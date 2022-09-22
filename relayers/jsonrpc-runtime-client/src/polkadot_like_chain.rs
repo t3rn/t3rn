@@ -9,16 +9,16 @@ pub type SyncHeader = relay_substrate_client::SyncHeader<bp_polkadot_core::Heade
 
 /// Polkadot chain definition
 #[derive(Debug, Clone, Copy)]
-pub struct PolkadotLike;
+pub struct Rococo;
 
-impl ChainBase for PolkadotLike {
+impl ChainBase for Rococo {
     type BlockNumber = bp_polkadot_core::BlockNumber;
     type Hash = bp_polkadot_core::Hash;
     type Hasher = bp_polkadot_core::Hasher;
     type Header = bp_polkadot_core::Header;
 }
 
-impl Chain for PolkadotLike {
+impl Chain for Rococo {
     type AccountId = bp_polkadot_core::AccountId;
     type Call = ();
     type Index = bp_polkadot_core::Nonce;

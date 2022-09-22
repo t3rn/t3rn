@@ -92,8 +92,8 @@ use frame_system::pallet_prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use std::convert::TryFrom;
     use super::*;
+    use sp_std::convert::TryFrom;
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -248,7 +248,7 @@ pub mod pallet {
         /// The pallet is currently halted
         Halted,
         /// The block height couldn't be converted
-        BlockHeightConversionError
+        BlockHeightConversionError,
     }
 
     /// Add a header range for the relaychain

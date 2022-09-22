@@ -18,9 +18,11 @@
 use crate::mock_rpc_setup::{TestSetup, REMOTE_CLIENT};
 use codec::{Compact, Encode};
 
-use sp_core::crypto::{AccountId32, UncheckedFrom};
-use sp_core::storage::StorageKey;
-use sp_core::Bytes;
+use sp_core::{
+    crypto::{AccountId32, UncheckedFrom},
+    storage::StorageKey,
+    Bytes,
+};
 use sp_io::TestExternalities;
 use sp_keystore::KeystoreExt;
 
@@ -29,7 +31,7 @@ use circuit_test_utils::create_gateway_protocol_from_client;
 use sp_keyring::Sr25519Keyring;
 use volatile_vm::wasm::PrefabWasmModule;
 
-use jsonrpc_runtime_client::polkadot_like_chain::PolkadotLike;
+use jsonrpc_runtime_client::polkadot_like_chain::Rococo;
 use jsonrpsee_types::{traits::Client, JsonValue};
 
 use codec::Decode;
@@ -121,7 +123,7 @@ pub fn storage_map_key<K: Encode>(
 }
 
 pub fn assert_contract_present_on_chain(
-    client: &RemoteClient<PolkadotLike>,
+    client: &RemoteClient<Rococo>,
     code_hash: <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::Output,
     code_length: usize,
 ) {
@@ -150,7 +152,7 @@ pub fn assert_contract_present_on_chain(
 }
 
 pub fn get_contract_storage(
-    client: &RemoteClient<PolkadotLike>,
+    client: &RemoteClient<Rococo>,
     contract_address: AccountId32,
     key: &str,
 ) -> Bytes {

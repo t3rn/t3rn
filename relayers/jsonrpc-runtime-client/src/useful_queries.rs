@@ -1,4 +1,4 @@
-use crate::polkadot_like_chain::PolkadotLike;
+use crate::polkadot_like_chain::Rococo;
 use codec::{Decode, Encode};
 use frame_metadata::{v14::RuntimeMetadataV14, RuntimeMetadata, RuntimeMetadataPrefixed};
 use jsonrpsee_types::{traits::Client, v2::params::JsonRpcParams};
@@ -12,9 +12,7 @@ use t3rn_primitives::{
 };
 
 /// Get first header of Substrate network
-pub async fn get_first_header(
-    sub_client: &SubstrateClient<PolkadotLike>,
-) -> Result<Vec<u8>, String> {
+pub async fn get_first_header(sub_client: &SubstrateClient<Rococo>) -> Result<Vec<u8>, String> {
     let initial_header = sub_client.header_by_number(Zero::zero()).await;
     initial_header
         .map(|header| header.encode())
@@ -22,7 +20,7 @@ pub async fn get_first_header(
 }
 
 pub async fn get_metadata(
-    sub_client: &SubstrateClient<PolkadotLike>,
+    sub_client: &SubstrateClient<Rococo>,
 ) -> Result<RuntimeMetadataV14, String> {
     let bytes: Bytes = sub_client
         .client
@@ -39,7 +37,7 @@ pub async fn get_metadata(
 
 /// Gets the current authority set id, the actual authority set, and header for the latest finalized block.
 pub async fn get_gtwy_init_data(
-    sub_client: &SubstrateClient<PolkadotLike>,
+    sub_client: &SubstrateClient<Rococo>,
     is_relay_chain: bool,
 ) -> Result<(AuthoritySet, Header), String> {
     let block_hash: serde_json::value::Value = sub_client
@@ -88,7 +86,7 @@ pub async fn get_gtwy_init_data(
     }
 }
 
-pub async fn get_parachain_id(sub_client: &SubstrateClient<PolkadotLike>) -> Result<u32, String> {
+pub async fn get_parachain_id(sub_client: &SubstrateClient<Rococo>) -> Result<u32, String> {
     let bytes: Bytes = sub_client
         .client
         .request(
