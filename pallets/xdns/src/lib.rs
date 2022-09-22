@@ -384,22 +384,19 @@ pub mod pallet {
         }
 
         fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
-            if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err(Error::<T>::XdnsRecordNotFound.into())
+            match <XDNSRegistry<T>>::get(chain_id) {
+                Some(rec) => Ok(rec.security_coordinates),
+                None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
-            Ok(<XDNSRegistry<T>>::get(chain_id)
-                .unwrap()
-                .security_coordinates) //safe because checked
         }
 
         fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, DispatchError> {
-            if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err(Error::<T>::XdnsRecordNotFound.into())
-            }
-
-            match <XDNSRegistry<T>>::get(chain_id).unwrap().parachain {
-                Some(value) => Ok(value.id),
-                None => Err(Error::<T>::NoParachainInfoFound.into()),
+            match <XDNSRegistry<T>>::get(chain_id) {
+                Some(rec) => match rec.parachain {
+                    Some(entry) => Ok(entry.id),
+                    None => Err(Error::<T>::NoParachainInfoFound.into()),
+                },
+                None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
         }
 
