@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::Decode;
-use pallet_circuit::monetary::MILLIT3RN;
+use t3rn_primitives::monetary::MILLIT3RN;
 
 use pallet_grandpa::AuthorityId as GrandpaId;
 
