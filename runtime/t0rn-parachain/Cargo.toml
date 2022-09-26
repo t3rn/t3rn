@@ -42,6 +42,7 @@ pallet-timestamp                           = { git = "https://github.com/parityt
 pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.19" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.19" }
 pallet-utility                             = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.19' }
+pallet-identity                            = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.19' }
 sp-api                                     = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.19" }
 sp-block-builder                           = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.19" }
 sp-consensus-aura                          = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.19" }
@@ -150,6 +151,7 @@ std = [
   "pallet-session/std",
   "pallet-sudo/std",
   "pallet-clock/std",
+  "pallet-identity/std",
   "pallet-xbi-portal/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",

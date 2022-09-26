@@ -135,6 +135,6 @@ construct_runtime!(
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
 
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>},
+        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 77,
     }
 );
