@@ -206,7 +206,7 @@ construct_runtime!(
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 77,
+        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 177,
     }
 );
 
