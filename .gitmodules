@@ -9,5 +9,4 @@
 	url = https://github.com/t3rn/3vm.git
 [submodule "pallets/xbi-portal"]
 	path = pallets/xbi-portal
-	branch = sfx_and_scabi
-	url = https://github.com/t3rn/xbi.git
+	url = https://github.com/t3rn/xbi-portal.git

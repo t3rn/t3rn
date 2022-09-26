@@ -61,10 +61,10 @@ fn set_ids(
     let xtx_id: sp_core::H256 =
         hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
 
-    let side_effect_a_id = valid_side_effect
+    let sfx_id = valid_side_effect
         .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
 
-    (xtx_id, side_effect_a_id)
+    (xtx_id, sfx_id)
 }
 
 fn as_u32_le(array: &[u8; 4]) -> u32 {
