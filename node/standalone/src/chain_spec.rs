@@ -1,11 +1,7 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig,
-    MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
-    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig, Signature,
+    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
-
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,
 };
@@ -112,7 +108,7 @@ async fn fetch_xdns_record_from_rpc(
         chain_id,
         parachain_info,
         Default::default(),
-        GatewayVendor::PolkadotLike,
+        GatewayVendor::Rococo,
         GatewayType::ProgrammableExternal(0),
         GatewayGenesisConfig {
             modules_encoded: Some(modules_vec),
@@ -238,6 +234,9 @@ pub fn development_config() -> Result<ChainSpec, String> {
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
                     get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                    get_account_id_from_seed::<sr25519::Public>("Executor//default"),
+                    get_account_id_from_seed::<sr25519::Public>("Cli//default"),
+                    get_account_id_from_seed::<sr25519::Public>("Ranger//default"),
                 ],
                 vec![],
                 standard_side_effects(),
@@ -331,7 +330,7 @@ fn testnet_genesis(
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
     standard_side_effects: Vec<SideEffectInterface>,
-    initial_gateways: Vec<InitializationData<Header>>,
+    _initial_gateways: Vec<InitializationData<Header>>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -344,7 +343,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1 << 60))
+                .map(|k| (k, (10000 * 10u128.pow(12))))
                 .collect(),
         },
         aura: AuraConfig {
@@ -361,35 +360,11 @@ fn testnet_genesis(
             key: Some(root_key),
         },
         transaction_payment: Default::default(),
-        // beefy: BeefyConfig {
-        //     // authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
-        //     authorities: Vec::new(),
-        // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
             standard_side_effects,
         },
         contracts_registry: Default::default(),
-        multi_finality_verifier_substrate_like: MultiFinalityVerifierSubstrateLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_generic_like: MultiFinalityVerifierGenericLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_ethereum_like: MultiFinalityVerifierEthereumLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
-            owner: None,
-            init_data: Some(initial_gateways),
-        },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
         treasury: Default::default(),

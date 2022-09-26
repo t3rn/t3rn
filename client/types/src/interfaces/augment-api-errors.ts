@@ -1,10 +1,23 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from "@polkadot/api-base/types";
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import "@polkadot/api-base/types/errors";
+
+import type { ApiTypes, AugmentedError } from "@polkadot/api-base/types";
+
+export type __AugmentedError<ApiType extends ApiTypes> =
+  AugmentedError<ApiType>;
 
 declare module "@polkadot/api-base/types/errors" {
-  export interface AugmentedErrors<ApiType extends ApiTypes> {
+  interface AugmentedErrors<ApiType extends ApiTypes> {
+    accountManager: {
+      ExecutionAlreadyRegistered: AugmentedError<ApiType>;
+      ExecutionNotRegistered: AugmentedError<ApiType>;
+      /** Generic error */
+      [key: string]: AugmentedError<ApiType>;
+    };
     balances: {
       /** Beneficiary account must pre-exist */
       DeadAccount: AugmentedError<ApiType>;
@@ -32,6 +45,7 @@ declare module "@polkadot/api-base/types/errors" {
       ContractXtxKilledRunOutOfFunds: AugmentedError<ApiType>;
       DeterminedForbiddenXtxStatus: AugmentedError<ApiType>;
       EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished: AugmentedError<ApiType>;
+      FailedToHardenFullSideEffect: AugmentedError<ApiType>;
       FatalCommitSideEffectWithoutConfirmationAttempt: AugmentedError<ApiType>;
       FatalErroredCommitSideEffectConfirmationAttempt: AugmentedError<ApiType>;
       FatalErroredRevertSideEffectConfirmationAttempt: AugmentedError<ApiType>;
@@ -52,11 +66,13 @@ declare module "@polkadot/api-base/types/errors" {
       SetupFailedXtxNotFound: AugmentedError<ApiType>;
       SetupFailedXtxStorageArtifactsNotFound: AugmentedError<ApiType>;
       SideEffectsValidationFailed: AugmentedError<ApiType>;
+      SignalQueueFull: AugmentedError<ApiType>;
       UnsupportedRole: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
     circuitPortal: {
+      BridgedHeaderDecodingError: AugmentedError<ApiType>;
       ContractDoesNotExists: AugmentedError<ApiType>;
       /** Non existent public key. */
       InvalidKey: AugmentedError<ApiType>;
@@ -66,17 +82,31 @@ declare module "@polkadot/api-base/types/errors" {
       NoParachainEntryFound: AugmentedError<ApiType>;
       ParachainHeaderNotVerified: AugmentedError<ApiType>;
       ProcessStepGatewayNotRecognised: AugmentedError<ApiType>;
+      ReadLatestTargetHashError: AugmentedError<ApiType>;
+      ReadTargetHeightDecodeBlockHashError: AugmentedError<ApiType>;
+      ReadTargetHeightDecodeCmpHeightError: AugmentedError<ApiType>;
+      ReadTargetHeightError: AugmentedError<ApiType>;
+      ReadTargetHeightReplayAttackDetected: AugmentedError<ApiType>;
       RequesterNotEnoughBalance: AugmentedError<ApiType>;
       SideEffectConfirmationInvalidInclusionProof: AugmentedError<ApiType>;
       SideEffectTypeNotRecognized: AugmentedError<ApiType>;
       StepConfirmationBlockUnrecognised: AugmentedError<ApiType>;
       StepConfirmationDecodingError: AugmentedError<ApiType>;
       StepConfirmationGatewayNotRecognised: AugmentedError<ApiType>;
+      StorageProofDecodingError: AugmentedError<ApiType>;
       VendorUnknown: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
     contracts: {
+      /** Authors of some contracts can not be remunerated */
+      AuthorNotRemuneratable: AugmentedError<ApiType>;
+      /** The side effects can not be triggered from some contracts */
+      CannotTriggerSideEffects: AugmentedError<ApiType>;
+      /** You can't submit side effects without any side effects */
+      CannotTriggerWithoutSideEffects: AugmentedError<ApiType>;
+      /** The Circuit had an issue handling the new step */
+      CircuitStepHandlingFailed: AugmentedError<ApiType>;
       /**
        * Code removal was denied because the code is still in use by at least
        * one contract.
@@ -96,6 +126,8 @@ declare module "@polkadot/api-base/types/errors" {
        * specified in the current schedule.
        */
       CodeTooLarge: AugmentedError<ApiType>;
+      /** Some contracts can not be instantiated */
+      ContractCannotBeInstantiated: AugmentedError<ApiType>;
       /** No contract was found at the specified address. */
       ContractNotFound: AugmentedError<ApiType>;
       /**
@@ -120,10 +152,14 @@ declare module "@polkadot/api-base/types/errors" {
        * again during another block is the only way to resolve this issue.
        */
       DeletionQueueFull: AugmentedError<ApiType>;
+      /** Some contracts do not have storage */
+      DoesNotHaveStorage: AugmentedError<ApiType>;
       /** A contract with the same AccountId already exists. */
       DuplicateContract: AugmentedError<ApiType>;
       /** The topics passed to `seal_deposit_events` contains at least one duplicate. */
       DuplicateTopics: AugmentedError<ApiType>;
+      /** A user exceeded the bounce threshold for submitting signals */
+      ExceededSignalBounceThreshold: AugmentedError<ApiType>;
       /** `seal_call` forwarded this contracts input. It therefore is no longer available. */
       InputForwarded: AugmentedError<ApiType>;
       /** Invalid combination of flags supplied to `seal_call` or `seal_delegate_call`. */
@@ -143,6 +179,8 @@ declare module "@polkadot/api-base/types/errors" {
        * happen as deploying such contracts is rejected.
        */
       NoChainExtension: AugmentedError<ApiType>;
+      /** Do nothing */
+      Noop: AugmentedError<ApiType>;
       /** The operation is not allowed when the execution is volatile. */
       NotAllowedInVolatileMode: AugmentedError<ApiType>;
       /** A buffer outside of sandbox memory was passed to a contract API function. */
@@ -409,6 +447,64 @@ declare module "@polkadot/api-base/types/errors" {
       LiquidityRestrictions: AugmentedError<ApiType>;
       /** Failed because the maximum locks was exceeded */
       MaxLocksExceeded: AugmentedError<ApiType>;
+      /** Generic error */
+      [key: string]: AugmentedError<ApiType>;
+    };
+    portal: {
+      /** The gateways vendor is not available, which is a result of a missing XDNS record. */
+      GatewayVendorNotFound: AugmentedError<ApiType>;
+      /** No gateway height could be found */
+      NoGatewayHeightAvailable: AugmentedError<ApiType>;
+      /** Gateway registration failed */
+      RegistrationError: AugmentedError<ApiType>;
+      /** Finality Verifiers operational status can't be updated */
+      SetOperationalError: AugmentedError<ApiType>;
+      /** Finality Verifier owner can't be set. */
+      SetOwnerError: AugmentedError<ApiType>;
+      /** SideEffect confirmation failed */
+      SideEffectConfirmationFailed: AugmentedError<ApiType>;
+      /** The header could not be added */
+      SubmitHeaderError: AugmentedError<ApiType>;
+      /** Specified Vendor is not implemented */
+      UnimplementedGatewayVendor: AugmentedError<ApiType>;
+      /** The creation of the XDNS record was not successful */
+      XdnsRecordCreationFailed: AugmentedError<ApiType>;
+      /** Generic error */
+      [key: string]: AugmentedError<ApiType>;
+    };
+    rococoBridge: {
+      /** The pallet has already been initialized. */
+      AlreadyInitialized: AugmentedError<ApiType>;
+      /** All pallet operations are halted. */
+      Halted: AugmentedError<ApiType>;
+      InvalidAnchorHeader: AugmentedError<ApiType>;
+      /** The authority set from the underlying header chain is invalid. */
+      InvalidAuthoritySet: AugmentedError<ApiType>;
+      /** The given justification is invalid for the given header. */
+      InvalidJustification: AugmentedError<ApiType>;
+      NoFinalizedHeader: AugmentedError<ApiType>;
+      NoParachainEntryFound: AugmentedError<ApiType>;
+      /**
+       * The header being imported is older than the best finalized header known
+       * to the pallet.
+       */
+      OldHeader: AugmentedError<ApiType>;
+      /**
+       * The storage proof doesn't contains storage root. So it is invalid for
+       * given header.
+       */
+      StorageRootMismatch: AugmentedError<ApiType>;
+      /** There are too many requests for the current window to handle. */
+      TooManyRequests: AugmentedError<ApiType>;
+      /** The header is unknown to the pallet. */
+      UnknownHeader: AugmentedError<ApiType>;
+      /**
+       * The scheduled authority set change found in the header is unsupported
+       * by the pallet.
+       *
+       * This is the case for non-standard (e.g forced) authority set changes.
+       */
+      UnsupportedScheduledChange: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };

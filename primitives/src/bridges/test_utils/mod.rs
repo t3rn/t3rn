@@ -21,7 +21,7 @@ use crate::bridges::header_chain as bp_header_chain;
 use bp_header_chain::justification::GrandpaJustification;
 use sp_finality_grandpa::{AuthorityId, AuthoritySignature, AuthorityWeight, SetId};
 use sp_runtime::traits::{Header as HeaderT, One, Zero};
-use sp_std::{convert::TryFrom, prelude::*};
+use sp_std::{convert::TryFrom, prelude::*, vec};
 // Re-export all our test account utilities
 pub use keyring::*;
 

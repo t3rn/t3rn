@@ -1,145 +1,217 @@
-import { EventEmitter } from "events"
-import { SideEffect } from "./utils/types"
+import {EventEmitter} from "events"
 import createDebug from "debug"
+import {Execution} from "./circuit/executions/execution";
+import {ProfitEstimation} from "./profitEstimation";
+import {SideEffect, SideEffectStatus} from "./circuit/executions/sideEffect";
 
+// A type used for storing the different SideEffects throughout their respective life-cycle.
+// Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
 type Queue = {
-  gateways: {
-    blockHeight: number
-    // used for SideEffects that are waiting for execution
-    open: string[]
-    // caught circuit event but not executed yet
-    executing: string[]
-    // to confirm we need to wait for a specific block height to be reached
-    confirming: {
-      [block: number]: string[]
+    gateways: {
+        blockHeight: number
+        // sfx that are waiting the insurance to be bonded
+        waitingForInsurance: string[]
+        // sfx that can be executed on target, ignoring the step rules.
+        readyToExecute: string[]
+        // Executed sfx and their respective execution block.
+        readyToConfirm: {
+            [block: number]: string[]
+        }
     }
-  }
 }
 
 export class ExecutionManager extends EventEmitter {
-  static debug = createDebug("execution-manager")
+    static debug = createDebug("execution-manager")
 
-  // we map the current state in the queue
-  queue: Queue = <Queue>{}
-  // and use this mapping for storing the actual side effect instances
-  sideEffects: {
-    [id: string]: SideEffect
-  } = {}
+    // we map the current state in the queue
+    queue: Queue = <Queue>{}
+    // maps xtxId to Execution instance
+    executions: {
+        [id: string]: Execution
+    } = {}
+    // a lookup mapping, to find a sfx xtxId
+    sfxExecutionLookup: {
+        [sfxId: string]: string
+    } = {};
 
-  // maintains order during xtx lifecycle
-  sideEffectsOrder: { [xtxId: string]: string[] } = {}
+    profitEstimation: ProfitEstimation = new ProfitEstimation();
 
-  // adds gateways on startup
-  addGateway(id: string) {
-    this.queue[id] = {
-      blockHeight: 0,
-      open: [],
-      executing: [],
-      confirming: {},
-    }
-  }
-
-  addSideEffects(sideEffects: SideEffect[]) {
-    // store xtx sfx order to submit confirmations in sequence
-    this.sideEffectsOrder[sideEffects[0].getXtxId()] = sideEffects.map(
-      sideEffect => sideEffect.getId()
-    )
-
-    // plug off-chain riks assessment here
-    const acceptRisk = true
-    if (acceptRisk) {
-      sideEffects.forEach(sideEffect => {
-        this.sideEffects[sideEffect.getId()] = sideEffect
-        this.queue[sideEffect.getTarget()].executing.push(sideEffect.getId())
-      })
-      // Trigger execution
-      this.emit("ExecuteSideEffects", sideEffects)
-    } else {
-      sideEffects.forEach(sideEffect => {
-        this.sideEffects[sideEffect.getId()] = sideEffect
-        this.queue[sideEffect.getTarget()].open.push(sideEffect.getId())
-      })
+    // adds gateways on startup
+    addGateway(id: string) {
+        this.queue[id] = {
+            blockHeight: 0,
+            waitingForInsurance: [],
+            readyToExecute: [],
+            readyToConfirm: {},
+        }
     }
 
-    ExecutionManager.debug("Added SideEffects: ", this.queue)
-  }
+    // add a new execution to the execution manager and initialize event listeners
+    addExecution(execution: Execution) {
+        this.executions[execution.xtxId.toHex()] = execution;
 
-  // once SideEffect has been executed on target we add it to the confirming pool
-  // the transactions resides here until the circuit has received targets header range
-  sideEffectExecuted(id: string) {
-    if (!this.sideEffects[id]) return
-    const gatewayId = this.sideEffects[id].getTarget()
-    const inclusionBlock = this.sideEffects[id].getTargetBlock()
-    // this.queue[gatewayId].executing.remove(id)
-    this.removeExecuting(id, gatewayId)
+        Object.keys(execution.sideEffects).forEach((sfxId: string) => {
+            // add sfxId to execution lookup mapping
+            this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
+        })
 
-    //create array if inclusionBlock is not available
-    if (!this.queue[gatewayId].confirming[inclusionBlock]) {
-      this.queue[gatewayId].confirming[inclusionBlock] = []
+        // listens for step confirmation signal. This is called after a step is confirmed, and SideEffects in the next step are already executed.
+        // In the current configuration this is not used, as the executions of a next step are only started once the former one is complete (next listener)
+        execution.on("ConfirmSideEffectInCurrentStep", (sideEffects: SideEffect[]) => {
+            this.executeConfirmationStepQueue(sideEffects)
+        })
+
+        // confirmation trigger that is called if the previous step is complete and we have executed sfx
+        execution.on("ExecuteSideEffectInCurrentStep", (sideEffects: SideEffect[]) => {
+            sideEffects.forEach(sideEffect=> {
+                this.emit("ExecuteSideEffect", sideEffect)
+            })
+        })
+
+        // add dirty transactions to queue
+        Object.values(execution.sideEffects).filter((sfx: SideEffect) => !sfx.hasInsurance).forEach(sfx => {
+            this.queue[sfx.target].readyToExecute.push(sfx.id)
+        })
+
+        const needInsurance = Object.values(execution.sideEffects).filter((sfx: SideEffect) => sfx.hasInsurance)
+
+        // adds transaction waiting for insurance bond into correct queue
+        needInsurance.forEach(sfx => {
+            this.queue[sfx.target].waitingForInsurance.push(sfx.id)
+        })
+
+        // emit insured txs we want to bond
+        this.emit("BondInsurance", needInsurance)
+
+        ExecutionManager.debug("New Execution Received:", this.queue)
     }
 
-    this.queue[gatewayId].confirming[inclusionBlock].push(id)
-    ExecutionManager.debug("Executed:", this.queue)
-  }
-
-  // Once confirmed, delete from queue
-  finalize(id: string) {
-    if (!this.sideEffects[id]) return
-    const gatewayId = this.sideEffects[id].getTarget()
-    const inclusionBlock = this.sideEffects[id].getTargetBlock()
-    this.removeConfirming(id, gatewayId, inclusionBlock)
-    delete this.sideEffects[id]
-    ExecutionManager.debug("Finalized:", this.queue)
-  }
-
-  // New header range was submitted on circuit
-  // update local params and check which SideEffects can be confirmed
-  updateGatewayHeight(gatewayId: string, blockHeight: any) {
-    blockHeight = parseInt(blockHeight)
-    if (this.queue[gatewayId]) {
-      this.queue[gatewayId].blockHeight = blockHeight
-      this.executeQueue(gatewayId, blockHeight)
+    // the entire execution has terminated
+    executionComplete(xtxId: string) {
+        this.executions[xtxId].complete()
+        ExecutionManager.debug("✨✨✨ Execution Complete ✨✨✨", xtxId)
+        console.log(this.queue)
     }
-  }
 
-  // checks which unconfirmed SideEffects can be executed on circuit
-  // ToDo: This crime needs to be refactored
-  executeQueue(gatewayId: string, blockHeight: number) {
-    // filter and flatten SideEffects ready to be confirmed.
-    let ready = Object.keys(this.queue[gatewayId].confirming).filter(block => {
-      //in node object keys are always strings
-      return parseInt(block) <= blockHeight
-    })
+    // update sfx once insurance has been bonded
+    insuranceBonded(sfxId: string, iAmExecuting: boolean) {
+        if (!this.sfxExecutionLookup[sfxId]) return
+        const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
 
-    if (ready.length > 0) {
-      // mapping to confirmable sfx ids
-      const sfxIds: string[] = ready
-        .map((_blockHeight, i) => this.queue[gatewayId].confirming[ready[i]])
-        .flat()
+        // remove from old queue
+        this.removeFromQueue("waitingForInsurance", sfxId, sfx.target)
+        // add to new one
+        this.queue[sfx.target].readyToExecute.push(sfxId)
 
-      // rearrange sfx into correct order
-      const sideEffectsToConfirm: SideEffect[] = this.sideEffectsOrder[
-        this.sideEffects[sfxIds[0]].getXtxId()
-      ].map(sfxId => this.sideEffects[sfxId])
-
-      ExecutionManager.debug("Ready to Submit", ready)
-
-      this.emit("ConfirmSideEffects", sideEffectsToConfirm)
+        this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId].insuranceBonded(iAmExecuting)
+        ExecutionManager.debug(`Insurance Bonded: ${this.toHuman(sfxId)} - ${sfx.target} 💎`)
     }
-  }
 
-  private removeExecuting(id: string, gatewayId: string) {
-    const index = this.queue[gatewayId].executing.indexOf(id)
-    this.queue[gatewayId].executing.splice(index, 1)
-  }
+    // the execution is ready to be executed. This happends once all insured sfx have received their insurance
+    xtxReady(xtxId: string) {
+        this.executions[xtxId].readyToExecute()
 
-  private removeConfirming(id: string, gatewayId: string, blockHeight: number) {
-    const index = this.queue[gatewayId].confirming[blockHeight].indexOf(id)
-    // high chance their is only one SideEffect in this block, so this is faster.
-    if (this.queue[gatewayId].confirming[blockHeight].length === 1) {
-      delete this.queue[gatewayId].confirming[blockHeight]
-    } else {
-      this.queue[gatewayId].confirming[blockHeight].splice(index, 1)
+        // this could potentially be useless, as all sfxs should be readyToExecute at this stage. Other executor might have snatched some sfx, so leaving this here
+        const canExecute = this.executions[xtxId].getReadyToExecute()
+
+        canExecute.forEach(sideEffect=> {
+            this.emit("ExecuteSideEffect", sideEffect)
+        })
+        ExecutionManager.debug("Execution Ready:", xtxId)
+        console.log(this.queue)
     }
-  }
+
+    // once SideEffect has been executed on target we add it to the confirming pool
+    // the transactions resides here until the circuit has received targets header range
+    sideEffectExecuted(sfxId: string) {
+        if (!this.sfxExecutionLookup[sfxId]) return
+        const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
+        this.removeFromQueue("readyToExecute", sfxId, sfx.target)
+
+        //create array if inclusionBlock is not available
+        if (!this.queue[sfx.target].readyToConfirm[sfx.targetInclusionHeight.toNumber()]) {
+            this.queue[sfx.target].readyToConfirm[sfx.targetInclusionHeight.toNumber()] = []
+        }
+
+        this.queue[sfx.target].readyToConfirm[sfx.targetInclusionHeight.toNumber()].push(sfxId)
+
+        ExecutionManager.debug(`Executed: ${this.toHuman(sfxId)} - ${sfx.target} - #${sfx.targetInclusionHeight.toNumber()} 🏁`)
+    }
+
+    // Once confirmed on target, delete from queue
+    sideEffectConfirmed(sfxId: string) {
+        if (!this.sfxExecutionLookup[sfxId]) return
+        const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId]
+        //update status in execution and sfx
+        this.executions[this.sfxExecutionLookup[sfxId]].sideEffectConfirmed(sfxId)
+        //remove from local queue
+        this.removeConfirming(sfxId, sfx.target, sfx.targetInclusionHeight.toNumber())
+        ExecutionManager.debug(`Confirmed: ${this.toHuman(sfxId)} - ${sfx.target} ✅`)
+    }
+
+    // New header range was submitted on circuit
+    // update local params and check which SideEffects can be confirmed
+    updateGatewayHeight(gatewayId: string, blockHeight: any) {
+        blockHeight = parseInt(blockHeight)
+        if (this.queue[gatewayId]) {
+            this.queue[gatewayId].blockHeight = blockHeight
+            this.executeConfirmationQueue(gatewayId)
+        }
+    }
+
+    // checks which executed SideEffects can be confirmed on circuit
+    executeConfirmationQueue(gatewayId: string) {
+        // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
+        let readyByHeight: string[] = [];
+        Object.keys(this.queue[gatewayId].readyToConfirm).forEach(block => {
+            //in node object keys are always strings
+            if(parseInt(block) <= this.queue[gatewayId].blockHeight) {
+                readyByHeight = readyByHeight.concat(this.queue[gatewayId].readyToConfirm[block])
+            }
+        })
+        const readyByStep: SideEffect[] = [];
+
+        // filter the SideEffects that can be confirmed in the current step
+        readyByHeight.forEach(sfxId => {
+            const sfx: SideEffect = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
+            if(sfx.step === this.executions[sfx.xtxId].currentStep) {
+                readyByStep.push(sfx)
+            }
+        })
+
+        ExecutionManager.debug(`${gatewayId} - ${this.queue[gatewayId].blockHeight}: ReadyToConfirm: ${readyByStep.length}`)
+        this.emit("ConfirmSideEffects", readyByStep)
+    }
+
+    // Checks if there are any sfx that can be confirmed, after another sfx was conmfirmed. This function is not used in the current configuration, as we wait with executing a nexts steps sfxs until step is complete
+    executeConfirmationStepQueue(sideEffects: SideEffect[]) {
+        let readyToConfirm = sideEffects.filter((sfx: SideEffect) => {
+            return parseInt(this.queue[sfx.target].blockHeight)>= sfx.targetInclusionHeight.toNumber()
+        })
+
+        if(readyToConfirm.length > 0) {
+            this.emit("ConfirmSideEffects", readyToConfirm)
+        }
+    }
+
+    // removes sfx from executing queue
+    private removeFromQueue(queue: string, id: string, gatewayId: string) {
+        const index = this.queue[gatewayId][queue].indexOf(id)
+        this.queue[gatewayId][queue].splice(index, 1)
+    }
+
+    // removes the SideEffects from the confirmation queue
+    private removeConfirming(id: string, gatewayId: string, blockHeight: number) {
+        // high chance there is only one SideEffect in this block, so this is faster.
+        if (this.queue[gatewayId].readyToConfirm[blockHeight].length === 1) {
+            delete this.queue[gatewayId].readyToConfirm[blockHeight]
+        } else {
+            const index = this.queue[gatewayId].readyToConfirm[blockHeight].indexOf(id)
+            this.queue[gatewayId].readyToConfirm[blockHeight].splice(index, 1)
+        }
+    }
+
+    private toHuman(id: string) {
+        return id.substring(0, 8)
+    }
 }

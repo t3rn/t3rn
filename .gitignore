@@ -14,6 +14,7 @@ client/**/node_modules
 /.devkey
 client/types/dist/*
 client/relayer/.env
+client/cli/yarn-error.log
 
 # mac
 **/.DS_Store

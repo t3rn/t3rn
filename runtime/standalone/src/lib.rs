@@ -78,23 +78,7 @@ construct_runtime!(
         // Circuit
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 101,
-        MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 102,
-        MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 103,
-        MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 104,
-        MultiFinalityVerifierDefault: pallet_mfv::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 105,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Treasury: pallet_treasury = 109,
         Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
@@ -106,5 +90,11 @@ construct_runtime!(
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
+        // Portal
+        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        RococoBridge: pallet_grandpa_finality_verifier::{
+            Pallet, Storage
+        } = 129,
+
     }
 );

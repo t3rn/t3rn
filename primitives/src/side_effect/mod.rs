@@ -139,8 +139,7 @@ mod tests {
             confirmed: Some(ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
                 err: Some(ConfirmationOutcome::Success),
                 output: Some(vec![]),
-                encoded_effect: vec![],
-                inclusion_proof: None,
+                inclusion_data: vec![],
                 executioner: from,
                 received_at: 1u64 as BlockNumber,
                 cost: Some(2u64 as BalanceOf),
@@ -224,7 +223,7 @@ mod tests {
         assert_eq!(
             empty_side_effect.generate_id::<Hashing>(),
             H256::from_slice(&hex!(
-                "89eb0d6a8a691dae2cd15ed0369931ce0a949ecafa5c3f93f8121833646e15c3"
+                "5d0d3f21208ec6b3c32b85e5d535b804713bf7b658559a10058c9c4d9fd2c79a"
             ))
         );
     }

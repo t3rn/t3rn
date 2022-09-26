@@ -1,7 +1,15 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from "@polkadot/api-base/types";
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import "@polkadot/api-base/types/storage";
+
+import type {
+  ApiTypes,
+  AugmentedQuery,
+  QueryableStorageEntry,
+} from "@polkadot/api-base/types";
 import type {
   Bytes,
   Compact,
@@ -30,6 +38,7 @@ import type {
   PalletBalancesReserveData,
   PalletCircuitStateInsuranceDeposit,
   PalletCircuitStateXExecSignal,
+  PalletGrandpaFinalityVerifierParachain,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
   PalletTransactionPaymentReleases,
@@ -39,17 +48,44 @@ import type {
   PalletWasmContractsWasmPrefabWasmModule,
   SpConsensusAuraSr25519AppSr25519Public,
   SpRuntimeDigest,
+  SpRuntimeHeaderU32,
+  SpRuntimeHeaderU64,
+  T3rnPrimitivesAccountManagerExecutionRegistryItem,
   T3rnPrimitivesBridgesHeaderChainAuthoritySet,
   T3rnPrimitivesContractsRegistryRegistryContract,
   T3rnPrimitivesSideEffectFullSideEffect,
   T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
   T3rnPrimitivesVolatileLocalState,
   T3rnPrimitivesXdnsXdnsRecord,
+  T3rnSdkPrimitivesSignalExecutionSignal,
 } from "@polkadot/types/lookup";
 import type { Observable } from "@polkadot/types/types";
 
+export type __AugmentedQuery<ApiType extends ApiTypes> = AugmentedQuery<
+  ApiType,
+  () => unknown
+>;
+export type __QueryableStorageEntry<ApiType extends ApiTypes> =
+  QueryableStorageEntry<ApiType>;
+
 declare module "@polkadot/api-base/types/storage" {
-  export interface AugmentedQueries<ApiType extends ApiTypes> {
+  interface AugmentedQueries<ApiType extends ApiTypes> {
+    accountManager: {
+      executionNonce: AugmentedQuery<ApiType, () => Observable<u64>, []> &
+        QueryableStorageEntry<ApiType, []>;
+      executionRegistry: AugmentedQuery<
+        ApiType,
+        (
+          arg: u64 | AnyNumber | Uint8Array
+        ) => Observable<
+          Option<T3rnPrimitivesAccountManagerExecutionRegistryItem>
+        >,
+        [u64]
+      > &
+        QueryableStorageEntry<ApiType, [u64]>;
+      /** Generic query */
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
     aura: {
       /** The current authority set. */
       authorities: AugmentedQuery<
@@ -218,6 +254,19 @@ declare module "@polkadot/api-base/types/storage" {
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;
+      /**
+       * Handles queued signals
+       *
+       * This operation is performed lazily in `on_initialize`.
+       */
+      signalQueue: AugmentedQuery<
+        ApiType,
+        () => Observable<
+          Vec<ITuple<[AccountId32, T3rnSdkPrimitivesSignalExecutionSignal]>>
+        >,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
       /** Current Circuit's context of active transactions */
       xExecSignals: AugmentedQuery<
         ApiType,
@@ -248,6 +297,15 @@ declare module "@polkadot/api-base/types/storage" {
       /** The subtrie counter. */
       accountCounter: AugmentedQuery<ApiType, () => Observable<u64>, []> &
         QueryableStorageEntry<ApiType, []>;
+      /** The initial author of the instantiated contract */
+      authorOf: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<AccountId32>>,
+        [AccountId32]
+      > &
+        QueryableStorageEntry<ApiType, [AccountId32]>;
       /**
        * A mapping between an original code hash and instrumented wasm code,
        * ready for execution.
@@ -305,6 +363,16 @@ declare module "@polkadot/api-base/types/storage" {
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;
+      /** Holds the amount of times the signal was posted or attempted to be posted */
+      signals: AugmentedQuery<
+        ApiType,
+        (
+          arg1: H256 | string | Uint8Array,
+          arg2: u32 | AnyNumber | Uint8Array
+        ) => Observable<Option<u32>>,
+        [H256, u32]
+      > &
+        QueryableStorageEntry<ApiType, [H256, u32]>;
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };
@@ -574,17 +642,7 @@ declare module "@polkadot/api-base/types/storage" {
         (
           arg1: U8aFixed | string | Uint8Array,
           arg2: H256 | string | Uint8Array
-        ) => Observable<
-          Option<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u64>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >
-        >,
+        ) => Observable<Option<SpRuntimeHeaderU64>>,
         [U8aFixed, H256]
       > &
         QueryableStorageEntry<ApiType, [U8aFixed, H256]>;
@@ -715,17 +773,7 @@ declare module "@polkadot/api-base/types/storage" {
         (
           arg1: U8aFixed | string | Uint8Array,
           arg2: H256 | string | Uint8Array
-        ) => Observable<
-          Option<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >
-        >,
+        ) => Observable<Option<SpRuntimeHeaderU32>>,
         [U8aFixed, H256]
       > &
         QueryableStorageEntry<ApiType, [U8aFixed, H256]>;
@@ -1114,6 +1162,10 @@ declare module "@polkadot/api-base/types/storage" {
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };
+    portal: {
+      /** Generic query */
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
     randomnessCollectiveFlip: {
       /**
        * Series of block headers from the last 81 blocks that acts as random
@@ -1122,6 +1174,160 @@ declare module "@polkadot/api-base/types/storage" {
        */
       randomMaterial: AugmentedQuery<ApiType, () => Observable<Vec<H256>>, []> &
         QueryableStorageEntry<ApiType, []>;
+      /** Generic query */
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
+    rococoBridge: {
+      /** Map of hashes of the best finalized header. */
+      bestFinalizedMap: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<H256>>,
+        [U8aFixed]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed]>;
+      /** The current GRANDPA Authority set. */
+      currentAuthoritySet: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<T3rnPrimitivesBridgesHeaderChainAuthoritySet>>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      /** Hash of the header used to bootstrap the pallet. */
+      initialHashMap: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<H256>>,
+        [U8aFixed]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed]>;
+      /** Map of instance ids of gateways which are active */
+      instantiatedGatewaysMap: AugmentedQuery<
+        ApiType,
+        () => Observable<Vec<U8aFixed>>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      /** If true, all pallet transactions are failed immediately. */
+      isHalted: AugmentedQuery<ApiType, () => Observable<bool>, []> &
+        QueryableStorageEntry<ApiType, []>;
+      /** If true, all pallet transactions are failed immediately. */
+      isHaltedMap: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<bool>>,
+        [U8aFixed]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed]>;
+      /** A ring buffer of imported hashes. Ordered by the insertion time. */
+      multiImportedHashes: AugmentedQuery<
+        ApiType,
+        (
+          arg1: U8aFixed | string | Uint8Array,
+          arg2: u32 | AnyNumber | Uint8Array
+        ) => Observable<Option<H256>>,
+        [U8aFixed, u32]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed, u32]>;
+      /** Current ring buffer position. */
+      multiImportedHashesPointer: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<u32>>,
+        [U8aFixed]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed]>;
+      /** Headers which have been imported into the pallet. */
+      multiImportedHeaders: AugmentedQuery<
+        ApiType,
+        (
+          arg1: U8aFixed | string | Uint8Array,
+          arg2: H256 | string | Uint8Array
+        ) => Observable<
+          Option<
+            {
+              readonly parentHash: H256;
+              readonly number: Compact<u32>;
+              readonly stateRoot: H256;
+              readonly extrinsicsRoot: H256;
+              readonly digest: SpRuntimeDigest;
+            } & Struct
+          >
+        >,
+        [U8aFixed, H256]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed, H256]>;
+      /**
+       * Roots (ExtrinsicsRoot + StateRoot) which have been imported into the
+       * pallet for a given gateway.
+       */
+      multiImportedRoots: AugmentedQuery<
+        ApiType,
+        (
+          arg1: U8aFixed | string | Uint8Array,
+          arg2: H256 | string | Uint8Array
+        ) => Observable<Option<ITuple<[H256, H256]>>>,
+        [U8aFixed, H256]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed, H256]>;
+      /**
+       * Optional pallet owner.
+       *
+       * Pallet owner has a right to halt all pallet operations and then resume
+       * it. If it is `None`, then there are no direct ways to halt/resume
+       * pallet operations, but other runtime methods may still be used to do
+       * that (i.e. democracy::referendum to update halt flag directly or call
+       * the `halt_operations`).
+       */
+      palletOwner: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<AccountId32>>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      /**
+       * Optional pallet owner.
+       *
+       * Pallet owner has a right to halt all pallet operations and then resume
+       * it. If it is `None`, then there are no direct ways to halt/resume
+       * pallet operations, but other runtime methods may still be used to do
+       * that (i.e. democracy::referendum to update halt flag directly or call
+       * the `halt_operations`).
+       */
+      palletOwnerMap: AugmentedQuery<
+        ApiType,
+        (
+          arg: U8aFixed | string | Uint8Array
+        ) => Observable<Option<AccountId32>>,
+        [U8aFixed]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed]>;
+      /** The current GRANDPA Authority set. */
+      parachainIdMap: AugmentedQuery<
+        ApiType,
+        (
+          arg: U8aFixed | string | Uint8Array
+        ) => Observable<Option<PalletGrandpaFinalityVerifierParachain>>,
+        [U8aFixed]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed]>;
+      relayChainId: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<U8aFixed>>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      /**
+       * The current number of requests which have written to storage.
+       *
+       * If the `RequestCount` hits `MaxRequests`, no more calls will be allowed
+       * to the pallet until the request capacity is increased.
+       *
+       * The `RequestCount` is decreased by one at the beginning of every block.
+       * This is to ensure that the pallet can always make progress.
+       */
+      requestCountMap: AugmentedQuery<
+        ApiType,
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<u32>>,
+        [U8aFixed]
+      > &
+        QueryableStorageEntry<ApiType, [U8aFixed]>;
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };

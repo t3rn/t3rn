@@ -2,7 +2,6 @@ import { ApiPromise } from "@polkadot/api"
 import { u8aToHex } from "@polkadot/util"
 import { xxhashAsU8a } from "@polkadot/util-crypto"
 import { BN } from "@polkadot/util"
-export * from "./types"
 
 export async function getStorage(api: ApiPromise, parameters: any) {
   let res = await api.rpc.state.getStorage(parameters.key)

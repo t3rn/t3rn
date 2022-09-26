@@ -1,6 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import "@polkadot/types/types/registry";
+
 import type {
   CircuitStandaloneRuntimeOriginCaller,
   CircuitStandaloneRuntimeRuntime,
@@ -39,6 +43,9 @@ import type {
   OrmlTokensBalanceLock,
   OrmlTokensModuleError,
   OrmlTokensModuleEvent,
+  PalletAccountManagerCall,
+  PalletAccountManagerError,
+  PalletAccountManagerEvent,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesCall,
@@ -62,11 +69,16 @@ import type {
   PalletGrandpaCall,
   PalletGrandpaError,
   PalletGrandpaEvent,
+  PalletGrandpaFinalityVerifierError,
+  PalletGrandpaFinalityVerifierParachain,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
   PalletMultiFinalityVerifierCall,
   PalletMultiFinalityVerifierError,
   PalletMultiFinalityVerifierEvent,
+  PalletPortalCall,
+  PalletPortalError,
+  PalletPortalEvent,
   PalletSudoCall,
   PalletSudoError,
   PalletSudoEvent,
@@ -107,39 +119,49 @@ import type {
   SpRuntimeDigest,
   SpRuntimeDigestDigestItem,
   SpRuntimeDispatchError,
+  SpRuntimeHeaderU32,
+  SpRuntimeHeaderU64,
   SpRuntimeKeccak256,
   SpRuntimeModuleError,
   SpRuntimeMultiSignature,
   SpRuntimeTokenError,
+  SpRuntimeTransactionalError,
   SpVersionRuntimeVersion,
-  T3rnPrimitivesAbiContractActionDesc,
-  T3rnPrimitivesAbiCryptoAlgo,
-  T3rnPrimitivesAbiGatewayABIConfig,
-  T3rnPrimitivesAbiHasherAlgo,
-  T3rnPrimitivesAbiParameter,
-  T3rnPrimitivesAbiStructDecl,
-  T3rnPrimitivesAbiType,
+  T3rnPrimitivesAccountManagerExecutionRegistryItem,
+  T3rnPrimitivesAccountManagerReason,
   T3rnPrimitivesBridgesHeaderChainAuthoritySet,
+  T3rnPrimitivesBridgesHeaderChainInitializationData,
   T3rnPrimitivesContractMetadata,
+  T3rnPrimitivesContractsRegistryAuthorInfo,
   T3rnPrimitivesContractsRegistryRegistryContract,
   T3rnPrimitivesGatewayGenesisConfig,
   T3rnPrimitivesGatewaySysProps,
   T3rnPrimitivesGatewayType,
   T3rnPrimitivesGatewayVendor,
-  T3rnPrimitivesSideEffect,
-  T3rnPrimitivesSideEffectConfirmationOutcome,
-  T3rnPrimitivesSideEffectConfirmedSideEffect,
   T3rnPrimitivesSideEffectFullSideEffect,
   T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
-  T3rnPrimitivesSideEffectSecurityLvl,
   T3rnPrimitivesStorageRawAliveContractInfo,
   T3rnPrimitivesVolatileLocalState,
   T3rnPrimitivesXdnsParachain,
   T3rnPrimitivesXdnsXdnsRecord,
+  T3rnSdkPrimitivesSignalExecutionSignal,
+  T3rnSdkPrimitivesSignalKillReason,
+  T3rnSdkPrimitivesSignalSignalKind,
+  T3rnTypesAbiContractActionDesc,
+  T3rnTypesAbiCryptoAlgo,
+  T3rnTypesAbiGatewayABIConfig,
+  T3rnTypesAbiHasherAlgo,
+  T3rnTypesAbiParameter,
+  T3rnTypesAbiStructDecl,
+  T3rnTypesAbiType,
+  T3rnTypesSideEffect,
+  T3rnTypesSideEffectConfirmationOutcome,
+  T3rnTypesSideEffectConfirmedSideEffect,
+  T3rnTypesSideEffectSecurityLvl,
 } from "@polkadot/types/lookup";
 
 declare module "@polkadot/types/types/registry" {
-  export interface InterfaceTypes {
+  interface InterfaceTypes {
     CircuitStandaloneRuntimeOriginCaller: CircuitStandaloneRuntimeOriginCaller;
     CircuitStandaloneRuntimeRuntime: CircuitStandaloneRuntimeRuntime;
     FinalityGrandpaEquivocationPrecommit: FinalityGrandpaEquivocationPrecommit;
@@ -177,6 +199,9 @@ declare module "@polkadot/types/types/registry" {
     OrmlTokensBalanceLock: OrmlTokensBalanceLock;
     OrmlTokensModuleError: OrmlTokensModuleError;
     OrmlTokensModuleEvent: OrmlTokensModuleEvent;
+    PalletAccountManagerCall: PalletAccountManagerCall;
+    PalletAccountManagerError: PalletAccountManagerError;
+    PalletAccountManagerEvent: PalletAccountManagerEvent;
     PalletBalancesAccountData: PalletBalancesAccountData;
     PalletBalancesBalanceLock: PalletBalancesBalanceLock;
     PalletBalancesCall: PalletBalancesCall;
@@ -200,11 +225,16 @@ declare module "@polkadot/types/types/registry" {
     PalletGrandpaCall: PalletGrandpaCall;
     PalletGrandpaError: PalletGrandpaError;
     PalletGrandpaEvent: PalletGrandpaEvent;
+    PalletGrandpaFinalityVerifierError: PalletGrandpaFinalityVerifierError;
+    PalletGrandpaFinalityVerifierParachain: PalletGrandpaFinalityVerifierParachain;
     PalletGrandpaStoredPendingChange: PalletGrandpaStoredPendingChange;
     PalletGrandpaStoredState: PalletGrandpaStoredState;
     PalletMultiFinalityVerifierCall: PalletMultiFinalityVerifierCall;
     PalletMultiFinalityVerifierError: PalletMultiFinalityVerifierError;
     PalletMultiFinalityVerifierEvent: PalletMultiFinalityVerifierEvent;
+    PalletPortalCall: PalletPortalCall;
+    PalletPortalError: PalletPortalError;
+    PalletPortalEvent: PalletPortalEvent;
     PalletSudoCall: PalletSudoCall;
     PalletSudoError: PalletSudoError;
     PalletSudoEvent: PalletSudoEvent;
@@ -245,34 +275,44 @@ declare module "@polkadot/types/types/registry" {
     SpRuntimeDigest: SpRuntimeDigest;
     SpRuntimeDigestDigestItem: SpRuntimeDigestDigestItem;
     SpRuntimeDispatchError: SpRuntimeDispatchError;
+    SpRuntimeHeaderU32: SpRuntimeHeaderU32;
+    SpRuntimeHeaderU64: SpRuntimeHeaderU64;
     SpRuntimeKeccak256: SpRuntimeKeccak256;
     SpRuntimeModuleError: SpRuntimeModuleError;
     SpRuntimeMultiSignature: SpRuntimeMultiSignature;
     SpRuntimeTokenError: SpRuntimeTokenError;
+    SpRuntimeTransactionalError: SpRuntimeTransactionalError;
     SpVersionRuntimeVersion: SpVersionRuntimeVersion;
-    T3rnPrimitivesAbiContractActionDesc: T3rnPrimitivesAbiContractActionDesc;
-    T3rnPrimitivesAbiCryptoAlgo: T3rnPrimitivesAbiCryptoAlgo;
-    T3rnPrimitivesAbiGatewayABIConfig: T3rnPrimitivesAbiGatewayABIConfig;
-    T3rnPrimitivesAbiHasherAlgo: T3rnPrimitivesAbiHasherAlgo;
-    T3rnPrimitivesAbiParameter: T3rnPrimitivesAbiParameter;
-    T3rnPrimitivesAbiStructDecl: T3rnPrimitivesAbiStructDecl;
-    T3rnPrimitivesAbiType: T3rnPrimitivesAbiType;
+    T3rnPrimitivesAccountManagerExecutionRegistryItem: T3rnPrimitivesAccountManagerExecutionRegistryItem;
+    T3rnPrimitivesAccountManagerReason: T3rnPrimitivesAccountManagerReason;
     T3rnPrimitivesBridgesHeaderChainAuthoritySet: T3rnPrimitivesBridgesHeaderChainAuthoritySet;
+    T3rnPrimitivesBridgesHeaderChainInitializationData: T3rnPrimitivesBridgesHeaderChainInitializationData;
     T3rnPrimitivesContractMetadata: T3rnPrimitivesContractMetadata;
+    T3rnPrimitivesContractsRegistryAuthorInfo: T3rnPrimitivesContractsRegistryAuthorInfo;
     T3rnPrimitivesContractsRegistryRegistryContract: T3rnPrimitivesContractsRegistryRegistryContract;
     T3rnPrimitivesGatewayGenesisConfig: T3rnPrimitivesGatewayGenesisConfig;
     T3rnPrimitivesGatewaySysProps: T3rnPrimitivesGatewaySysProps;
     T3rnPrimitivesGatewayType: T3rnPrimitivesGatewayType;
     T3rnPrimitivesGatewayVendor: T3rnPrimitivesGatewayVendor;
-    T3rnPrimitivesSideEffect: T3rnPrimitivesSideEffect;
-    T3rnPrimitivesSideEffectConfirmationOutcome: T3rnPrimitivesSideEffectConfirmationOutcome;
-    T3rnPrimitivesSideEffectConfirmedSideEffect: T3rnPrimitivesSideEffectConfirmedSideEffect;
     T3rnPrimitivesSideEffectFullSideEffect: T3rnPrimitivesSideEffectFullSideEffect;
     T3rnPrimitivesSideEffectInterfaceSideEffectInterface: T3rnPrimitivesSideEffectInterfaceSideEffectInterface;
-    T3rnPrimitivesSideEffectSecurityLvl: T3rnPrimitivesSideEffectSecurityLvl;
     T3rnPrimitivesStorageRawAliveContractInfo: T3rnPrimitivesStorageRawAliveContractInfo;
     T3rnPrimitivesVolatileLocalState: T3rnPrimitivesVolatileLocalState;
     T3rnPrimitivesXdnsParachain: T3rnPrimitivesXdnsParachain;
     T3rnPrimitivesXdnsXdnsRecord: T3rnPrimitivesXdnsXdnsRecord;
+    T3rnSdkPrimitivesSignalExecutionSignal: T3rnSdkPrimitivesSignalExecutionSignal;
+    T3rnSdkPrimitivesSignalKillReason: T3rnSdkPrimitivesSignalKillReason;
+    T3rnSdkPrimitivesSignalSignalKind: T3rnSdkPrimitivesSignalSignalKind;
+    T3rnTypesAbiContractActionDesc: T3rnTypesAbiContractActionDesc;
+    T3rnTypesAbiCryptoAlgo: T3rnTypesAbiCryptoAlgo;
+    T3rnTypesAbiGatewayABIConfig: T3rnTypesAbiGatewayABIConfig;
+    T3rnTypesAbiHasherAlgo: T3rnTypesAbiHasherAlgo;
+    T3rnTypesAbiParameter: T3rnTypesAbiParameter;
+    T3rnTypesAbiStructDecl: T3rnTypesAbiStructDecl;
+    T3rnTypesAbiType: T3rnTypesAbiType;
+    T3rnTypesSideEffect: T3rnTypesSideEffect;
+    T3rnTypesSideEffectConfirmationOutcome: T3rnTypesSideEffectConfirmationOutcome;
+    T3rnTypesSideEffectConfirmedSideEffect: T3rnTypesSideEffectConfirmedSideEffect;
+    T3rnTypesSideEffectSecurityLvl: T3rnTypesSideEffectSecurityLvl;
   } // InterfaceTypes
 } // declare module
