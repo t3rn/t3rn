@@ -19,7 +19,7 @@ build_nodes() {
     rm -rf $d
   fi
   cargo build \
-    --manifest-path $root_dir/node/parachain/Cargo.toml \
+    --manifest-path $root_dir/node/t0rn-parachain/Cargo.toml \
     --release \
     --locked
   cp \
@@ -42,17 +42,19 @@ keygen() {
 }
 
 build_relay_chain_spec() {
+  echo "build_relay_chain_spec"
   $dir/bin/polkadot \
       build-spec \
       --chain rococo-local \
   > $dir/specs/rococo-local.json
-  sed 's/"nextFreeParaId": [[:digit:]]\+/"nextFreeParaId": 3333/g' \
-    -i $dir/specs/rococo-local.json
+
   $dir/bin/polkadot \
       build-spec \
       --chain $dir/specs/rococo-local.json \
       --raw \
   > $dir/specs/rococo-local.raw.json
+  sed 's/"nextFreeParaId": [[:digit:]]\+/"nextFreeParaId": 3333/g' \
+    -i $dir/specs/rococo-local.json
 }
 
 build_para_chain_specs() {
@@ -214,6 +216,8 @@ onboard() {
 }
 
 start_nodes() {
+
+  echo "hello start_nodes"
   if [ "$(uname)" == "Darwin" ]; then
     term_name=iTerm
   else
@@ -222,7 +226,7 @@ start_nodes() {
   if ! npm ls --global | grep -qF ttab; then
     npm i -g ttab
   fi
-  ttab -w -a $term_name exec $dir/bin/polkadot \
+  nohup $dir/bin/polkadot \
     --ws-port 1944 \
     --alice \
     --validator \
@@ -230,31 +234,31 @@ start_nodes() {
     --rpc-cors all \
     --unsafe-ws-external \
     --unsafe-rpc-external \
-    --chain $dir/specs/rococo-local.raw.json
-  ttab -w -a $term_name exec $dir/bin/polkadot \
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.alice.out 2>&1 &
+  nohup $dir/bin/polkadot \
     --bob \
     --validator \
     --tmp \
-    --chain $dir/specs/rococo-local.raw.json
-  ttab -w -a $term_name exec $dir/bin/polkadot \
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.bob.out 2>&1 &
+  nohup $dir/bin/polkadot \
     --charlie \
     --validator \
     --tmp \
     --rpc-cors all \
     --unsafe-ws-external \
     --unsafe-rpc-external \
-    --chain $dir/specs/rococo-local.raw.json
-  ttab -w -a $term_name exec $dir/bin/polkadot \
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.charlie.out 2>&1 &
+  nohup $dir/bin/polkadot \
     --dave \
     --validator \
     --tmp \
-    --chain $dir/specs/rococo-local.raw.json
-  ttab -w -a $term_name exec $dir/bin/polkadot \
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.dave.out 2>&1 &
+  nohup $dir/bin/polkadot \
     --eve \
     --validator \
     --tmp \
-    --chain $dir/specs/rococo-local.raw.json
-  ttab -w -a $term_name exec $dir/bin/devnet-circuit-collator \
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.eve.out 2>&1 &
+  nohup $dir/bin/devnet-circuit-collator \
     --port 33333 \
     --ws-port 1933 \
     --rpc-port 1833 \
@@ -267,8 +271,8 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local
-  ttab -w -a $term_name exec $dir/bin/devnet-circuit-collator \
+    --discover-local > $dir/logs/circuit.a.out 2>&1 &
+  nohup $dir/bin/devnet-circuit-collator \
     --port 33332 \
     --ws-port 1932 \
     --rpc-port 1832 \
@@ -278,8 +282,8 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local
-  ttab -w -a $term_name exec $dir/bin/devnet-circuit-collator \
+    --discover-local > $dir/logs/circuit.b.out 2>&1 &
+  nohup $dir/bin/devnet-circuit-collator \
     --port 23333 \
     --ws-port 2933 \
     --rpc-port 2833 \
@@ -289,8 +293,8 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local
-  ttab -w -a $term_name exec $dir/bin/devnet-circuit-collator \
+    --discover-local > $dir/logs/circuit.c.out 2>&1 &
+  nohup $dir/bin/devnet-circuit-collator \
     --port 23332 \
     --ws-port 2932 \
     --rpc-port 2832 \
@@ -300,7 +304,7 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local
+    --discover-local > $dir/logs/circuit.d.out 2>&1 &
 }
 
 devnet() {
@@ -332,9 +336,11 @@ teardown() {
 main() {
   case ${1:-spinup} in
   spinup|up)
+    echo "spinup" 1>&2
     devnet
     ;;
   teardown|down)
+    echo "teardown" 1>&2
     teardown
     ;;
   *)
