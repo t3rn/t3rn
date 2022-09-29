@@ -45,7 +45,7 @@ use pallet_xbi_portal::{
 };
 use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
 use sp_runtime::{
-    traits::{AccountIdConversion, Zero},
+    traits::{Zero},
     KeyTypeId,
 };
 use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
@@ -111,10 +111,8 @@ pub mod pallet {
             fungible::{Inspect, Mutate},
             Get,
         },
-        PalletId,
     };
     use frame_system::pallet_prelude::*;
-    use orml_traits::MultiCurrency;
     use pallet_xbi_portal::xbi_codec::{XBICheckOutStatus, XBIMetadata, XBINotificationKind};
     use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
     use sp_runtime::traits::Hash;
@@ -231,9 +229,9 @@ pub mod pallet {
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// The Circuit's pallet id
+        /// The Circuit's account id
         #[pallet::constant]
-        type PalletId: Get<PalletId>;
+        type SelfAccountId: Get<Self::AccountId>;
 
         /// The Circuit's self gateway id
         #[pallet::constant]
@@ -268,9 +266,6 @@ pub mod pallet {
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: weights::WeightInfo;
-
-        /// A type that provides MultiCurrency support
-        type MultiCurrency: MultiCurrency<Self::AccountId>;
 
         /// A type that provides inspection and mutation to some fungible assets
         type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
@@ -1729,7 +1724,7 @@ impl<T: Config> Pallet<T> {
 
     /// The account ID of the Circuit Vault.
     pub fn account_id() -> T::AccountId {
-        <T as Config>::PalletId::get().into_account()
+        <T as Config>::SelfAccountId::get()
     }
 
     pub fn convert_side_effects(
