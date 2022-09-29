@@ -45,7 +45,6 @@ pub mod circuit_config;
 pub mod consensus_aura_config;
 pub mod contracts_config;
 pub mod impl_versioned_runtime_with_api;
-pub mod orml_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod xbi_config;
@@ -71,9 +70,6 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
-
-        // ORML
-        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,
 
         // Circuit
         // t3rn pallets
