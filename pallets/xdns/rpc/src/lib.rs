@@ -2,11 +2,13 @@
 
 use std::sync::Arc;
 
-pub use self::gen_client::Client as XdnsClient;
 use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
-
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+    core::{async_trait, Error as JsonRpseeError, RpcResult},
+    proc_macros::rpc,
+    types::error::CallError,
+};
 pub use pallet_xdns_rpc_runtime_api::XdnsRuntimeApi;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_api::ProvideRuntimeApi;
@@ -18,17 +20,17 @@ use sp_runtime::{
 
 const RUNTIME_ERROR: i64 = 1;
 
-#[rpc]
+#[rpc(client, server)]
 pub trait XdnsApi<AccountId> {
     /// Returns all known XDNS records
-    #[rpc(name = "xdns_fetchRecords")]
-    fn fetch_records(&self) -> Result<FetchXdnsRecordsResponse<AccountId>>;
+    #[method(name = "xdns_fetchRecords")]
+    fn fetch_records(&self) -> RpcResult<FetchXdnsRecordsResponse<AccountId>>;
 
-    #[rpc(name = "xdns_fetchAbi")]
-    fn fetch_abi(&self, chain_id: ChainId) -> Result<GatewayABIConfig>;
+    #[method(name = "xdns_fetchAbi")]
+    fn fetch_abi(&self, chain_id: ChainId) -> RpcResult<GatewayABIConfig>;
 }
 
-/// A struct that implements the [`XdnsApi`].
+/// A struct that implements the [`XdnsApiServer`].
 pub struct Xdns<C, P> {
     client: Arc<C>,
     _marker: std::marker::PhantomData<P>,
@@ -44,14 +46,15 @@ impl<C, P> Xdns<C, P> {
     }
 }
 
-impl<C, Block, AccountId> XdnsApi<AccountId> for Xdns<C, Block>
+#[async_trait]
+impl<C, Block, AccountId> XdnsApiServer<AccountId> for Xdns<C, Block>
 where
     AccountId: Codec + MaybeDisplay,
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
     C::Api: XdnsRuntimeApi<Block, AccountId>,
 {
-    fn fetch_records(&self) -> Result<FetchXdnsRecordsResponse<AccountId>> {
+    fn fetch_records(&self) -> RpcResult<FetchXdnsRecordsResponse<AccountId>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().best_hash);
 
@@ -60,7 +63,7 @@ where
         Ok(result)
     }
 
-    fn fetch_abi(&self, chain_id: ChainId) -> Result<GatewayABIConfig> {
+    fn fetch_abi(&self, chain_id: ChainId) -> RpcResult<GatewayABIConfig> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().best_hash);
 
@@ -76,10 +79,10 @@ where
     }
 }
 
-fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
-    Error {
-        code: ErrorCode::ServerError(RUNTIME_ERROR),
-        message: "Runtime error".into(),
-        data: Some(format!("{:?}", err).into()),
-    }
+fn runtime_error_into_rpc_err(_err: impl std::fmt::Debug) -> JsonRpseeError {
+    JsonRpseeError::Call(CallError::Custom(jsonrpsee::types::ErrorObject::owned(
+        RUNTIME_ERROR as i32,
+        "Runtime error",
+        None::<()>,
+    )))
 }
