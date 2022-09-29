@@ -67,9 +67,10 @@ pub enum Error {
 /// Return valid storage proof and state root.
 ///
 /// NOTE: This should only be used for **testing**.
+#[cfg(feature = "testing")]
 pub fn craft_valid_storage_proof() -> (sp_core::H256, StorageProof) {
     use sp_state_machine::{backend::Backend, prove_read, InMemoryBackend};
-
+    use sp_std::vec;
     let state_version = sp_runtime::StateVersion::default();
 
     // construct storage proof
@@ -83,7 +84,7 @@ pub fn craft_valid_storage_proof() -> (sp_core::H256, StorageProof) {
         ],
         state_version,
     ));
-    let root = backend.storage_root(std::iter::empty(), state_version).0;
+    let root = backend.storage_root(sp_std::iter::empty(), state_version).0;
     let proof = StorageProof::new(
         prove_read(backend, &[&b"key1"[..], &b"key2"[..], &b"key22"[..]])
             .unwrap()

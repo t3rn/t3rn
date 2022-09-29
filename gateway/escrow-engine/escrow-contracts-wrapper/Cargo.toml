@@ -22,7 +22,7 @@ pallet-contracts            = { version = "2.0.0", default-features = false }
 pallet-contracts-primitives = { version = "2.0.0", default-features = false }
 parity-wasm                 = { version = "0.41.0", default-features = false }
 pwasm-utils                 = { version = "0.14.0", default-features = false }
-serde                       = { version = "1.0.101", default-features = false, optional = true, features = [ "derive" ] }
+serde                       = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
 sp-core                     = { version = "2.0.0", default-features = false }
 sp-io                       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-runtime                  = { version = "2.0.0", default-features = false }
