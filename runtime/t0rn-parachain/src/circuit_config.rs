@@ -1,13 +1,13 @@
 use crate::*;
+
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
-use sp_runtime::traits::*;
+use sp_runtime::traits::{BlakeTwo256, Convert};
 use t3rn_primitives::common::DEFAULT_ROUND_TERM;
 
 use crate::xbi_config::XBIPortalRuntimeEntry;
 
-// t3rn pallets
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
@@ -52,7 +52,7 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 }
 
 parameter_types! {
-    pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+    pub const CircuitAccountId: AccountId = AccountId::new([33u8; 32]);
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
 
@@ -64,10 +64,8 @@ impl pallet_circuit::Config for Runtime {
     type Escrowed = Self;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    // type FreeVM = FreeVM;
-    type MultiCurrency = ORMLTokens;
-    type PalletId = CircuitPalletId;
     type Portal = Portal;
+    type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
@@ -80,7 +78,7 @@ impl pallet_circuit::Config for Runtime {
 }
 
 parameter_types! {
-    pub const HeadersToStore: u32 = 100800; // 1 week worth of rococo headers
+    pub const HeadersToStore: u32 = 100;
 }
 
 type RococoBridgeInstance = ();
@@ -112,7 +110,7 @@ parameter_types! {
     pub const MinRoundTerm: u32 = 20; // TODO
     pub const DefaultRoundTerm: u32 = DEFAULT_ROUND_TERM; // TODO
     pub const GenesisIssuance: u32 = 20_000_000; // TODO
-    pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
+    pub const IdealPerpetualInflation: Perbill =Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
 }
 
