@@ -25,7 +25,6 @@ mod accounts_config;
 mod circuit_config;
 mod consensus_aura_config;
 mod contracts_config;
-mod orml_config;
 mod system_no_version_config;
 mod xbi_config;
 
@@ -47,9 +46,6 @@ frame_support::construct_runtime!(
 
         Sudo: pallet_sudo,
         Utility: pallet_utility,
-
-
-        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
 
         // Circuit
         // t3rn pallets

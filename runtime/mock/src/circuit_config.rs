@@ -51,7 +51,7 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 }
 
 parameter_types! {
-    pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+    pub const CircuitAccountId: AccountId = AccountId::new([33u8; 32]);
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
 
@@ -63,9 +63,8 @@ impl pallet_circuit::Config for Runtime {
     type Escrowed = Self;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    type MultiCurrency = ORMLTokens;
-    type PalletId = CircuitPalletId;
     type Portal = Portal;
+    type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
