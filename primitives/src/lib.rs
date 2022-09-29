@@ -39,7 +39,7 @@ use sp_runtime::{
 };
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
-pub use orml_traits;
+// pub use orml_traits;
 
 use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
