@@ -1,4 +1,5 @@
 pub use frame_system;
+pub use pallet_assets;
 pub use pallet_aura;
 pub use pallet_babe;
 pub use pallet_balances;
@@ -8,9 +9,6 @@ pub use pallet_sudo;
 pub use pallet_timestamp;
 pub use pallet_transaction_payment;
 pub use pallet_utility;
-
-pub use orml_tokens;
-pub use orml_traits;
 
 pub use evm_precompile_util;
 pub use pallet_3vm;
