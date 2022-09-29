@@ -533,7 +533,6 @@ fn testnet_genesis(
             standard_side_effects,
         },
         contracts_registry: Default::default(),
-        orml_tokens: Default::default(),
         account_manager: Default::default(),
         treasury: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers

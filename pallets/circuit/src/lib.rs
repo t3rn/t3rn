@@ -44,10 +44,7 @@ use pallet_xbi_portal::{
     xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
 };
 use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
-use sp_runtime::{
-    traits::{Zero},
-    KeyTypeId,
-};
+use sp_runtime::{traits::Zero, KeyTypeId};
 use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
 use t3rn_primitives::account_manager::Outcome;
 
