@@ -1079,7 +1079,6 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 // Catches missing feature flag
 #[cfg(all(not(feature = "testing"), test))]
 pub mod tests {
-    use super::*;
 
     #[test]
     fn panic_without_testing_feature() {
