@@ -53,6 +53,7 @@ frame-system                               = { git = "https://github.com/parityt
 frame-system-rpc-runtime-api               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 node-primitives                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-aura                                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+pallet-assets                              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-balances                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-grandpa                             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-randomness-collective-flip          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
@@ -92,6 +93,7 @@ std = [
   "frame-system-rpc-runtime-api/std",
   "frame-system/std",
   "pallet-aura/std",
+  "pallet-assets/std",
   "t3rn-primitives/std",
   "t3rn-protocol/std",
   "pallet-xdns/std",
