@@ -23,7 +23,7 @@ where
 
 parameter_types! {
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
-    pub const XBIAccountId: AccountId = AccountId::new([33u8; 32]);
+    pub const XBIAccountId: AccountId = AccountId::new([68u8; 32]); // 0x444...4
 }
 
 // ToDo: Implement
