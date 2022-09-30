@@ -11,6 +11,7 @@ use circuit_parachain_runtime::{
     opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce,
 };
 use pallet_3vm_contracts_rpc::{Contracts, ContractsApiServer};
+use pallet_3vm_evm_rpc::{Evm, EvmApiServer};
 use pallet_xdns_rpc::{Xdns, XdnsApiServer};
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -66,8 +67,8 @@ where
     module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
     module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     module.merge(Contracts::new(client.clone()).into_rpc())?;
-    module.merge(Xdns::new(client).into_rpc())?;
-    // module.merge(Evm::new(client).into_rpc())?;
+    module.merge(Xdns::new(client.clone()).into_rpc())?;
+    module.merge(Evm::new(client).into_rpc())?;
 
     Ok(module)
 }

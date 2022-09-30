@@ -254,7 +254,7 @@ impl_runtime_apis! {
 
         fn get_storage(
             address: AccountId,
-            key: [u8; 32],
+            key: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
         }
