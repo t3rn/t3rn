@@ -26,7 +26,7 @@ const fn deposit(items: u32, bytes: u32) -> Balance {
 }
 
 parameter_types! {
-    pub const CreateSideEffectsPrecompileDest: AccountId = AccountId::new([33u8; 32]);
+    pub const CreateSideEffectsPrecompileDest: AccountId = AccountId::new([51u8; 32]); // 0x333...3
     pub const CircuitTargetId: t3rn_primitives::ChainId = [3, 3, 3, 3];
 
     pub const MaxValueSize: u32 = 16_384;

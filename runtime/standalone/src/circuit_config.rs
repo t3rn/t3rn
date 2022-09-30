@@ -52,7 +52,7 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 }
 
 parameter_types! {
-    pub const CircuitAccountId: AccountId = AccountId::new([33u8; 32]);
+    pub const CircuitAccountId: AccountId = AccountId::new([51u8; 32]); // 0x333...3
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
 

@@ -248,7 +248,7 @@ pub mod test {
                             )
                                 .into(), // executor account
                                 hex!(
-                                "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
+                                "3333333333333333333333333333333333333333333333333333333333333333"
                             )
                                 .into(), // circuit account
                                 1u128, // value
@@ -329,7 +329,7 @@ pub mod test {
                             )
                                 .into(), // executor account
                                 hex!(
-                                "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
+                                "3333333333333333333333333333333333333333333333333333333333333333"
                             )
                                 .into(), // circuit account
                                 1u128, // value
@@ -355,7 +355,7 @@ pub mod test {
                         event: Event::Circuit(
                             pallet_circuit::pallet::Event::<Runtime>::EscrowTransfer(
                                 hex!(
-                                "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
+                                "3333333333333333333333333333333333333333333333333333333333333333"
                             )
                                 .into(), // executor account
                                 hex!(
