@@ -1,9 +1,6 @@
 //! RPC interface for the XDNS pallet.
 
-use std::sync::Arc;
-
 use codec::Codec;
-use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpsee::{
     core::{async_trait, Error as JsonRpseeError, RpcResult},
     proc_macros::rpc,
@@ -17,6 +14,7 @@ use sp_runtime::{
     generic::BlockId,
     traits::{Block as BlockT, MaybeDisplay},
 };
+use std::sync::Arc;
 
 const RUNTIME_ERROR: i64 = 1;
 
@@ -79,10 +77,10 @@ where
     }
 }
 
-fn runtime_error_into_rpc_err(_err: impl std::fmt::Debug) -> JsonRpseeError {
+fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> JsonRpseeError {
     JsonRpseeError::Call(CallError::Custom(jsonrpsee::types::ErrorObject::owned(
         RUNTIME_ERROR as i32,
-        "Runtime error",
-        None::<()>,
+        "Runtime Error - XDNS RPC",
+        Some(format!("{:?}", err)),
     )))
 }
