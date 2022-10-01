@@ -54,7 +54,7 @@ impl<H: HeaderT> crate::bridges::header_chain::FinalityProof<H::Number>
 }
 
 /// Justification verification error.
-#[derive(RuntimeDebug, PartialEq)]
+#[derive(RuntimeDebug, PartialEq, Eq)]
 pub enum Error {
     /// Failed to decode justification.
     JustificationDecode,
