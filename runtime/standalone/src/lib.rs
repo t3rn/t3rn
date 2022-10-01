@@ -66,10 +66,13 @@ construct_runtime!(
         Timestamp: pallet_timestamp,
         Aura: pallet_aura,
         Grandpa: pallet_grandpa,
-        Balances: pallet_balances,
-        TransactionPayment: pallet_transaction_payment,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
+
+        // Monetary
+        Balances: pallet_balances = 10,
+        TransactionPayment: pallet_transaction_payment = 11,
+        Assets: pallet_assets = 12,
 
         // Circuit
         // t3rn pallets

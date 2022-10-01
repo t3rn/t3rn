@@ -360,6 +360,7 @@ fn testnet_genesis(
             key: Some(root_key),
         },
         transaction_payment: Default::default(),
+        assets: Default::default(),
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
             standard_side_effects,
