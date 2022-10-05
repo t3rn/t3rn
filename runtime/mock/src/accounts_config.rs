@@ -37,7 +37,7 @@ impl pallet_assets::Config for Runtime {
     type ApprovalDeposit = ApprovalDeposit;
     type AssetAccountDeposit = AssetAccountDeposit;
     type AssetDeposit = AssetDeposit;
-    type AssetId = u32;
+    type AssetId = circuit_runtime_types::AssetId;
     type Balance = Balance;
     type Currency = Balances;
     type Event = Event;
