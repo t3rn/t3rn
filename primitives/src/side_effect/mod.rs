@@ -47,9 +47,9 @@ where
     fn try_into(
         self,
     ) -> Result<HardenedSideEffect<AccountId, BlockNumber, BalanceOf>, Self::Error> {
-        let confirmation_outcome = self.clone().confirmed.and_then(|c| c.err.clone());
-        let confirmed_executioner = self.clone().confirmed.map(|c| c.executioner.clone());
-        let confirmed_received_at = self.clone().confirmed.map(|c| c.received_at.clone());
+        let confirmation_outcome = self.clone().confirmed.and_then(|c| c.err);
+        let confirmed_executioner = self.clone().confirmed.map(|c| c.executioner);
+        let confirmed_received_at = self.clone().confirmed.map(|c| c.received_at);
         let confirmed_cost = self.clone().confirmed.and_then(|c| c.cost);
         Ok(HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: self.input.target,
@@ -172,9 +172,9 @@ mod tests {
                 encoded_args_abi: vec![],
                 security_lvl: SecurityLvl::Dirty,
                 confirmation_outcome: Some(ConfirmationOutcome::Success),
-                confirmed_executioner: Some(AccountId32::new(
-                    hex!("0101010101010101010101010101010101010101010101010101010101010101").into()
-                )),
+                confirmed_executioner: Some(AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                ))),
                 confirmed_received_at: Some(1),
                 confirmed_cost: Some(2)
             },

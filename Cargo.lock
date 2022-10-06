@@ -1151,6 +1151,7 @@ dependencies = [
  "node-primitives",
  "pallet-3vm",
  "pallet-account-manager",
+ "pallet-assets",
  "pallet-aura",
  "pallet-balances",
  "pallet-circuit",

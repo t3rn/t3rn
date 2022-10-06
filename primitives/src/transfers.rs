@@ -43,8 +43,7 @@ pub fn commit_deferred_transfers<T: frame_system::Config, E: EscrowTrait<T>>(
             &escrow_account,
             &h256_to_account(transfer.to),
             EscrowedBalanceOf::<T, E>::from(transfer.value),
-        )
-        .map_err(|e| e)?;
+        )?;
     }
     Ok(())
 }

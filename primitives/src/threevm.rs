@@ -121,7 +121,7 @@ pub trait CharacteristicValidator {
     fn validate(characteristic: &Characteristic) -> Result<(), ()>; // TODO: handle error
 }
 
-#[derive(Encode, Decode, Debug, PartialEq)]
+#[derive(Encode, Decode, Debug, PartialEq, Eq)]
 pub enum SignalOpcode {
     Initiated,
     Bounced,
