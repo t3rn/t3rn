@@ -119,24 +119,24 @@ pub fn polkadot_config() -> ChainSpec {
                 vec![
                     (
                         get_account_id_from_adrs(
-                            "5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW",
+                            "t3rn2cUTJPwjhCXRGjUMm9jViuLxa4oZsz32nPJZJxftHDeb",
                         ),
-                        get_aura_id_from_adrs("5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW"),
+                        get_aura_id_from_adrs("t3rn2cUTJPwjhCXRGjUMm9jViuLxa4oZsz32nPJZJxftHDeb"),
                     ),
                     (
                         get_account_id_from_adrs(
-                            "5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v",
+                            "t3rn36tUEi4swq6uDNef5nZzdrBn4X5vKrSUsxx94HVeHXGq",
                         ),
-                        get_aura_id_from_adrs("5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v"),
+                        get_aura_id_from_adrs("t3rn36tUEi4swq6uDNef5nZzdrBn4X5vKrSUsxx94HVeHXGq"),
                     ),
                 ],
                 // Prefunded accounts
                 vec![get_account_id_from_adrs(
-                    "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A",
+                    "t3rnTimebvS7RsUGsN6u7N6sR1gqWtXiUVLG9nSeSon4Q7K",
                 )],
                 PARACHAIN_ID.into(),
                 // Sudo
-                get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
+                get_account_id_from_adrs("t3rnTimebvS7RsUGsN6u7N6sR1gqWtXiUVLG9nSeSon4Q7K"),
             )
         },
         // Bootnodes
