@@ -148,6 +148,25 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// Temporary bids for SFX executions
+    ///
+    #[pallet::storage]
+    #[pallet::getter(fn get_pending_sfx_bids)]
+    pub type PendingSFXBids<T> = StorageDoubleMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        Identity,
+        SideEffectId<T>,
+        Vec<
+            SFXBid<
+                <T as frame_system::Config>::AccountId,
+                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            >,
+        >,
+        ValueQuery,
+    >;
+
     /// Current Circuit's context of active insurance deposits
     ///
     #[pallet::storage]
@@ -615,11 +634,12 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::bond_insurance_deposit())]
-        pub fn bond_insurance_deposit(
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_execution())]
+        pub fn bid_execution(
             origin: OriginFor<T>, // Active relayer
             xtx_id: XExecSignalId<T>,
             side_effect_id: SideEffectId<T>,
+            bid_amount: EscrowedBalanceOf<T, T::Escrowed>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let executor = Self::authorize(origin, CircuitRole::Executor)?;
@@ -632,8 +652,12 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            let insurance_deposit_copy =
-                Optimistic::<T>::bond_4_sfx(&executor, &mut local_xtx_ctx, side_effect_id)?;
+            let accepted_bid = Optimistic::<T>::try_bid(
+                &executor,
+                bid_amount,
+                &mut local_xtx_ctx,
+                side_effect_id,
+            )?;
 
             let status_change = Self::update(&mut local_xtx_ctx)?;
 
@@ -1014,10 +1038,12 @@ impl<T: Config> Pallet<T> {
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
-                        .map(|&se_id| {
+                        .map(|&sfx_id| {
                             (
-                                se_id,
-                                <Self as Store>::InsuranceDeposits::get(id, se_id)
+                                sfx_id,
+                                <Self as Store>::InsuranceDeposits::get(id, sfx_id)
+                                    .expect("Should not be state inconsistency"),
+                                <Self as Store>::PendingSFXBids::get(id, sfx_id)
                                     .expect("Should not be state inconsistency"),
                             )
                         })
@@ -1028,6 +1054,7 @@ impl<T: Config> Pallet<T> {
                                 T::BlockNumber,
                                 EscrowedBalanceOf<T, T::Escrowed>,
                             >,
+                            Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
                         )>>();
 
                     let full_side_effects = <Self as Store>::FullSideEffects::get(id)
@@ -1192,7 +1219,7 @@ impl<T: Config> Pallet<T> {
                 }
 
                 let mut ids_with_insurance: Vec<SideEffectId<T>> = vec![];
-                for (side_effect_id, insurance_deposit) in &local_ctx.insurance_deposits {
+                for (side_effect_id, insurance_deposit, bids) in &local_ctx.insurance_deposits {
                     <InsuranceDeposits<T>>::insert::<
                         XExecSignalId<T>,
                         SideEffectId<T>,
@@ -1204,6 +1231,12 @@ impl<T: Config> Pallet<T> {
                     >(
                         local_ctx.xtx_id, *side_effect_id, insurance_deposit.clone()
                     );
+                    <PendingSFXBids<T>>::insert::<
+                        XExecSignalId<T>,
+                        SideEffectId<T>,
+                        Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
+                    >(local_ctx.xtx_id, *side_effect_id, bids.clone());
+
                     ids_with_insurance.push(*side_effect_id);
                 }
                 <XtxInsuranceLinks<T>>::insert::<XExecSignalId<T>, Vec<SideEffectId<T>>>(
@@ -1517,6 +1550,7 @@ impl<T: Config> Pallet<T> {
                         requester.clone(),
                         <frame_system::Pallet<T>>::block_number(),
                     ),
+                    vec![],
                 ));
                 let submission_target_height =
                     T::Portal::get_latest_finalized_height(side_effect.target)?
@@ -1827,6 +1861,48 @@ impl<T: Config> Pallet<T> {
             .filter(|&fsx| fsx.security_lvl == security_lvl)
             .cloned()
             .collect()
+    }
+
+    pub(self) fn get_sfx_accepted_bids(
+        local_ctx: &mut LocalXtxCtx<T>,
+        sfx_id: SideEffectId<T>,
+    ) -> Result<
+        Vec<
+            SFXBid<
+                <T as frame_system::Config>::AccountId,
+                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            >,
+        >,
+        Error<T>,
+    > {
+        return if let Some((_id, _insurance_request, &bids)) = local_ctx
+            .insurance_deposits
+            .iter()
+            .find(|(id, _, _bids)| *id == sfx_id)
+        {
+            Ok(bids)
+        } else {
+            // This is a forbidden state which should have not happened -
+            //  at this point all of the insurances should have a bonded relayer assigned
+            Err(Error::<T>::RefundTransferFailed)
+        }
+    }
+
+    pub(self) fn order_sfx_bids(
+        bids: &mut Vec<
+            SFXBid<
+                <T as frame_system::Config>::AccountId,
+                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            >,
+        >,
+    ) -> Vec<
+        SFXBid<
+            <T as frame_system::Config>::AccountId,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >,
+    > {
+        bids.sort_by(|a, b| a.bid.cmp(b.bid));
+        bids.to_vec()
     }
 
     pub(self) fn get_fsx_total_rewards(

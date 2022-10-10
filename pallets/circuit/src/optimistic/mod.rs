@@ -9,6 +9,46 @@ pub struct Optimistic<T: Config> {
 }
 
 impl<T: Config> Optimistic<T> {
+    pub fn try_bid(
+        executor: &T::AccountId,
+        bid: EscrowedBalanceOf<T, T::Escrowed>,
+        local_ctx: &mut LocalXtxCtx<T>,
+        sfx_id: SideEffectId<T>,
+    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>, Error<T>> {
+        // Check if Xtx is in the bidding state
+        if local_ctx.xtx.status != CircuitStatus::PendingInsurance {
+            return Err(Error::<T>::InsuranceBondTooLow)
+        }
+        let fsx = crate::Pallet::<T>::recover_fsx_by_id(sfx_id, local_ctx)?;
+        if bid > fsx.input.prize {
+            return Err(Error::<T>::InsuranceBondTooLow)
+        }
+        // Check for the bids within the local ctx
+        let mut current_accepted_bids =
+            crate::Pallet::<T>::get_sfx_accepted_bids(local_ctx, sfx_id)?;
+        // ToDo: Change prize to max_fee
+        let sfx_bid = SFXBid {
+            bid,
+            // ToDo: Check for bond_4_sfx requirements if current FSX is optimistic
+            optimistic_insurance: None,
+            reserved_bond: (),
+            executor,
+        };
+
+        if Some(current_best_bid) = current_accepted_bids.last() {
+            if current_best_bid.bid < sfx_bid.bid {
+                return Err(Error::<T>::InsuranceBondTooLow)
+            }
+        }
+
+        current_accepted_bids.push(sfx_bid.clone());
+
+        let ordered_bids = crate::Pallet::<T>::order_sfx_bids(&mut current_accepted_bids);
+
+        // ToDo: Add ordered_bids to local_ctx now
+        Ok(sfx_bid)
+    }
+
     pub fn bond_4_sfx(
         executor: &T::AccountId,
         local_ctx: &mut LocalXtxCtx<T>,
@@ -32,6 +72,7 @@ impl<T: Config> Optimistic<T> {
                 >,
             >>(),
         );
+
         let mut insurance_deposit = Self::get_insurance_deposit_mutable_ref(local_ctx, sfx_id)?;
 
         <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve(
@@ -124,10 +165,10 @@ impl<T: Config> Optimistic<T> {
 
         for fsx in &optimistic_fsx_in_step {
             let side_effect_id = fsx.input.generate_id::<SystemHashing<T>>();
-            if let Some((_id, insurance_request)) = local_ctx
+            if let Some((_id, insurance_request, _bids)) = local_ctx
                 .insurance_deposits
                 .iter()
-                .find(|(id, _)| *id == side_effect_id)
+                .find(|(id, _, _)| *id == side_effect_id)
             {
                 if let Some(bonded_relayer) = &insurance_request.bonded_relayer {
                     if fsx.confirmed.is_some()

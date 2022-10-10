@@ -187,7 +187,7 @@ fn confirm_side_effect(
     )
 }
 
-pub fn bond_insurance_deposit(
+pub fn bid_execution(
     origin: OriginFor<Runtime>,
     json: Value,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
@@ -198,7 +198,7 @@ pub fn bond_insurance_deposit(
     let side_effect_id: SideEffectId<Runtime> =
         Decode::decode(&mut &*hex::decode(json["encoded_id"].as_str().unwrap()).unwrap()).unwrap();
 
-    Circuit::bond_insurance_deposit(
+    Circuit::bid_execution(
         origin, // Active relayer
         xtx_id,
         side_effect_id,
@@ -833,7 +833,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 
             let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-            assert_ok!(Circuit::bond_insurance_deposit(
+            assert_ok!(Circuit::bid_execution(
                 origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
@@ -1039,7 +1039,7 @@ fn circuit_handles_swap_with_insurance() {
 
             let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-            assert_ok!(Circuit::bond_insurance_deposit(
+            assert_ok!(Circuit::bid_execution(
                 origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
@@ -1227,7 +1227,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
 
             let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-            assert_ok!(Circuit::bond_insurance_deposit(
+            assert_ok!(Circuit::bid_execution(
                 origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
@@ -1317,7 +1317,7 @@ fn successfully_bond_optimistic(
         "Wrong test value - optimistic transfer assumes optimistic arguments"
     );
 
-    assert_ok!(Circuit::bond_insurance_deposit(
+    assert_ok!(Circuit::bid_execution(
         Origin::signed(relayer.clone()),
         xtx_id,
         side_effect
@@ -1828,7 +1828,7 @@ fn insured_unrewarded_single_rococo_transfer() {
                 &(path.to_owned() + "4-bond-insurance-8eb5521e.json"),
                 false,
             );
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
             ));
@@ -1947,7 +1947,7 @@ fn insured_rewarded_single_rococo_transfer() {
                 &(path.to_owned() + "4-bond-insurance-3c964de9.json"),
                 false,
             );
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
             ));
@@ -2079,11 +2079,11 @@ fn insured_rewarded_multi_rococo_transfer() {
                 false,
             );
 
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_1[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_2[0].clone()
             ));
@@ -2237,12 +2237,12 @@ fn insured_unrewarded_multi_rococo_transfer() {
             );
 
             // Bond can be submitted in arbitrary order
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_2[0].clone()
             ));
 
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_1[0].clone()
             ));
@@ -2641,15 +2641,15 @@ fn multi_mixed_rococo() {
             );
 
             // Bond can be submitted in arbitrary order
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_3[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_4[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_2[0].clone()
             ));
@@ -2678,7 +2678,7 @@ fn multi_mixed_rococo() {
             //     pallet_circuit::Error::<Runtime>::ApplyFailed
             // );
 
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_1[0].clone()
             ));
@@ -3060,19 +3060,19 @@ fn insured_multi_rococo_multiple_executors() {
             );
 
             // Bond can be submitted in arbitrary order, by different executors
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_SECOND),
                 bond_insurance_3[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_SECOND),
                 bond_insurance_4[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_2[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_execution(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_1[0].clone()
             ));

@@ -160,6 +160,7 @@ impl CircuitStatus {
         insurance_deposits: &[(
             SideEffectId<T>,
             InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+            Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
         )],
     ) -> Result<CircuitStatus, Error<T>> {
         let mut lowest_determined_status = CircuitStatus::Requested;
@@ -191,6 +192,7 @@ pub struct LocalXtxCtx<T: Config> {
     pub insurance_deposits: Vec<(
         SideEffectId<T>,
         InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
     )>,
     pub full_side_effects:
         Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>>,
@@ -200,6 +202,14 @@ impl Default for CircuitStatus {
     fn default() -> Self {
         CircuitStatus::Requested
     }
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
+pub struct SFXBid<AccountId, BalanceOf> {
+    pub bid: BalanceOf,
+    pub optimistic_insurance: Option<BalanceOf>,
+    pub reserved_bond: BalanceOf,
+    pub executor: AccountId,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
