@@ -191,49 +191,6 @@ impl Default for CircuitStatus {
     }
 }
 
-// #[derive(Clone, Eq, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
-// pub struct InsuranceDeposit<AccountId, BlockNumber, BalanceOf> {
-//     /// Optional insurance in case of optimistic FSX
-//     pub insurance: BalanceOf,
-//     /// Optional reserved bond in case of optimistic FSX
-//     pub reserved_bond: BalanceOf,
-//     /// Bid becomes a claimable reward
-//     pub reward: BalanceOf,
-//     /// User requesting SFX execution
-//     pub requester: AccountId,
-//     /// Executor picking up the SFX
-//     pub bonded_relayer: Option<AccountId>,
-//     /// Remove? available via Xtx
-//     pub status: CircuitStatus,
-//     /// Remove? available via Xtx
-//     pub requested_at: BlockNumber,
-// }
-
-// impl<
-//         AccountId: Encode + Clone + Debug,
-//         BlockNumber: Ord + Copy + Zero + Encode + Clone + Debug,
-//         BalanceOf: Copy + Zero + Encode + Decode + Clone + Debug,
-//     > InsuranceDeposit<AccountId, BlockNumber, BalanceOf>
-// {
-//     pub fn new(
-//         insurance: BalanceOf,
-//         reward: BalanceOf,
-//         reserved_bond: BalanceOf,
-//         requester: AccountId,
-//         requested_at: BlockNumber,
-//     ) -> Self {
-//         InsuranceDeposit {
-//             insurance,
-//             reserved_bond,
-//             reward,
-//             requester,
-//             bonded_relayer: None,
-//             status: CircuitStatus::Requested,
-//             requested_at,
-//         }
-//     }
-// }
-
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {

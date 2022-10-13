@@ -199,11 +199,6 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    // #[pallet::storage]
-    // #[pallet::getter(fn get_xtx_insurance_links)]
-    // pub type XtxInsuranceLinks<T> =
-    //     StorageMap<_, Identity, XExecSignalId<T>, Vec<SideEffectId<T>>, ValueQuery>;
-
     /// LocalXtxStates stores the map of LocalState - additional state to be used to communicate between SFX that belong to the same Xtx
     ///
     /// - @Circuit::Requested: create LocalXtxStates array without confirmations or bids
@@ -1177,11 +1172,7 @@ impl<T: Config> Pallet<T> {
     /// Returns: Returns changes written to the state if there are any.
     ///     For now only returns Xtx and FullSideEffects that changed.
     fn apply(
-        mut local_ctx: &mut LocalXtxCtx<T>,
-        // maybe_insurance_tuple: Option<(
-        //     SideEffectId<T>,
-        //     InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        // )>,
+        local_ctx: &mut LocalXtxCtx<T>,
         status_change: (CircuitStatus, CircuitStatus),
     ) -> (
         Option<XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
@@ -1278,16 +1269,37 @@ impl<T: Config> Pallet<T> {
                     Some(local_ctx.full_side_effects.to_vec()),
                 )
             },
-            CircuitStatus::PendingBidding =>
-                if old_status != new_status {
-                    local_ctx.xtx.status = new_status;
-                    <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                        *x = Some(local_ctx.xtx.clone())
-                    });
-                    (Some(local_ctx.xtx.clone()), None)
-                } else {
-                    (None, None)
-                },
+            CircuitStatus::PendingBidding => {
+                match new_status {
+                    CircuitStatus::Bonded => {
+                        <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.full_side_effects.clone())
+                        });
+                    },
+                    CircuitStatus::DroppedAtBidding => {
+                        // Clean all associated Xtx entries
+                        <Self as Store>::XExecSignals::remove(local_ctx.xtx_id);
+                        <Self as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                        <Self as Store>::LocalXtxStates::remove(local_ctx.xtx_id);
+                        <Self as Store>::FullSideEffects::remove(local_ctx.xtx_id);
+                        for fsx_step in &local_ctx.full_side_effects {
+                            for fsx in fsx_step {
+                                <Self as Store>::SFX2XTXLinksMap::remove(
+                                    fsx.input.generate_id::<SystemHashing<T>>(),
+                                );
+                            }
+                        }
+                    },
+                    _ => {},
+                }
+                // Always clean temporary PendingSFXBids and TimeoutsMap after bidding
+                <Self as Store>::PendingSFXBids::remove_prefix(local_ctx.xtx_id, None);
+                <Self as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
+                (
+                    Some(local_ctx.xtx.clone()),
+                    Some(local_ctx.full_side_effects.to_vec()),
+                )
+            },
             CircuitStatus::RevertTimedOut => {
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
@@ -1885,23 +1897,6 @@ impl<T: Config> Pallet<T> {
     > {
         // fixme: This accesses storage and therefor breaks the rule of a single-storage access at setup.
         <PendingSFXBids<T>>::get(local_ctx.xtx_id, sfx_id)
-    }
-
-    pub(self) fn order_sfx_bids(
-        bids: &mut Vec<
-            SFXBid<
-                <T as frame_system::Config>::AccountId,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            >,
-        >,
-    ) -> Vec<
-        SFXBid<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-        >,
-    > {
-        bids.sort_by(|a, b| a.bid.cmp(&b.bid));
-        bids.to_vec()
     }
 
     pub(self) fn generate_fsx_ids(
