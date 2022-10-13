@@ -31,8 +31,11 @@ pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 #[derive(Clone, Eq, PartialEq, Encode, Default, Decode, Debug, TypeInfo)]
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
+    // todo: Change to max_fee
     pub prize: BalanceOf,
+    // todo: Remove since redundant with Xtx
     pub ordered_at: BlockNumber,
+    // todo: add missing insurance: Option<BalanceOf> field
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
