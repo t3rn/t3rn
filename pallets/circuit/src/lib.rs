@@ -1258,7 +1258,10 @@ impl<T: Config> Pallet<T> {
                     local_ctx.xtx_id,
                     local_ctx.xtx.timeouts_at,
                 );
-
+                <PendingXtxBidsTimeoutsMap<T>>::insert::<XExecSignalId<T>, T::BlockNumber>(
+                    local_ctx.xtx_id,
+                    T::SFXBiddingPeriod::get() + frame_system::Pallet::<T>::block_number(),
+                );
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
                     XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,

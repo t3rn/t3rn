@@ -79,7 +79,7 @@ impl<T: Config> Optimistic<T> {
         )
         .map_err(|_e| Error::<T>::BiddingFailedExecutorsBalanceTooLowToReserve)?;
 
-        sfx_bid.optimistic_insurance = Some(insurance);
+        sfx_bid.insurance = Some(insurance);
         sfx_bid.reserved_bond = Some(insurance);
 
         Ok(sfx_bid.clone())

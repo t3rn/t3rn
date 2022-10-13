@@ -66,12 +66,12 @@ impl CircuitStatus {
     ) -> CircuitStatus {
         if let Some(bid) = fsx.best_bid {
             if fsx.security_lvl == SecurityLvl::Optimistic
-                && (bid.optimistic_insurance.is_none() || bid.reserved_bond.is_none())
+                && (bid.insurance.is_none() || bid.reserved_bond.is_none())
             {
                 // todo: handle
                 panic!();
             } else if fsx.security_lvl == SecurityLvl::Escrowed
-                && (bid.optimistic_insurance.is_some() || bid.reserved_bond.is_some())
+                && (bid.insurance.is_some() || bid.reserved_bond.is_some())
             {
                 // todo: handle
                 panic!();

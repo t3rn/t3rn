@@ -45,7 +45,7 @@ pub struct SFXBid<AccountId, BalanceOf> {
     /// Bid amount - always below SFX::max_fee requested by a user
     pub bid: BalanceOf,
     /// Optional insurance in case of optimistic FSX
-    pub optimistic_insurance: Option<BalanceOf>,
+    pub insurance: Option<BalanceOf>,
     /// Optional reserved bond in case of optimistic FSX
     pub reserved_bond: Option<BalanceOf>,
     /// Bidding Executor belonging to the active set
@@ -58,7 +58,7 @@ impl<AccountId, BalanceOf> SFXBid<AccountId, BalanceOf> {
     pub fn new_none_optimistic(bid: BalanceOf, executor: AccountId, requester: AccountId) -> Self {
         SFXBid {
             bid,
-            optimistic_insurance: None,
+            insurance: None,
             reserved_bond: None,
             executor,
             requester,
@@ -72,9 +72,9 @@ impl<AccountId, BalanceOf> SFXBid<AccountId, BalanceOf> {
     }
 
     pub fn expect_insurance(&self) -> &BalanceOf {
-        self.optimistic_insurance
+        self.insurance
             .as_ref()
-            .expect("Accessed optimistic_insurance  and expected it to be a part of SFXBid")
+            .expect("Accessed insurance  and expected it to be a part of SFXBid")
     }
 }
 
