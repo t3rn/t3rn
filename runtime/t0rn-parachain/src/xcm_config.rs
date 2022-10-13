@@ -64,9 +64,9 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
     ConvertedConcreteAssetId<
-        AssetId,
+        parachains_common::AssetId,
         Balance,
-        AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
+        AsPrefixedGeneralIndex<AssetsPalletLocation, parachains_common::AssetId, JustTry>,
         JustTry,
     >,
     // Do a simple punn to convert an AccountId20 MultiLocation into a native chain account ID:
