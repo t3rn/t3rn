@@ -1,62 +1,59 @@
 use crate::{pallet::Error, *};
 
 use frame_support::traits::ReservableCurrency;
+
 use sp_std::marker::PhantomData;
-use t3rn_primitives::transfers::EscrowedBalanceOf;
+use t3rn_primitives::{side_effect::SFXBid, transfers::EscrowedBalanceOf};
 
 pub struct Optimistic<T: Config> {
     _phantom: PhantomData<T>,
 }
 
 impl<T: Config> Optimistic<T> {
-    pub fn try_bid(
+    pub fn try_bid_4_sfx(
+        local_ctx: &mut LocalXtxCtx<T>,
         executor: &T::AccountId,
         bid: EscrowedBalanceOf<T, T::Escrowed>,
-        local_ctx: &mut LocalXtxCtx<T>,
         sfx_id: SideEffectId<T>,
+        current_accepted_bid: Option<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
     ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>, Error<T>> {
         // Check if Xtx is in the bidding state
-        if local_ctx.xtx.status != CircuitStatus::PendingInsurance {
-            return Err(Error::<T>::InsuranceBondTooLow)
+        if local_ctx.xtx.status != CircuitStatus::PendingBidding {
+            return Err(Error::<T>::BiddingInactive)
         }
         let fsx = crate::Pallet::<T>::recover_fsx_by_id(sfx_id, local_ctx)?;
-        if bid > fsx.input.prize {
-            return Err(Error::<T>::InsuranceBondTooLow)
-        }
-        // Check for the bids within the local ctx
-        let mut current_accepted_bids =
-            crate::Pallet::<T>::get_sfx_accepted_bids(local_ctx, sfx_id)?;
-        // ToDo: Change prize to max_fee
-        let sfx_bid = SFXBid {
-            bid,
-            // ToDo: Check for bond_4_sfx requirements if current FSX is optimistic
-            optimistic_insurance: None,
-            reserved_bond: (),
-            executor,
-        };
+        let (sfx_max_fee, sfx_security_lvl) = (fsx.input.prize, fsx.security_lvl);
 
-        if Some(current_best_bid) = current_accepted_bids.last() {
-            if current_best_bid.bid < sfx_bid.bid {
-                return Err(Error::<T>::InsuranceBondTooLow)
+        if bid > sfx_max_fee {
+            return Err(Error::<T>::BiddingRejectedBidTooHigh)
+        }
+
+        if let Some(current_best_bid) = current_accepted_bid {
+            if current_best_bid.bid < bid {
+                return Err(Error::<T>::BiddingRejectedBetterBidFound)
             }
         }
 
-        current_accepted_bids.push(sfx_bid.clone());
+        let mut sfx_bid =
+            SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>::new_none_optimistic(
+                bid,
+                executor.clone(),
+                local_ctx.xtx.requester.clone(),
+            );
+        // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
+        if sfx_security_lvl == SecurityLvl::Optimistic {
+            sfx_bid = Self::bond_4_sfx(executor, local_ctx, &mut sfx_bid, sfx_id)?;
+        }
 
-        let ordered_bids = crate::Pallet::<T>::order_sfx_bids(&mut current_accepted_bids);
-
-        // ToDo: Add ordered_bids to local_ctx now
         Ok(sfx_bid)
     }
 
-    pub fn bond_4_sfx(
+    pub(self) fn bond_4_sfx(
         executor: &T::AccountId,
         local_ctx: &mut LocalXtxCtx<T>,
+        sfx_bid: &mut SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>,
         sfx_id: SideEffectId<T>,
-    ) -> Result<
-        InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        Error<T>,
-    > {
+    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>, Error<T>> {
         let total_xtx_step_optimistic_rewards_of_others = crate::Pallet::<T>::get_fsx_total_rewards(
             &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
                 local_ctx,
@@ -73,26 +70,19 @@ impl<T: Config> Optimistic<T> {
             >>(),
         );
 
-        let mut insurance_deposit = Self::get_insurance_deposit_mutable_ref(local_ctx, sfx_id)?;
+        // todo/fixme: add insurance field to fsx.input.insurance
+        let insurance = Zero::zero();
 
         <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve(
             executor,
-            insurance_deposit.insurance,
+            insurance + total_xtx_step_optimistic_rewards_of_others,
         )
-        .map_err(|_e| Error::<T>::InsuranceBondTooLow)?;
+        .map_err(|_e| Error::<T>::BiddingFailedExecutorsBalanceTooLowToReserve)?;
 
-        <T as Config>::Executors::reserve_bond(
-            executor,
-            total_xtx_step_optimistic_rewards_of_others,
-        )
-        .map_err(|_e| Error::<T>::InsuranceBondTooLow)?;
+        sfx_bid.optimistic_insurance = Some(insurance);
+        sfx_bid.reserved_bond = Some(insurance);
 
-        insurance_deposit.bonded_relayer = Some(executor.clone());
-        insurance_deposit.reserved_bond = total_xtx_step_optimistic_rewards_of_others;
-        // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
-        insurance_deposit.status = CircuitStatus::Bonded;
-
-        Ok(insurance_deposit.clone())
+        Ok(sfx_bid.clone())
     }
 
     pub fn try_unbond(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
@@ -100,111 +90,67 @@ impl<T: Config> Optimistic<T> {
             local_ctx,
             SecurityLvl::Optimistic,
         );
-        for fsx in &optimistic_fsx_in_step {
-            let side_effect_id = fsx.input.generate_id::<SystemHashing<T>>();
-            if let Some((_id, insurance_request)) = local_ctx
-                .insurance_deposits
-                .iter()
-                .find(|(id, _)| *id == side_effect_id)
-            {
-                if let Some(bonded_relayer) = &insurance_request.bonded_relayer {
-                    <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
-                        bonded_relayer,
-                        insurance_request.insurance,
-                    );
-                    <T as Config>::Executors::unreserve_bond(
-                        bonded_relayer,
-                        insurance_request.reserved_bond,
-                    );
-                } else {
-                    return Err(Error::<T>::RefundTransferFailed)
-                }
-            } else {
-                // This is a forbidden state which should have not happened -
-                //  at this point all of the insurances should have a bonded relayer assigned
-                return Err(Error::<T>::RefundTransferFailed)
-            }
+        for fsx in optimistic_fsx_in_step {
+            let sfx_bid = fsx.expect_sfx_bid();
+            let (insurance, reserved_bond) =
+                (*sfx_bid.expect_insurance(), *sfx_bid.expect_reserved_bond());
+
+            <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                &sfx_bid.executor,
+                insurance + reserved_bond,
+            );
         }
+
         Ok(())
     }
 
-    pub(self) fn get_insurance_deposit_mutable_ref(
-        local_ctx: &mut LocalXtxCtx<T>,
-        sfx_id: SideEffectId<T>,
-    ) -> Result<
-        &mut InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        Error<T>,
-    > {
-        let mut maybe_insurance_deposit: Option<
-            &mut InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        > = None;
-
-        for (id, x) in local_ctx.insurance_deposits.iter_mut() {
-            if *id == sfx_id {
-                maybe_insurance_deposit = Some(x);
-            }
-        }
-        if let Some(insurance_deposit) = maybe_insurance_deposit {
-            Ok(insurance_deposit)
-        } else {
-            Err(Error::<T>::InsuranceBondNotRequired)
-        }
-    }
-
     pub fn try_slash(local_ctx: &mut LocalXtxCtx<T>) {
-        let optimistic_fsx_in_step = crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
+        let mut slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> = Zero::zero();
+        let mut slashed_counter: usize = 0;
+
+        let optimistic_fsx_in_step = &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
             local_ctx,
             SecurityLvl::Optimistic,
         );
+        // Slash loop
+        for fsx in optimistic_fsx_in_step {
+            // Look for invalid FSX cases to slash
+            if !fsx.is_successfully_confirmed() {
+                let sfx_bid = fsx.expect_sfx_bid();
+                let (insurance, reserved_bond) =
+                    (*sfx_bid.expect_insurance(), *sfx_bid.expect_reserved_bond());
 
-        let mut slashed_executors: Vec<(
-            &T::AccountId,
-            &InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        )> = vec![];
-        let mut repatriated_executors: Vec<&T::AccountId> = vec![];
-
-        for fsx in &optimistic_fsx_in_step {
-            let side_effect_id = fsx.input.generate_id::<SystemHashing<T>>();
-            if let Some((_id, insurance_request, _bids)) = local_ctx
-                .insurance_deposits
-                .iter()
-                .find(|(id, _, _)| *id == side_effect_id)
-            {
-                if let Some(bonded_relayer) = &insurance_request.bonded_relayer {
-                    if fsx.confirmed.is_some()
-                        && fsx
-                            .confirmed
-                            .as_ref()
-                            .expect("ensured exists in the same check")
-                            .err
-                            .is_none()
-                    {
-                        repatriated_executors.push(bonded_relayer)
-                    } else {
-                        slashed_executors.push((bonded_relayer, insurance_request))
-                    }
-                }
+                // First slash executor
+                <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
+                    &sfx_bid.executor,
+                    insurance + reserved_bond,
+                );
+                slashed_reserve += reserved_bond;
+                slashed_counter += 1;
             }
         }
 
-        for (slash_executor, slash_insurance_request) in slashed_executors.iter() {
-            <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
-                slash_executor,
-                slash_insurance_request.insurance,
-            );
-            <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::deposit_creating(
-                &slash_insurance_request.requester,
-                slash_insurance_request.insurance,
-            );
-            <T as Config>::Executors::slash_bond(
-                slash_executor,
-                slash_insurance_request.reserved_bond,
-            );
+        let honest_counter = optimistic_fsx_in_step.len() - slashed_counter;
+        let repatriation_bonus_per_honest_fsx =
+            slashed_reserve / EscrowedBalanceOf::<T, T::Escrowed>::from(honest_counter as u32);
 
-            for repatriated_executor in &repatriated_executors {
-                <T as Config>::Executors::increase_bond(
-                    repatriated_executor,
-                    slash_insurance_request.reserved_bond,
+        // Repatriate loop
+        for fsx in optimistic_fsx_in_step {
+            // Look for valid FSX cases to repatriate
+            if fsx.is_successfully_confirmed() {
+                let sfx_bid = fsx.expect_sfx_bid();
+                let (insurance, reserved_bond) =
+                    (*sfx_bid.expect_insurance(), *sfx_bid.expect_reserved_bond());
+
+                // First unlock honest executor
+                <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                    &sfx_bid.executor,
+                    insurance + reserved_bond,
+                );
+                // Repatriate slashed bonus since honest executor won't get rewards for the SFX::max_fee
+                <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::deposit_creating(
+                    &sfx_bid.executor,
+                    repatriation_bonus_per_honest_fsx,
                 );
             }
         }
