@@ -129,24 +129,6 @@ pub mod pallet {
 
     pub type EscrowBalance<T> = EscrowedBalanceOf<T, <T as Config>::Escrowed>;
 
-    // /// Current Circuit's context of active insurance deposits
-    // ///
-    // #[pallet::storage]
-    // #[pallet::getter(fn get_insurance_deposits)]
-    // pub type InsuranceDeposits<T> = StorageDoubleMap<
-    //     _,
-    //     Identity,
-    //     XExecSignalId<T>,
-    //     Identity,
-    //     SideEffectId<T>,
-    //     InsuranceDeposit<
-    //         <T as frame_system::Config>::AccountId,
-    //         <T as frame_system::Config>::BlockNumber,
-    //         EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-    //     >,
-    //     OptionQuery,
-    // >;
-
     /// Temporary bids for SFX executions. Cleaned out each Config::BidsInterval, where are moved from
     ///     PendingSFXBids to FSX::accepted_bids
     ///
@@ -1122,26 +1104,6 @@ impl<T: Config> Pallet<T> {
                         );
                         return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
                     }
-                    // let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
-                    //     .iter()
-                    //     .map(|&sfx_id| {
-                    //         (
-                    //             sfx_id,
-                    //             <Self as Store>::InsuranceDeposits::get(id, sfx_id)
-                    //                 .expect("Should not be state inconsistency"),
-                    //             <Self as Store>::PendingSFXBids::get(id, sfx_id)
-                    //                 .expect("Should not be state inconsistency"),
-                    //         )
-                    //     })
-                    //     .collect::<Vec<(
-                    //         SideEffectId<T>,
-                    //         InsuranceDeposit<
-                    //             T::AccountId,
-                    //             T::BlockNumber,
-                    //             EscrowedBalanceOf<T, T::Escrowed>,
-                    //         >,
-                    //         Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
-                    //     )>>();
 
                     let full_side_effects = <Self as Store>::FullSideEffects::get(id)
                         .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
@@ -1153,8 +1115,6 @@ impl<T: Config> Pallet<T> {
                         use_protocol: UniversalSideEffectsProtocol::new(),
                         xtx_id: id,
                         xtx,
-                        // insurance_deposits,
-                        // We need to retrieve full side effects to validate the confirmation order
                         full_side_effects,
                     })
                 } else {
@@ -1208,10 +1168,7 @@ impl<T: Config> Pallet<T> {
             _ => {},
         }
 
-        let new_status = CircuitStatus::determine_xtx_status(
-            &local_ctx.full_side_effects,
-            // &local_ctx.insurance_deposits,
-        )?;
+        let new_status = CircuitStatus::determine_xtx_status(&local_ctx.full_side_effects)?;
         local_ctx.xtx.status = new_status.clone();
 
         Ok((current_status, new_status))
@@ -1302,31 +1259,6 @@ impl<T: Config> Pallet<T> {
                     );
                 }
 
-                // let mut ids_with_insurance: Vec<SideEffectId<T>> = vec![];
-                // for (side_effect_id, insurance_deposit, bids) in &local_ctx.insurance_deposits {
-                //     <InsuranceDeposits<T>>::insert::<
-                //         XExecSignalId<T>,
-                //         SideEffectId<T>,
-                //         InsuranceDeposit<
-                //             T::AccountId,
-                //             T::BlockNumber,
-                //             EscrowedBalanceOf<T, T::Escrowed>,
-                //         >,
-                //     >(
-                //         local_ctx.xtx_id, *side_effect_id, insurance_deposit.clone()
-                //     );
-                //     <PendingSFXBids<T>>::insert::<
-                //         XExecSignalId<T>,
-                //         SideEffectId<T>,
-                //         Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
-                //     >(local_ctx.xtx_id, *side_effect_id, bids.clone());
-                //
-                //     ids_with_insurance.push(*side_effect_id);
-                // }
-                // <XtxInsuranceLinks<T>>::insert::<XExecSignalId<T>, Vec<SideEffectId<T>>>(
-                //     local_ctx.xtx_id,
-                //     ids_with_insurance,
-                // );
                 <LocalXtxStates<T>>::insert::<XExecSignalId<T>, LocalState>(
                     local_ctx.xtx_id,
                     local_ctx.local_state.clone(),
@@ -1346,14 +1278,7 @@ impl<T: Config> Pallet<T> {
                     Some(local_ctx.full_side_effects.to_vec()),
                 )
             },
-            CircuitStatus::PendingBidding => {
-                // if let Some((side_effect_id, insurance_deposit)) = maybe_insurance_tuple {
-                //     <Self as Store>::InsuranceDeposits::mutate(
-                //         local_ctx.xtx_id,
-                //         side_effect_id,
-                //         |x| *x = Some(insurance_deposit),
-                //     );
-                // }
+            CircuitStatus::PendingBidding =>
                 if old_status != new_status {
                     local_ctx.xtx.status = new_status;
                     <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
@@ -1362,8 +1287,7 @@ impl<T: Config> Pallet<T> {
                     (Some(local_ctx.xtx.clone()), None)
                 } else {
                     (None, None)
-                }
-            },
+                },
             CircuitStatus::RevertTimedOut => {
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
@@ -1626,17 +1550,6 @@ impl<T: Config> Pallet<T> {
                     return Err("Side_effect prize must be equal to reward of Optional Insurance")
                 }
 
-                // local_ctx.insurance_deposits.push((
-                //     side_effect.generate_id::<SystemHashing<T>>(),
-                //     InsuranceDeposit::new(
-                //         insurance,
-                //         reward,
-                //         Zero::zero(), // To be modified by Optimistic::bond_4_sfx when set in the step context.
-                //         requester.clone(),
-                //         <frame_system::Pallet<T>>::block_number(),
-                //     ),
-                //     vec![],
-                // ));
                 let submission_target_height =
                     T::Portal::get_latest_finalized_height(side_effect.target)?
                         .ok_or("target height not found")?;

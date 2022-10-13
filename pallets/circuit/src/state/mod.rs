@@ -80,18 +80,6 @@ impl CircuitStatus {
         } else {
             CircuitStatus::PendingBidding
         }
-        // return if let Some((_id, insurance_request)) = insurance_deposits
-        //     .iter()
-        //     .find(|(id, _)| *id == side_effect_id)
-        // {
-        //     if insurance_request.bonded_relayer.is_some() {
-        //         CircuitStatus::Bonded
-        //     } else {
-        //         CircuitStatus::PendingBidding
-        //     }
-        // } else {
-        //     CircuitStatus::Ready
-        // }
     }
 
     /// Check if all FSX have the bidding companion.
@@ -103,11 +91,7 @@ impl CircuitStatus {
             T::AccountId,
             T::BlockNumber,
             EscrowedBalanceOf<T, T::Escrowed>,
-        >], // insurance_deposits: &Vec<(
-            //     SideEffectId<T>,
-            //     InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-            //     // Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
-            // )>,
+        >],
     ) -> CircuitStatus {
         for fsx in fsx_step.iter() {
             if Self::determine_fsx_bidding_status::<T>(fsx.clone()) == CircuitStatus::PendingBidding
@@ -122,10 +106,6 @@ impl CircuitStatus {
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config>(
         step: &[FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>],
-        // insurance_deposits: &[(
-        //     SideEffectId<T>,
-        //     InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        // )],
     ) -> Result<CircuitStatus, Error<T>> {
         // Those are determined post - ready
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
@@ -134,9 +114,6 @@ impl CircuitStatus {
         let current_determined_status = Self::determine_bidding_status::<T>(step);
 
         for (_step_cnt, full_side_effect) in step.iter().enumerate() {
-            // let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
-            // let current_determined_status =
-            //     Self::determine_insurance_status::<T>(current_id, insurance_deposits);
             if current_determined_status == CircuitStatus::PendingBidding
                 && highest_post_ready_determined_status > CircuitStatus::Ready
             {
@@ -177,11 +154,6 @@ impl CircuitStatus {
         steps: &[Vec<
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         >],
-        // insurance_deposits: &[(
-        //     SideEffectId<T>,
-        //     InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        //     Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
-        // )],
     ) -> Result<CircuitStatus, Error<T>> {
         let mut lowest_determined_status = CircuitStatus::Requested;
 
@@ -209,11 +181,6 @@ pub struct LocalXtxCtx<T: Config> {
     pub use_protocol: UniversalSideEffectsProtocol,
     pub xtx_id: XExecSignalId<T>,
     pub xtx: XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-    // pub insurance_deposits: Vec<(
-    //     SideEffectId<T>,
-    //     InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-    //     Vec<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
-    // )>,
     pub full_side_effects:
         Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>>,
 }
