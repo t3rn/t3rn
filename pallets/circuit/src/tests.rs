@@ -202,6 +202,7 @@ pub fn bid_execution(
         origin, // Active relayer
         xtx_id,
         side_effect_id,
+        2 as Balance,
     )
 }
 
@@ -474,7 +475,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             );
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
                 None
             );
 
@@ -497,6 +498,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect,
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Dirty,
                     submission_target_height: vec![0],
                 }]]
@@ -701,21 +703,21 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
 
             // Runtime Apply State
             // Returns void insurance for that side effect
-            let valid_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
+            let valid_sfx_bid = SFXBid {
+                bid: 0 as Balance,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 1,
-                reserved_bond: 0,
+                executor: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                reserved_bond: None,
+                insurance: None,
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                valid_insurance_deposit
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                valid_sfx_bid
             );
 
             assert_eq!(
@@ -726,7 +728,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingInsurance,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
                     steps_cnt: (0, 1)
                 }
@@ -737,6 +739,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect,
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
                 }]]
@@ -745,7 +748,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
 }
 
 #[test]
-fn circuit_handles_insurance_deposit_for_transfers() {
+fn circuit_handles_sfx_bid_for_transfers() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let transfer_protocol_box =
@@ -766,6 +769,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
     let fee = 1;
+    let bid_a = 2 as Balance;
     let sequential = true;
 
     ExtBuilder::default()
@@ -790,21 +794,30 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 
             // Runtime Apply State
             // Returns void insurance for that side effect
-            let valid_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
+            let valid_sfx_bid = SFXBid {
+                // insurance: 1,
+                // reward: 2,
+                // requester: AccountId32::new(hex!(
+                //     "0101010101010101010101010101010101010101010101010101010101010101"
+                // )),
+                // bonded_relayer: None,
+                // status: CircuitStatus::Requested,
+                // requested_at: 1,
+                // reserved_bond: 0,
+                bid: 0 as Balance,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 1,
-                reserved_bond: 0,
+                executor: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                reserved_bond: None,
+                insurance: None,
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                valid_insurance_deposit
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                valid_sfx_bid
             );
 
             assert_eq!(
@@ -815,7 +828,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingInsurance,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
                     steps_cnt: (0, 1),
                 }
@@ -826,6 +839,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
                 }]]
@@ -837,23 +851,33 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
+                bid_a,
             ));
 
-            let expected_bonded_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
+            let expected_bonded_sfx_bid = SFXBid {
+                // insurance: 1,
+                // reward: 2,
+                // requester: AccountId32::new(hex!(
+                //     "0101010101010101010101010101010101010101010101010101010101010101"
+                // )),
+                // bonded_relayer: Some(BOB_RELAYER),
+                // status: CircuitStatus::Bonded,
+                // requested_at: 1,
+                // reserved_bond: 0,
+                bid: 0 as Balance,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                bonded_relayer: Some(BOB_RELAYER),
-                status: CircuitStatus::Bonded,
-                requested_at: 1,
-                reserved_bond: 0,
+                executor: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                reserved_bond: None,
+                insurance: None,
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_insurance_deposit
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                expected_bonded_sfx_bid
             );
 
             assert_eq!(
@@ -937,13 +961,14 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                 vec![vec![FullSideEffect {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Dirty,
                     submission_target_height: vec![0],
                 }]]
             );
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
                 None
             );
         });
@@ -996,21 +1021,30 @@ fn circuit_handles_swap_with_insurance() {
 
             // Runtime Apply State
             // Returns valid insurance for that side effect
-            let valid_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
+            let valid_sfx_bid = SFXBid {
+                // insurance: 1,
+                // reward: 2,
+                // requester: AccountId32::new(hex!(
+                //     "0101010101010101010101010101010101010101010101010101010101010101"
+                // )),
+                // bonded_relayer: None,
+                // status: CircuitStatus::Requested,
+                // requested_at: 1,
+                // reserved_bond: 0,
+                bid: 0 as Balance,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 1,
-                reserved_bond: 0,
+                executor: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                reserved_bond: None,
+                insurance: None,
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                valid_insurance_deposit
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                valid_sfx_bid
             );
 
             assert_eq!(
@@ -1021,7 +1055,7 @@ fn circuit_handles_swap_with_insurance() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingInsurance,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
                     steps_cnt: (0, 1),
                 }
@@ -1032,6 +1066,7 @@ fn circuit_handles_swap_with_insurance() {
                 vec![vec![FullSideEffect {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
                 }]]
@@ -1043,23 +1078,33 @@ fn circuit_handles_swap_with_insurance() {
                 origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
+                2 as Balance,
             ));
 
-            let expected_bonded_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
+            let expected_bonded_sfx_bid = SFXBid {
+                // insurance: 1,
+                // reward: 2,
+                // requester: AccountId32::new(hex!(
+                //     "0101010101010101010101010101010101010101010101010101010101010101"
+                // )),
+                // bonded_relayer: Some(BOB_RELAYER),
+                // status: CircuitStatus::Bonded,
+                // requested_at: 1,
+                // reserved_bond: 0,
+                bid: 0 as Balance,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                bonded_relayer: Some(BOB_RELAYER),
-                status: CircuitStatus::Bonded,
-                requested_at: 1,
-                reserved_bond: 0,
+                executor: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                reserved_bond: None,
+                insurance: None,
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_insurance_deposit
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                expected_bonded_sfx_bid
             );
 
             assert_eq!(
@@ -1128,7 +1173,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
             let (xtx_id, side_effect_a_id) = set_ids(valid_add_liquidity_side_effect.clone());
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
                 None
             );
         });
@@ -1185,21 +1230,30 @@ fn circuit_handles_add_liquidity_with_insurance() {
 
             // Runtime Apply State
             // Returns valid insurance for that side effect
-            let valid_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
+            let valid_sfx_bid = SFXBid {
+                // insurance: 1,
+                // reward: 2,
+                // requester: AccountId32::new(hex!(
+                //     "0101010101010101010101010101010101010101010101010101010101010101"
+                // )),
+                // bonded_relayer: None,
+                // status: CircuitStatus::Requested,
+                // requested_at: 1,
+                // reserved_bond: 0,
+                bid: 0 as Balance,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 1,
-                reserved_bond: 0,
+                executor: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                reserved_bond: None,
+                insurance: None,
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                valid_insurance_deposit
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                valid_sfx_bid
             );
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
@@ -1209,7 +1263,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingInsurance,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
                     steps_cnt: (0, 1),
                 }
@@ -1220,6 +1274,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 vec![vec![FullSideEffect {
                     input: valid_add_liquidity_side_effect.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
                 }]]
@@ -1231,23 +1286,33 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
+                2 as Balance,
             ));
 
-            let expected_bonded_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
+            let expected_bonded_sfx_bid = SFXBid {
+                // insurance: 1,
+                // reward: 2,
+                // requester: AccountId32::new(hex!(
+                //     "0101010101010101010101010101010101010101010101010101010101010101"
+                // )),
+                // bonded_relayer: Some(BOB_RELAYER),
+                // status: CircuitStatus::Bonded,
+                // requested_at: 1,
+                // reserved_bond: 0,
+                bid: 0 as Balance,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                bonded_relayer: Some(BOB_RELAYER),
-                status: CircuitStatus::Bonded,
-                requested_at: 1,
-                reserved_bond: 0,
+                executor: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                reserved_bond: None,
+                insurance: None,
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_insurance_deposit
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                expected_bonded_sfx_bid
             );
 
             assert_eq!(
@@ -1322,26 +1387,26 @@ fn successfully_bond_optimistic(
         xtx_id,
         side_effect
             .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+        2 as Balance,
     ));
 
     let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
 
-    let created_insurance_deposit = Circuit::get_insurance_deposits(
+    let created_sfx_bid = Circuit::get_pending_sfx_bids(
         xtx_id,
         side_effect
             .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
     )
     .unwrap();
 
-    assert_eq!(created_insurance_deposit.insurance, insurance as u128);
-    assert_eq!(created_insurance_deposit.reward, reward as u128);
+    assert_eq!(created_sfx_bid.insurance, Some(insurance as Balance));
+    // assert_eq!(created_sfx_bid.reserved_bond, Some(insurance as Balance));
+    assert_eq!(created_sfx_bid.bid, reward as Balance);
     assert_eq!(
-        created_insurance_deposit.requester,
+        created_sfx_bid.requester,
         Decode::decode(&mut &submitter.encode()[..]).unwrap()
     );
-    assert_eq!(created_insurance_deposit.bonded_relayer, Some(relayer));
-    assert_eq!(created_insurance_deposit.status, CircuitStatus::Bonded);
-    assert_eq!(created_insurance_deposit.requested_at, 1);
+    assert_eq!(created_sfx_bid.executor, relayer);
 }
 
 #[test]
@@ -1591,7 +1656,7 @@ fn circuit_cancels_xtx_after_timeout() {
                     )),
                     timeouts_at: 401u32, // 100 offset + current block height 1 = 101
                     delay_steps_at: None,
-                    status: CircuitStatus::Ready,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
                     steps_cnt: (0, 1),
                 })
@@ -3707,6 +3772,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Escrowed,
                     submission_target_height: vec![0],
                 }]]
@@ -3716,8 +3782,8 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                 origin,
                 xtx_id,
                 valid_transfer_side_effect,
-                MAX_EXECUTION_COST as u128,
-                MAX_NOTIFICATION_COST as u128,
+                MAX_EXECUTION_COST as Balance,
+                MAX_NOTIFICATION_COST as Balance,
             ));
 
             assert_eq!(
@@ -3820,6 +3886,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                 vec![vec![FullSideEffect {
                     input: valid_evm_sfx.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Escrowed,
                     submission_target_height: vec![0],
                 }]]
@@ -3829,8 +3896,8 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                 origin,
                 xtx_id,
                 valid_evm_sfx,
-                MAX_EXECUTION_COST as u128,
-                MAX_NOTIFICATION_COST as u128,
+                MAX_EXECUTION_COST as Balance,
+                MAX_NOTIFICATION_COST as Balance,
             ));
 
             assert_eq!(
