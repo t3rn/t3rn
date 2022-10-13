@@ -1,29 +1,33 @@
 use crate::{
-    AccountId, Balance, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
-    Runtime, XcmpQueue,
+    AccountId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem,
+    PolkadotXcm, Runtime, XcmpQueue,
 };
 use frame_support::{
     match_types, parameter_types,
-    traits::{Everything, Nothing},
+    traits::{Everything, Nothing, PalletInfoAccess},
     weights::{IdentityFee, Weight},
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
-    EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
+    AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+    AsPrefixedGeneralIndex, ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin,
+    FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     UsingComponents,
 };
-use xcm_executor::XcmExecutor;
+use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
     pub const RelayNetwork: NetworkId = NetworkId::Any;
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+    pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+    pub AssetsPalletLocation: MultiLocation =
+        PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -51,6 +55,32 @@ pub type LocalAssetTransactor = CurrencyAdapter<
     // We don't track any teleports.
     (),
 >;
+
+// The non-reserve fungible transactor type
+// It will use pallet-assets, and the Id will be matched against AsAssetType
+// This is intended to match FOREIGN ASSETS
+pub type ForeignFungiblesTransactor = FungiblesAdapter<
+    // Use this fungibles implementation:
+    Assets,
+    // Use this currency when it is a fungible asset matching the given location or name:
+    ConvertedConcreteAssetId<
+        AssetId,
+        Balance,
+        AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
+        JustTry,
+    >,
+    // Do a simple punn to convert an AccountId20 MultiLocation into a native chain account ID:
+    LocationToAccountId,
+    // Our chain's account ID type (we can't get away without mentioning it explicitly):
+    AccountId,
+    // We only want to allow teleports of known assets. We use non-zero issuance as an indication
+    // that this asset is known.
+    parachains_common::impls::NonZeroIssuance<AccountId, Assets>,
+    // The account to use for tracking teleports.
+    CheckingAccount,
+>;
+
+pub type AssetTransactors = (LocalAssetTransactor, ForeignFungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -97,7 +127,7 @@ pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type AssetClaims = PolkadotXcm;
     // How to withdraw and deposit an asset.
-    type AssetTransactor = LocalAssetTransactor;
+    type AssetTransactor = AssetTransactors;
     type AssetTrap = PolkadotXcm;
     type Barrier = Barrier;
     type Call = Call;
