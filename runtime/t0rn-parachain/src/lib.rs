@@ -14,6 +14,7 @@ pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod xbi_config;
 pub mod xcm_config;
+pub mod utility;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;

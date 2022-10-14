@@ -3,10 +3,10 @@
 	url = https://github.com/t3rn/frontier
 [submodule "protocol"]
 	path = protocol
-	url = https://github.com/t3rn/protocol
+	url = git@github.com:t3rn/protocol
 [submodule "3vm"]
 	path = 3vm
-	url = https://github.com/t3rn/3vm.git
+	url = git@github.com:t3rn/3vm.git
 [submodule "pallets/xbi-portal"]
 	path = pallets/xbi-portal
-	url = https://github.com/t3rn/xbi-portal.git
+	url = git@github.com:t3rn/xbi-portal.git
