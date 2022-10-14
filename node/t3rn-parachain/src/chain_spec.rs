@@ -1,10 +1,11 @@
 use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
 use cumulus_primitives_core::ParaId;
 
+use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{Pair, Public};
+use sp_core::{crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 use t3rn_primitives::{
@@ -102,9 +103,9 @@ pub fn session_keys(keys: AuraId) -> circuit_parachain_runtime::SessionKeys {
 
 pub fn polkadot_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
-    properties.insert("tokenSymbol".into(), "T3RN".into());
+    properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 42.into());
+    properties.insert("ss58Format".into(), 9935.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -117,25 +118,25 @@ pub fn polkadot_config() -> ChainSpec {
                 // Invulnerable collators
                 vec![
                     (
-                        get_account_id_from_adrs(
-                            "t3rn2cUTJPwjhCXRGjUMm9jViuLxa4oZsz32nPJZJxftHDeb",
-                        ),
-                        get_aura_id_from_adrs("t3rn2cUTJPwjhCXRGjUMm9jViuLxa4oZsz32nPJZJxftHDeb"),
+                        hex!("5232d5d6b3904523020c08addf5b648f5ecb1e3481c04fe46d2d82efb193b674")
+                            .into(),
+                        hex!("5232d5d6b3904523020c08addf5b648f5ecb1e3481c04fe46d2d82efb193b674")
+                            .unchecked_into(),
                     ),
                     (
-                        get_account_id_from_adrs(
-                            "t3rn36tUEi4swq6uDNef5nZzdrBn4X5vKrSUsxx94HVeHXGq",
-                        ),
-                        get_aura_id_from_adrs("t3rn36tUEi4swq6uDNef5nZzdrBn4X5vKrSUsxx94HVeHXGq"),
+                        hex!("7e6f18e1b19513672c6a11d1e09880ba05015c84022ebe84c781f5bc71fc4d79")
+                            .into(),
+                        hex!("7e6f18e1b19513672c6a11d1e09880ba05015c84022ebe84c781f5bc71fc4d79")
+                            .unchecked_into(),
                     ),
                 ],
                 // Prefunded accounts
-                vec![get_account_id_from_adrs(
-                    "t3rnTimebvS7RsUGsN6u7N6sR1gqWtXiUVLG9nSeSon4Q7K",
-                )],
+                vec![
+                    hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d").into(),
+                ],
                 PARACHAIN_ID.into(),
                 // Sudo
-                get_account_id_from_adrs("t3rnTimebvS7RsUGsN6u7N6sR1gqWtXiUVLG9nSeSon4Q7K"),
+                hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d").into(),
             )
         },
         // Bootnodes
@@ -178,7 +179,7 @@ fn polkadot_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1 << 60))
+                .map(|k| (k, 100_000_000_000000000000))
                 .collect(),
         },
         parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
