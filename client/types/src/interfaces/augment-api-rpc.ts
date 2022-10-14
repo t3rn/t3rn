@@ -267,7 +267,10 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
       >;
     };
     contracts: {
-      /** Executes a call to a contract */
+      /**
+       * @deprecated Use the runtime interface `api.call.contractsApi.call`
+       *   instead Executes a call to a contract
+       */
       call: AugmentedRpc<
         (
           callRequest:
@@ -285,7 +288,11 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
           at?: BlockHash | string | Uint8Array
         ) => Observable<ContractExecResult>
       >;
-      /** Returns the value under a specified storage key in a contract */
+      /**
+       * @deprecated Use the runtime interface
+       *   `api.call.contractsApi.getStorage` instead Returns the value under a
+       *   specified storage key in a contract
+       */
       getStorage: AugmentedRpc<
         (
           address: AccountId | string | Uint8Array,
@@ -293,7 +300,10 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
           at?: BlockHash | string | Uint8Array
         ) => Observable<Option<Bytes>>
       >;
-      /** Instantiate a new contract */
+      /**
+       * @deprecated Use the runtime interface
+       *   `api.call.contractsApi.instantiate` instead Instantiate a new contract
+       */
       instantiate: AugmentedRpc<
         (
           request:
@@ -313,8 +323,9 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
         ) => Observable<ContractInstantiateResult>
       >;
       /**
-       * Returns the projected time a given contract will be able to sustain
-       * paying its rent
+       * @deprecated Not available in newer versions of the contracts interfaces
+       *   Returns the projected time a given contract will be able to sustain
+       *   paying its rent
        */
       rentProjection: AugmentedRpc<
         (
@@ -322,7 +333,11 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
           at?: BlockHash | string | Uint8Array
         ) => Observable<Option<BlockNumber>>
       >;
-      /** Upload new code without instantiating a contract from it */
+      /**
+       * @deprecated Use the runtime interface
+       *   `api.call.contractsApi.uploadCode` instead Upload new code without
+       *   instantiating a contract from it
+       */
       uploadCode: AugmentedRpc<
         (
           uploadRequest:
@@ -789,7 +804,10 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
           at?: BlockHash | string | Uint8Array
         ) => Observable<u64>
       >;
-      /** Retrieves the keys with a certain prefix */
+      /**
+       * @deprecated Use `api.rpc.state.getKeysPaged` to retrieve keys Retrieves
+       *   the keys with a certain prefix
+       */
       getKeys: AugmentedRpc<
         (
           key: StorageKey | string | Uint8Array | any,
@@ -810,8 +828,9 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
         (at?: BlockHash | string | Uint8Array) => Observable<Metadata>
       >;
       /**
-       * Returns the keys with prefix, leave empty to get all the keys
-       * (deprecated: Use getKeysPaged)
+       * @deprecated Use `api.rpc.state.getKeysPaged` to retrieve keys Returns
+       *   the keys with prefix, leave empty to get all the keys (deprecated:
+       *   Use getKeysPaged)
        */
       getPairs: AugmentedRpc<
         (
