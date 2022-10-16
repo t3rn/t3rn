@@ -642,9 +642,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
-            side_effects: Vec<
-                SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-            >,
+            side_effects: Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
             fee: EscrowedBalanceOf<T, T::Escrowed>,
             sequential: bool,
         ) -> DispatchResultWithPostInfo {
@@ -739,7 +737,6 @@ pub mod pallet {
             xtx_id: XExecSignalId<T>,
             side_effect: SideEffect<
                 <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, <T as Config>::Escrowed>,
             >,
             max_exec_cost: u128,
@@ -814,7 +811,6 @@ pub mod pallet {
             xtx_id: XtxId<T>,
             side_effect: SideEffect<
                 <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
             confirmation: ConfirmedSideEffect<
@@ -931,7 +927,6 @@ pub mod pallet {
             Vec<
                 SideEffect<
                     <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
                 >,
             >,
@@ -945,7 +940,6 @@ pub mod pallet {
             Vec<
                 SideEffect<
                     <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
                 >,
             >,
@@ -1000,6 +994,7 @@ pub mod pallet {
         SetupFailedXtxReverted,
         SetupFailedXtxRevertedTimeout,
         SetupFailedUnknownXtx,
+        InvalidFSXBidStateLocated,
         EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished,
         FatalXtxTimeoutXtxIdNotMatched,
         RelayEscrowedFailedNothingToConfirm,
@@ -1358,9 +1353,7 @@ impl<T: Config> Pallet<T> {
             XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         >,
         subjected_account: &T::AccountId,
-        side_effects: &Vec<
-            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
+        side_effects: &Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
         maybe_full_side_effects: Option<
             Vec<
                 Vec<
@@ -1427,7 +1420,7 @@ impl<T: Config> Pallet<T> {
                 let requester = maybe_requester_charge.ok_or(Error::<T>::ChargingTransferFailed)?;
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
-                    let offered_reward = fsx.input.prize;
+                    let offered_reward = fsx.input.max_fee;
                     if offered_reward > Zero::zero() {
                         <T as Config>::AccountManager::deposit(
                             charge_id,
@@ -1513,11 +1506,7 @@ impl<T: Config> Pallet<T> {
     }
 
     fn validate(
-        side_effects: &[SideEffect<
-            T::AccountId,
-            T::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >],
+        side_effects: &[SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>],
         local_ctx: &mut LocalXtxCtx<T>,
         _requester: &T::AccountId,
         _sequential: bool,
@@ -1557,12 +1546,17 @@ impl<T: Config> Pallet<T> {
                     SystemHashing<T>,
                 >(side_effect.clone(), &mut local_ctx.local_state)?
             {
-                let (_insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
+                let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
                 // ToDo: Consider to remove the assignment below and move OptionalInsurance to SFX fields:
                 //      sfx.reward = Option<Balance>
                 //      sfx.insurance = Option<Balance>
-                if side_effect.prize != reward {
-                    return Err("Side_effect prize must be equal to reward of Optional Insurance")
+                if side_effect.max_fee != reward {
+                    return Err("Side_effect max_fee must be equal to reward of Optional Insurance")
+                }
+                if side_effect.insurance != insurance {
+                    return Err(
+                        "Side_effect insurance must be equal to reward of Optional Insurance",
+                    )
                 }
 
                 let submission_target_height =
@@ -1580,7 +1574,6 @@ impl<T: Config> Pallet<T> {
                 fn determine_dirty_vs_escrowed_lvl<T: Config>(
                     side_effect: &SideEffect<
                         <T as frame_system::Config>::AccountId,
-                        <T as frame_system::Config>::BlockNumber,
                         EscrowedBalanceOf<T, T::Escrowed>,
                     >,
                 ) -> SecurityLvl {
@@ -1590,9 +1583,9 @@ impl<T: Config> Pallet<T> {
                         || gateway_type == GatewayType::OnCircuit(0);
 
                     if is_escrowed {
-                        SecurityLvl::Escrowed
+                        SecurityLvl::Escrow
                     } else {
-                        SecurityLvl::Dirty
+                        SecurityLvl::Optimistic
                     }
                 }
                 let submission_target_height =
@@ -1624,9 +1617,9 @@ impl<T: Config> Pallet<T> {
             // Push to the single step as long as there's no Dirty side effect
             //  Or if there was no Optimistic/Escrow side effects before
 
-            if sorted_fse.security_lvl != SecurityLvl::Dirty || current_step.is_empty() {
+            if sorted_fse.security_lvl != SecurityLvl::Optimistic || current_step.is_empty() {
                 current_step.push(sorted_fse);
-            } else if sorted_fse.security_lvl == SecurityLvl::Dirty {
+            } else if sorted_fse.security_lvl == SecurityLvl::Optimistic {
                 // R#1: there only can be max 1 dirty side effect at each step.
                 full_side_effects_steps.push(vec![sorted_fse])
             }
@@ -1642,7 +1635,6 @@ impl<T: Config> Pallet<T> {
         _relayer: &T::AccountId,
         side_effect: &SideEffect<
             <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
             EscrowedBalanceOf<T, T::Escrowed>,
         >,
         confirmation: &ConfirmedSideEffect<
@@ -1654,7 +1646,6 @@ impl<T: Config> Pallet<T> {
         fn confirm_order<T: Config>(
             side_effect: &SideEffect<
                 <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
             confirmation: &ConfirmedSideEffect<
@@ -1761,10 +1752,8 @@ impl<T: Config> Pallet<T> {
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
         >,
         _steps_cnt: (u32, u32),
-    ) -> Result<
-        Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        &'static str,
-    > {
+    ) -> Result<Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>, &'static str>
+    {
         Ok(vec![])
     }
 
@@ -1775,16 +1764,13 @@ impl<T: Config> Pallet<T> {
 
     pub fn convert_side_effects(
         side_effects: Vec<Vec<u8>>,
-    ) -> Result<
-        Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        &'static str,
-    > {
-        let side_effects: Vec<
-            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        > = side_effects
-            .into_iter()
-            .filter_map(|se| se.try_into().ok()) // TODO: maybe not
-            .collect();
+    ) -> Result<Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>, &'static str>
+    {
+        let side_effects: Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>> =
+            side_effects
+                .into_iter()
+                .filter_map(|se| se.try_into().ok()) // TODO: maybe not
+                .collect();
         if side_effects.is_empty() {
             Err("No side effects provided")
         } else {
@@ -1902,22 +1888,6 @@ impl<T: Config> Pallet<T> {
         <PendingSFXBids<T>>::get(local_ctx.xtx_id, sfx_id)
     }
 
-    pub(self) fn generate_fsx_ids(
-        fsx_array: &[FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-        >],
-    ) -> Vec<SideEffectId<T>> {
-        let mut fsx_ids: Vec<SideEffectId<T>> = vec![];
-
-        for fsx in fsx_array {
-            fsx_ids.push(fsx.input.generate_id::<SystemHashing<T>>())
-        }
-
-        fsx_ids.clone()
-    }
-
     pub(self) fn get_fsx_total_rewards(
         fsxs: &[FullSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -1928,7 +1898,7 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            acc_rewards += fsx.input.prize;
+            acc_rewards += fsx.input.max_fee;
         }
 
         acc_rewards

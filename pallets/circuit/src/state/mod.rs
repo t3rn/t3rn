@@ -63,22 +63,16 @@ pub enum InsuranceEnact {
 impl CircuitStatus {
     fn determine_fsx_bidding_status<T: Config>(
         fsx: FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-    ) -> CircuitStatus {
+    ) -> Result<CircuitStatus, Error<T>> {
         if let Some(bid) = fsx.best_bid {
-            if fsx.security_lvl == SecurityLvl::Optimistic
-                && (bid.insurance.is_none() || bid.reserved_bond.is_none())
+            if (fsx.security_lvl == SecurityLvl::Optimistic && bid.reserved_bond.is_none())
+                || (fsx.security_lvl == SecurityLvl::Escrow && bid.reserved_bond.is_some())
             {
-                // todo: handle
-                panic!();
-            } else if fsx.security_lvl == SecurityLvl::Escrowed
-                && (bid.insurance.is_some() || bid.reserved_bond.is_some())
-            {
-                // todo: handle
-                panic!();
+                return Err(Error::<T>::InvalidFSXBidStateLocated)
             }
-            CircuitStatus::Bonded
+            Ok(CircuitStatus::Bonded)
         } else {
-            CircuitStatus::PendingBidding
+            Ok(CircuitStatus::PendingBidding)
         }
     }
 
@@ -92,14 +86,15 @@ impl CircuitStatus {
             T::BlockNumber,
             EscrowedBalanceOf<T, T::Escrowed>,
         >],
-    ) -> CircuitStatus {
+    ) -> Result<CircuitStatus, Error<T>> {
         for fsx in fsx_step.iter() {
-            if Self::determine_fsx_bidding_status::<T>(fsx.clone()) == CircuitStatus::PendingBidding
+            if Self::determine_fsx_bidding_status::<T>(fsx.clone())?
+                == CircuitStatus::PendingBidding
             {
-                return CircuitStatus::PendingBidding
+                return Ok(CircuitStatus::PendingBidding)
             }
         }
-        CircuitStatus::Ready
+        Ok(CircuitStatus::Ready)
     }
 
     /// Based solely on full steps + insurance deposits determine the execution status.
@@ -111,7 +106,7 @@ impl CircuitStatus {
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
         let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
 
-        let current_determined_status = Self::determine_bidding_status::<T>(step);
+        let current_determined_status = Self::determine_bidding_status::<T>(step)?;
 
         for (_step_cnt, full_side_effect) in step.iter().enumerate() {
             if current_determined_status == CircuitStatus::PendingBidding

@@ -22,7 +22,7 @@ impl<T: Config> Optimistic<T> {
             return Err(Error::<T>::BiddingInactive)
         }
         let fsx = crate::Pallet::<T>::recover_fsx_by_id(sfx_id, local_ctx)?;
-        let (sfx_max_fee, sfx_security_lvl) = (fsx.input.prize, fsx.security_lvl);
+        let (sfx_max_fee, sfx_security_lvl) = (fsx.input.max_fee, fsx.security_lvl);
 
         if bid > sfx_max_fee {
             return Err(Error::<T>::BiddingRejectedBidTooHigh)
@@ -37,6 +37,7 @@ impl<T: Config> Optimistic<T> {
         let mut sfx_bid =
             SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>::new_none_optimistic(
                 bid,
+                fsx.input.insurance,
                 executor.clone(),
                 local_ctx.xtx.requester.clone(),
             );
@@ -79,7 +80,7 @@ impl<T: Config> Optimistic<T> {
         )
         .map_err(|_e| Error::<T>::BiddingFailedExecutorsBalanceTooLowToReserve)?;
 
-        sfx_bid.insurance = Some(insurance);
+        sfx_bid.insurance = insurance;
         sfx_bid.reserved_bond = Some(insurance);
 
         Ok(sfx_bid.clone())
@@ -93,7 +94,7 @@ impl<T: Config> Optimistic<T> {
         for fsx in optimistic_fsx_in_step {
             let sfx_bid = fsx.expect_sfx_bid();
             let (insurance, reserved_bond) =
-                (*sfx_bid.expect_insurance(), *sfx_bid.expect_reserved_bond());
+                (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
             <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
                 &sfx_bid.executor,
@@ -118,7 +119,7 @@ impl<T: Config> Optimistic<T> {
             if !fsx.is_successfully_confirmed() {
                 let sfx_bid = fsx.expect_sfx_bid();
                 let (insurance, reserved_bond) =
-                    (*sfx_bid.expect_insurance(), *sfx_bid.expect_reserved_bond());
+                    (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
                 // First slash executor
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
@@ -140,7 +141,7 @@ impl<T: Config> Optimistic<T> {
             if fsx.is_successfully_confirmed() {
                 let sfx_bid = fsx.expect_sfx_bid();
                 let (insurance, reserved_bond) =
-                    (*sfx_bid.expect_insurance(), *sfx_bid.expect_reserved_bond());
+                    (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
                 // First unlock honest executor
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(

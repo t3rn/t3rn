@@ -29,17 +29,15 @@ pub const SWAP_SIDE_EFFECT_ID: &[u8; 4] = b"swap";
 pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 
 #[derive(Clone, Eq, PartialEq, Encode, Default, Decode, Debug, TypeInfo)]
-pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
+pub struct SideEffect<AccountId, BalanceOf> {
     pub target: TargetId,
-    // todo: Change to max_fee
-    pub prize: BalanceOf,
-    // todo: Remove since redundant with Xtx
-    pub ordered_at: BlockNumber,
-    // todo: add missing insurance: Option<BalanceOf> field
+    pub max_fee: BalanceOf,
+    pub insurance: BalanceOf,
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
-    pub enforce_executioner: Option<AccountId>,
+    pub requester_nonce: u32,
+    pub enforce_executor: Option<AccountId>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
@@ -70,7 +68,7 @@ where
             encoded_action: [0, 0, 0, 0],
             encoded_args: vec![],
             encoded_args_abi: vec![],
-            security_lvl: SecurityLvl::Dirty,
+            security_lvl: SecurityLvl::Optimistic,
             confirmation_outcome: None,
             confirmed_executioner: None,
             confirmed_received_at: None,
@@ -80,10 +78,9 @@ where
 }
 
 #[cfg(feature = "runtime")]
-impl<AccountId, BlockNumber, BalanceOf> SideEffect<AccountId, BlockNumber, BalanceOf>
+impl<AccountId, BalanceOf> SideEffect<AccountId, BalanceOf>
 where
     AccountId: Encode,
-    BlockNumber: Ord + Copy + sp_runtime::traits::Zero + Encode,
     BalanceOf: Copy + sp_runtime::traits::Zero + Encode + Decode,
 {
     pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
@@ -97,11 +94,10 @@ where
 
 #[cfg(feature = "runtime")]
 /// Decode the side effect from encoded Chain.
-impl<AccountId, BlockNumber, BalanceOf> TryFrom<Vec<u8>>
-    for SideEffect<AccountId, BlockNumber, BalanceOf>
+impl<AccountId, BalanceOf> TryFrom<Vec<u8>>
+    for SideEffect<AccountId, BalanceOf>
 where
     AccountId: Encode + MaxEncodedLen,
-    BlockNumber: Ord + Copy + Zero + Encode,
     BalanceOf: Copy + Zero + Encode + Decode + MaxEncodedLen,
 {
     type Error = &'static str;
@@ -121,14 +117,15 @@ where
         let action_bytes: [u8; 4] = action.into();
         let action_bytes = action_bytes.encode();
 
-        Ok(SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        Ok(SideEffect::<AccountId, BalanceOf> {
             target,
-            prize: Zero::zero(),
-            ordered_at: Zero::zero(),
+            max_fee: Zero::zero(),
             encoded_action: action_bytes,
             encoded_args: args,
             signature: vec![],
-            enforce_executioner: None,
+            insurance: Zero::zero(),
+            requester_nonce: 0,
+            enforce_executor: None
         })
     }
 }
@@ -364,14 +361,13 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
 pub enum SecurityLvl {
-    Dirty,
     Optimistic,
-    Escrowed,
+    Escrow,
 }
 
 impl Default for SecurityLvl {
     fn default() -> Self {
-        SecurityLvl::Dirty
+        SecurityLvl::Optimistic
     }
 }
 
@@ -403,26 +399,28 @@ mod tests {
 
     #[test]
     fn successfully_creates_empty_side_effect() {
-        let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
-            ordered_at: 0,
+            max_fee: 0,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            insurance: 0,
+            requester_nonce: 0,
+            enforce_executor: None
         };
 
         assert_eq!(
             empty_side_effect,
             SideEffect {
                 target: [0, 0, 0, 0],
-                prize: 0,
-                ordered_at: 0,
+                max_fee: 0,
                 encoded_action: vec![],
                 encoded_args: vec![],
                 signature: vec![],
-                enforce_executioner: None,
+                insurance: 0,
+                requester_nonce: 0,
+                enforce_executor: None
             }
         );
     }
@@ -435,10 +433,9 @@ mod tests {
         let optional_insurance = 2u128;
         let optional_reward = 3u128;
 
-        let tsfx_input = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let tsfx_input = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
-            ordered_at: 0,
+            max_fee: 0,
             encoded_action: vec![],
             encoded_args: vec![
                 from.encode(),
@@ -447,15 +444,17 @@ mod tests {
                 [optional_insurance.encode(), optional_reward.encode()].concat(),
             ],
             signature: vec![],
-            enforce_executioner: None,
+            insurance: 0,
+            requester_nonce: 0,
+            enforce_executor: None
         };
 
         assert_eq!(
             tsfx_input,
             SideEffect {
                 target: [0, 0, 0, 0],
-                prize: 0,
-                ordered_at: 0,
+                max_fee: 0,
+                insurance: 0,
                 encoded_action: vec![],
                 encoded_args: vec![
                     vec![
@@ -473,21 +472,23 @@ mod tests {
                     ]
                 ],
                 signature: vec![],
-                enforce_executioner: None,
+                requester_nonce: 0,
+                enforce_executor: None
             }
         );
     }
 
     #[test]
     fn successfully_defaults_side_effect_to_an_empty_one() {
-        let empty_side_effect = SideEffect::<u64, BlockNumber, BalanceOf> {
+        let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
-            ordered_at: 0,
+            max_fee: 0,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            insurance: 0,
+            requester_nonce: 0,
+            enforce_executor: None
         };
 
         assert_eq!(empty_side_effect, SideEffect::default(),);
@@ -509,7 +510,7 @@ mod tests {
                 }),
             );
         let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+        let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
 
         assert_eq!(s.target, *b"pdot");
         assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
@@ -540,7 +541,7 @@ mod tests {
                 }),
             );
         let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+        let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
 
         assert_eq!(s.target, *b"pdot");
         assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
@@ -569,7 +570,7 @@ mod tests {
                 },
             );
         let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+        let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
 
         assert_eq!(s.target, *b"pdot");
         assert_eq!(s.encoded_action, *TRANSFER_SIDE_EFFECT_ID);
@@ -598,7 +599,7 @@ mod tests {
                 },
             );
         let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+        let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
 
         assert_eq!(s.target, *b"pdot");
         assert_eq!(s.encoded_action, *MULTI_TRANSFER_SIDE_EFFECT_ID);
@@ -637,7 +638,7 @@ mod tests {
                 },
             );
         let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+        let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
 
         assert_eq!(s.target, *b"pdot");
         assert_eq!(s.encoded_action, *ADD_LIQUIDITY_SIDE_EFFECT_ID);
@@ -676,7 +677,7 @@ mod tests {
                 },
             );
         let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+        let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
 
         assert_eq!(s.target, *b"pdot");
         assert_eq!(s.encoded_action, *SWAP_SIDE_EFFECT_ID);
@@ -701,7 +702,7 @@ mod tests {
                 Operation::<AccountId, BalanceOf, Hash>::Data { index },
             );
         let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+        let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
 
         assert_eq!(s.target, *b"pdot");
         assert_eq!(s.encoded_action, *DATA_SIDE_EFFECT_ID);
@@ -721,8 +722,7 @@ mod tests {
             s,
             SideEffect {
                 target: [112, 100, 111, 116],
-                prize: 0,
-                ordered_at: 0,
+                max_fee: 0,
                 encoded_action: vec![116, 114, 97, 110],
                 encoded_args: vec![
                     vec![
@@ -736,7 +736,9 @@ mod tests {
                     vec![100, 0, 0, 0],
                 ],
                 signature: vec![],
-                enforce_executioner: None,
+                insurance: 0,
+                requester_nonce: 0,
+                enforce_executor: None
             }
         );
     }

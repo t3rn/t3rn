@@ -28,7 +28,7 @@ pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
-    pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
+    pub input: SideEffect<AccountId, BalanceOf>,
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
     pub security_lvl: SecurityLvl,
     pub submission_target_height: Bytes,
@@ -44,8 +44,8 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
 pub struct SFXBid<AccountId, BalanceOf> {
     /// Bid amount - always below SFX::max_fee requested by a user
     pub bid: BalanceOf,
-    /// Optional insurance in case of optimistic FSX
-    pub insurance: Option<BalanceOf>,
+    /// Insurance in case of optimistic FSX
+    pub insurance: BalanceOf,
     /// Optional reserved bond in case of optimistic FSX
     pub reserved_bond: Option<BalanceOf>,
     /// Bidding Executor belonging to the active set
@@ -55,10 +55,10 @@ pub struct SFXBid<AccountId, BalanceOf> {
 }
 
 impl<AccountId, BalanceOf> SFXBid<AccountId, BalanceOf> {
-    pub fn new_none_optimistic(bid: BalanceOf, executor: AccountId, requester: AccountId) -> Self {
+    pub fn new_none_optimistic(bid: BalanceOf, insurance: BalanceOf, executor: AccountId, requester: AccountId) -> Self {
         SFXBid {
             bid,
-            insurance: None,
+            insurance,
             reserved_bond: None,
             executor,
             requester,
@@ -68,13 +68,11 @@ impl<AccountId, BalanceOf> SFXBid<AccountId, BalanceOf> {
     pub fn expect_reserved_bond(&self) -> &BalanceOf {
         self.reserved_bond
             .as_ref()
-            .expect("Accessed reserved_bond  and expected it to be a part of SFXBid")
+            .expect("Accessed reserved_bond and expected it to be a part of SFXBid")
     }
 
-    pub fn expect_insurance(&self) -> &BalanceOf {
-        self.insurance
-            .as_ref()
-            .expect("Accessed insurance  and expected it to be a part of SFXBid")
+    pub fn get_insurance(&self) -> &BalanceOf {
+        &self.insurance
     }
 }
 
@@ -120,7 +118,7 @@ where
         let confirmed_cost = self.clone().confirmed.and_then(|c| c.cost);
         Ok(HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: self.input.target,
-            prize: self.input.prize,
+            prize: self.input.max_fee,
             encoded_action: TargetId::try_from(self.input.encoded_action.clone())
                 .unwrap_or_default(),
             encoded_args: self.input.encoded_args,
@@ -154,7 +152,7 @@ mod tests {
     fn successfully_creates_empty_side_effect() {
         let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
+            max_fee: 0,
             ordered_at: 0,
             encoded_action: vec![],
             encoded_args: vec![],
@@ -166,7 +164,7 @@ mod tests {
             empty_side_effect,
             SideEffect {
                 target: [0, 0, 0, 0],
-                prize: 0,
+                max_fee: 0,
                 ordered_at: 0,
                 encoded_action: vec![],
                 encoded_args: vec![],
@@ -186,7 +184,7 @@ mod tests {
 
         let tsfx_input = SideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
+            max_fee: 0,
             ordered_at: 0,
             encoded_action: vec![],
             encoded_args: vec![
@@ -201,7 +199,7 @@ mod tests {
 
         let tfsfx = FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
             input: tsfx_input.clone(),
-            security_lvl: SecurityLvl::Dirty,
+            security_lvl: SecurityLvl::Optimistic,
             submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             confirmed: Some(ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
                 err: Some(ConfirmationOutcome::Success),
@@ -237,7 +235,7 @@ mod tests {
                     ]
                 ],
                 encoded_args_abi: vec![],
-                security_lvl: SecurityLvl::Dirty,
+                security_lvl: SecurityLvl::Optimistic,
                 confirmation_outcome: Some(ConfirmationOutcome::Success),
                 confirmed_executioner: Some(AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
@@ -251,7 +249,7 @@ mod tests {
             tsfx_input,
             SideEffect {
                 target: [0, 0, 0, 0],
-                prize: 0,
+                max_fee: 0,
                 ordered_at: 0,
                 encoded_action: vec![],
                 encoded_args: vec![
@@ -279,7 +277,7 @@ mod tests {
     fn successfully_generates_id_for_side_empty_effect() {
         let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
+            max_fee: 0,
             ordered_at: 0,
             encoded_action: vec![],
             encoded_args: vec![],
@@ -299,7 +297,7 @@ mod tests {
     fn successfully_defaults_side_effect_to_an_empty_one() {
         let empty_side_effect = SideEffect::<u64, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
+            max_fee: 0,
             ordered_at: 0,
             encoded_action: vec![],
             encoded_args: vec![],
