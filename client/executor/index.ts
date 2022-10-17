@@ -1,12 +1,12 @@
-import {SideEffect} from "./circuit/executions/sideEffect";
+import {SideEffect} from "./executionManager/sideEffect";
 
 require('dotenv').config()
 import CircuitListener from "./circuit/listener"
 import CircuitRelayer from "./circuit/relayer"
 import SubstrateRelayer from "./gateways/substrate/relayer"
-import CostEstimator from "./gateways/substrate/costEstimator";
+import Estimator from "./gateways/substrate/estimator";
 import config from "./config/config.json"
-import { Execution } from "./circuit/executions/execution"
+import { Execution } from "./executionManager/execution"
 import { ExecutionManager } from "./executionManager"
 import createDebug from "debug"
 
@@ -45,7 +45,7 @@ class InstanceManager {
                 })
 
                 // setup in executionManager
-                this.executionManager.addGateway(entry.id)
+                this.executionManager.addGateway(entry.id, instance)
                 // store relayer instance locally
                 this.instances[entry.id] = instance
             }
@@ -65,8 +65,8 @@ class InstanceManager {
         })
 
         // new Execution has been received
-        this.circuitListener.on("NewExecution", async (execution: Execution) => {
-            this.executionManager.addExecution(execution);
+        this.circuitListener.on("NewExecution", async (execution: any) => {
+            this.executionManager.createExecution(execution);
         })
 
         //SideEffect has been confirmed on Circuit

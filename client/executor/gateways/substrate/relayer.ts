@@ -1,9 +1,9 @@
 import {EventEmitter} from "events"
 import {ApiPromise, Keyring, WsProvider} from "@polkadot/api"
-import {EventMapper, SideEffect, TransactionType} from "../../circuit/executions/sideEffect"
+import {EventMapper, SideEffect, TransactionType} from "../../executionManager/sideEffect"
 import {fetchNonce, getEventProofs} from "../../utils"
 import createDebug from "debug"
-import CostEstimator from "./costEstimator";
+import Estimator from "./estimator";
 import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 
 export default class SubstrateRelayer extends EventEmitter {
@@ -29,7 +29,6 @@ export default class SubstrateRelayer extends EventEmitter {
               ? keyring.addFromUri("//Executor//default")
               : keyring.addFromMnemonic(process.env.SIGNER_ROCOCO)
 
-        let cost = new CostEstimator(id, this.api, this.signer)
         this.name = name
         this.nonce = await this.fetchNonce(this.api, this.signer.address)
     }
