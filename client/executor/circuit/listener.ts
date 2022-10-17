@@ -3,7 +3,7 @@ import { EventEmitter } from "events"
 import { TextDecoder } from "util"
 import{ ApiPromise, WsProvider }from '@polkadot/api';
 import { H256 } from '@polkadot/types/interfaces';
-import { Execution } from "./executions/execution"
+import { Execution } from "../executionManager/execution"
 import createDebug from "debug"
 
 export default class CircuitListener extends EventEmitter {
@@ -31,8 +31,8 @@ api: ApiPromise
                     let sfxId = notification.event.data[0].toHex();
                     this.emit("SideEffectConfirmed", sfxId)
                 } else if (notification.event.method === "NewSideEffectsAvailable") {
-                    const execution = new Execution(notification.event.data)
-                    this.emit("NewExecution", execution)
+                    // const execution = new Execution(notification.event.data)
+                    this.emit("NewExecution", notification.event.data)
                 } else if (notification.event.method === "XTransactionXtxFinishedExecAllSteps") {
                     const xtxId = notification.event.data[0].toHex();
                     this.emit("ExecutionComplete", xtxId)

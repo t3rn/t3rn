@@ -1,7 +1,7 @@
 import { EventEmitter } from "events"
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { fetchNonce } from "../utils/"
-import { SideEffect } from "./executions/sideEffect"
+import { SideEffect } from "../executionManager/sideEffect"
 import createDebug from "debug"
 import types from "../types.json"
 const fs = require("fs");

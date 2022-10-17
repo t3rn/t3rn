@@ -26,6 +26,7 @@ export class SideEffect {
     target: string;
     hasInsurance: boolean;
     iAmExecuting: boolean;
+    relayer: any
 
     // SideEffect data
     id: string;
@@ -37,6 +38,9 @@ export class SideEffect {
     inclusionData: any; // contains encoded payload, inclusionProof, and blockHash
     targetInclusionHeight: any;
     executor: string;
+
+    // Risk/Reward Analysis
+    cost: number;
 
     constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string) {
         if(this.knownTransactionInterface(sideEffect.encodedAction)) {

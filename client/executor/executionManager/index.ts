@@ -1,8 +1,9 @@
 import {EventEmitter} from "events"
 import createDebug from "debug"
-import {Execution} from "./circuit/executions/execution";
-import {ProfitEstimation} from "./profitEstimation";
-import {SideEffect, SideEffectStatus} from "./circuit/executions/sideEffect";
+import {Execution} from "./execution";
+import {SideEffect, SideEffectStatus} from "./sideEffect";
+import config from "../config/config.json"
+import Estimator from "../gateways/substrate/estimator";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -34,25 +35,29 @@ export class ExecutionManager extends EventEmitter {
         [sfxId: string]: string
     } = {};
 
-    profitEstimation: ProfitEstimation = new ProfitEstimation();
+	targetEstimator: {} = {};
 
     // adds gateways on startup
-    addGateway(id: string) {
+    addGateway(id: string, relayer: any) {
         this.queue[id] = {
             blockHeight: 0,
             waitingForInsurance: [],
             readyToExecute: [],
             readyToConfirm: {},
         }
+
+		this.targetEstimator[id] = new Estimator(relayer);
     }
 
     // add a new execution to the execution manager and initialize event listeners
-    addExecution(execution: Execution) {
+    createExecution(rawExecution: any) {
+		const execution = new Execution(rawExecution);
         this.executions[execution.xtxId.toHex()] = execution;
 
         Object.keys(execution.sideEffects).forEach((sfxId: string) => {
             // add sfxId to execution lookup mapping
             this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
+			this.targetEstimator[execution.sideEffects[sfxId].target].estimateProfit(execution.sideEffects[sfxId])
         })
 
         // listens for step confirmation signal. This is called after a step is confirmed, and SideEffects in the next step are already executed.
