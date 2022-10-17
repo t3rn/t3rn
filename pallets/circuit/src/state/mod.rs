@@ -31,17 +31,16 @@ pub type XExecStepSideEffectId<T> = <T as frame_system::Config>::Hash;
 pub enum CircuitStatus {
     Requested,
     PendingBidding,
-    Bonded,
     Ready,
     PendingExecution,
     Finished,
     FinishedAllSteps,
+    Committed,
+    DroppedAtBidding,
+    Reverted,
     RevertTimedOut,
     RevertKill,
     RevertMisbehaviour,
-    DroppedAtBidding,
-    Committed,
-    Reverted,
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -64,13 +63,8 @@ impl CircuitStatus {
     fn determine_fsx_bidding_status<T: Config>(
         fsx: FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
     ) -> Result<CircuitStatus, Error<T>> {
-        if let Some(bid) = fsx.best_bid {
-            if (fsx.security_lvl == SecurityLvl::Optimistic && bid.reserved_bond.is_none())
-                || (fsx.security_lvl == SecurityLvl::Escrow && bid.reserved_bond.is_some())
-            {
-                return Err(Error::<T>::InvalidFSXBidStateLocated)
-            }
-            Ok(CircuitStatus::Bonded)
+        if let Some(_bid) = fsx.best_bid {
+            Ok(CircuitStatus::Ready)
         } else {
             Ok(CircuitStatus::PendingBidding)
         }
@@ -192,6 +186,9 @@ pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
     /// The owner of the bid
     pub requester: AccountId,
 
+    /// The owner of the bid
+    pub requester_nonce: u32,
+
     /// Expiry timeout
     pub timeouts_at: BlockNumber,
 
@@ -217,6 +214,8 @@ impl<
     pub fn new(
         // Requester of xtx
         requester: &AccountId,
+        // Requester' nonce of xtx
+        requester_nonce: u32,
         // Expiry timeout
         timeouts_at: BlockNumber,
         // Schedule execution of steps in the future intervals
@@ -228,6 +227,7 @@ impl<
     ) -> Self {
         XExecSignal {
             requester: requester.clone(),
+            requester_nonce,
             timeouts_at,
             delay_steps_at,
             status: Default::default(),
@@ -262,7 +262,20 @@ impl<
         XExecSignalId<T>,
         XExecSignal<T::AccountId, T::BlockNumber, BalanceOf>,
     ) {
-        let signal = XExecSignal::new(requester, timeouts_at, delay_steps_at, total_reward, (0, 0));
+        let requester_nonce = Decode::decode(
+            &mut &frame_system::Pallet::<T>::account_nonce(requester).encode()[..],
+        )
+        .expect(
+            "System::Index decoding try to u32 should always succeed since set in Runtime Config",
+        );
+        let signal = XExecSignal::new(
+            requester,
+            requester_nonce,
+            timeouts_at,
+            delay_steps_at,
+            total_reward,
+            (0, 0),
+        );
         let id = signal.generate_id::<T>();
         (id, signal)
     }

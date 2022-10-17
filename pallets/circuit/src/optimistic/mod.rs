@@ -1,4 +1,6 @@
 use crate::{pallet::Error, *};
+use frame_support::traits::fungible::Inspect;
+use sp_runtime::traits::Zero;
 
 use frame_support::traits::ReservableCurrency;
 
@@ -22,17 +24,24 @@ impl<T: Config> Optimistic<T> {
             return Err(Error::<T>::BiddingInactive)
         }
         let fsx = crate::Pallet::<T>::recover_fsx_by_id(sfx_id, local_ctx)?;
-        let (sfx_max_fee, sfx_security_lvl) = (fsx.input.max_fee, fsx.security_lvl);
-
+        let (sfx_max_fee, sfx_security_lvl) = (fsx.input.max_fee, fsx.security_lvl.clone());
+        // Check if bid doesn't go below dust
+        if bid < <T::Escrowed as EscrowTrait<T>>::Currency::minimum_balance() {
+            return Err(Error::<T>::BiddingRejectedBidBelowDust)
+        }
+        // Check if bid is attractive enough for requester
         if bid > sfx_max_fee {
             return Err(Error::<T>::BiddingRejectedBidTooHigh)
         }
-
-        if let Some(current_best_bid) = current_accepted_bid {
-            if current_best_bid.bid < bid {
+        // Check if bid beats the previous ones
+        if let Some(current_best_bid) = &current_accepted_bid {
+            if current_best_bid.bid <= bid {
                 return Err(Error::<T>::BiddingRejectedBetterBidFound)
             }
         }
+        // Check if bid candidate has enough balance and reserve
+        <T::Escrowed as EscrowTrait<T>>::Currency::reserve(executor, bid + fsx.input.insurance)
+            .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
 
         let mut sfx_bid =
             SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>::new_none_optimistic(
@@ -44,6 +53,19 @@ impl<T: Config> Optimistic<T> {
         // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
         if sfx_security_lvl == SecurityLvl::Optimistic {
             sfx_bid = Self::bond_4_sfx(executor, local_ctx, &mut sfx_bid, sfx_id)?;
+        }
+
+        // Un-reserve the funds of discarded bidder.
+        // Warning: From this point on all of the next operations must be infallible.
+        if let Some(current_best_bid) = &current_accepted_bid {
+            let mut total_unreserve = current_best_bid.insurance + current_best_bid.bid;
+            if let Some(bond) = current_best_bid.reserved_bond {
+                total_unreserve += bond;
+            }
+            <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                &current_best_bid.executor,
+                total_unreserve,
+            );
         }
 
         Ok(sfx_bid)
@@ -71,17 +93,14 @@ impl<T: Config> Optimistic<T> {
             >>(),
         );
 
-        // todo/fixme: add insurance field to fsx.input.insurance
-        let insurance = Zero::zero();
-
-        <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve(
-            executor,
-            insurance + total_xtx_step_optimistic_rewards_of_others,
-        )
-        .map_err(|_e| Error::<T>::BiddingFailedExecutorsBalanceTooLowToReserve)?;
-
-        sfx_bid.insurance = insurance;
-        sfx_bid.reserved_bond = Some(insurance);
+        if total_xtx_step_optimistic_rewards_of_others > Zero::zero() {
+            <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve(
+                executor,
+                total_xtx_step_optimistic_rewards_of_others,
+            )
+            .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
+            sfx_bid.reserved_bond = Some(total_xtx_step_optimistic_rewards_of_others);
+        }
 
         Ok(sfx_bid.clone())
     }

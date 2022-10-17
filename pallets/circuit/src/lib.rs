@@ -30,7 +30,7 @@ use crate::{optimistic::Optimistic, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
-    traits::{Currency, ExistenceRequirement::AllowDeath, Get},
+    traits::{Currency, ExistenceRequirement::AllowDeath, Get, ReservableCurrency},
     weights::Weight,
     RuntimeDebug,
 };
@@ -150,7 +150,7 @@ pub mod pallet {
     /// Links mapping SFX 2 XTX
     ///
     #[pallet::storage]
-    #[pallet::getter(fn local_side_effect_to_xtx_id_links)]
+    #[pallet::getter(fn local_sidfe_effect_to_xtx_id_links)]
     pub type SFX2XTXLinksMap<T> =
         StorageMap<_, Identity, SideEffectId<T>, XExecSignalId<T>, OptionQuery>;
 
@@ -371,7 +371,7 @@ pub mod pallet {
                 })
                 .map(|(xtx_id, _bidding_timeouts_at)| {
                     let mut local_ctx = Self::setup(
-                        CircuitStatus::RevertTimedOut,
+                        CircuitStatus::PendingBidding,
                         &Self::account_id(),
                         Zero::zero(),
                         Some(xtx_id),
@@ -396,12 +396,16 @@ pub mod pallet {
                         }
                     }
 
+
+                    let status_change = Self::update(&mut local_ctx).unwrap();
+
+                    Self::square_up(&mut local_ctx, None)
+                        .expect("Expect Bonding Bids at square up to be infallible since funds of requester have been reserved at the SFX submission");
+
                     Self::apply(
                         &mut local_ctx,
-                        (CircuitStatus::PendingBidding, CircuitStatus::Bonded),
+                        status_change,
                     );
-
-                    // Drop at bidding
                 });
             // Go over pending Bids to discover whether
 
@@ -584,7 +588,7 @@ pub mod pallet {
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
 
             // Account fees and charges
-            Self::square_up(&mut local_xtx_ctx, Some(requester.clone()), None)?;
+            Self::square_up(&mut local_xtx_ctx, None)?;
 
             // Update local context
             let status_change = Self::update(&mut local_xtx_ctx)?;
@@ -661,7 +665,7 @@ pub mod pallet {
             )?;
 
             // Account fees and charges
-            Self::square_up(&mut local_xtx_ctx, Some(requester.clone()), None)?;
+            Self::square_up(&mut local_xtx_ctx, None)?;
 
             // Update local context
             let status_change = Self::update(&mut local_xtx_ctx)?;
@@ -780,7 +784,6 @@ pub mod pallet {
 
             Self::square_up(
                 &mut local_xtx_ctx,
-                None,
                 Some((charge_id, executor, total_max_fees)),
             )?;
 
@@ -822,17 +825,17 @@ pub mod pallet {
             _block_hash: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
+            let executor = Self::authorize(origin, CircuitRole::Executor)?;
 
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingExecution,
-                &relayer,
+                &executor,
                 Zero::zero(),
                 Some(xtx_id),
             )?;
 
-            Self::confirm(&mut local_xtx_ctx, &relayer, &side_effect, &confirmation)?;
+            Self::confirm(&mut local_xtx_ctx, &executor, &side_effect, &confirmation)?;
 
             let status_change = Self::update(&mut local_xtx_ctx)?;
 
@@ -848,7 +851,7 @@ pub mod pallet {
             Self::emit(
                 local_xtx_ctx.xtx_id,
                 maybe_xtx_changed,
-                &relayer,
+                &executor,
                 &vec![],
                 assert_full_side_effects_changed,
             );
@@ -972,6 +975,8 @@ pub mod pallet {
         RequesterNotEnoughBalance,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
+        XtxChargeFailedRequesterBalanceTooLow,
+        XtxChargeBondDepositFailedCantAccessBid,
         FinalizeSquareUpFailed,
         CriticalStateSquareUpCalledToFinishWithoutFsxConfirmed,
         RewardTransferFailed,
@@ -979,6 +984,8 @@ pub mod pallet {
         SideEffectsValidationFailed,
         InsuranceBondNotRequired,
         BiddingInactive,
+        BiddingRejectedBidBelowDust,
+        BiddingRejectedExecutorNotEnoughBalance,
         BiddingRejectedBidTooHigh,
         BiddingRejectedBetterBidFound,
         BiddingFailedExecutorsBalanceTooLowToReserve,
@@ -1078,7 +1085,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Ready
             | CircuitStatus::PendingExecution
             | CircuitStatus::PendingBidding
-            | CircuitStatus::Bonded
+            | CircuitStatus::Ready
             | CircuitStatus::Finished => {
                 if let Some(id) = xtx_id {
                     let xtx = <Self as Store>::XExecSignals::get(id)
@@ -1132,7 +1139,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Requested => {
                 local_ctx.xtx.steps_cnt = (0, local_ctx.full_side_effects.len() as u32);
             },
-            // CircuitStatus::PendingBidding | CircuitStatus::Bonded => {
+            // CircuitStatus::PendingBidding | CircuitStatus::Ready => {
             //     local_ctx.xtx.status =
             //         CircuitStatus::determine_xtx_status::<T>(&local_ctx.full_side_effects)?;
             // },
@@ -1269,9 +1276,12 @@ impl<T: Config> Pallet<T> {
             },
             CircuitStatus::PendingBidding => {
                 match new_status {
-                    CircuitStatus::Bonded => {
+                    CircuitStatus::Ready => {
                         <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
                             *x = Some(local_ctx.full_side_effects.clone())
+                        });
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.xtx.clone())
                         });
                     },
                     CircuitStatus::DroppedAtBidding => {
@@ -1310,10 +1320,7 @@ impl<T: Config> Pallet<T> {
                 )
             },
             // fixme: Separate for Bonded
-            CircuitStatus::Ready
-            | CircuitStatus::Bonded
-            | CircuitStatus::PendingExecution
-            | CircuitStatus::Finished => {
+            CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
                 // Update set of full side effects assuming the new confirmed has appeared
                 <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.full_side_effects.clone())
@@ -1400,7 +1407,7 @@ impl<T: Config> Pallet<T> {
         local_ctx.xtx.status = cause.clone();
         Optimistic::<T>::try_slash(local_ctx);
 
-        Self::square_up(local_ctx, None, None)
+        Self::square_up(local_ctx, None)
             .expect("Expect Revert and RevertKill options to square up to be infallible");
 
         Self::apply(local_ctx, (cause.clone(), cause));
@@ -1408,34 +1415,68 @@ impl<T: Config> Pallet<T> {
 
     fn square_up(
         local_ctx: &mut LocalXtxCtx<T>,
-        maybe_requester_charge: Option<<T as frame_system::Config>::AccountId>,
         maybe_xbi_execution_charge: Option<(
             T::Hash,
             <T as frame_system::Config>::AccountId,
             EscrowedBalanceOf<T, T::Escrowed>,
         )>,
     ) -> Result<(), Error<T>> {
+        let requester = local_ctx.xtx.requester.clone();
+        let _current_step_fsx = Self::get_current_step_fsx(local_ctx);
+
+        let unreserve_requester_xtx_max_fees = |current_step_fsx: &Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            >,
+        >| {
+            let mut total_max_fees = Zero::zero();
+            for fsx in current_step_fsx.iter() {
+                total_max_fees += fsx.input.max_fee;
+            }
+
+            <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(&requester, total_max_fees);
+        };
         match local_ctx.xtx.status {
             CircuitStatus::Requested => {
-                let requester = maybe_requester_charge.ok_or(Error::<T>::ChargingTransferFailed)?;
+                let mut total_max_fees = Zero::zero();
+                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
+                    total_max_fees += fsx.input.max_fee;
+                }
+                <T::Escrowed as EscrowTrait<T>>::Currency::reserve(&requester, total_max_fees)
+                    .map_err(|_e| Error::<T>::XtxChargeFailedRequesterBalanceTooLow)?;
+            },
+            CircuitStatus::DroppedAtBidding => {
+                unreserve_requester_xtx_max_fees(Self::get_current_step_fsx(local_ctx));
+            },
+            CircuitStatus::Ready => {
+                // Unreserve the max_fees and replace with possibly lower bids of executor in following loop
+                unreserve_requester_xtx_max_fees(Self::get_current_step_fsx(local_ctx));
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
-                    let offered_reward = fsx.input.max_fee;
-                    if offered_reward > Zero::zero() {
+                    let bid_4_fsx: &SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>> =
+                        if let Some(bid) = &fsx.best_bid {
+                            bid
+                        } else {
+                            return Err(Error::<T>::XtxChargeBondDepositFailedCantAccessBid)
+                        };
+
+                    if bid_4_fsx.bid > Zero::zero() {
                         <T as Config>::AccountManager::deposit(
                             charge_id,
                             &requester,
                             Zero::zero(),
-                            offered_reward,
+                            bid_4_fsx.bid,
                             BenefitSource::TrafficRewards,
                             CircuitRole::Requester,
-                            None,
+                            Some(bid_4_fsx.executor.clone()),
                         )
                         .map_err(|_e| Error::<T>::ChargingTransferFailed)?;
                     }
                 }
             },
-            CircuitStatus::PendingExecution | CircuitStatus::Ready => {
+            CircuitStatus::PendingExecution => {
                 let (charge_id, executor_payee, charge_fee) =
                     maybe_xbi_execution_charge.ok_or(Error::<T>::ChargingTransferFailed)?;
                 <T as Config>::AccountManager::deposit(
@@ -1539,7 +1580,7 @@ impl<T: Config> Pallet<T> {
             })?;
 
             if let Some(insurance_and_reward) =
-                UniversalSideEffectsProtocol::check_if_insurance_required::<
+                UniversalSideEffectsProtocol::ensure_required_insurance::<
                     T::AccountId,
                     T::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
@@ -1547,12 +1588,14 @@ impl<T: Config> Pallet<T> {
                 >(side_effect.clone(), &mut local_ctx.local_state)?
             {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
+
                 // ToDo: Consider to remove the assignment below and move OptionalInsurance to SFX fields:
                 //      sfx.reward = Option<Balance>
                 //      sfx.insurance = Option<Balance>
                 if side_effect.max_fee != reward {
                     return Err("Side_effect max_fee must be equal to reward of Optional Insurance")
                 }
+
                 if side_effect.insurance != insurance {
                     return Err(
                         "Side_effect insurance must be equal to reward of Optional Insurance",
