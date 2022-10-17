@@ -1,0 +1,306 @@
+# Relaychain Configuration
+relaychain:
+  image: parity/polkadot:v0.9.27 # the docker image to use
+  chain: rococo-local # the chain to use
+  runtimeGenesisConfig: # additonal genesis override
+    balances:
+      balances:
+        - [
+          5Ec4AhPV91i9yNuiWuNunPf6AQCYDhFTTA4G5QCbtqYApH9E, # parachain 2001
+          10000000000000000,
+        ]
+        - [
+          5Ec4AhPUwPeyTFyuhGuBbD224mY85LKLMSqSSo33JYWCazU4, # parachain 2000
+          10000000000000000,
+        ]
+        - [
+          5Ec4AhPQ8esUzs1gsg6DiUp9q87vJgFNHhPmrXwYiU9FFR7H, # parachain 3000
+          10000000000000000,
+        ]
+    configuration:
+      config:
+        validation_upgrade_cooldown: 10
+        validation_upgrade_delay: 10
+    hrmp:
+      preopenHrmpChannels:
+        # 1
+        - sender: 1
+          recipient: 2
+          maxCapacity: 8
+          maxMessageSize: 102400
+        - sender: 1
+          recipient: 3
+          maxCapacity: 8
+          maxMessageSize: 102400
+        #         - sender: 1
+        #           recipient: 4
+        #           maxCapacity: 8
+        #           maxMessageSize: 102400
+        # - sender: 1
+        #   recipient: 5
+        #   maxCapacity: 8
+        #   maxMessageSize: 102400
+        # 2
+        - sender: 2
+          recipient: 1
+          maxCapacity: 8
+          maxMessageSize: 102400
+        - sender: 2
+          recipient: 3
+          maxCapacity: 8
+          maxMessageSize: 102400
+        #         - sender: 2
+        #           recipient: 4
+        #           maxCapacity: 8
+        #           maxMessageSize: 102400
+        # - sender: 2
+        #   recipient: 5
+        #   maxCapacity: 8
+        #   maxMessageSize: 102400
+        # 3
+        - sender: 3
+          recipient: 2
+          maxCapacity: 8
+          maxMessageSize: 102400
+        - sender: 3
+          recipient: 1
+          maxCapacity: 8
+          maxMessageSize: 102400
+        #         - sender: 3
+        #           recipient: 4
+        #           maxCapacity: 8
+        #           maxMessageSize: 102400
+        # - sender: 3
+        #   recipient: 5
+        #   maxCapacity: 8
+        #   maxMessageSize: 102400
+        # 4
+        #         - sender: 4
+        #           recipient: 2
+        #           maxCapacity: 8
+        #           maxMessageSize: 102400
+        #         - sender: 4
+        #           recipient: 3
+        #           maxCapacity: 8
+        #           maxMessageSize: 102400
+        #         - sender: 4
+        #           recipient: 1
+        #           maxCapacity: 8
+        #           maxMessageSize: 102400
+        # - sender: 4
+        #   recipient: 5
+        #   maxCapacity: 8
+        #   maxMessageSize: 102400
+        # # 5
+        # - sender: 5
+        #   recipient: 2
+        #   maxCapacity: 8
+        #   maxMessageSize: 102400
+        # - sender: 5
+        #   recipient: 3
+        #   maxCapacity: 8
+        #   maxMessageSize: 102400
+        # - sender: 5
+        #   recipient: 4
+        #   maxCapacity: 8
+        #   maxMessageSize: 102400
+        # - sender: 5
+        #   recipient: 1
+        #   maxCapacity: 8
+        #   maxMessageSize: 102400
+  env: # environment variables for all relaychain nodes
+    RUST_LOG: debug
+  flags: # additional CLI flags for all relaychain nodes
+    - --rpc-methods=unsafe
+  nodes: # nodes config
+    - name: alice # the node name and session key, this imply `--alice`
+      wsPort: 9944 # default ws port number is `9944 + global_node_index`
+      rpcPort: 9933 # default rpc port number is `9933 + global_node_index`
+      port: 30333 # default libp2p port number is `30333 + global_node_index`
+      flags: # additional CLI flags for this node
+        - --force-authoring
+    - name: bob
+    - name: charlie
+
+# Parachain Configuration
+parachains:
+  #   - image: trappistnetwork/trappist-node:latest
+  - image: parity/polkadot-parachain:latest
+    chain: # this could be a string like `dev` or a config object
+      #       base: trappist-rococo # the chain to use
+      base: statemine-local # the chain to use
+      collators:
+        - alice
+        - bob
+        - charlie
+      sudo: alice
+    id: 1 # override parachain id
+    parachain: true # this is parachain, not parathread
+    flags: # CLI flags for this parachain nodes
+      - --rpc-methods=unsafe
+      - --force-authoring
+      - --execution=wasm
+    relaychainFlags: # CLI flags for the relaychain port
+      - --execution=wasm
+    env: # environment variables for this parachain nodes
+      RUST_LOG: error,xcm::filter_asset_location=trace,xcm::trace
+    nodes: # nodes config
+      - wsPort: 9847
+        rpcPort: 9836
+        port: 28336
+        flags: # additional CLI flags for this node
+          - --alice
+        relaychainFlags: # additional CLI flags for relaychain part
+          - --name=relaychain-alice
+      - flags:
+          - --bob
+      - flags:
+          - --charlie
+
+  # Second parachain
+  - image: t3rn/t0rn-collator:v1.1.0-rc.1
+    chain:
+      base: rococo
+      collators:
+        - alice
+        - bob
+        - charlie
+      sudo: 5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A
+    id: 2
+    parachain: true
+    flags:
+      - --rpc-methods=unsafe
+      - --force-authoring
+      - --execution=wasm
+    relaychainFlags:
+      - --execution=wasm
+    env:
+      RUST_LOG: warn,xcm::filter_asset_location=trace,xcm=trace
+    volumePath: /node/data2
+    nodes:
+      - flags:
+          - --alice
+        wsPort: 9747
+        rpcPort: 9736
+        port: 27336
+      - flags:
+          - --bob
+        wsPort: 9746
+        rpcPort: 9735
+        port: 27335
+      - flags:
+          - --charlie
+        wsPort: 9745
+        rpcPort: 9734
+        port: 27334
+  - image: t3rn/t0rn-collator:v1.1.0-rc.1
+    chain: # this could be a string like `dev` or a config object
+      base: rococo # the chain to use
+      collators: # override collators
+        - alice # this imply //Alice
+        - bob # or could be a session key public address
+        - charlie
+      sudo: 5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A
+    id: 3 # override parachain id
+    parachain: true # this is parachain, not parathread
+    volumePath: /node/data2
+    flags: # CLI flags for this parachain nodes
+      - --rpc-methods=unsafe
+      - --force-authoring
+      - --execution=wasm
+    relaychainFlags: # CLI flags for the relaychain port
+      - --execution=wasm
+    env: # environment variables for this parachain nodes
+      RUST_LOG: warn,xcm=trace
+    nodes: # nodes config
+      - flags: # additional CLI flags for this node
+          - --alice
+        wsPort: 9647
+        rpcPort: 9636
+        port: 26336
+        relaychainFlags: # additional CLI flags for relaychian part
+          - --name=relaychain-alice
+      - flags:
+          - --bob
+        wsPort: 9646
+        rpcPort: 9635
+        port: 26335
+      - flags:
+          - --charlie
+        wsPort: 9645
+        rpcPort: 9634
+        port: 26334
+  #   - image: parity/polkadot-parachain:latest
+  #     chain: # this could be a string like `dev` or a config object
+  #       base: statemine-local # the chain to use
+  #       collators: # override collators
+  #         - alice # this imply //Alice
+  #         - bob # or could be a session key public address
+  #         - charlie
+  #       sudo: alice # override sudo key to //Alice
+  #     id: 4 # override parachain id
+  #     parachain: true # this is parachain, not parathread
+  #     flags: # CLI flags for this parachain nodes
+  #       - --rpc-methods=unsafe
+  #       - --force-authoring
+  #       - --execution=wasm
+  #     relaychainFlags: # CLI flags for the relaychain port
+  #       - --execution=wasm
+  #     env: # environment variables for this parachain nodes
+  #       RUST_LOG: error,xcm::filter_asset_location=trace,xcm::trace
+  #     nodes: # nodes config
+  #       - wsPort: 9547
+  #         rpcPort: 9536
+  #         port: 25336
+  #         flags: # additional CLI flags for this node
+  #           - --alice
+  #         relaychainFlags: # additional CLI flags for relaychian part
+  #           - --name=relaychain-alice
+  #       - flags:
+  #           - --bob
+  #         wsPort: 9546
+  #         rpcPort: 9535
+  #         port: 25635
+  #       - flags:
+  #           - --charlie
+  #         wsPort: 9545
+  #         rpcPort: 9534
+  #         port: 25634
+
+  # - image: acala/karura-node:2.5.0
+  #   chain: # this could be a string like `dev` or a config object
+  #     base: karura-dev # the chain to use
+  #     collators: # override collators
+  #       - alice # this imply //Alice
+  #       - bob # or could be a session key public address
+  #       - charlie
+  #     sudo: alice # override sudo key to //Alice
+  #   volumePath: /acala/data
+  #   id: 5 # override parachain id
+  #   parachain: true # this is parachain, not parathread
+  #   flags: # CLI flags for this parachain nodes
+  #     - --rpc-methods=unsafe
+  #     - --force-authoring
+  #     - --execution=wasm
+  #   relaychainFlags: # CLI flags for the relaychain port
+  #     - --execution=wasm
+  #   env: # environment variables for this parachain nodes
+  #     RUST_LOG: xcm::filter_asset_location=trace
+  #   nodes: # nodes config
+  #     - wsPort: 9447
+  #       rpcPort: 9436
+  #       port: 24336
+  #       flags: # additional CLI flags for this node
+  #         - --alice
+  #       relaychainFlags: # additional CLI flags for relaychian part
+  #         - --name=relaychain-alice
+  #     - flags:
+  #         - --bob
+  #       wsPort: 9446
+  #       rpcPort: 9435
+  #       port: 24635
+  #     - flags:
+  #         - --charlie
+  #       wsPort: 9445
+  #       rpcPort: 9434
+  #       port: 24634

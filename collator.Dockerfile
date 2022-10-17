@@ -23,7 +23,6 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /node runner && \
     mkdir /node/specs
 
 COPY --chown=runner target/release/circuit-collator /usr/local/bin/circuit-collator
-RUN ls /usr/local/bin
 COPY --chown=runner specs/$RELAYCHAIN_NAME.raw.json /node/specs/$RELAYCHAIN_NAME.raw.json
 COPY --chown=runner specs/$PARACHAIN_NAME.raw.json /node/specs/$PARACHAIN_NAME.raw.json
 
