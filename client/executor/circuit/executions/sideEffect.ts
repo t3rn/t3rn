@@ -6,7 +6,6 @@ const BN = require('bn.js')
 // contains the different side_effect types
 export enum TransactionType {
     Transfer,
-    Swap,
 }
 
 // maps event names to TransactionType enum;
@@ -72,10 +71,6 @@ export class SideEffect {
                 }
                 break;
             }
-            case TransactionType.Swap: {
-                return argsLength === 5;
-                break;
-            }
         }
     }
 
@@ -88,9 +83,6 @@ export class SideEffect {
         switch(this.action) {
             case TransactionType.Transfer: {
                 return this.getTransferArguments()
-            }
-            case TransactionType.Swap: {
-                return []
             }
         }
     }
