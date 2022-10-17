@@ -215,6 +215,30 @@ pub fn bid_execution(
     )
 }
 
+pub fn place_winning_bid_and_move_3_blocks_ahead(
+    origin: OriginFor<Runtime>,
+    xtx_id: sp_core::H256,
+    sfx_id: sp_core::H256,
+    bid_amount: Balance,
+) {
+    assert_ok!(Circuit::bid_execution(
+        origin, // Active relayer
+        xtx_id, sfx_id, bid_amount,
+    ));
+
+    let three_blocks_ahead = System::block_number() + 3;
+    System::set_block_number(three_blocks_ahead);
+
+    <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
+        three_blocks_ahead,
+    );
+
+    assert_eq!(
+        Circuit::get_x_exec_signals(xtx_id).unwrap().status,
+        CircuitStatus::Ready
+    );
+}
+
 fn read_file_and_set_height(path: &str, ignore_submission_height: bool) -> Value {
     let file = fs::read_to_string("src/mock-data/".to_owned() + path).unwrap();
     let json: Value = serde_json::from_str(file.as_str()).unwrap();
@@ -710,7 +734,8 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
         .build()
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ =
+                Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -3749,7 +3774,7 @@ fn into_se_from_chain() {
         se,
         SideEffect {
             target: [112u8, 100u8, 111u8, 116u8],
-            max_fee: 1,
+            max_fee: 0,
             insurance: 0,
             encoded_action: vec![116, 114, 97, 110],
             encoded_args: vec![
@@ -3803,7 +3828,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 }
 
 /// XBI
-const INITIAL_BALANCE: Balance = 3;
+const INITIAL_BALANCE: Balance = 50;
 const MAX_EXECUTION_COST: Balance = 1;
 const MAX_NOTIFICATION_COST: Balance = 2;
 #[test]
@@ -3819,7 +3844,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, max_fee = 1
         ],
         &mut local_state,
         transfer_protocol_box,
@@ -3832,6 +3857,9 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
     let fee = 1;
     let sequential = true;
 
+    const MAX_FEE: Balance = 1;
+    const INSURANCE: Balance = 1;
+
     ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
@@ -3839,14 +3867,14 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
         .execute_with(|| {
             // XTX SETUP
 
-            let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE);
 
             System::set_block_number(1);
             brute_seed_block_1([3, 3, 3, 3]);
 
             let xtx_id: sp_core::H256 =
                 hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
-            let _side_effect_a_id = valid_transfer_side_effect
+            let sfx_id_a = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
             );
 
@@ -3860,12 +3888,10 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
-                    requester: AccountId32::new(hex!(
-                        "0101010101010101010101010101010101010101010101010101010101010101"
-                    )),
+                    requester: ALICE,
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::Ready,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
@@ -3883,6 +3909,13 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                 }]]
             );
 
+            place_winning_bid_and_move_3_blocks_ahead(
+                Origin::signed(ALICE),
+                xtx_id,
+                sfx_id_a,
+                MAX_FEE,
+            );
+
             assert_ok!(Circuit::execute_side_effects_with_xbi(
                 origin,
                 xtx_id,
@@ -3893,7 +3926,11 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                INITIAL_BALANCE - MAX_EXECUTION_COST - MAX_NOTIFICATION_COST
+                INITIAL_BALANCE
+                    - MAX_EXECUTION_COST
+                    - MAX_NOTIFICATION_COST
+                    - 2 * MAX_FEE
+                    - INSURANCE
             );
         });
 }

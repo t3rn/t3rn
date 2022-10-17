@@ -396,7 +396,6 @@ pub mod pallet {
                         }
                     }
 
-
                     let status_change = Self::update(&mut local_ctx).unwrap();
 
                     Self::square_up(&mut local_ctx, None)
@@ -755,7 +754,7 @@ pub mod pallet {
             let executor = Self::authorize(origin, CircuitRole::Executor)?;
 
             // Setup: retrieve local xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+            let mut local_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingExecution,
                 &executor,
                 Zero::zero(),
@@ -782,15 +781,21 @@ pub mod pallet {
             let charge_id = T::Hashing::hash(&xbi.encode()[..]);
             let total_max_fees = xbi.metadata.total_max_costs_in_local_currency()?;
 
-            Self::square_up(
-                &mut local_xtx_ctx,
-                Some((charge_id, executor, total_max_fees)),
-            )?;
+            // fixme: must be solved with charging and update status order if XBI is the first SFX
+            if local_ctx.xtx.status == CircuitStatus::Ready {
+                local_ctx.xtx.status = CircuitStatus::PendingExecution;
+            }
+
+            Self::square_up(&mut local_ctx, Some((charge_id, executor, total_max_fees)))?;
 
             T::XBIPromise::then(
                 xbi,
                 pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
             )?;
+
+            let status_change = Self::update(&mut local_ctx)?;
+
+            Self::apply(&mut local_ctx, status_change);
 
             Ok(().into())
         }
@@ -975,6 +980,7 @@ pub mod pallet {
         RequesterNotEnoughBalance,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
+        ChargingTransferFailedAtPendingExecution,
         XtxChargeFailedRequesterBalanceTooLow,
         XtxChargeBondDepositFailedCantAccessBid,
         FinalizeSquareUpFailed,
@@ -1422,7 +1428,6 @@ impl<T: Config> Pallet<T> {
         )>,
     ) -> Result<(), Error<T>> {
         let requester = local_ctx.xtx.requester.clone();
-        let _current_step_fsx = Self::get_current_step_fsx(local_ctx);
 
         let unreserve_requester_xtx_max_fees = |current_step_fsx: &Vec<
             FullSideEffect<
@@ -1479,6 +1484,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::PendingExecution => {
                 let (charge_id, executor_payee, charge_fee) =
                     maybe_xbi_execution_charge.ok_or(Error::<T>::ChargingTransferFailed)?;
+
                 <T as Config>::AccountManager::deposit(
                     charge_id,
                     &executor_payee,
@@ -1488,7 +1494,7 @@ impl<T: Config> Pallet<T> {
                     CircuitRole::Executor,
                     None,
                 )
-                .map_err(|_e| Error::<T>::ChargingTransferFailed)?;
+                .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;
             },
             // todo: make sure callable once
             // todo: distinct between RevertTimedOut to iterate over all steps vs single step for Revert
