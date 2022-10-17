@@ -1559,92 +1559,68 @@ impl<T: Config> Pallet<T> {
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         > = vec![];
 
-        for side_effect in side_effects.iter() {
-            let gateway_abi = <T as Config>::Xdns::get_abi(side_effect.target)?;
-            let allowed_side_effects =
-                <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
+        pub fn determine_security_lvl(gateway_type: GatewayType) -> SecurityLvl {
+            if gateway_type == GatewayType::ProgrammableInternal(0)
+                || gateway_type == GatewayType::OnCircuit(0)
+            {
+                SecurityLvl::Escrow
+            } else {
+                SecurityLvl::Optimistic
+            }
+        }
+
+        for sfx in side_effects.iter() {
+            let gateway_abi = <T as Config>::Xdns::get_abi(sfx.target)?;
+            let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
+
+            let allowed_side_effects = <T as Config>::Xdns::allowed_side_effects(&sfx.target);
 
             local_ctx
                 .use_protocol
-                .notice_gateway(side_effect.target, allowed_side_effects);
+                .notice_gateway(sfx.target, allowed_side_effects);
 
             local_ctx
-            .use_protocol
-            .validate_args::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>, SystemHashing<T>>(
-                side_effect.clone(),
-                gateway_abi,
-                &mut local_ctx.local_state,
-            ).map_err(|e| {
+                .use_protocol
+                .validate_args::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>, SystemHashing<T>>(
+                    sfx.clone(),
+                    gateway_abi,
+                    &mut local_ctx.local_state,
+                ).map_err(|e| {
                 log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
                 e
             })?;
 
-            if let Some(insurance_and_reward) =
+            let (insurance, reward) = if let Some(insurance_and_reward) =
                 UniversalSideEffectsProtocol::ensure_required_insurance::<
                     T::AccountId,
                     T::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
                     SystemHashing<T>,
-                >(side_effect.clone(), &mut local_ctx.local_state)?
+                >(sfx.clone(), &mut local_ctx.local_state)?
             {
-                let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
-
-                // ToDo: Consider to remove the assignment below and move OptionalInsurance to SFX fields:
-                //      sfx.reward = Option<Balance>
-                //      sfx.insurance = Option<Balance>
-                if side_effect.max_fee != reward {
-                    return Err("Side_effect max_fee must be equal to reward of Optional Insurance")
-                }
-
-                if side_effect.insurance != insurance {
-                    return Err(
-                        "Side_effect insurance must be equal to reward of Optional Insurance",
-                    )
-                }
-
-                let submission_target_height =
-                    T::Portal::get_latest_finalized_height(side_effect.target)?
-                        .ok_or("target height not found")?;
-
-                full_side_effects.push(FullSideEffect {
-                    input: side_effect.clone(),
-                    confirmed: None,
-                    security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height,
-                    best_bid: None,
-                })
+                (insurance_and_reward[0], insurance_and_reward[1])
             } else {
-                fn determine_dirty_vs_escrowed_lvl<T: Config>(
-                    side_effect: &SideEffect<
-                        <T as frame_system::Config>::AccountId,
-                        EscrowedBalanceOf<T, T::Escrowed>,
-                    >,
-                ) -> SecurityLvl {
-                    let gateway_type =
-                        <T as Config>::Xdns::get_gateway_type_unsafe(&side_effect.target);
-                    let is_escrowed = gateway_type == GatewayType::ProgrammableInternal(0)
-                        || gateway_type == GatewayType::OnCircuit(0);
-
-                    if is_escrowed {
-                        SecurityLvl::Escrow
-                    } else {
-                        SecurityLvl::Optimistic
-                    }
-                }
-                let submission_target_height =
-                    T::Portal::get_latest_finalized_height(side_effect.target)?
-                        .ok_or("target height not found")?;
-
-                full_side_effects.push(FullSideEffect {
-                    input: side_effect.clone(),
-                    confirmed: None,
-                    security_lvl: determine_dirty_vs_escrowed_lvl::<T>(side_effect),
-                    submission_target_height,
-                    best_bid: None,
-                });
+                return Err(
+                    "SFX must have its insurance and reward linked into the last arguments list",
+                )
+            };
+            if sfx.max_fee != reward {
+                return Err("Side_effect max_fee must be equal to reward of Optional Insurance")
             }
-        }
+            if sfx.insurance != insurance {
+                return Err("Side_effect insurance must be equal to reward of Optional Insurance")
+            }
+            let submission_target_height = T::Portal::get_latest_finalized_height(sfx.target)?
+                .ok_or("target height not found")?;
 
+            full_side_effects.push(FullSideEffect {
+                input: sfx.clone(),
+                confirmed: None,
+                security_lvl: determine_security_lvl(gateway_type),
+                submission_target_height,
+                best_bid: None,
+            });
+        }
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
         full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
 
