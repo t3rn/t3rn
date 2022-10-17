@@ -4,7 +4,8 @@ require('dotenv').config()
 import CircuitListener from "./circuit/listener"
 import CircuitRelayer from "./circuit/relayer"
 import SubstrateRelayer from "./gateways/substrate/relayer"
-import config from "./config.json"
+import CostEstimator from "./gateways/substrate/costEstimator";
+import config from "./config/config.json"
 import { Execution } from "./circuit/executions/execution"
 import { ExecutionManager } from "./executionManager"
 import createDebug from "debug"
@@ -37,7 +38,7 @@ class InstanceManager {
             const entry = config.gateways[i]
             if (entry.type === "substrate") {
                 let instance = new SubstrateRelayer()
-                await instance.setup(entry.rpc, entry.name)
+                await instance.setup(entry.rpc, entry.name, entry.id)
 
                 instance.on("SideEffectExecuted", (id: string) => {
                     this.executionManager.sideEffectExecuted(id)

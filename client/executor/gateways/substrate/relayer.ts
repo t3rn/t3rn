@@ -1,9 +1,10 @@
-import { EventEmitter } from "events"
-import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
-import { SideEffect, TransactionType, EventMapper } from "../../circuit/executions/sideEffect"
-import { getEventProofs, fetchNonce } from "../../utils"
+import {EventEmitter} from "events"
+import {ApiPromise, Keyring, WsProvider} from "@polkadot/api"
+import {EventMapper, SideEffect, TransactionType} from "../../circuit/executions/sideEffect"
+import {fetchNonce, getEventProofs} from "../../utils"
 import createDebug from "debug"
-import { BN } from "@polkadot/util"
+import CostEstimator from "./costEstimator";
+import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 
 export default class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
@@ -15,11 +16,12 @@ export default class SubstrateRelayer extends EventEmitter {
     name: string
     nonce: number
 
-    async setup(rpc: string, name: string) {
+    async setup(rpc: string, name: string, id: string) {
         this.rpc = rpc
         this.api = await ApiPromise.create({
             provider: new WsProvider(rpc),
         })
+
         const keyring = new Keyring({ type: "sr25519" })
 
         this.signer =
@@ -27,29 +29,31 @@ export default class SubstrateRelayer extends EventEmitter {
               ? keyring.addFromUri("//Executor//default")
               : keyring.addFromMnemonic(process.env.SIGNER_ROCOCO)
 
+        let cost = new CostEstimator(id, this.api, this.signer)
         this.name = name
         this.nonce = await this.fetchNonce(this.api, this.signer.address)
     }
 
-    // Execute sfx on target
-    async executeTx(sideEffect: SideEffect) {
-        SubstrateRelayer.debug(`Executing sfx ${this.toHuman(sideEffect.id)} - ${sideEffect.target} with nonce: ${this.nonce} 🔮`)
-        switch (sideEffect.action) {
+    // Builds tx object for the different side effects. This can be used for estimating fees or to submit tx
+    buildTx(sideEffect: SideEffect): SubmittableExtrinsic {
+        switch(sideEffect.action) {
             case TransactionType.Transfer: {
                 const data = sideEffect.execute()
-                this.api.tx.balances
+                return this.api.tx.balances
                     .transfer(data[0], data[1])
-                    .signAndSend(this.signer, { nonce: this.nonce }, async result => {
-                        if (result.status.isFinalized) {
-                            this.handleTx(sideEffect, result)
-                        }
-                    })
-                break
             }
-            case TransactionType.Swap:
-            default:
-              SubstrateRelayer.debug(`invalid tx type: ${sideEffect.action}`)
         }
+    }
+
+    // Submit the sfx tx to the target
+    async executeTx(sideEffect: SideEffect) {
+        SubstrateRelayer.debug(`Executing sfx ${this.toHuman(sideEffect.id)} - ${sideEffect.target} with nonce: ${this.nonce} 🔮`)
+        const tx: SubmittableExtrinsic = this.buildTx(sideEffect)
+        tx.signAndSend(this.signer, {nonce: this.nonce}, async result => {
+            if (result.status.isFinalized) {
+                this.handleTx(sideEffect, result)
+            }
+        })
         this.nonce += 1; // we optimistically increment the nonce. If a transaction fails, this will mess things up. The alternative is to do it sequentially, which is very slow.
     }
 

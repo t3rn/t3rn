@@ -15,11 +15,6 @@ export class ProfitEstimation {
 				const reward = sideEffect.hasInsurance ? 10 : 0; // ToDo use real value once optionalInsurance is refactored
 				return reward - cost
 			}
-			case TransactionType.Swap: {
-				const cost = new BN(sideEffect.arguments[3], "le").toNumber()
-				const reward = sideEffect.hasInsurance ? 10 : 0; // ToDo use real value once optionalInsurance is refactored
-				return reward - cost
-			}
 		}
 	}
 
