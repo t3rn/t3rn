@@ -103,7 +103,7 @@ impl ExtBuilder {
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
@@ -123,7 +123,7 @@ impl ExtBuilder {
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
@@ -152,7 +152,7 @@ impl ExtBuilder {
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
@@ -184,7 +184,7 @@ impl ExtBuilder {
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
