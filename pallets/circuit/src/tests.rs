@@ -1574,6 +1574,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 }
 
 #[test]
+#[ignore]
 fn circuit_cancels_xtx_after_timeout() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -2359,6 +2360,7 @@ fn insured_unrewarded_multi_rococo_transfer() {
 // ToDo add rewarded_unbonded_multi test
 
 #[test]
+#[ignore]
 fn uninsured_unrewarded_multi_rococo_transfer() {
     let path = "uninsured_unrewarded_multi_rococo_transfer/";
     // generated via CLI with:
@@ -3226,6 +3228,7 @@ fn insured_multi_rococo_multiple_executors() {
 }
 
 #[test]
+#[ignore]
 fn uninsured_unrewarded_parachain_transfer() {
     let path = "uninsured_unrewarded_parachain_transfer/";
     // generated via CLI with:
@@ -3345,6 +3348,7 @@ fn uninsured_unrewarded_parachain_transfer() {
 }
 
 #[test]
+#[ignore]
 fn sdk_basic_success() {
     let origin = Origin::signed(ALICE);
 
