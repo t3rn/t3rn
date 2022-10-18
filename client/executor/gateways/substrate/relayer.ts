@@ -9,28 +9,21 @@ import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 export default class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
 
-    api: ApiPromise
-    id: string
-    rpc: string
+    client: ApiPromise
     signer: any
-    name: string
     nonce: number
 
-    async setup(rpc: string, name: string, id: string) {
-        this.rpc = rpc
-        this.api = await ApiPromise.create({
-            provider: new WsProvider(rpc),
-        })
+    async setup(client: ApiPromise, signer: string | undefined) {
+        this.client = client;
 
         const keyring = new Keyring({ type: "sr25519" })
 
         this.signer =
-            process.env.SIGNER_ROCOCO === undefined
+            signer === undefined
               ? keyring.addFromUri("//Executor//default")
-              : keyring.addFromMnemonic(process.env.SIGNER_ROCOCO)
+              : keyring.addFromMnemonic(signer)
 
-        this.name = name
-        this.nonce = await this.fetchNonce(this.api, this.signer.address)
+        this.nonce = await this.fetchNonce(this.client, this.signer.address)
     }
 
     // Builds tx object for the different side effects. This can be used for estimating fees or to submit tx
@@ -38,7 +31,7 @@ export default class SubstrateRelayer extends EventEmitter {
         switch(sideEffect.action) {
             case TransactionType.Transfer: {
                 const data = sideEffect.execute()
-                return this.api.tx.balances
+                return this.client.tx.balances
                     .transfer(data[0], data[1])
             }
         }
@@ -48,11 +41,11 @@ export default class SubstrateRelayer extends EventEmitter {
     async executeTx(sideEffect: SideEffect) {
         SubstrateRelayer.debug(`Executing sfx ${this.toHuman(sideEffect.id)} - ${sideEffect.target} with nonce: ${this.nonce} 🔮`)
         const tx: SubmittableExtrinsic = this.buildTx(sideEffect)
-        tx.signAndSend(this.signer, {nonce: this.nonce}, async result => {
-            if (result.status.isFinalized) {
-                this.handleTx(sideEffect, result)
-            }
-        })
+        // tx.signAndSend(this.signer, {nonce: this.nonce}, async result => {
+        //     if (result.status.isFinalized) {
+        //         this.handleTx(sideEffect, result)
+        //     }
+        // })
         this.nonce += 1; // we optimistically increment the nonce. If a transaction fails, this will mess things up. The alternative is to do it sequentially, which is very slow.
     }
 
@@ -68,7 +61,7 @@ export default class SubstrateRelayer extends EventEmitter {
               result.events[result.events.length - 1].event.method ===
               "ExtrinsicSuccess"
 
-            const inclusionProof = await getEventProofs(this.api, blockHash)
+            const inclusionProof = await getEventProofs(this.client, blockHash)
             const inclusionData = {
                 encoded_payload: event.toHex(),
                 proof: {
@@ -88,7 +81,7 @@ export default class SubstrateRelayer extends EventEmitter {
     }
 
     async getBlockNumber(hash: any) {
-        return (await this.api.rpc.chain.getHeader(hash)).number
+        return (await this.client.rpc.chain.getHeader(hash)).number
     }
 
     getEvent(transactionType: TransactionType, events: any[]) {

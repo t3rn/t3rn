@@ -7,18 +7,17 @@ import { Execution } from "../executionManager/execution"
 import createDebug from "debug"
 
 export default class CircuitListener extends EventEmitter {
-static debug = createDebug("circuit-listener")
+    static debug = createDebug("circuit-listener")
 
-api: ApiPromise
+    client: ApiPromise
 
-    async setup(rpc: string) {
-        this.api = await ApiPromise.create({
-            provider: new WsProvider(rpc),
-        })
+    constructor(client: ApiPromise) {
+        super();
+        this.client = client;
     }
 
     async start() {
-        this.api.query.system.events(notifications => {
+        this.client.query.system.events(notifications => {
             notifications.forEach(notification => {
                 if (notification.event.method === "XTransactionReadyForExec") {
                     let xtxId = notification.event.data[0].toHex();
@@ -31,8 +30,8 @@ api: ApiPromise
                     let sfxId = notification.event.data[0].toHex();
                     this.emit("SideEffectConfirmed", sfxId)
                 } else if (notification.event.method === "NewSideEffectsAvailable") {
-                    // const execution = new Execution(notification.event.data)
-                    this.emit("NewExecution", notification.event.data)
+                    const execution = new Execution(notification.event.data) // create execution object from raw data
+                    this.emit("NewExecution", execution)
                 } else if (notification.event.method === "XTransactionXtxFinishedExecAllSteps") {
                     const xtxId = notification.event.data[0].toHex();
                     this.emit("ExecutionComplete", xtxId)

@@ -8,13 +8,13 @@ export default class CostEstimator {
 		this.relayer = relayer
 	}
 
-	async currentSideEffectCost(tx: SubmittableExtrinsic) {
+	/// returns the transaction cost of a specific side effect in native asset
+	async currentTransactionCost(tx: SubmittableExtrinsic) {
 		const paymentInfo = await tx.paymentInfo(this.relayer.signer);
-
-		console.log("TX Weight:", paymentInfo.weight.toHuman())
-		console.log("TX Cost:", paymentInfo.partialFee.toHuman())
-		return paymentInfo
+		return paymentInfo.partialFee.toJSON()
 	}
+
+
 
 	// // fetches tx fee details from endpoint. Not used to estimate fees, but might be useful again
 	// async fetchTxFees(blockHash: string, extrinsicIndex:number) {

@@ -1,9 +1,11 @@
 import {EventEmitter} from "events"
 import createDebug from "debug"
 import {Execution} from "./execution";
-import {SideEffect, SideEffectStatus} from "./sideEffect";
-import config from "../config/config.json"
+import {SideEffect} from "./sideEffect";
 import Estimator from "../gateways/substrate/estimator";
+import SubstrateRelayer from "../gateways/substrate/relayer";
+import {GatewayDataService} from "../utils/gatewayDataService";
+import {PriceEngine} from "../pricing";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -35,10 +37,21 @@ export class ExecutionManager extends EventEmitter {
         [sfxId: string]: string
     } = {};
 
-	targetEstimator: {} = {};
+	targetEstimator: {
+        [id: string]: Estimator
+    } = {};
+
+    gatewayService: GatewayDataService;
+    priceEngine: PriceEngine;
+
+    constructor(gatewayService: GatewayDataService, priceEngine: PriceEngine) {
+        super();
+        this.gatewayService = gatewayService;
+        this.priceEngine = priceEngine;
+    }
 
     // adds gateways on startup
-    addGateway(id: string, relayer: any) {
+    addGateway(id: string, relayer: SubstrateRelayer) {
         this.queue[id] = {
             blockHeight: 0,
             waitingForInsurance: [],
@@ -46,14 +59,13 @@ export class ExecutionManager extends EventEmitter {
             readyToConfirm: {},
         }
 
-		this.targetEstimator[id] = new Estimator(relayer);
+		this.targetEstimator[id] = new Estimator(relayer, this.priceEngine, this.gatewayService);
+
     }
 
     // add a new execution to the execution manager and initialize event listeners
-    createExecution(rawExecution: any) {
-		const execution = new Execution(rawExecution);
+    createExecution(execution: Execution) {
         this.executions[execution.xtxId.toHex()] = execution;
-
         Object.keys(execution.sideEffects).forEach((sfxId: string) => {
             // add sfxId to execution lookup mapping
             this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
