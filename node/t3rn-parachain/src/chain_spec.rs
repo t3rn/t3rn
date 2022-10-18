@@ -1,4 +1,4 @@
-use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
+use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig};
 use cumulus_primitives_core::ParaId;
 
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -9,6 +9,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 use t3rn_primitives::{
     bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
+    monetary::TRN,
     ChainId,
 };
 
@@ -102,7 +103,7 @@ pub fn session_keys(keys: AuraId) -> circuit_parachain_runtime::SessionKeys {
 
 pub fn polkadot_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
-    properties.insert("tokenSymbol".into(), "T3RN".into());
+    properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
     properties.insert("ss58Format".into(), 42.into());
 
@@ -184,7 +185,7 @@ fn polkadot_genesis(
         parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
         collator_selection: circuit_parachain_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
+            candidacy_bond: (TRN as u128) * 10_000_u128,
             ..Default::default()
         },
         session: circuit_parachain_runtime::SessionConfig {

@@ -165,12 +165,12 @@ impl TryFrom<&ChainId> for GatewaySysProps {
         match chain_id {
             b"circ" => Ok(GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             }),
             b"gate" => Ok(GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             }),
             &POLKADOT_CHAIN_ID => Ok(GatewaySysProps {
