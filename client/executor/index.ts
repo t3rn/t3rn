@@ -1,48 +1,67 @@
-import {SideEffect} from "./executionManager/sideEffect";
+import {Execution} from "./executionManager/execution";
 
 require('dotenv').config()
+import "@t3rn/types"
+import {SideEffect} from "./executionManager/sideEffect";
 import CircuitListener from "./circuit/listener"
 import CircuitRelayer from "./circuit/relayer"
 import SubstrateRelayer from "./gateways/substrate/relayer"
-import Estimator from "./gateways/substrate/estimator";
-import config from "./config/config.json"
-import { Execution } from "./executionManager/execution"
 import { ExecutionManager } from "./executionManager"
-import createDebug from "debug"
+import { GatewayDataService } from "./utils/gatewayDataService";
 
+import createDebug from "debug"
+import { ApiPromise, WsProvider } from "@polkadot/api"
+import types from "./config/types.json"
+import rpc from "./config/rpc.json"
+import config from "./config/config";
+import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
+import {PriceEngine} from "./pricing";
 class InstanceManager {
     static debug = createDebug("instance-manager")
 
-    circuitListener: CircuitListener
-    circuitRelayer: CircuitRelayer
-    executionManager: ExecutionManager
-    instances: { [key: string]: SubstrateRelayer } = {}
-
-    constructor() {
-        this.circuitListener = new CircuitListener()
-        this.circuitRelayer = new CircuitRelayer()
-        this.executionManager = new ExecutionManager()
-    }
+    circuitClient: ApiPromise;
+    priceEngine: PriceEngine;
+    circuitListener: CircuitListener;
+    circuitRelayer: CircuitRelayer;
+    executionManager: ExecutionManager;
+    instances: { [key: string]: SubstrateRelayer } = {};
+    gatewayDataService: GatewayDataService;
 
     async setup() {
-        await this.circuitListener.setup(config.circuit.rpc)
-        await this.circuitRelayer.setup(config.circuit.rpc)
+        this.circuitClient = await ApiPromise.create({
+            provider: new WsProvider(config.circuit.rpc),
+            types: types as any,
+            rpc: rpc as any
+        })
+        this.gatewayDataService = new GatewayDataService(this.circuitClient, config)
+        this.priceEngine = new PriceEngine();
+        this.executionManager = new ExecutionManager(this.gatewayDataService, this.priceEngine);
+        // @ts-ignore
+        this.circuitRelayer = new CircuitRelayer(this.circuitClient, config.circuit.signer)
+        this.circuitListener = new CircuitListener(this.circuitClient)
+
+        await this.gatewayDataService.init()
         await this.circuitListener.start()
+
         await this.initializeGateways()
         await this.initializeEventListeners()
+
         InstanceManager.debug("executor setup")
     }
 
     async initializeGateways() {
-        for (let i = 0; i < config.gateways.length; i++) {
-            const entry = config.gateways[i]
-            if (entry.type === "substrate") {
+        for (let i = 0; i < this.gatewayDataService.gateways.length; i++) {
+            const entry = this.gatewayDataService.gateways[i]
+
+            if (entry.type === "Substrate") {
                 let instance = new SubstrateRelayer()
-                await instance.setup(entry.rpc, entry.name, entry.id)
+                await instance.setup(entry.rpcClient, entry.signer)
 
                 instance.on("SideEffectExecuted", (id: string) => {
                     this.executionManager.sideEffectExecuted(id)
                 })
+
+                console.log("calling!!")
 
                 // setup in executionManager
                 this.executionManager.addGateway(entry.id, instance)
@@ -51,7 +70,6 @@ class InstanceManager {
             }
         }
     }
-
     async initializeEventListeners() {
         // Insurance for all SideEffects has been posted, ready to execute
         this.circuitListener.on("XTransactionReadyForExec", async (xtxId: string) => {
@@ -65,7 +83,7 @@ class InstanceManager {
         })
 
         // new Execution has been received
-        this.circuitListener.on("NewExecution", async (execution: any) => {
+        this.circuitListener.on("NewExecution", async (execution: Execution) => {
             this.executionManager.createExecution(execution);
         })
 
@@ -103,6 +121,15 @@ class InstanceManager {
         this.circuitRelayer.on("SideEffectExecuted", (sfxId: string) => {
             this.executionManager.sideEffectExecuted(sfxId)
         })
+    }
+
+    async fetchXdnsData() {
+        // @ts-ignore
+        const records: T3rnPrimitivesXdnsXdnsRecord[] =  await this.circuitClient.rpc.xdns.fetchRecords();
+
+
+        console.log(records['xdns_records'].toHuman())
+
     }
 }
 

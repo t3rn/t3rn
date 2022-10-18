@@ -3,7 +3,6 @@ import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { fetchNonce } from "../utils/"
 import { SideEffect } from "../executionManager/sideEffect"
 import createDebug from "debug"
-import types from "../types.json"
 const fs = require("fs");
 
 export default class CircuitRelayer extends EventEmitter {
@@ -14,19 +13,14 @@ export default class CircuitRelayer extends EventEmitter {
     rpc: string
     signer: any
 
-    async setup(rpc: string) {
-        this.rpc = rpc
-        this.api = await ApiPromise.create({
-              provider: new WsProvider(rpc),
-              types: types as any
-        })
-
+    constructor(client: ApiPromise, signer: string | undefined) {
+        super();
+        this.api = client;
         const keyring = new Keyring({ type: "sr25519" })
-
         this.signer =
-            process.env.CIRCUIT_KEY === undefined
+            signer === undefined
                 ? keyring.addFromUri("//Executor//default")
-                : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+                : keyring.addFromMnemonic(signer)
 
     }
 
