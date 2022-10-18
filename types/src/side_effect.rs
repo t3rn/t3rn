@@ -94,8 +94,7 @@ where
 
 #[cfg(feature = "runtime")]
 /// Decode the side effect from encoded Chain.
-impl<AccountId, BalanceOf> TryFrom<Vec<u8>>
-    for SideEffect<AccountId, BalanceOf>
+impl<AccountId, BalanceOf> TryFrom<Vec<u8>> for SideEffect<AccountId, BalanceOf>
 where
     AccountId: Encode + MaxEncodedLen,
     BalanceOf: Copy + Zero + Encode + Decode + MaxEncodedLen,
@@ -125,7 +124,7 @@ where
             signature: vec![],
             insurance: Zero::zero(),
             requester_nonce: 0,
-            enforce_executor: None
+            enforce_executor: None,
         })
     }
 }
@@ -407,7 +406,7 @@ mod tests {
             signature: vec![],
             insurance: 0,
             requester_nonce: 0,
-            enforce_executor: None
+            enforce_executor: None,
         };
 
         assert_eq!(
@@ -446,7 +445,7 @@ mod tests {
             signature: vec![],
             insurance: 0,
             requester_nonce: 0,
-            enforce_executor: None
+            enforce_executor: None,
         };
 
         assert_eq!(
@@ -488,7 +487,7 @@ mod tests {
             signature: vec![],
             insurance: 0,
             requester_nonce: 0,
-            enforce_executor: None
+            enforce_executor: None,
         };
 
         assert_eq!(empty_side_effect, SideEffect::default(),);

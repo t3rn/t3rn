@@ -55,7 +55,12 @@ pub struct SFXBid<AccountId, BalanceOf> {
 }
 
 impl<AccountId, BalanceOf> SFXBid<AccountId, BalanceOf> {
-    pub fn new_none_optimistic(bid: BalanceOf, insurance: BalanceOf, executor: AccountId, requester: AccountId) -> Self {
+    pub fn new_none_optimistic(
+        bid: BalanceOf,
+        insurance: BalanceOf,
+        executor: AccountId,
+        requester: AccountId,
+    ) -> Self {
         SFXBid {
             bid,
             insurance,
