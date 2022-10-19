@@ -32,6 +32,8 @@ export class SideEffect {
     id: string;
     xtxId: string;
     arguments: string[];
+    insurance: number;
+    reward: number;
     raw: T3rnTypesSideEffect;
 
     // TargetConfirmation
@@ -40,7 +42,9 @@ export class SideEffect {
     executor: string;
 
     // Risk/Reward Analysis
-    cost: number;
+    txCostUsd: number;
+    maxProfitUsd: number;
+    assetCostUsd: number;
 
     constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string) {
         if(this.knownTransactionInterface(sideEffect.encodedAction)) {
@@ -50,6 +54,9 @@ export class SideEffect {
             this.arguments = sideEffect.encodedArgs.map(entry => entry.toString());
             this.hasInsurance = this.checkForInsurance(this.arguments.length, this.action)
             this.target =  new TextDecoder().decode(sideEffect.target.toU8a())
+            this.txCostUsd = 0;
+            this.maxProfitUsd = 0;
+            this.assetCostUsd = 0;
         } else {
             console.log("SideEffect interface unknown!!")
         }
@@ -58,6 +65,12 @@ export class SideEffect {
     // sets the step of the sideEffect in its execution
     setStep(step: number) {
         this.step = step
+    }
+
+    updateRiskRewardParameters(txCostUsd: number, assetCostUsd: number) {
+        this.txCostUsd = txCostUsd;
+        this.assetCostUsd = assetCostUsd;
+        this.maxProfitUsd = 10; // hardcode for now
     }
 
     // ToDo remove once merged https://github.com/t3rn/t3rn/issues/432
@@ -87,6 +100,14 @@ export class SideEffect {
         switch(this.action) {
             case TransactionType.Transfer: {
                 return this.getTransferArguments()
+            }
+        }
+    }
+
+    getTxOutput() {
+        switch(this.action) {
+            case TransactionType.Transfer: {
+                return parseInt(this.getTransferArguments()[1])
             }
         }
     }

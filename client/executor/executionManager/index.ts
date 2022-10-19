@@ -64,13 +64,16 @@ export class ExecutionManager extends EventEmitter {
     }
 
     // add a new execution to the execution manager and initialize event listeners
-    createExecution(execution: Execution) {
+    async createExecution(execution: Execution) {
         this.executions[execution.xtxId.toHex()] = execution;
-        Object.keys(execution.sideEffects).forEach((sfxId: string) => {
+        let sfxId = Object.keys(execution.sideEffects)
+        // Object.keys(execution.sideEffects).forEach(async (sfxId: string) => {
+        for(let i = 0; i < sfxId.length; i++) {
             // add sfxId to execution lookup mapping
-            this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
-			this.targetEstimator[execution.sideEffects[sfxId].target].estimateProfit(execution.sideEffects[sfxId])
-        })
+            this.sfxExecutionLookup[sfxId[i]] = execution.xtxId.toHex()
+			let [txCost, assetCost] = await this.targetEstimator[execution.sideEffects[sfxId[i]].target].estimateProfit(execution.sideEffects[sfxId[i]])
+            execution.sideEffects[sfxId[i]].updateRiskRewardParameters(txCost, assetCost)
+        }
 
         // listens for step confirmation signal. This is called after a step is confirmed, and SideEffects in the next step are already executed.
         // In the current configuration this is not used, as the executions of a next step are only started once the former one is complete (next listener)
