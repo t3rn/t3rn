@@ -119,12 +119,14 @@ pub fn polkadot_config() -> ChainSpec {
                 // Invulnerable collators
                 vec![
                     (
+                        // Collator 1: t3W7yG2pkGdLogoX6KJm5KtPMMWBQygvcZArcjtjo5AsJPad2
                         hex!("5232d5d6b3904523020c08addf5b648f5ecb1e3481c04fe46d2d82efb193b674")
                             .into(),
                         hex!("5232d5d6b3904523020c08addf5b648f5ecb1e3481c04fe46d2d82efb193b674")
                             .unchecked_into(),
                     ),
                     (
+                        // Collator 2: t3X7yGXEmCwTwwS6aFwwNeXDrGT2EU9Cy13G4qUPNpVh4Phjm
                         hex!("7e6f18e1b19513672c6a11d1e09880ba05015c84022ebe84c781f5bc71fc4d79")
                             .into(),
                         hex!("7e6f18e1b19513672c6a11d1e09880ba05015c84022ebe84c781f5bc71fc4d79")
@@ -133,6 +135,7 @@ pub fn polkadot_config() -> ChainSpec {
                 ],
                 // Prefunded accounts
                 vec![
+                    // Genesis Account: t3UH41t54cqKW72s9KSepTr1xW1r9F91aPfJvDfDgQf1CAgRC
                     hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d").into(),
                 ],
                 PARACHAIN_ID.into(),
