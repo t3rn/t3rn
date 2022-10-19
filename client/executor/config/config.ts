@@ -41,7 +41,7 @@ export default {
     },
     strategies: {
         "roco": {
-            minProfitUsd: 1,
+            minProfitUsd: 10,
             minYield: 0.05,
         },
         "bslk": {

@@ -6,6 +6,7 @@ import Estimator from "../gateways/substrate/estimator";
 import SubstrateRelayer from "../gateways/substrate/relayer";
 import {GatewayDataService} from "../utils/gatewayDataService";
 import {PriceEngine} from "../pricing";
+import {StrategyEngine} from "../strategy";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -43,11 +44,13 @@ export class ExecutionManager extends EventEmitter {
 
     gatewayService: GatewayDataService;
     priceEngine: PriceEngine;
+    strategyEngine: StrategyEngine;
 
     constructor(gatewayService: GatewayDataService, priceEngine: PriceEngine) {
         super();
         this.gatewayService = gatewayService;
         this.priceEngine = priceEngine;
+        this.strategyEngine = new StrategyEngine();
     }
 
     // adds gateways on startup
@@ -73,6 +76,8 @@ export class ExecutionManager extends EventEmitter {
             this.sfxExecutionLookup[sfxId[i]] = execution.xtxId.toHex()
 			let [txCost, assetCost] = await this.targetEstimator[execution.sideEffects[sfxId[i]].target].estimateProfit(execution.sideEffects[sfxId[i]])
             execution.sideEffects[sfxId[i]].updateRiskRewardParameters(txCost, assetCost)
+            const shouldExecute = this.strategyEngine.evaluateSideEffect(execution.sideEffects[sfxId[i]])
+            console.log("Want to Execute:", shouldExecute)
         }
 
         // listens for step confirmation signal. This is called after a step is confirmed, and SideEffects in the next step are already executed.
