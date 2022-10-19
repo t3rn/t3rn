@@ -155,26 +155,28 @@ mod tests {
 
     #[test]
     fn successfully_creates_empty_side_effect() {
-        let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
         assert_eq!(
             empty_side_effect,
             SideEffect {
                 target: [0, 0, 0, 0],
-                max_fee: 0,
-                ordered_at: 0,
+                max_fee: 1,
                 encoded_action: vec![],
                 encoded_args: vec![],
                 signature: vec![],
-                enforce_executioner: None,
+                requester_nonce: 0,
+                insurance: 1,
+                enforce_executor: None
             }
         );
     }
@@ -187,10 +189,10 @@ mod tests {
         let optional_insurance = 2u128;
         let optional_reward = 3u128;
 
-        let tsfx_input = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let tsfx_input = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 3,
+            insurance: 2,
             encoded_action: vec![],
             encoded_args: vec![
                 from.encode(),
@@ -199,7 +201,8 @@ mod tests {
                 [optional_insurance.encode(), optional_reward.encode()].concat(),
             ],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            enforce_executor: None,
         };
 
         let tfsfx = FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -211,9 +214,10 @@ mod tests {
                 output: Some(vec![]),
                 inclusion_data: vec![],
                 executioner: from,
-                received_at: 1u64 as BlockNumber,
-                cost: Some(2u64 as BalanceOf),
+                received_at: 1 as BlockNumber,
+                cost: Some(2 as BalanceOf),
             }),
+            best_bid: None,
         };
 
         let hsfx: HardenedSideEffect<AccountId, BlockNumber, BalanceOf> = tfsfx.try_into().unwrap();
@@ -222,7 +226,7 @@ mod tests {
             hsfx,
             HardenedSideEffect {
                 target: [0, 0, 0, 0],
-                prize: 0,
+                prize: 3,
                 encoded_action: [0, 0, 0, 0],
                 encoded_args: vec![
                     vec![
@@ -254,8 +258,7 @@ mod tests {
             tsfx_input,
             SideEffect {
                 target: [0, 0, 0, 0],
-                max_fee: 0,
-                ordered_at: 0,
+                max_fee: 3,
                 encoded_action: vec![],
                 encoded_args: vec![
                     vec![
@@ -273,41 +276,45 @@ mod tests {
                     ]
                 ],
                 signature: vec![],
-                enforce_executioner: None,
+                requester_nonce: 0,
+                insurance: 2,
+                enforce_executor: None
             }
         );
     }
 
     #[test]
     fn successfully_generates_id_for_side_empty_effect() {
-        let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
         assert_eq!(
             empty_side_effect.generate_id::<Hashing>(),
             H256::from_slice(&hex!(
-                "5d0d3f21208ec6b3c32b85e5d535b804713bf7b658559a10058c9c4d9fd2c79a"
+                "8ab35b967dcc4b6ff0859ee0615b416663437b6f0bd691c62dd9baa9f771cf7d"
             ))
         );
     }
 
     #[test]
     fn successfully_defaults_side_effect_to_an_empty_one() {
-        let empty_side_effect = SideEffect::<u64, BlockNumber, BalanceOf> {
+        let empty_side_effect = SideEffect::<u64, BalanceOf> {
             target: [0, 0, 0, 0],
             max_fee: 0,
-            ordered_at: 0,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 0,
+            enforce_executor: None,
         };
 
         assert_eq!(empty_side_effect, SideEffect::default(),);

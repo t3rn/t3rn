@@ -182,14 +182,15 @@ mod tests {
 
     #[test]
     fn successfully_confirms_1_side_effect_and_completes_xtx() {
-        let input_side_effect_1 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -213,6 +214,7 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None,
             }]],
         );
 
@@ -234,6 +236,7 @@ mod tests {
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
 
@@ -242,24 +245,26 @@ mod tests {
 
     #[test]
     fn successfully_confirms_2_side_effect_in_1_step_in_xtx() {
-        let input_side_effect_1 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
-        let input_side_effect_2 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -293,12 +298,14 @@ mod tests {
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    best_bid: None,
                 },
                 FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    best_bid: None,
                 },
             ]],
         );
@@ -319,6 +326,7 @@ mod tests {
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
 
@@ -330,6 +338,7 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
 
@@ -352,6 +361,7 @@ mod tests {
                 confirmed: Some(completing_side_effect_2),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -359,24 +369,26 @@ mod tests {
 
     #[test]
     fn successfully_confirms_2_side_effect_in_2_steps_in_xtx() {
-        let input_side_effect_1 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
-        let input_side_effect_2 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -411,12 +423,14 @@ mod tests {
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    best_bid: None,
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    best_bid: None,
                 }],
             ],
         );
@@ -437,6 +451,7 @@ mod tests {
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
 
@@ -448,6 +463,7 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
 
@@ -468,6 +484,7 @@ mod tests {
                 confirmed: Some(completing_side_effect_2),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -475,24 +492,26 @@ mod tests {
 
     #[test]
     fn throws_when_attempts_to_confirm_side_effect_from_2nd_step_without_1st_in_xtx() {
-        let input_side_effect_1 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
-        let input_side_effect_2 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
-            max_fee: 0,
-            ordered_at: 0,
+            max_fee: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            requester_nonce: 0,
+            insurance: 1,
+            enforce_executor: None,
         };
 
         let _completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -527,12 +546,14 @@ mod tests {
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    best_bid: None,
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    best_bid: None,
                 }],
             ],
         );
@@ -550,6 +571,7 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
 
@@ -560,6 +582,7 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                best_bid: None
             }
         );
 
