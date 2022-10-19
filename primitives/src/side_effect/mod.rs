@@ -97,6 +97,10 @@ where
                 .is_none()
     }
 
+    pub fn is_bid_resolved(&self) -> bool {
+        self.best_bid.is_some()
+    }
+
     pub fn expect_sfx_bid(&self) -> &SFXBid<AccountId, BalanceOf> {
         self.best_bid
             .as_ref()
