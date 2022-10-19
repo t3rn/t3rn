@@ -1574,7 +1574,6 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 }
 
 #[test]
-#[ignore]
 fn circuit_cancels_xtx_after_timeout() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -1644,7 +1643,7 @@ fn circuit_cancels_xtx_after_timeout() {
 
             System::set_block_number(410);
 
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(110);
+            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -3348,7 +3347,6 @@ fn uninsured_unrewarded_parachain_transfer() {
 }
 
 #[test]
-#[ignore]
 fn sdk_basic_success() {
     let origin = Origin::signed(ALICE);
 
@@ -3393,8 +3391,8 @@ fn sdk_basic_success() {
             check_queue(QueueValidator::Elements(vec![(ALICE, signal)]));
 
             // async process the signal
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(100);
             System::set_block_number(100);
+            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(100);
 
             // no signal left
             check_queue(QueueValidator::Length(0));

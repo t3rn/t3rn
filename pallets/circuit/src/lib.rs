@@ -357,7 +357,6 @@ pub mod pallet {
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
             let weight = Self::process_signal_queue();
-
             // Check every XtxTimeoutCheckInterval blocks
 
             // what happens if the weight for the block is consumed, do these timeouts need to wait
@@ -408,7 +407,7 @@ pub mod pallet {
                 });
             // Go over pending Bids to discover whether
 
-            // Scenario 1: all the timeouts can be handled in the block space
+            // Scenario 1: all the timeout s can be handled in the block space
             // Scenario 2: all but 5 timeouts can be handled
             //     - add the 5 timeouts to an immediate queue for the next block
             if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
@@ -423,7 +422,7 @@ pub mod pallet {
                             return
                         }
                         let mut local_xtx_ctx = Self::setup(
-                            CircuitStatus::RevertTimedOut,
+                            CircuitStatus::Ready,
                             &Self::account_id(),
                             Zero::zero(),
                             Some(xtx_id),
@@ -1091,7 +1090,6 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Ready
             | CircuitStatus::PendingExecution
             | CircuitStatus::PendingBidding
-            | CircuitStatus::Ready
             | CircuitStatus::Finished => {
                 if let Some(id) = xtx_id {
                     let xtx = <Self as Store>::XExecSignals::get(id)

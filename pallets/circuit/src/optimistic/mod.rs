@@ -111,14 +111,16 @@ impl<T: Config> Optimistic<T> {
             SecurityLvl::Optimistic,
         );
         for fsx in optimistic_fsx_in_step {
-            let sfx_bid = fsx.expect_sfx_bid();
-            let (insurance, reserved_bond) =
-                (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
+            if fsx.is_bid_resolved() {
+                let sfx_bid = fsx.expect_sfx_bid();
+                let (insurance, reserved_bond) =
+                    (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
-            <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
-                &sfx_bid.executor,
-                insurance + reserved_bond,
-            );
+                <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                    &sfx_bid.executor,
+                    insurance + reserved_bond,
+                );
+            }
         }
 
         Ok(())
@@ -135,7 +137,7 @@ impl<T: Config> Optimistic<T> {
         // Slash loop
         for fsx in optimistic_fsx_in_step {
             // Look for invalid FSX cases to slash
-            if !fsx.is_successfully_confirmed() {
+            if !fsx.is_successfully_confirmed() && fsx.is_bid_resolved() {
                 let sfx_bid = fsx.expect_sfx_bid();
                 let (insurance, reserved_bond) =
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
@@ -151,13 +153,16 @@ impl<T: Config> Optimistic<T> {
         }
 
         let honest_counter = optimistic_fsx_in_step.len() - slashed_counter;
+        if honest_counter == 0 {
+            return
+        }
         let repatriation_bonus_per_honest_fsx =
             slashed_reserve / EscrowedBalanceOf::<T, T::Escrowed>::from(honest_counter as u32);
 
         // Repatriate loop
         for fsx in optimistic_fsx_in_step {
             // Look for valid FSX cases to repatriate
-            if fsx.is_successfully_confirmed() {
+            if fsx.is_successfully_confirmed() && fsx.is_bid_resolved() {
                 let sfx_bid = fsx.expect_sfx_bid();
                 let (insurance, reserved_bond) =
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
