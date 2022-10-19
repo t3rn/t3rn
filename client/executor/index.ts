@@ -61,8 +61,6 @@ class InstanceManager {
                     this.executionManager.sideEffectExecuted(id)
                 })
 
-                console.log("calling!!")
-
                 // setup in executionManager
                 this.executionManager.addGateway(entry.id, instance)
                 // store relayer instance locally

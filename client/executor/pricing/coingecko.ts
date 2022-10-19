@@ -38,8 +38,7 @@ export class CoingeckoPricing {
 				this.prices[ids[i]] = price
 			})
 		}
-
-		console.log("Prices:", this.prices)
+		console.log("Prices:", this.prices);
 	}
 
 

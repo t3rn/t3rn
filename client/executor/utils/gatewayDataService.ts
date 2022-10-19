@@ -78,7 +78,6 @@ export class GatewayDataService {
 	valueToHuman(amount: number, id: string) {
 		const decimals = this.gateways[this.idMapper[id]].decimals;
 		const num = amount / Math.pow(10, decimals);
-		console.log(num)
 		return num;
 	}
 
@@ -86,7 +85,6 @@ export class GatewayDataService {
 	humanToValue(amount: number, id: string) {
 		const decimals = this.gateways[this.idMapper[id]].decimals;
 		const num = new BN(amount * Math.pow(10, decimals));
-		console.log(num)
 		return num;
 	}
 }

@@ -1,6 +1,8 @@
 export default {
     circuit: {
-        rpc: "ws://127.0.0.1::9944"
+        rpc: "ws://127.0.0.1::9944",
+        ticker: "TRN",
+        decimals: 12
     },
     gateways: [
         {
@@ -26,11 +28,27 @@ export default {
         "ROC": {
             priceSource: "coingecko",
             id: "polkadot"
+        },
+        "TRN": {
+            priceSource: "coingecko",
+            id: "tether"
         }
     },
     priceSource: {
         coingecko: {
             endpoint: "https://api.coingecko.com/api/v3/coins/"
+        }
+    },
+    strategies: {
+        "roco": {
+            minProfitUsd: 1,
+            minYield: 0.05,
+        },
+        "bslk": {
+            minProfitUsd: 1,
+            minYield: 0.03,
+            maxTxFeesUsd: 1,
+            maxTxFeeShare: 10,
         }
     }
 }
