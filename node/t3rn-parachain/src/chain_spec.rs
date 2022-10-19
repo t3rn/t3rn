@@ -180,7 +180,7 @@ fn polkadot_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 100_000_000_000000000000))
+                .map(|k| (k, 100_000_000_000_000_000_000)) // 100 million TRN
                 .collect(),
         },
         parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
