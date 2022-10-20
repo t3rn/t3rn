@@ -138,19 +138,27 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         // Simple rules for splitting, for now, we take 1% to keep the account manager alive
         let (payee_split, recipient_split, recipient_bonus): (u8, u8, BalanceOf<T>) = match outcome
         {
-            Outcome::Commit => (0, 99, charge.offered_reward),
-            Outcome::Revert => (89, 10, Zero::zero()),
+            Outcome::Commit => (0, 99, Zero::zero()),
+            Outcome::Revert => (99, 0, Zero::zero()),
             Outcome::UnexpectedFailure => (49, 50, Zero::zero()),
         };
 
+        let total_reserved = charge.charge_fee + charge.offered_reward;
+
         let payee_refund: BalanceOf<T> = if let Some(actual_fees) = maybe_actual_fees {
-            percent_ratio::<T>(charge.charge_fee - actual_fees, payee_split)?
+            // ToDo: Better handle case when actual fees outgrow total_reserved
+            if actual_fees > total_reserved {
+                return Err(Error::<T>::ChargeOrSettlementActualFeesOutgrowReserved.into())
+            }
+            percent_ratio::<T>(total_reserved - actual_fees, payee_split)?
         } else {
-            percent_ratio::<T>(charge.charge_fee, payee_split)?
+            percent_ratio::<T>(total_reserved, payee_split)?
         };
 
-        T::Currency::slash_reserved(&charge.payee, charge.charge_fee + charge.offered_reward);
-        T::Currency::deposit_creating(&charge.payee, payee_refund);
+        T::Currency::slash_reserved(&charge.payee, total_reserved.clone());
+        if payee_refund > Zero::zero() {
+            T::Currency::deposit_creating(&charge.payee, payee_refund);
+        }
 
         // Check if recipient has been updated
         let recipient = if let Some(recipient) = maybe_recipient {
@@ -159,28 +167,29 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             charge.recipient
         };
 
-        let recipient_fee_rewards = percent_ratio::<T>(charge.charge_fee, recipient_split)?;
+        let recipient_rewards = percent_ratio::<T>(total_reserved.clone(), recipient_split)?;
 
         // Create Settlement for the future async claim
-        SettlementsPerRound::<T>::insert(
-            T::Clock::current_round(),
-            charge_id,
-            Settlement::<T::AccountId, BalanceOf<T>> {
-                requester: charge.payee,
-                recipient,
-                settlement_amount: recipient_fee_rewards + recipient_bonus,
-                outcome,
-                source: charge.source,
-                role: charge.role,
-            },
-        );
-
+        if recipient_rewards > Zero::zero() {
+            SettlementsPerRound::<T>::insert(
+                T::Clock::current_round(),
+                charge_id,
+                Settlement::<T::AccountId, BalanceOf<T>> {
+                    requester: charge.payee,
+                    recipient,
+                    settlement_amount: recipient_rewards.clone() + recipient_bonus,
+                    outcome,
+                    source: charge.source,
+                    role: charge.role,
+                },
+            );
+        }
         PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
 
-        // Take what's left - 1% to keep the account manager alive
+        // Take what's left to treasury
         T::Currency::deposit_creating(
             &T::EscrowAccount::get(),
-            charge.charge_fee - recipient_fee_rewards - payee_refund,
+            total_reserved - payee_refund - recipient_rewards,
         );
 
         Ok(())
@@ -402,7 +411,7 @@ mod tests {
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                DEFAULT_BALANCE - ten_percent_charge_amt - one_percent_charge_amt
+                DEFAULT_BALANCE - one_percent_charge_amt
             );
 
             assert_eq!(
@@ -413,15 +422,14 @@ mod tests {
                 None
             );
 
-            let settlement = AccountManager::settlements_per_round::<RoundInfo<BlockNumber>, H256>(
-                Default::default(),
-                execution_id,
-            )
-            .unwrap();
-
-            assert_eq!(settlement.requester, ALICE);
-            assert_eq!(settlement.recipient, BOB);
-            assert_eq!(settlement.settlement_amount, ten_percent_charge_amt);
+            // Expect no settlement at revert
+            assert_eq!(
+                AccountManager::settlements_per_round::<RoundInfo<BlockNumber>, H256>(
+                    Default::default(),
+                    execution_id,
+                ),
+                None
+            );
         });
     }
 
