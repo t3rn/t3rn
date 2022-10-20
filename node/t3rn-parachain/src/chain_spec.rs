@@ -147,10 +147,13 @@ pub fn polkadot_config() -> ChainSpec {
         // Bootnodes
         vec![],
         // Telemetry
-        Some(TelemetryEndpoints::new(vec![(
-            "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F".into(),
-            1,
-        )])),
+        Some(
+            TelemetryEndpoints::new(vec![(
+                "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F".into(),
+                1,
+            )])
+            .expect("telemetry"),
+        ),
         // Protocol ID
         Some("t3rn"),
         // Fork ID
