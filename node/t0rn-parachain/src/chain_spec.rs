@@ -502,6 +502,7 @@ fn testnet_genesis(
         collator_selection: circuit_parachain_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
             candidacy_bond: (TRN as u128) * 10_u128,
+            desired_candidates: 32_u32,
             ..Default::default()
         },
         session: circuit_parachain_runtime::SessionConfig {
