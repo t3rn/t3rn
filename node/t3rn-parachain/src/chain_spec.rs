@@ -4,6 +4,7 @@ use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -144,9 +145,12 @@ pub fn polkadot_config() -> ChainSpec {
             )
         },
         // Bootnodes
-        Vec::new(),
+        vec![],
         // Telemetry
-        None,
+        Some(TelemetryEndpoints::new(vec![(
+            "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F".into(),
+            1,
+        )])),
         // Protocol ID
         Some("t3rn"),
         // Fork ID
