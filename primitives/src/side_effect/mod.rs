@@ -307,20 +307,4 @@ mod tests {
             ))
         );
     }
-
-    #[test]
-    fn successfully_defaults_side_effect_to_an_empty_one() {
-        let empty_side_effect = SideEffect::<u64, BalanceOf> {
-            target: [0, 0, 0, 0],
-            max_reward: 0,
-            encoded_action: vec![],
-            encoded_args: vec![],
-            signature: vec![],
-            nonce: 0,
-            insurance: 0,
-            enforce_executor: None,
-        };
-
-        assert_eq!(empty_side_effect, SideEffect::default(),);
-    }
 }
