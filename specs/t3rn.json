@@ -16,7 +16,7 @@
     "ss58Format": 9935
   },
   "relay_chain": "polkadot",
-  "para_id": 3333,
+  "para_id": 3000,
   "codeSubstitutes": {},
   "genesis": {
     "runtime": {
@@ -25,7 +25,7 @@
       },
       "parachainSystem": null,
       "parachainInfo": {
-        "parachainId": 3333
+        "parachainId": 3000
       },
       "balances": {
         "balances": [

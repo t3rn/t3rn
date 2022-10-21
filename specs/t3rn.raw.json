@@ -16,12 +16,12 @@
     "ss58Format": 9935
   },
   "relay_chain": "polkadot",
-  "para_id": 3333,
+  "para_id": 3000,
   "codeSubstitutes": {},
   "genesis": {
     "raw": {
       "top": {
-        "0x0d715f2646c8f85767b5d2764bb2782604a74d81251e398fd8a0a4d55023bb3f": "0x050d0000",
+        "0x0d715f2646c8f85767b5d2764bb2782604a74d81251e398fd8a0a4d55023bb3f": "0xb80b0000",
         "0x0d715f2646c8f85767b5d2764bb278264e7b9012096b41c4eb3aaf947f6ea429": "0x0000",
         "0x15464cac3378d46f113cd5b7a4d71c84476f594316a7dfe49c1f352d95abdaf1": "0x20000000",
         "0x15464cac3378d46f113cd5b7a4d71c844e7b9012096b41c4eb3aaf947f6ea429": "0x0000",

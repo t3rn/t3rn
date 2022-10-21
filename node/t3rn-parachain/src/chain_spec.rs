@@ -9,22 +9,9 @@ use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-use t3rn_primitives::{
-    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
-    monetary::TRN,
-    ChainId,
-};
+use t3rn_primitives::{monetary::TRN, ChainId};
 
-const PARACHAIN_ID: u32 = 3333_u32;
-
-fn is_relaychain(chain_id: &ChainId) -> bool {
-    match *chain_id {
-        POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
-        _ => false,
-    }
-}
-
-/// t3rn-pallets chain spec config -- END
+const PARACHAIN_ID: u32 = 3000_u32;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
