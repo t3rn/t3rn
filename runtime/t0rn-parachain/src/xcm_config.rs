@@ -12,23 +12,19 @@ use frame_support::{
     },
     weights::{Weight, WeightToFee as WeightToFeeExt},
 };
-use parachains_common::{
-    xcm_config::{
-        DenyReserveTransferToRelayChain, DenyThenTry,
-    },
-};
 use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::MultiNativeAsset;
 use pallet_xcm::XcmPassthrough;
+use parachains_common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::{ConvertInto, Zero};
 use sp_std::marker::PhantomData;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
-    AsPrefixedGeneralIndex, ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin,
-    FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+    ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+    FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     UsingComponents,
@@ -45,6 +41,8 @@ parameter_types! {
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub AssetsPalletLocation: MultiLocation =
     PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
+    pub OwnAssetLocation: MultiLocation = RelayLocation::get()
+        .pushed_with_interior(Ancestry::get().take_last().unwrap()).unwrap();
     pub AssetsPalletLocationFullPath: MultiLocation = RelayLocation::get()
         .pushed_with_interior(Ancestry::get().take_last().unwrap()).unwrap()
         .pushed_with_interior(AssetsPalletLocation::get().take_last().unwrap()).unwrap();
@@ -68,7 +66,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
     // Use this currency:
     Balances,
     // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<RelayLocation>,
+    IsConcrete<OwnAssetLocation>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):

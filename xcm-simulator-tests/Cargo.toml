@@ -1,0 +1,37 @@
+[package]
+authors = ["t3rn"]
+edition = "2021"
+license = "Apache-2.0"
+name = "xcm-emulator-tests"
+version = "0.1.0"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3", default-features = false }
+scale-info = { version = "2.1.2", default-features = false }
+proc-macro2 = "1.0.40"
+serde = { version = "1.0.144", optional = true }
+
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+
+cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.27" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.27" }
+parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.27" }
+
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+xcm-emulator = { git = "https://github.com/AwesomeIbex/xcm-simulator.git", branch = "polkadot-v0.9.27" }
+
+rococo-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+t0rn = { path = "../runtime/t0rn-parachain", package = "t0rn-parachain-runtime" }
+t3rn = { path = "../runtime/t3rn-parachain", package = "t3rn-parachain-runtime" }
+
+[workspace]
+members = []

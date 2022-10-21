@@ -17,25 +17,25 @@ name = "bob"
 validator = true
 extra_args = [ "-lparachain=debug" ]
 
-[[parachains]]
-id = 1
-addToGenesis = true
-cumulus_based = true
-chain = "statemine-local"
-
-[[parachains.collators]]
-name = "statemine-collator01"
-image = "docker.io/parity/polkadot-parachain:latest"
-command = "polkadot-parachain"
-ws_port = 9910
-args = ["--log=xcm=trace,pallet-assets=trace"]
-
-[[parachains.collators]]
-name = "statemine-collator02"
-image = "docker.io/parity/polkadot-parachain:latest"
-command = "polkadot-parachain"
-ws_port = 9911
-args = ["--log=xcm=trace,pallet-assets=trace"]
+#[[parachains]]
+#id = 1
+#addToGenesis = true
+#cumulus_based = true
+#chain = "statemine-local"
+#
+#[[parachains.collators]]
+#name = "statemine-collator01"
+#image = "docker.io/parity/polkadot-parachain:latest"
+#command = "polkadot-parachain"
+#ws_port = 9910
+#args = ["--log=xcm=trace,pallet-assets=trace"]
+#
+#[[parachains.collators]]
+#name = "statemine-collator02"
+#image = "docker.io/parity/polkadot-parachain:latest"
+#command = "polkadot-parachain"
+#ws_port = 9911
+#args = ["--log=xcm=trace,pallet-assets=trace"]
 
 [[parachains]]
 id = 2
@@ -44,7 +44,7 @@ cumulus_based = true
 chain = "rococo"
 
 [[parachains.collators]]
-name = "t0rn-collator01"
+name = "t0rn-collator-01"
 image = "t3rn/t0rn-collator:v1.1.0-rc.1"
 command = "/usr/local/bin/circuit-collator"
 ws_port = 9920
@@ -61,17 +61,17 @@ args = ["--log=xcm=trace,pallet-assets=trace"]
 id = 3
 addToGenesis = true
 cumulus_based = true
-chain = ""
+chain = "rococo"
 
 [[parachains.collators]]
-name = "t0rn-collator01"
+name = "t1rn-collator01"
 image = "t3rn/t0rn-collator:v1.1.0-rc.1"
 command = "/usr/local/bin/circuit-collator"
 ws_port = 9930
 args = ["--log=xcm=trace,pallet-assets=trace"]
 
 [[parachains.collators]]
-name = "t0rn-collator02"
+name = "t1rn-collator02"
 image = "t3rn/t0rn-collator:v1.1.0-rc.1"
 command = "/usr/local/bin/circuit-collator"
 ws_port = 9931
@@ -82,35 +82,35 @@ number = "u64"
 parent_hash = "Hash"
 post_state = "Hash"
 
-[[hrmp_channels]]
-sender = 1
-recipient = 2
-max_capacity = 8
-max_message_size = 512
+#[[hrmp_channels]]
+#sender = 1
+#recipient = 2
+#max_capacity = 8
+#max_message_size = 512
+#
+#[[hrmp_channels]]
+#sender = 1
+#recipient = 3
+#max_capacity = 8
+#max_message_size = 512
+
+#[[hrmp_channels]]
+#sender = 2
+#recipient = 1
+#max_capacity = 8
+#max_message_size = 512
 
 [[hrmp_channels]]
-sender = 1
+sender = 2
 recipient = 3
 max_capacity = 8
 max_message_size = 512
 
-[[hrmp_channels]]
-sender = 2
-recipient = 1
-max_capacity = 8
-max_message_size = 512
-
-[[hrmp_channels]]
-sender = 2
-recipient = 3
-max_capacity = 8
-max_message_size = 512
-
-[[hrmp_channels]]
-sender = 3
-recipient = 1
-max_capacity = 8
-max_message_size = 512
+#[[hrmp_channels]]
+#sender = 3
+#recipient = 1
+#max_capacity = 8
+#max_message_size = 512
 
 [[hrmp_channels]]
 sender = 3
