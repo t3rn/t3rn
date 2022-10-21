@@ -64,7 +64,7 @@ mod tests {
     use crate::{Network, RococoNet};
     use frame_support::{assert_ok, traits::Currency};
     use polkadot_primitives::v2::Id as ParaId;
-    use sp_runtime::{traits::AccountIdConversion, MultiAddress};
+    use sp_runtime::{traits::AccountIdConversion, MultiAddress, MultiAddress::Id};
     use t0rn::AccountId;
     use xcm::{latest::prelude::*, VersionedMultiAssets, VersionedMultiLocation, VersionedXcm};
     use xcm_emulator::TestExt;
@@ -458,7 +458,144 @@ mod tests {
     }
 
     #[test]
-    fn transfer_asset_to_sovereign_then_back() {}
+    fn transfer_asset_to_sovereign_then_back() {
+        Network::reset();
+
+        let a_id = 1;
+        let asset_amt = 100_u128.pow(12);
+
+        let t1rn_sovereign_addr = AccountId::from(hex_literal::hex!(
+            "7369626c01000000000000000000000000000000000000000000000000000000"
+        ));
+
+        transfer_to_t1rn(a_id, asset_amt, t1rn_sovereign_addr);
+
+        T0rn::execute_with(|| {
+            use t0rn::{Event, System};
+
+            let multi_asset = concrete_asset_pallet_assets(a_id as u128, asset_amt / 10);
+            let dest_para = box MultiLocation::new(1, X1(Parachain(T1RN_PARA_ID))).versioned();
+
+            assert_ok!(t0rn::PolkadotXcm::send(
+                Origin::signed(ALICE),
+                dest_para,
+                box VersionedXcm::V2(Xcm(vec![
+                    WithdrawAsset(MultiAssets::from(vec![multi_asset.clone()])),
+                    BuyExecution {
+                        fees: multi_asset.clone(),
+                        weight_limit: WeightLimit::Unlimited
+                    },
+                    InitiateTeleport {
+                        assets: MultiAssetFilter::Wild(WildMultiAsset::All),
+                        dest: MultiLocation::new(1, X1(Parachain(T0RN_PARA_ID))),
+                        xcm: Xcm(vec![
+                            BuyExecution {
+                                fees: multi_asset,
+                                weight_limit: WeightLimit::Unlimited
+                            },
+                            DepositAsset {
+                                assets: MultiAssetFilter::Wild(WildMultiAsset::All),
+                                max_assets: 0,
+                                beneficiary: MultiLocation::new(
+                                    0,
+                                    X1(AccountId32 {
+                                        network: Any,
+                                        id: <[u8; 32]>::from(ALICE),
+                                    })
+                                )
+                            }
+                        ])
+                    }
+                ]))
+            ));
+            log_all_events("T0rn");
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { .. })
+            )));
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::PolkadotXcm(pallet_xcm::Event::Sent(ref _origin, ref _dest, ref _msg))
+            )));
+        });
+
+        T1rn::execute_with(|| {
+            use t0rn::{Event, System};
+            log_all_events("T1rn");
+
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Success { .. })
+            )));
+        });
+    }
+
+    fn transfer_to_t1rn(a_id: u32, asset_amt: u128, t1rn_sovereign_addr: sp_runtime::AccountId32) {
+        T1rn::execute_with(|| {
+            use t0rn::{Event, System};
+
+            create_asset(a_id);
+
+            log_all_events("T1rn");
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::Assets(pallet_assets::Event::ForceCreated { .. })
+            )));
+        });
+
+        T0rn::execute_with(|| {
+            use t0rn::{Event, System};
+
+            create_asset(a_id);
+            mint_asset(a_id, ALICE, asset_amt);
+            log_all_events("T0rn");
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::Assets(pallet_assets::Event::Issued { asset_id, .. }) if asset_id == a_id
+            )));
+
+            let multi_asset = concrete_asset_pallet_assets(a_id as u128, asset_amt / 10);
+
+            let dest_para = box MultiLocation::new(1, X1(Parachain(T1RN_PARA_ID))).versioned();
+            let t0rn_on_dest = box MultiLocation::new(1, X1(Parachain(T0RN_PARA_ID))).versioned();
+
+            assert_ok!(t0rn::PolkadotXcm::limited_reserve_transfer_assets(
+                Origin::signed(ALICE),
+                dest_para,
+                t0rn_on_dest,
+                box VersionedMultiAssets::from(MultiAssets::from(vec![multi_asset])),
+                0_u32,
+                WeightLimit::Unlimited
+            ));
+            log_all_events("T0rn");
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::PolkadotXcm(pallet_xcm::Event::Attempted(Outcome::Complete(_)))
+            )));
+            println!("[T0rn] cleared events..");
+            System::reset_events();
+        });
+
+        T1rn::execute_with(|| {
+            use t0rn::{Event, System};
+            log_all_events("T1rn");
+
+            assert!(System::events().iter().any(|r| matches!(
+                &r.event,
+                Event::Assets(pallet_assets::Event::Issued {
+                    asset_id,
+                    owner,
+                    ..
+                }) if asset_id == &a_id && owner == &t1rn_sovereign_addr
+            )));
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Success { .. })
+            )));
+            println!("[T1rn] cleared events..");
+            System::reset_events();
+        });
+    }
 
     #[test]
     fn transfer_asset() {}

@@ -10,6 +10,8 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2.1.2", default-features = false }
 proc-macro2 = "1.0.40"
 serde = { version = "1.0.144", optional = true }
+hex = "0.4.3"
+hex-literal = "0.3.4"
 
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
