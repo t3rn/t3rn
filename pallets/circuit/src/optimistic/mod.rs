@@ -24,13 +24,13 @@ impl<T: Config> Optimistic<T> {
             return Err(Error::<T>::BiddingInactive)
         }
         let fsx = crate::Pallet::<T>::recover_fsx_by_id(sfx_id, local_ctx)?;
-        let (sfx_max_fee, sfx_security_lvl) = (fsx.input.max_fee, fsx.security_lvl.clone());
+        let (sfx_max_reward, sfx_security_lvl) = (fsx.input.max_reward, fsx.security_lvl.clone());
         // Check if bid doesn't go below dust
         if bid < <T::Escrowed as EscrowTrait<T>>::Currency::minimum_balance() {
             return Err(Error::<T>::BiddingRejectedBidBelowDust)
         }
         // Check if bid is attractive enough for requester
-        if bid > sfx_max_fee {
+        if bid > sfx_max_reward {
             return Err(Error::<T>::BiddingRejectedBidTooHigh)
         }
         // Check if bid beats the previous ones
@@ -128,7 +128,6 @@ impl<T: Config> Optimistic<T> {
 
     pub fn try_slash(local_ctx: &mut LocalXtxCtx<T>) {
         let mut slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> = Zero::zero();
-        let mut slashed_counter: usize = 0;
 
         let optimistic_fsx_in_step = &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
             local_ctx,
@@ -143,22 +142,17 @@ impl<T: Config> Optimistic<T> {
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
                 // First slash executor
+                slashed_reserve += insurance + reserved_bond;
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
                     &sfx_bid.executor,
                     insurance + reserved_bond,
                 );
-                slashed_reserve += reserved_bond;
-                slashed_counter += 1;
             }
         }
 
-        let honest_counter = optimistic_fsx_in_step.len() - slashed_counter;
-        if honest_counter == 0 {
-            return
-        }
-        let repatriation_bonus_per_honest_fsx =
-            slashed_reserve / EscrowedBalanceOf::<T, T::Escrowed>::from(honest_counter as u32);
-
+        // Single reserved_bond consists out of Sum(N) sfxN.max_rewards, where N isn't executors' SFX index.
+        // Repatriation therefore should always suffice to cover up the losses on targets by getting
+        //  the bid amounts back to the honest executors
         // Repatriate loop
         for fsx in optimistic_fsx_in_step {
             // Look for valid FSX cases to repatriate
@@ -172,12 +166,22 @@ impl<T: Config> Optimistic<T> {
                     &sfx_bid.executor,
                     insurance + reserved_bond,
                 );
-                // Repatriate slashed bonus since honest executor won't get rewards for the SFX::max_fee
+                // Repatriate the reward to honest executors since the reserved bond was slashed and should always suffice
+                slashed_reserve -= sfx_bid.bid;
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::deposit_creating(
                     &sfx_bid.executor,
-                    repatriation_bonus_per_honest_fsx,
+                    sfx_bid.bid,
                 );
             }
+        }
+
+        // ToDo: Introduce more sophisticated slashed rewards split between
+        //  treasury, users, honest executors
+        if slashed_reserve > Zero::zero() {
+            <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::deposit_creating(
+                &T::SelfAccountId::get(),
+                slashed_reserve,
+            );
         }
     }
 }

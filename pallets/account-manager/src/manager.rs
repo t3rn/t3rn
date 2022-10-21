@@ -155,7 +155,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             percent_ratio::<T>(total_reserved, payee_split)?
         };
 
-        T::Currency::slash_reserved(&charge.payee, total_reserved.clone());
+        T::Currency::slash_reserved(&charge.payee, total_reserved);
         if payee_refund > Zero::zero() {
             T::Currency::deposit_creating(&charge.payee, payee_refund);
         }
@@ -167,7 +167,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             charge.recipient
         };
 
-        let recipient_rewards = percent_ratio::<T>(total_reserved.clone(), recipient_split)?;
+        let recipient_rewards = percent_ratio::<T>(total_reserved, recipient_split)?;
 
         // Create Settlement for the future async claim
         if recipient_rewards > Zero::zero() {
@@ -177,7 +177,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
                 Settlement::<T::AccountId, BalanceOf<T>> {
                     requester: charge.payee,
                     recipient,
-                    settlement_amount: recipient_rewards.clone() + recipient_bonus,
+                    settlement_amount: recipient_rewards + recipient_bonus,
                     outcome,
                     source: charge.source,
                     role: charge.role,
@@ -400,7 +400,7 @@ mod tests {
             ));
 
             let one_percent_charge_amt = charge_amt / 100;
-            let ten_percent_charge_amt = charge_amt / 10;
+            let _ten_percent_charge_amt = charge_amt / 10;
 
             assert_eq!(
                 Balances::free_balance(

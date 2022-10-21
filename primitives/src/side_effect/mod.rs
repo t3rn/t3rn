@@ -127,7 +127,7 @@ where
         let confirmed_cost = self.clone().confirmed.and_then(|c| c.cost);
         Ok(HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: self.input.target,
-            prize: self.input.max_fee,
+            prize: self.input.max_reward,
             encoded_action: TargetId::try_from(self.input.encoded_action.clone())
                 .unwrap_or_default(),
             encoded_args: self.input.encoded_args,
@@ -161,11 +161,11 @@ mod tests {
     fn successfully_creates_empty_side_effect() {
         let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -174,11 +174,11 @@ mod tests {
             empty_side_effect,
             SideEffect {
                 target: [0, 0, 0, 0],
-                max_fee: 1,
+                max_reward: 1,
                 encoded_action: vec![],
                 encoded_args: vec![],
                 signature: vec![],
-                requester_nonce: 0,
+                nonce: 0,
                 insurance: 1,
                 enforce_executor: None
             }
@@ -195,7 +195,7 @@ mod tests {
 
         let tsfx_input = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 3,
+            max_reward: 3,
             insurance: 2,
             encoded_action: vec![],
             encoded_args: vec![
@@ -205,7 +205,7 @@ mod tests {
                 [optional_insurance.encode(), optional_reward.encode()].concat(),
             ],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             enforce_executor: None,
         };
 
@@ -262,7 +262,7 @@ mod tests {
             tsfx_input,
             SideEffect {
                 target: [0, 0, 0, 0],
-                max_fee: 3,
+                max_reward: 3,
                 encoded_action: vec![],
                 encoded_args: vec![
                     vec![
@@ -280,7 +280,7 @@ mod tests {
                     ]
                 ],
                 signature: vec![],
-                requester_nonce: 0,
+                nonce: 0,
                 insurance: 2,
                 enforce_executor: None
             }
@@ -291,11 +291,11 @@ mod tests {
     fn successfully_generates_id_for_side_empty_effect() {
         let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -312,11 +312,11 @@ mod tests {
     fn successfully_defaults_side_effect_to_an_empty_one() {
         let empty_side_effect = SideEffect::<u64, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 0,
+            max_reward: 0,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 0,
             enforce_executor: None,
         };

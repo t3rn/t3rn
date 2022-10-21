@@ -150,7 +150,7 @@ pub mod pallet {
     /// Links mapping SFX 2 XTX
     ///
     #[pallet::storage]
-    #[pallet::getter(fn local_sidfe_effect_to_xtx_id_links)]
+    #[pallet::getter(fn get_sfx_2_xtx_links)]
     pub type SFX2XTXLinksMap<T> =
         StorageMap<_, Identity, SideEffectId<T>, XExecSignalId<T>, OptionQuery>;
 
@@ -778,14 +778,17 @@ pub mod pallet {
 
             // Use encoded XBI hash as ID for the executor's charge
             let charge_id = T::Hashing::hash(&xbi.encode()[..]);
-            let total_max_fees = xbi.metadata.total_max_costs_in_local_currency()?;
+            let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
 
             // fixme: must be solved with charging and update status order if XBI is the first SFX
             if local_ctx.xtx.status == CircuitStatus::Ready {
                 local_ctx.xtx.status = CircuitStatus::PendingExecution;
             }
 
-            Self::square_up(&mut local_ctx, Some((charge_id, executor, total_max_fees)))?;
+            Self::square_up(
+                &mut local_ctx,
+                Some((charge_id, executor, total_max_rewards)),
+            )?;
 
             T::XBIPromise::then(
                 xbi,
@@ -1427,35 +1430,35 @@ impl<T: Config> Pallet<T> {
     ) -> Result<(), Error<T>> {
         let requester = local_ctx.xtx.requester.clone();
 
-        let unreserve_requester_xtx_max_fees = |current_step_fsx: &Vec<
+        let unreserve_requester_xtx_max_rewards = |current_step_fsx: &Vec<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, <T as Config>::Escrowed>,
             >,
         >| {
-            let mut total_max_fees = Zero::zero();
+            let mut total_max_rewards = Zero::zero();
             for fsx in current_step_fsx.iter() {
-                total_max_fees += fsx.input.max_fee;
+                total_max_rewards += fsx.input.max_reward;
             }
 
-            <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(&requester, total_max_fees);
+            <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(&requester, total_max_rewards);
         };
         match local_ctx.xtx.status {
             CircuitStatus::Requested => {
-                let mut total_max_fees = Zero::zero();
+                let mut total_max_rewards = Zero::zero();
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    total_max_fees += fsx.input.max_fee;
+                    total_max_rewards += fsx.input.max_reward;
                 }
-                <T::Escrowed as EscrowTrait<T>>::Currency::reserve(&requester, total_max_fees)
+                <T::Escrowed as EscrowTrait<T>>::Currency::reserve(&requester, total_max_rewards)
                     .map_err(|_e| Error::<T>::XtxChargeFailedRequesterBalanceTooLow)?;
             },
             CircuitStatus::DroppedAtBidding => {
-                unreserve_requester_xtx_max_fees(Self::get_current_step_fsx(local_ctx));
+                unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
             },
             CircuitStatus::Ready => {
-                // Unreserve the max_fees and replace with possibly lower bids of executor in following loop
-                unreserve_requester_xtx_max_fees(Self::get_current_step_fsx(local_ctx));
+                // Unreserve the max_rewards and replace with possibly lower bids of executor in following loop
+                unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
                     let bid_4_fsx: &SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>> =
@@ -1556,9 +1559,6 @@ impl<T: Config> Pallet<T> {
         _requester: &T::AccountId,
         _sequential: bool,
     ) -> Result<(), &'static str> {
-        // ToDo: Consuder burn_validation_fee
-        // Fees::<T>::burn_validation_fee(requester, side_effects)?;
-
         let mut full_side_effects: Vec<
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         > = vec![];
@@ -1571,6 +1571,12 @@ impl<T: Config> Pallet<T> {
             } else {
                 SecurityLvl::Optimistic
             }
+        }
+
+        // ToDo: Handle empty SFX case as error instead - must satisfy requirements of LocalTrigger
+        if side_effects.is_empty() {
+            local_ctx.full_side_effects = vec![vec![]];
+            return Ok(())
         }
 
         for sfx in side_effects.iter() {
@@ -1608,8 +1614,8 @@ impl<T: Config> Pallet<T> {
                     "SFX must have its insurance and reward linked into the last arguments list",
                 )
             };
-            if sfx.max_fee != reward {
-                return Err("Side_effect max_fee must be equal to reward of Optional Insurance")
+            if sfx.max_reward != reward {
+                return Err("Side_effect max_reward must be equal to reward of Optional Insurance")
             }
             if sfx.insurance != insurance {
                 return Err("Side_effect insurance must be equal to reward of Optional Insurance")
@@ -1630,22 +1636,26 @@ impl<T: Config> Pallet<T> {
 
         let mut full_side_effects_steps: Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        > = vec![vec![]];
+        > = vec![vec![], vec![]];
 
-        for sorted_fse in full_side_effects {
-            let current_step = full_side_effects_steps
-                .last_mut()
-                .expect("Vector initialized at declaration");
-
-            // Push to the single step as long as there's no Dirty side effect
-            //  Or if there was no Optimistic/Escrow side effects before
-
-            if sorted_fse.security_lvl != SecurityLvl::Optimistic || current_step.is_empty() {
-                current_step.push(sorted_fse);
-            } else if sorted_fse.security_lvl == SecurityLvl::Optimistic {
-                // R#1: there only can be max 1 dirty side effect at each step.
-                full_side_effects_steps.push(vec![sorted_fse])
+        // Split for 2 following steps of Escrow and Optimistic and
+        //  assign indices to each SFX of current Xtx to avoid collisions the same SFX within the same Xtx.
+        for mut sorted_fsx in full_side_effects.iter_mut() {
+            if sorted_fsx.security_lvl == SecurityLvl::Escrow {
+                // ToDo: Replace nonce as field with nonce as Xtx index argument.
+                sorted_fsx.input.nonce = full_side_effects_steps[0].len() as u32;
+                full_side_effects_steps[0].push(sorted_fsx.clone());
+            } else if sorted_fsx.security_lvl == SecurityLvl::Optimistic {
+                sorted_fsx.input.nonce = full_side_effects_steps[1].len() as u32;
+                full_side_effects_steps[1].push(sorted_fsx.clone());
             }
+        }
+
+        // full_side_effects_steps should be non-empty at this point
+        if full_side_effects_steps[0].is_empty() {
+            full_side_effects_steps = vec![full_side_effects_steps[1].clone()];
+        } else if full_side_effects_steps[1].is_empty() {
+            full_side_effects_steps = vec![full_side_effects_steps[0].clone()];
         }
 
         local_ctx.full_side_effects = full_side_effects_steps.clone();
@@ -1921,7 +1931,7 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            acc_rewards += fsx.input.max_fee;
+            acc_rewards += fsx.expect_sfx_bid().bid;
         }
 
         acc_rewards

@@ -184,11 +184,11 @@ mod tests {
     fn successfully_confirms_1_side_effect_and_completes_xtx() {
         let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -247,22 +247,22 @@ mod tests {
     fn successfully_confirms_2_side_effect_in_1_step_in_xtx() {
         let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
 
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -371,22 +371,22 @@ mod tests {
     fn successfully_confirms_2_side_effect_in_2_steps_in_xtx() {
         let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
 
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -494,22 +494,22 @@ mod tests {
     fn throws_when_attempts_to_confirm_side_effect_from_2nd_step_without_1st_in_xtx() {
         let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
 
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
-            max_fee: 1,
+            max_reward: 1,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };

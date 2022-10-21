@@ -390,7 +390,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
 
     let side_effects = vec![SideEffect {
         target: [0u8, 0u8, 0u8, 0u8],
-        max_fee: 2,
+        max_reward: 2,
         encoded_action: vec![116, 114, 97, 110],
         encoded_args: vec![
             vec![
@@ -410,7 +410,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
             ],
         ],
         signature: vec![],
-        requester_nonce: 0,
+        nonce: 0,
         enforce_executor: Some(
             [
                 53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85, 53,
@@ -508,7 +508,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                             .into(),
                             vec![SideEffect {
                                 target: [0u8, 0u8, 0u8, 0u8],
-                                max_fee: 1,
+                                max_reward: 1,
                                 encoded_action: vec![116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![
@@ -526,7 +526,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                     ]
                                 ],
                                 signature: vec![],
-                                requester_nonce: 0,
+                                nonce: 0,
                                 enforce_executor: None,
                                 insurance: 1,
                             }],
@@ -698,7 +698,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                             .into(),
                             vec![SideEffect {
                                 target: [0u8, 0u8, 0u8, 0u8],
-                                max_fee: 1 as Balance,
+                                max_reward: 1 as Balance,
                                 insurance: 1 as Balance,
                                 encoded_action: vec![116, 114, 97, 110],
                                 encoded_args: vec![
@@ -718,7 +718,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                     ]
                                 ],
                                 signature: vec![],
-                                requester_nonce: 0,
+                                nonce: 0,
                                 enforce_executor: None
                             }],
                             vec![hex!(
@@ -872,7 +872,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::C), // insurance = 3, max_fee/reward = 3
+            (Type::OptionalInsurance, ArgVariant::C), // insurance = 3, max_reward/reward = 3
         ],
         &mut local_state,
         transfer_protocol_box,
@@ -913,7 +913,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 fee,
                 true,
             ));
-            // Requester should have offered SFX::max_fee reserved
+            // Requester should have offered SFX::max_reward reserved
             assert_eq!(Balances::reserved_balance(&REQUESTER), MAX_FEE);
             assert_eq!(
                 Balances::free_balance(&REQUESTER),
@@ -946,7 +946,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 }]]
             );
 
-            // Bob opens bid with bid = max_fee, the highest possible
+            // Bob opens bid with bid = max_reward, the highest possible
             assert_ok!(Circuit::bid_execution(
                 Origin::signed(BID_WINNER),
                 xtx_id,
@@ -3629,7 +3629,7 @@ fn into_se_from_chain() {
         se,
         SideEffect {
             target: [112u8, 100u8, 111u8, 116u8],
-            max_fee: 0,
+            max_reward: 0,
             insurance: 0,
             encoded_action: vec![116, 114, 97, 110],
             encoded_args: vec![
@@ -3645,7 +3645,7 @@ fn into_se_from_chain() {
                 vec![]
             ],
             signature: vec![],
-            requester_nonce: 0,
+            nonce: 0,
             enforce_executor: None,
         }
     )

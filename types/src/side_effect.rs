@@ -31,12 +31,12 @@ pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 #[derive(Clone, Eq, PartialEq, Encode, Default, Decode, Debug, TypeInfo)]
 pub struct SideEffect<AccountId, BalanceOf> {
     pub target: TargetId,
-    pub max_fee: BalanceOf,
+    pub max_reward: BalanceOf,
     pub insurance: BalanceOf,
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
-    pub requester_nonce: u32,
+    pub nonce: u32,
     pub enforce_executor: Option<AccountId>,
 }
 
@@ -118,12 +118,12 @@ where
 
         Ok(SideEffect::<AccountId, BalanceOf> {
             target,
-            max_fee: Zero::zero(),
+            max_reward: Zero::zero(),
             encoded_action: action_bytes,
             encoded_args: args,
             signature: vec![],
             insurance: Zero::zero(),
-            requester_nonce: 0,
+            nonce: 0,
             enforce_executor: None,
         })
     }
