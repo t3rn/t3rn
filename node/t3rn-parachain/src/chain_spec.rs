@@ -1,28 +1,17 @@
 use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig};
 use cumulus_primitives_core::ParaId;
 
+use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
-use sp_core::{Pair, Public};
+use sp_core::{crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-use t3rn_primitives::{
-    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
-    monetary::TRN,
-    ChainId,
-};
+use t3rn_primitives::{monetary::TRN, ChainId};
 
-const PARACHAIN_ID: u32 = 3333_u32;
-
-fn is_relaychain(chain_id: &ChainId) -> bool {
-    match *chain_id {
-        POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
-        _ => false,
-    }
-}
-
-/// t3rn-pallets chain spec config -- END
+const PARACHAIN_ID: u32 = 3000_u32;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -105,7 +94,7 @@ pub fn polkadot_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 42.into());
+    properties.insert("ss58Format".into(), 9935.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -118,31 +107,40 @@ pub fn polkadot_config() -> ChainSpec {
                 // Invulnerable collators
                 vec![
                     (
-                        get_account_id_from_adrs(
-                            "5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW",
-                        ),
-                        get_aura_id_from_adrs("5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW"),
+                        // Collator 1: t3W7yG2pkGdLogoX6KJm5KtPMMWBQygvcZArcjtjo5AsJPad2
+                        hex!("5232d5d6b3904523020c08addf5b648f5ecb1e3481c04fe46d2d82efb193b674")
+                            .into(),
+                        hex!("5232d5d6b3904523020c08addf5b648f5ecb1e3481c04fe46d2d82efb193b674")
+                            .unchecked_into(),
                     ),
                     (
-                        get_account_id_from_adrs(
-                            "5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v",
-                        ),
-                        get_aura_id_from_adrs("5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v"),
+                        // Collator 2: t3X7yGXEmCwTwwS6aFwwNeXDrGT2EU9Cy13G4qUPNpVh4Phjm
+                        hex!("7e6f18e1b19513672c6a11d1e09880ba05015c84022ebe84c781f5bc71fc4d79")
+                            .into(),
+                        hex!("7e6f18e1b19513672c6a11d1e09880ba05015c84022ebe84c781f5bc71fc4d79")
+                            .unchecked_into(),
                     ),
                 ],
                 // Prefunded accounts
-                vec![get_account_id_from_adrs(
-                    "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A",
-                )],
+                vec![
+                    // Genesis Account: t3UH41t54cqKW72s9KSepTr1xW1r9F91aPfJvDfDgQf1CAgRC
+                    hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d").into(),
+                ],
                 PARACHAIN_ID.into(),
                 // Sudo
-                get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
+                hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d").into(),
             )
         },
         // Bootnodes
-        Vec::new(),
+        vec![],
         // Telemetry
-        None,
+        Some(
+            TelemetryEndpoints::new(vec![(
+                "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F".into(),
+                1,
+            )])
+            .expect("telemetry"),
+        ),
         // Protocol ID
         Some("t3rn"),
         // Fork ID
@@ -179,13 +177,14 @@ fn polkadot_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1 << 60))
+                .map(|k| (k, 100_000_000_000_000_000_000)) // 100 million TRN
                 .collect(),
         },
         parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
         collator_selection: circuit_parachain_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
             candidacy_bond: (TRN as u128) * 10_000_u128,
+            desired_candidates: 32_u32,
             ..Default::default()
         },
         session: circuit_parachain_runtime::SessionConfig {
