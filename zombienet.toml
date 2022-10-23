@@ -1,0 +1,53 @@
+[relaychain]
+command = "polkadot"
+chain = "rococo-local"
+
+[[relaychain.nodes]]
+name = "alice"
+ws_port = 9900
+
+[[relaychain.node_groups]]
+name = "bob"
+count = 4
+
+[[parachains]]
+id = 3000
+cumulus_based = true
+chain = "zombienet.json"
+
+[[parachains.collators]]
+name = "t0rn-collator-01"
+command = "circuit-collator"
+ws_port = 9920
+
+[[parachains.collators]]
+name = "t0rn-collator02"
+command = "circuit-collator"
+ws_port = 9921
+
+[[parachains]]
+id = 3001
+cumulus_based = true
+chain = "zombienet.json"
+
+[[parachains.collators]]
+name = "t1rn-collator01"
+command = "circuit-collator"
+ws_port = 9930
+
+[[parachains.collators]]
+name = "t1rn-collator02"
+command = "circuit-collator"
+ws_port = 9931
+
+[[hrmp_channels]]
+sender = 3000
+recipient = 3001
+max_capacity = 8
+max_message_size = 512
+
+[[hrmp_channels]]
+sender = 3001
+recipient = 3000
+max_capacity = 8
+max_message_size = 512
