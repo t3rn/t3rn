@@ -28,11 +28,14 @@ pub struct ActiveSetClaimablePerRound<Account, Balance> {
     pub claimable: Balance,
 }
 
-fn percent_ratio<T: Config>(amt: BalanceOf<T>, percent: u8) -> Result<BalanceOf<T>, DispatchError> {
-    amt.checked_mul(&BalanceOf::<T>::from(percent))
-        .ok_or::<DispatchError>(Error::<T>::ChargeOrSettlementCalculationOverflow.into())?
-        .checked_div(&BalanceOf::<T>::from(100u8))
-        .ok_or::<DispatchError>(Error::<T>::ChargeOrSettlementCalculationOverflow.into())
+pub fn percent_ratio<BalanceOf: Zero + CheckedDiv + CheckedMul + From<u8>>(
+    amt: BalanceOf,
+    percent: u8,
+) -> Result<BalanceOf, DispatchError> {
+    amt.checked_mul(&BalanceOf::from(percent))
+        .ok_or::<DispatchError>("PercentRatio::ChargeOrSettlementCalculationOverflow".into())?
+        .checked_div(&BalanceOf::from(100u8))
+        .ok_or::<DispatchError>("PercentRatio::ChargeOrSettlementCalculationOverflow".into())
 }
 
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
@@ -150,9 +153,9 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             if actual_fees > total_reserved {
                 return Err(Error::<T>::ChargeOrSettlementActualFeesOutgrowReserved.into())
             }
-            percent_ratio::<T>(total_reserved - actual_fees, payee_split)?
+            percent_ratio::<BalanceOf<T>>(total_reserved - actual_fees, payee_split)?
         } else {
-            percent_ratio::<T>(total_reserved, payee_split)?
+            percent_ratio::<BalanceOf<T>>(total_reserved, payee_split)?
         };
 
         T::Currency::slash_reserved(&charge.payee, total_reserved);
@@ -167,7 +170,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             charge.recipient
         };
 
-        let recipient_rewards = percent_ratio::<T>(total_reserved, recipient_split)?;
+        let recipient_rewards = percent_ratio::<BalanceOf<T>>(total_reserved, recipient_split)?;
 
         // Create Settlement for the future async claim
         if recipient_rewards > Zero::zero() {
@@ -279,7 +282,7 @@ mod tests {
     use super::*;
     use circuit_mock_runtime::*;
 
-    use frame_support::{assert_err, assert_noop, assert_ok};
+    use frame_support::{assert_err, assert_ok};
 
     use sp_core::H256;
     use t3rn_primitives::common::RoundInfo;
@@ -474,6 +477,16 @@ mod tests {
             ),
                 circuit_runtime_pallets::pallet_account_manager::Error::<Runtime>::ChargeOrSettlementActualFeesOutgrowReserved,
             );
+        });
+    }
+
+    #[test]
+    fn percent_ratio_works_for_zero() {
+        ExtBuilder::default().build().execute_with(|| {
+            assert_eq!(percent_ratio::<Balance>(0, 100).unwrap(), 0);
+            assert_eq!(percent_ratio::<Balance>(100, 0).unwrap(), 0);
+            assert_eq!(percent_ratio::<Balance>(10, 100).unwrap(), 10);
+            assert_eq!(percent_ratio::<Balance>(100, 10).unwrap(), 10);
         });
     }
 
