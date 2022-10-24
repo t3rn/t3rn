@@ -279,7 +279,7 @@ mod tests {
     use super::*;
     use circuit_mock_runtime::*;
 
-    use frame_support::{assert_err, assert_ok};
+    use frame_support::{assert_err, assert_noop, assert_ok};
 
     use sp_core::H256;
     use t3rn_primitives::common::RoundInfo;
@@ -429,6 +429,50 @@ mod tests {
                     execution_id,
                 ),
                 None
+            );
+        });
+    }
+
+    #[test]
+    fn test_overflow_err_after_actual_fees_exceed_deposit() {
+        ExtBuilder::default().build().execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(
+                &<Runtime as pallet_account_manager::Config>::EscrowAccount::get(),
+                DEFAULT_BALANCE,
+            );
+            const CHARGE: Balance = 100;
+            const INSURANCE: Balance = 10;
+
+            let execution_id: H256 = H256::repeat_byte(0);
+
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                Balance,
+                Hash,
+                BlockNumber,
+            >>::deposit(
+                execution_id,
+                &ALICE,
+                CHARGE,
+                INSURANCE,
+                BenefitSource::TrafficRewards,
+                CircuitRole::ContractAuthor,
+                Some(BOB),
+            ));
+
+            assert_eq!(Balances::reserved_balance(&ALICE), CHARGE + INSURANCE);
+
+            assert_err!(<AccountManager as AccountManagerExt<
+                AccountId,
+                Balance,
+                Hash,
+                BlockNumber,
+            >>::finalize(
+                execution_id, Outcome::Revert, None, Some(CHARGE + INSURANCE + 1),
+            ),
+                circuit_runtime_pallets::pallet_account_manager::Error::<Runtime>::ChargeOrSettlementActualFeesOutgrowReserved,
             );
         });
     }
