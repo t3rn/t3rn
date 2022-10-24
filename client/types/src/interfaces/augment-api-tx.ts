@@ -1,12 +1,22 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from "@polkadot/api-base/types";
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import "@polkadot/api-base/types/submittable";
+
+import type {
+  ApiTypes,
+  AugmentedSubmittable,
+  SubmittableExtrinsic,
+  SubmittableExtrinsicFunction,
+} from "@polkadot/api-base/types";
 import type {
   Bytes,
   Compact,
   Option,
   Struct,
+  U256,
   U8aFixed,
   Vec,
   bool,
@@ -14,35 +24,943 @@ import type {
   u16,
   u32,
   u64,
+  u8,
 } from "@polkadot/types-codec";
 import type { AnyNumber, IMethod, ITuple } from "@polkadot/types-codec/types";
 import type {
   AccountId32,
   Call,
+  H160,
   H256,
   MultiAddress,
   Perbill,
 } from "@polkadot/types/interfaces/runtime";
 import type {
   CircuitStandaloneRuntimeOriginCaller,
+  PalletAssetsDestroyWitness,
+  PalletXbiPortalXbiFormat,
+  PalletXbiPortalXbiFormatXbiCheckIn,
   SpCoreVoid,
-  SpFinalityGrandpaAppPublic,
   SpFinalityGrandpaEquivocationProof,
-  SpRuntimeDigest,
-  T3rnPrimitivesAbiGatewayABIConfig,
-  T3rnPrimitivesAbiType,
+  T3rnPrimitivesAccountManagerOutcome,
+  T3rnPrimitivesClaimableBenefitSource,
+  T3rnPrimitivesClaimableCircuitRole,
   T3rnPrimitivesContractsRegistryRegistryContract,
   T3rnPrimitivesGatewayGenesisConfig,
   T3rnPrimitivesGatewaySysProps,
   T3rnPrimitivesGatewayType,
   T3rnPrimitivesGatewayVendor,
-  T3rnPrimitivesSideEffect,
-  T3rnPrimitivesSideEffectConfirmedSideEffect,
-  T3rnPrimitivesXdnsParachain,
+  T3rnPrimitivesMonetaryBeneficiaryRole,
+  T3rnPrimitivesMonetaryInflationAllocation,
+  T3rnTypesAbiGatewayABIConfig,
+  T3rnTypesAbiType,
+  T3rnTypesSideEffect,
+  T3rnTypesSideEffectConfirmedSideEffect,
+  XcmV2Xcm,
 } from "@polkadot/types/lookup";
 
+export type __AugmentedSubmittable = AugmentedSubmittable<() => unknown>;
+export type __SubmittableExtrinsic<ApiType extends ApiTypes> =
+  SubmittableExtrinsic<ApiType>;
+export type __SubmittableExtrinsicFunction<ApiType extends ApiTypes> =
+  SubmittableExtrinsicFunction<ApiType>;
+
 declare module "@polkadot/api-base/types/submittable" {
-  export interface AugmentedSubmittables<ApiType extends ApiTypes> {
+  interface AugmentedSubmittables<ApiType extends ApiTypes> {
+    accountManager: {
+      deposit: AugmentedSubmittable<
+        (
+          chargeId: H256 | string | Uint8Array,
+          payee: AccountId32 | string | Uint8Array,
+          chargeFee: u128 | AnyNumber | Uint8Array,
+          offeredReward: u128 | AnyNumber | Uint8Array,
+          source:
+            | T3rnPrimitivesClaimableBenefitSource
+            | "TrafficFees"
+            | "TrafficRewards"
+            | "BootstrapPool"
+            | "Inflation"
+            | number
+            | Uint8Array,
+          role:
+            | T3rnPrimitivesClaimableCircuitRole
+            | "Ambassador"
+            | "Executor"
+            | "Attester"
+            | "Staker"
+            | "Collator"
+            | "ContractAuthor"
+            | "Relayer"
+            | "Requester"
+            | "Local"
+            | number
+            | Uint8Array,
+          maybeRecipient:
+            | Option<AccountId32>
+            | null
+            | Uint8Array
+            | AccountId32
+            | string
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          H256,
+          AccountId32,
+          u128,
+          u128,
+          T3rnPrimitivesClaimableBenefitSource,
+          T3rnPrimitivesClaimableCircuitRole,
+          Option<AccountId32>
+        ]
+      >;
+      finalize: AugmentedSubmittable<
+        (
+          chargeId: H256 | string | Uint8Array,
+          outcome:
+            | T3rnPrimitivesAccountManagerOutcome
+            | "UnexpectedFailure"
+            | "Revert"
+            | "Commit"
+            | number
+            | Uint8Array,
+          maybeRecipient:
+            | Option<AccountId32>
+            | null
+            | Uint8Array
+            | AccountId32
+            | string,
+          maybeActualFees: Option<u128> | null | Uint8Array | u128 | AnyNumber
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          H256,
+          T3rnPrimitivesAccountManagerOutcome,
+          Option<AccountId32>,
+          Option<u128>
+        ]
+      >;
+      /** Generic tx */
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
+    assets: {
+      /**
+       * Approve an amount of asset for transfer by a delegated third-party account.
+       *
+       * Origin must be Signed.
+       *
+       * Ensures that `ApprovalDeposit` worth of `Currency` is reserved from
+       * signing account for the purpose of holding the approval. If some
+       * non-zero amount of assets is already approved from signing account to
+       * `delegate`, then it is topped up or unreserved to meet the right value.
+       *
+       * NOTE: The signing account does not need to own `amount` of assets at
+       * the point of making this call.
+       *
+       * - `id`: The identifier of the asset.
+       * - `delegate`: The account to delegate permission to transfer asset.
+       * - `amount`: The amount of asset that may be transferred by `delegate`. If
+       *   there is already an approval in place, then this acts additively.
+       *
+       * Emits `ApprovedTransfer` on success.
+       *
+       * Weight: `O(1)`
+       */
+      approveTransfer: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          delegate:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          amount: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, Compact<u128>]
+      >;
+      /**
+       * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
+       *
+       * Origin must be Signed and the sender should be the Manager of the asset `id`.
+       *
+       * Bails with `NoAccount` if the `who` is already dead.
+       *
+       * - `id`: The identifier of the asset to have some amount burned.
+       * - `who`: The account to be debited from.
+       * - `amount`: The maximum amount by which `who`'s balance should be reduced.
+       *
+       * Emits `Burned` with the actual amount burned. If this takes the balance
+       * to below the minimum for the asset, then the amount burned is increased
+       * to take it to zero.
+       *
+       * Weight: `O(1)` Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
+       */
+      burn: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          who:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          amount: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, Compact<u128>]
+      >;
+      /**
+       * Cancel all of some asset approved for delegated transfer by a
+       * third-party account.
+       *
+       * Origin must be Signed and there must be an approval in place between
+       * signer and `delegate`.
+       *
+       * Unreserves any deposit previously reserved by `approve_transfer` for
+       * the approval.
+       *
+       * - `id`: The identifier of the asset.
+       * - `delegate`: The account delegated permission to transfer asset.
+       *
+       * Emits `ApprovalCancelled` on success.
+       *
+       * Weight: `O(1)`
+       */
+      cancelApproval: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          delegate:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress]
+      >;
+      /**
+       * Clear the metadata for an asset.
+       *
+       * Origin must be Signed and the sender should be the Owner of the asset `id`.
+       *
+       * Any deposit is freed for the asset owner.
+       *
+       * - `id`: The identifier of the asset to clear.
+       *
+       * Emits `MetadataCleared`.
+       *
+       * Weight: `O(1)`
+       */
+      clearMetadata: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>]
+      >;
+      /**
+       * Issue a new class of fungible assets from a public origin.
+       *
+       * This new asset class has no assets initially and its owner is the origin.
+       *
+       * The origin must be Signed and the sender must have sufficient funds free.
+       *
+       * Funds of sender are reserved by `AssetDeposit`.
+       *
+       * Parameters:
+       *
+       * - `id`: The identifier of the new asset. This must not be currently in
+       *   use to identify an existing asset.
+       * - `admin`: The admin of this class of assets. The admin is the initial
+       *   address of each member of the asset class's admin team.
+       * - `min_balance`: The minimum balance of this new asset that any single
+       *   account must have. If an account's balance is reduced below this,
+       *   then it collapses to zero.
+       *
+       * Emits `Created` event when successful.
+       *
+       * Weight: `O(1)`
+       */
+      create: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          admin:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          minBalance: u128 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, u128]
+      >;
+      /**
+       * Destroy a class of fungible assets.
+       *
+       * The origin must conform to `ForceOrigin` or must be Signed and the
+       * sender must be the owner of the asset `id`.
+       *
+       * - `id`: The identifier of the asset to be destroyed. This must identify
+       *   an existing asset.
+       *
+       * Emits `Destroyed` event when successful.
+       *
+       * NOTE: It can be helpful to first freeze an asset before destroying it
+       * so that you can provide accurate witness information and prevent users
+       * from manipulating state in a way that can make it harder to destroy.
+       *
+       * Weight: `O(c + p + a)` where:
+       *
+       * - `c = (witness.accounts - witness.sufficients)`
+       * - `s = witness.sufficients`
+       * - `a = witness.approvals`
+       */
+      destroy: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          witness:
+            | PalletAssetsDestroyWitness
+            | { accounts?: any; sufficients?: any; approvals?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, PalletAssetsDestroyWitness]
+      >;
+      /**
+       * Alter the attributes of a given asset.
+       *
+       * Origin must be `ForceOrigin`.
+       *
+       * - `id`: The identifier of the asset.
+       * - `owner`: The new Owner of this asset.
+       * - `issuer`: The new Issuer of this asset.
+       * - `admin`: The new Admin of this asset.
+       * - `freezer`: The new Freezer of this asset.
+       * - `min_balance`: The minimum balance of this new asset that any single
+       *   account must have. If an account's balance is reduced below this,
+       *   then it collapses to zero.
+       * - `is_sufficient`: Whether a non-zero balance of this asset is deposit of
+       *   sufficient value to account for the state bloat associated with its
+       *   balance storage. If set to `true`, then non-zero balances may be
+       *   stored without a `consumer` reference (and thus an ED in the Balances
+       *   pallet or whatever else is used to control user-account state growth).
+       * - `is_frozen`: Whether this asset class is frozen except for
+       *   permissioned/admin instructions.
+       *
+       * Emits `AssetStatusChanged` with the identity of the asset.
+       *
+       * Weight: `O(1)`
+       */
+      forceAssetStatus: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          owner:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          issuer:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          admin:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          freezer:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          minBalance: Compact<u128> | AnyNumber | Uint8Array,
+          isSufficient: bool | boolean | Uint8Array,
+          isFrozen: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          Compact<u32>,
+          MultiAddress,
+          MultiAddress,
+          MultiAddress,
+          MultiAddress,
+          Compact<u128>,
+          bool,
+          bool
+        ]
+      >;
+      /**
+       * Cancel all of some asset approved for delegated transfer by a
+       * third-party account.
+       *
+       * Origin must be either ForceOrigin or Signed origin with the signer
+       * being the Admin account of the asset `id`.
+       *
+       * Unreserves any deposit previously reserved by `approve_transfer` for
+       * the approval.
+       *
+       * - `id`: The identifier of the asset.
+       * - `delegate`: The account delegated permission to transfer asset.
+       *
+       * Emits `ApprovalCancelled` on success.
+       *
+       * Weight: `O(1)`
+       */
+      forceCancelApproval: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          owner:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          delegate:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, MultiAddress]
+      >;
+      /**
+       * Clear the metadata for an asset.
+       *
+       * Origin must be ForceOrigin.
+       *
+       * Any deposit is returned.
+       *
+       * - `id`: The identifier of the asset to clear.
+       *
+       * Emits `MetadataCleared`.
+       *
+       * Weight: `O(1)`
+       */
+      forceClearMetadata: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>]
+      >;
+      /**
+       * Issue a new class of fungible assets from a privileged origin.
+       *
+       * This new asset class has no assets initially.
+       *
+       * The origin must conform to `ForceOrigin`.
+       *
+       * Unlike `create`, no funds are reserved.
+       *
+       * - `id`: The identifier of the new asset. This must not be currently in
+       *   use to identify an existing asset.
+       * - `owner`: The owner of this class of assets. The owner has full
+       *   superuser permissions over this asset, but may later change and
+       *   configure the permissions using `transfer_ownership` and `set_team`.
+       * - `min_balance`: The minimum balance of this new asset that any single
+       *   account must have. If an account's balance is reduced below this,
+       *   then it collapses to zero.
+       *
+       * Emits `ForceCreated` event when successful.
+       *
+       * Weight: `O(1)`
+       */
+      forceCreate: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          owner:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          isSufficient: bool | boolean | Uint8Array,
+          minBalance: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, bool, Compact<u128>]
+      >;
+      /**
+       * Force the metadata for an asset to some value.
+       *
+       * Origin must be ForceOrigin.
+       *
+       * Any deposit is left alone.
+       *
+       * - `id`: The identifier of the asset to update.
+       * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+       * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+       * - `decimals`: The number of decimals this asset uses to represent one unit.
+       *
+       * Emits `MetadataSet`.
+       *
+       * Weight: `O(N + S)` where N and S are the length of the name and symbol
+       * respectively.
+       */
+      forceSetMetadata: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          name: Bytes | string | Uint8Array,
+          symbol: Bytes | string | Uint8Array,
+          decimals: u8 | AnyNumber | Uint8Array,
+          isFrozen: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, Bytes, Bytes, u8, bool]
+      >;
+      /**
+       * Move some assets from one account to another.
+       *
+       * Origin must be Signed and the sender should be the Admin of the asset `id`.
+       *
+       * - `id`: The identifier of the asset to have some amount transferred.
+       * - `source`: The account to be debited.
+       * - `dest`: The account to be credited.
+       * - `amount`: The amount by which the `source`'s balance of assets should
+       *   be reduced and `dest`'s balance increased. The amount actually
+       *   transferred may be slightly greater in the case that the transfer
+       *   would otherwise take the `source` balance above zero but below the
+       *   minimum balance. Must be greater than zero.
+       *
+       * Emits `Transferred` with the actual amount transferred. If this takes
+       * the source balance to below the minimum for the asset, then the amount
+       * transferred is increased to take it to zero.
+       *
+       * Weight: `O(1)` Modes: Pre-existence of `dest`; Post-existence of
+       * `source`; Account pre-existence of `dest`.
+       */
+      forceTransfer: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          source:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          dest:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          amount: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, MultiAddress, Compact<u128>]
+      >;
+      /**
+       * Disallow further unprivileged transfers from an account.
+       *
+       * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+       *
+       * - `id`: The identifier of the asset to be frozen.
+       * - `who`: The account to be frozen.
+       *
+       * Emits `Frozen`.
+       *
+       * Weight: `O(1)`
+       */
+      freeze: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          who:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress]
+      >;
+      /**
+       * Disallow further unprivileged transfers for the asset class.
+       *
+       * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+       *
+       * - `id`: The identifier of the asset to be frozen.
+       *
+       * Emits `Frozen`.
+       *
+       * Weight: `O(1)`
+       */
+      freezeAsset: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>]
+      >;
+      /**
+       * Mint assets of a particular class.
+       *
+       * The origin must be Signed and the sender must be the Issuer of the asset `id`.
+       *
+       * - `id`: The identifier of the asset to have some amount minted.
+       * - `beneficiary`: The account to be credited with the minted assets.
+       * - `amount`: The amount of the asset to be minted.
+       *
+       * Emits `Issued` event when successful.
+       *
+       * Weight: `O(1)` Modes: Pre-existing balance of `beneficiary`; Account
+       * pre-existence of `beneficiary`.
+       */
+      mint: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          beneficiary:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          amount: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, Compact<u128>]
+      >;
+      /**
+       * Return the deposit (if any) of an asset account.
+       *
+       * The origin must be Signed.
+       *
+       * - `id`: The identifier of the asset for the account to be created.
+       * - `allow_burn`: If `true` then assets may be destroyed in order to
+       *   complete the refund.
+       *
+       * Emits `Refunded` event when successful.
+       */
+      refund: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          allowBurn: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, bool]
+      >;
+      /**
+       * Set the metadata for an asset.
+       *
+       * Origin must be Signed and the sender should be the Owner of the asset `id`.
+       *
+       * Funds of sender are reserved according to the formula:
+       * `MetadataDepositBase + MetadataDepositPerByte * (name.len +
+       * symbol.len)` taking into account any already reserved funds.
+       *
+       * - `id`: The identifier of the asset to update.
+       * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+       * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+       * - `decimals`: The number of decimals this asset uses to represent one unit.
+       *
+       * Emits `MetadataSet`.
+       *
+       * Weight: `O(1)`
+       */
+      setMetadata: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          name: Bytes | string | Uint8Array,
+          symbol: Bytes | string | Uint8Array,
+          decimals: u8 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, Bytes, Bytes, u8]
+      >;
+      /**
+       * Change the Issuer, Admin and Freezer of an asset.
+       *
+       * Origin must be Signed and the sender should be the Owner of the asset `id`.
+       *
+       * - `id`: The identifier of the asset to be frozen.
+       * - `issuer`: The new Issuer of this asset.
+       * - `admin`: The new Admin of this asset.
+       * - `freezer`: The new Freezer of this asset.
+       *
+       * Emits `TeamChanged`.
+       *
+       * Weight: `O(1)`
+       */
+      setTeam: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          issuer:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          admin:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          freezer:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, MultiAddress, MultiAddress]
+      >;
+      /**
+       * Allow unprivileged transfers from an account again.
+       *
+       * Origin must be Signed and the sender should be the Admin of the asset `id`.
+       *
+       * - `id`: The identifier of the asset to be frozen.
+       * - `who`: The account to be unfrozen.
+       *
+       * Emits `Thawed`.
+       *
+       * Weight: `O(1)`
+       */
+      thaw: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          who:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress]
+      >;
+      /**
+       * Allow unprivileged transfers for the asset again.
+       *
+       * Origin must be Signed and the sender should be the Admin of the asset `id`.
+       *
+       * - `id`: The identifier of the asset to be thawed.
+       *
+       * Emits `Thawed`.
+       *
+       * Weight: `O(1)`
+       */
+      thawAsset: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>]
+      >;
+      /**
+       * Create an asset account for non-provider assets.
+       *
+       * A deposit will be taken from the signer account.
+       *
+       * - `origin`: Must be Signed; the signer account must have sufficient funds
+       *   for a deposit to be taken.
+       * - `id`: The identifier of the asset for the account to be created.
+       *
+       * Emits `Touched` event when successful.
+       */
+      touch: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>]
+      >;
+      /**
+       * Move some assets from the sender account to another.
+       *
+       * Origin must be Signed.
+       *
+       * - `id`: The identifier of the asset to have some amount transferred.
+       * - `target`: The account to be credited.
+       * - `amount`: The amount by which the sender's balance of assets should be
+       *   reduced and `target`'s balance increased. The amount actually
+       *   transferred may be slightly greater in the case that the transfer
+       *   would otherwise take the sender balance above zero but below the
+       *   minimum balance. Must be greater than zero.
+       *
+       * Emits `Transferred` with the actual amount transferred. If this takes
+       * the source balance to below the minimum for the asset, then the amount
+       * transferred is increased to take it to zero.
+       *
+       * Weight: `O(1)` Modes: Pre-existence of `target`; Post-existence of
+       * sender; Account pre-existence of `target`.
+       */
+      transfer: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          target:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          amount: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, Compact<u128>]
+      >;
+      /**
+       * Transfer some asset balance from a previously delegated account to some
+       * third-party account.
+       *
+       * Origin must be Signed and there must be an approval in place by the
+       * `owner` to the signer.
+       *
+       * If the entire amount approved for transfer is transferred, then any
+       * deposit previously reserved by `approve_transfer` is unreserved.
+       *
+       * - `id`: The identifier of the asset.
+       * - `owner`: The account which previously approved for a transfer of at
+       *   least `amount` and from which the asset balance will be withdrawn.
+       * - `destination`: The account to which the asset balance of `amount` will
+       *   be transferred.
+       * - `amount`: The amount of assets to transfer.
+       *
+       * Emits `TransferredApproved` on success.
+       *
+       * Weight: `O(1)`
+       */
+      transferApproved: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          owner:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          destination:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          amount: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, MultiAddress, Compact<u128>]
+      >;
+      /**
+       * Move some assets from the sender account to another, keeping the sender
+       * account alive.
+       *
+       * Origin must be Signed.
+       *
+       * - `id`: The identifier of the asset to have some amount transferred.
+       * - `target`: The account to be credited.
+       * - `amount`: The amount by which the sender's balance of assets should be
+       *   reduced and `target`'s balance increased. The amount actually
+       *   transferred may be slightly greater in the case that the transfer
+       *   would otherwise take the sender balance above zero but below the
+       *   minimum balance. Must be greater than zero.
+       *
+       * Emits `Transferred` with the actual amount transferred. If this takes
+       * the source balance to below the minimum for the asset, then the amount
+       * transferred is increased to take it to zero.
+       *
+       * Weight: `O(1)` Modes: Pre-existence of `target`; Post-existence of
+       * sender; Account pre-existence of `target`.
+       */
+      transferKeepAlive: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          target:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          amount: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress, Compact<u128>]
+      >;
+      /**
+       * Change the Owner of an asset.
+       *
+       * Origin must be Signed and the sender should be the Owner of the asset `id`.
+       *
+       * - `id`: The identifier of the asset.
+       * - `owner`: The new Owner of this asset.
+       *
+       * Emits `OwnerChanged`.
+       *
+       * Weight: `O(1)`
+       */
+      transferOwnership: AugmentedSubmittable<
+        (
+          id: Compact<u32> | AnyNumber | Uint8Array,
+          owner:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u32>, MultiAddress]
+      >;
+      /** Generic tx */
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
     balances: {
       /**
        * Exactly as `transfer`, except the origin must be root and the source
@@ -243,60 +1161,11 @@ declare module "@polkadot/api-base/types/submittable" {
        * Blind version should only be used for testing - unsafe since skips
        * inclusion proof check.
        */
-      confirmCommitRevertRelay: AugmentedSubmittable<
-        (
-          xtxId: H256 | string | Uint8Array,
-          sideEffect:
-            | T3rnPrimitivesSideEffect
-            | {
-                target?: any;
-                prize?: any;
-                orderedAt?: any;
-                encodedAction?: any;
-                encodedArgs?: any;
-                signature?: any;
-                enforceExecutioner?: any;
-              }
-            | string
-            | Uint8Array,
-          confirmation:
-            | T3rnPrimitivesSideEffectConfirmedSideEffect
-            | {
-                err?: any;
-                output?: any;
-                encodedEffect?: any;
-                inclusionProof?: any;
-                executioner?: any;
-                receivedAt?: any;
-                cost?: any;
-              }
-            | string
-            | Uint8Array,
-          inclusionProof:
-            | Option<Vec<Bytes>>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          blockHash: Option<Bytes> | null | object | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          H256,
-          T3rnPrimitivesSideEffect,
-          T3rnPrimitivesSideEffectConfirmedSideEffect,
-          Option<Vec<Bytes>>,
-          Option<Bytes>
-        ]
-      >;
-      /**
-       * Blind version should only be used for testing - unsafe since skips
-       * inclusion proof check.
-       */
       confirmSideEffect: AugmentedSubmittable<
         (
           xtxId: H256 | string | Uint8Array,
           sideEffect:
-            | T3rnPrimitivesSideEffect
+            | T3rnTypesSideEffect
             | {
                 target?: any;
                 prize?: any;
@@ -309,12 +1178,11 @@ declare module "@polkadot/api-base/types/submittable" {
             | string
             | Uint8Array,
           confirmation:
-            | T3rnPrimitivesSideEffectConfirmedSideEffect
+            | T3rnTypesSideEffectConfirmedSideEffect
             | {
                 err?: any;
                 output?: any;
-                encodedEffect?: any;
-                inclusionProof?: any;
+                inclusionData?: any;
                 executioner?: any;
                 receivedAt?: any;
                 cost?: any;
@@ -324,24 +1192,24 @@ declare module "@polkadot/api-base/types/submittable" {
           inclusionProof:
             | Option<Vec<Bytes>>
             | null
-            | object
-            | string
-            | Uint8Array,
-          blockHash: Option<Bytes> | null | object | string | Uint8Array
+            | Uint8Array
+            | Vec<Bytes>
+            | (Bytes | string | Uint8Array)[],
+          blockHash: Option<Bytes> | null | Uint8Array | Bytes | string
         ) => SubmittableExtrinsic<ApiType>,
         [
           H256,
-          T3rnPrimitivesSideEffect,
-          T3rnPrimitivesSideEffectConfirmedSideEffect,
+          T3rnTypesSideEffect,
+          T3rnTypesSideEffectConfirmedSideEffect,
           Option<Vec<Bytes>>,
           Option<Bytes>
         ]
       >;
-      executeSideEffectsViaCircuit: AugmentedSubmittable<
+      executeSideEffectsWithXbi: AugmentedSubmittable<
         (
           xtxId: H256 | string | Uint8Array,
           sideEffect:
-            | T3rnPrimitivesSideEffect
+            | T3rnTypesSideEffect
             | {
                 target?: any;
                 prize?: any;
@@ -352,16 +1220,18 @@ declare module "@polkadot/api-base/types/submittable" {
                 enforceExecutioner?: any;
               }
             | string
-            | Uint8Array
+            | Uint8Array,
+          maxExecCost: u128 | AnyNumber | Uint8Array,
+          maxNotificationsCost: u128 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [H256, T3rnPrimitivesSideEffect]
+        [H256, T3rnTypesSideEffect, u128, u128]
       >;
       onExtrinsicTrigger: AugmentedSubmittable<
         (
           sideEffects:
-            | Vec<T3rnPrimitivesSideEffect>
+            | Vec<T3rnTypesSideEffect>
             | (
-                | T3rnPrimitivesSideEffect
+                | T3rnTypesSideEffect
                 | {
                     target?: any;
                     prize?: any;
@@ -377,7 +1247,7 @@ declare module "@polkadot/api-base/types/submittable" {
           fee: u128 | AnyNumber | Uint8Array,
           sequential: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Vec<T3rnPrimitivesSideEffect>, u128, bool]
+        [Vec<T3rnTypesSideEffect>, u128, bool]
       >;
       /** Used by other pallets that want to create the exec order */
       onLocalTrigger: AugmentedSubmittable<
@@ -388,128 +1258,13 @@ declare module "@polkadot/api-base/types/submittable" {
         () => SubmittableExtrinsic<ApiType>,
         []
       >;
+      onXbiSfxResolved: AugmentedSubmittable<
+        (sfxId: H256 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [H256]
+      >;
       onXcmTrigger: AugmentedSubmittable<
         () => SubmittableExtrinsic<ApiType>,
         []
-      >;
-      /** Generic tx */
-      [key: string]: SubmittableExtrinsicFunction<ApiType>;
-    };
-    circuitPortal: {
-      registerGateway: AugmentedSubmittable<
-        (
-          url: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          parachain:
-            | Option<T3rnPrimitivesXdnsParachain>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          gatewayAbi:
-            | T3rnPrimitivesAbiGatewayABIConfig
-            | {
-                blockNumberTypeSize?: any;
-                hashSize?: any;
-                hasher?: any;
-                crypto?: any;
-                addressLength?: any;
-                valueTypeSize?: any;
-                decimals?: any;
-                structs?: any;
-              }
-            | string
-            | Uint8Array,
-          gatewayVendor:
-            | T3rnPrimitivesGatewayVendor
-            | "Substrate"
-            | "Ethereum"
-            | number
-            | Uint8Array,
-          gatewayType:
-            | T3rnPrimitivesGatewayType
-            | { ProgrammableInternal: any }
-            | { ProgrammableExternal: any }
-            | { TxOnly: any }
-            | { OnCircuit: any }
-            | string
-            | Uint8Array,
-          gatewayGenesis:
-            | T3rnPrimitivesGatewayGenesisConfig
-            | {
-                modulesEncoded?: any;
-                extrinsicsVersion?: any;
-                genesisHash?: any;
-              }
-            | string
-            | Uint8Array,
-          gatewaySysProps:
-            | T3rnPrimitivesGatewaySysProps
-            | { ss58Format?: any; tokenSymbol?: any; tokenDecimals?: any }
-            | string
-            | Uint8Array,
-          firstHeader: Bytes | string | Uint8Array,
-          authorities:
-            | Option<Vec<AccountId32>>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          authoritySetId: Option<u64> | null | object | string | Uint8Array,
-          allowedSideEffects: Vec<U8aFixed>
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          Bytes,
-          U8aFixed,
-          Option<T3rnPrimitivesXdnsParachain>,
-          T3rnPrimitivesAbiGatewayABIConfig,
-          T3rnPrimitivesGatewayVendor,
-          T3rnPrimitivesGatewayType,
-          T3rnPrimitivesGatewayGenesisConfig,
-          T3rnPrimitivesGatewaySysProps,
-          Bytes,
-          Option<Vec<AccountId32>>,
-          Option<u64>,
-          Vec<U8aFixed>
-        ]
-      >;
-      updateGateway: AugmentedSubmittable<
-        (
-          gatewayId: U8aFixed | string | Uint8Array,
-          url: Option<Bytes> | null | object | string | Uint8Array,
-          gatewayAbi:
-            | Option<T3rnPrimitivesAbiGatewayABIConfig>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          gatewaySysProps:
-            | Option<T3rnPrimitivesGatewaySysProps>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          authorities:
-            | Option<Vec<AccountId32>>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          allowedSideEffects:
-            | Option<Vec<U8aFixed>>
-            | null
-            | object
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          U8aFixed,
-          Option<Bytes>,
-          Option<T3rnPrimitivesAbiGatewayABIConfig>,
-          Option<T3rnPrimitivesGatewaySysProps>,
-          Option<Vec<AccountId32>>,
-          Option<Vec<U8aFixed>>
-        ]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
@@ -549,9 +1304,9 @@ declare module "@polkadot/api-base/types/submittable" {
           storageDepositLimit:
             | Option<Compact<u128>>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | Compact<u128>
+            | AnyNumber,
           data: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
@@ -561,40 +1316,6 @@ declare module "@polkadot/api-base/types/submittable" {
           Option<Compact<u128>>,
           Bytes
         ]
-      >;
-      /**
-       * Makes a call to an account, optionally transferring some balance.
-       * Returns the side effects produced from the call and the breakpoints.
-       *
-       * # Parameters
-       *
-       * - `dest`: Address of the contract to call.
-       * - `value`: The balance to transfer from the `origin` to `dest`.
-       * - `gas_limit`: The gas limit enforced when executing the constructor.
-       * - `storage_deposit_limit`: The maximum amount of balance that can be
-       *   charged from the caller to pay for the storage consumed.
-       * - `data`: The input data to pass to the contract.
-       * - If the account is a smart-contract account, the associated code will be
-       *   executed and any value will be transferred.
-       * - If the account is a regular account, any value will be transferred.
-       * - If no account exists and the call value is not less than
-       *   `existential_deposit`, a regular account will be created and any
-       *   value will be transferred.
-       */
-      composableCall: AugmentedSubmittable<
-        (
-          dest: AccountId32 | string | Uint8Array,
-          value: Compact<u128> | AnyNumber | Uint8Array,
-          gasLimit: Compact<u64> | AnyNumber | Uint8Array,
-          storageDepositLimit:
-            | Option<Compact<u128>>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          data: Bytes | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Compact<u128>, Compact<u64>, Option<Compact<u128>>, Bytes]
       >;
       /**
        * Instantiates a contract from a previously deployed wasm binary.
@@ -610,9 +1331,9 @@ declare module "@polkadot/api-base/types/submittable" {
           storageDepositLimit:
             | Option<Compact<u128>>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | Compact<u128>
+            | AnyNumber,
           codeHash: H256 | string | Uint8Array,
           data: Bytes | string | Uint8Array,
           salt: Bytes | string | Uint8Array
@@ -655,9 +1376,9 @@ declare module "@polkadot/api-base/types/submittable" {
           storageDepositLimit:
             | Option<Compact<u128>>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | Compact<u128>
+            | AnyNumber,
           code: Bytes | string | Uint8Array,
           data: Bytes | string | Uint8Array,
           salt: Bytes | string | Uint8Array
@@ -706,9 +1427,9 @@ declare module "@polkadot/api-base/types/submittable" {
           storageDepositLimit:
             | Option<Compact<u128>>
             | null
-            | object
-            | string
             | Uint8Array
+            | Compact<u128>
+            | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
         [Bytes, Option<Compact<u128>>]
       >;
@@ -726,7 +1447,6 @@ declare module "@polkadot/api-base/types/submittable" {
                 codeTxt?: any;
                 bytes?: any;
                 author?: any;
-                authorFeesPerSingleUse?: any;
                 abi?: any;
                 actionDescriptions?: any;
                 info?: any;
@@ -748,15 +1468,139 @@ declare module "@polkadot/api-base/types/submittable" {
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
+    evm: {
+      /**
+       * Issue an EVM call operation. This is similar to a message call
+       * transaction in Ethereum.
+       */
+      call: AugmentedSubmittable<
+        (
+          target: H160 | string | Uint8Array,
+          input: Bytes | string | Uint8Array,
+          value: U256 | AnyNumber | Uint8Array,
+          gasLimit: u64 | AnyNumber | Uint8Array,
+          maxFeePerGas: U256 | AnyNumber | Uint8Array,
+          maxPriorityFeePerGas:
+            | Option<U256>
+            | null
+            | Uint8Array
+            | U256
+            | AnyNumber,
+          nonce: Option<U256> | null | Uint8Array | U256 | AnyNumber,
+          accessList:
+            | Vec<ITuple<[H160, Vec<H256>]>>
+            | [
+                H160 | string | Uint8Array,
+                Vec<H256> | (H256 | string | Uint8Array)[]
+              ][]
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          H160,
+          Bytes,
+          U256,
+          u64,
+          U256,
+          Option<U256>,
+          Option<U256>,
+          Vec<ITuple<[H160, Vec<H256>]>>
+        ]
+      >;
+      /** Claim an evm address, used to claim an evm address that is compatible with EVM. */
+      claim: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Issue an EVM create operation. This is similar to a contract creation
+       * transaction in Ethereum.
+       */
+      create: AugmentedSubmittable<
+        (
+          init: Bytes | string | Uint8Array,
+          value: U256 | AnyNumber | Uint8Array,
+          gasLimit: u64 | AnyNumber | Uint8Array,
+          maxFeePerGas: U256 | AnyNumber | Uint8Array,
+          maxPriorityFeePerGas:
+            | Option<U256>
+            | null
+            | Uint8Array
+            | U256
+            | AnyNumber,
+          nonce: Option<U256> | null | Uint8Array | U256 | AnyNumber,
+          accessList:
+            | Vec<ITuple<[H160, Vec<H256>]>>
+            | [
+                H160 | string | Uint8Array,
+                Vec<H256> | (H256 | string | Uint8Array)[]
+              ][]
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          Bytes,
+          U256,
+          u64,
+          U256,
+          Option<U256>,
+          Option<U256>,
+          Vec<ITuple<[H160, Vec<H256>]>>
+        ]
+      >;
+      /** Issue an EVM create2 operation. */
+      create2: AugmentedSubmittable<
+        (
+          init: Bytes | string | Uint8Array,
+          salt: H256 | string | Uint8Array,
+          value: U256 | AnyNumber | Uint8Array,
+          gasLimit: u64 | AnyNumber | Uint8Array,
+          maxFeePerGas: U256 | AnyNumber | Uint8Array,
+          maxPriorityFeePerGas:
+            | Option<U256>
+            | null
+            | Uint8Array
+            | U256
+            | AnyNumber,
+          nonce: Option<U256> | null | Uint8Array | U256 | AnyNumber,
+          accessList:
+            | Vec<ITuple<[H160, Vec<H256>]>>
+            | [
+                H160 | string | Uint8Array,
+                Vec<H256> | (H256 | string | Uint8Array)[]
+              ][]
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          Bytes,
+          H256,
+          U256,
+          u64,
+          U256,
+          Option<U256>,
+          Option<U256>,
+          Vec<ITuple<[H160, Vec<H256>]>>
+        ]
+      >;
+      /** Withdraw balance from EVM into currency/balances pallet. */
+      withdraw: AugmentedSubmittable<
+        (
+          address: H160 | string | Uint8Array,
+          value: u128 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [H160, u128]
+      >;
+      /** Generic tx */
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
     grandpa: {
       /**
-       * Note that the current authority set of the GRANDPA finality gadget has
-       * stalled. This will trigger a forced authority set change at the
-       * beginning of the next session, to be enacted `delay` blocks after that.
-       * The delay should be high enough to safely assume that the block
-       * signalling the forced change will not be re-orged (e.g. 1000 blocks).
-       * The GRANDPA voters will start the new authority set using the given
-       * finalized block as base. Only callable by root.
+       * Note that the current authority set of the GRANDPA finality gadget has stalled.
+       *
+       * This will trigger a forced authority set change at the beginning of the
+       * next session, to be enacted `delay` blocks after that. The `delay`
+       * should be high enough to safely assume that the block signalling the
+       * forced change will not be re-orged e.g. 1000 blocks. The block
+       * production rate (which may be slowed down because of finality lagging)
+       * should be taken into account when choosing the `delay`. The GRANDPA
+       * voters based on the new authority will start voting on top of
+       * `best_finalized_block_number` for new finalized blocks.
+       * `best_finalized_block_number` should be the highest of the latest
+       * finalized block of all validators of the new authority set.
+       *
+       * Only callable by root.
        */
       noteStalled: AugmentedSubmittable<
         (
@@ -804,832 +1648,90 @@ declare module "@polkadot/api-base/types/submittable" {
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
-    multiFinalityVerifierDefault: {
-      /**
-       * Bootstrap the bridge pallet with an initial header and authority set
-       * from which to sync.
-       *
-       * The initial configuration provided does not need to be the genesis
-       * header of the bridged chain, it can be any arbirary header. You can
-       * also provide the next scheduled set change if it is already know.
-       *
-       * This function is only allowed to be called from a trusted origin and
-       * writes to storage with practically no checks in terms of the validity
-       * of the data. It is important that you ensure that valid data is being passed in.
-       */
-      initializeSingle: AugmentedSubmittable<
+    portal: {
+      registerGateway: AugmentedSubmittable<
         (
-          initData:
-            | ({
-                readonly header: {
-                  readonly parentHash: H256;
-                  readonly number: Compact<u32>;
-                  readonly stateRoot: H256;
-                  readonly extrinsicsRoot: H256;
-                  readonly digest: SpRuntimeDigest;
-                } & Struct;
-                readonly authorityList: Vec<
-                  ITuple<[SpFinalityGrandpaAppPublic, u64]>
-                >;
-                readonly setId: u64;
-                readonly isHalted: bool;
-                readonly gatewayId: U8aFixed;
-              } & Struct)
+          url: Bytes | string | Uint8Array,
+          gatewayId: U8aFixed | string | Uint8Array,
+          gatewayAbi:
+            | T3rnTypesAbiGatewayABIConfig
             | {
-                header?: any;
-                authorityList?: any;
-                setId?: any;
-                isHalted?: any;
-                gatewayId?: any;
-              }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly header: {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct;
-            readonly authorityList: Vec<
-              ITuple<[SpFinalityGrandpaAppPublic, u64]>
-            >;
-            readonly setId: u64;
-            readonly isHalted: bool;
-            readonly gatewayId: U8aFixed;
-          } & Struct
-        ]
-      >;
-      /**
-       * Halt or resume all pallet operations.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
-      setOperational: AugmentedSubmittable<
-        (
-          operational: bool | boolean | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [bool, U8aFixed]
-      >;
-      /**
-       * Change `PalletOwner`.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
-      setOwner: AugmentedSubmittable<
-        (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Option<AccountId32>, U8aFixed]
-      >;
-      /**
-       * Verify a target header is finalized according to the given finality proof.
-       *
-       * It will use the underlying storage pallet to fetch information about
-       * the current authorities and best finalized header in order to verify
-       * that the header is finalized.
-       *
-       * If successful in verification, it will write the target header to the
-       * underlying storage pallet.
-       */
-      submitFinalityProof: AugmentedSubmittable<
-        (
-          finalityTarget:
-            | ({
-                readonly parentHash: H256;
-                readonly number: Compact<u32>;
-                readonly stateRoot: H256;
-                readonly extrinsicsRoot: H256;
-                readonly digest: SpRuntimeDigest;
-              } & Struct)
-            | {
-                parentHash?: any;
-                number?: any;
-                stateRoot?: any;
-                extrinsicsRoot?: any;
-                digest?: any;
+                blockNumberTypeSize?: any;
+                hashSize?: any;
+                hasher?: any;
+                crypto?: any;
+                addressLength?: any;
+                valueTypeSize?: any;
+                decimals?: any;
+                structs?: any;
               }
             | string
             | Uint8Array,
-          encodedJustification: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly parentHash: H256;
-            readonly number: Compact<u32>;
-            readonly stateRoot: H256;
-            readonly extrinsicsRoot: H256;
-            readonly digest: SpRuntimeDigest;
-          } & Struct,
-          Bytes,
-          U8aFixed
-        ]
-      >;
-      submitHeaderRange: AugmentedSubmittable<
-        (
-          gatewayId: U8aFixed | string | Uint8Array,
-          headersReversed: Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          anchorHeaderHash: H256 | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          U8aFixed,
-          Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          H256
-        ]
-      >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
-      >;
-      /** Generic tx */
-      [key: string]: SubmittableExtrinsicFunction<ApiType>;
-    };
-    multiFinalityVerifierEthereumLike: {
-      /**
-       * Bootstrap the bridge pallet with an initial header and authority set
-       * from which to sync.
-       *
-       * The initial configuration provided does not need to be the genesis
-       * header of the bridged chain, it can be any arbirary header. You can
-       * also provide the next scheduled set change if it is already know.
-       *
-       * This function is only allowed to be called from a trusted origin and
-       * writes to storage with practically no checks in terms of the validity
-       * of the data. It is important that you ensure that valid data is being passed in.
-       */
-      initializeSingle: AugmentedSubmittable<
-        (
-          initData:
-            | ({
-                readonly header: {
-                  readonly parentHash: H256;
-                  readonly number: Compact<u64>;
-                  readonly stateRoot: H256;
-                  readonly extrinsicsRoot: H256;
-                  readonly digest: SpRuntimeDigest;
-                } & Struct;
-                readonly authorityList: Vec<
-                  ITuple<[SpFinalityGrandpaAppPublic, u64]>
-                >;
-                readonly setId: u64;
-                readonly isHalted: bool;
-                readonly gatewayId: U8aFixed;
-              } & Struct)
-            | {
-                header?: any;
-                authorityList?: any;
-                setId?: any;
-                isHalted?: any;
-                gatewayId?: any;
-              }
+          gatewayVendor:
+            | T3rnPrimitivesGatewayVendor
+            | "Polkadot"
+            | "Kusama"
+            | "Rococo"
+            | "Ethereum"
+            | number
+            | Uint8Array,
+          gatewayType:
+            | T3rnPrimitivesGatewayType
+            | { ProgrammableInternal: any }
+            | { ProgrammableExternal: any }
+            | { TxOnly: any }
+            | { OnCircuit: any }
             | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly header: {
-              readonly parentHash: H256;
-              readonly number: Compact<u64>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct;
-            readonly authorityList: Vec<
-              ITuple<[SpFinalityGrandpaAppPublic, u64]>
-            >;
-            readonly setId: u64;
-            readonly isHalted: bool;
-            readonly gatewayId: U8aFixed;
-          } & Struct
-        ]
-      >;
-      /**
-       * Halt or resume all pallet operations.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
-      setOperational: AugmentedSubmittable<
-        (
-          operational: bool | boolean | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [bool, U8aFixed]
-      >;
-      /**
-       * Change `PalletOwner`.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
-      setOwner: AugmentedSubmittable<
-        (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Option<AccountId32>, U8aFixed]
-      >;
-      /**
-       * Verify a target header is finalized according to the given finality proof.
-       *
-       * It will use the underlying storage pallet to fetch information about
-       * the current authorities and best finalized header in order to verify
-       * that the header is finalized.
-       *
-       * If successful in verification, it will write the target header to the
-       * underlying storage pallet.
-       */
-      submitFinalityProof: AugmentedSubmittable<
-        (
-          finalityTarget:
-            | ({
-                readonly parentHash: H256;
-                readonly number: Compact<u64>;
-                readonly stateRoot: H256;
-                readonly extrinsicsRoot: H256;
-                readonly digest: SpRuntimeDigest;
-              } & Struct)
+            | Uint8Array,
+          gatewayGenesis:
+            | T3rnPrimitivesGatewayGenesisConfig
             | {
-                parentHash?: any;
-                number?: any;
-                stateRoot?: any;
-                extrinsicsRoot?: any;
-                digest?: any;
+                modulesEncoded?: any;
+                extrinsicsVersion?: any;
+                genesisHash?: any;
               }
             | string
             | Uint8Array,
-          encodedJustification: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly parentHash: H256;
-            readonly number: Compact<u64>;
-            readonly stateRoot: H256;
-            readonly extrinsicsRoot: H256;
-            readonly digest: SpRuntimeDigest;
-          } & Struct,
-          Bytes,
-          U8aFixed
-        ]
-      >;
-      submitHeaderRange: AugmentedSubmittable<
-        (
-          gatewayId: U8aFixed | string | Uint8Array,
-          headersReversed: Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u64>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          anchorHeaderHash: H256 | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          U8aFixed,
-          Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u64>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          H256
-        ]
-      >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
-      >;
-      /** Generic tx */
-      [key: string]: SubmittableExtrinsicFunction<ApiType>;
-    };
-    multiFinalityVerifierGenericLike: {
-      /**
-       * Bootstrap the bridge pallet with an initial header and authority set
-       * from which to sync.
-       *
-       * The initial configuration provided does not need to be the genesis
-       * header of the bridged chain, it can be any arbirary header. You can
-       * also provide the next scheduled set change if it is already know.
-       *
-       * This function is only allowed to be called from a trusted origin and
-       * writes to storage with practically no checks in terms of the validity
-       * of the data. It is important that you ensure that valid data is being passed in.
-       */
-      initializeSingle: AugmentedSubmittable<
-        (
-          initData:
-            | ({
-                readonly header: {
-                  readonly parentHash: H256;
-                  readonly number: Compact<u32>;
-                  readonly stateRoot: H256;
-                  readonly extrinsicsRoot: H256;
-                  readonly digest: SpRuntimeDigest;
-                } & Struct;
-                readonly authorityList: Vec<
-                  ITuple<[SpFinalityGrandpaAppPublic, u64]>
-                >;
-                readonly setId: u64;
-                readonly isHalted: bool;
-                readonly gatewayId: U8aFixed;
-              } & Struct)
-            | {
-                header?: any;
-                authorityList?: any;
-                setId?: any;
-                isHalted?: any;
-                gatewayId?: any;
-              }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly header: {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct;
-            readonly authorityList: Vec<
-              ITuple<[SpFinalityGrandpaAppPublic, u64]>
-            >;
-            readonly setId: u64;
-            readonly isHalted: bool;
-            readonly gatewayId: U8aFixed;
-          } & Struct
-        ]
-      >;
-      /**
-       * Halt or resume all pallet operations.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
-      setOperational: AugmentedSubmittable<
-        (
-          operational: bool | boolean | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [bool, U8aFixed]
-      >;
-      /**
-       * Change `PalletOwner`.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
-      setOwner: AugmentedSubmittable<
-        (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Option<AccountId32>, U8aFixed]
-      >;
-      /**
-       * Verify a target header is finalized according to the given finality proof.
-       *
-       * It will use the underlying storage pallet to fetch information about
-       * the current authorities and best finalized header in order to verify
-       * that the header is finalized.
-       *
-       * If successful in verification, it will write the target header to the
-       * underlying storage pallet.
-       */
-      submitFinalityProof: AugmentedSubmittable<
-        (
-          finalityTarget:
-            | ({
-                readonly parentHash: H256;
-                readonly number: Compact<u32>;
-                readonly stateRoot: H256;
-                readonly extrinsicsRoot: H256;
-                readonly digest: SpRuntimeDigest;
-              } & Struct)
-            | {
-                parentHash?: any;
-                number?: any;
-                stateRoot?: any;
-                extrinsicsRoot?: any;
-                digest?: any;
-              }
+          gatewaySysProps:
+            | T3rnPrimitivesGatewaySysProps
+            | { ss58Format?: any; tokenSymbol?: any; tokenDecimals?: any }
             | string
             | Uint8Array,
-          encodedJustification: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
+          allowedSideEffects: Vec<U8aFixed>,
+          encodedRegistrationData: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
-          {
-            readonly parentHash: H256;
-            readonly number: Compact<u32>;
-            readonly stateRoot: H256;
-            readonly extrinsicsRoot: H256;
-            readonly digest: SpRuntimeDigest;
-          } & Struct,
           Bytes,
-          U8aFixed
-        ]
-      >;
-      submitHeaderRange: AugmentedSubmittable<
-        (
-          gatewayId: U8aFixed | string | Uint8Array,
-          headersReversed: Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          anchorHeaderHash: H256 | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
           U8aFixed,
-          Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          H256
+          T3rnTypesAbiGatewayABIConfig,
+          T3rnPrimitivesGatewayVendor,
+          T3rnPrimitivesGatewayType,
+          T3rnPrimitivesGatewayGenesisConfig,
+          T3rnPrimitivesGatewaySysProps,
+          Vec<U8aFixed>,
+          Bytes
         ]
       >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
-      >;
-      /** Generic tx */
-      [key: string]: SubmittableExtrinsicFunction<ApiType>;
-    };
-    multiFinalityVerifierPolkadotLike: {
-      /**
-       * Bootstrap the bridge pallet with an initial header and authority set
-       * from which to sync.
-       *
-       * The initial configuration provided does not need to be the genesis
-       * header of the bridged chain, it can be any arbirary header. You can
-       * also provide the next scheduled set change if it is already know.
-       *
-       * This function is only allowed to be called from a trusted origin and
-       * writes to storage with practically no checks in terms of the validity
-       * of the data. It is important that you ensure that valid data is being passed in.
-       */
-      initializeSingle: AugmentedSubmittable<
-        (
-          initData:
-            | ({
-                readonly header: {
-                  readonly parentHash: H256;
-                  readonly number: Compact<u32>;
-                  readonly stateRoot: H256;
-                  readonly extrinsicsRoot: H256;
-                  readonly digest: SpRuntimeDigest;
-                } & Struct;
-                readonly authorityList: Vec<
-                  ITuple<[SpFinalityGrandpaAppPublic, u64]>
-                >;
-                readonly setId: u64;
-                readonly isHalted: bool;
-                readonly gatewayId: U8aFixed;
-              } & Struct)
-            | {
-                header?: any;
-                authorityList?: any;
-                setId?: any;
-                isHalted?: any;
-                gatewayId?: any;
-              }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly header: {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct;
-            readonly authorityList: Vec<
-              ITuple<[SpFinalityGrandpaAppPublic, u64]>
-            >;
-            readonly setId: u64;
-            readonly isHalted: bool;
-            readonly gatewayId: U8aFixed;
-          } & Struct
-        ]
-      >;
-      /**
-       * Halt or resume all pallet operations.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
       setOperational: AugmentedSubmittable<
         (
-          operational: bool | boolean | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
+          gatewayId: U8aFixed | string | Uint8Array,
+          operational: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [bool, U8aFixed]
+        [U8aFixed, bool]
       >;
-      /**
-       * Change `PalletOwner`.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
       setOwner: AugmentedSubmittable<
         (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
+          gatewayId: U8aFixed | string | Uint8Array,
+          encodedNewOwner: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Option<AccountId32>, U8aFixed]
+        [U8aFixed, Bytes]
       >;
-      /**
-       * Verify a target header is finalized according to the given finality proof.
-       *
-       * It will use the underlying storage pallet to fetch information about
-       * the current authorities and best finalized header in order to verify
-       * that the header is finalized.
-       *
-       * If successful in verification, it will write the target header to the
-       * underlying storage pallet.
-       */
-      submitFinalityProof: AugmentedSubmittable<
-        (
-          finalityTarget:
-            | ({
-                readonly parentHash: H256;
-                readonly number: Compact<u32>;
-                readonly stateRoot: H256;
-                readonly extrinsicsRoot: H256;
-                readonly digest: SpRuntimeDigest;
-              } & Struct)
-            | {
-                parentHash?: any;
-                number?: any;
-                stateRoot?: any;
-                extrinsicsRoot?: any;
-                digest?: any;
-              }
-            | string
-            | Uint8Array,
-          encodedJustification: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly parentHash: H256;
-            readonly number: Compact<u32>;
-            readonly stateRoot: H256;
-            readonly extrinsicsRoot: H256;
-            readonly digest: SpRuntimeDigest;
-          } & Struct,
-          Bytes,
-          U8aFixed
-        ]
-      >;
-      submitHeaderRange: AugmentedSubmittable<
+      submitHeaders: AugmentedSubmittable<
         (
           gatewayId: U8aFixed | string | Uint8Array,
-          headersReversed: Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          anchorHeaderHash: H256 | string | Uint8Array
+          encodedHeaderData: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          U8aFixed,
-          Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          H256
-        ]
-      >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
-      >;
-      /** Generic tx */
-      [key: string]: SubmittableExtrinsicFunction<ApiType>;
-    };
-    multiFinalityVerifierSubstrateLike: {
-      /**
-       * Bootstrap the bridge pallet with an initial header and authority set
-       * from which to sync.
-       *
-       * The initial configuration provided does not need to be the genesis
-       * header of the bridged chain, it can be any arbirary header. You can
-       * also provide the next scheduled set change if it is already know.
-       *
-       * This function is only allowed to be called from a trusted origin and
-       * writes to storage with practically no checks in terms of the validity
-       * of the data. It is important that you ensure that valid data is being passed in.
-       */
-      initializeSingle: AugmentedSubmittable<
-        (
-          initData:
-            | ({
-                readonly header: {
-                  readonly parentHash: H256;
-                  readonly number: Compact<u32>;
-                  readonly stateRoot: H256;
-                  readonly extrinsicsRoot: H256;
-                  readonly digest: SpRuntimeDigest;
-                } & Struct;
-                readonly authorityList: Vec<
-                  ITuple<[SpFinalityGrandpaAppPublic, u64]>
-                >;
-                readonly setId: u64;
-                readonly isHalted: bool;
-                readonly gatewayId: U8aFixed;
-              } & Struct)
-            | {
-                header?: any;
-                authorityList?: any;
-                setId?: any;
-                isHalted?: any;
-                gatewayId?: any;
-              }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly header: {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct;
-            readonly authorityList: Vec<
-              ITuple<[SpFinalityGrandpaAppPublic, u64]>
-            >;
-            readonly setId: u64;
-            readonly isHalted: bool;
-            readonly gatewayId: U8aFixed;
-          } & Struct
-        ]
-      >;
-      /**
-       * Halt or resume all pallet operations.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
-      setOperational: AugmentedSubmittable<
-        (
-          operational: bool | boolean | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [bool, U8aFixed]
-      >;
-      /**
-       * Change `PalletOwner`.
-       *
-       * May only be called either by root, or by `PalletOwner`.
-       */
-      setOwner: AugmentedSubmittable<
-        (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Option<AccountId32>, U8aFixed]
-      >;
-      /**
-       * Verify a target header is finalized according to the given finality proof.
-       *
-       * It will use the underlying storage pallet to fetch information about
-       * the current authorities and best finalized header in order to verify
-       * that the header is finalized.
-       *
-       * If successful in verification, it will write the target header to the
-       * underlying storage pallet.
-       */
-      submitFinalityProof: AugmentedSubmittable<
-        (
-          finalityTarget:
-            | ({
-                readonly parentHash: H256;
-                readonly number: Compact<u32>;
-                readonly stateRoot: H256;
-                readonly extrinsicsRoot: H256;
-                readonly digest: SpRuntimeDigest;
-              } & Struct)
-            | {
-                parentHash?: any;
-                number?: any;
-                stateRoot?: any;
-                extrinsicsRoot?: any;
-                digest?: any;
-              }
-            | string
-            | Uint8Array,
-          encodedJustification: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly parentHash: H256;
-            readonly number: Compact<u32>;
-            readonly stateRoot: H256;
-            readonly extrinsicsRoot: H256;
-            readonly digest: SpRuntimeDigest;
-          } & Struct,
-          Bytes,
-          U8aFixed
-        ]
-      >;
-      submitHeaderRange: AugmentedSubmittable<
-        (
-          gatewayId: U8aFixed | string | Uint8Array,
-          headersReversed: Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          anchorHeaderHash: H256 | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          U8aFixed,
-          Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          H256
-        ]
-      >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
+        [U8aFixed, Bytes]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
@@ -1835,6 +1937,10 @@ declare module "@polkadot/api-base/types/submittable" {
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
+    threeVm: {
+      /** Generic tx */
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
     timestamp: {
       /**
        * Set the current time.
@@ -1861,6 +1967,112 @@ declare module "@polkadot/api-base/types/submittable" {
           now: Compact<u64> | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Compact<u64>]
+      >;
+      /** Generic tx */
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
+    treasury: {
+      addBeneficiary: AugmentedSubmittable<
+        (
+          beneficiary: AccountId32 | string | Uint8Array,
+          role:
+            | T3rnPrimitivesMonetaryBeneficiaryRole
+            | "Developer"
+            | "Executor"
+            | number
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId32, T3rnPrimitivesMonetaryBeneficiaryRole]
+      >;
+      claimRewards: AugmentedSubmittable<
+        () => SubmittableExtrinsic<ApiType>,
+        []
+      >;
+      /**
+       * Mints tokens for given round. TODO: maybe ensure can only be called
+       * once per round TODO: exec, infl
+       */
+      mintForRound: AugmentedSubmittable<
+        (
+          roundIndex: u32 | AnyNumber | Uint8Array,
+          amount: Compact<u128> | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u32, Compact<u128>]
+      >;
+      removeBeneficiary: AugmentedSubmittable<
+        (
+          beneficiary: AccountId32 | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId32]
+      >;
+      /** Sets the annual inflation rate to derive per-round inflation */
+      setInflation: AugmentedSubmittable<
+        (
+          annualInflationConfig:
+            | ({
+                readonly min: Perbill;
+                readonly ideal: Perbill;
+                readonly max: Perbill;
+              } & Struct)
+            | { min?: any; ideal?: any; max?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          {
+            readonly min: Perbill;
+            readonly ideal: Perbill;
+            readonly max: Perbill;
+          } & Struct
+        ]
+      >;
+      /** Sets the reward percentage to be allocated amongst t3rn actors */
+      setInflationAlloc: AugmentedSubmittable<
+        (
+          inflationAlloc:
+            | T3rnPrimitivesMonetaryInflationAllocation
+            | { developer?: any; executor?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [T3rnPrimitivesMonetaryInflationAllocation]
+      >;
+      /**
+       * Set blocks per round
+       *
+       * - If called with `new` less than term of current round, will transition
+       *   immediately in the next block
+       * - Also updates per-round inflation config
+       */
+      setRoundTerm: AugmentedSubmittable<
+        (
+          updated: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u32]
+      >;
+      /**
+       * Set the expectations for total staked. These expectations determine the
+       * issuance for the round according to logic in `fn compute_round_issuance`.
+       */
+      setTotalStakeExpectation: AugmentedSubmittable<
+        (
+          expectations:
+            | ({
+                readonly min: u128;
+                readonly ideal: u128;
+                readonly max: u128;
+              } & Struct)
+            | { min?: any; ideal?: any; max?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          {
+            readonly min: u128;
+            readonly ideal: u128;
+            readonly max: u128;
+          } & Struct
+        ]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
@@ -1969,85 +2181,82 @@ declare module "@polkadot/api-base/types/submittable" {
         ) => SubmittableExtrinsic<ApiType>,
         [CircuitStandaloneRuntimeOriginCaller, Call]
       >;
+      /**
+       * Send a batch of dispatch calls. Unlike `batch`, it allows errors and
+       * won't interrupt.
+       *
+       * May be called from any origin.
+       *
+       * - `calls`: The calls to be dispatched from the same origin. The number of
+       *   call must not exceed the constant: `batched_calls_limit` (available
+       *   in constant metadata).
+       *
+       * If origin is root then call are dispatch without checking origin
+       * filter. (This includes bypassing `frame_system::Config::BaseCallFilter`).
+       *
+       * # <weight>
+       *
+       * - Complexity: O(C) where C is the number of calls to be batched.
+       *
+       * # </weight>
+       */
+      forceBatch: AugmentedSubmittable<
+        (
+          calls: Vec<Call> | (Call | IMethod | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<Call>]
+      >;
+      /** Generic tx */
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
+    xbiPortal: {
+      checkInXbi: AugmentedSubmittable<
+        (
+          xbi:
+            | PalletXbiPortalXbiFormat
+            | { instr?: any; metadata?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletXbiPortalXbiFormat]
+      >;
+      cleanup: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Enter might be weight heavy - calls for execution into EVMs and if
+       * necessary sends the response If returns XBICheckOut means that executed
+       * instantly and the XBI order can be removed from pending checkouts
+       */
+      enterCall: AugmentedSubmittable<
+        (
+          checkin:
+            | PalletXbiPortalXbiFormatXbiCheckIn
+            | {
+                xbi?: any;
+                notificationDeliveryTimeout?: any;
+                notificationExecutionTimeout?: any;
+              }
+            | string
+            | Uint8Array,
+          xbiId: H256 | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PalletXbiPortalXbiFormatXbiCheckIn, H256]
+      >;
+      executeXcm: AugmentedSubmittable<
+        (xcm: XcmV2Xcm) => SubmittableExtrinsic<ApiType>,
+        [XcmV2Xcm]
+      >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
     xdns: {
-      /** Inserts a xdns_record into the on-chain registry. Root only access. */
-      addNewXdnsRecord: AugmentedSubmittable<
-        (
-          url: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          parachain:
-            | Option<T3rnPrimitivesXdnsParachain>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          gatewayAbi:
-            | T3rnPrimitivesAbiGatewayABIConfig
-            | {
-                blockNumberTypeSize?: any;
-                hashSize?: any;
-                hasher?: any;
-                crypto?: any;
-                addressLength?: any;
-                valueTypeSize?: any;
-                decimals?: any;
-                structs?: any;
-              }
-            | string
-            | Uint8Array,
-          gatewayVendor:
-            | T3rnPrimitivesGatewayVendor
-            | "Substrate"
-            | "Ethereum"
-            | number
-            | Uint8Array,
-          gatewayType:
-            | T3rnPrimitivesGatewayType
-            | { ProgrammableInternal: any }
-            | { ProgrammableExternal: any }
-            | { TxOnly: any }
-            | { OnCircuit: any }
-            | string
-            | Uint8Array,
-          gatewayGenesis:
-            | T3rnPrimitivesGatewayGenesisConfig
-            | {
-                modulesEncoded?: any;
-                extrinsicsVersion?: any;
-                genesisHash?: any;
-              }
-            | string
-            | Uint8Array,
-          gatewaySysProps:
-            | T3rnPrimitivesGatewaySysProps
-            | { ss58Format?: any; tokenSymbol?: any; tokenDecimals?: any }
-            | string
-            | Uint8Array,
-          allowedSideEffects: Vec<U8aFixed>
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          Bytes,
-          U8aFixed,
-          Option<T3rnPrimitivesXdnsParachain>,
-          T3rnPrimitivesAbiGatewayABIConfig,
-          T3rnPrimitivesGatewayVendor,
-          T3rnPrimitivesGatewayType,
-          T3rnPrimitivesGatewayGenesisConfig,
-          T3rnPrimitivesGatewaySysProps,
-          Vec<U8aFixed>
-        ]
-      >;
       addSideEffect: AugmentedSubmittable<
         (
           id: U8aFixed | string | Uint8Array,
           name: Bytes | string | Uint8Array,
           argumentAbi:
-            | Vec<T3rnPrimitivesAbiType>
+            | Vec<T3rnTypesAbiType>
             | (
-                | T3rnPrimitivesAbiType
+                | T3rnTypesAbiType
                 | { Address: any }
                 | { DynamicAddress: any }
                 | { Bool: any }
@@ -2081,7 +2290,7 @@ declare module "@polkadot/api-base/types/submittable" {
         [
           U8aFixed,
           Bytes,
-          Vec<T3rnPrimitivesAbiType>,
+          Vec<T3rnTypesAbiType>,
           Vec<Bytes>,
           Vec<Bytes>,
           Vec<Bytes>,

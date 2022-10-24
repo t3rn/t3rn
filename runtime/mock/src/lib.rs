@@ -9,7 +9,7 @@ use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::{
     impl_opaque_keys,
-    traits::{BlakeTwo256, Convert, Keccak256},
+    traits::{BlakeTwo256, Convert},
     Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};
@@ -25,7 +25,6 @@ mod accounts_config;
 mod circuit_config;
 mod consensus_aura_config;
 mod contracts_config;
-mod orml_config;
 mod system_no_version_config;
 mod xbi_config;
 
@@ -36,41 +35,24 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system,
+        Sudo: pallet_sudo,
+        Utility: pallet_utility,
+
         RandomnessCollectiveFlip: pallet_randomness_collective_flip,
         Timestamp: pallet_timestamp,
 
         Aura: pallet_aura,
         Grandpa: pallet_grandpa,
 
-        Balances: pallet_balances,
-        TransactionPayment: pallet_transaction_payment,
-
-        Sudo: pallet_sudo,
-        Utility: pallet_utility,
-
-
-        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
+        // Monetary
+        Balances: pallet_balances = 10,
+        TransactionPayment: pallet_transaction_payment = 11,
+        Assets: pallet_assets = 12,
 
         // Circuit
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 101,
-        MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 102,
-        MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 103,
-        MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 104,
-        MultiFinalityVerifierDefault: pallet_mfv::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 105,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Treasury: pallet_treasury = 109,
         Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
@@ -83,6 +65,11 @@ frame_support::construct_runtime!(
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
+        // Portal
+        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        RococoBridge: pallet_grandpa_finality_verifier::{
+            Pallet, Storage
+        } = 129,
     }
 );
 
@@ -111,12 +98,12 @@ impl ExtBuilder {
                 id: 3333,
             }),
             Default::default(),
-            GatewayVendor::PolkadotLike,
+            GatewayVendor::Rococo,
             GatewayType::OnCircuit(0),
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
@@ -131,12 +118,12 @@ impl ExtBuilder {
                 id: 3333,
             }),
             Default::default(),
-            GatewayVendor::PolkadotLike,
+            GatewayVendor::Rococo,
             GatewayType::OnCircuit(0),
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
@@ -160,12 +147,12 @@ impl ExtBuilder {
                 decimals: 12,
                 structs: vec![],
             },
-            GatewayVendor::PolkadotLike,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableInternal(0),
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
@@ -176,7 +163,7 @@ impl ExtBuilder {
             [0u8, 0u8, 0u8, 0u8],
             None,
             Default::default(),
-            GatewayVendor::PolkadotLike,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -192,12 +179,12 @@ impl ExtBuilder {
             *b"gate",
             None,
             Default::default(),
-            GatewayVendor::PolkadotLike,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
@@ -208,7 +195,7 @@ impl ExtBuilder {
             *b"pdot",
             None,
             Default::default(),
-            GatewayVendor::PolkadotLike,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -224,7 +211,7 @@ impl ExtBuilder {
             *b"ksma",
             None,
             Default::default(),
-            GatewayVendor::PolkadotLike,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -294,3 +281,15 @@ pub const BOB: AccountId = AccountId::new([2u8; 32]);
 pub const BOB_RELAYER: AccountId = AccountId::new([2u8; 32]);
 pub const CHARLIE: AccountId = AccountId::new([3u8; 32]);
 pub const DJANGO: AccountId = AccountId::new([4u8; 32]);
+pub const CLI_DEFAULT: AccountId = AccountId::new([
+    108, 81, 222, 3, 128, 118, 146, 25, 212, 131, 171, 210, 104, 110, 11, 63, 79, 235, 65, 99, 161,
+    143, 230, 174, 109, 98, 47, 128, 20, 242, 27, 114,
+]);
+pub const EXECUTOR_DEFAULT: AccountId = AccountId::new([
+    1, 119, 209, 36, 229, 1, 136, 124, 36, 112, 226, 96, 200, 240, 218, 96, 219, 158, 211, 219,
+    168, 8, 166, 130, 240, 154, 251, 57, 239, 240, 197, 97,
+]);
+pub const EXECUTOR_SECOND: AccountId = AccountId::new([
+    2, 119, 209, 36, 229, 1, 136, 124, 36, 112, 226, 96, 200, 240, 218, 96, 219, 158, 211, 219,
+    168, 8, 166, 130, 240, 154, 251, 57, 239, 240, 197, 99,
+]);

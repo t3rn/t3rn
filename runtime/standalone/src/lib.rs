@@ -47,7 +47,6 @@ pub mod circuit_config;
 pub mod consensus_aura_config;
 pub mod contracts_config;
 pub mod impl_versioned_runtime_with_api;
-pub mod orml_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod xbi_config;
@@ -95,34 +94,18 @@ construct_runtime!(
         Timestamp: pallet_timestamp,
         Aura: pallet_aura,
         Grandpa: pallet_grandpa,
-        Balances: pallet_balances,
-        TransactionPayment: pallet_transaction_payment,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
 
-        // ORML
-        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,
+        // Monetary
+        Balances: pallet_balances = 10,
+        TransactionPayment: pallet_transaction_payment = 11,
+        Assets: pallet_assets = 12,
 
         // Circuit
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 101,
-        MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 102,
-        MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 103,
-        MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 104,
-        MultiFinalityVerifierDefault: pallet_mfv::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 105,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Treasury: pallet_treasury = 109,
         Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
@@ -136,5 +119,11 @@ construct_runtime!(
         AccountManager: pallet_account_manager = 125,
 
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
+        // Portal
+        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        RococoBridge: pallet_grandpa_finality_verifier::{
+            Pallet, Storage
+        } = 129,
+
     }
 );

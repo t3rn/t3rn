@@ -14,8 +14,6 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 
-use t3rn_primitives::ReadLatestGatewayHeight;
-
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{
@@ -256,7 +254,7 @@ impl_runtime_apis! {
 
         fn get_storage(
             address: AccountId,
-            key: [u8; 32],
+            key: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
         }
@@ -291,20 +289,6 @@ impl_runtime_apis! {
             let mut tmp = [0u8; 32];
             index.to_big_endian(&mut tmp);
             Evm::account_storages(address, H256::from_slice(&tmp[..]))
-        }
-    }
-
-    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
-        fn read_latest_gateway_height(
-            gateway_id: [u8; 4],
-        ) -> ReadLatestGatewayHeight {
-            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
-                Ok(encoded_height) =>
-                    ReadLatestGatewayHeight::Success {
-                        encoded_height,
-                    },
-                Err(_err) => ReadLatestGatewayHeight::Error
-            }
         }
     }
 

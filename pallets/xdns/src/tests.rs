@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Tests for pallet-xdns.
+//! Runtimes for pallet-xdns.
 
 use super::*;
 use circuit_mock_runtime::{ExtBuilder, *};
@@ -55,13 +55,12 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
             *b"test",
             None,
             Default::default(),
-            GatewayVendor::PolkadotLike,
+            GatewayVendor::Rococo,
             GatewayType::TxOnly(0),
             Default::default(),
             Default::default(),
             vec![],
             vec![],
-            false
         ));
         assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), 1);
         assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"test").is_some());
@@ -203,13 +202,12 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                     [3, 3, 3, 3],
                     None,
                     Default::default(),
-                    GatewayVendor::PolkadotLike,
+                    GatewayVendor::Rococo,
                     GatewayType::TxOnly(0),
                     Default::default(),
                     Default::default(),
                     vec![],
                     vec![],
-                    false
                 ),
                 pallet_xdns::pallet::Error::<Runtime>::XdnsRecordAlreadyExists
             );
@@ -387,6 +385,28 @@ fn fetch_abi_should_error_for_unknown_xdns_record() {
         .build()
         .execute_with(|| {
             let actual = XDNS::get_abi(*b"rand");
-            assert_err!(actual, "Xdns record not found");
+            assert_err!(actual, pallet_xdns::Error::<Runtime>::XdnsRecordNotFound);
+        });
+}
+
+#[test]
+fn gate_gateway_vendor_returns_error_for_unknown_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let actual = XDNS::get_gateway_vendor(b"rand");
+            assert_err!(actual, pallet_xdns::Error::<Runtime>::XdnsRecordNotFound);
+        });
+}
+
+#[test]
+fn gate_gateway_vendor_returns_vendor_for_known_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let actual = XDNS::get_gateway_vendor(b"pdot");
+            assert_ok!(actual, GatewayVendor::Rococo);
         });
 }

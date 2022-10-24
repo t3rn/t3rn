@@ -9,7 +9,6 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod accounts_config;
 pub mod circuit_config;
 pub mod contracts_config;
-pub mod orml_config;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
@@ -151,7 +150,8 @@ construct_runtime!(
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
+        Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -166,30 +166,11 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-        // ORML
-        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,
-
         // Circuit
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 101,
-        MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 102,
-        MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 103,
-        MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 104,
-        MultiFinalityVerifierDefault: pallet_mfv::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 105,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Treasury: pallet_treasury = 109,
         Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
@@ -202,6 +183,12 @@ construct_runtime!(
 
         // XBI
         XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>} = 111,
+
+         // Portal
+        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        RococoBridge: pallet_grandpa_finality_verifier::{
+            Pallet, Storage
+        } = 129,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
@@ -365,7 +352,7 @@ impl_runtime_apis! {
 
         fn get_storage(
             address: AccountId,
-            key: [u8; 32],
+            key: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
         }
@@ -400,20 +387,6 @@ impl_runtime_apis! {
             let mut tmp = [0u8; 32];
             index.to_big_endian(&mut tmp);
             Evm::account_storages(address, H256::from_slice(&tmp[..]))
-        }
-    }
-
-    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
-        fn read_latest_gateway_height(
-            gateway_id: [u8; 4],
-        ) -> ReadLatestGatewayHeight {
-            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
-                Ok(encoded_height) =>
-                    ReadLatestGatewayHeight::Success {
-                        encoded_height,
-                    },
-                Err(_err) => ReadLatestGatewayHeight::Error
-            }
         }
     }
 

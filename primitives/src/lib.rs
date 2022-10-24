@@ -39,7 +39,7 @@ use sp_runtime::{
 };
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
-pub use orml_traits;
+// pub use orml_traits;
 
 use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
@@ -58,6 +58,7 @@ pub mod executors;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod monetary;
+pub mod portal;
 pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
@@ -100,14 +101,15 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
-    InternalXBI,
-    PolkadotLike,
-    EvmBased,
+    Polkadot,
+    Kusama,
+    Rococo,
+    Ethereum,
 }
 
 impl Default for GatewayVendor {
     fn default() -> Self {
-        GatewayVendor::PolkadotLike
+        GatewayVendor::Rococo
     }
 }
 
@@ -163,12 +165,12 @@ impl TryFrom<&ChainId> for GatewaySysProps {
         match chain_id {
             b"circ" => Ok(GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             }),
             b"gate" => Ok(GatewaySysProps {
                 ss58_format: 1333,
-                token_symbol: Encode::encode("T3RN"),
+                token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             }),
             &POLKADOT_CHAIN_ID => Ok(GatewaySysProps {
@@ -436,7 +438,7 @@ pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPoint
     Ok(vec![GatewayPointer {
         id: gateway_id,
         gateway_type: GatewayType::ProgrammableExternal(0),
-        vendor: GatewayVendor::PolkadotLike,
+        vendor: GatewayVendor::Rococo,
     }])
 }
 

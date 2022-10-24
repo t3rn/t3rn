@@ -117,6 +117,7 @@ parameter_types! {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
+    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
     type DmpMessageHandler = DmpQueue;
     type Event = Event;
     type OnSystemEvent = ();

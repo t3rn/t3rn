@@ -47,9 +47,9 @@ where
     fn try_into(
         self,
     ) -> Result<HardenedSideEffect<AccountId, BlockNumber, BalanceOf>, Self::Error> {
-        let confirmation_outcome = self.clone().confirmed.and_then(|c| c.err.clone());
-        let confirmed_executioner = self.clone().confirmed.map(|c| c.executioner.clone());
-        let confirmed_received_at = self.clone().confirmed.map(|c| c.received_at.clone());
+        let confirmation_outcome = self.clone().confirmed.and_then(|c| c.err);
+        let confirmed_executioner = self.clone().confirmed.map(|c| c.executioner);
+        let confirmed_received_at = self.clone().confirmed.map(|c| c.received_at);
         let confirmed_cost = self.clone().confirmed.and_then(|c| c.cost);
         Ok(HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: self.input.target,
@@ -139,8 +139,7 @@ mod tests {
             confirmed: Some(ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
                 err: Some(ConfirmationOutcome::Success),
                 output: Some(vec![]),
-                encoded_effect: vec![],
-                inclusion_proof: None,
+                inclusion_data: vec![],
                 executioner: from,
                 received_at: 1u64 as BlockNumber,
                 cost: Some(2u64 as BalanceOf),
@@ -173,9 +172,9 @@ mod tests {
                 encoded_args_abi: vec![],
                 security_lvl: SecurityLvl::Dirty,
                 confirmation_outcome: Some(ConfirmationOutcome::Success),
-                confirmed_executioner: Some(AccountId32::new(
-                    hex!("0101010101010101010101010101010101010101010101010101010101010101").into()
-                )),
+                confirmed_executioner: Some(AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                ))),
                 confirmed_received_at: Some(1),
                 confirmed_cost: Some(2)
             },
@@ -224,7 +223,7 @@ mod tests {
         assert_eq!(
             empty_side_effect.generate_id::<Hashing>(),
             H256::from_slice(&hex!(
-                "89eb0d6a8a691dae2cd15ed0369931ce0a949ecafa5c3f93f8121833646e15c3"
+                "5d0d3f21208ec6b3c32b85e5d535b804713bf7b658559a10058c9c4d9fd2c79a"
             ))
         );
     }

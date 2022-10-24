@@ -1,7 +1,7 @@
 use crate::*;
-use frame_support::{parameter_types, traits::ConstU32, PalletId};
+
+use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::H256;
-use sp_runtime::traits::*;
 
 use frame_support::dispatch::{DispatchError, DispatchErrorWithPostInfo};
 
@@ -22,9 +22,8 @@ where
 }
 
 parameter_types! {
-    pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
-    pub const XBIPalletId: PalletId = PalletId(*b"pal/xbip");
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
+    pub const XBIAccountId: AccountId = AccountId::new([68u8; 32]); // 0x444...4
 }
 
 // ToDo: Implement
@@ -42,7 +41,7 @@ impl pallet_xbi_portal::Config for Runtime {
     type ExpectedBlockTimeMs = ConstU32<6000>;
     type MyParachainId = ConstU32<3333>;
     type ORML = pallet_xbi_portal::primitives::orml::ORMLMock<Runtime>;
-    type PalletId = XBIPalletId;
+    type SelfAccountId = XBIAccountId;
     type TimeoutChecksLimit = ConstU32<3000>;
     type Transfers = XBIPortalRuntimeEntry;
     type WASM = pallet_xbi_portal::primitives::wasm::WASMMock<Runtime>;

@@ -97,7 +97,7 @@ parameter_types! {
         })
         .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
         .build_or_panic();
-    pub const SS58Prefix: u16 = 42;
+    pub const SS58Prefix: u16 = 9935;
 }
 
 parameter_types! {
@@ -117,6 +117,7 @@ parameter_types! {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
+    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
     type DmpMessageHandler = DmpQueue;
     type Event = Event;
     type OnSystemEvent = ();

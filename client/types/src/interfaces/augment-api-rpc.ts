@@ -1,6 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import "@polkadot/rpc-core/types/jsonrpc";
+
 import type { AugmentedRpc } from "@polkadot/rpc-core/types";
 import type { Metadata, StorageKey } from "@polkadot/types";
 import type {
@@ -14,6 +18,7 @@ import type {
   U64,
   Vec,
   bool,
+  f64,
   u32,
   u64,
 } from "@polkadot/types-codec";
@@ -40,6 +45,7 @@ import type { CreatedBlock } from "@polkadot/types/interfaces/engine";
 import type {
   EthAccount,
   EthCallRequest,
+  EthFeeHistory,
   EthFilter,
   EthFilterChanges,
   EthLog,
@@ -58,7 +64,10 @@ import type {
   JustificationNotification,
   ReportedRoundStates,
 } from "@polkadot/types/interfaces/grandpa";
-import type { MmrLeafProof } from "@polkadot/types/interfaces/mmr";
+import type {
+  MmrLeafBatchProof,
+  MmrLeafProof,
+} from "@polkadot/types/interfaces/mmr";
 import type { StorageKind } from "@polkadot/types/interfaces/offchain";
 import type {
   FeeDetails,
@@ -97,8 +106,10 @@ import type {
 } from "@polkadot/types/interfaces/system";
 import type { IExtrinsic, Observable } from "@polkadot/types/types";
 
+export type __AugmentedRpc = AugmentedRpc<() => unknown>;
+
 declare module "@polkadot/rpc-core/types/jsonrpc" {
-  export interface RpcInterface {
+  interface RpcInterface {
     author: {
       /**
        * Returns true if the keystore has private keys for the given public key
@@ -145,11 +156,15 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
       rotateKeys: AugmentedRpc<() => Observable<Bytes>>;
       /** Submit and subscribe to watch an extrinsic until unsubscribed */
       submitAndWatchExtrinsic: AugmentedRpc<
-        (extrinsic: IExtrinsic) => Observable<ExtrinsicStatus>
+        (
+          extrinsic: Extrinsic | IExtrinsic | string | Uint8Array
+        ) => Observable<ExtrinsicStatus>
       >;
       /** Submit a fully formatted extrinsic for block inclusion */
       submitExtrinsic: AugmentedRpc<
-        (extrinsic: IExtrinsic) => Observable<Hash>
+        (
+          extrinsic: Extrinsic | IExtrinsic | string | Uint8Array
+        ) => Observable<Hash>
       >;
     };
     babe: {
@@ -252,7 +267,10 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
       >;
     };
     contracts: {
-      /** Executes a call to a contract */
+      /**
+       * @deprecated Use the runtime interface `api.call.contractsApi.call`
+       *   instead Executes a call to a contract
+       */
       call: AugmentedRpc<
         (
           callRequest:
@@ -270,7 +288,11 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
           at?: BlockHash | string | Uint8Array
         ) => Observable<ContractExecResult>
       >;
-      /** Returns the value under a specified storage key in a contract */
+      /**
+       * @deprecated Use the runtime interface
+       *   `api.call.contractsApi.getStorage` instead Returns the value under a
+       *   specified storage key in a contract
+       */
       getStorage: AugmentedRpc<
         (
           address: AccountId | string | Uint8Array,
@@ -278,7 +300,10 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
           at?: BlockHash | string | Uint8Array
         ) => Observable<Option<Bytes>>
       >;
-      /** Instantiate a new contract */
+      /**
+       * @deprecated Use the runtime interface
+       *   `api.call.contractsApi.instantiate` instead Instantiate a new contract
+       */
       instantiate: AugmentedRpc<
         (
           request:
@@ -298,8 +323,9 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
         ) => Observable<ContractInstantiateResult>
       >;
       /**
-       * Returns the projected time a given contract will be able to sustain
-       * paying its rent
+       * @deprecated Not available in newer versions of the contracts interfaces
+       *   Returns the projected time a given contract will be able to sustain
+       *   paying its rent
        */
       rentProjection: AugmentedRpc<
         (
@@ -307,7 +333,11 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
           at?: BlockHash | string | Uint8Array
         ) => Observable<Option<BlockNumber>>
       >;
-      /** Upload new code without instantiating a contract from it */
+      /**
+       * @deprecated Use the runtime interface
+       *   `api.call.contractsApi.uploadCode` instead Upload new code without
+       *   instantiating a contract from it
+       */
       uploadCode: AugmentedRpc<
         (
           uploadRequest:
@@ -391,6 +421,19 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
             | Uint8Array,
           number?: BlockNumber | AnyNumber | Uint8Array
         ) => Observable<U256>
+      >;
+      /** Returns fee history for given block count & reward percentiles */
+      feeHistory: AugmentedRpc<
+        (
+          blockCount: U256 | AnyNumber | Uint8Array,
+          newestBlock: BlockNumber | AnyNumber | Uint8Array,
+          rewardPercentiles:
+            | Option<Vec<f64>>
+            | null
+            | Uint8Array
+            | Vec<f64>
+            | f64[]
+        ) => Observable<EthFeeHistory>
       >;
       /** Returns current gas price. */
       gasPrice: AugmentedRpc<() => Observable<U256>>;
@@ -531,6 +574,8 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
       getWork: AugmentedRpc<() => Observable<EthWork>>;
       /** Returns the number of hashes per second that the node is mining with. */
       hashrate: AugmentedRpc<() => Observable<U256>>;
+      /** Returns max priority fee per gas */
+      maxPriorityFeePerGas: AugmentedRpc<() => Observable<U256>>;
       /** Returns true if client is actively mining new blocks. */
       mining: AugmentedRpc<() => Observable<bool>>;
       /** Returns id of new block filter. */
@@ -639,12 +684,19 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
       >;
     };
     mmr: {
+      /** Generate MMR proof for the given leaf indices. */
+      generateBatchProof: AugmentedRpc<
+        (
+          leafIndices: Vec<u64> | (u64 | AnyNumber | Uint8Array)[],
+          at?: BlockHash | string | Uint8Array
+        ) => Observable<MmrLeafProof>
+      >;
       /** Generate MMR proof for given leaf index. */
       generateProof: AugmentedRpc<
         (
           leafIndex: u64 | AnyNumber | Uint8Array,
           at?: BlockHash | string | Uint8Array
-        ) => Observable<MmrLeafProof>
+        ) => Observable<MmrLeafBatchProof>
       >;
     };
     net: {
@@ -752,7 +804,10 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
           at?: BlockHash | string | Uint8Array
         ) => Observable<u64>
       >;
-      /** Retrieves the keys with a certain prefix */
+      /**
+       * @deprecated Use `api.rpc.state.getKeysPaged` to retrieve keys Retrieves
+       *   the keys with a certain prefix
+       */
       getKeys: AugmentedRpc<
         (
           key: StorageKey | string | Uint8Array | any,
@@ -773,8 +828,9 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
         (at?: BlockHash | string | Uint8Array) => Observable<Metadata>
       >;
       /**
-       * Returns the keys with prefix, leave empty to get all the keys
-       * (deprecated: Use getKeysPaged)
+       * @deprecated Use `api.rpc.state.getKeysPaged` to retrieve keys Returns
+       *   the keys with prefix, leave empty to get all the keys (deprecated:
+       *   Use getKeysPaged)
        */
       getPairs: AugmentedRpc<
         (
@@ -844,9 +900,9 @@ declare module "@polkadot/rpc-core/types/jsonrpc" {
       traceBlock: AugmentedRpc<
         (
           block: Hash | string | Uint8Array,
-          targets: Option<Text> | null | object | string | Uint8Array,
-          storageKeys: Option<Text> | null | object | string | Uint8Array,
-          methods: Option<Text> | null | object | string | Uint8Array
+          targets: Option<Text> | null | Uint8Array | Text | string,
+          storageKeys: Option<Text> | null | Uint8Array | Text | string,
+          methods: Option<Text> | null | Uint8Array | Text | string
         ) => Observable<TraceBlockResponse>
       >;
       /** Check current migration state */

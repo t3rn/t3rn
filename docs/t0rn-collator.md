@@ -29,7 +29,7 @@ Create the collator node's data and a specs directory:
 mkdir -p ~/t0rn/{data,specs}
 ```
 
-## Install a Prebuilt Collator
+## Option 1: Install a Prebuilt Collator
 
 We maintain collator binaries which we release alongside every runtime release. Our sole target platform is glibc based Linux. Download and extract the prebuild:
 
@@ -45,7 +45,7 @@ Don't forget to make it executable:
 chmod +x ~/t0rn/circuit-collator
 ```
 
-## Fetch Chain Specs
+## Fetch Chain Specs (Binary)
 
 To associate your node to the correct network we need to provide the t0rn chain spec as well as the Rococo chain specification. We need the latter as every collator runs an embedded relay chain node.
 
@@ -59,13 +59,28 @@ curl -sSfL \
   https://raw.githubusercontent.com/t3rn/t3rn/v1.1.0-rc.0/specs/t0rn.raw.json
 ```
 
+## Option 2: Pull latest Docker image
+
+```sh
+docker pull ghcr.io/t3rn/t0rn-collator:v1.1.0-rc.0
+```
+
+
+
+## Select Boot Nodes
 We publish these chain specs alongside our runtime releases.
 
-Also, select a Rococo boot node:
+Also, select a `Rococo` boot node:
 
 ```sh
 rococo_boot_node="$(jq -r .bootNodes[0] ~/t0rn/specs/rococo.raw.json)"
 ```
+or:
+```sh
+rococo_boot_node=/ip4/34.90.151.124/tcp/30333/p2p/12D3KooWF7BUbG5ErMZ47ZdarRwtpZamgcZqxwpnFzkhjc1spHnP
+```
+
+
 
 The `t0rn` boot node reads:
 
@@ -73,7 +88,7 @@ The `t0rn` boot node reads:
 t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqYPFTWxSo1keuvenBdDKzdTCf
 ```
 
-## Start the Collator
+## Option 1: Start the Collator (Binary)
 
 ```sh
 ~/t0rn/circuit-collator \
@@ -84,6 +99,8 @@ t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqYPFTW
   --bootnodes "$t0rn_boot_node" \
   --port 33333 \
   --rpc-port 8833 \
+  --prometheus-port 7001 \
+  --telemetry-url 'wss://telemetry.polkadot.io/submit 1' \
   --ws-port 9933 \
   --execution Wasm \
   --pruning=archive \
@@ -96,6 +113,29 @@ t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqYPFTW
   --execution Wasm
 ```
 
+## Option 2: Start the Collator (Docker image)
+
+```sh
+docker run -p 33333:33333 -p 8833:8833 -p 9933:9933 \
+  -v /node ghcr.io/t3rn/t0rn-collator:v1.1.0-rc.0 \
+  --collator \
+  --name genius \
+  --base-path /node \
+  --chain /node/specs/t0rn.raw.json \
+  --bootnodes "$t0rn_boot_node" \
+  --execution Wasm \
+  --pruning=archive \
+  -- \
+  --chain /node/specs/rococo.raw.json \
+  --bootnodes "$rococo_boot_node" \
+  --port 10001 \
+  --rpc-port 8001 \
+  --prometheus-port 7001 \
+  --telemetry-url 'wss://telemetry.polkadot.io/submit 1' \
+  --ws-port 9001 \
+  --execution Wasm
+```
+
 When running the collator the first time, add the `--rpc-methods=unsafe` argument to be able to call rotateKeys later.
 Please restart your node after the registration process without the argument.
 
@@ -104,10 +144,24 @@ Please restart your node after the registration process without the argument.
 
 Your collator needs an [Aura](https://docs.substrate.io/v3/advanced/consensus/#aura) identity in order to produce blocks.
 
-The Aura key must be inserted into the keystore *after* startup:
+The Aura key must be inserted into the keystore *after* startup.
 
+For the Binary Collator:
 ```sh
 ~/t0rn/circuit-collator \
+  key \
+  insert \
+  --base-path ~/t0rn/data \
+  --chain ~/t0rn/specs/t0rn.raw.json \
+  --scheme Sr25519 \
+  --suri "your collator's secret phrase ..." \
+  --key-type aura
+```
+
+For the Docker Collator:
+`cd /usr/local/bin/`
+```sh
+circuit-collator \
   key \
   insert \
   --base-path ~/t0rn/data \

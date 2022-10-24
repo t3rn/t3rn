@@ -21,7 +21,7 @@ use ed25519_dalek::{Keypair, PublicKey, SecretKey, Signature};
 use finality_grandpa::voter_set::VoterSet;
 use sp_finality_grandpa::{AuthorityId, AuthorityList, AuthorityWeight};
 use sp_runtime::RuntimeDebug;
-use sp_std::prelude::*;
+use sp_std::{prelude::*, vec};
 
 /// Set of test accounts with friendly names.
 pub const ALICE: Account = Account(0);
@@ -43,7 +43,7 @@ impl Account {
     pub fn secret(&self) -> SecretKey {
         let data = self.0.encode();
         let mut bytes = [0_u8; 32];
-        bytes[0..data.len()].copy_from_slice(&*data);
+        bytes[0..data.len()].copy_from_slice(&data);
         SecretKey::from_bytes(&bytes)
             .expect("A static array of the correct length is a known good.")
     }
@@ -83,6 +83,14 @@ pub fn authority_list() -> AuthorityList {
     test_keyring()
         .iter()
         .map(|(id, w)| (AuthorityId::from(*id), *w))
+        .collect()
+}
+
+/// Convenience function to get a list of Grandpa authority addresses.
+pub fn authorities() -> Vec<AuthorityId> {
+    test_keyring()
+        .iter()
+        .map(|(id, _w)| AuthorityId::from(*id))
         .collect()
 }
 

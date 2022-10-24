@@ -167,6 +167,12 @@ pub fn run() -> sc_cli::Result<()> {
                     //         Arc::new(ext_builder),
                     //     )
                     // },
+                    // BenchmarkCmd::Machine(cmd) => runner
+                    //     .sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+                    // NOTE: this allows the Client to leniently implement
+                    // new benchmark commands without requiring a companion MR.
+                    #[allow(unreachable_patterns)]
+                    _ => Err("Benchmarking sub-command unsupported".into()),
                 }
             })
         },

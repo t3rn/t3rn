@@ -179,7 +179,7 @@ pub mod test {
     use t3rn_primitives::{abi::Type, xtx::LocalState};
     use t3rn_protocol::side_effects::test_utils::*;
 
-    use crate::tests::brute_seed_block_1_to_grandpa_mfv;
+    use crate::tests::brute_seed_block_1;
     use circuit_mock_runtime::*;
     use circuit_runtime_pallets::pallet_circuit;
     use pallet_circuit::escrow::Escrow;
@@ -216,7 +216,7 @@ pub mod test {
             .execute_with(|| {
                 let _ = Balances::deposit_creating(&ALICE, 1 + 2 + 1); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
                 System::set_block_number(1);
-                brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
+                brute_seed_block_1([3, 3, 3, 3]);
                 // Submit for execution first
                 assert_ok!(Circuit::on_extrinsic_trigger(
                     origin,
@@ -248,7 +248,7 @@ pub mod test {
                             )
                                 .into(), // executor account
                                 hex!(
-                                "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
+                                "3333333333333333333333333333333333333333333333333333333333333333"
                             )
                                 .into(), // circuit account
                                 1u128, // value
@@ -299,7 +299,7 @@ pub mod test {
             .execute_with(|| {
                 let _ = Balances::deposit_creating(&ALICE, 1 + 2 + 1); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
                 System::set_block_number(1);
-                brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
+                brute_seed_block_1([3, 3, 3, 3]);
 
                 // Submit for execution first
                 assert_ok!(Circuit::on_extrinsic_trigger(
@@ -329,7 +329,7 @@ pub mod test {
                             )
                                 .into(), // executor account
                                 hex!(
-                                "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
+                                "3333333333333333333333333333333333333333333333333333333333333333"
                             )
                                 .into(), // circuit account
                                 1u128, // value
@@ -355,7 +355,7 @@ pub mod test {
                         event: Event::Circuit(
                             pallet_circuit::pallet::Event::<Runtime>::EscrowTransfer(
                                 hex!(
-                                "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
+                                "3333333333333333333333333333333333333333333333333333333333333333"
                             )
                                 .into(), // executor account
                                 hex!(

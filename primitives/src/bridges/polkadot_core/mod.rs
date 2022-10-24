@@ -289,9 +289,9 @@ impl<Call> SignedExtensions<Call> {
 
 /// Polkadot-like chain.
 #[derive(RuntimeDebug)]
-pub struct PolkadotLike;
+pub struct Rococo;
 
-impl Chain for PolkadotLike {
+impl Chain for Rococo {
     type BlockNumber = BlockNumber;
     type Hash = Hash;
     type Hasher = Hasher;

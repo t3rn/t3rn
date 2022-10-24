@@ -43,5 +43,17 @@
       ],
       "type": "GatewayABIConfig"
     }
+  },
+  "portal": {
+    "getLatestFinalizedHeader": {
+      "description": "Fetches the latest finalized header of a gateway",
+      "params": [
+         {
+          "name": "gateway_id",
+          "type": "ChainId"
+        }
+      ],
+      "type": "Result<Vec<u8>>"
+    }
   }
 }
