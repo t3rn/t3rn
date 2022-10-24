@@ -476,6 +476,7 @@ mod tests {
             let multi_asset = concrete_asset_pallet_assets(a_id as u128, asset_amt / 10);
             let dest_para = box MultiLocation::new(1, X1(Parachain(T1RN_PARA_ID))).versioned();
 
+            // FIXME: this fails because https://substrate.stackexchange.com/questions/5017/allowtoplevelpaidexecutionfrom-not-supporting-descendorigin
             assert_ok!(t0rn::PolkadotXcm::send(
                 Origin::signed(ALICE),
                 dest_para,
