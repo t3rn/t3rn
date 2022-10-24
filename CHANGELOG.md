@@ -1,7 +1,8 @@
 # Changelog
 
-## `v1.1.0-rc.0` 2022-07-14
+## `v1.2.0-rc.0` 2022-10-24
 
+## `v1.1.0-rc.0` 2022-07-14
 
 ### Features
 - [**3VM**: repatriate gas fees to contract authors](https://github.com/t3rn/t3rn/pull/295)
