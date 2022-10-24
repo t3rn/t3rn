@@ -88,13 +88,11 @@ where
     BalanceOf: Encode + Zero + Clone,
 {
     pub fn is_successfully_confirmed(&self) -> bool {
-        self.confirmed.is_some()
-            && self
-                .confirmed
-                .as_ref()
-                .expect("ensured exists in the same check")
-                .err
-                .is_none()
+        if let Some(confirmed) = &self.confirmed {
+            confirmed.err.is_none()
+        } else {
+            false
+        }
     }
 
     pub fn is_bid_resolved(&self) -> bool {
