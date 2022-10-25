@@ -1,6 +1,6 @@
 
 
-export const toId = (targetId: string | number[]): number[] => {
+export const toU8aId = (targetId: string | number[]): number[] => {
 	let res;
 	if(typeof targetId === 'string') {
 		res = new TextEncoder().encode(targetId);
