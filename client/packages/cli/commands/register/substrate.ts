@@ -83,7 +83,7 @@ const createGatewayGenesis = async (circuit: ApiPromise, target: ApiPromise): Pr
     return circuit.createType('GatewayGenesisConfig', config);
 }
 
-const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any) => {
+const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any): Codec => {
     const config: GatewayABIConfig = {
         blockNumberTypeSize: gatewayConfig.blockNumberTypeSize,
         hashSize: gatewayConfig.hashSize,
@@ -97,7 +97,7 @@ const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any) => {
     return circuiApi.createType('GatewayABIConfig', config);
 }
 
-const createGatewaySysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
+const createGatewaySysProps = (circuiApi: ApiPromise, gatewaySysProps: any): Codec => {
     const props: GatewaySysProps = {
         ss58Format: gatewaySysProps.ss58Format,
         tokenSymbol: gatewaySysProps.tokenSymbol,

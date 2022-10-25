@@ -1,11 +1,11 @@
 import config from "./config/setup"
-import{ ApiPromise, Keyring, WsProvider }from'@polkadot/api';
+import { ApiPromise, Keyring } from'@polkadot/api';
 import { CircuitRelayer } from "./circuitRelayer";
 import { register } from "./commands/register/register";
-// import { setOperational } from "./commands/operational";
+import { setOperational } from "./commands/operational";
 // import {onExtrinsicTrigger} from "./commands/onExtrinsicTrigger";
 // import * as fs from "fs";
-// import {submitHeader} from "./commands/submit_header/submit_header";
+import {submitHeader} from "./commands/submit_header/submit_header";
 import { Sdk, encodings, converters } from "@t3rn/sdk/dist/src";
 
 import { Command } from 'commander';
@@ -84,59 +84,59 @@ class CircuitCLI {
         }
     }
 
-    // async setOperational(id: string, operational: boolean, exportArgs: boolean, exportName: string) {
-    //     const data = config.gateways.find(elem => elem.id === id)
-    //     if (data) {
-    //         const transactionArgs = await setOperational(this.circuit, data, operational)
-    //         const submissionHeight = await this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.setOperational(transactionArgs?.gatewayId, transactionArgs?.operational))
-    //             .catch(err => {
-    //                 console.log(err);
-    //                 console.log("setOperational Failed!");
-    //                 this.error()
-    //             })
-    //
-    //         if (exportArgs) {
-    //             const fileName = `./exports/` + exportName + '.json';
-    //             // @ts-ignore
-    //             await this.exportData([transactionArgs], fileName, "set-operational", submissionHeight)
-    //         } else {
-    //             this.close()
-    //         }
-    //
-    //     } else {
-    //         console.log(`Config or argument for ${process.argv[3]} not found!`)
-    //         this.error();
-    //     }
-    // }
-    //
-    // async submitHeaders(id: string, exportArgs: boolean, exportName: string) {
-    //     const gatewayData = config.gateways.find(elem => elem.id === id)
-    //     if(gatewayData) {
-    //         if(gatewayData.registrationData?.parachain !== null) {
-    //             // @ts-ignore
-    //             gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
-    //         }
-    //         const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id)
-    //         const submissionHeight = await this.circuitRelayer.submitHeaders(transactionArgs)
-    //             .catch(err => {
-    //                 console.log(err)
-    //                 console.log("Header Submission Failed!")
-    //                 this.error()
-    //             })
-    //
-    //         if (exportArgs) {
-    //             const fileName = `./exports/` + exportName + '.json';
-    //             // @ts-ignore
-    //             await this.exportData(transactionArgs, fileName, "submit-headers", submissionHeight)
-    //         } else {
-    //             this.close()
-    //         }
-    //
-    //     } else {
-    //         console.log(`Config for ${process.argv[3]} not found!`)
-    //         this.error();
-    //     }
-    // }
+    async setOperational(id: string, operational: boolean, exportArgs: boolean, exportName: string) {
+        const data = config.gateways.find(elem => elem.id === id)
+        if (data) {
+            const transactionArgs = await setOperational(this.circuit, data, operational)
+            const submissionHeight = await this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.setOperational(transactionArgs?.gatewayId, transactionArgs?.operational))
+                .catch(err => {
+                    console.log(err);
+                    console.log("setOperational Failed!");
+                    this.error()
+                })
+
+            if (exportArgs) {
+                const fileName = `./exports/` + exportName + '.json';
+                // @ts-ignore
+                await this.exportData([transactionArgs], fileName, "set-operational", submissionHeight)
+            } else {
+                this.close()
+            }
+
+        } else {
+            console.log(`Config or argument for ${process.argv[3]} not found!`)
+            this.error();
+        }
+    }
+
+    async submitHeaders(id: string, exportArgs: boolean, exportName: string) {
+        const gatewayData = config.gateways.find(elem => elem.id === id)
+        if(gatewayData) {
+            if(gatewayData.registrationData?.parachain !== null) {
+                // @ts-ignore
+                gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
+            }
+            const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id)
+            const submissionHeight = await this.circuitRelayer.submitHeaders(transactionArgs)
+                .catch(err => {
+                    console.log(err)
+                    console.log("Header Submission Failed!")
+                    this.error()
+                })
+
+            if (exportArgs) {
+                const fileName = `./exports/` + exportName + '.json';
+                // @ts-ignore
+                await this.exportData(transactionArgs, fileName, "submit-headers", submissionHeight)
+            } else {
+                this.close()
+            }
+
+        } else {
+            console.log(`Config for ${process.argv[3]} not found!`)
+            this.error();
+        }
+    }
     //
     // async transfer(data: any, sequential: boolean) {
     //     const gatewayData = config.gateways.find(elem => elem.id === data.target)
@@ -229,30 +229,30 @@ program.command('register')
           await cli.setup()
           cli.register(id, parseInt(options.teleport), options.export, options.output)
       });
-//
-// program.command('set-operational')
-//       .description('Activate/deactivate a gateway')
-//       .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-//       .argument('operational <bool>', 'gateway_id as specified in setup.ts')
-//       .option('-e, --export', 'export the transaction arguments as JSON', false)
-//       .option('-o, --output <string>', 'specify the filename of the export', "export")
-//       .action(async (id, operational, options) => {
-//           let cli = new CircuitCLI();
-//           await cli.setup()
-//           operational = operational === "true" ? true : false;
-//           cli.setOperational(id, operational, options.export, options.output)
-//       });
-//
-// program.command('submit-headers')
-//       .description('Submit the latest headers of a gateway to portal. All available finalized headers will be added.')
-//       .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-//       .option('-e, --export', 'export the transaction arguments as JSON', false)
-//       .option('-o, --output <string>', 'specify the filename of the export', "export")
-//       .action(async (id, options) => {
-//           let cli = new CircuitCLI();
-//           await cli.setup()
-//           cli.submitHeaders(id, options.export, options.output)
-//       });
+
+program.command('set-operational')
+      .description('Activate/deactivate a gateway')
+      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+      .argument('operational <bool>', 'gateway_id as specified in setup.ts')
+      .option('-e, --export', 'export the transaction arguments as JSON', false)
+      .option('-o, --output <string>', 'specify the filename of the export', "export")
+      .action(async (id, operational, options) => {
+          let cli = new CircuitCLI();
+          await cli.setup()
+          operational = operational === "true" ? true : false;
+          cli.setOperational(id, operational, options.export, options.output)
+      });
+
+program.command('submit-headers')
+      .description('Submit the latest headers of a gateway to portal. All available finalized headers will be added.')
+      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+      .option('-e, --export', 'export the transaction arguments as JSON', false)
+      .option('-o, --output <string>', 'specify the filename of the export', "export")
+      .action(async (id, options) => {
+          let cli = new CircuitCLI();
+          await cli.setup()
+          cli.submitHeaders(id, options.export, options.output)
+      });
 //
 // program.command('transfer')
 //       .description('Triggers a transfer SideEffect, sending the targets nativ asset')

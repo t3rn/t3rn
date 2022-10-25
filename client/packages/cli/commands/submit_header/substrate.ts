@@ -1,4 +1,4 @@
-import {decodeHeader, decodeJustification, decodeFinalityProof} from "../../utils/decoder";
+import { encodings } from "@t3rn/sdk";
 import {fetchBestFinalizedHash, fetchLatestPossibleParachainHeader, getStorageProof} from "../../utils/substrate";
 const axios = require('axios').default;
 
@@ -17,19 +17,27 @@ export const submitRelaychainHeaders = async (circuit: any, target: any, gateway
 const generateBatchProof = async (circuit: any, target: any, gatewayId: string, from: number, to: number) => {
     let transactionArguments: any[] = [];
     while(from < to) {
+        // get finalityProof element of epoch that contains block #from
         const finalityProof = await target.rpc.grandpa.proveFinality(from)
-        let {latestBlockHash, justification, headers} = decodeFinalityProof(finalityProof)
+        // decode finality proof
+        let { justification, headers } = encodings.substrate.decoders.finalityProofDecode(finalityProof)
         let signed_header = headers.pop()
+
+        // query from header again, as its not part of the proof, and concat
         headers = [await getHeader(target, from), ...headers]
         let range = circuit.createType("Vec<Header>", headers)
+
         console.log("Batch:")
         console.log(`Range: From #${range[0].number.toNumber()} to #${range[range.length - 1].number.toNumber()}`)
         console.log("__________________________________________________________________")
+
         const relaychainHeaderData = circuit.createType("RelaychainHeaderData<Header>", {
             signed_header,
             range,
-            justification: decodeJustification(justification)
+            justification: encodings.substrate.decoders.justificationDecode(justification)
         })
+
+        //push to transaction queue
         transactionArguments.push({gatewayId: circuit.createType("ChainId", gatewayId), data: relaychainHeaderData})
         from = parseInt(signed_header.number.toJSON()) + 1
     }
@@ -43,7 +51,7 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
         latestRelayChainHeader.toJSON(),
         gatewayData.registrationData.parachain.id
     )
-    const decodedParachainHeader = decodeHeader(parachainHeader.toJSON())
+    const decodedParachainHeader = encodings.substrate.decoders.headerDecode(parachainHeader.toJSON())
     const parachainHeightCircuit = await fetchGatewayHeight(gatewayData.id, circuit)
     console.log("Latest Para Finalized Height:", parachainHeightCircuit)
     console.log("Newest potential header:", decodedParachainHeader.number.toNumber())
@@ -65,9 +73,9 @@ const collectHeaderRange = async (target: any, from: number, to: number) => {
     let headers: any[] = [];
     while(from <= to) {
         headers.push(
-            await target.rpc.chain.getHeader(
+            (await target.rpc.chain.getHeader(
                 await target.rpc.chain.getBlockHash(from)
-            )
+            )).toJSON()
         )
         console.log("fetched #", from)
 
@@ -97,9 +105,9 @@ const fetchCurrentHeight = async (target: any) => {
 }
 
 const getHeader = async (target: any, height: number) => {
-    return target.rpc.chain.getHeader(
+    return (await target.rpc.chain.getHeader(
         await target.rpc.chain.getBlockHash(height)
-    )
+    )).toJSON()
 }
 
 //for registrations we want to get the justification cotaining the latest authoritySetUpdate, as we can be sure that all authorties are included.
