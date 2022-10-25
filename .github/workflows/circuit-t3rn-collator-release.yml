@@ -48,8 +48,8 @@ jobs:
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.sha }}-collator-release-artifacts
-          path: ./target/release/circuit-collator
+          name: ${{ github.sha }}-t3rn-collator-release-artifacts
+          path: ./target/release/t3rn-collator
           if-no-files-found: error
           retention-days: 1
 
@@ -65,7 +65,7 @@ jobs:
       - name: 📥 Download circuit collator
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-collator-release-artifacts
+          name: ${{ github.sha }}-t3rn-collator-release-artifacts
           path: ./target/release/
 
       - name: 🏷️ Get the version tag
@@ -86,7 +86,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: t3rn/circuit-collator:${{ env.PUSHED_TAG }}
+          tags: t3rn/t3rn-collator:${{ env.PUSHED_TAG }}
           platforms: linux/amd64
           file: collator.Dockerfile
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -102,20 +102,20 @@ jobs:
       - name: 📥 Download circuit collator
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-collator-release-artifacts
+          name: ${{ github.sha }}-t3rn-collator-release-artifacts
           path: ./target/release/
 
       - name: 🎱 Gzip circuit collator
         run: |
-          gzip -c ./target/release/circuit-collator \
-          > ./target/release/circuit-collator.gz
+          gzip -c ./target/release/t3rn-collator \
+          > ./target/release/t3rn-collator.gz
 
       - name: 🖐🏾 Fingerprint the gball
         run: |
-          sha256sum -b ./target/release/circuit-collator.gz \
+          sha256sum -b ./target/release/t3rn-collator.gz \
           | grep -oE '^[a-f0-9]+' \
           | tr -d '\n' \
-          > ./target/release/circuit-collator.gz.sha256sum
+          > ./target/release/t3rn-collator.gz.sha256sum
 
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
@@ -151,8 +151,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/circuit-collator.gz.sha256sum
-          asset_name: ${{ env.PARACHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_path: ./target/release/t3rn-collator.gz.sha256sum
+          asset_name: ${{ env.PARACHAIN_NAME }}-t3rn-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
           asset_content_type: text/plain
 
       - name: 📦 Upload the circuit parachain collator gball as a release asset
@@ -161,8 +161,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/circuit-collator.gz
-          asset_name: ${{ env.PARACHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_path: ./target/release/t3rn-collator.gz
+          asset_name: ${{ env.PARACHAIN_NAME }}-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip
 
   trigger-downstream:
@@ -172,11 +172,11 @@ jobs:
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-      - name: 🔫 Trigger chainops downstream
-        run: |
-          curl -XPOST /
-            -u ${{ secrets.GH_PAT }} /
-            -H "Accept:application/vnd.github" /
-            -H "Content-Type:application/json" /
-            https://api.github.com/repos/t3rn/chainops/cd.yml/dispatches /
-            --data "{\"action\":\"xtrigger\",\"tag\":\"${{ env.PUSHED_TAG }}\"}"
+#      - name: 🔫 Trigger chainops downstream
+#        run: |
+#          curl -XPOST /
+#            -u ${{ secrets.GH_PAT }} /
+#            -H "Accept:application/vnd.github" /
+#            -H "Content-Type:application/json" /
+#            https://api.github.com/repos/t3rn/chainops/cd.yml/dispatches /
+#            --data "{\"action\":\"xtrigger\",\"tag\":\"${{ env.PUSHED_TAG }}\"}"

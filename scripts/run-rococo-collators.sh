@@ -28,7 +28,7 @@ mkdir -p \
 
 # pull a prebuilt circuit collator binary
 curl -sSfL \
-  https://github.com/t3rn/t3rn/releases/download/$tag/t0rn-circuit-collator-$tag-x86_64-unknown-linux-gnu.gz \
+  https://github.com/t3rn/t3rn/releases/download/$tag/t0rn-collator-$tag-x86_64-unknown-linux-gnu.gz \
 | \
 gunzip \
 > $collator_binary
