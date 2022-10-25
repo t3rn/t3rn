@@ -41,30 +41,32 @@ export class Gateway {
 	}
 
 	createTransferSfx(
-		nonce: number,
-		from: string,
-		to: string,
-		maxReward: number | BN | string,
-		insurance: number | BN | string,
-		value: number | BN | string,
-		signature: string | undefined,
-		enforceExecutioner: string | undefined,
+		args: {
+			from: string,
+			to: string,
+			value: number | BN | string,
+			maxReward: number | BN | string,
+			insurance: number | BN | string,
+			nonce: number,
+			signature?: string,
+			enforceExecutioner?: string
+		}
 	): T3rnTypesSideEffect {
 		if (!this.allowedSideEffects.includes("tran")) throw new Error(`Transfer Sfx not supported for ${this.id}`)
-		const encodedArgs: string[] = this.encodeTransferArgs(from, to, value, insurance, maxReward)
+		const encodedArgs: string[] = this.encodeTransferArgs(args.from, args.to, args.value, args.insurance, args.maxReward)
 
-		maxReward = new AmountConverter({value: maxReward}).toBn()
-		insurance = new AmountConverter({value: insurance}).toBn()
+		const maxReward = new AmountConverter({value: args.maxReward}).toBn()
+		const insurance = new AmountConverter({value: args.insurance}).toBn()
 
 		return createSfx({
 			target: toU8aId(this.id),
-			nonce,
-			maxReward: maxReward as BN,
-			insurance: insurance as BN,
+			nonce: args.nonce,
+			maxReward,
+			insurance,
 			encodedArgs,
 			encodedAction: "tran",
-			signature,
-			enforceExecutioner,
+			signature: args.signature,
+			enforceExecutioner: args.enforceExecutioner,
 		})
 	}
 
