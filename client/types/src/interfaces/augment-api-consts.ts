@@ -77,6 +77,8 @@ declare module "@polkadot/api-base/types/consts" {
       selfGatewayId: U8aFixed & AugmentedConst<ApiType>;
       /** The Circuit's self parachain id */
       selfParaId: u32 & AugmentedConst<ApiType>;
+      /** The Circuit's SFX Bidding Period */
+      sfxBiddingPeriod: u32 & AugmentedConst<ApiType>;
       /**
        * The maximum number of signals that can be queued for handling.
        *

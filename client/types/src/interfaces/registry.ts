@@ -65,7 +65,6 @@ import type {
   PalletCircuitError,
   PalletCircuitEvent,
   PalletCircuitStateCircuitStatus,
-  PalletCircuitStateInsuranceDeposit,
   PalletCircuitStateXExecSignal,
   PalletClockError,
   PalletClockEvent,
@@ -167,6 +166,7 @@ import type {
   T3rnPrimitivesMonetaryInflationAllocation,
   T3rnPrimitivesSideEffectFullSideEffect,
   T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
+  T3rnPrimitivesSideEffectSfxBid,
   T3rnPrimitivesStorageRawAliveContractInfo,
   T3rnPrimitivesVolatileLocalState,
   T3rnPrimitivesXdnsParachain,
@@ -269,7 +269,6 @@ declare module "@polkadot/types/types/registry" {
     PalletCircuitError: PalletCircuitError;
     PalletCircuitEvent: PalletCircuitEvent;
     PalletCircuitStateCircuitStatus: PalletCircuitStateCircuitStatus;
-    PalletCircuitStateInsuranceDeposit: PalletCircuitStateInsuranceDeposit;
     PalletCircuitStateXExecSignal: PalletCircuitStateXExecSignal;
     PalletClockError: PalletClockError;
     PalletClockEvent: PalletClockEvent;
@@ -371,6 +370,7 @@ declare module "@polkadot/types/types/registry" {
     T3rnPrimitivesMonetaryInflationAllocation: T3rnPrimitivesMonetaryInflationAllocation;
     T3rnPrimitivesSideEffectFullSideEffect: T3rnPrimitivesSideEffectFullSideEffect;
     T3rnPrimitivesSideEffectInterfaceSideEffectInterface: T3rnPrimitivesSideEffectInterfaceSideEffectInterface;
+    T3rnPrimitivesSideEffectSfxBid: T3rnPrimitivesSideEffectSfxBid;
     T3rnPrimitivesStorageRawAliveContractInfo: T3rnPrimitivesStorageRawAliveContractInfo;
     T3rnPrimitivesVolatileLocalState: T3rnPrimitivesVolatileLocalState;
     T3rnPrimitivesXdnsParachain: T3rnPrimitivesXdnsParachain;

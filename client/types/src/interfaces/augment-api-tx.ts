@@ -1150,12 +1150,13 @@ declare module "@polkadot/api-base/types/submittable" {
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
     circuit: {
-      bondInsuranceDeposit: AugmentedSubmittable<
+      bidExecution: AugmentedSubmittable<
         (
           xtxId: H256 | string | Uint8Array,
-          sideEffectId: H256 | string | Uint8Array
+          sfxId: H256 | string | Uint8Array,
+          bidAmount: u128 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [H256, H256]
+        [H256, H256, u128]
       >;
       /**
        * Blind version should only be used for testing - unsafe since skips
@@ -1168,12 +1169,13 @@ declare module "@polkadot/api-base/types/submittable" {
             | T3rnTypesSideEffect
             | {
                 target?: any;
-                prize?: any;
-                orderedAt?: any;
+                maxFee?: any;
+                insurance?: any;
                 encodedAction?: any;
                 encodedArgs?: any;
                 signature?: any;
-                enforceExecutioner?: any;
+                requesterNonce?: any;
+                enforceExecutor?: any;
               }
             | string
             | Uint8Array,
@@ -1212,12 +1214,13 @@ declare module "@polkadot/api-base/types/submittable" {
             | T3rnTypesSideEffect
             | {
                 target?: any;
-                prize?: any;
-                orderedAt?: any;
+                maxFee?: any;
+                insurance?: any;
                 encodedAction?: any;
                 encodedArgs?: any;
                 signature?: any;
-                enforceExecutioner?: any;
+                requesterNonce?: any;
+                enforceExecutor?: any;
               }
             | string
             | Uint8Array,
@@ -1234,12 +1237,13 @@ declare module "@polkadot/api-base/types/submittable" {
                 | T3rnTypesSideEffect
                 | {
                     target?: any;
-                    prize?: any;
-                    orderedAt?: any;
+                    maxFee?: any;
+                    insurance?: any;
                     encodedAction?: any;
                     encodedArgs?: any;
                     signature?: any;
-                    enforceExecutioner?: any;
+                    requesterNonce?: any;
+                    enforceExecutor?: any;
                   }
                 | string
                 | Uint8Array

@@ -360,6 +360,10 @@ declare module "@polkadot/api-base/types/events" {
           Bytes
         ]
       >;
+      SFXNewBidReceived: AugmentedEvent<
+        ApiType,
+        [H256, H256, AccountId32, u128]
+      >;
       SideEffectConfirmed: AugmentedEvent<ApiType, [H256]>;
       SideEffectInsuranceReceived: AugmentedEvent<ApiType, [H256, AccountId32]>;
       SideEffectsConfirmed: AugmentedEvent<

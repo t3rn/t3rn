@@ -42,7 +42,6 @@ import type {
   PalletBalancesBalanceLock,
   PalletBalancesReleases,
   PalletBalancesReserveData,
-  PalletCircuitStateInsuranceDeposit,
   PalletCircuitStateXExecSignal,
   PalletContractsStorageDeletedContract,
   PalletContractsStorageRawContractInfo,
@@ -70,6 +69,7 @@ import type {
   T3rnPrimitivesMonetaryInflationAllocation,
   T3rnPrimitivesSideEffectFullSideEffect,
   T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
+  T3rnPrimitivesSideEffectSfxBid,
   T3rnPrimitivesVolatileLocalState,
   T3rnPrimitivesXdnsXdnsRecord,
   T3rnSdkPrimitivesSignalExecutionSignal,
@@ -262,16 +262,19 @@ declare module "@polkadot/api-base/types/storage" {
       [key: string]: QueryableStorageEntry<ApiType>;
     };
     circuit: {
-      /** Current Circuit's context of active insurance deposits */
-      activeXExecSignalsTimingLinks: AugmentedQuery<
-        ApiType,
-        (arg: H256 | string | Uint8Array) => Observable<Option<u32>>,
-        [H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256]>;
       /**
        * Current Circuit's context of active full side effects (requested +
-       * confirmation proofs)
+       * confirmation proofs) Lifecycle tips: FSX entries are created at the
+       * time of Xtx submission, where still uncertain whether Xtx will be
+       * accepted for execution (picked up in the bidding process).
+       *
+       * - @Circuit::Requested: create FSX array without confirmations or bids
+       * - @Circuit::Bonded -> Ready: add bids to FSX
+       * - @Circuit::PendingExecution -> add more confirmations at receipt
+       *
+       * If no bids have been received @Circuit::PendingBidding, FSX entries
+       * will stay - just without the Bid. The details on Xtx status might be
+       * played back by looking up with the SFX2XTXLinksMap
        */
       fullSideEffects: AugmentedQuery<
         ApiType,
@@ -283,32 +286,61 @@ declare module "@polkadot/api-base/types/storage" {
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;
-      /** Current Circuit's context of active insurance deposits */
-      insuranceDeposits: AugmentedQuery<
-        ApiType,
-        (
-          arg1: H256 | string | Uint8Array,
-          arg2: H256 | string | Uint8Array
-        ) => Observable<Option<PalletCircuitStateInsuranceDeposit>>,
-        [H256, H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256, H256]>;
-      /** Current Circuit's context of active insurance deposits */
-      localSideEffectToXtxIdLinks: AugmentedQuery<
-        ApiType,
-        (arg: H256 | string | Uint8Array) => Observable<Option<H256>>,
-        [H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256]>;
       /**
-       * Current Circuit's context of active full side effects (requested +
-       * confirmation proofs)
+       * LocalXtxStates stores the map of LocalState - additional state to be
+       * used to communicate between SFX that belong to the same Xtx
+       *
+       * - @Circuit::Requested: create LocalXtxStates array without confirmations or bids
+       * - @Circuit::PendingExecution: entries to LocalState can be updated. If no
+       *   bids have been received @Circuit::PendingBidding, LocalXtxStates
+       *   entries are removed since Xtx won't be executed
        */
       localXtxStates: AugmentedQuery<
         ApiType,
         (
           arg: H256 | string | Uint8Array
         ) => Observable<Option<T3rnPrimitivesVolatileLocalState>>,
+        [H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256]>;
+      /**
+       * Temporary bids for SFX executions. Cleaned out each
+       * Config::BidsInterval, where are moved from PendingSFXBids to FSX::accepted_bids
+       */
+      pendingSFXBids: AugmentedQuery<
+        ApiType,
+        (
+          arg1: H256 | string | Uint8Array,
+          arg2: H256 | string | Uint8Array
+        ) => Observable<Option<T3rnPrimitivesSideEffectSfxBid>>,
+        [H256, H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256, H256]>;
+      /**
+       * Temporary bids for SFX executions. Cleaned out each
+       * Config::BidsInterval, where are moved from PendingSFXBids to FSX::accepted_bids
+       */
+      pendingXtxBidsTimeoutsMap: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<u32>>,
+        [H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256]>;
+      /**
+       * Current Circuit's context of active Xtx used for the on_initialize
+       * clock to discover the ones pending for execution too long, that
+       * eventually need to be killed
+       */
+      pendingXtxTimeoutsMap: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<u32>>,
+        [H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256]>;
+      /** Links mapping SFX 2 XTX */
+      sfx2xtxLinksMap: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<H256>>,
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;
@@ -325,22 +357,18 @@ declare module "@polkadot/api-base/types/storage" {
         []
       > &
         QueryableStorageEntry<ApiType, []>;
-      /** Current Circuit's context of active transactions */
+      /**
+       * Current Circuit's context of all accepted for execution cross-chain transactions.
+       *
+       * All Xtx that has been initially paid out by users will be left here.
+       * Even if the timeout has been exceeded, they will eventually end with
+       * the Circuit::RevertedTimeout
+       */
       xExecSignals: AugmentedQuery<
         ApiType,
         (
           arg: H256 | string | Uint8Array
         ) => Observable<Option<PalletCircuitStateXExecSignal>>,
-        [H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256]>;
-      /**
-       * Current Circuit's context of active full side effects (requested +
-       * confirmation proofs)
-       */
-      xtxInsuranceLinks: AugmentedQuery<
-        ApiType,
-        (arg: H256 | string | Uint8Array) => Observable<Vec<H256>>,
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;

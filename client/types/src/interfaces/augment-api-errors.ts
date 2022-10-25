@@ -86,7 +86,14 @@ declare module "@polkadot/api-base/types/errors" {
     circuit: {
       ApplyFailed: AugmentedError<ApiType>;
       ApplyTriggeredWithUnexpectedStatus: AugmentedError<ApiType>;
+      BiddingFailedExecutorsBalanceTooLowToReserve: AugmentedError<ApiType>;
+      BiddingInactive: AugmentedError<ApiType>;
+      BiddingRejectedBetterBidFound: AugmentedError<ApiType>;
+      BiddingRejectedBidBelowDust: AugmentedError<ApiType>;
+      BiddingRejectedBidTooHigh: AugmentedError<ApiType>;
+      BiddingRejectedExecutorNotEnoughBalance: AugmentedError<ApiType>;
       ChargingTransferFailed: AugmentedError<ApiType>;
+      ChargingTransferFailedAtPendingExecution: AugmentedError<ApiType>;
       ContractXtxKilledRunOutOfFunds: AugmentedError<ApiType>;
       CriticalStateSquareUpCalledToFinishWithoutFsxConfirmed: AugmentedError<ApiType>;
       DeterminedForbiddenXtxStatus: AugmentedError<ApiType>;
@@ -105,7 +112,7 @@ declare module "@polkadot/api-base/types/errors" {
       FinalizeSquareUpFailed: AugmentedError<ApiType>;
       InsuranceBondAlreadyDeposited: AugmentedError<ApiType>;
       InsuranceBondNotRequired: AugmentedError<ApiType>;
-      InsuranceBondTooLow: AugmentedError<ApiType>;
+      InvalidFSXBidStateLocated: AugmentedError<ApiType>;
       InvalidLocalTrigger: AugmentedError<ApiType>;
       LocalExecutionUnauthorized: AugmentedError<ApiType>;
       LocalSideEffectExecutionNotApplicable: AugmentedError<ApiType>;
@@ -118,14 +125,20 @@ declare module "@polkadot/api-base/types/errors" {
       SetupFailedEmptyXtx: AugmentedError<ApiType>;
       SetupFailedIncorrectXtxStatus: AugmentedError<ApiType>;
       SetupFailedUnknownXtx: AugmentedError<ApiType>;
+      SetupFailedXtxAlreadyFinished: AugmentedError<ApiType>;
       SetupFailedXtxNotFound: AugmentedError<ApiType>;
+      SetupFailedXtxReverted: AugmentedError<ApiType>;
+      SetupFailedXtxRevertedTimeout: AugmentedError<ApiType>;
       SetupFailedXtxStorageArtifactsNotFound: AugmentedError<ApiType>;
+      SetupFailedXtxWasDroppedAtBidding: AugmentedError<ApiType>;
       SideEffectIsAlreadyScheduledToExecuteOverXBI: AugmentedError<ApiType>;
       SideEffectsValidationFailed: AugmentedError<ApiType>;
       SignalQueueFull: AugmentedError<ApiType>;
       UnsupportedRole: AugmentedError<ApiType>;
       UpdateXtxTriggeredWithUnexpectedStatus: AugmentedError<ApiType>;
       XBIExitFailedOnSFXConfirmation: AugmentedError<ApiType>;
+      XtxChargeBondDepositFailedCantAccessBid: AugmentedError<ApiType>;
+      XtxChargeFailedRequesterBalanceTooLow: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
