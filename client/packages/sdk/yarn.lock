@@ -707,11 +707,6 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-18.11.5.tgz#1bc94cf2f9ab5fe33353bc7c79c797dcc5325bef"
   integrity sha512-3JRwhbjI+cHLAkUorhf8RnqUbFXajvzX4q6fMn5JwkgtuwfYtRQYI3u4V92vI6NJuTsbBQWWh3RZjFsuevyMGQ==
 
-"@types/node@^10.12.12":
-  version "10.17.60"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.17.60.tgz#35f3d6213daed95da7f0f73e75bcc6980e90597b"
-  integrity sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw==
-
 "@types/unist@*", "@types/unist@^2.0.2":
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/@types/unist/-/unist-2.0.6.tgz#250a7b16c3b91f672a24552ec64678eeb1d3a08d"
@@ -772,13 +767,6 @@ binary-search-bounds@^2.0.5:
   version "2.0.5"
   resolved "https://registry.yarnpkg.com/binary-search-bounds/-/binary-search-bounds-2.0.5.tgz#125e5bd399882f71e6660d4bf1186384e989fba7"
   integrity sha512-H0ea4Fd3lS1+sTEB2TgcLoK21lLhwEJzlQv3IN47pJS976Gx4zoWe0ak3q+uYh60ppQxg9F16Ri4tS1sfD4+jA==
-
-bn.js-types@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/bn.js-types/-/bn.js-types-1.0.1.tgz#43954557be9702eeed95bd24fbcee7bef5ca1bf8"
-  integrity sha512-1kTB06ujmupJAPOCwno8pGYVwU1Ye33EoKT77ZwuFJbiBVlSx0TLhA8xlbrmY4DPaXS7fnpVeBVpGVimjMZEVQ==
-  dependencies:
-    "@types/node" "^10.12.12"
 
 bn.js@^5.2.1:
   version "5.2.1"

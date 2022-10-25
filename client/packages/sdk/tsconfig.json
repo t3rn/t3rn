@@ -4,11 +4,11 @@
     "outDir": "./dist",
     "baseUrl": "./src",
     "moduleResolution": "Node",
-    "module": "CommonJS",
-    "target": "ESNext",
+    "module": "commonjs",
+    "target": "esnext",
     "sourceMap": true,
     "lib": [
-      "esnext", "es6", "es2018"
+      "es6", "es2018"
     ],
     "esModuleInterop": true,
     "alwaysStrict": false,
@@ -18,7 +18,10 @@
     "noImplicitThis": false,
     "noUnusedLocals": true,
     "resolveJsonModule": true,
+    "composite": true,
+    "declaration": true,
   },
   "references": [],
   "exclude": ["node_modules", "dist", "*.d.ts"],
+  "include": ["src", "src/config/types.json", "src/config/rpc.json"]
 }

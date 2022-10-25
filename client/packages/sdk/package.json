@@ -2,8 +2,6 @@
   "name": "@t3rn/sdk",
   "version": "0.1.4",
   "description": "t3rn's client side SDK",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -37,5 +35,7 @@
   "dependencies": {
     "@polkadot/api": "^9.2.4",
     "@t3rn/types": "../types"
-  }
+  },
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts"
 }

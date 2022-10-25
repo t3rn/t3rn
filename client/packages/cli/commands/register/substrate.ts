@@ -1,35 +1,26 @@
 import{ ApiPromise, Keyring, WsProvider } from'@polkadot/api';
-import { extractAuthoritySetFromFinalityProof, decodeFinalityProof } from "../../utils/decoder";
+import { encodings } from "@t3rn/sdk"
+import "@t3rn/types"
+// @ts-ignore
+import { GatewayGenesisConfig, GatewayABIConfig, GatewaySysProps } from '@polkadot/types/lookup'
 import { fetchBestFinalizedHash, fetchLatestPossibleParachainHeader } from "../../utils/substrate";
+import {Codec} from "@polkadot/types-codec/types";
 
 const axios = require('axios').default;
 
-export const registerSubstrate = async (circuit: ApiPromise, gatewayData: any) => {
-    const target = await ApiPromise.create({
-        provider: new WsProvider(gatewayData.rpc),
-    })
-
-    if(gatewayData.registrationData.relaychain === null) { // relaychain
-        return registerRelaychain(circuit, target, gatewayData)
-    } else {
-        console.log("Not implemented!")
-        return
-    }
-}
-
-export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: any, epochsAgo: number) => {
+export const registerSubstrate = async (circuit: ApiPromise, gatewayData: any, epochsAgo: number) => {
     const target = await ApiPromise.create({
         provider: new WsProvider(gatewayData.rpc),
     })
 
     if(gatewayData.registrationData.parachain === null) { // relaychain
-        return registerPortalRelaychain(circuit, target, gatewayData, epochsAgo)
+        return registerRelaychain(circuit, target, gatewayData, epochsAgo)
     } else {
-        return registerPortalParachain(circuit, target, gatewayData)
+        return registerParachain(circuit, target, gatewayData)
     }
 }
 
-const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {
+const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData, epochsAgo)
     console.log("Registering Block #", registrationHeader.number.toNumber());
     return [{
@@ -51,7 +42,7 @@ const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise,
     }]
 }
 
-const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
+const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
     const latestRelayChainHeader = await fetchBestFinalizedHash(circuit, gatewayData.registrationData.parachain.relayChainId)
     const parachainHeader: any = await fetchLatestPossibleParachainHeader(
         gatewayData.relaychainRpc,
@@ -78,59 +69,41 @@ const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, 
     }]
 }
 
-const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
-    const abiConfig = createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig)
-    const gatewayGenesis = createGatewayGenesis(circuit, target);
-    const gatewaySysProps = createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps)
-    const { registrationHeader, authorities, authoritySetId } = await fetchConsensusData(circuit, target, gatewayData, 0)
-    const allowedSideEffects = circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects)
-    return circuit.tx.circuitPortal.registerGateway(
-        gatewayData.rpc,
-        gatewayData.id,
-        null,
-        abiConfig,
-        circuit.createType('GatewayVendor', 'Substrate'),
-        circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
-        gatewayGenesis,
-        gatewaySysProps,
-        registrationHeader,
-        authorities,
-        authoritySetId,
-        allowedSideEffects
-    );
-}
-
-const createGatewayGenesis = async (circuit: ApiPromise, target: ApiPromise) => {
+const createGatewayGenesis = async (circuit: ApiPromise, target: ApiPromise): Promise<Codec> => {
     const [metadata, genesisHash] = await Promise.all([
           await target.runtimeMetadata,
           await target.genesisHash,
     ]);
-    return circuit.createType('GatewayGenesisConfig', [
-        circuit.createType('Option<Bytes>', metadata.asV14.pallets.toHex()),
-        metadata.asV14.extrinsic.version,
-        genesisHash,
-    ]);
+
+    const config: GatewayGenesisConfig = {
+        module_encoded: metadata.asV14.pallets,
+        extrinsics_version: metadata.asV14.extrinsic.version,
+        genesis_hash: genesisHash.toHex(),
+    }
+    return circuit.createType('GatewayGenesisConfig', config);
 }
 
 const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any) => {
-    return circuiApi.createType('GatewayABIConfig', [
-        circuiApi.createType('u16', gatewayConfig.blockNumberTypeSize),
-        circuiApi.createType('u16', gatewayConfig.hashSize),
-        circuiApi.createType('HasherAlgo', gatewayConfig.hasher),
-        circuiApi.createType('CryptoAlgo', gatewayConfig.crypto),
-        circuiApi.createType('u16', gatewayConfig.addressLength),
-        circuiApi.createType('u16', gatewayConfig.valueTypeSize),
-        circuiApi.createType('u16', gatewayConfig.decimals),
-        circuiApi.createType('Vec<StructDecl>', gatewayConfig.structs),
-    ]);
+    const config: GatewayABIConfig = {
+        blockNumberTypeSize: gatewayConfig.blockNumberTypeSize,
+        hashSize: gatewayConfig.hashSize,
+        hasher: gatewayConfig.hasher,
+        crypto: gatewayConfig.crypto,
+        addressLength: gatewayConfig.addressLength,
+        valueTypeSize: gatewayConfig.valueTypeSize,
+        decimals: gatewayConfig.decimals,
+        structs: gatewayConfig.structs
+    }
+    return circuiApi.createType('GatewayABIConfig', config);
 }
 
 const createGatewaySysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
-   return circuiApi.createType('GatewaySysProps', [
-        circuiApi.createType('u16', gatewaySysProps.ss58Format),
-        circuiApi.createType('Vec<u8>', gatewaySysProps.tokenSymbol),
-        circuiApi.createType('u8', gatewaySysProps.tokenDecimals),
-   ]);
+    const props: GatewaySysProps = {
+        ss58Format: gatewaySysProps.ss58Format,
+        tokenSymbol: gatewaySysProps.tokenSymbol,
+        tokenDecimals: gatewaySysProps.tokenDecimals
+    }
+   return circuiApi.createType('GatewaySysProps', props);
 }
 
 const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {
@@ -141,7 +114,7 @@ const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise,
     )
 
     const finalityProof = await target.rpc.grandpa.proveFinality(registrationHeight);
-    const authorities= extractAuthoritySetFromFinalityProof(finalityProof)
+    const authorities= encodings.substrate.decoders.extractAuthoritySetFromFinalityProof(finalityProof)
     const registratationHeaderHash = await target.rpc.chain.getBlockHash(registrationHeight);
     const targetAt = await target.at(registratationHeaderHash);
     const authoritySetId = await targetAt.query.grandpa.currentSetId()
@@ -161,7 +134,7 @@ const fetchConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatew
     )
 
     const finalityProof = await target.rpc.grandpa.proveFinality(registrationHeight);
-    const authorities= extractAuthoritySetFromFinalityProof(finalityProof)
+    const authorities = encodings.substrate.decoders.extractAuthoritySetFromFinalityProof(finalityProof)
     const authoritySetId = await target.query.grandpa.currentSetId()
     return {
         registrationHeader: circuit.createType('Bytes', registrationHeader.toHex()),
