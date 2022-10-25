@@ -96,6 +96,7 @@ construct_runtime!(
         Grandpa: pallet_grandpa,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
+        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
 
         // Monetary
         Balances: pallet_balances = 10,
@@ -118,7 +119,6 @@ construct_runtime!(
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
 
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
         // Portal
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
         RococoBridge: pallet_grandpa_finality_verifier::{

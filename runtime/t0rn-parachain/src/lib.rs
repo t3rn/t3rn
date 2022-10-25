@@ -147,6 +147,7 @@ construct_runtime!(
         Preimage: pallet_preimage = 4,
         Scheduler: pallet_scheduler = 5,
         Utility: pallet_utility = 6,
+        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -193,7 +194,6 @@ construct_runtime!(
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
     }
 );
 
