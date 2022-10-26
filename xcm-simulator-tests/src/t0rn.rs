@@ -64,7 +64,7 @@ mod tests {
     use crate::{Network, RococoNet};
     use frame_support::{assert_ok, traits::Currency};
     use polkadot_primitives::v2::Id as ParaId;
-    use sp_runtime::{traits::AccountIdConversion, MultiAddress, MultiAddress::Id};
+    use sp_runtime::{traits::AccountIdConversion, MultiAddress};
     use t0rn::AccountId;
     use xcm::{latest::prelude::*, VersionedMultiAssets, VersionedMultiLocation, VersionedXcm};
     use xcm_emulator::TestExt;
@@ -340,7 +340,78 @@ mod tests {
     }
 
     #[test]
-    fn transfer_native_to_sovereign() {}
+    fn transfer_native_to_sovereign() {
+        Network::reset();
+
+        let a_id = 0;
+        let asset_amt = 100_u128.pow(12);
+
+        let t1rn_sovereign_addr = AccountId::from(hex_literal::hex!(
+            "7369626c01000000000000000000000000000000000000000000000000000000"
+        ));
+
+        transfer_to_t1rn(a_id, asset_amt, t1rn_sovereign_addr);
+
+        T0rn::execute_with(|| {
+            use t0rn::{Event, System};
+
+            let multi_asset = concrete_asset_pallet_assets(a_id as u128, asset_amt / 10);
+            let dest_para = box MultiLocation::new(1, X1(Parachain(T1RN_PARA_ID))).versioned();
+
+            // FIXME: this fails because https://substrate.stackexchange.com/questions/5017/allowtoplevelpaidexecutionfrom-not-supporting-descendorigin
+            assert_ok!(t0rn::PolkadotXcm::send(
+                Origin::signed(ALICE),
+                dest_para,
+                box VersionedXcm::V2(Xcm(vec![
+                    WithdrawAsset(MultiAssets::from(vec![multi_asset.clone()])),
+                    BuyExecution {
+                        fees: multi_asset.clone(),
+                        weight_limit: WeightLimit::Unlimited
+                    },
+                    InitiateTeleport {
+                        assets: MultiAssetFilter::Wild(WildMultiAsset::All),
+                        dest: MultiLocation::new(1, X1(Parachain(T0RN_PARA_ID))),
+                        xcm: Xcm(vec![
+                            BuyExecution {
+                                fees: multi_asset,
+                                weight_limit: WeightLimit::Unlimited
+                            },
+                            DepositAsset {
+                                assets: MultiAssetFilter::Wild(WildMultiAsset::All),
+                                max_assets: 500,
+                                beneficiary: MultiLocation::new(
+                                    0,
+                                    X1(AccountId32 {
+                                        network: Any,
+                                        id: <[u8; 32]>::from(ALICE),
+                                    })
+                                )
+                            }
+                        ])
+                    }
+                ]))
+            ));
+            log_all_events("T0rn");
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::XcmpMessageSent { .. })
+            )));
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::PolkadotXcm(pallet_xcm::Event::Sent(ref _origin, ref _dest, ref _msg))
+            )));
+        });
+
+        T1rn::execute_with(|| {
+            use t0rn::{Event, System};
+            log_all_events("T1rn");
+
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Success { .. })
+            )));
+        });
+    }
 
     #[test]
     fn transfer_asset_to_user() {
@@ -404,12 +475,12 @@ mod tests {
             log_all_events("T1rn");
 
             assert!(System::events().iter().any(|r| matches!(
-                r.event,
-                Event::Assets(pallet_assets::Event::Issued {
-                    asset_id,
-                    owner: ALICE,
-                    ..
-                }) if asset_id == a_id
+                    r.event,
+            Event::Assets(pallet_assets::Event::Issued {
+                asset_id,
+            owner: ALICE,
+            ..
+            }) if asset_id == a_id
             )));
             assert!(System::events().iter().any(|r| matches!(
                 r.event,
@@ -419,12 +490,19 @@ mod tests {
     }
 
     fn concrete_asset_pallet_assets(index: u128, amt: u128) -> MultiAsset {
-        MultiAsset {
-            id: Concrete(MultiLocation::new(
-                0,
-                X2(PalletInstance(12), GeneralIndex(index)),
-            )),
-            fun: Fungible(amt),
+        if index > 0 {
+            MultiAsset {
+                id: Concrete(MultiLocation::new(
+                    0,
+                    X2(PalletInstance(12), GeneralIndex(index)),
+                )),
+                fun: Fungible(amt),
+            }
+        } else {
+            MultiAsset {
+                id: Concrete(MultiLocation::here()),
+                fun: Fungible(amt),
+            }
         }
     }
 
@@ -496,7 +574,7 @@ mod tests {
                             },
                             DepositAsset {
                                 assets: MultiAssetFilter::Wild(WildMultiAsset::All),
-                                max_assets: 0,
+                                max_assets: 500,
                                 beneficiary: MultiLocation::new(
                                     0,
                                     X1(AccountId32 {
@@ -536,7 +614,6 @@ mod tests {
             use t0rn::{Event, System};
 
             create_asset(a_id);
-
             log_all_events("T1rn");
             assert!(System::events().iter().any(|r| matches!(
                 r.event,
@@ -547,13 +624,15 @@ mod tests {
         T0rn::execute_with(|| {
             use t0rn::{Event, System};
 
-            create_asset(a_id);
-            mint_asset(a_id, ALICE, asset_amt);
-            log_all_events("T0rn");
-            assert!(System::events().iter().any(|r| matches!(
-                r.event,
-                Event::Assets(pallet_assets::Event::Issued { asset_id, .. }) if asset_id == a_id
-            )));
+            if a_id > 0 {
+                create_asset(a_id);
+                mint_asset(a_id, ALICE, asset_amt);
+                log_all_events("T0rn");
+                assert!(System::events().iter().any(|r| matches!(
+                    r.event,
+                    Event::Assets(pallet_assets::Event::Issued { asset_id, .. }) if asset_id == a_id
+                )));
+            }
 
             let multi_asset = concrete_asset_pallet_assets(a_id as u128, asset_amt / 10);
 
@@ -596,56 +675,5 @@ mod tests {
             println!("[T1rn] cleared events..");
             System::reset_events();
         });
-    }
-
-    #[test]
-    fn transfer_asset() {}
-
-    #[test]
-    fn transfer_reserve_then_instruct_to_send_back() {
-        // Network::reset();
-        //
-        // T0rn::execute_with(|| {
-        //     use t0rn::System;
-        //
-        //     assert_ok!(t0rn::PolkadotXcm::send_xcm(
-        //         Here,
-        //         MultiLocation::new(1, X1(Parachain(T1RN_PARA_ID))),
-        //         Xcm(vec![
-        //             WithdrawAsset(MultiAssets::from(vec![MultiAsset {
-        //                 id: AssetId::Concrete(MultiLocation::here()),
-        //                 fun: Fungibility::Fungible(10000000)
-        //             }])),
-        //             BuyExecution {
-        //                 fees: MultiAsset {
-        //                     id: AssetId::Concrete(MultiLocation::here()),
-        //                     fun: Fungibility::Fungible(10000000)
-        //                 },
-        //                 weight_limit: WeightLimit::Unlimited
-        //             },
-        //             Transact {
-        //                 origin_type: OriginKind::SovereignAccount,
-        //                 require_weight_at_most: 10_000_000,
-        //                 call: remark.encode().into(),
-        //             }
-        //         ]),
-        //     ));
-        //
-        //     System::events()
-        //         .iter()
-        //         .for_each(|r| println!(">>> [T0rn] {:?}", r.event));
-        // });
-        //
-        // T1rn::execute_with(|| {
-        //     use t0rn::{Event, System};
-        //     System::events()
-        //         .iter()
-        //         .for_each(|r| println!(">>> [T1rn] {:?}", r.event));
-        //
-        //     assert!(System::events().iter().any(|r| matches!(
-        //         r.event,
-        //         Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
-        //     )));
-        // });
     }
 }

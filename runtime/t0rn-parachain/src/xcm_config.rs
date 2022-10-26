@@ -22,7 +22,7 @@ use sp_std::marker::PhantomData;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex, Case,
     ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
     FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
@@ -36,16 +36,36 @@ use xcm_executor::{
 
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
+    pub const T3rnLocation: MultiLocation = MultiLocation::here();
     pub const RelayNetwork: NetworkId = NetworkId::Any;
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
-    pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-    pub AssetsPalletLocation: MultiLocation =
-    PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
-    pub OwnAssetLocation: MultiLocation = RelayLocation::get()
-        .pushed_with_interior(Ancestry::get().take_last().unwrap()).unwrap();
-    pub AssetsPalletLocationFullPath: MultiLocation = RelayLocation::get()
-        .pushed_with_interior(Ancestry::get().take_last().unwrap()).unwrap()
-        .pushed_with_interior(AssetsPalletLocation::get().take_last().unwrap()).unwrap();
+    pub Ancestry: Junction = Parachain(ParachainInfo::parachain_id().into());
+
+
+    pub RelativeAssetsPalletLocation: Junction =
+        PalletInstance(<Assets as PalletInfoAccess>::index() as u8);
+
+    pub NativeAssetPalletLocation: Junction =
+        PalletInstance(<Balances as PalletInfoAccess>::index() as u8);
+
+    // Self Reserve location, defines the multilocation identifiying the self-reserve currency
+    // This is used to match it also against our Balances pallet when we receive such
+    // a MultiLocation: (Self Balances pallet index)
+    // We use the ABSOLUTE multilocation
+    pub NativeAssetLocationAbsolute: MultiLocation = MultiLocation {
+        parents: 1,
+        interior: Junctions::X2(Ancestry::get(), NativeAssetPalletLocation::get())
+    };
+
+    // Assets pallet location, defines the multilocation where we have t3rn assets
+    // This is used to match it also against our Balances pallet when we receive such
+    // a MultiLocation: (Self Assets pallet index)
+    // We use the ABSOLUTE multilocation
+    pub AssetsPalletLocationAbsolute: MultiLocation = MultiLocation {
+        parents: 1,
+        interior: Junctions::X2(Ancestry::get(), RelativeAssetsPalletLocation::get())
+    };
+
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 
 }
@@ -62,16 +82,17 @@ pub type LocationToAccountId = (
     AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-pub type CurrencyTransactor = CurrencyAdapter<
+// Transacting native asset
+pub type NativeCurrencyTransactor = CurrencyAdapter<
     // Use this currency:
     Balances,
     // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<OwnAssetLocation>,
+    IsConcrete<NativeAssetLocationAbsolute>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
-    // We don't track any teleports of `Balances`.
+    // We don't track any teleports of Native Assets.
     (),
 >;
 
@@ -85,8 +106,8 @@ pub type FungiblesTransactor = FungiblesAdapter<
     ConvertedConcreteAssetId<
         FungibleAssetId,
         Balance,
-        //        AsPrefixedGeneralIndex<AssetsPalletLocation, FungibleAssetId, JustTry>,
-        OneForOneAssetId<AssetsPalletLocationFullPath, FungibleAssetId, JustTry>, // TODO: only supports assets
+        //        AsPrefixedGeneralIndex<AssetsPalletLocation, FungibleAssetId, JustTry>, TODO: fix
+        OneForOneAssetId<AssetsPalletLocationAbsolute, FungibleAssetId, JustTry>, // TODO: only supports assets
         JustTry,
     >,
     // Convert an XCM MultiLocation into a local account id:
@@ -99,7 +120,8 @@ pub type FungiblesTransactor = FungiblesAdapter<
     // The account to use for tracking teleports.
     CheckingAccount,
 >;
-pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
+
+pub type AssetTransactors = (NativeCurrencyTransactor, FungiblesTransactor);
 
 pub struct NonZeroIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
 impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
@@ -138,7 +160,7 @@ parameter_types! {
     pub UnitWeightCost: Weight = 1_000_000_000;
     pub const MaxInstructions: u32 = 100;
     pub SelfLocationAbsolute: MultiLocation = MultiLocation {
-        parents:1,
+        parents: 1,
         interior: Junctions::X1(
             Parachain(ParachainInfo::parachain_id().into())
         )
@@ -152,6 +174,7 @@ match_types! {
         MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
     };
 }
+
 pub type Barrier = DenyThenTry<
     DenyReserveTransferToRelayChain,
     (
@@ -266,6 +289,12 @@ impl<Prefix: Get<MultiLocation>, AssetId: Clone, ConvertAssetId: Convert<u128, A
     }
 }
 
+parameter_types! {
+    pub FromSiblingCase: (MultiAssetFilter, MultiLocation) = (MultiAssetFilter::Wild(WildMultiAsset::All), MultiLocation {
+        parents:1,
+        interior: Junctions::X1(Parachain(2))
+    });
+}
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type AssetClaims = PolkadotXcm;
@@ -275,14 +304,20 @@ impl xcm_executor::Config for XcmConfig {
     type Barrier = Barrier;
     type Call = Call;
     // We are our only reserve
-    type IsReserve = MultiNativeAsset<AbsoluteAndRelativeReserve<SelfLocationAbsolute>>;
-    type IsTeleporter = NativeAsset;
+    type IsReserve = MultiNativeAsset<AbsoluteAndRelativeReserve<NativeAssetLocationAbsolute>>;
+    type IsTeleporter = (NativeAsset, Case<FromSiblingCase>);
     type LocationInverter = LocationInverter<Ancestry>;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type ResponseHandler = PolkadotXcm;
     type SubscriptionService = PolkadotXcm;
+    // TODO: these traders need very careful attention
+    // we probably want to introduce an asset manager which covers these and avoids
+    // algorithmic lookups
     type Trader = (
-        UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ()>,
+        // Trade native currency
+        UsingComponents<WeightToFee, T3rnLocation, AccountId, Balances, ()>,
+        // Trade native absolute
+        UsingComponents<WeightToFee, NativeAssetLocationAbsolute, AccountId, Balances, ()>,
         crate::utility::TakeFirstAssetTrader<
             AccountId,
             AssetFeeAsExistentialDepositMultiplier<
@@ -293,7 +328,7 @@ impl xcm_executor::Config for XcmConfig {
             ConvertedConcreteAssetId<
                 FungibleAssetId,
                 Balance,
-                OneForOneAssetId<AssetsPalletLocationFullPath, FungibleAssetId, JustTry>,
+                OneForOneAssetId<AssetsPalletLocationAbsolute, FungibleAssetId, JustTry>, // TODO: this should just have some mapping register, like bsx,astar
                 JustTry,
             >,
             Assets,
