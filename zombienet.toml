@@ -16,38 +16,38 @@ cumulus_based = true
 chain = "zombienet.json"
 
 [[parachains.collators]]
-name = "t0rn-collator-01"
-command = "circuit-collator"
-ws_port = 9920
-
-[[parachains.collators]]
-name = "t0rn-collator02"
-command = "circuit-collator"
-ws_port = 9921
-
-[[parachains]]
-id = 3001
-cumulus_based = true
-chain = "zombienet.json"
-
-[[parachains.collators]]
-name = "t1rn-collator01"
+name = "t3rn01-collator01"
 command = "circuit-collator"
 ws_port = 9930
 
 [[parachains.collators]]
-name = "t1rn-collator02"
+name = "t3rn01-collator02"
 command = "circuit-collator"
 ws_port = 9931
 
+[[parachains]]
+id = 4000
+cumulus_based = true
+chain = "zombienet.json"
+
+[[parachains.collators]]
+name = "t3rn02-collator01"
+command = "circuit-collator"
+ws_port = 9940
+
+[[parachains.collators]]
+name = "t3rn02-collator02"
+command = "circuit-collator"
+ws_port = 9941
+
 [[hrmp_channels]]
 sender = 3000
-recipient = 3001
+recipient = 4000
 max_capacity = 8
 max_message_size = 512
 
 [[hrmp_channels]]
-sender = 3001
+sender = 4000
 recipient = 3000
 max_capacity = 8
 max_message_size = 512
