@@ -214,16 +214,7 @@ fn polkadot_genesis(
         developer_membership: circuit_parachain_runtime::DeveloperMembershipConfig {
             members: vec![
                 root_key,
-                get_account_id_from_adrs("5CAYyLZxG4oYQP8CGTYgPPhkoT42NyMvi2J3hKPCLGyKHAC4"),
-                get_account_id_from_adrs("5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf"),
-                get_account_id_from_adrs("5CqRUh9fiVgzMftXmacNSNMXF4TDfkUXCTZvXfuYXA33knRC"),
-                get_account_id_from_adrs("5DXBQResSqHCGijMH1UtpQNZzpjdCqHtad14FUnwaSA7xmRL"),
-                get_account_id_from_adrs("5HomG74gKivcZfCLixXyZbuGg57Bc8ZR55BkAX2jus2dSYS1"),
-                get_account_id_from_adrs("5FQpivNZCVw3LQWoQwrF44CLeP1g5j8RSAtcR4kURbZwXgXg"),
-                get_account_id_from_adrs("5GLMuTmTvNCWkYCYc2DNPWjTMKa2nKW6yYH8xKqeiPHgcLNs"),
-                get_account_id_from_adrs("5DWyim48gMrAhoHz9pjb6qu5Q8paDmeWhisALuV9cS8NvScG"),
-                get_account_id_from_adrs("5FU77XnhRuBD6VSA8ZvwqB6BSjyYEGtS4HPwMMU6WwqpVmmV"),
-                get_account_id_from_adrs("5Cfd51SrYX5gQbdWc5tPg7PuoSGkCkz7G91E9cp8UBkam5Lf"),
+                get_account_id_from_adrs("5Cfd51SrYX5gQbdWc5tPg7PuoSGkCkz7G91E9cp8UBkam5Lf"), // CI
             ]
             .try_into()
             .expect("Could not build a bounded vector of members, probably overflowed"),
