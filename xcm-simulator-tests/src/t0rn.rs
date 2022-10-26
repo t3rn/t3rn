@@ -199,9 +199,9 @@ mod tests {
 
     #[test]
     fn xcmp_through_a_parachain() {
-        use t0rn::{Call, PolkadotXcm, Runtime};
-
         Network::reset();
+
+        use t0rn::{Call, PolkadotXcm, Runtime};
 
         // The message goes through: Pumpkin --> Mushroom --> Octopus
         let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
@@ -675,5 +675,111 @@ mod tests {
             println!("[T1rn] cleared events..");
             System::reset_events();
         });
+    }
+
+    #[test]
+    fn user_pays_for_transact_in_xdot() {
+        Network::reset();
+
+        let remark = t0rn::Call::System(frame_system::Call::<t0rn::Runtime>::remark_with_event {
+            remark: "Hello from Rococo!".as_bytes().to_vec(),
+        });
+
+        T0rn::execute_with(|| {
+            use t0rn::{Event, System};
+
+            let xdot = 500;
+            let xdot_mint_amt = 100_u128.pow(12);
+
+            create_asset(xdot);
+            mint_asset(xdot, ALICE, xdot_mint_amt);
+            log_all_events("T0rn");
+            assert!(System::events().iter().any(|r| matches!(
+                    r.event,
+            Event::Assets(pallet_assets::Event::Issued { asset_id, .. }) if asset_id == xdot
+            )));
+
+            let xdot_withdraw = concrete_asset_pallet_assets(xdot as u128, xdot_mint_amt / 10);
+            let xdot_buy_execution =
+                concrete_asset_pallet_assets(xdot as u128, xdot_mint_amt / 100);
+
+            assert_ok!(t0rn::PolkadotXcm::send_xcm(
+                Here,
+                MultiLocation::new(1, X1(Parachain(2))),
+                Xcm(vec![
+                    WithdrawAsset(MultiAssets::from(vec![xdot_withdraw])),
+                    BuyExecution {
+                        fees: xdot_buy_execution,
+                        weight_limit: WeightLimit::Unlimited
+                    },
+                    Transact {
+                        origin_type: OriginKind::SovereignAccount,
+                        require_weight_at_most: 10_000_000,
+                        call: remark.encode().into(),
+                    }
+                ]),
+            ));
+
+            log_all_events("T0rn");
+        });
+
+        T1rn::execute_with(|| {
+            use t0rn::{Event, System};
+            log_all_events("T1rn");
+
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+            )));
+        });
+    }
+
+    #[test]
+    fn user_pays_for_transact_in_native() {
+        Network::reset();
+
+        let remark = t0rn::Call::System(frame_system::Call::<t0rn::Runtime>::remark_with_event {
+            remark: "Hello from Rococo!".as_bytes().to_vec(),
+        });
+
+        T0rn::execute_with(|| {
+            use t0rn::{Event, System};
+
+            assert_ok!(t0rn::PolkadotXcm::send_xcm(
+                Here,
+                MultiLocation::new(1, X1(Parachain(2))),
+                Xcm(vec![
+                    WithdrawAsset(MultiAssets::from(vec![MultiAsset {
+                        id: AssetId::Concrete(MultiLocation::here()),
+                        fun: Fungibility::Fungible(10000000)
+                    }])),
+                    BuyExecution {
+                        fees: MultiAsset {
+                            id: AssetId::Concrete(MultiLocation::here()),
+                            fun: Fungibility::Fungible(10000000)
+                        },
+                        weight_limit: WeightLimit::Unlimited
+                    },
+                    Transact {
+                        origin_type: OriginKind::SovereignAccount,
+                        require_weight_at_most: 10_000_000,
+                        call: remark.encode().into(),
+                    }
+                ]),
+            ));
+
+            log_all_events("T0rn");
+        });
+
+        T1rn::execute_with(|| {
+            use t0rn::{Event, System};
+            log_all_events("T1rn");
+
+            assert!(System::events().iter().any(|r| matches!(
+                r.event,
+                Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+            )));
+        });
+        panic!("this is a duplicate test but we want to fix this to prove the idea")
     }
 }
