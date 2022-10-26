@@ -56,6 +56,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use t3rn_primitives::{monetary::MILLIT3RN, ReadLatestGatewayHeight};
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
@@ -103,6 +104,32 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
+const MT3RN: Balance = MILLIT3RN as Balance;
+
+parameter_types! {
+    pub const BasicDeposit: Balance = 5 * MT3RN;
+    pub const FieldDeposit: Balance = 1 * MT3RN;
+    pub const SubAccountDeposit: Balance = 2 * MT3RN;
+    pub const MaxSubAccounts: u32 = 100;
+    pub const MaxAdditionalFields: u32 = 100;
+    pub const MaxRegistrars: u32 = 20;
+}
+
+impl pallet_identity::Config for Runtime {
+    type BasicDeposit = BasicDeposit;
+    type Currency = Balances;
+    type Event = Event;
+    type FieldDeposit = FieldDeposit;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type MaxAdditionalFields = MaxAdditionalFields;
+    type MaxRegistrars = MaxRegistrars;
+    type MaxSubAccounts = MaxSubAccounts;
+    type RegistrarOrigin = EnsureRoot<AccountId>;
+    type Slashed = ();
+    type SubAccountDeposit = SubAccountDeposit;
+    type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -120,6 +147,7 @@ construct_runtime!(
         Preimage: pallet_preimage = 4,
         Scheduler: pallet_scheduler = 5,
         Utility: pallet_utility = 6,
+        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -165,6 +193,7 @@ construct_runtime!(
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
+
     }
 );
 

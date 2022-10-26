@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, Perbill, RuntimeDebug};
 
 pub const DECIMALS: u8 = 12;
-pub const MILLITRN: u64 = 1_000_000_000;
+pub const MILLIT3RN: u64 = 1_000_000_000;
 pub const TRN: u64 = 1_000_000_000_000;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
