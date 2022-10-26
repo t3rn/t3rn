@@ -22,15 +22,15 @@ serde       = { version = "1.0", default-features = false, optional = true, feat
 # Circuit dependencies
 pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
-pallet-portal                             = { path = "../../pallets/portal", default-features = false }
-pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
+pallet-clock                              = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
+pallet-portal                             = { path = "../../pallets/portal", default-features = false }
+pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
 pallet-treasury                           = { path = "../../pallets/treasury", default-features = false }
-pallet-clock                              = { path = "../../pallets/clock", default-features = false }
-pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xbi-portal                         = { path = "../../pallets/xbi-portal", default-features = false }
+pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
@@ -42,10 +42,10 @@ pallet-3vm-contracts                 = { path = "../../3vm/pallets/contracts", d
 pallet-3vm-contracts-primitives      = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
 pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
 
-evm-precompile-util       = { path = "../../3vm/pallets/evm/precompile/util", default-features = false, package = "precompile-util" }
-pallet-3vm-evm            = { path = "../../3vm/pallets/evm", default-features = false, package = "pallet-evm" }
-pallet-3vm-evm-primitives = { path = "../../3vm/primitives/evm", default-features = false, package = "fp-evm" }
-pallet-evm-rpc-runtime-api        = { path = "../../3vm/rpc/evm/runtime-api", default-features = false }
+evm-precompile-util        = { path = "../../3vm/pallets/evm/precompile/util", default-features = false, package = "precompile-util" }
+pallet-3vm-evm             = { path = "../../3vm/pallets/evm", default-features = false, package = "pallet-evm" }
+pallet-3vm-evm-primitives  = { path = "../../3vm/primitives/evm", default-features = false, package = "fp-evm" }
+pallet-evm-rpc-runtime-api = { path = "../../3vm/rpc/evm/runtime-api", default-features = false }
 
 # Substrate Dependencies
 frame-executive                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
@@ -53,8 +53,8 @@ frame-support                              = { git = "https://github.com/parityt
 frame-system                               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 frame-system-rpc-runtime-api               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 node-primitives                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-pallet-aura                                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-assets                              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+pallet-aura                                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-balances                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-grandpa                             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-randomness-collective-flip          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }

@@ -1,5 +1,5 @@
 use crate::*;
-
+use frame_system::EnsureSignedBy;
 use smallvec::smallvec;
 use sp_runtime::impl_opaque_keys;
 use sp_std::prelude::*;
@@ -235,7 +235,7 @@ impl pallet_scheduler::Config for Runtime {
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type PalletsOrigin = OriginCaller;
     type PreimageProvider = Preimage;
-    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type ScheduleOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 

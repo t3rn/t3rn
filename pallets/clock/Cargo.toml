@@ -28,8 +28,8 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/su
 sp-std     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-t3rn-primitives = { path = "../../primitives", default-features = false }
 pallet-account-manager = { path = "../account-manager", default-features = false }
+t3rn-primitives        = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
@@ -39,9 +39,9 @@ pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = '
 pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-pallet-executors               = { path = "../../pallets/executors" }
-pallet-treasury               = { path = "../../pallets/treasury" }
-pallet-account-manager               = { path = "../../pallets/account-manager" }
+pallet-account-manager = { path = "../../pallets/account-manager" }
+pallet-executors       = { path = "../../pallets/executors" }
+pallet-treasury        = { path = "../../pallets/treasury" }
 
 [features]
 default = [ "std" ]
