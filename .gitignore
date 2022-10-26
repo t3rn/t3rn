@@ -18,3 +18,5 @@ client/cli/yarn-error.log
 
 # mac
 **/.DS_Store
+
+bin
