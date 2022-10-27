@@ -1634,31 +1634,35 @@ impl<T: Config> Pallet<T> {
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
         full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
 
-        let mut full_side_effects_steps: Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        > = vec![vec![], vec![]];
+        let mut escrow_sfx_step: Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        > = vec![];
+        let mut optimistic_sfx_step: Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        > = vec![];
 
         // Split for 2 following steps of Escrow and Optimistic and
         //  assign indices to each SFX of current Xtx to avoid collisions the same SFX within the same Xtx.
+        // ToDo: Replace nonce as field with nonce as Xtx index argument.
         for mut sorted_fsx in full_side_effects.iter_mut() {
             if sorted_fsx.security_lvl == SecurityLvl::Escrow {
-                // ToDo: Replace nonce as field with nonce as Xtx index argument.
-                sorted_fsx.input.nonce = full_side_effects_steps[0].len() as u32;
-                full_side_effects_steps[0].push(sorted_fsx.clone());
+                sorted_fsx.input.nonce = escrow_sfx_step.len() as u32;
+                escrow_sfx_step.push(sorted_fsx.clone());
             } else if sorted_fsx.security_lvl == SecurityLvl::Optimistic {
-                sorted_fsx.input.nonce = full_side_effects_steps[1].len() as u32;
-                full_side_effects_steps[1].push(sorted_fsx.clone());
+                sorted_fsx.input.nonce = optimistic_sfx_step.len() as u32;
+                optimistic_sfx_step.push(sorted_fsx.clone());
             }
         }
 
         // full_side_effects_steps should be non-empty at this point
-        if full_side_effects_steps[0].is_empty() {
-            full_side_effects_steps = vec![full_side_effects_steps[1].clone()];
-        } else if full_side_effects_steps[1].is_empty() {
-            full_side_effects_steps = vec![full_side_effects_steps[0].clone()];
+        if escrow_sfx_step.is_empty() {
+            local_ctx.full_side_effects = vec![optimistic_sfx_step.clone()];
+        } else if optimistic_sfx_step.is_empty() {
+            local_ctx.full_side_effects = vec![escrow_sfx_step.clone()];
+        } else {
+            local_ctx.full_side_effects =
+                vec![escrow_sfx_step.clone(), optimistic_sfx_step.clone()];
         }
-
-        local_ctx.full_side_effects = full_side_effects_steps.clone();
 
         Ok(())
     }
