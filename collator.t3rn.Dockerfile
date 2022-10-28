@@ -1,8 +1,8 @@
 FROM ubuntu:21.04
 LABEL org.opencontainers.image.source https://github.com/t3rn/t3rn
 
-ENV RELAYCHAIN_NAME=rococo
-ENV PARACHAIN_NAME=t0rn
+ENV RELAYCHAIN_NAME=polkadot
+ENV PARACHAIN_NAME=t3rn
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /node runner && \
     mkdir /node/data && \
