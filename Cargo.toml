@@ -1,0 +1,19 @@
+[profile.release]
+panic = 'unwind'
+
+[workspace]
+exclude = [ '3vm', '3vm/sdk' ]
+members = [
+  'node/standalone',
+  'node/t0rn-parachain',
+  'node/t3rn-parachain',
+  'pallets/*',
+  'primitives',
+  'primitives/src/bridges/finality',
+  'primitives/src/bridges/headers',
+  'primitives/src/bridges/utils',
+  'primitives/src/bridges/snowfork/*',
+  'runtime/*',
+  'types',
+  'finality-verifiers/grandpa',
+]

@@ -1,0 +1,19 @@
+{
+    "circuit": {
+        "rpc": "ws://127.0.0.1::9944"
+    },
+    "gateways": [
+        {
+            "name": "Rococo",
+            "id": "roco",
+            "rpc": "wss://rococo-rpc.polkadot.io",
+            "type": "substrate"
+        },
+        {
+            "name": "Basilisk",
+            "id": "bslk",
+            "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
+            "type": "substrate"
+        }
+    ]
+}

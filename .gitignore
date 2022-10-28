@@ -1,1 +1,20 @@
 comms
+
+# Added by cargo
+/gateway/target
+**/target
+*/Cargo.lock
+.idea
+/beefy/target/
+/build/local_beefy_spec.json
+*.iml
+client/**/node_modules
+
+# accound id info
+/.devkey
+client/types/dist/*
+client/relayer/.env
+client/cli/yarn-error.log
+
+# mac
+**/.DS_Store

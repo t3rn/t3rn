@@ -1,0 +1,8 @@
+{
+  "label": "Finality Proofs",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "To verify a transaction has been finalized on a target chain, t3rn needs to verify the finality proofs on-chain. In this section we explain how this is achieved in the different types of blockchains."
+  }
+}

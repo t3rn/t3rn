@@ -6,7 +6,7 @@ labels: 'type: bug'
 assignees: ''
 ---
 
-### Expected behavior
+## Expected behavior
 
 ### Actual behavior
 

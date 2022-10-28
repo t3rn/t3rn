@@ -1,0 +1,7 @@
+[workspace]
+exclude  = [  ]
+members  = [ 'node', 'runtime', 'rpc' ]
+resolver = '2'
+
+[profile.release]
+panic = 'unwind'

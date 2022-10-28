@@ -1,0 +1,21 @@
+[package]
+authors     = [ 'Substrate DevHub <https://github.com/substrate-developer-hub>' ]
+description = "A pallet that demonstrates weight annotations on dispatchable calls"
+edition     = "2018"
+license     = "GPL-3.0-or-later"
+name        = "weights"
+repository  = 'https://github.com/substrate-developer-hub/recipes'
+version     = "3.0.0"
+
+[dependencies]
+codec         = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
+frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+frame-system  = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-runtime    = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+
+[dev-dependencies]
+sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+
+[features]
+default = [ 'std' ]
+std     = [ 'codec/std', 'frame-support/std', 'frame-system/std', 'sp-runtime/std' ]

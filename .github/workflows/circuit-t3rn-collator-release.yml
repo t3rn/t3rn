@@ -1,0 +1,182 @@
+name: Circuit t3rn Rococo Collator Release
+
+on:
+  push:
+    tags:
+      - 'v[1-9]+.[0-9]+.[0-9]+'
+
+env:
+  PARACHAIN_NAME: t3rn
+  RUST_BACKTRACE: full
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-release:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+
+      - name: ⚙️ Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-06-16
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+
+      - name: 🕒 Cache Rust binaries and packages
+        uses: actions/cache@v2
+        id: cache-rust
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ./target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('./Cargo.lock') }}
+
+      - name: 🏭 Build circuit
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: build
+          args: --manifest-path ./node/t3rn-parachain/Cargo.toml --locked --release
+
+      - name: 📤 Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-t3rn-collator-release-artifacts
+          path: ./target/release/t3rn-collator
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-docker-image:
+    runs-on: ubuntu-22.04
+    needs: build-release
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+
+      - name: 📥 Download circuit collator
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-t3rn-collator-release-artifacts
+          path: ./target/release/
+
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: 🐋 Login to the GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: 🐳 Build and publish the Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: t3rn/t3rn-collator:${{ env.PUSHED_TAG }}
+          platforms: linux/amd64
+          file: collator.Dockerfile
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+  release-on-github:
+    runs-on: ubuntu-22.04
+    needs: build-release
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: 📥 Download circuit collator
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-t3rn-collator-release-artifacts
+          path: ./target/release/
+
+      - name: 🎱 Gzip circuit collator
+        run: |
+          gzip -c ./target/release/t3rn-collator \
+          > ./target/release/t3rn-collator.gz
+
+      - name: 🖐🏾 Fingerprint the gball
+        run: |
+          sha256sum -b ./target/release/t3rn-collator.gz \
+          | grep -oE '^[a-f0-9]+' \
+          | tr -d '\n' \
+          > ./target/release/t3rn-collator.gz.sha256sum
+
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: 🖨️ Get the release notes
+        run: |
+          node -e "
+            const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
+            let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
+            if (head === -1) { throw Error('cannot parse ${{ env.PUSHED_TAG }} from changelog') }
+            else head = head + 1;
+            let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
+            tail = tail === -1 ? lines.length : tail + head;
+            console.log(lines.slice(head, tail).join(''));
+          " \
+          > ./target/release/notes.md
+
+      - name: 🐙 Create a GitHub release
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        with:
+          tag_name: ${{ env.PUSHED_TAG }}
+          release_name: ${{ env.PUSHED_TAG }}
+          body_path: ./target/release/notes.md
+          draft: false
+          prerelease: true
+
+      - name: 🍔 Provide the sha256sum as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/release/t3rn-collator.gz.sha256sum
+          asset_name: ${{ env.PARACHAIN_NAME }}-t3rn-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_content_type: text/plain
+
+      - name: 📦 Upload the circuit parachain collator gball as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/release/t3rn-collator.gz
+          asset_name: ${{ env.PARACHAIN_NAME }}-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_content_type: application/gzip
+
+  trigger-downstream:
+    runs-on: ubuntu-22.04
+    needs: release-on-github
+    steps:
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+#      - name: 🔫 Trigger chainops downstream
+#        run: |
+#          curl -XPOST /
+#            -u ${{ secrets.GH_PAT }} /
+#            -H "Accept:application/vnd.github" /
+#            -H "Content-Type:application/json" /
+#            https://api.github.com/repos/t3rn/chainops/cd.yml/dispatches /
+#            --data "{\"action\":\"xtrigger\",\"tag\":\"${{ env.PUSHED_TAG }}\"}"

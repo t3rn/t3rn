@@ -1,6 +1,12 @@
-[submodule "sdk/subxt"]
-	path = sdk/subxt
-	url = https://github.com/MaciejBaj/substrate-subxt
-[submodule "sdk/compiler"]
-	path = sdk/compiler
-	url = https://github.com/MaciejBaj/cargo-contract
+[submodule "vendor/frontier"]
+	path = vendor/frontier
+	url = https://github.com/t3rn/frontier
+[submodule "protocol"]
+	path = protocol
+	url = https://github.com/t3rn/protocol
+[submodule "3vm"]
+	path = 3vm
+	url = https://github.com/t3rn/3vm.git
+[submodule "pallets/xbi-portal"]
+	path = pallets/xbi-portal
+	url = https://github.com/t3rn/xbi-portal.git
