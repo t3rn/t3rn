@@ -403,7 +403,6 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
             ],
         ],
         signature: vec![],
-        nonce: 0,
         enforce_executor: Some(
             [
                 53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85, 53,
@@ -519,12 +518,11 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                     ]
                                 ],
                                 signature: vec![],
-                                nonce: 0,
                                 enforce_executor: None,
                                 insurance: 1,
                             }],
                             vec![hex!(
-                                "02d7ef0efaddd11e5e0ac88551a263068cecc33efda5f6b08711a033d26e0e9e"
+                                "74d8909624ac412b1d6d020dcae68efa421d978782ea93a4a1f101346f874443"
                             )
                             .into(),],
                         )),
@@ -578,6 +576,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    nonce: 0,
                 }]]
             );
         });
@@ -711,11 +710,10 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                     ]
                                 ],
                                 signature: vec![],
-                                nonce: 0,
                                 enforce_executor: None
                             }],
                             vec![hex!(
-                                "02d7ef0efaddd11e5e0ac88551a263068cecc33efda5f6b08711a033d26e0e9e"
+                                "74d8909624ac412b1d6d020dcae68efa421d978782ea93a4a1f101346f874443"
                             )
                             .into(),],
                         )),
@@ -809,6 +807,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    nonce: 0,
                 }]]
             );
 
@@ -936,6 +935,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    nonce: 0,
                 }]]
             );
 
@@ -1110,6 +1110,7 @@ fn circuit_handles_swap_with_insurance() {
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    nonce: 0,
                 }]]
             );
 
@@ -1267,6 +1268,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    nonce: 0,
                 }]]
             );
 
@@ -3638,7 +3640,6 @@ fn into_se_from_chain() {
                 vec![]
             ],
             signature: vec![],
-            nonce: 0,
             enforce_executor: None,
         }
     )
@@ -3754,6 +3755,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                     best_bid: None,
                     security_lvl: SecurityLvl::Escrow,
                     submission_target_height: vec![0],
+                    nonce: 0,
                 }]]
             );
 
@@ -3828,7 +3830,6 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
         ],
         1,
         1,
-        FIRST_REQUESTER_NONCE,
     )
     .unwrap();
 
@@ -3882,6 +3883,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                     best_bid: None,
                     security_lvl: SecurityLvl::Escrow,
                     submission_target_height: vec![0],
+                    nonce: 0,
                 }]]
             );
 

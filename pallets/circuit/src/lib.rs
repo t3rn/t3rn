@@ -1573,7 +1573,7 @@ impl<T: Config> Pallet<T> {
             return Ok(())
         }
 
-        for sfx in side_effects.iter() {
+        for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_abi = <T as Config>::Xdns::get_abi(sfx.target)?;
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
 
@@ -1623,6 +1623,7 @@ impl<T: Config> Pallet<T> {
                 security_lvl: determine_security_lvl(gateway_type),
                 submission_target_height,
                 best_bid: None,
+                nonce: index as u32,
             });
         }
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
@@ -1638,12 +1639,10 @@ impl<T: Config> Pallet<T> {
         // Split for 2 following steps of Escrow and Optimistic and
         //  assign indices to each SFX of current Xtx to avoid collisions the same SFX within the same Xtx.
         // ToDo: Replace nonce as field with nonce as Xtx index argument.
-        for mut sorted_fsx in full_side_effects.iter_mut() {
+        for mut sorted_fsx in full_side_effects.iter() {
             if sorted_fsx.security_lvl == SecurityLvl::Escrow {
-                sorted_fsx.input.nonce = escrow_sfx_step.len() as u32;
                 escrow_sfx_step.push(sorted_fsx.clone());
             } else if sorted_fsx.security_lvl == SecurityLvl::Optimistic {
-                sorted_fsx.input.nonce = optimistic_sfx_step.len() as u32;
                 optimistic_sfx_step.push(sorted_fsx.clone());
             }
         }

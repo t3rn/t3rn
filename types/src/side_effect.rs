@@ -36,7 +36,6 @@ pub struct SideEffect<AccountId, BalanceOf> {
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
-    pub nonce: u32,
     pub enforce_executor: Option<AccountId>,
 }
 
@@ -52,6 +51,7 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub confirmed_executioner: Option<AccountId>,
     pub confirmed_received_at: Option<BlockNumber>,
     pub confirmed_cost: Option<BalanceOf>,
+    pub nonce: u32,
 }
 
 impl<AccountId, BlockNumber, BalanceOf> Default
@@ -73,6 +73,7 @@ where
             confirmed_executioner: None,
             confirmed_received_at: None,
             confirmed_cost: None,
+            nonce: 0,
         }
     }
 }
@@ -123,7 +124,6 @@ where
             encoded_args: args,
             signature: vec![],
             insurance: Zero::zero(),
-            nonce: 0,
             enforce_executor: None,
         })
     }
@@ -401,7 +401,6 @@ mod tests {
             encoded_args: vec![],
             signature: vec![],
             insurance: 0,
-            nonce: 0,
             enforce_executor: None,
         };
 
@@ -414,7 +413,6 @@ mod tests {
                 encoded_args: vec![],
                 signature: vec![],
                 insurance: 0,
-                nonce: 0,
                 enforce_executor: None
             }
         );
@@ -440,7 +438,6 @@ mod tests {
             ],
             signature: vec![],
             insurance: 0,
-            nonce: 0,
             enforce_executor: None,
         };
 
@@ -467,7 +464,6 @@ mod tests {
                     ]
                 ],
                 signature: vec![],
-                nonce: 0,
                 enforce_executor: None
             }
         );
