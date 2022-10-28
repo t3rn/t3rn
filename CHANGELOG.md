@@ -1,5 +1,8 @@
 # Changelog
 
+## `v1.0.0` 2022-10-28
+#### Shell Runtime of t3rn
+
 ## `v1.2.0-rc.0` 2022-10-24
 ## What's Changed
 
