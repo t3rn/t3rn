@@ -33,6 +33,7 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub security_lvl: SecurityLvl,
     pub submission_target_height: Bytes,
     pub best_bid: Option<SFXBid<AccountId, BalanceOf>>,
+    pub nonce: u32,
 }
 
 /// All Executors from the active set can bid for SFX executions in order to claim the rewards (max_fee) set by users,
@@ -135,6 +136,7 @@ where
             confirmed_executioner,
             confirmed_received_at,
             confirmed_cost,
+            nonce: self.nonce,
         })
     }
 }
@@ -163,7 +165,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -176,7 +177,6 @@ mod tests {
                 encoded_action: vec![],
                 encoded_args: vec![],
                 signature: vec![],
-                nonce: 0,
                 insurance: 1,
                 enforce_executor: None
             }
@@ -220,6 +220,7 @@ mod tests {
                 cost: Some(2 as BalanceOf),
             }),
             best_bid: None,
+            nonce: 0,
         };
 
         let hsfx: HardenedSideEffect<AccountId, BlockNumber, BalanceOf> = tfsfx.try_into().unwrap();
@@ -252,7 +253,8 @@ mod tests {
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 ))),
                 confirmed_received_at: Some(1),
-                confirmed_cost: Some(2)
+                confirmed_cost: Some(2),
+                nonce: 0,
             },
         );
 
@@ -278,7 +280,6 @@ mod tests {
                     ]
                 ],
                 signature: vec![],
-                nonce: 0,
                 insurance: 2,
                 enforce_executor: None
             }
@@ -293,7 +294,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
