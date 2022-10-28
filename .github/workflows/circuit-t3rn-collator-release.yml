@@ -88,7 +88,7 @@ jobs:
           push: true
           tags: t3rn/t3rn-collator:${{ env.PUSHED_TAG }}
           platforms: linux/amd64
-          file: collator.Dockerfile
+          file: collator.t3rn.Dockerfile
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
