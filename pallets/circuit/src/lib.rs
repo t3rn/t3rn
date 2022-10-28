@@ -818,21 +818,17 @@ pub mod pallet {
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
-            xtx_id: XtxId<T>,
-            side_effect: SideEffect<
-                <T as frame_system::Config>::AccountId,
-                EscrowedBalanceOf<T, T::Escrowed>,
-            >,
+            sfx_id: SideEffectId<T>,
             confirmation: ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            _inclusion_proof: Option<Vec<Vec<u8>>>,
-            _block_hash: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let executor = Self::authorize(origin, CircuitRole::Executor)?;
+            let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
+                .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
@@ -842,7 +838,7 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            Self::confirm(&mut local_xtx_ctx, &executor, &side_effect, &confirmation)?;
+            Self::confirm(&mut local_xtx_ctx, &executor, &sfx_id, &confirmation)?;
 
             let status_change = Self::update(&mut local_xtx_ctx)?;
 
@@ -850,9 +846,7 @@ pub mod pallet {
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
                 Self::apply(&mut local_xtx_ctx, status_change);
 
-            Self::deposit_event(Event::SideEffectConfirmed(
-                side_effect.generate_id::<SystemHashing<T>>(),
-            ));
+            Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
 
             // Emit: From Circuit events
             Self::emit(
@@ -1231,7 +1225,7 @@ impl<T: Config> Pallet<T> {
                                         T::BlockNumber,
                                         EscrowedBalanceOf<T, <T as Config>::Escrowed>,
                                     >::generate_step_id::<T>(
-                                        side_effect_hash, cnt
+                                        local_ctx.xtx_id, cnt
                                     ),
                                 )
                             })
@@ -1670,10 +1664,7 @@ impl<T: Config> Pallet<T> {
     fn confirm(
         local_ctx: &mut LocalXtxCtx<T>,
         _relayer: &T::AccountId,
-        side_effect: &SideEffect<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >,
+        sfx_id: &SideEffectId<T>,
         confirmation: &ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
@@ -1681,10 +1672,7 @@ impl<T: Config> Pallet<T> {
         >,
     ) -> Result<(), &'static str> {
         fn confirm_order<T: Config>(
-            side_effect: &SideEffect<
-                <T as frame_system::Config>::AccountId,
-                EscrowedBalanceOf<T, T::Escrowed>,
-            >,
+            sfx_id: &SideEffectId<T>,
             confirmation: &ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
@@ -1705,9 +1693,6 @@ impl<T: Config> Pallet<T> {
             >,
             &'static str,
         > {
-            // ToDo: Extract as a separate function and migrate tests from Xtx
-            let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
-
             // Double check there are some side effects for that Xtx - should have been checked at API level tho already
             if step_side_effects.is_empty() {
                 return Err("Xtx has an empty single step.")
@@ -1716,7 +1701,7 @@ impl<T: Config> Pallet<T> {
             // Find sfx object index in the current step
             match step_side_effects
                 .iter()
-                .position(|sfx| sfx.input.generate_id::<SystemHashing<T>>() == input_side_effect_id)
+                .position(|sfx| sfx.input.generate_id::<SystemHashing<T>>() == *sfx_id)
             {
                 Some(index) => {
                     // side effect found in current step
@@ -1732,30 +1717,30 @@ impl<T: Config> Pallet<T> {
             }
         }
 
-        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-        side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
-
         // confirm order of current season, by passing the side_effects of it to confirm order.
         let fsx = confirm_order::<T>(
-            side_effect,
+            sfx_id,
             confirmation,
             &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
         )?;
+
         log::debug!("Order confirmed!");
+
+        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
+        side_effect_id.copy_from_slice(&fsx.input.encoded_action[0..4]);
+
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
         let (params, source) = <T as Config>::Portal::confirm_and_decode_payload_params(
-            side_effect.target,
+            fsx.input.target,
             fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
-            side_effect_id,
+            side_effect_id.clone(),
         )
         .map_err(|_| "SideEffect confirmation failed!")?;
         // ToDo: handle misbehaviour
         log::debug!("SFX confirmation params: {:?}", params);
 
-        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-        side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
         let side_effect_interface =
             <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
 
@@ -1766,14 +1751,9 @@ impl<T: Config> Pallet<T> {
             params,
             source,
             &local_ctx.local_state,
-            Some(
-                side_effect
-                    .generate_id::<SystemHashing<T>>()
-                    .as_ref()
-                    .to_vec(),
-            ),
+            Some(sfx_id.as_ref().to_vec()),
             fsx.security_lvl,
-            <T as Config>::Xdns::get_gateway_security_coordinates(&side_effect.target)?,
+            <T as Config>::Xdns::get_gateway_security_coordinates(&fsx.input.target)?,
         )
         .map_err(|_| "Execution can't be confirmed.")?;
         log::debug!("confirmation plug ok");
@@ -2118,7 +2098,7 @@ impl<T: Config> Pallet<T> {
         Self::confirm(
             &mut local_xtx_ctx,
             &Self::account_id(),
-            &fsx.input,
+            &fsx.input.generate_id::<SystemHashing<T>>(),
             &confirmation,
         )
         .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;

@@ -186,14 +186,10 @@ fn confirm_side_effect(
         )
         .unwrap();
 
-    Circuit::confirm_side_effect(
-        origin,
-        xtx_id,
-        side_effect,
-        confirmed_side_effect,
-        None,
-        None,
-    )
+    let sfx_id = side_effect
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
+
+    Circuit::confirm_side_effect(origin, sfx_id, confirmed_side_effect)
 }
 
 pub fn bid_execution(
@@ -217,7 +213,7 @@ pub fn bid_execution(
 
 pub fn confirm_sfx(
     executor: AccountId32,
-    xtx_id: sp_core::H256,
+    _xtx_id: sp_core::H256,
     sfx: SideEffect<AccountId32, Balance>,
     inclusion_data: Vec<u8>,
 ) {
@@ -232,11 +228,8 @@ pub fn confirm_sfx(
 
     Circuit::confirm_side_effect(
         Origin::signed(executor),
-        xtx_id,
-        sfx,
+        sfx.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
         sfx_confirmation,
-        None,
-        None,
     );
 }
 
