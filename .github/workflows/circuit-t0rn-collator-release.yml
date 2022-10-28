@@ -1,9 +1,9 @@
-name: Circuit Collator Release
+name: Circuit t0rn Rococo Collator Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
 
 env:
   PARACHAIN_NAME: t0rn
@@ -43,13 +43,13 @@ jobs:
         continue-on-error: false
         with:
           command: build
-          args: --manifest-path ./node/parachain/Cargo.toml --locked --release
+          args: --manifest-path ./node/t0rn-parachain/Cargo.toml --locked --release
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.sha }}-collator-release-artifacts
-          path: ./target/release/circuit-collator
+          name: ${{ github.sha }}-t0rn-collator-release-artifacts
+          path: ./target/release/t0rn-collator
           if-no-files-found: error
           retention-days: 1
 
@@ -65,7 +65,7 @@ jobs:
       - name: 📥 Download circuit collator
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-collator-release-artifacts
+          name: ${{ github.sha }}-t0rn-collator-release-artifacts
           path: ./target/release/
 
       - name: 🏷️ Get the version tag
@@ -78,14 +78,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: 🐳 Build and publish the Docker image
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          tags: t3rn/circuit-collator:${{ env.PUSHED_TAG }}
+          tags: ghcr.io/t3rn/t0rn-collator:${{ env.PUSHED_TAG }}
           platforms: linux/amd64
           file: collator.Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
@@ -99,20 +103,20 @@ jobs:
       - name: 📥 Download circuit collator
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-collator-release-artifacts
+          name: ${{ github.sha }}-t0rn-collator-release-artifacts
           path: ./target/release/
 
       - name: 🎱 Gzip circuit collator
         run: |
-          gzip -c ./target/release/circuit-collator \
-          > ./target/release/circuit-collator.gz
+          gzip -c ./target/release/t0rn-collator \
+          > ./target/release/t0rn-collator.gz
 
       - name: 🖐🏾 Fingerprint the gball
         run: |
-          sha256sum -b ./target/release/circuit-collator.gz \
+          sha256sum -b ./target/release/t0rn-collator.gz \
           | grep -oE '^[a-f0-9]+' \
           | tr -d '\n' \
-          > ./target/release/circuit-collator.gz.sha256sum
+          > ./target/release/t0rn-collator.gz.sha256sum
 
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
@@ -148,8 +152,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/circuit-collator.gz.sha256sum
-          asset_name: ${{ env.PARACHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_path: ./target/release/t0rn-collator.gz.sha256sum
+          asset_name: ${{ env.PARACHAIN_NAME }}-t0rn-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
           asset_content_type: text/plain
 
       - name: 📦 Upload the circuit parachain collator gball as a release asset
@@ -158,8 +162,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/circuit-collator.gz
-          asset_name: ${{ env.PARACHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_path: ./target/release/t0rn-collator.gz
+          asset_name: ${{ env.PARACHAIN_NAME }}-t0rn-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip
 
   trigger-downstream:
@@ -169,11 +173,11 @@ jobs:
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-      - name: 🔫 Trigger chainops downstream
-        run: |
-          curl -XPOST /
-            -u ${{ secrets.GH_PAT }} /
-            -H "Accept:application/vnd.github" /
-            -H "Content-Type:application/json" /
-            https://api.github.com/repos/t3rn/chainops/cd.yml/dispatches /
-            --data "{\"action\":\"xtrigger\",\"tag\":\"${{ env.PUSHED_TAG }}\"}"
+#      - name: 🔫 Trigger chainops downstream
+#        run: |
+#          curl -XPOST /
+#            -u ${{ secrets.GH_PAT }} /
+#            -H "Accept:application/vnd.github" /
+#            -H "Content-Type:application/json" /
+#            https://api.github.com/repos/t3rn/chainops/cd.yml/dispatches /
+#            --data "{\"action\":\"xtrigger\",\"tag\":\"${{ env.PUSHED_TAG }}\"}"

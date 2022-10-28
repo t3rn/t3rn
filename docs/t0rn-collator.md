@@ -35,7 +35,7 @@ We maintain collator binaries which we release alongside every runtime release. 
 
 ```sh
 curl -sSfL \
-  https://github.com/t3rn/t3rn/releases/download/v1.1.0-rc.0/t0rn-circuit-collator-v1.1.0-rc.0-x86_64-unknown-linux-gnu.gz \
+  https://github.com/t3rn/t3rn/releases/download/v1.1.0-rc.0/t0rn-collator-v1.1.0-rc.0-x86_64-unknown-linux-gnu.gz \
 | gunzip > ~/t0rn/circuit-collator
 ```
 

@@ -1,7 +1,37 @@
 # Changelog
 
-## `v1.1.0-rc.0` 2022-07-14
+## `v1.2.0-rc.0` 2022-10-24
+## What's Changed
 
+### Features
+* feat: consolidate runtimes + Integrate XBI + async reward claims for SFX execution + 3VM LVL 4 by @MaciejBaj in https://github.com/t3rn/t3rn/pull/448
+* feat: executors bid for all SFX narrowed to Optimistic and Escrow by @MaciejBaj #477
+* feat: utilise the rearchitecture for 3VM and install EVM to the nodes by @AwesomeIbex in https://github.com/t3rn/t3rn/pull/400
+* feat: Portal LVL3 - Verify ingress messages finality using pluggable Light Clients by @petscheit in https://github.com/t3rn/t3rn/pull/456
+
+### Maintenance & Docs
+* docs: add github and social badges to readme by @chiefbiiko in https://github.com/t3rn/t3rn/pull/409
+* fix: Correct received event names after new SFX are available for executors by @petscheit in https://github.com/t3rn/t3rn/pull/391
+* docs: add registration part to collator docs by @alexand3rwilke in https://github.com/t3rn/t3rn/pull/411
+* fix: fix devnet by unpinning subkey by @chiefbiiko in https://github.com/t3rn/t3rn/pull/414
+* docs: update rotate keys part by @alexand3rwilke in https://github.com/t3rn/t3rn/pull/418
+* feat: unify side effects between sdk and circuit  by @beqaabu in https://github.com/t3rn/t3rn/pull/413
+* chore: enable collator telemetry by @chiefbiiko in https://github.com/t3rn/t3rn/pull/426
+* build: Prepare continous collator deployments by @chiefbiiko in https://github.com/t3rn/t3rn/pull/415
+* refactor: provide non-sensitive artifacts for collators by @chiefbiiko in https://github.com/t3rn/t3rn/pull/434
+* refactor: update TS types to new portal setup and adds step based execution and confirmation logic by @petscheit in https://github.com/t3rn/t3rn/pull/436
+* refactor: add common runtime types as a separate crate by @MaciejBaj in https://github.com/t3rn/t3rn/pull/442
+* refactor: the collator docker image to incl. all runtime deps by @chiefbiiko in https://github.com/t3rn/t3rn/pull/437
+* chore: add DepositReceived event from AccountManager by @MaciejBaj in https://github.com/t3rn/t3rn/pull/455
+* refactor: update path to latest XBI Portal by @MaciejBaj in https://github.com/t3rn/t3rn/pull/458
+* build: commit linting during pipeline execution by @phpengine in https://github.com/t3rn/t3rn/pull/393
+* build: revive devnet run.sh script by @MaciejBaj in https://github.com/t3rn/t3rn/pull/460
+* build: update builds and source files to Polkadot v0.9.27 by @MaciejBaj in https://github.com/t3rn/t3rn/pull/467
+* refactor: install pallet assets to mock, standalone and t0rn runtimes by @MaciejBaj 
+
+Full Changelog: https://github.com/t3rn/t3rn/compare/v1.1.0-rc.0...v1.2.0-rc.0
+
+## `v1.1.0-rc.0` 2022-07-14
 
 ### Features
 - [**3VM**: repatriate gas fees to contract authors](https://github.com/t3rn/t3rn/pull/295)

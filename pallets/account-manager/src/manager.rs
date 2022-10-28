@@ -28,11 +28,14 @@ pub struct ActiveSetClaimablePerRound<Account, Balance> {
     pub claimable: Balance,
 }
 
-fn percent_ratio<T: Config>(amt: BalanceOf<T>, percent: u8) -> Result<BalanceOf<T>, DispatchError> {
-    amt.checked_mul(&BalanceOf::<T>::from(percent))
-        .ok_or::<DispatchError>(Error::<T>::ChargeOrSettlementCalculationOverflow.into())?
-        .checked_div(&BalanceOf::<T>::from(100u8))
-        .ok_or::<DispatchError>(Error::<T>::ChargeOrSettlementCalculationOverflow.into())
+pub fn percent_ratio<BalanceOf: Zero + CheckedDiv + CheckedMul + From<u8>>(
+    amt: BalanceOf,
+    percent: u8,
+) -> Result<BalanceOf, DispatchError> {
+    amt.checked_mul(&BalanceOf::from(percent))
+        .ok_or::<DispatchError>("PercentRatio::ChargeOrSettlementCalculationOverflow".into())?
+        .checked_div(&BalanceOf::from(100u8))
+        .ok_or::<DispatchError>("PercentRatio::ChargeOrSettlementCalculationOverflow".into())
 }
 
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
@@ -138,19 +141,27 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         // Simple rules for splitting, for now, we take 1% to keep the account manager alive
         let (payee_split, recipient_split, recipient_bonus): (u8, u8, BalanceOf<T>) = match outcome
         {
-            Outcome::Commit => (0, 99, charge.offered_reward),
-            Outcome::Revert => (89, 10, Zero::zero()),
+            Outcome::Commit => (0, 99, Zero::zero()),
+            Outcome::Revert => (99, 0, Zero::zero()),
             Outcome::UnexpectedFailure => (49, 50, Zero::zero()),
         };
 
+        let total_reserved = charge.charge_fee + charge.offered_reward;
+
         let payee_refund: BalanceOf<T> = if let Some(actual_fees) = maybe_actual_fees {
-            percent_ratio::<T>(charge.charge_fee - actual_fees, payee_split)?
+            // ToDo: Better handle case when actual fees outgrow total_reserved
+            if actual_fees > total_reserved {
+                return Err(Error::<T>::ChargeOrSettlementActualFeesOutgrowReserved.into())
+            }
+            percent_ratio::<BalanceOf<T>>(total_reserved - actual_fees, payee_split)?
         } else {
-            percent_ratio::<T>(charge.charge_fee, payee_split)?
+            percent_ratio::<BalanceOf<T>>(total_reserved, payee_split)?
         };
 
-        T::Currency::slash_reserved(&charge.payee, charge.charge_fee + charge.offered_reward);
-        T::Currency::deposit_creating(&charge.payee, payee_refund);
+        T::Currency::slash_reserved(&charge.payee, total_reserved);
+        if payee_refund > Zero::zero() {
+            T::Currency::deposit_creating(&charge.payee, payee_refund);
+        }
 
         // Check if recipient has been updated
         let recipient = if let Some(recipient) = maybe_recipient {
@@ -159,28 +170,29 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             charge.recipient
         };
 
-        let recipient_fee_rewards = percent_ratio::<T>(charge.charge_fee, recipient_split)?;
+        let recipient_rewards = percent_ratio::<BalanceOf<T>>(total_reserved, recipient_split)?;
 
         // Create Settlement for the future async claim
-        SettlementsPerRound::<T>::insert(
-            T::Clock::current_round(),
-            charge_id,
-            Settlement::<T::AccountId, BalanceOf<T>> {
-                requester: charge.payee,
-                recipient,
-                settlement_amount: recipient_fee_rewards + recipient_bonus,
-                outcome,
-                source: charge.source,
-                role: charge.role,
-            },
-        );
-
+        if recipient_rewards > Zero::zero() {
+            SettlementsPerRound::<T>::insert(
+                T::Clock::current_round(),
+                charge_id,
+                Settlement::<T::AccountId, BalanceOf<T>> {
+                    requester: charge.payee,
+                    recipient,
+                    settlement_amount: recipient_rewards + recipient_bonus,
+                    outcome,
+                    source: charge.source,
+                    role: charge.role,
+                },
+            );
+        }
         PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
 
-        // Take what's left - 1% to keep the account manager alive
+        // Take what's left to treasury
         T::Currency::deposit_creating(
             &T::EscrowAccount::get(),
-            charge.charge_fee - recipient_fee_rewards - payee_refund,
+            total_reserved - payee_refund - recipient_rewards,
         );
 
         Ok(())
@@ -391,7 +403,7 @@ mod tests {
             ));
 
             let one_percent_charge_amt = charge_amt / 100;
-            let ten_percent_charge_amt = charge_amt / 10;
+            let _ten_percent_charge_amt = charge_amt / 10;
 
             assert_eq!(
                 Balances::free_balance(
@@ -402,7 +414,7 @@ mod tests {
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                DEFAULT_BALANCE - ten_percent_charge_amt - one_percent_charge_amt
+                DEFAULT_BALANCE - one_percent_charge_amt
             );
 
             assert_eq!(
@@ -413,15 +425,68 @@ mod tests {
                 None
             );
 
-            let settlement = AccountManager::settlements_per_round::<RoundInfo<BlockNumber>, H256>(
-                Default::default(),
-                execution_id,
-            )
-            .unwrap();
+            // Expect no settlement at revert
+            assert_eq!(
+                AccountManager::settlements_per_round::<RoundInfo<BlockNumber>, H256>(
+                    Default::default(),
+                    execution_id,
+                ),
+                None
+            );
+        });
+    }
 
-            assert_eq!(settlement.requester, ALICE);
-            assert_eq!(settlement.recipient, BOB);
-            assert_eq!(settlement.settlement_amount, ten_percent_charge_amt);
+    #[test]
+    fn test_overflow_err_after_actual_fees_exceed_deposit() {
+        ExtBuilder::default().build().execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(
+                &<Runtime as pallet_account_manager::Config>::EscrowAccount::get(),
+                DEFAULT_BALANCE,
+            );
+            const CHARGE: Balance = 100;
+            const INSURANCE: Balance = 10;
+
+            let execution_id: H256 = H256::repeat_byte(0);
+
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                Balance,
+                Hash,
+                BlockNumber,
+            >>::deposit(
+                execution_id,
+                &ALICE,
+                CHARGE,
+                INSURANCE,
+                BenefitSource::TrafficRewards,
+                CircuitRole::ContractAuthor,
+                Some(BOB),
+            ));
+
+            assert_eq!(Balances::reserved_balance(&ALICE), CHARGE + INSURANCE);
+
+            assert_err!(<AccountManager as AccountManagerExt<
+                AccountId,
+                Balance,
+                Hash,
+                BlockNumber,
+            >>::finalize(
+                execution_id, Outcome::Revert, None, Some(CHARGE + INSURANCE + 1),
+            ),
+                circuit_runtime_pallets::pallet_account_manager::Error::<Runtime>::ChargeOrSettlementActualFeesOutgrowReserved,
+            );
+        });
+    }
+
+    #[test]
+    fn percent_ratio_works_for_zero() {
+        ExtBuilder::default().build().execute_with(|| {
+            assert_eq!(percent_ratio::<Balance>(0, 100).unwrap(), 0);
+            assert_eq!(percent_ratio::<Balance>(100, 0).unwrap(), 0);
+            assert_eq!(percent_ratio::<Balance>(10, 100).unwrap(), 10);
+            assert_eq!(percent_ratio::<Balance>(100, 10).unwrap(), 10);
         });
     }
 
