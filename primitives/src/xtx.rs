@@ -188,7 +188,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -215,6 +214,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
+                nonce: 0,
             }]],
         );
 
@@ -236,7 +236,8 @@ mod tests {
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 0
             }
         );
 
@@ -251,7 +252,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -262,7 +262,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -299,6 +298,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
+                    nonce: 0,
                 },
                 FullSideEffect {
                     input: input_side_effect_2.clone(),
@@ -306,6 +306,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
+                    nonce: 1,
                 },
             ]],
         );
@@ -326,7 +327,8 @@ mod tests {
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 0
             }
         );
 
@@ -338,7 +340,8 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 1
             }
         );
 
@@ -361,7 +364,8 @@ mod tests {
                 confirmed: Some(completing_side_effect_2),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 0
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -375,7 +379,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -386,7 +389,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -424,6 +426,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
+                    nonce: 0,
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
@@ -431,6 +434,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
+                    nonce: 0,
                 }],
             ],
         );
@@ -451,7 +455,8 @@ mod tests {
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 0
             }
         );
 
@@ -463,7 +468,8 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 0
             }
         );
 
@@ -484,7 +490,8 @@ mod tests {
                 confirmed: Some(completing_side_effect_2),
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 0
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -498,7 +505,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -509,7 +515,6 @@ mod tests {
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            nonce: 0,
             insurance: 1,
             enforce_executor: None,
         };
@@ -547,6 +552,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
+                    nonce: 0,
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
@@ -554,6 +560,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
+                    nonce: 1,
                 }],
             ],
         );
@@ -571,7 +578,8 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 0
             }
         );
 
@@ -582,7 +590,8 @@ mod tests {
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
-                best_bid: None
+                best_bid: None,
+                nonce: 1
             }
         );
 
