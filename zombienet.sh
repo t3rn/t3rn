@@ -13,12 +13,13 @@ version=${ZOMBIENET_VERSION:-v1.2.59}
 runtime=${RUNTIME:-t3rn-parachain}
 pdot_branch=${PDOT_BRANCH:-release-v0.9.27}
 root_dir=$(git rev-parse --show-toplevel)
+[ ! -O /usr/local/bin ] && sudo_maybe=sudo
 
 mkdir -p $root_dir/bin
 
 if [[ ! -x /usr/local/bin/zombienet ]]; then
-  curl -fL# -o /usr/local/bin/zombienet https://github.com/paritytech/zombienet/releases/download/$version/zombienet-$machine
-  chmod +x /usr/local/bin/zombienet
+  $sudo_maybe curl -fL# -o /usr/local/bin/zombienet https://github.com/paritytech/zombienet/releases/download/$version/zombienet-$machine
+  $sudo_maybe chmod +x /usr/local/bin/zombienet
 fi
 
 if [[ ! -x $root_dir/bin/polkadot ]]; then
