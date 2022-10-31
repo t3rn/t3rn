@@ -13384,7 +13384,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-membership",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
