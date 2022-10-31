@@ -19,11 +19,13 @@ chain = "zombienet.json"
 name = "t3rn01-collator01"
 command = "circuit-collator"
 ws_port = 9930
+rpc_port = 8830
 
 [[parachains.collators]]
 name = "t3rn01-collator02"
 command = "circuit-collator"
 ws_port = 9931
+rpc_port = 8831
 
 [[parachains]]
 id = 4000
@@ -34,11 +36,13 @@ chain = "zombienet.json"
 name = "t3rn02-collator01"
 command = "circuit-collator"
 ws_port = 9940
+rpc_port = 8840
 
 [[parachains.collators]]
 name = "t3rn02-collator02"
 command = "circuit-collator"
 ws_port = 9941
+rpc_port = 8841
 
 [[hrmp_channels]]
 sender = 3000
