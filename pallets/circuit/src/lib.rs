@@ -50,6 +50,7 @@ use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     account_manager::{AccountManager, Outcome},
+    circuit::{XExecSignalId, XExecStepSideEffectId},
     circuit_portal::CircuitPortal,
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
@@ -385,7 +386,7 @@ pub mod pallet {
 
                     let current_step = local_ctx.xtx.steps_cnt.0;
                     for mut fsx in local_ctx.full_side_effects[current_step as usize].iter_mut() {
-                        let sfx_id = fsx.input.generate_id::<SystemHashing<T>>();
+                        let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                         if let Some(best_sfx_bid) = <PendingSFXBids<T>>::get(xtx_id, sfx_id) {
                             fsx.best_bid = Some(best_sfx_bid);
                         } else {
@@ -1213,9 +1214,14 @@ impl<T: Config> Pallet<T> {
                     .flat_map(|(cnt, fsx_step)| {
                         fsx_step
                             .iter()
-                            .map(|full_side_effect| full_side_effect.input.clone())
-                            .filter(|side_effect| is_local::<T>(&side_effect.target))
-                            .map(|side_effect| side_effect.generate_id::<SystemHashing<T>>())
+                            .map(|full_side_effect| full_side_effect.clone())
+                            .filter(|full_side_effect| {
+                                is_local::<T>(&full_side_effect.input.target)
+                            })
+                            .map(|full_side_effect| {
+                                full_side_effect
+                                    .generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
+                            })
                             .map(|side_effect_hash| {
                                 (
                                     cnt,
@@ -1294,7 +1300,7 @@ impl<T: Config> Pallet<T> {
                         for fsx_step in &local_ctx.full_side_effects {
                             for fsx in fsx_step {
                                 <Self as Store>::SFX2XTXLinksMap::remove(
-                                    fsx.input.generate_id::<SystemHashing<T>>(),
+                                    fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
                                 );
                             }
                         }
@@ -1451,10 +1457,11 @@ impl<T: Config> Pallet<T> {
                 unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
             },
             CircuitStatus::Ready => {
+                let current_step_sfx = Self::get_current_step_fsx(local_ctx);
                 // Unreserve the max_rewards and replace with possibly lower bids of executor in following loop
-                unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
+                unreserve_requester_xtx_max_rewards(current_step_sfx);
+                for fsx in current_step_sfx.iter() {
+                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     let bid_4_fsx: &SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>> =
                         if let Some(bid) = &fsx.best_bid {
                             bid
@@ -1498,7 +1505,7 @@ impl<T: Config> Pallet<T> {
             | CircuitStatus::RevertMisbehaviour => {
                 Optimistic::<T>::try_slash(local_ctx);
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
+                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     <T as Config>::AccountManager::try_finalize(
                         charge_id,
                         Outcome::Revert,
@@ -1510,7 +1517,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Finished | CircuitStatus::FinishedAllSteps => {
                 Optimistic::<T>::try_unbond(local_ctx)?;
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
+                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     let confirmed = if let Some(confirmed) = &fsx.confirmed {
                         Ok(confirmed)
                     } else {
@@ -1850,7 +1857,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(self) fn get_current_step_fsx(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
     ) -> &Vec<
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -1935,7 +1942,7 @@ impl<T: Config> Pallet<T> {
         let maybe_fsx = local_ctx.full_side_effects[current_step as usize]
             .iter()
             .filter(|&fsx| fsx.confirmed.is_none())
-            .find(|&fsx| fsx.input.generate_id::<SystemHashing<T>>() == sfx_id);
+            .find(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id) == sfx_id);
 
         if let Some(fsx) = maybe_fsx {
             Ok(fsx.clone())
@@ -2094,10 +2101,11 @@ impl<T: Config> Pallet<T> {
         )
         .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
 
+        let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_xtx_ctx.xtx_id);
         Self::confirm(
             &mut local_xtx_ctx,
             &Self::account_id(),
-            &fsx.input.generate_id::<SystemHashing<T>>(),
+            sfx_id,
             &confirmation,
         )
         .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;

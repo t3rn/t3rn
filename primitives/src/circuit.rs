@@ -63,3 +63,6 @@ pub trait OnLocalTrigger<T: Config, Balance> {
 
     fn on_signal(origin: &OriginFor<T>, signal: ExecutionSignal<T::Hash>) -> DispatchResult;
 }
+
+pub type XExecSignalId<T> = <T as Config>::Hash;
+pub type XExecStepSideEffectId<T> = <T as Config>::Hash;
