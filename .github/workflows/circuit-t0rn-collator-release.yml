@@ -88,7 +88,7 @@ jobs:
           push: true
           tags: ghcr.io/t3rn/t0rn-collator:${{ env.PUSHED_TAG }}
           platforms: linux/amd64
-          file: collator.Dockerfile
+          file: collator.t0rn.Dockerfile
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
