@@ -2,7 +2,9 @@
 
 ## `v1.0.0` 2022-10-28
 #### Shell Runtime of t3rn
-
+* no custom features
+* open collator pool
+* upgradable runtime
 ## `v1.2.0-rc.0` 2022-10-24
 ## What's Changed
 
