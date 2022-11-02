@@ -113,8 +113,8 @@ where
         xtx_id: XExecSignalId<Hash>,
     ) -> <Hasher as sp_core::Hasher>::Out {
         let mut xtx_id_and_nonce = xtx_id.encode();
-        xtx_id_and_nonce.extend(self.nonce.encode());
-        Hasher::hash(Encode::encode(xtx_id_and_nonce.as_slice()).as_ref())
+        xtx_id_and_nonce.extend(&self.nonce.to_be_bytes());
+        Hasher::hash(xtx_id_and_nonce.as_ref())
     }
 }
 
@@ -298,6 +298,7 @@ mod tests {
 
     #[test]
     fn successfully_generates_id_for_side_empty_effect() {
+        let xtx_id = [0u8; 32];
         let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 1,
@@ -309,9 +310,9 @@ mod tests {
         };
 
         assert_eq!(
-            empty_side_effect.generate_id::<Hashing>(),
+            empty_side_effect.generate_id::<Hashing>(&xtx_id, 0),
             H256::from_slice(&hex!(
-                "8ab35b967dcc4b6ff0859ee0615b416663437b6f0bd691c62dd9baa9f771cf7d"
+                "9f0e444c69f77a49bd0be89db92c38fe713e0963165cca12faf5712d7657120f"
             ))
         );
     }

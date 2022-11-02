@@ -204,7 +204,9 @@ pub mod test {
             ],
             &mut local_state,
             transfer_protocol_box,
+            ALICE,
             FIRST_REQUESTER_NONCE,
+            0,
         );
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];
@@ -288,7 +290,9 @@ pub mod test {
             ],
             &mut local_state,
             transfer_protocol_box,
+            ALICE,
             FIRST_REQUESTER_NONCE,
+            0,
         );
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];

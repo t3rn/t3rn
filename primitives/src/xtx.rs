@@ -8,8 +8,8 @@ use sp_std::vec::Vec;
 
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
-
 pub use crate::volatile::{LocalState, Volatile};
+use core::convert::TryInto;
 use scale_info::TypeInfo;
 use sp_std::fmt::Debug;
 
@@ -77,8 +77,13 @@ impl<
         }
     }
 
-    pub fn generate_xtx_id<T: frame_system::Config>(&self) -> XtxId<T> {
-        SystemHashing::<T>::hash(Encode::encode(self).as_ref())
+    pub fn generate_xtx_id<Hasher: sp_core::Hasher>(
+        &self,
+        requester_nonce: u32,
+    ) -> <Hasher as sp_core::Hasher>::Out {
+        let mut requester_and_nonce: Vec<u8> = self.requester.encode();
+        requester_and_nonce.extend_from_slice(&requester_nonce.to_be_bytes());
+        Hasher::hash(&requester_and_nonce)
     }
 
     pub fn is_completed(&self) -> bool {
@@ -103,8 +108,10 @@ impl<
         &mut self,
         confirmed: ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>,
         input: SideEffect<AccountId, BalanceOf>,
+        xtx_id: <Hasher as sp_core::Hasher>::Out,
+        sfx_index: u32,
     ) -> Result<bool, &'static str> {
-        let input_side_effect_id = input.generate_id::<Hasher>();
+        let sfx_id = input.generate_id::<Hasher>(&xtx_id.as_ref().try_into().unwrap(), sfx_index);
 
         // Double check there are some side effects for that Xtx - should have been checked at API level tho already
         if self.full_side_effects.is_empty() {
@@ -124,9 +131,13 @@ impl<
                     if unconfirmed_step_no.is_none() {
                         unconfirmed_step_no = Some(i);
                     }
+
                     // Recalculate the ID for each input side effect and compare with the input one.
                     // Check the current unconfirmed step before attempt to confirm the full side effect.
-                    return if full_side_effect.input.generate_id::<Hasher>() == input_side_effect_id
+                    return if full_side_effect.input.generate_id::<Hasher>(
+                        &xtx_id.as_ref().try_into().unwrap(),
+                        full_side_effect.nonce,
+                    ) == sfx_id
                         && unconfirmed_step_no == Some(i)
                     {
                         // We found the side effect to confirm from inside the unconfirmed step.
@@ -147,6 +158,7 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bridges::test_utils::ALICE;
 
     type BlockNumber = u64;
     type BalanceOf = u64;
@@ -224,6 +236,8 @@ mod tests {
             .complete_side_effect::<Hashing>(
                 completing_side_effect_1.clone(),
                 input_side_effect_1.clone(),
+                xtx.generate_xtx_id::<Hashing>(0),
+                0,
             )
             .unwrap();
 
@@ -315,6 +329,8 @@ mod tests {
             .complete_side_effect::<Hashing>(
                 completing_side_effect_1.clone(),
                 input_side_effect_1.clone(),
+                xtx.generate_xtx_id::<Hashing>(1),
+                0,
             )
             .unwrap();
 
@@ -351,6 +367,8 @@ mod tests {
             .complete_side_effect::<Hashing>(
                 completing_side_effect_2.clone(),
                 input_side_effect_2.clone(),
+                xtx.generate_xtx_id::<Hashing>(2),
+                1,
             )
             .unwrap();
 
@@ -365,7 +383,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 0
+                nonce: 1
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -434,7 +452,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
-                    nonce: 0,
+                    nonce: 1,
                 }],
             ],
         );
@@ -443,6 +461,8 @@ mod tests {
             .complete_side_effect::<Hashing>(
                 completing_side_effect_1.clone(),
                 input_side_effect_1.clone(),
+                xtx.generate_xtx_id::<Hashing>(3),
+                0,
             )
             .unwrap();
 
@@ -469,7 +489,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 0
+                nonce: 1
             }
         );
 
@@ -477,6 +497,8 @@ mod tests {
             .complete_side_effect::<Hashing>(
                 completing_side_effect_2.clone(),
                 input_side_effect_2.clone(),
+                xtx.generate_xtx_id::<Hashing>(4),
+                1,
             )
             .unwrap();
 
@@ -491,7 +513,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 0
+                nonce: 1
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -565,8 +587,12 @@ mod tests {
             ],
         );
 
-        let res_2_err = xtx
-            .complete_side_effect::<Hashing>(completing_side_effect_2, input_side_effect_2.clone());
+        let res_2_err = xtx.complete_side_effect::<Hashing>(
+            completing_side_effect_2,
+            input_side_effect_2.clone(),
+            xtx.generate_xtx_id::<Hashing>(5),
+            1,
+        );
 
         assert_eq!(res_2_err, Err("Attempt to confirm side effect from the next step, but there still is at least one unfinished step"));
 
