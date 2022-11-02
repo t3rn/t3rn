@@ -34,7 +34,7 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub security_lvl: SecurityLvl,
     pub submission_target_height: Bytes,
     pub best_bid: Option<SFXBid<AccountId, BalanceOf>>,
-    pub nonce: u32,
+    pub index: u32,
 }
 
 /// All Executors from the active set can bid for SFX executions in order to claim the rewards (max_fee) set by users,
@@ -112,9 +112,9 @@ where
         &self,
         xtx_id: XExecSignalId<Hash>,
     ) -> <Hasher as sp_core::Hasher>::Out {
-        let mut xtx_id_and_nonce = xtx_id.encode();
-        xtx_id_and_nonce.extend(&self.nonce.to_be_bytes());
-        Hasher::hash(xtx_id_and_nonce.as_ref())
+        let mut xtx_id_and_index = xtx_id.encode();
+        xtx_id_and_index.extend(&self.index.to_be_bytes());
+        Hasher::hash(xtx_id_and_index.as_ref())
     }
 }
 
@@ -147,7 +147,7 @@ where
             confirmed_executioner,
             confirmed_received_at,
             confirmed_cost,
-            nonce: self.nonce,
+            index: self.index,
         })
     }
 }
@@ -230,7 +230,7 @@ mod tests {
                 cost: Some(2 as BalanceOf),
             }),
             best_bid: None,
-            nonce: 0,
+            index: 0,
         };
 
         let hsfx: HardenedSideEffect<AccountId, BlockNumber, BalanceOf> = tfsfx.try_into().unwrap();
@@ -264,7 +264,7 @@ mod tests {
                 ))),
                 confirmed_received_at: Some(1),
                 confirmed_cost: Some(2),
-                nonce: 0,
+                index: 0,
             },
         );
 

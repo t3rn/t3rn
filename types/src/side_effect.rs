@@ -51,7 +51,7 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub confirmed_executioner: Option<AccountId>,
     pub confirmed_received_at: Option<BlockNumber>,
     pub confirmed_cost: Option<BalanceOf>,
-    pub nonce: u32,
+    pub index: u32,
 }
 
 impl<AccountId, BlockNumber, BalanceOf> Default
@@ -73,7 +73,7 @@ where
             confirmed_executioner: None,
             confirmed_received_at: None,
             confirmed_cost: None,
-            nonce: 0,
+            index: 0,
         }
     }
 }

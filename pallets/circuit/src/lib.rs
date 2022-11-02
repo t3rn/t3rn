@@ -1643,7 +1643,7 @@ impl<T: Config> Pallet<T> {
                 security_lvl: determine_security_lvl(gateway_type),
                 submission_target_height,
                 best_bid: None,
-                nonce: index as u32,
+                index: index as u32,
             });
         }
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
