@@ -745,7 +745,8 @@ pub mod pallet {
             max_exec_cost: u128,
             max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
-            let sfx_id = side_effect.generate_id::<SystemHashing<T>>();
+            let sfx_id = side_effect
+                .generate_id::<SystemHashing<T>>(xtx_id.as_ref().try_into().unwrap(), 0u32);
 
             if T::XBIPortal::get_status(sfx_id) != XBIStatus::UnknownId {
                 return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
@@ -1384,7 +1385,13 @@ impl<T: Config> Pallet<T> {
                 side_effects.to_vec(),
                 side_effects
                     .iter()
-                    .map(|se| se.generate_id::<SystemHashing<T>>())
+                    .enumerate()
+                    .map(|(index, se)| {
+                        se.generate_id::<SystemHashing<T>>(
+                            xtx_id.as_ref().try_into().unwrap(),
+                            index as u32,
+                        )
+                    })
                     .collect::<Vec<SideEffectId<T>>>(),
             ));
         }
@@ -1596,6 +1603,8 @@ impl<T: Config> Pallet<T> {
                     sfx.clone(),
                     gateway_abi,
                     &mut local_ctx.local_state,
+                    &local_ctx.xtx_id.as_ref().try_into().unwrap(),
+                    index as u32
                 ).map_err(|e| {
                 log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
                 e
@@ -1607,8 +1616,12 @@ impl<T: Config> Pallet<T> {
                     T::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
                     SystemHashing<T>,
-                >(sfx.clone(), &mut local_ctx.local_state)?
-            {
+                >(
+                    sfx.clone(),
+                    &mut local_ctx.local_state,
+                    &local_ctx.xtx_id.as_ref().try_into().unwrap(),
+                    index as u32,
+                )? {
                 (insurance_and_reward[0], insurance_and_reward[1])
             } else {
                 return Err(
@@ -1678,7 +1691,8 @@ impl<T: Config> Pallet<T> {
         >,
     ) -> Result<(), &'static str> {
         fn confirm_order<T: Config>(
-            sfx_id: &SideEffectId<T>,
+            xtx_id: XExecSignalId<T>,
+            sfx_id: SideEffectId<T>,
             confirmation: &ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
@@ -1707,7 +1721,7 @@ impl<T: Config> Pallet<T> {
             // Find sfx object index in the current step
             match step_side_effects
                 .iter()
-                .position(|sfx| sfx.input.generate_id::<SystemHashing<T>>() == *sfx_id)
+                .position(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
             {
                 Some(index) => {
                     // side effect found in current step
@@ -1725,7 +1739,8 @@ impl<T: Config> Pallet<T> {
 
         // confirm order of current season, by passing the side_effects of it to confirm order.
         let fsx = confirm_order::<T>(
-            sfx_id,
+            local_ctx.xtx_id,
+            *sfx_id,
             confirmation,
             &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
         )?;

@@ -67,13 +67,24 @@ pub const SECOND_REQUESTER_NONCE: u32 = 1;
 pub const THIRD_REQUESTER_NONCE: u32 = 2;
 pub const FOURTH_REQUESTER_NONCE: u32 = 3;
 pub const FIFTH_REQUESTER_NONCE: u32 = 4;
+pub const FIRST_SFX_INDEX: u32 = 0;
+pub const SECOND_SFX_INDEX: u32 = 1;
+pub const THIRD_SFX_INDEX: u32 = 2;
+pub const FOURTH_SFX_INDEX: u32 = 3;
+pub const FIFTH_SFX_INDEX: u32 = 4;
 
-fn set_ids(valid_side_effect: SideEffect<AccountId32, Balance>) -> (sp_core::H256, sp_core::H256) {
-    let xtx_id: sp_core::H256 =
-        hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
+fn set_ids(
+    sfx: SideEffect<AccountId32, Balance>,
+    requester: AccountId32,
+    requester_nonce: u32,
+    sfx_index: u32,
+) -> (sp_core::H256, sp_core::H256) {
+    let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(requester, requester_nonce);
 
-    let sfx_id = valid_side_effect
-        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
+    let sfx_id = sfx
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, sfx_index,
+        );
 
     (xtx_id, sfx_id)
 }
@@ -187,7 +198,9 @@ fn confirm_side_effect(
         .unwrap();
 
     let sfx_id = side_effect
-        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, 0,
+        );
 
     Circuit::confirm_side_effect(origin, sfx_id, confirmed_side_effect)
 }
@@ -213,7 +226,7 @@ pub fn bid_execution(
 
 pub fn confirm_sfx(
     executor: AccountId32,
-    _xtx_id: sp_core::H256,
+    xtx_id: sp_core::H256,
     sfx: SideEffect<AccountId32, Balance>,
     inclusion_data: Vec<u8>,
 ) {
@@ -228,7 +241,9 @@ pub fn confirm_sfx(
 
     Circuit::confirm_side_effect(
         Origin::signed(executor),
-        sfx.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+        sfx.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, 0,
+        ),
         sfx_confirmation,
     );
 }
@@ -452,7 +467,9 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -495,7 +512,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into(),
                             vec![SideEffect {
@@ -522,7 +539,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                 insurance: 1,
                             }],
                             vec![hex!(
-                                "74d8909624ac412b1d6d020dcae68efa421d978782ea93a4a1f101346f874443"
+                                "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
                             )
                             .into(),],
                         )),
@@ -534,7 +551,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                             Runtime,
                         >::XTransactionReceivedForExec(
                             hex!(
-                                "9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into()
                         )),
@@ -543,9 +560,11 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                 ]
             );
             let xtx_id: sp_core::H256 =
-                hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
+                hex!("2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c").into();
             let side_effect_a_id = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                &xtx_id.0,
+                FIRST_SFX_INDEX,
             );
 
             assert_eq!(
@@ -600,7 +619,9 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -644,7 +665,9 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -685,7 +708,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into(),
                             vec![SideEffect {
@@ -713,7 +736,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                 enforce_executor: None
                             }],
                             vec![hex!(
-                                "74d8909624ac412b1d6d020dcae68efa421d978782ea93a4a1f101346f874443"
+                                "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
                             )
                             .into(),],
                         )),
@@ -725,7 +748,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                             Runtime,
                         >::XTransactionReceivedForExec(
                             hex!(
-                                "9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into()
                         )),
@@ -754,7 +777,9 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -782,7 +807,12 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                 sequential,
             ));
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_transfer_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
@@ -868,7 +898,9 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -912,7 +944,12 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 INITIAL_BALANCE - MAX_FEE
             );
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_transfer_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
@@ -1061,7 +1098,9 @@ fn circuit_handles_swap_with_insurance() {
         ],
         &mut local_state,
         swap_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_swap_side_effect.clone()];
@@ -1085,7 +1124,12 @@ fn circuit_handles_swap_with_insurance() {
                 sequential,
             ));
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_swap_side_effect.clone());
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_swap_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
@@ -1162,7 +1206,9 @@ fn circuit_handles_add_liquidity_without_insurance() {
         ],
         &mut local_state,
         add_liquidity_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
@@ -1186,7 +1232,12 @@ fn circuit_handles_add_liquidity_without_insurance() {
                 sequential,
             ));
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_add_liquidity_side_effect.clone());
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_add_liquidity_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
 
             assert_eq!(
                 Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
@@ -1219,7 +1270,9 @@ fn circuit_handles_add_liquidity_with_insurance() {
         ],
         &mut local_state,
         add_liquidity_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
@@ -1243,7 +1296,12 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 sequential,
             ));
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_add_liquidity_side_effect.clone());
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_add_liquidity_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
@@ -1336,6 +1394,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
 
 fn successfully_bond_optimistic(
     side_effect: SideEffect<AccountId32, Balance>,
+    sfx_index: u32,
     xtx_id: XtxId<Runtime>,
     relayer: AccountId32,
     submitter: AccountId32,
@@ -1350,8 +1409,9 @@ fn successfully_bond_optimistic(
     assert_ok!(Circuit::bid_execution(
         Origin::signed(relayer.clone()),
         xtx_id,
-        side_effect
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, sfx_index
+        ),
         2 as Balance,
     ));
 
@@ -1359,8 +1419,9 @@ fn successfully_bond_optimistic(
 
     let created_sfx_bid = Circuit::get_pending_sfx_bids(
         xtx_id,
-        side_effect
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, sfx_index,
+        ),
     )
     .unwrap();
 
@@ -1393,7 +1454,9 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
         ],
         &mut local_state,
         transfer_protocol_box.clone(),
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
@@ -1405,7 +1468,9 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         SECOND_REQUESTER_NONCE,
+        SECOND_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
@@ -1453,7 +1518,9 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
         ],
         &mut local_state,
         transfer_protocol_box.clone(),
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
@@ -1465,7 +1532,9 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         SECOND_REQUESTER_NONCE,
+        SECOND_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
@@ -1511,7 +1580,9 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         ],
         &mut local_state,
         transfer_protocol_box.clone(),
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
@@ -1523,7 +1594,9 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         SECOND_REQUESTER_NONCE,
+        SECOND_SFX_INDEX,
     );
 
     let valid_swap_side_effect = produce_and_validate_side_effect(
@@ -1538,7 +1611,9 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         ],
         &mut local_state,
         swap_protocol_box,
+        ALICE,
         THIRD_REQUESTER_NONCE,
+        THIRD_SFX_INDEX,
     );
 
     let side_effects = vec![
@@ -1588,7 +1663,9 @@ fn circuit_cancels_xtx_after_timeout() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -1615,8 +1692,7 @@ fn circuit_cancels_xtx_after_timeout() {
             let _events = System::events();
             // assert_eq!(events.len(), 8);
 
-            let xtx_id: sp_core::H256 =
-                hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
 
             // The tiemout links that will be checked at on_initialize are there
             assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(401u32)); // 100 offset + current block height 1 = 101
@@ -1669,7 +1745,7 @@ fn circuit_cancels_xtx_after_timeout() {
                             Runtime,
                         >::XTransactionXtxRevertedAfterTimeOut(
                             hex!(
-                                "9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into()
                         )),
@@ -1693,7 +1769,7 @@ fn load_local_state_can_generate_and_read_state() {
         let res = Circuit::load_local_state(&origin, None).unwrap();
 
         let xtx_id_new: sp_core::H256 =
-            hex!("67f20205e3efdea95adbac0d1f1bb8d24755f807a21ce8d514eea9f0da5f341e").into();
+            hex!("2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c").into();
 
         assert_eq!(res.xtx_id, xtx_id_new);
         assert_eq!(res.local_state, LocalState::new());
@@ -3697,7 +3773,9 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     valid_transfer_side_effect.target = [3, 3, 3, 3];
@@ -3721,10 +3799,12 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             System::set_block_number(1);
             brute_seed_block_1([3, 3, 3, 3]);
 
-            let xtx_id: sp_core::H256 =
-                hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+
             let sfx_id_a = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                &xtx_id.0,
+                FIRST_SFX_INDEX,
             );
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -3755,7 +3835,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                     best_bid: None,
                     security_lvl: SecurityLvl::Escrow,
                     submission_target_height: vec![0],
-                    nonce: 0,
+                    nonce: FIRST_SFX_INDEX,
                 }]]
             );
 
@@ -3852,8 +3932,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
             brute_seed_block_1([3, 3, 3, 3]);
             brute_seed_block_1([1, 1, 1, 1]);
 
-            let xtx_id: sp_core::H256 =
-                hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin.clone(),
@@ -3892,6 +3971,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                 xtx_id,
                 valid_evm_sfx
                     .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                        &xtx_id.0, 0,
                     ),
                 1,
             );
