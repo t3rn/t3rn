@@ -132,7 +132,7 @@ impl<
                     // Check the current unconfirmed step before attempt to confirm the full side effect.
                     return if full_side_effect.input.generate_id::<Hasher>(
                         &xtx_id.as_ref().try_into().unwrap(),
-                        full_side_effect.nonce,
+                        full_side_effect.index,
                     ) == sfx_id
                         && unconfirmed_step_no == Some(i)
                     {
@@ -222,7 +222,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 0,
+                index: 0,
             }]],
         );
 
@@ -247,7 +247,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 0
+                index: 0
             }
         );
 
@@ -308,7 +308,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
-                    nonce: 0,
+                    index: 0,
                 },
                 FullSideEffect {
                     input: input_side_effect_2.clone(),
@@ -316,7 +316,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
-                    nonce: 1,
+                    index: 1,
                 },
             ]],
         );
@@ -340,7 +340,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 0
+                index: 0
             }
         );
 
@@ -353,7 +353,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 1
+                index: 1
             }
         );
 
@@ -379,7 +379,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 1
+                index: 1
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -440,7 +440,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
-                    nonce: 0,
+                    index: 0,
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
@@ -448,7 +448,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
-                    nonce: 1,
+                    index: 1,
                 }],
             ],
         );
@@ -472,7 +472,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 0
+                index: 0
             }
         );
 
@@ -485,7 +485,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 1
+                index: 1
             }
         );
 
@@ -509,7 +509,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 1
+                index: 1
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -570,7 +570,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
-                    nonce: 0,
+                    index: 0,
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
@@ -578,7 +578,7 @@ mod tests {
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                     best_bid: None,
-                    nonce: 1,
+                    index: 1,
                 }],
             ],
         );
@@ -601,7 +601,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 0
+                index: 0
             }
         );
 
@@ -613,7 +613,7 @@ mod tests {
                 security_lvl: SecurityLvl::Optimistic,
                 submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 best_bid: None,
-                nonce: 1
+                index: 1
             }
         );
 
