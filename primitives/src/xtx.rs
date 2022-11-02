@@ -1,12 +1,8 @@
 use crate::side_effect::*;
 use codec::{Decode, Encode};
-use sp_runtime::{
-    traits::{Hash, Zero},
-    RuntimeDebug,
-};
+use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::vec::Vec;
 
-type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 pub use crate::volatile::{LocalState, Volatile};
 use core::convert::TryInto;
