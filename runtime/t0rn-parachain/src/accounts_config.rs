@@ -40,7 +40,7 @@ impl pallet_assets::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Extra = ();
-    type ForceOrigin = EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
