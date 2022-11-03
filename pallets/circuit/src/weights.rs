@@ -31,7 +31,7 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
     fn on_local_trigger() -> Weight;
     fn on_extrinsic_trigger() -> Weight;
-    fn bid_execution() -> Weight;
+    fn bid_sfx() -> Weight;
     fn confirm_side_effect() -> Weight;
     fn execute_side_effects_with_xbi() -> Weight;
 }
@@ -51,7 +51,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
         60_000_000_u64
     }
 
-    fn bid_execution() -> Weight {
+    fn bid_sfx() -> Weight {
         60_000_000_u64
     }
 
@@ -74,7 +74,7 @@ impl WeightInfo for () {
         60_000_000_u64
     }
 
-    fn bid_execution() -> Weight {
+    fn bid_sfx() -> Weight {
         60_000_000_u64
     }
 

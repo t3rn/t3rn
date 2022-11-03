@@ -684,15 +684,18 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_execution())]
-        pub fn bid_execution(
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
+        pub fn bid_sfx(
             origin: OriginFor<T>, // Active relayer
-            xtx_id: XExecSignalId<T>,
             sfx_id: SideEffectId<T>,
             bid_amount: EscrowedBalanceOf<T, T::Escrowed>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let executor = Self::authorize(origin, CircuitRole::Executor)?;
+
+            // retrieve xtx_id
+            let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
+                .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             // Setup: retrieve local xtx context
             let mut local_ctx: LocalXtxCtx<T> = Self::setup(
