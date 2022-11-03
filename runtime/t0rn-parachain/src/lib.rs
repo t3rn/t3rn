@@ -120,11 +120,11 @@ impl pallet_identity::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type FieldDeposit = FieldDeposit;
-    type ForceOrigin = EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type MaxSubAccounts = MaxSubAccounts;
-    type RegistrarOrigin = EnsureRoot<AccountId>;
+    type RegistrarOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type Slashed = ();
     type SubAccountDeposit = SubAccountDeposit;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
