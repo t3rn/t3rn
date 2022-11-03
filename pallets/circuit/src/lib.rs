@@ -642,6 +642,24 @@ pub mod pallet {
             unimplemented!();
         }
 
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
+        pub fn cancel_xtx(origin: OriginFor<T>, xtx_id: T::Hash) -> DispatchResultWithPostInfo {
+            let requester = Self::authorize(origin, CircuitRole::Requester)?;
+            // Setup: new xtx context
+            let mut local_xtx_ctx: LocalXtxCtx<T> =
+                Self::setup(CircuitStatus::Requested, &requester, fee, xtx_id)?;
+
+            if requester != local_xtx_ctx.xtx.requester
+                || local_xtx_ctx.xtx.status > CircuitStatus::PendingBidding
+            {
+                return Err(Error::<T>::UnauthorizedCancellation.into())
+            }
+
+            Self::kill(&mut local_xtx_ctx, CircuitStatus::DroppedAtBidding);
+
+            Ok(().into())
+        }
+
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
@@ -865,6 +883,7 @@ pub mod pallet {
         }
     }
 
+    use crate::CircuitStatus::RevertKill;
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
@@ -1020,6 +1039,7 @@ pub mod pallet {
         SideEffectIsAlreadyScheduledToExecuteOverXBI,
         LocalSideEffectExecutionNotApplicable,
         LocalExecutionUnauthorized,
+        UnauthorizedCancellation,
         FailedToConvertSFX2XBI,
         FailedToCheckInOverXBI,
         FailedToCreateXBIMetadataDueToWrongAccountConversion,
