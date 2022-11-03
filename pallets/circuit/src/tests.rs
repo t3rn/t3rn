@@ -205,7 +205,7 @@ fn confirm_side_effect(
     Circuit::confirm_side_effect(origin, sfx_id, confirmed_side_effect)
 }
 
-pub fn bid_execution(
+pub fn bid_sfx(
     origin: OriginFor<Runtime>,
     json: Value,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
@@ -216,7 +216,7 @@ pub fn bid_execution(
     let side_effect_id: SideEffectId<Runtime> =
         Decode::decode(&mut &*hex::decode(json["encoded_id"].as_str().unwrap()).unwrap()).unwrap();
 
-    Circuit::bid_execution(
+    Circuit::bid_sfx(
         origin, // Active relayer
         xtx_id,
         side_effect_id,
@@ -254,7 +254,7 @@ pub fn place_winning_bid_and_advance_3_blocks(
     sfx_id: sp_core::H256,
     bid_amount: Balance,
 ) {
-    assert_ok!(Circuit::bid_execution(
+    assert_ok!(Circuit::bid_sfx(
         Origin::signed(executor.clone()), // Active relayer
         xtx_id,
         sfx_id,
@@ -843,7 +843,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
 
             let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-            assert_ok!(Circuit::bid_execution(
+            assert_ok!(Circuit::bid_sfx(
                 origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
@@ -977,7 +977,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             );
 
             // Bob opens bid with bid = max_reward, the highest possible
-            assert_ok!(Circuit::bid_execution(
+            assert_ok!(Circuit::bid_sfx(
                 Origin::signed(BID_WINNER),
                 xtx_id,
                 side_effect_a_id,
@@ -991,7 +991,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             );
 
             // Charlie bids better offer
-            assert_ok!(Circuit::bid_execution(
+            assert_ok!(Circuit::bid_sfx(
                 Origin::signed(BID_LOOSER),
                 xtx_id,
                 side_effect_a_id,
@@ -1007,7 +1007,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             assert_eq!(Balances::reserved_balance(&BID_WINNER), 0);
             // Bidding with the same amount should not be accepted
             assert_err!(
-                Circuit::bid_execution(
+                Circuit::bid_sfx(
                     Origin::signed(BID_WINNER),
                     xtx_id,
                     side_effect_a_id,
@@ -1017,7 +1017,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             );
 
             // Bob submits the winning bid
-            assert_ok!(Circuit::bid_execution(
+            assert_ok!(Circuit::bid_sfx(
                 Origin::signed(BID_WINNER),
                 xtx_id,
                 side_effect_a_id,
@@ -1406,7 +1406,7 @@ fn successfully_bond_optimistic(
         "Wrong test value - optimistic transfer assumes optimistic arguments"
     );
 
-    assert_ok!(Circuit::bid_execution(
+    assert_ok!(Circuit::bid_sfx(
         Origin::signed(relayer.clone()),
         xtx_id,
         side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
@@ -1944,7 +1944,7 @@ fn insured_unrewarded_single_rococo_transfer() {
                 &(path.to_owned() + "4-bond-insurance-8eb5521e.json"),
                 false,
             );
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
             ));
@@ -2063,7 +2063,7 @@ fn insured_rewarded_single_rococo_transfer() {
                 &(path.to_owned() + "4-bond-insurance-3c964de9.json"),
                 false,
             );
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
             ));
@@ -2195,11 +2195,11 @@ fn insured_rewarded_multi_rococo_transfer() {
                 false,
             );
 
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_1[0].clone()
             ));
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_2[0].clone()
             ));
@@ -2353,12 +2353,12 @@ fn insured_unrewarded_multi_rococo_transfer() {
             );
 
             // Bond can be submitted in arbitrary order
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_2[0].clone()
             ));
 
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_1[0].clone()
             ));
@@ -2758,15 +2758,15 @@ fn multi_mixed_rococo() {
             );
 
             // Bond can be submitted in arbitrary order
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_3[0].clone()
             ));
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_4[0].clone()
             ));
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_2[0].clone()
             ));
@@ -2795,7 +2795,7 @@ fn multi_mixed_rococo() {
             //     pallet_circuit::Error::<Runtime>::ApplyFailed
             // );
 
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_1[0].clone()
             ));
@@ -3177,19 +3177,19 @@ fn insured_multi_rococo_multiple_executors() {
             );
 
             // Bond can be submitted in arbitrary order, by different executors
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_SECOND),
                 bond_insurance_3[0].clone()
             ));
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_SECOND),
                 bond_insurance_4[0].clone()
             ));
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_2[0].clone()
             ));
-            assert_ok!(bid_execution(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_1[0].clone()
             ));
