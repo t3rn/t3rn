@@ -745,8 +745,7 @@ pub mod pallet {
             max_exec_cost: u128,
             max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
-            let sfx_id = side_effect
-                .generate_id::<SystemHashing<T>>(xtx_id.as_ref().try_into().unwrap(), 0u32);
+            let sfx_id = side_effect.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0u32);
 
             if T::XBIPortal::get_status(sfx_id) != XBIStatus::UnknownId {
                 return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
@@ -1387,10 +1386,7 @@ impl<T: Config> Pallet<T> {
                     .iter()
                     .enumerate()
                     .map(|(index, se)| {
-                        se.generate_id::<SystemHashing<T>>(
-                            xtx_id.as_ref().try_into().unwrap(),
-                            index as u32,
-                        )
+                        se.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
                     })
                     .collect::<Vec<SideEffectId<T>>>(),
             ));
@@ -1603,7 +1599,7 @@ impl<T: Config> Pallet<T> {
                     sfx.clone(),
                     gateway_abi,
                     &mut local_ctx.local_state,
-                    &local_ctx.xtx_id.as_ref().try_into().unwrap(),
+                    &local_ctx.xtx_id.as_ref(),
                     index as u32
                 ).map_err(|e| {
                 log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
@@ -1619,7 +1615,7 @@ impl<T: Config> Pallet<T> {
                 >(
                     sfx.clone(),
                     &mut local_ctx.local_state,
-                    &local_ctx.xtx_id.as_ref().try_into().unwrap(),
+                    &local_ctx.xtx_id.as_ref(),
                     index as u32,
                 )? {
                 (insurance_and_reward[0], insurance_and_reward[1])

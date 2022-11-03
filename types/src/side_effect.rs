@@ -86,7 +86,7 @@ where
 {
     pub fn generate_id<Hasher: sp_core::Hasher>(
         &self,
-        xtx_id: &[u8; 32], // would a slice also be fine here for XBI?
+        xtx_id: &[u8], // would a slice also be fine here for XBI?
         sfx_index: u32,
     ) -> <Hasher as sp_core::Hasher>::Out {
         let mut xtx_id_and_index = xtx_id.to_vec();

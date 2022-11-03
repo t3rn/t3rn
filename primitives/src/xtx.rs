@@ -107,7 +107,7 @@ impl<
         xtx_id: <Hasher as sp_core::Hasher>::Out,
         sfx_index: u32,
     ) -> Result<bool, &'static str> {
-        let sfx_id = input.generate_id::<Hasher>(&xtx_id.as_ref().try_into().unwrap(), sfx_index);
+        let sfx_id = input.generate_id::<Hasher>(&xtx_id.as_ref(), sfx_index);
 
         // Double check there are some side effects for that Xtx - should have been checked at API level tho already
         if self.full_side_effects.is_empty() {
@@ -130,10 +130,10 @@ impl<
 
                     // Recalculate the ID for each input side effect and compare with the input one.
                     // Check the current unconfirmed step before attempt to confirm the full side effect.
-                    return if full_side_effect.input.generate_id::<Hasher>(
-                        &xtx_id.as_ref().try_into().unwrap(),
-                        full_side_effect.index,
-                    ) == sfx_id
+                    return if full_side_effect
+                        .input
+                        .generate_id::<Hasher>(&xtx_id.as_ref(), full_side_effect.index)
+                        == sfx_id
                         && unconfirmed_step_no == Some(i)
                     {
                         // We found the side effect to confirm from inside the unconfirmed step.
