@@ -218,7 +218,6 @@ pub fn bid_sfx(
 
     Circuit::bid_sfx(
         origin, // Active relayer
-        xtx_id,
         side_effect_id,
         2 as Balance,
     )
@@ -256,7 +255,6 @@ pub fn place_winning_bid_and_advance_3_blocks(
 ) {
     assert_ok!(Circuit::bid_sfx(
         Origin::signed(executor.clone()), // Active relayer
-        xtx_id,
         sfx_id,
         bid_amount,
     ));
@@ -845,7 +843,6 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
 
             assert_ok!(Circuit::bid_sfx(
                 origin_relayer_bob,
-                xtx_id,
                 side_effect_a_id,
                 BID_AMOUNT,
             ));
@@ -979,7 +976,6 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Bob opens bid with bid = max_reward, the highest possible
             assert_ok!(Circuit::bid_sfx(
                 Origin::signed(BID_WINNER),
-                xtx_id,
                 side_effect_a_id,
                 BID_AMOUNT_C,
             ));
@@ -993,7 +989,6 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Charlie bids better offer
             assert_ok!(Circuit::bid_sfx(
                 Origin::signed(BID_LOOSER),
-                xtx_id,
                 side_effect_a_id,
                 BID_AMOUNT_B,
             ));
@@ -1007,19 +1002,13 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             assert_eq!(Balances::reserved_balance(&BID_WINNER), 0);
             // Bidding with the same amount should not be accepted
             assert_err!(
-                Circuit::bid_sfx(
-                    Origin::signed(BID_WINNER),
-                    xtx_id,
-                    side_effect_a_id,
-                    BID_AMOUNT_B,
-                ),
+                Circuit::bid_sfx(Origin::signed(BID_WINNER), side_effect_a_id, BID_AMOUNT_B,),
                 circuit_error::<Runtime>::BiddingRejectedBetterBidFound,
             );
 
             // Bob submits the winning bid
             assert_ok!(Circuit::bid_sfx(
                 Origin::signed(BID_WINNER),
-                xtx_id,
                 side_effect_a_id,
                 BID_AMOUNT_A,
             ));
@@ -1408,7 +1397,6 @@ fn successfully_bond_optimistic(
 
     assert_ok!(Circuit::bid_sfx(
         Origin::signed(relayer.clone()),
-        xtx_id,
         side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
             &xtx_id.0, sfx_index
         ),
