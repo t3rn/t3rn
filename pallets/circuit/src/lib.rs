@@ -1653,8 +1653,6 @@ impl<T: Config> Pallet<T> {
         > = vec![];
 
         // Split for 2 following steps of Escrow and Optimistic and
-        //  assign indices to each SFX of current Xtx to avoid collisions the same SFX within the same Xtx.
-        // ToDo: Replace nonce as field with nonce as Xtx index argument.
         for sorted_fsx in full_side_effects.iter() {
             if sorted_fsx.security_lvl == SecurityLvl::Escrow {
                 escrow_sfx_step.push(sorted_fsx.clone());
