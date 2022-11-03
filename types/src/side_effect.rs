@@ -28,15 +28,16 @@ pub const ADD_LIQUIDITY_SIDE_EFFECT_ID: &[u8; 4] = b"aliq";
 pub const SWAP_SIDE_EFFECT_ID: &[u8; 4] = b"swap";
 pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 
-#[derive(Clone, Eq, PartialEq, Encode, Default, Decode, Debug, TypeInfo)]
-pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+pub struct SideEffect<AccountId, BalanceOf> {
     pub target: TargetId,
-    pub prize: BalanceOf,
-    pub ordered_at: BlockNumber,
+    pub max_reward: BalanceOf,
+    pub insurance: BalanceOf,
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
-    pub enforce_executioner: Option<AccountId>,
+    pub nonce: u32,
+    pub enforce_executor: Option<AccountId>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
@@ -67,7 +68,7 @@ where
             encoded_action: [0, 0, 0, 0],
             encoded_args: vec![],
             encoded_args_abi: vec![],
-            security_lvl: SecurityLvl::Dirty,
+            security_lvl: SecurityLvl::Optimistic,
             confirmation_outcome: None,
             confirmed_executioner: None,
             confirmed_received_at: None,
@@ -77,10 +78,9 @@ where
 }
 
 #[cfg(feature = "runtime")]
-impl<AccountId, BlockNumber, BalanceOf> SideEffect<AccountId, BlockNumber, BalanceOf>
+impl<AccountId, BalanceOf> SideEffect<AccountId, BalanceOf>
 where
     AccountId: Encode,
-    BlockNumber: Ord + Copy + sp_runtime::traits::Zero + Encode,
     BalanceOf: Copy + sp_runtime::traits::Zero + Encode + Decode,
 {
     pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
@@ -94,11 +94,9 @@ where
 
 #[cfg(feature = "runtime")]
 /// Decode the side effect from encoded Chain.
-impl<AccountId, BlockNumber, BalanceOf> TryFrom<Vec<u8>>
-    for SideEffect<AccountId, BlockNumber, BalanceOf>
+impl<AccountId, BalanceOf> TryFrom<Vec<u8>> for SideEffect<AccountId, BalanceOf>
 where
     AccountId: Encode + MaxEncodedLen,
-    BlockNumber: Ord + Copy + Zero + Encode,
     BalanceOf: Copy + Zero + Encode + Decode + MaxEncodedLen,
 {
     type Error = &'static str;
@@ -118,14 +116,15 @@ where
         let action_bytes: [u8; 4] = action.into();
         let action_bytes = action_bytes.encode();
 
-        Ok(SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        Ok(SideEffect::<AccountId, BalanceOf> {
             target,
-            prize: Zero::zero(),
-            ordered_at: Zero::zero(),
+            max_reward: Zero::zero(),
             encoded_action: action_bytes,
             encoded_args: args,
             signature: vec![],
-            enforce_executioner: None,
+            insurance: Zero::zero(),
+            nonce: 0,
+            enforce_executor: None,
         })
     }
 }
@@ -361,14 +360,13 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
 pub enum SecurityLvl {
-    Dirty,
     Optimistic,
-    Escrowed,
+    Escrow,
 }
 
 impl Default for SecurityLvl {
     fn default() -> Self {
-        SecurityLvl::Dirty
+        SecurityLvl::Optimistic
     }
 }
 
@@ -385,10 +383,6 @@ mod tests {
 
     use scale_info::prelude::vec::Vec;
     use sp_core::crypto::AccountId32;
-    use t3rn_sdk_primitives::{
-        storage::BoundedVec,
-        xc::{Call, Chain, Operation, VM},
-    };
 
     type BlockNumber = u64;
     type BalanceOf = u128;
@@ -400,26 +394,28 @@ mod tests {
 
     #[test]
     fn successfully_creates_empty_side_effect() {
-        let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
-            ordered_at: 0,
+            max_reward: 0,
             encoded_action: vec![],
             encoded_args: vec![],
             signature: vec![],
-            enforce_executioner: None,
+            insurance: 0,
+            nonce: 0,
+            enforce_executor: None,
         };
 
         assert_eq!(
             empty_side_effect,
             SideEffect {
                 target: [0, 0, 0, 0],
-                prize: 0,
-                ordered_at: 0,
+                max_reward: 0,
                 encoded_action: vec![],
                 encoded_args: vec![],
                 signature: vec![],
-                enforce_executioner: None,
+                insurance: 0,
+                nonce: 0,
+                enforce_executor: None
             }
         );
     }
@@ -432,10 +428,9 @@ mod tests {
         let optional_insurance = 2u128;
         let optional_reward = 3u128;
 
-        let tsfx_input = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let tsfx_input = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
-            prize: 0,
-            ordered_at: 0,
+            max_reward: 0,
             encoded_action: vec![],
             encoded_args: vec![
                 from.encode(),
@@ -444,15 +439,17 @@ mod tests {
                 [optional_insurance.encode(), optional_reward.encode()].concat(),
             ],
             signature: vec![],
-            enforce_executioner: None,
+            insurance: 0,
+            nonce: 0,
+            enforce_executor: None,
         };
 
         assert_eq!(
             tsfx_input,
             SideEffect {
                 target: [0, 0, 0, 0],
-                prize: 0,
-                ordered_at: 0,
+                max_reward: 0,
+                insurance: 0,
                 encoded_action: vec![],
                 encoded_args: vec![
                     vec![
@@ -470,271 +467,264 @@ mod tests {
                     ]
                 ],
                 signature: vec![],
-                enforce_executioner: None,
+                nonce: 0,
+                enforce_executor: None
             }
         );
     }
 
-    #[test]
-    fn successfully_defaults_side_effect_to_an_empty_one() {
-        let empty_side_effect = SideEffect::<u64, BlockNumber, BalanceOf> {
-            target: [0, 0, 0, 0],
-            prize: 0,
-            ordered_at: 0,
-            encoded_action: vec![],
-            encoded_args: vec![],
-            signature: vec![],
-            enforce_executioner: None,
-        };
-
-        assert_eq!(empty_side_effect, SideEffect::default(),);
-    }
-
-    #[test]
-    fn encoded_evm_call_to_side_effect() {
-        let se =
-            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::Call(box Call {
-                    caller: ALICE,
-                    call: VM::<AccountId, BalanceOf>::Evm {
-                        dest: BOB,
-                        value: 50,
-                    },
-                    data: t3rn_sdk_primitives::storage::BoundedVec::<u8, 1024>::from_iter(vec![
-                        0_u8, 1_u8, 2_u8,
-                    ]),
-                }),
-            );
-        let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
-
-        assert_eq!(s.target, *b"pdot");
-        assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
-        assert_eq!(
-            s.encoded_args,
-            vec![
-                [1_u8; 32].to_vec(),
-                [2_u8; 32].to_vec(),
-                50_u128.encode(),
-                vec![0, 1, 2]
-            ]
-        );
-    }
-
-    #[test]
-    fn encoded_wasm_call_to_side_effect() {
-        let se =
-            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::Call(box Call {
-                    caller: ALICE,
-                    call: VM::<AccountId, BalanceOf>::Wasm {
-                        dest: BOB,
-                        value: 50,
-                        gas_limit: 60,
-                        storage_limit: Some(70),
-                    },
-                    data: BoundedVec::<u8, 1024>::from_iter(vec![0_u8, 1_u8, 2_u8]),
-                }),
-            );
-        let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
-
-        assert_eq!(s.target, *b"pdot");
-        assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
-        assert_eq!(
-            s.encoded_args,
-            vec![
-                [1_u8; 32].to_vec(),
-                [2_u8; 32].to_vec(),
-                50_u128.encode(),
-                60_u128.encode(),
-                70_u128.encode(),
-                vec![0, 1, 2]
-            ]
-        );
-    }
-
-    #[test]
-    fn encoded_transfer_to_side_effect() {
-        let se =
-            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::Transfer {
-                    caller: ALICE,
-                    to: BOB,
-                    amount: 50,
-                    insurance: None,
-                },
-            );
-        let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
-
-        assert_eq!(s.target, *b"pdot");
-        assert_eq!(s.encoded_action, *TRANSFER_SIDE_EFFECT_ID);
-        assert_eq!(
-            s.encoded_args,
-            vec![
-                [1_u8; 32].to_vec(),
-                [2_u8; 32].to_vec(),
-                50_u128.encode(),
-                vec![]
-            ]
-        );
-    }
-
-    #[test]
-    fn encoded_multi_transfer_to_side_effect() {
-        let asset = [5_u8; 32];
-        let se =
-            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::TransferMulti {
-                    asset,
-                    caller: ALICE,
-                    to: BOB,
-                    amount: 50,
-                    insurance: None,
-                },
-            );
-        let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
-
-        assert_eq!(s.target, *b"pdot");
-        assert_eq!(s.encoded_action, *MULTI_TRANSFER_SIDE_EFFECT_ID);
-        assert_eq!(
-            s.encoded_args,
-            vec![
-                asset.to_vec(),
-                [1_u8; 32].to_vec(),
-                [2_u8; 32].to_vec(),
-                50_u128.encode(),
-                vec![]
-            ]
-        );
-    }
-
-    #[test]
-    fn encoded_aliq_to_side_effect() {
-        let amount_left = 1_u128;
-        let amount_right = 2_u128;
-        let amount_liquidity_token = 3_u128;
-        let liquidity_token = [4_u8; 32];
-        let asset_right = [3_u8; 32];
-        let asset_left = [2_u8; 32];
-        let se =
-            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::AddLiquidity {
-                    caller: ALICE,
-                    to: BOB,
-                    asset_left,
-                    asset_right,
-                    liquidity_token,
-                    amount_left,
-                    amount_right,
-                    amount_liquidity_token,
-                    insurance: None,
-                },
-            );
-        let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
-
-        assert_eq!(s.target, *b"pdot");
-        assert_eq!(s.encoded_action, *ADD_LIQUIDITY_SIDE_EFFECT_ID);
-        assert_eq!(
-            s.encoded_args,
-            vec![
-                [1_u8; 32].to_vec(),
-                [2_u8; 32].to_vec(),
-                asset_left.to_vec(),
-                asset_right.to_vec(),
-                liquidity_token.to_vec(),
-                amount_left.encode(),
-                amount_right.encode(),
-                amount_liquidity_token.encode(),
-                vec![]
-            ]
-        );
-    }
-
-    #[test]
-    fn encoded_swap_to_side_effect() {
-        let amount_from = 1_u128;
-        let amount_to = 2_u128;
-        let asset_from = [3_u8; 32];
-        let asset_to = [2_u8; 32];
-        let se =
-            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::Swap {
-                    caller: ALICE,
-                    to: BOB,
-                    amount_from,
-                    amount_to,
-                    asset_from,
-                    asset_to,
-                    insurance: None,
-                },
-            );
-        let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
-
-        assert_eq!(s.target, *b"pdot");
-        assert_eq!(s.encoded_action, *SWAP_SIDE_EFFECT_ID);
-        assert_eq!(
-            s.encoded_args,
-            vec![
-                [1_u8; 32].to_vec(),
-                [2_u8; 32].to_vec(),
-                amount_from.encode(),
-                amount_to.encode(),
-                asset_from.to_vec(),
-                asset_to.to_vec(),
-                vec![]
-            ]
-        );
-    }
-    #[test]
-    fn encoded_data_to_side_effect() {
-        let index = [3_u8; 32];
-        let se =
-            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::Data { index },
-            );
-        let bytes = se.encode();
-        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
-
-        assert_eq!(s.target, *b"pdot");
-        assert_eq!(s.encoded_action, *DATA_SIDE_EFFECT_ID);
-        assert_eq!(s.encoded_args, vec![index.to_vec(),]);
-    }
-
-    #[test]
-    fn from_encoded_chain_to_side_effect() {
-        let v: Vec<u8> = vec![
-            1, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-            5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-            6, 6, 6, 6, 6, 6, 6, 6, 100, 0, 0, 0,
-        ];
-        let s = SideEffect::<[u8; 32], u32, u32>::try_from(v).unwrap();
-
-        assert_eq!(
-            s,
-            SideEffect {
-                target: [112, 100, 111, 116],
-                prize: 0,
-                ordered_at: 0,
-                encoded_action: vec![116, 114, 97, 110],
-                encoded_args: vec![
-                    vec![
-                        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-                        5, 5, 5, 5, 5, 5, 5
-                    ],
-                    vec![
-                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                        6, 6, 6, 6, 6, 6, 6
-                    ],
-                    vec![100, 0, 0, 0],
-                ],
-                signature: vec![],
-                enforce_executioner: None,
-            }
-        );
-    }
+    // fixme: Revisit t3rn_sdk_primitives and update TryFrom SideEffect new interface changed
+    //  after Executors Bidding (t3rn/t3rn#477)
+    // use t3rn_sdk_primitives::{
+    //     storage::BoundedVec,
+    //     xc::{Call, Chain, Operation, VM},
+    // };
+    // #[test]
+    // fn encoded_evm_call_to_side_effect() {
+    //     let se =
+    //         Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+    //             Operation::<AccountId, BalanceOf, Hash>::Call(box Call {
+    //                 caller: ALICE,
+    //                 call: VM::<AccountId, BalanceOf>::Evm {
+    //                     dest: BOB,
+    //                     value: 50,
+    //                 },
+    //                 data: t3rn_sdk_primitives::storage::BoundedVec::<u8, 1024>::from_iter(vec![
+    //                     0_u8, 1_u8, 2_u8,
+    //                 ]),
+    //             }),
+    //         );
+    //     let bytes = se.encode();
+    //     let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
+    //
+    //     assert_eq!(s.target, *b"pdot");
+    //     assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
+    //     assert_eq!(
+    //         s.encoded_args,
+    //         vec![
+    //             [1_u8; 32].to_vec(),
+    //             [2_u8; 32].to_vec(),
+    //             50_u128.encode(),
+    //             vec![0, 1, 2]
+    //         ]
+    //     );
+    // }
+    //
+    // #[test]
+    // fn encoded_wasm_call_to_side_effect() {
+    //     let se =
+    //         Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+    //             Operation::<AccountId, BalanceOf, Hash>::Call(box Call {
+    //                 caller: ALICE,
+    //                 call: VM::<AccountId, BalanceOf>::Wasm {
+    //                     dest: BOB,
+    //                     value: 50,
+    //                     gas_limit: 60,
+    //                     storage_limit: Some(70),
+    //                 },
+    //                 data: BoundedVec::<u8, 1024>::from_iter(vec![0_u8, 1_u8, 2_u8]),
+    //             }),
+    //         );
+    //     let bytes = se.encode();
+    //     let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
+    //
+    //     assert_eq!(s.target, *b"pdot");
+    //     assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
+    //     assert_eq!(
+    //         s.encoded_args,
+    //         vec![
+    //             [1_u8; 32].to_vec(),
+    //             [2_u8; 32].to_vec(),
+    //             50_u128.encode(),
+    //             60_u128.encode(),
+    //             70_u128.encode(),
+    //             vec![0, 1, 2]
+    //         ]
+    //     );
+    // }
+    //
+    // #[test]
+    // fn encoded_transfer_to_side_effect() {
+    //     let se =
+    //         Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+    //             Operation::<AccountId, BalanceOf, Hash>::Transfer {
+    //                 caller: ALICE,
+    //                 to: BOB,
+    //                 amount: 50,
+    //                 insurance: None,
+    //             },
+    //         );
+    //     let bytes = se.encode();
+    //     let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
+    //
+    //     assert_eq!(s.target, *b"pdot");
+    //     assert_eq!(s.encoded_action, *TRANSFER_SIDE_EFFECT_ID);
+    //     assert_eq!(
+    //         s.encoded_args,
+    //         vec![
+    //             [1_u8; 32].to_vec(),
+    //             [2_u8; 32].to_vec(),
+    //             50_u128.encode(),
+    //             vec![]
+    //         ]
+    //     );
+    // }
+    //
+    // #[test]
+    // fn encoded_multi_transfer_to_side_effect() {
+    //     let asset = [5_u8; 32];
+    //     let se =
+    //         Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+    //             Operation::<AccountId, BalanceOf, Hash>::TransferMulti {
+    //                 asset,
+    //                 caller: ALICE,
+    //                 to: BOB,
+    //                 amount: 50,
+    //                 insurance: None,
+    //             },
+    //         );
+    //     let bytes = se.encode();
+    //     let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
+    //
+    //     assert_eq!(s.target, *b"pdot");
+    //     assert_eq!(s.encoded_action, *MULTI_TRANSFER_SIDE_EFFECT_ID);
+    //     assert_eq!(
+    //         s.encoded_args,
+    //         vec![
+    //             asset.to_vec(),
+    //             [1_u8; 32].to_vec(),
+    //             [2_u8; 32].to_vec(),
+    //             50_u128.encode(),
+    //             vec![]
+    //         ]
+    //     );
+    // }
+    //
+    // #[test]
+    // fn encoded_aliq_to_side_effect() {
+    //     let amount_left = 1_u128;
+    //     let amount_right = 2_u128;
+    //     let amount_liquidity_token = 3_u128;
+    //     let liquidity_token = [4_u8; 32];
+    //     let asset_right = [3_u8; 32];
+    //     let asset_left = [2_u8; 32];
+    //     let se =
+    //         Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+    //             Operation::<AccountId, BalanceOf, Hash>::AddLiquidity {
+    //                 caller: ALICE,
+    //                 to: BOB,
+    //                 asset_left,
+    //                 asset_right,
+    //                 liquidity_token,
+    //                 amount_left,
+    //                 amount_right,
+    //                 amount_liquidity_token,
+    //                 insurance: None,
+    //             },
+    //         );
+    //     let bytes = se.encode();
+    //     let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
+    //
+    //     assert_eq!(s.target, *b"pdot");
+    //     assert_eq!(s.encoded_action, *ADD_LIQUIDITY_SIDE_EFFECT_ID);
+    //     assert_eq!(
+    //         s.encoded_args,
+    //         vec![
+    //             [1_u8; 32].to_vec(),
+    //             [2_u8; 32].to_vec(),
+    //             asset_left.to_vec(),
+    //             asset_right.to_vec(),
+    //             liquidity_token.to_vec(),
+    //             amount_left.encode(),
+    //             amount_right.encode(),
+    //             amount_liquidity_token.encode(),
+    //             vec![]
+    //         ]
+    //     );
+    // }
+    //
+    // #[test]
+    // fn encoded_swap_to_side_effect() {
+    //     let amount_from = 1_u128;
+    //     let amount_to = 2_u128;
+    //     let asset_from = [3_u8; 32];
+    //     let asset_to = [2_u8; 32];
+    //     let se =
+    //         Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+    //             Operation::<AccountId, BalanceOf, Hash>::Swap {
+    //                 caller: ALICE,
+    //                 to: BOB,
+    //                 amount_from,
+    //                 amount_to,
+    //                 asset_from,
+    //                 asset_to,
+    //                 insurance: None,
+    //             },
+    //         );
+    //     let bytes = se.encode();
+    //     let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
+    //
+    //     assert_eq!(s.target, *b"pdot");
+    //     assert_eq!(s.encoded_action, *SWAP_SIDE_EFFECT_ID);
+    //     assert_eq!(
+    //         s.encoded_args,
+    //         vec![
+    //             [1_u8; 32].to_vec(),
+    //             [2_u8; 32].to_vec(),
+    //             amount_from.encode(),
+    //             amount_to.encode(),
+    //             asset_from.to_vec(),
+    //             asset_to.to_vec(),
+    //             vec![]
+    //         ]
+    //     );
+    // }
+    // #[test]
+    // fn encoded_data_to_side_effect() {
+    //     let index = [3_u8; 32];
+    //     let se =
+    //         Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+    //             Operation::<AccountId, BalanceOf, Hash>::Data { index },
+    //         );
+    //     let bytes = se.encode();
+    //     let s = SideEffect::<AccountId, BalanceOf>::try_from(bytes).unwrap();
+    //
+    //     assert_eq!(s.target, *b"pdot");
+    //     assert_eq!(s.encoded_action, *DATA_SIDE_EFFECT_ID);
+    //     assert_eq!(s.encoded_args, vec![index.to_vec(),]);
+    // }
+    //
+    // #[test]
+    // fn from_encoded_chain_to_side_effect() {
+    //     let v: Vec<u8> = vec![
+    //         1, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    //         5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    //         6, 6, 6, 6, 6, 6, 6, 6, 100, 0, 0, 0,
+    //     ];
+    //     let s = SideEffect::<[u8; 32], u32, u32>::try_from(v).unwrap();
+    //
+    //     assert_eq!(
+    //         s,
+    //         SideEffect {
+    //             target: [112, 100, 111, 116],
+    //             max_reward: 0,
+    //             encoded_action: vec![116, 114, 97, 110],
+    //             encoded_args: vec![
+    //                 vec![
+    //                     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    //                     5, 5, 5, 5, 5, 5, 5
+    //                 ],
+    //                 vec![
+    //                     6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    //                     6, 6, 6, 6, 6, 6, 6
+    //                 ],
+    //                 vec![100, 0, 0, 0],
+    //             ],
+    //             signature: vec![],
+    //             insurance: 0,
+    //             nonce: 0,
+    //             enforce_executor: None
+    //         }
+    //     );
+    // }
 }

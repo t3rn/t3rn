@@ -8,7 +8,7 @@ repository = 'https://github.com/t3rn/t3rn'
 version    = "1.0.0"
 
 [[bin]]
-name = "circuit-collator"
+name = "t3rn-collator"
 path = "src/main.rs"
 
 [dependencies]
