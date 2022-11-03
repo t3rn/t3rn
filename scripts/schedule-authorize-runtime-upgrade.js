@@ -43,6 +43,7 @@ async function main() {
     }
   )
 
+  //  await circuit.tx.balances.transfer(freshAccount.address, 1n * TRN)
   await circuit.tx.sudo.sudo(scheduleCall).signAndSend(sudo)
 
   circuit.disconnect()
