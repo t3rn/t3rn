@@ -13115,7 +13115,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.0.0-beta.0"
+version = "1.2.0-rc.0"
 dependencies = [
  "async-std",
  "clap",
@@ -13192,7 +13192,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.0.0-alpha.0"
+version = "1.2.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
