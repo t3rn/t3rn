@@ -646,16 +646,28 @@ pub mod pallet {
         pub fn cancel_xtx(origin: OriginFor<T>, xtx_id: T::Hash) -> DispatchResultWithPostInfo {
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Setup: new xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::Requested, &requester, fee, xtx_id)?;
+            let mut local_ctx: LocalXtxCtx<T> = Self::setup(
+                CircuitStatus::PendingBidding,
+                &requester,
+                Zero::zero(),
+                Some(xtx_id),
+            )?;
 
-            if requester != local_xtx_ctx.xtx.requester
-                || local_xtx_ctx.xtx.status > CircuitStatus::PendingBidding
+            if requester != local_ctx.xtx.requester
+                || local_ctx.xtx.status > CircuitStatus::PendingBidding
             {
                 return Err(Error::<T>::UnauthorizedCancellation.into())
             }
 
-            Self::kill(&mut local_xtx_ctx, CircuitStatus::DroppedAtBidding);
+            // Drop cancellation in case some bids have already been posted
+            if Self::get_current_step_fsx(&local_ctx)
+                .iter()
+                .any(|fsx| fsx.best_bid.is_some())
+            {
+                return Err(Error::<T>::UnauthorizedCancellation.into())
+            }
+
+            Self::kill(&mut local_ctx, CircuitStatus::DroppedAtBidding);
 
             Ok(().into())
         }
