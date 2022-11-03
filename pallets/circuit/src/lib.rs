@@ -1249,10 +1249,6 @@ impl<T: Config> Pallet<T> {
                     .flat_map(|(cnt, fsx_step)| {
                         fsx_step
                             .iter()
-                            .map(|full_side_effect| full_side_effect.clone())
-                            .filter(|full_side_effect| {
-                                is_local::<T>(&full_side_effect.input.target)
-                            })
                             .map(|full_side_effect| {
                                 full_side_effect
                                     .generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
@@ -1382,6 +1378,7 @@ impl<T: Config> Pallet<T> {
             },
             CircuitStatus::FinishedAllSteps => {
                 // todo: cleanup all of the local storage
+                // TODO cleanup sfx2xtx map
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
