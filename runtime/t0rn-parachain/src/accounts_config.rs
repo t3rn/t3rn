@@ -1,6 +1,6 @@
 use super::*;
 use frame_support::parameter_types;
-use frame_system::EnsureRoot;
+use frame_system::EnsureSignedBy;
 use sp_core::crypto::AccountId32;
 
 parameter_types! {
