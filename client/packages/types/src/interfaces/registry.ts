@@ -94,15 +94,6 @@ import type {
   PalletGrandpaFinalityVerifierParachain,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
-  PalletIdentityBitFlags,
-  PalletIdentityCall,
-  PalletIdentityError,
-  PalletIdentityEvent,
-  PalletIdentityIdentityField,
-  PalletIdentityIdentityInfo,
-  PalletIdentityJudgement,
-  PalletIdentityRegistrarInfo,
-  PalletIdentityRegistration,
   PalletPortalCall,
   PalletPortalError,
   PalletPortalEvent,
@@ -307,15 +298,6 @@ declare module "@polkadot/types/types/registry" {
     PalletGrandpaFinalityVerifierParachain: PalletGrandpaFinalityVerifierParachain;
     PalletGrandpaStoredPendingChange: PalletGrandpaStoredPendingChange;
     PalletGrandpaStoredState: PalletGrandpaStoredState;
-    PalletIdentityBitFlags: PalletIdentityBitFlags;
-    PalletIdentityCall: PalletIdentityCall;
-    PalletIdentityError: PalletIdentityError;
-    PalletIdentityEvent: PalletIdentityEvent;
-    PalletIdentityIdentityField: PalletIdentityIdentityField;
-    PalletIdentityIdentityInfo: PalletIdentityIdentityInfo;
-    PalletIdentityJudgement: PalletIdentityJudgement;
-    PalletIdentityRegistrarInfo: PalletIdentityRegistrarInfo;
-    PalletIdentityRegistration: PalletIdentityRegistration;
     PalletPortalCall: PalletPortalCall;
     PalletPortalError: PalletPortalError;
     PalletPortalEvent: PalletPortalEvent;

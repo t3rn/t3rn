@@ -135,6 +135,7 @@ declare module "@polkadot/api-base/types/errors" {
       SideEffectIsAlreadyScheduledToExecuteOverXBI: AugmentedError<ApiType>;
       SideEffectsValidationFailed: AugmentedError<ApiType>;
       SignalQueueFull: AugmentedError<ApiType>;
+      UnauthorizedCancellation: AugmentedError<ApiType>;
       UnsupportedRole: AugmentedError<ApiType>;
       UpdateXtxTriggeredWithUnexpectedStatus: AugmentedError<ApiType>;
       XBIExitFailedOnSFXConfirmation: AugmentedError<ApiType>;
@@ -302,42 +303,6 @@ declare module "@polkadot/api-base/types/errors" {
       ResumeFailed: AugmentedError<ApiType>;
       /** Cannot signal forced change so soon after last. */
       TooSoon: AugmentedError<ApiType>;
-      /** Generic error */
-      [key: string]: AugmentedError<ApiType>;
-    };
-    identity: {
-      /** Account ID is already named. */
-      AlreadyClaimed: AugmentedError<ApiType>;
-      /** Empty index. */
-      EmptyIndex: AugmentedError<ApiType>;
-      /** Fee is changed. */
-      FeeChanged: AugmentedError<ApiType>;
-      /** The index is invalid. */
-      InvalidIndex: AugmentedError<ApiType>;
-      /** Invalid judgement. */
-      InvalidJudgement: AugmentedError<ApiType>;
-      /** The target is invalid. */
-      InvalidTarget: AugmentedError<ApiType>;
-      /** Judgement given. */
-      JudgementGiven: AugmentedError<ApiType>;
-      /** No identity found. */
-      NoIdentity: AugmentedError<ApiType>;
-      /** Account isn't found. */
-      NotFound: AugmentedError<ApiType>;
-      /** Account isn't named. */
-      NotNamed: AugmentedError<ApiType>;
-      /** Sub-account isn't owned by sender. */
-      NotOwned: AugmentedError<ApiType>;
-      /** Sender is not a sub-account. */
-      NotSub: AugmentedError<ApiType>;
-      /** Sticky judgement. */
-      StickyJudgement: AugmentedError<ApiType>;
-      /** Too many additional fields. */
-      TooManyFields: AugmentedError<ApiType>;
-      /** Maximum amount of registrars reached. Cannot add any more. */
-      TooManyRegistrars: AugmentedError<ApiType>;
-      /** Too many subs-accounts. */
-      TooManySubAccounts: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
