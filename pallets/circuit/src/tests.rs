@@ -209,7 +209,7 @@ pub fn bid_sfx(
     origin: OriginFor<Runtime>,
     json: Value,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let xtx_id: sp_core::H256 =
+    let _xtx_id: sp_core::H256 =
         Decode::decode(&mut &*hex::decode(json["encoded_xtx_id"].as_str().unwrap()).unwrap())
             .unwrap();
 
@@ -238,7 +238,7 @@ pub fn confirm_sfx(
         inclusion_data,
     };
 
-    Circuit::confirm_side_effect(
+    let _ = Circuit::confirm_side_effect(
         Origin::signed(executor),
         sfx.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
             &xtx_id.0, 0,
@@ -3976,5 +3976,116 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                 Balances::free_balance(&ALICE),
                 INITIAL_BALANCE - MAX_EXECUTION_COST - MAX_NOTIFICATION_COST - 3
             );
+        });
+}
+#[test]
+fn no_duplicate_xtx_and_sfx_ids() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+
+    let mut local_state = LocalState::new();
+
+    let valid_transfer_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(128), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::C), // insurance = 3, max_reward/reward = 3
+        ],
+        &mut local_state,
+        transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
+    );
+
+    let expected_xtx_id_1 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+    let expected_xtx_id_2 = generate_xtx_id::<Hashing>(ALICE, SECOND_REQUESTER_NONCE);
+
+    let expected_sfx_id_1 = valid_transfer_side_effect
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+        &expected_xtx_id_1.0,
+        0,
+    );
+
+    let expected_sfx_id_2 = valid_transfer_side_effect
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+        &expected_xtx_id_2.0,
+        0,
+    );
+
+    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 6); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
+            System::set_block_number(1);
+            brute_seed_block_1([0, 0, 0, 0]);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin.clone(),
+                side_effects.clone(),
+                fee,
+                sequential,
+            ));
+
+            let events = System::events();
+            assert_eq!(
+                events[4],
+                EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
+                        Runtime,
+                    >::NewSideEffectsAvailable(
+                        AccountId32::new(hex!(
+                            "0101010101010101010101010101010101010101010101010101010101010101"
+                        )),
+                        expected_xtx_id_1,
+                        side_effects.clone(),
+                        vec![expected_sfx_id_1],
+                    )),
+                    topics: vec![]
+                }
+            );
+
+            // manually increment nonce to simulate production environment
+            frame_system::Pallet::<Runtime>::inc_account_nonce(ALICE);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects.clone(),
+                fee,
+                sequential,
+            ));
+
+            let next_events = System::events();
+            assert_eq!(
+                next_events[7],
+                EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
+                        Runtime,
+                    >::NewSideEffectsAvailable(
+                        AccountId32::new(hex!(
+                            "0101010101010101010101010101010101010101010101010101010101010101"
+                        )),
+                        expected_xtx_id_2,
+                        side_effects,
+                        vec![expected_sfx_id_2],
+                    )),
+                    topics: vec![]
+                }
+            );
+
+            assert_ne!(expected_xtx_id_1, expected_xtx_id_2);
+            assert_ne!(expected_sfx_id_1, expected_sfx_id_2);
         });
 }
