@@ -316,4 +316,25 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn sfx_ids_do_not_create_collisions() {
+        let xtx_id_1 = [0u8; 32];
+        let xtx_id_2 = [1u8; 32];
+
+        let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
+            target: [0, 0, 0, 0],
+            max_reward: 1,
+            encoded_action: vec![],
+            encoded_args: vec![],
+            signature: vec![],
+            insurance: 1,
+            enforce_executor: None,
+        };
+
+        assert_ne!(
+            empty_side_effect.generate_id::<Hashing>(&xtx_id_1, 0),
+            empty_side_effect.generate_id::<Hashing>(&xtx_id_2, 0),
+        );
+    }
 }
