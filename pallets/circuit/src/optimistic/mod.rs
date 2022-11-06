@@ -133,13 +133,18 @@ impl<T: Config> Optimistic<T> {
             local_ctx,
             SecurityLvl::Optimistic,
         );
+
         // Slash loop
         for fsx in optimistic_fsx_in_step {
             // Look for invalid FSX cases to slash
             if !fsx.is_successfully_confirmed() && fsx.is_bid_resolved() {
                 let sfx_bid = fsx.expect_sfx_bid();
-                let (insurance, reserved_bond) =
-                    (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
+                let insurance = *sfx_bid.get_insurance();
+                let reserved_bond = if let Some(bond) = sfx_bid.get_reserved_bond() {
+                    *bond
+                } else {
+                    Zero::zero()
+                };
 
                 // First slash executor
                 slashed_reserve += insurance + reserved_bond;
