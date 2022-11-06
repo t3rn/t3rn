@@ -76,6 +76,10 @@ impl<AccountId, BalanceOf> SFXBid<AccountId, BalanceOf> {
             .expect("Accessed reserved_bond and expected it to be a part of SFXBid")
     }
 
+    pub fn get_reserved_bond(&self) -> &Option<BalanceOf> {
+        &self.reserved_bond
+    }
+
     pub fn get_insurance(&self) -> &BalanceOf {
         &self.insurance
     }
