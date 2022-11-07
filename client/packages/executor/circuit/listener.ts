@@ -19,7 +19,10 @@ export default class CircuitListener extends EventEmitter {
     async start() {
         this.client.query.system.events(notifications => {
             notifications.forEach(notification => {
-                if (notification.event.method === "XTransactionReadyForExec") {
+                if (notification.event.method === "NewSideEffectsAvailable") { // receives new side effects
+                    const execution = new Execution(notification.event.data)
+                    this.emit("NewExecution", execution)
+                } else if (notification.event.method === "XTransactionReadyForExec") {
                     let xtxId = notification.event.data[0].toHex();
                     this.emit("XTransactionReadyForExec", xtxId)
                 } else if (notification.event.method === "SideEffectInsuranceReceived") {
@@ -29,9 +32,6 @@ export default class CircuitListener extends EventEmitter {
                 } else if (notification.event.method === "SideEffectConfirmed") {
                     let sfxId = notification.event.data[0].toHex();
                     this.emit("SideEffectConfirmed", sfxId)
-                } else if (notification.event.method === "NewSideEffectsAvailable") {
-                    const execution = new Execution(notification.event.data) // create execution object from raw data
-                    this.emit("NewExecution", execution)
                 } else if (notification.event.method === "XTransactionXtxFinishedExecAllSteps") {
                     const xtxId = notification.event.data[0].toHex();
                     this.emit("ExecutionComplete", xtxId)

@@ -1,18 +1,19 @@
 import "@t3rn/types"
 import {AccountId32, H256} from '@polkadot/types/interfaces';
 import {SideEffect, SideEffectStatus} from "./sideEffect";
-import {T3rnTypesSideEffect} from '@polkadot/types/lookup';
+import {T3rnTypesSideEffect, } from '@polkadot/types/lookup';
 import {EventEmitter} from "events";
 
 export enum ExecutionStatus {
-    Open,
-    ReadyToExecute,
-    Complete,
-    Reverted
+    PendingBidding,
+    Ready,
+    Finished,
+    FinishedAllSteps,
+    RevertTimedOut
 }
 
 export class Execution extends EventEmitter {
-    status: ExecutionStatus = ExecutionStatus.Open;
+    status: ExecutionStatus = ExecutionStatus.PendingBidding;
     xtxId: H256;
     owner: AccountId32;
     sideEffects: {[key:string]: SideEffect} = {};
@@ -54,6 +55,10 @@ export class Execution extends EventEmitter {
                 }
             }
         })
+    }
+
+    generateExecutionSteps(): string[][] {
+
     }
 
     // update the status and set the step counter to the appropriate value.
