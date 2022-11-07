@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "moduleResolution": "Node",
+    "module": "commonjs",
+    "target": "esnext",
+    "sourceMap": true,
+    "lib": [
+      "es6",
+      "es2018",
+      "es2020.bigint"
+    ],
+    "esModuleInterop": true,
+    "alwaysStrict": false,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
+    "noUnusedLocals": true,
+    "resolveJsonModule": true,
+    "composite": true,
+    "declaration": true
+  },
+  "references": [],
+  "exclude": ["node_modules", "dist", "*.d.ts"],
+  "include": ["src", "src/config/types.json", "src/config/rpc.json"]
+}
