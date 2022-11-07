@@ -1,3 +1,4 @@
+
 [package]
 authors     = [ "devs @ t3rn" ]
 description = "Circuit parachain runtime"
@@ -62,6 +63,7 @@ pallet-timestamp                           = { git = "https://github.com/parityt
 pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-utility                             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+pallet-identity                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 
 sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 sp-block-builder    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
@@ -141,6 +143,7 @@ std = [
   "sp-version/std",
   "node-primitives/std",
   "pallet-utility/std",
+  "pallet-identity/std",
   "pallet-clock/std",
   "circuit-runtime-types/std",
 ]

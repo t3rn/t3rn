@@ -7,14 +7,15 @@ use scale_info::TypeInfo;
 use sp_core::Hasher;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::{default::Default, fmt::Debug};
-use t3rn_primitives::transfers::EscrowedBalanceOf;
+use t3rn_primitives::{
+    circuit::{XExecSignalId, XExecStepSideEffectId},
+    transfers::EscrowedBalanceOf,
+};
 
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
-pub type XExecSignalId<T> = <T as frame_system::Config>::Hash;
-pub type XExecStepSideEffectId<T> = <T as frame_system::Config>::Hash;
 
 /// Status of Circuit storage items:
 /// Requested - default
@@ -30,17 +31,17 @@ pub type XExecStepSideEffectId<T> = <T as frame_system::Config>::Hash;
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitStatus {
     Requested,
-    PendingInsurance,
-    Bonded,
+    PendingBidding,
     Ready,
     PendingExecution,
     Finished,
     FinishedAllSteps,
+    Committed,
+    DroppedAtBidding,
+    Reverted,
     RevertTimedOut,
     RevertKill,
     RevertMisbehaviour,
-    Committed,
-    Reverted,
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -60,64 +61,50 @@ pub enum InsuranceEnact {
 }
 
 impl CircuitStatus {
-    fn determine_insurance_status<T: Config>(
-        side_effect_id: SideEffectId<T>,
-        insurance_deposits: &[(
-            SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        )],
-    ) -> CircuitStatus {
-        return if let Some((_id, insurance_request)) = insurance_deposits
-            .iter()
-            .find(|(id, _)| *id == side_effect_id)
-        {
-            if insurance_request.bonded_relayer.is_some() {
-                CircuitStatus::Bonded
-            } else {
-                CircuitStatus::PendingInsurance
-            }
+    fn determine_fsx_bidding_status<T: Config>(
+        fsx: FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+    ) -> Result<CircuitStatus, Error<T>> {
+        if let Some(_bid) = fsx.best_bid {
+            Ok(CircuitStatus::Ready)
         } else {
-            CircuitStatus::Ready
+            Ok(CircuitStatus::PendingBidding)
         }
     }
 
-    pub fn determine_effects_insurance_status<T: Config>(
-        insurance_deposits: &Vec<(
-            SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        )>,
-    ) -> CircuitStatus {
-        for (current_id, _insurance_deposit) in insurance_deposits {
-            if Self::determine_insurance_status::<T>(*current_id, insurance_deposits)
-                == CircuitStatus::PendingInsurance
+    /// Check if all FSX have the bidding companion.
+    /// Additionally,
+    /// if SFX::Optimistic check if the optional insurance and bonded_deposit fields are present
+    /// if SFX::Escrow check if the optional insurance and bonded_deposit are set to None
+    pub fn determine_bidding_status<T: Config>(
+        fsx_step: &[FullSideEffect<
+            T::AccountId,
+            T::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >],
+    ) -> Result<CircuitStatus, Error<T>> {
+        for fsx in fsx_step.iter() {
+            if Self::determine_fsx_bidding_status::<T>(fsx.clone())?
+                == CircuitStatus::PendingBidding
             {
-                return CircuitStatus::PendingInsurance
+                return Ok(CircuitStatus::PendingBidding)
             }
         }
-        CircuitStatus::Ready
+        Ok(CircuitStatus::Ready)
     }
 
     /// Based solely on full steps + insurance deposits determine the execution status.
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config>(
         step: &[FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>],
-        insurance_deposits: &[(
-            SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        )],
     ) -> Result<CircuitStatus, Error<T>> {
         // Those are determined post - ready
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
         let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
 
-        let current_determined_status =
-            Self::determine_effects_insurance_status::<T>(&insurance_deposits.to_vec());
+        let current_determined_status = Self::determine_bidding_status::<T>(step)?;
 
         for (_step_cnt, full_side_effect) in step.iter().enumerate() {
-            // let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
-            // let current_determined_status =
-            //     Self::determine_insurance_status::<T>(current_id, insurance_deposits);
-            if current_determined_status == CircuitStatus::PendingInsurance
+            if current_determined_status == CircuitStatus::PendingBidding
                 && highest_post_ready_determined_status > CircuitStatus::Ready
             {
                 // If we are here it means that the side effect has requested for insurance that is still pending
@@ -157,15 +144,11 @@ impl CircuitStatus {
         steps: &[Vec<
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         >],
-        insurance_deposits: &[(
-            SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        )],
     ) -> Result<CircuitStatus, Error<T>> {
         let mut lowest_determined_status = CircuitStatus::Requested;
 
         for step in steps.iter() {
-            let current_step_status = Self::determine_step_status::<T>(step, insurance_deposits)?;
+            let current_step_status = Self::determine_step_status::<T>(step)?;
             log::debug!(
                 "Determine determine_xtx_status in loop Before -- {:?}",
                 current_step_status.clone()
@@ -188,10 +171,6 @@ pub struct LocalXtxCtx<T: Config> {
     pub use_protocol: UniversalSideEffectsProtocol,
     pub xtx_id: XExecSignalId<T>,
     pub xtx: XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-    pub insurance_deposits: Vec<(
-        SideEffectId<T>,
-        InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-    )>,
     pub full_side_effects:
         Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>>,
 }
@@ -202,47 +181,14 @@ impl Default for CircuitStatus {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
-pub struct InsuranceDeposit<AccountId, BlockNumber, BalanceOf> {
-    pub insurance: BalanceOf,
-    pub reserved_bond: BalanceOf,
-    pub reward: BalanceOf,
-    pub requester: AccountId,
-    pub bonded_relayer: Option<AccountId>,
-    pub status: CircuitStatus,
-    pub requested_at: BlockNumber,
-}
-
-impl<
-        AccountId: Encode + Clone + Debug,
-        BlockNumber: Ord + Copy + Zero + Encode + Clone + Debug,
-        BalanceOf: Copy + Zero + Encode + Decode + Clone + Debug,
-    > InsuranceDeposit<AccountId, BlockNumber, BalanceOf>
-{
-    pub fn new(
-        insurance: BalanceOf,
-        reward: BalanceOf,
-        reserved_bond: BalanceOf,
-        requester: AccountId,
-        requested_at: BlockNumber,
-    ) -> Self {
-        InsuranceDeposit {
-            insurance,
-            reserved_bond,
-            reward,
-            requester,
-            bonded_relayer: None,
-            status: CircuitStatus::Requested,
-            requested_at,
-        }
-    }
-}
-
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
     /// The owner of the bid
     pub requester: AccountId,
+
+    /// The owner of the bid
+    pub requester_nonce: u32,
 
     /// Expiry timeout
     pub timeouts_at: BlockNumber,
@@ -269,6 +215,8 @@ impl<
     pub fn new(
         // Requester of xtx
         requester: &AccountId,
+        // Requester' nonce of xtx
+        requester_nonce: u32,
         // Expiry timeout
         timeouts_at: BlockNumber,
         // Schedule execution of steps in the future intervals
@@ -280,6 +228,7 @@ impl<
     ) -> Self {
         XExecSignal {
             requester: requester.clone(),
+            requester_nonce,
             timeouts_at,
             delay_steps_at,
             status: Default::default(),
@@ -288,8 +237,11 @@ impl<
         }
     }
 
+    // xtx_id is generated by hashing requester + requester_nonce. This ensures it will always be unique
     pub fn generate_id<T: frame_system::Config>(&self) -> XExecSignalId<T> {
-        SystemHashing::<T>::hash(Encode::encode(self).as_ref())
+        let mut requester_and_nonce = self.requester.encode();
+        requester_and_nonce.extend_from_slice(&self.requester_nonce.to_be_bytes());
+        SystemHashing::<T>::hash(requester_and_nonce.as_ref())
     }
 
     pub fn generate_step_id<T: frame_system::Config>(
@@ -314,7 +266,20 @@ impl<
         XExecSignalId<T>,
         XExecSignal<T::AccountId, T::BlockNumber, BalanceOf>,
     ) {
-        let signal = XExecSignal::new(requester, timeouts_at, delay_steps_at, total_reward, (0, 0));
+        let requester_nonce = Decode::decode(
+            &mut &frame_system::Pallet::<T>::account_nonce(requester).encode()[..],
+        )
+        .expect(
+            "System::Index decoding try to u32 should always succeed since set in Runtime Config",
+        );
+        let signal = XExecSignal::new(
+            requester,
+            requester_nonce,
+            timeouts_at,
+            delay_steps_at,
+            total_reward,
+            (0, 0),
+        );
         let id = signal.generate_id::<T>();
         (id, signal)
     }

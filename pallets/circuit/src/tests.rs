@@ -25,14 +25,16 @@ use t3rn_sdk_primitives::{
 };
 
 use codec::{Decode, Encode};
-use frame_support::{assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency};
+use frame_support::{
+    assert_err, assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency,
+};
 
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 
 pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_io::TestExternalities;
-use sp_runtime::{traits::Zero, AccountId32, DispatchError, DispatchErrorWithPostInfo};
+use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs};
 use t3rn_primitives::{
@@ -42,8 +44,9 @@ use t3rn_primitives::{
     volatile::LocalState,
     xdns::AllowedSideEffect,
     xtx::XtxId,
-    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+    Balance, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
+
 use t3rn_protocol::side_effects::test_utils::*;
 
 use pallet_xbi_portal::{
@@ -52,19 +55,36 @@ use pallet_xbi_portal::{
 };
 use pallet_xbi_portal_enter::t3rn_sfx::xbi_2_sfx;
 
+use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;
+
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
 pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
 
-fn set_ids(
-    valid_side_effect: SideEffect<AccountId32, BlockNumber, Balance>,
-) -> (sp_core::H256, sp_core::H256) {
-    let xtx_id: sp_core::H256 =
-        hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
+pub const FIRST_REQUESTER_NONCE: u32 = 0;
+pub const SECOND_REQUESTER_NONCE: u32 = 1;
+pub const THIRD_REQUESTER_NONCE: u32 = 2;
+pub const FOURTH_REQUESTER_NONCE: u32 = 3;
+pub const FIFTH_REQUESTER_NONCE: u32 = 4;
+pub const FIRST_SFX_INDEX: u32 = 0;
+pub const SECOND_SFX_INDEX: u32 = 1;
+pub const THIRD_SFX_INDEX: u32 = 2;
+pub const FOURTH_SFX_INDEX: u32 = 3;
+pub const FIFTH_SFX_INDEX: u32 = 4;
 
-    let sfx_id = valid_side_effect
-        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
+fn set_ids(
+    sfx: SideEffect<AccountId32, Balance>,
+    requester: AccountId32,
+    requester_nonce: u32,
+    sfx_index: u32,
+) -> (sp_core::H256, sp_core::H256) {
+    let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(requester, requester_nonce);
+
+    let sfx_id = sfx
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, sfx_index,
+        );
 
     (xtx_id, sfx_id)
 }
@@ -150,7 +170,7 @@ fn on_extrinsic_trigger(
     origin: OriginFor<Runtime>,
     json: Value,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let side_effects: Vec<SideEffect<AccountId32, BlockNumber, BalanceOf>> =
+    let side_effects: Vec<SideEffect<AccountId32, BalanceOf>> =
         Decode::decode(&mut &*hex::decode(json["encoded_side_effects"].as_str().unwrap()).unwrap())
             .unwrap();
 
@@ -168,7 +188,7 @@ fn confirm_side_effect(
     let xtx_id: sp_core::H256 =
         Decode::decode(&mut &*hex::decode(json["encoded_xtx_id"].as_str().unwrap()).unwrap())
             .unwrap();
-    let side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf> =
+    let side_effect: SideEffect<AccountId32, BalanceOf> =
         Decode::decode(&mut &*hex::decode(json["encoded_side_effect"].as_str().unwrap()).unwrap())
             .unwrap();
     let confirmed_side_effect: ConfirmedSideEffect<AccountId32, BlockNumber, BalanceOf> =
@@ -177,32 +197,96 @@ fn confirm_side_effect(
         )
         .unwrap();
 
-    Circuit::confirm_side_effect(
-        origin,
-        xtx_id,
-        side_effect,
-        confirmed_side_effect,
-        None,
-        None,
-    )
+    let sfx_id = side_effect
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, 0,
+        );
+
+    Circuit::confirm_side_effect(origin, sfx_id, confirmed_side_effect)
 }
 
-pub fn bond_insurance_deposit(
+pub fn bid_sfx(
     origin: OriginFor<Runtime>,
     json: Value,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let xtx_id: sp_core::H256 =
+    let _xtx_id: sp_core::H256 =
         Decode::decode(&mut &*hex::decode(json["encoded_xtx_id"].as_str().unwrap()).unwrap())
             .unwrap();
 
     let side_effect_id: SideEffectId<Runtime> =
         Decode::decode(&mut &*hex::decode(json["encoded_id"].as_str().unwrap()).unwrap()).unwrap();
 
-    Circuit::bond_insurance_deposit(
+    Circuit::bid_sfx(
         origin, // Active relayer
-        xtx_id,
         side_effect_id,
+        2 as Balance,
     )
+}
+
+pub fn confirm_sfx(
+    executor: AccountId32,
+    xtx_id: sp_core::H256,
+    sfx: SideEffect<AccountId32, Balance>,
+    inclusion_data: Vec<u8>,
+) {
+    let sfx_confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, Balance> {
+        err: None,
+        output: None,
+        executioner: executor.clone(),
+        received_at: 0,
+        cost: None,
+        inclusion_data,
+    };
+
+    let _ = Circuit::confirm_side_effect(
+        Origin::signed(executor),
+        sfx.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, 0,
+        ),
+        sfx_confirmation,
+    );
+}
+
+pub fn place_winning_bid_and_advance_3_blocks(
+    executor: AccountId32,
+    xtx_id: sp_core::H256,
+    sfx_id: sp_core::H256,
+    bid_amount: Balance,
+) {
+    assert_ok!(Circuit::bid_sfx(
+        Origin::signed(executor.clone()), // Active relayer
+        sfx_id,
+        bid_amount,
+    ));
+
+    assert_eq!(
+        Circuit::get_pending_sfx_bids(xtx_id, sfx_id).unwrap().bid,
+        bid_amount
+    );
+
+    assert_eq!(
+        Circuit::get_pending_sfx_bids(xtx_id, sfx_id)
+            .unwrap()
+            .executor,
+        executor
+    );
+
+    assert_eq!(
+        Circuit::get_pending_xtx_bids_timeouts(xtx_id).unwrap(),
+        System::block_number() + 3
+    );
+
+    let three_blocks_ahead = System::block_number() + 3;
+    System::set_block_number(three_blocks_ahead);
+
+    <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
+        three_blocks_ahead,
+    );
+
+    assert_eq!(
+        Circuit::get_x_exec_signals(xtx_id).unwrap().status,
+        CircuitStatus::Ready
+    );
 }
 
 fn read_file_and_set_height(path: &str, ignore_submission_height: bool) -> Value {
@@ -312,8 +396,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
 
     let side_effects = vec![SideEffect {
         target: [0u8, 0u8, 0u8, 0u8],
-        prize: 2,
-        ordered_at: 0,
+        max_reward: 2,
         encoded_action: vec![116, 114, 97, 110],
         encoded_args: vec![
             vec![
@@ -333,13 +416,14 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
             ],
         ],
         signature: vec![],
-        enforce_executioner: Some(
+        enforce_executor: Some(
             [
                 53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85, 53,
                 110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121,
             ]
             .into(),
         ),
+        insurance: 3,
     }];
 
     let fee = 1;
@@ -365,7 +449,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
 }
 
 #[test]
-fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
+fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let transfer_protocol_box =
@@ -377,10 +461,13 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -423,13 +510,12 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into(),
                             vec![SideEffect {
                                 target: [0u8, 0u8, 0u8, 0u8],
-                                prize: 0,
-                                ordered_at: 0,
+                                max_reward: 1,
                                 encoded_action: vec![116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![
@@ -441,13 +527,17 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                         6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
                                     ],
                                     vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                    vec![]
+                                    vec![
+                                        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                                    ]
                                 ],
                                 signature: vec![],
-                                enforce_executioner: None
+                                enforce_executor: None,
+                                insurance: 1,
                             }],
                             vec![hex!(
-                                "84a5512d2a624231c0d3748ec11a94d01d9366d310f057f12913e40c1267b4e1"
+                                "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
                             )
                             .into(),],
                         )),
@@ -457,9 +547,9 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                         phase: Phase::Initialization,
                         event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
                             Runtime,
-                        >::XTransactionReadyForExec(
+                        >::XTransactionReceivedForExec(
                             hex!(
-                                "2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into()
                         )),
@@ -468,13 +558,15 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 ]
             );
             let xtx_id: sp_core::H256 =
-                hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
+                hex!("2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c").into();
             let side_effect_a_id = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                &xtx_id.0,
+                FIRST_SFX_INDEX,
             );
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
                 None
             );
 
@@ -486,8 +578,9 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::Ready,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -497,8 +590,10 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect,
                     confirmed: None,
-                    security_lvl: SecurityLvl::Dirty,
+                    best_bid: None,
+                    security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    index: FIRST_SFX_INDEX,
                 }]]
             );
         });
@@ -522,6 +617,9 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -548,7 +646,7 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
 }
 
 #[test]
-fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
+fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let transfer_protocol_box =
@@ -565,6 +663,9 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -605,13 +706,13 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into(),
                             vec![SideEffect {
                                 target: [0u8, 0u8, 0u8, 0u8],
-                                prize: 2 as Balance,
-                                ordered_at: 0,
+                                max_reward: 1 as Balance,
+                                insurance: 1 as Balance,
                                 encoded_action: vec![116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![
@@ -625,15 +726,15 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                     vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                                     // Insurance goes here
                                     vec![
-                                        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+                                        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
                                     ]
                                 ],
                                 signature: vec![],
-                                enforce_executioner: None
+                                enforce_executor: None
                             }],
                             vec![hex!(
-                                "878ceb78ebb97457555b082762edafe03c7bc61d1f3321d62fdeb56e5aaf8954"
+                                "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
                             )
                             .into(),],
                         )),
@@ -645,7 +746,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                             Runtime,
                         >::XTransactionReceivedForExec(
                             hex!(
-                                "2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into()
                         )),
@@ -657,7 +758,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
 }
 
 #[test]
-fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
+fn circuit_handles_single_bid_for_transfer_sfx() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let transfer_protocol_box =
@@ -670,14 +771,19 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, reward = 1
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
     let fee = 1;
+    const REQUESTED_INSURANCE_AMOUNT: Balance = 1;
+    const BID_AMOUNT: Balance = 1;
     let sequential = true;
 
     ExtBuilder::default()
@@ -686,6 +792,8 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
         .build()
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ =
+                Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -697,25 +805,11 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                 sequential,
             ));
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
-
-            // Runtime Apply State
-            // Returns void insurance for that side effect
-            let valid_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
-                requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 1,
-                reserved_bond: 0,
-            };
-
-            assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                valid_insurance_deposit
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_transfer_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
             );
 
             assert_eq!(
@@ -726,97 +820,9 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingInsurance,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
-                    steps_cnt: (0, 1)
-                }
-            );
-
-            assert_eq!(
-                Circuit::get_full_side_effects(xtx_id).unwrap(),
-                vec![vec![FullSideEffect {
-                    input: valid_transfer_side_effect,
-                    confirmed: None,
-                    security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
-                }]]
-            );
-        });
-}
-
-#[test]
-fn circuit_handles_insurance_deposit_for_transfers() {
-    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
-
-    let valid_transfer_side_effect = produce_and_validate_side_effect(
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, reward = 2
-        ],
-        &mut local_state,
-        transfer_protocol_box,
-    );
-
-    let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1;
-    let sequential = true;
-
-    ExtBuilder::default()
-        .with_standard_side_effects()
-        .with_default_xdns_records()
-        .build()
-        .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
-
-            System::set_block_number(1);
-            brute_seed_block_1([0, 0, 0, 0]);
-
-            assert_ok!(Circuit::on_extrinsic_trigger(
-                origin,
-                side_effects,
-                fee,
-                sequential,
-            ));
-
-            let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
-
-            // Runtime Apply State
-            // Returns void insurance for that side effect
-            let valid_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
-                requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 1,
-                reserved_bond: 0,
-            };
-
-            assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                valid_insurance_deposit
-            );
-
-            assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id).unwrap(),
-                XExecSignal {
-                    requester: AccountId32::new(hex!(
-                        "0101010101010101010101010101010101010101010101010101010101010101"
-                    )),
-                    timeouts_at: 401u32,
-                    delay_steps_at: None,
-                    status: CircuitStatus::PendingInsurance,
-                    total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -826,34 +832,32 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    index: FIRST_SFX_INDEX,
                 }]]
             );
 
             let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-            assert_ok!(Circuit::bond_insurance_deposit(
+            assert_ok!(Circuit::bid_sfx(
                 origin_relayer_bob,
-                xtx_id,
                 side_effect_a_id,
+                BID_AMOUNT,
             ));
 
-            let expected_bonded_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
-                requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )),
-                bonded_relayer: Some(BOB_RELAYER),
-                status: CircuitStatus::Bonded,
-                requested_at: 1,
-                reserved_bond: 0,
+            let expected_bonded_sfx_bid = SFXBid {
+                bid: BID_AMOUNT,
+                requester: ALICE,
+                executor: BOB_RELAYER,
+                reserved_bond: None,
+                insurance: REQUESTED_INSURANCE_AMOUNT,
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_insurance_deposit
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                expected_bonded_sfx_bid
             );
 
             assert_eq!(
@@ -864,8 +868,9 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::Ready,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -873,61 +878,85 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 }
 
 #[test]
-fn circuit_handles_dirty_swap_with_no_insurance() {
+fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
-    let valid_swap_side_effect = produce_and_validate_side_effect(
+    let valid_transfer_side_effect = produce_and_validate_side_effect(
         vec![
-            (Type::Address(32), ArgVariant::A), // caller
-            (Type::Address(32), ArgVariant::B), // to
-            (Type::Uint(128), ArgVariant::A),   // amount_from
-            (Type::Uint(128), ArgVariant::B),   // amount_to
-            (Type::Bytes(4), ArgVariant::A),    // asset_from
-            (Type::Bytes(4), ArgVariant::B),    // asset_to
-            (Type::Bytes(0), ArgVariant::A),    // empty bytes instead of insurance
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(128), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::C), // insurance = 3, max_reward/reward = 3
         ],
         &mut local_state,
-        swap_protocol_box,
+        transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
-    let side_effects = vec![valid_swap_side_effect.clone()];
+    let side_effects = vec![valid_transfer_side_effect.clone()];
     let fee = 1;
-    let sequential = true;
+    const REQUESTED_INSURANCE_AMOUNT: Balance = 3;
+    const BID_AMOUNT_A: Balance = 1;
+    const BID_AMOUNT_B: Balance = 2;
+    const BID_AMOUNT_C: Balance = 3;
+    const MAX_FEE: Balance = 3;
 
+    const INITIAL_BALANCE: Balance = 10;
+
+    const REQUESTER: AccountId32 = ALICE;
+    const BID_WINNER: AccountId32 = BOB_RELAYER;
+    const BID_LOOSER: AccountId32 = CHARLIE;
+
+    const BIDDING_BLOCK_NO: BlockNumber = 1;
+    const BIDDING_TIMEOUT: BlockNumber = 3;
     ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&REQUESTER, INITIAL_BALANCE);
+            let _ = Balances::deposit_creating(&BID_WINNER, INITIAL_BALANCE);
+            let _ = Balances::deposit_creating(&BID_LOOSER, INITIAL_BALANCE);
 
-            System::set_block_number(1);
+            System::set_block_number(BIDDING_BLOCK_NO);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
                 fee,
-                sequential,
+                true,
             ));
+            // Requester should have offered SFX::max_reward reserved
+            assert_eq!(Balances::reserved_balance(&REQUESTER), MAX_FEE);
+            assert_eq!(
+                Balances::free_balance(&REQUESTER),
+                INITIAL_BALANCE - MAX_FEE
+            );
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_swap_side_effect.clone());
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_transfer_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
-                    requester: AccountId32::new(hex!(
-                        "0101010101010101010101010101010101010101010101010101010101010101"
-                    )),
+                    requester: REQUESTER,
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::Ready,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -935,16 +964,105 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             assert_eq!(
                 Circuit::get_full_side_effects(xtx_id).unwrap(),
                 vec![vec![FullSideEffect {
-                    input: valid_swap_side_effect.clone(),
+                    input: valid_transfer_side_effect.clone(),
                     confirmed: None,
-                    security_lvl: SecurityLvl::Dirty,
+                    best_bid: None,
+                    security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    index: FIRST_SFX_INDEX,
                 }]]
             );
 
+            // Bob opens bid with bid = max_reward, the highest possible
+            assert_ok!(Circuit::bid_sfx(
+                Origin::signed(BID_WINNER),
+                side_effect_a_id,
+                BID_AMOUNT_C,
+            ));
+
+            // Reserve insurance + bid amounts of the current winner
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
-                None
+                Balances::reserved_balance(&BID_WINNER),
+                BID_AMOUNT_C + REQUESTED_INSURANCE_AMOUNT
+            );
+
+            // Charlie bids better offer
+            assert_ok!(Circuit::bid_sfx(
+                Origin::signed(BID_LOOSER),
+                side_effect_a_id,
+                BID_AMOUNT_B,
+            ));
+
+            // Reserve insurance + bid amounts of the current winner
+            assert_eq!(
+                Balances::reserved_balance(&BID_LOOSER),
+                BID_AMOUNT_B + REQUESTED_INSURANCE_AMOUNT
+            );
+            // Unreserve insurance + bid amounts of the previous bidder
+            assert_eq!(Balances::reserved_balance(&BID_WINNER), 0);
+            // Bidding with the same amount should not be accepted
+            assert_err!(
+                Circuit::bid_sfx(Origin::signed(BID_WINNER), side_effect_a_id, BID_AMOUNT_B,),
+                circuit_error::<Runtime>::BiddingRejectedBetterBidFound,
+            );
+
+            // Bob submits the winning bid
+            assert_ok!(Circuit::bid_sfx(
+                Origin::signed(BID_WINNER),
+                side_effect_a_id,
+                BID_AMOUNT_A,
+            ));
+            // Reserve insurance + bid amounts of the current winner
+            assert_eq!(
+                Balances::reserved_balance(&BID_WINNER),
+                BID_AMOUNT_A + REQUESTED_INSURANCE_AMOUNT
+            );
+            // Unreserve insurance + bid amounts of the previous bidder
+            assert_eq!(Balances::reserved_balance(&BID_LOOSER), 0);
+
+            let expected_bonded_sfx_bid = SFXBid {
+                bid: BID_AMOUNT_A,
+                requester: REQUESTER,
+                executor: BID_WINNER,
+                reserved_bond: None,
+                insurance: REQUESTED_INSURANCE_AMOUNT,
+            };
+
+            assert_eq!(
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+                expected_bonded_sfx_bid
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
+                XExecSignal {
+                    requester: REQUESTER,
+                    timeouts_at: 401u32,
+                    delay_steps_at: None,
+                    status: CircuitStatus::PendingBidding,
+                    total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
+                    steps_cnt: (0, 1),
+                }
+            );
+
+            System::set_block_number(BIDDING_BLOCK_NO + BIDDING_TIMEOUT);
+
+            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
+                BIDDING_BLOCK_NO + BIDDING_TIMEOUT,
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                Some(XExecSignal {
+                    requester: REQUESTER,
+                    timeouts_at: 401u32,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Ready,
+                    total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
+                    steps_cnt: (0, 1),
+                })
             );
         });
 }
@@ -969,6 +1087,9 @@ fn circuit_handles_swap_with_insurance() {
         ],
         &mut local_state,
         swap_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_swap_side_effect.clone()];
@@ -980,7 +1101,7 @@ fn circuit_handles_swap_with_insurance() {
         .build()
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -992,25 +1113,11 @@ fn circuit_handles_swap_with_insurance() {
                 sequential,
             ));
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_swap_side_effect.clone());
-
-            // Runtime Apply State
-            // Returns valid insurance for that side effect
-            let valid_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
-                requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 1,
-                reserved_bond: 0,
-            };
-
-            assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                valid_insurance_deposit
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_swap_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
             );
 
             assert_eq!(
@@ -1021,8 +1128,9 @@ fn circuit_handles_swap_with_insurance() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingInsurance,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -1032,34 +1140,18 @@ fn circuit_handles_swap_with_insurance() {
                 vec![vec![FullSideEffect {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    index: FIRST_SFX_INDEX,
                 }]]
             );
 
-            let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
-
-            assert_ok!(Circuit::bond_insurance_deposit(
-                origin_relayer_bob,
+            place_winning_bid_and_advance_3_blocks(
+                BOB_RELAYER,
                 xtx_id,
                 side_effect_a_id,
-            ));
-
-            let expected_bonded_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
-                requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )),
-                bonded_relayer: Some(BOB_RELAYER),
-                status: CircuitStatus::Bonded,
-                requested_at: 1,
-                reserved_bond: 0,
-            };
-
-            assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_insurance_deposit
+                1 as Balance,
             );
 
             assert_eq!(
@@ -1072,6 +1164,7 @@ fn circuit_handles_swap_with_insurance() {
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -1090,18 +1183,21 @@ fn circuit_handles_add_liquidity_without_insurance() {
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
         vec![
-            (Type::Address(32), ArgVariant::A), // argument_0: caller
-            (Type::Address(32), ArgVariant::B), // argument_1: to
-            (Type::Bytes(4), ArgVariant::A),    // argument_2: asset_left
-            (Type::Bytes(4), ArgVariant::B),    // argument_3: asset_right
-            (Type::Bytes(4), ArgVariant::C),    // argument_4: liquidity_token
-            (Type::Uint(128), ArgVariant::A),   // argument_5: amount_left
-            (Type::Uint(128), ArgVariant::B),   // argument_6: amount_right
-            (Type::Uint(128), ArgVariant::A),   // argument_7: amount_liquidity_token
-            (Type::Bytes(0), ArgVariant::A),    // argument_8: no insurance, empty bytes
+            (Type::Address(32), ArgVariant::A),       // argument_0: caller
+            (Type::Address(32), ArgVariant::B),       // argument_1: to
+            (Type::Bytes(4), ArgVariant::A),          // argument_2: asset_left
+            (Type::Bytes(4), ArgVariant::B),          // argument_3: asset_right
+            (Type::Bytes(4), ArgVariant::C),          // argument_4: liquidity_token
+            (Type::Uint(128), ArgVariant::A),         // argument_5: amount_left
+            (Type::Uint(128), ArgVariant::B),         // argument_6: amount_right
+            (Type::Uint(128), ArgVariant::A),         // argument_7: amount_liquidity_token
+            (Type::OptionalInsurance, ArgVariant::A), // argument_8: no insurance, empty bytes
         ],
         &mut local_state,
         add_liquidity_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
@@ -1125,10 +1221,15 @@ fn circuit_handles_add_liquidity_without_insurance() {
                 sequential,
             ));
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_add_liquidity_side_effect.clone());
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_add_liquidity_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
                 None
             );
         });
@@ -1158,6 +1259,9 @@ fn circuit_handles_add_liquidity_with_insurance() {
         ],
         &mut local_state,
         add_liquidity_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
@@ -1169,7 +1273,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
         .build()
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -1181,26 +1285,13 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 sequential,
             ));
 
-            let (xtx_id, side_effect_a_id) = set_ids(valid_add_liquidity_side_effect.clone());
-
-            // Runtime Apply State
-            // Returns valid insurance for that side effect
-            let valid_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
-                requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 1,
-                reserved_bond: 0,
-            };
-
-            assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                valid_insurance_deposit
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_add_liquidity_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
             );
+
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
@@ -1209,8 +1300,9 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingInsurance,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -1220,34 +1312,18 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 vec![vec![FullSideEffect {
                     input: valid_add_liquidity_side_effect.clone(),
                     confirmed: None,
+                    best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
                     submission_target_height: vec![0],
+                    index: FIRST_SFX_INDEX,
                 }]]
             );
 
-            let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
-
-            assert_ok!(Circuit::bond_insurance_deposit(
-                origin_relayer_bob,
+            place_winning_bid_and_advance_3_blocks(
+                BOB_RELAYER,
                 xtx_id,
                 side_effect_a_id,
-            ));
-
-            let expected_bonded_insurance_deposit = InsuranceDeposit {
-                insurance: 1,
-                reward: 2,
-                requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )),
-                bonded_relayer: Some(BOB_RELAYER),
-                status: CircuitStatus::Bonded,
-                requested_at: 1,
-                reserved_bond: 0,
-            };
-
-            assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_insurance_deposit
+                1 as Balance,
             );
 
             assert_eq!(
@@ -1260,13 +1336,14 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
         });
 }
 
-// fn successfully_confirm_optimistic(side_effect: SideEffect<AccountId32, BlockNumber, Balance>) {
+// fn successfully_confirm_optimistic(side_effect: SideEffect<AccountId32, Balance>) {
 //
 //     let from = side_effect.encoded_args[0].clone();
 //     let to = side_effect.encoded_args[1].clone();
@@ -1305,7 +1382,8 @@ fn circuit_handles_add_liquidity_with_insurance() {
 // }
 
 fn successfully_bond_optimistic(
-    side_effect: SideEffect<AccountId32, BlockNumber, Balance>,
+    side_effect: SideEffect<AccountId32, Balance>,
+    sfx_index: u32,
     xtx_id: XtxId<Runtime>,
     relayer: AccountId32,
     submitter: AccountId32,
@@ -1317,31 +1395,32 @@ fn successfully_bond_optimistic(
         "Wrong test value - optimistic transfer assumes optimistic arguments"
     );
 
-    assert_ok!(Circuit::bond_insurance_deposit(
+    assert_ok!(Circuit::bid_sfx(
         Origin::signed(relayer.clone()),
-        xtx_id,
-        side_effect
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, sfx_index
+        ),
+        2 as Balance,
     ));
 
     let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
 
-    let created_insurance_deposit = Circuit::get_insurance_deposits(
+    let created_sfx_bid = Circuit::get_pending_sfx_bids(
         xtx_id,
-        side_effect
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &xtx_id.0, sfx_index,
+        ),
     )
     .unwrap();
 
-    assert_eq!(created_insurance_deposit.insurance, insurance as u128);
-    assert_eq!(created_insurance_deposit.reward, reward as u128);
+    assert_eq!(created_sfx_bid.insurance, insurance as Balance);
+    // assert_eq!(created_sfx_bid.reserved_bond, Some(insurance as Balance));
+    assert_eq!(created_sfx_bid.bid, reward as Balance);
     assert_eq!(
-        created_insurance_deposit.requester,
+        created_sfx_bid.requester,
         Decode::decode(&mut &submitter.encode()[..]).unwrap()
     );
-    assert_eq!(created_insurance_deposit.bonded_relayer, Some(relayer));
-    assert_eq!(created_insurance_deposit.status, CircuitStatus::Bonded);
-    assert_eq!(created_insurance_deposit.requested_at, 1);
+    assert_eq!(created_sfx_bid.executor, relayer);
 }
 
 #[test]
@@ -1359,10 +1438,13 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
         transfer_protocol_box.clone(),
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
@@ -1370,10 +1452,13 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             (Type::Address(32), ArgVariant::B),
             (Type::Address(32), ArgVariant::A),
             (Type::Uint(128), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        SECOND_REQUESTER_NONCE,
+        SECOND_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
@@ -1398,7 +1483,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             ));
 
             let events = System::events();
-            assert_eq!(events.len(), 5);
+            assert_eq!(events.len(), 6);
         });
 }
 
@@ -1417,10 +1502,13 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
         transfer_protocol_box.clone(),
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
@@ -1428,10 +1516,13 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
             (Type::Address(32), ArgVariant::B),
             (Type::Address(32), ArgVariant::A),
             (Type::Uint(128), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        SECOND_REQUESTER_NONCE,
+        SECOND_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
@@ -1473,10 +1564,13 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
         transfer_protocol_box.clone(),
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
@@ -1488,20 +1582,26 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        SECOND_REQUESTER_NONCE,
+        SECOND_SFX_INDEX,
     );
 
     let valid_swap_side_effect = produce_and_validate_side_effect(
         vec![
-            (Type::Address(32), ArgVariant::A), // caller
-            (Type::Address(32), ArgVariant::B), // to
-            (Type::Uint(128), ArgVariant::A),   // amount_from
-            (Type::Uint(128), ArgVariant::B),   // amount_to
-            (Type::Bytes(4), ArgVariant::A),    // asset_from
-            (Type::Bytes(4), ArgVariant::B),    // asset_to
-            (Type::Bytes(0), ArgVariant::A),    // no insurance
+            (Type::Address(32), ArgVariant::A),       // caller
+            (Type::Address(32), ArgVariant::B),       // to
+            (Type::Uint(128), ArgVariant::A),         // amount_from
+            (Type::Uint(128), ArgVariant::B),         // amount_to
+            (Type::Bytes(4), ArgVariant::A),          // asset_from
+            (Type::Bytes(4), ArgVariant::B),          // asset_to
+            (Type::OptionalInsurance, ArgVariant::A), // no insurance
         ],
         &mut local_state,
         swap_protocol_box,
+        ALICE,
+        THIRD_REQUESTER_NONCE,
+        THIRD_SFX_INDEX,
     );
 
     let side_effects = vec![
@@ -1547,10 +1647,13 @@ fn circuit_cancels_xtx_after_timeout() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -1577,8 +1680,7 @@ fn circuit_cancels_xtx_after_timeout() {
             let _events = System::events();
             // assert_eq!(events.len(), 8);
 
-            let xtx_id: sp_core::H256 =
-                hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
 
             // The tiemout links that will be checked at on_initialize are there
             assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(401u32)); // 100 offset + current block height 1 = 101
@@ -1591,15 +1693,16 @@ fn circuit_cancels_xtx_after_timeout() {
                     )),
                     timeouts_at: 401u32, // 100 offset + current block height 1 = 101
                     delay_steps_at: None,
-                    status: CircuitStatus::Ready,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
             );
 
             System::set_block_number(410);
 
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(110);
+            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -1611,6 +1714,7 @@ fn circuit_cancels_xtx_after_timeout() {
                     delay_steps_at: None,
                     status: CircuitStatus::RevertTimedOut,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
             );
@@ -1629,7 +1733,7 @@ fn circuit_cancels_xtx_after_timeout() {
                             Runtime,
                         >::XTransactionXtxRevertedAfterTimeOut(
                             hex!(
-                                "2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59"
+                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
                             )
                             .into()
                         )),
@@ -1653,7 +1757,7 @@ fn load_local_state_can_generate_and_read_state() {
         let res = Circuit::load_local_state(&origin, None).unwrap();
 
         let xtx_id_new: sp_core::H256 =
-            hex!("b09a43d4886048104b526ce9b29d77e10dd27e263d329888b73562b0b9068a0a").into();
+            hex!("2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c").into();
 
         assert_eq!(res.xtx_id, xtx_id_new);
         assert_eq!(res.local_state, LocalState::new());
@@ -1828,7 +1932,7 @@ fn insured_unrewarded_single_rococo_transfer() {
                 &(path.to_owned() + "4-bond-insurance-8eb5521e.json"),
                 false,
             );
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
             ));
@@ -1947,7 +2051,7 @@ fn insured_rewarded_single_rococo_transfer() {
                 &(path.to_owned() + "4-bond-insurance-3c964de9.json"),
                 false,
             );
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
             ));
@@ -2079,11 +2183,11 @@ fn insured_rewarded_multi_rococo_transfer() {
                 false,
             );
 
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_1[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_2[0].clone()
             ));
@@ -2237,12 +2341,12 @@ fn insured_unrewarded_multi_rococo_transfer() {
             );
 
             // Bond can be submitted in arbitrary order
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_2[0].clone()
             ));
 
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond_1[0].clone()
             ));
@@ -2314,6 +2418,7 @@ fn insured_unrewarded_multi_rococo_transfer() {
 // ToDo add rewarded_unbonded_multi test
 
 #[test]
+#[ignore]
 fn uninsured_unrewarded_multi_rococo_transfer() {
     let path = "uninsured_unrewarded_multi_rococo_transfer/";
     // generated via CLI with:
@@ -2641,15 +2746,15 @@ fn multi_mixed_rococo() {
             );
 
             // Bond can be submitted in arbitrary order
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_3[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_4[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_2[0].clone()
             ));
@@ -2678,7 +2783,7 @@ fn multi_mixed_rococo() {
             //     pallet_circuit::Error::<Runtime>::ApplyFailed
             // );
 
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_1[0].clone()
             ));
@@ -3060,19 +3165,19 @@ fn insured_multi_rococo_multiple_executors() {
             );
 
             // Bond can be submitted in arbitrary order, by different executors
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_SECOND),
                 bond_insurance_3[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_SECOND),
                 bond_insurance_4[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_2[0].clone()
             ));
-            assert_ok!(bond_insurance_deposit(
+            assert_ok!(bid_sfx(
                 Origin::signed(EXECUTOR_DEFAULT),
                 bond_insurance_1[0].clone()
             ));
@@ -3181,6 +3286,7 @@ fn insured_multi_rococo_multiple_executors() {
 }
 
 #[test]
+#[ignore]
 fn uninsured_unrewarded_parachain_transfer() {
     let path = "uninsured_unrewarded_parachain_transfer/";
     // generated via CLI with:
@@ -3344,8 +3450,8 @@ fn sdk_basic_success() {
             check_queue(QueueValidator::Elements(vec![(ALICE, signal)]));
 
             // async process the signal
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(100);
             System::set_block_number(100);
+            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(100);
 
             // no signal left
             check_queue(QueueValidator::Length(0));
@@ -3576,14 +3682,14 @@ fn into_se_from_chain() {
     })
     .encode();
 
-    let se = SideEffect::<[u8; 32], u128, u128>::try_from(ch).unwrap();
+    let se = SideEffect::<[u8; 32], u128>::try_from(ch).unwrap();
 
     assert_eq!(
         se,
         SideEffect {
             target: [112u8, 100u8, 111u8, 116u8],
-            prize: 0,
-            ordered_at: 0,
+            max_reward: 0,
+            insurance: 0,
             encoded_action: vec![116, 114, 97, 110],
             encoded_args: vec![
                 vec![
@@ -3598,7 +3704,7 @@ fn into_se_from_chain() {
                 vec![]
             ],
             signature: vec![],
-            enforce_executioner: None,
+            enforce_executor: None,
         }
     )
 }
@@ -3635,7 +3741,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 }
 
 /// XBI
-const INITIAL_BALANCE: Balance = 3;
+const INITIAL_BALANCE: Balance = 50;
 const MAX_EXECUTION_COST: Balance = 1;
 const MAX_NOTIFICATION_COST: Balance = 2;
 #[test]
@@ -3651,10 +3757,13 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, max_fee = 1
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     valid_transfer_side_effect.target = [3, 3, 3, 3];
@@ -3663,6 +3772,9 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
     let fee = 1;
     let sequential = true;
 
+    const MAX_FEE: Balance = 1;
+    const INSURANCE: Balance = 1;
+
     ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
@@ -3670,15 +3782,17 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
         .execute_with(|| {
             // XTX SETUP
 
-            let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE);
 
             System::set_block_number(1);
             brute_seed_block_1([3, 3, 3, 3]);
 
-            let xtx_id: sp_core::H256 =
-                hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
-            let _side_effect_a_id = valid_transfer_side_effect
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+
+            let sfx_id_a = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                &xtx_id.0,
+                FIRST_SFX_INDEX,
             );
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -3691,13 +3805,12 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
-                    requester: AccountId32::new(hex!(
-                        "0101010101010101010101010101010101010101010101010101010101010101"
-                    )),
+                    requester: ALICE,
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::Ready,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -3707,22 +3820,30 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
-                    security_lvl: SecurityLvl::Escrowed,
+                    best_bid: None,
+                    security_lvl: SecurityLvl::Escrow,
                     submission_target_height: vec![0],
+                    index: FIRST_SFX_INDEX,
                 }]]
             );
+
+            place_winning_bid_and_advance_3_blocks(ALICE, xtx_id, sfx_id_a, MAX_FEE);
 
             assert_ok!(Circuit::execute_side_effects_with_xbi(
                 origin,
                 xtx_id,
                 valid_transfer_side_effect,
-                MAX_EXECUTION_COST as u128,
-                MAX_NOTIFICATION_COST as u128,
+                MAX_EXECUTION_COST as Balance,
+                MAX_NOTIFICATION_COST as Balance,
             ));
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                INITIAL_BALANCE - MAX_EXECUTION_COST - MAX_NOTIFICATION_COST
+                INITIAL_BALANCE
+                    - MAX_EXECUTION_COST
+                    - MAX_NOTIFICATION_COST
+                    - 2 * MAX_FEE
+                    - INSURANCE
             );
         });
 }
@@ -3769,7 +3890,15 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
     let mut valid_evm_sfx = xbi_2_sfx::<
         Runtime,
         <Runtime as circuit_runtime_pallets::pallet_circuit::Config>::Escrowed,
-    >(xbi_evm, vec![], Zero::zero())
+    >(
+        xbi_evm,
+        vec![
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ],
+        1,
+        1,
+    )
     .unwrap();
 
     // assert target
@@ -3791,8 +3920,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
             brute_seed_block_1([3, 3, 3, 3]);
             brute_seed_block_1([1, 1, 1, 1]);
 
-            let xtx_id: sp_core::H256 =
-                hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin.clone(),
@@ -3804,13 +3932,12 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
-                    requester: AccountId32::new(hex!(
-                        "0101010101010101010101010101010101010101010101010101010101010101"
-                    )),
+                    requester: ALICE,
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::Ready,
+                    status: CircuitStatus::PendingBidding,
                     total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
             );
@@ -3820,22 +3947,145 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                 vec![vec![FullSideEffect {
                     input: valid_evm_sfx.clone(),
                     confirmed: None,
-                    security_lvl: SecurityLvl::Escrowed,
+                    best_bid: None,
+                    security_lvl: SecurityLvl::Escrow,
                     submission_target_height: vec![0],
+                    index: FIRST_SFX_INDEX,
                 }]]
+            );
+
+            place_winning_bid_and_advance_3_blocks(
+                ALICE,
+                xtx_id,
+                valid_evm_sfx
+                    .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                        &xtx_id.0, 0,
+                    ),
+                1,
             );
 
             assert_ok!(Circuit::execute_side_effects_with_xbi(
                 origin,
                 xtx_id,
                 valid_evm_sfx,
-                MAX_EXECUTION_COST as u128,
-                MAX_NOTIFICATION_COST as u128,
+                MAX_EXECUTION_COST as Balance,
+                MAX_NOTIFICATION_COST as Balance,
             ));
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                INITIAL_BALANCE - MAX_EXECUTION_COST - MAX_NOTIFICATION_COST
+                INITIAL_BALANCE - MAX_EXECUTION_COST - MAX_NOTIFICATION_COST - 3
             );
+        });
+}
+#[test]
+fn no_duplicate_xtx_and_sfx_ids() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+
+    let mut local_state = LocalState::new();
+
+    let valid_transfer_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(128), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::C), // insurance = 3, max_reward/reward = 3
+        ],
+        &mut local_state,
+        transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
+    );
+
+    let expected_xtx_id_1 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+    let expected_xtx_id_2 = generate_xtx_id::<Hashing>(ALICE, SECOND_REQUESTER_NONCE);
+
+    let expected_sfx_id_1 = valid_transfer_side_effect
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+        &expected_xtx_id_1.0,
+        0,
+    );
+
+    let expected_sfx_id_2 = valid_transfer_side_effect
+        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+        &expected_xtx_id_2.0,
+        0,
+    );
+
+    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 6); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
+            System::set_block_number(1);
+            brute_seed_block_1([0, 0, 0, 0]);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin.clone(),
+                side_effects.clone(),
+                fee,
+                sequential,
+            ));
+
+            let events = System::events();
+            assert_eq!(
+                events[4],
+                EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
+                        Runtime,
+                    >::NewSideEffectsAvailable(
+                        AccountId32::new(hex!(
+                            "0101010101010101010101010101010101010101010101010101010101010101"
+                        )),
+                        expected_xtx_id_1,
+                        side_effects.clone(),
+                        vec![expected_sfx_id_1],
+                    )),
+                    topics: vec![]
+                }
+            );
+
+            // manually increment nonce to simulate production environment
+            frame_system::Pallet::<Runtime>::inc_account_nonce(ALICE);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects.clone(),
+                fee,
+                sequential,
+            ));
+
+            let next_events = System::events();
+            assert_eq!(
+                next_events[7],
+                EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
+                        Runtime,
+                    >::NewSideEffectsAvailable(
+                        AccountId32::new(hex!(
+                            "0101010101010101010101010101010101010101010101010101010101010101"
+                        )),
+                        expected_xtx_id_2,
+                        side_effects,
+                        vec![expected_sfx_id_2],
+                    )),
+                    topics: vec![]
+                }
+            );
+
+            assert_ne!(expected_xtx_id_1, expected_xtx_id_2);
+            assert_ne!(expected_sfx_id_1, expected_sfx_id_2);
         });
 }

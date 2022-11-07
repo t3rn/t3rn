@@ -208,6 +208,7 @@ pub mod pallet {
         NoChargeOfGivenIdRegistered,
         ChargeAlreadyRegistered,
         ChargeOrSettlementCalculationOverflow,
+        ChargeOrSettlementActualFeesOutgrowReserved,
         DecodingExecutionIDFailed,
     }
 

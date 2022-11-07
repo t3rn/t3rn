@@ -6,9 +6,11 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::Decode;
+use t3rn_primitives::monetary::MILLIT3RN;
 
 use pallet_grandpa::AuthorityId as GrandpaId;
 
+use frame_system::EnsureRoot;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
@@ -55,6 +57,32 @@ pub use impl_versioned_runtime_with_api::*;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
+const MT3RN: Balance = MILLIT3RN as Balance;
+
+parameter_types! {
+    pub const BasicDeposit: Balance = 5 * MT3RN;
+    pub const FieldDeposit: Balance = 1 * MT3RN;
+    pub const SubAccountDeposit: Balance = 2 * MT3RN;
+    pub const MaxSubAccounts: u32 = 100;
+    pub const MaxAdditionalFields: u32 = 100;
+    pub const MaxRegistrars: u32 = 20;
+}
+
+impl pallet_identity::Config for Runtime {
+    type BasicDeposit = BasicDeposit;
+    type Currency = Balances;
+    type Event = Event;
+    type FieldDeposit = FieldDeposit;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type MaxAdditionalFields = MaxAdditionalFields;
+    type MaxRegistrars = MaxRegistrars;
+    type MaxSubAccounts = MaxSubAccounts;
+    type RegistrarOrigin = EnsureRoot<AccountId>;
+    type Slashed = ();
+    type SubAccountDeposit = SubAccountDeposit;
+    type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -68,6 +96,7 @@ construct_runtime!(
         Grandpa: pallet_grandpa,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
+        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
 
         // Monetary
         Balances: pallet_balances = 10,
@@ -89,6 +118,7 @@ construct_runtime!(
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
+
         // Portal
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
         RococoBridge: pallet_grandpa_finality_verifier::{

@@ -2,9 +2,9 @@
 
 set -x
 
-if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 ]]; then
-  echo "usage: $0 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when [--dryrun]"
-  # fx: $0 'collator sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up 33 --dryrun
+if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 || -z $6 ]]; then
+  echo "usage: $0 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
+  # fx: $0 'collator sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up 33 t0rn --dryrun
   exit 1
 fi
 
@@ -43,6 +43,7 @@ ws_provider=$2
 http_provider=$3
 tag=$4
 when=$5
+parachain_name=$6
 used_wasm=$HOME/.runtime-upgrade.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
@@ -74,10 +75,13 @@ old_impl_version=$(jq -r .version.implVersion <<<"$runtime_version")
 old_tx_version=$(jq -r .version.transactionVersion <<<"$runtime_version")
 old_author_version=$(jq -r .version.authoringVersion <<<"$runtime_version")
 
-new_spec_version=$(grep -Pom1 'spec_version: *\K[0-9]+' $root_dir/runtime/parachain/src/lib.rs)
-new_impl_version=$(grep -Pom1 'impl_version: *\K[0-9]+' $root_dir/runtime/parachain/src/lib.rs)
-new_tx_version=$(grep -Pom1 'transaction_version: *\K[0-9]+' $root_dir/runtime/parachain/src/lib.rs)
-new_author_version=$(grep -Pom1 'authoring_version: *\K[0-9]+' $root_dir/runtime/parachain/src/lib.rs)
+new_spec_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'spec_version: [0-9]*' | tail -1 | grep -o '[0-9]')
+new_impl_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'impl_version: [0-9]*' | tail -1 | grep -o '[0-9]')
+new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'transaction_version: [0-9]*' | tail -1 | grep -o '[0-9]')
+new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]')
+#new_impl_version=$(grep -Pom1 'impl_version: *\K[0-9]+' $root_dir/runtime/${parachain_name}-parachain/src/lib.rs)
+#new_tx_version=$(grep -Pom1 'transaction_version: *\K[0-9]+' $root_dir/runtime/${parachain_name}-parachain/src/lib.rs)
+#new_author_version=$(grep -Pom1 'authoring_version: *\K[0-9]+' $root_dir/runtime/${parachain_name}-parachain/src/lib.rs)
 
 if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
   echo "runtime spec version not incremented" >&2
@@ -104,13 +108,13 @@ echo "🏭 building runtime wasm..."
 cargo build \
   --locked \
   --profile release \
-  --package circuit-parachain-runtime \
+  --package ${parachain_name}-parachain-runtime \
   --target-dir $root_dir/target/ \
   -Z unstable-options
 
-used_wasm=$root_dir/target/release/wbuild/circuit-parachain-runtime/circuit_parachain_runtime.compact.compressed.wasm
+used_wasm=$root_dir/target/release/wbuild/${parachain_name}-parachain-runtime/${parachain_name}_parachain_runtime.compact.compressed.wasm
 
-echo "🔢 hashing circuit_parachain_runtime.compact.compressed.wasm..."
+echo "🔢 hashing ${parachain_name}_parachain_runtime.compact.compressed.wasm..."
 
 hash=$(subwasm info --json $used_wasm | jq -r .blake2_256)
 

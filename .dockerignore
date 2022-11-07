@@ -1,3 +1,4 @@
 **/target
 **/node_modules
-!target/release/circuit-collator
+!target/release/t3rn-collator
+!target/release/t0rn-collator

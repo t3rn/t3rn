@@ -5,6 +5,8 @@ use codec::Decode;
 use sp_std::marker::PhantomData;
 use t3rn_primitives::transfers::EscrowedBalanceOf;
 
+pub const FIRST_REQUESTER_NONCE: u32 = 0;
+
 pub struct Escrow<T: Config> {
     _phantom: PhantomData<T>,
 }
@@ -202,6 +204,9 @@ pub mod test {
             ],
             &mut local_state,
             transfer_protocol_box,
+            ALICE,
+            FIRST_REQUESTER_NONCE,
+            0,
         );
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];
@@ -285,6 +290,9 @@ pub mod test {
             ],
             &mut local_state,
             transfer_protocol_box,
+            ALICE,
+            FIRST_REQUESTER_NONCE,
+            0,
         );
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];

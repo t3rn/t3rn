@@ -1,6 +1,4 @@
-use circuit_parachain_runtime::{
-    AccountId, AuraId, EvmConfig, Signature, SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
-};
+use circuit_parachain_runtime::{AccountId, AuraId, EvmConfig, Signature, SudoConfig, XDNSConfig};
 use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,
@@ -26,6 +24,7 @@ use t3rn_primitives::{
             SOONSOCIAL_CHAIN_ID,
         },
     },
+    monetary::TRN,
     side_effect::interface::SideEffectInterface,
     xdns::{Parachain, XdnsRecord},
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
@@ -502,7 +501,8 @@ fn testnet_genesis(
         parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
         collator_selection: circuit_parachain_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
+            candidacy_bond: (TRN as u128) * 10_u128,
+            desired_candidates: 32_u32,
             ..Default::default()
         },
         session: circuit_parachain_runtime::SessionConfig {
