@@ -6,7 +6,7 @@ export default {
             to: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
             amount: "0.01111",
             insurance: "1",
-            reward: "0"
+            reward: "1"
         },
         {
             target: "roco",
