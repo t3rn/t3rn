@@ -895,7 +895,6 @@ pub mod pallet {
         }
     }
 
-    use crate::CircuitStatus::RevertKill;
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
@@ -1631,7 +1630,7 @@ impl<T: Config> Pallet<T> {
                     sfx.clone(),
                     gateway_abi,
                     &mut local_ctx.local_state,
-                    &local_ctx.xtx_id.as_ref(),
+                    local_ctx.xtx_id.as_ref(),
                     index as u32
                 ).map_err(|e| {
                 log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
@@ -1647,7 +1646,7 @@ impl<T: Config> Pallet<T> {
                 >(
                     sfx.clone(),
                     &mut local_ctx.local_state,
-                    &local_ctx.xtx_id.as_ref(),
+                    local_ctx.xtx_id.as_ref(),
                     index as u32,
                 )? {
                 (insurance_and_reward[0], insurance_and_reward[1])
@@ -1782,7 +1781,7 @@ impl<T: Config> Pallet<T> {
             fsx.input.target,
             fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
-            side_effect_id.clone(),
+            side_effect_id,
         )
         .map_err(|_| "SideEffect confirmation failed!")?;
         // ToDo: handle misbehaviour
