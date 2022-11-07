@@ -13,7 +13,9 @@ echo "removing current binaries for $PARACHAIN_NAME"
 
 rm "$ROOT_DIR"/target/release/"${PARACHAIN_NAME}"-collator
 
-cd "${ROOT_DIR}"/node/"${PARACHAIN_NAME}"-parachain && cargo build --release --locked || cd "${ROOT_DIR}" || exit
+cd "${ROOT_DIR}"/node/"${PARACHAIN_NAME}"-parachain && cargo build --release --locked || exit
+
+cd "${ROOT_DIR}" || exit
 
 mkdir -p "${ROOT_DIR}"/target/release/specs
 
