@@ -36,7 +36,6 @@ pub struct SideEffect<AccountId, BalanceOf> {
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
-    pub nonce: u32,
     pub enforce_executor: Option<AccountId>,
 }
 
@@ -52,6 +51,7 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub confirmed_executioner: Option<AccountId>,
     pub confirmed_received_at: Option<BlockNumber>,
     pub confirmed_cost: Option<BalanceOf>,
+    pub index: u32,
 }
 
 impl<AccountId, BlockNumber, BalanceOf> Default
@@ -73,6 +73,7 @@ where
             confirmed_executioner: None,
             confirmed_received_at: None,
             confirmed_cost: None,
+            index: 0,
         }
     }
 }
@@ -83,8 +84,14 @@ where
     AccountId: Encode,
     BalanceOf: Copy + sp_runtime::traits::Zero + Encode + Decode,
 {
-    pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
-        Hasher::hash(Encode::encode(self).as_ref())
+    pub fn generate_id<Hasher: sp_core::Hasher>(
+        &self,
+        xtx_id: &[u8], // would a slice also be fine here for XBI?
+        sfx_index: u32,
+    ) -> <Hasher as sp_core::Hasher>::Out {
+        let mut xtx_id_and_index = xtx_id.to_vec();
+        xtx_id_and_index.extend_from_slice(&sfx_index.to_be_bytes());
+        Hasher::hash(xtx_id_and_index.as_slice())
     }
 
     pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
@@ -123,7 +130,6 @@ where
             encoded_args: args,
             signature: vec![],
             insurance: Zero::zero(),
-            nonce: 0,
             enforce_executor: None,
         })
     }
@@ -401,7 +407,6 @@ mod tests {
             encoded_args: vec![],
             signature: vec![],
             insurance: 0,
-            nonce: 0,
             enforce_executor: None,
         };
 
@@ -414,7 +419,6 @@ mod tests {
                 encoded_args: vec![],
                 signature: vec![],
                 insurance: 0,
-                nonce: 0,
                 enforce_executor: None
             }
         );
@@ -440,7 +444,6 @@ mod tests {
             ],
             signature: vec![],
             insurance: 0,
-            nonce: 0,
             enforce_executor: None,
         };
 
@@ -467,7 +470,6 @@ mod tests {
                     ]
                 ],
                 signature: vec![],
-                nonce: 0,
                 enforce_executor: None
             }
         );
