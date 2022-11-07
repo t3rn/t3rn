@@ -50,6 +50,7 @@ use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     account_manager::{AccountManager, Outcome},
+    circuit::{XExecSignalId, XExecStepSideEffectId},
     circuit_portal::CircuitPortal,
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
@@ -385,7 +386,7 @@ pub mod pallet {
 
                     let current_step = local_ctx.xtx.steps_cnt.0;
                     for mut fsx in local_ctx.full_side_effects[current_step as usize].iter_mut() {
-                        let sfx_id = fsx.input.generate_id::<SystemHashing<T>>();
+                        let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                         if let Some(best_sfx_bid) = <PendingSFXBids<T>>::get(xtx_id, sfx_id) {
                             fsx.best_bid = Some(best_sfx_bid);
                         } else {
@@ -641,6 +642,36 @@ pub mod pallet {
             unimplemented!();
         }
 
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
+        pub fn cancel_xtx(origin: OriginFor<T>, xtx_id: T::Hash) -> DispatchResultWithPostInfo {
+            let requester = Self::authorize(origin, CircuitRole::Requester)?;
+            // Setup: new xtx context
+            let mut local_ctx: LocalXtxCtx<T> = Self::setup(
+                CircuitStatus::PendingBidding,
+                &requester,
+                Zero::zero(),
+                Some(xtx_id),
+            )?;
+
+            if requester != local_ctx.xtx.requester
+                || local_ctx.xtx.status > CircuitStatus::PendingBidding
+            {
+                return Err(Error::<T>::UnauthorizedCancellation.into())
+            }
+
+            // Drop cancellation in case some bids have already been posted
+            if Self::get_current_step_fsx(&local_ctx)
+                .iter()
+                .any(|fsx| fsx.best_bid.is_some())
+            {
+                return Err(Error::<T>::UnauthorizedCancellation.into())
+            }
+
+            Self::kill(&mut local_ctx, CircuitStatus::DroppedAtBidding);
+
+            Ok(().into())
+        }
+
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
@@ -683,15 +714,18 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_execution())]
-        pub fn bid_execution(
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
+        pub fn bid_sfx(
             origin: OriginFor<T>, // Active relayer
-            xtx_id: XExecSignalId<T>,
             sfx_id: SideEffectId<T>,
             bid_amount: EscrowedBalanceOf<T, T::Escrowed>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let executor = Self::authorize(origin, CircuitRole::Executor)?;
+
+            // retrieve xtx_id
+            let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
+                .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             // Setup: retrieve local xtx context
             let mut local_ctx: LocalXtxCtx<T> = Self::setup(
@@ -744,7 +778,7 @@ pub mod pallet {
             max_exec_cost: u128,
             max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
-            let sfx_id = side_effect.generate_id::<SystemHashing<T>>();
+            let sfx_id = side_effect.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0u32);
 
             if T::XBIPortal::get_status(sfx_id) != XBIStatus::UnknownId {
                 return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
@@ -818,21 +852,17 @@ pub mod pallet {
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
-            xtx_id: XtxId<T>,
-            side_effect: SideEffect<
-                <T as frame_system::Config>::AccountId,
-                EscrowedBalanceOf<T, T::Escrowed>,
-            >,
+            sfx_id: SideEffectId<T>,
             confirmation: ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            _inclusion_proof: Option<Vec<Vec<u8>>>,
-            _block_hash: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let executor = Self::authorize(origin, CircuitRole::Executor)?;
+            let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
+                .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
@@ -842,7 +872,7 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            Self::confirm(&mut local_xtx_ctx, &executor, &side_effect, &confirmation)?;
+            Self::confirm(&mut local_xtx_ctx, &executor, &sfx_id, &confirmation)?;
 
             let status_change = Self::update(&mut local_xtx_ctx)?;
 
@@ -850,9 +880,7 @@ pub mod pallet {
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
                 Self::apply(&mut local_xtx_ctx, status_change);
 
-            Self::deposit_event(Event::SideEffectConfirmed(
-                side_effect.generate_id::<SystemHashing<T>>(),
-            ));
+            Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
 
             // Emit: From Circuit events
             Self::emit(
@@ -867,6 +895,7 @@ pub mod pallet {
         }
     }
 
+    use crate::CircuitStatus::RevertKill;
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
@@ -1022,6 +1051,7 @@ pub mod pallet {
         SideEffectIsAlreadyScheduledToExecuteOverXBI,
         LocalSideEffectExecutionNotApplicable,
         LocalExecutionUnauthorized,
+        UnauthorizedCancellation,
         FailedToConvertSFX2XBI,
         FailedToCheckInOverXBI,
         FailedToCreateXBIMetadataDueToWrongAccountConversion,
@@ -1219,9 +1249,10 @@ impl<T: Config> Pallet<T> {
                     .flat_map(|(cnt, fsx_step)| {
                         fsx_step
                             .iter()
-                            .map(|full_side_effect| full_side_effect.input.clone())
-                            .filter(|side_effect| is_local::<T>(&side_effect.target))
-                            .map(|side_effect| side_effect.generate_id::<SystemHashing<T>>())
+                            .map(|full_side_effect| {
+                                full_side_effect
+                                    .generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
+                            })
                             .map(|side_effect_hash| {
                                 (
                                     cnt,
@@ -1231,7 +1262,7 @@ impl<T: Config> Pallet<T> {
                                         T::BlockNumber,
                                         EscrowedBalanceOf<T, <T as Config>::Escrowed>,
                                     >::generate_step_id::<T>(
-                                        side_effect_hash, cnt
+                                        local_ctx.xtx_id, cnt
                                     ),
                                 )
                             })
@@ -1300,7 +1331,7 @@ impl<T: Config> Pallet<T> {
                         for fsx_step in &local_ctx.full_side_effects {
                             for fsx in fsx_step {
                                 <Self as Store>::SFX2XTXLinksMap::remove(
-                                    fsx.input.generate_id::<SystemHashing<T>>(),
+                                    fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
                                 );
                             }
                         }
@@ -1347,6 +1378,7 @@ impl<T: Config> Pallet<T> {
             },
             CircuitStatus::FinishedAllSteps => {
                 // todo: cleanup all of the local storage
+                // TODO cleanup sfx2xtx map
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
@@ -1384,7 +1416,10 @@ impl<T: Config> Pallet<T> {
                 side_effects.to_vec(),
                 side_effects
                     .iter()
-                    .map(|se| se.generate_id::<SystemHashing<T>>())
+                    .enumerate()
+                    .map(|(index, se)| {
+                        se.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
+                    })
                     .collect::<Vec<SideEffectId<T>>>(),
             ));
         }
@@ -1457,10 +1492,11 @@ impl<T: Config> Pallet<T> {
                 unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
             },
             CircuitStatus::Ready => {
+                let current_step_sfx = Self::get_current_step_fsx(local_ctx);
                 // Unreserve the max_rewards and replace with possibly lower bids of executor in following loop
-                unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
+                unreserve_requester_xtx_max_rewards(current_step_sfx);
+                for fsx in current_step_sfx.iter() {
+                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     let bid_4_fsx: &SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>> =
                         if let Some(bid) = &fsx.best_bid {
                             bid
@@ -1504,7 +1540,7 @@ impl<T: Config> Pallet<T> {
             | CircuitStatus::RevertMisbehaviour => {
                 Optimistic::<T>::try_slash(local_ctx);
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
+                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     <T as Config>::AccountManager::try_finalize(
                         charge_id,
                         Outcome::Revert,
@@ -1516,7 +1552,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Finished | CircuitStatus::FinishedAllSteps => {
                 Optimistic::<T>::try_unbond(local_ctx)?;
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.input.generate_id::<SystemHashing<T>>();
+                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     let confirmed = if let Some(confirmed) = &fsx.confirmed {
                         Ok(confirmed)
                     } else {
@@ -1579,7 +1615,7 @@ impl<T: Config> Pallet<T> {
             return Ok(())
         }
 
-        for sfx in side_effects.iter() {
+        for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_abi = <T as Config>::Xdns::get_abi(sfx.target)?;
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
 
@@ -1595,6 +1631,8 @@ impl<T: Config> Pallet<T> {
                     sfx.clone(),
                     gateway_abi,
                     &mut local_ctx.local_state,
+                    &local_ctx.xtx_id.as_ref(),
+                    index as u32
                 ).map_err(|e| {
                 log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
                 e
@@ -1606,8 +1644,12 @@ impl<T: Config> Pallet<T> {
                     T::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
                     SystemHashing<T>,
-                >(sfx.clone(), &mut local_ctx.local_state)?
-            {
+                >(
+                    sfx.clone(),
+                    &mut local_ctx.local_state,
+                    &local_ctx.xtx_id.as_ref(),
+                    index as u32,
+                )? {
                 (insurance_and_reward[0], insurance_and_reward[1])
             } else {
                 return Err(
@@ -1629,6 +1671,7 @@ impl<T: Config> Pallet<T> {
                 security_lvl: determine_security_lvl(gateway_type),
                 submission_target_height,
                 best_bid: None,
+                index: index as u32,
             });
         }
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
@@ -1642,14 +1685,10 @@ impl<T: Config> Pallet<T> {
         > = vec![];
 
         // Split for 2 following steps of Escrow and Optimistic and
-        //  assign indices to each SFX of current Xtx to avoid collisions the same SFX within the same Xtx.
-        // ToDo: Replace nonce as field with nonce as Xtx index argument.
-        for mut sorted_fsx in full_side_effects.iter_mut() {
+        for sorted_fsx in full_side_effects.iter() {
             if sorted_fsx.security_lvl == SecurityLvl::Escrow {
-                sorted_fsx.input.nonce = escrow_sfx_step.len() as u32;
                 escrow_sfx_step.push(sorted_fsx.clone());
             } else if sorted_fsx.security_lvl == SecurityLvl::Optimistic {
-                sorted_fsx.input.nonce = optimistic_sfx_step.len() as u32;
                 optimistic_sfx_step.push(sorted_fsx.clone());
             }
         }
@@ -1670,10 +1709,7 @@ impl<T: Config> Pallet<T> {
     fn confirm(
         local_ctx: &mut LocalXtxCtx<T>,
         _relayer: &T::AccountId,
-        side_effect: &SideEffect<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >,
+        sfx_id: &SideEffectId<T>,
         confirmation: &ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
@@ -1681,10 +1717,8 @@ impl<T: Config> Pallet<T> {
         >,
     ) -> Result<(), &'static str> {
         fn confirm_order<T: Config>(
-            side_effect: &SideEffect<
-                <T as frame_system::Config>::AccountId,
-                EscrowedBalanceOf<T, T::Escrowed>,
-            >,
+            xtx_id: XExecSignalId<T>,
+            sfx_id: SideEffectId<T>,
             confirmation: &ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
@@ -1705,9 +1739,6 @@ impl<T: Config> Pallet<T> {
             >,
             &'static str,
         > {
-            // ToDo: Extract as a separate function and migrate tests from Xtx
-            let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
-
             // Double check there are some side effects for that Xtx - should have been checked at API level tho already
             if step_side_effects.is_empty() {
                 return Err("Xtx has an empty single step.")
@@ -1716,7 +1747,7 @@ impl<T: Config> Pallet<T> {
             // Find sfx object index in the current step
             match step_side_effects
                 .iter()
-                .position(|sfx| sfx.input.generate_id::<SystemHashing<T>>() == input_side_effect_id)
+                .position(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
             {
                 Some(index) => {
                     // side effect found in current step
@@ -1732,30 +1763,31 @@ impl<T: Config> Pallet<T> {
             }
         }
 
-        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-        side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
-
         // confirm order of current season, by passing the side_effects of it to confirm order.
         let fsx = confirm_order::<T>(
-            side_effect,
+            local_ctx.xtx_id,
+            *sfx_id,
             confirmation,
             &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
         )?;
+
         log::debug!("Order confirmed!");
+
+        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
+        side_effect_id.copy_from_slice(&fsx.input.encoded_action[0..4]);
+
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
         let (params, source) = <T as Config>::Portal::confirm_and_decode_payload_params(
-            side_effect.target,
+            fsx.input.target,
             fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
-            side_effect_id,
+            side_effect_id.clone(),
         )
         .map_err(|_| "SideEffect confirmation failed!")?;
         // ToDo: handle misbehaviour
         log::debug!("SFX confirmation params: {:?}", params);
 
-        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-        side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
         let side_effect_interface =
             <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
 
@@ -1766,14 +1798,9 @@ impl<T: Config> Pallet<T> {
             params,
             source,
             &local_ctx.local_state,
-            Some(
-                side_effect
-                    .generate_id::<SystemHashing<T>>()
-                    .as_ref()
-                    .to_vec(),
-            ),
+            Some(sfx_id.as_ref().to_vec()),
             fsx.security_lvl,
-            <T as Config>::Xdns::get_gateway_security_coordinates(&side_effect.target)?,
+            <T as Config>::Xdns::get_gateway_security_coordinates(&fsx.input.target)?,
         )
         .map_err(|_| "Execution can't be confirmed.")?;
         log::debug!("confirmation plug ok");
@@ -1871,7 +1898,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(self) fn get_current_step_fsx(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
     ) -> &Vec<
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -1956,7 +1983,7 @@ impl<T: Config> Pallet<T> {
         let maybe_fsx = local_ctx.full_side_effects[current_step as usize]
             .iter()
             .filter(|&fsx| fsx.confirmed.is_none())
-            .find(|&fsx| fsx.input.generate_id::<SystemHashing<T>>() == sfx_id);
+            .find(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id) == sfx_id);
 
         if let Some(fsx) = maybe_fsx {
             Ok(fsx.clone())
@@ -2115,10 +2142,11 @@ impl<T: Config> Pallet<T> {
         )
         .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
 
+        let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_xtx_ctx.xtx_id);
         Self::confirm(
             &mut local_xtx_ctx,
             &Self::account_id(),
-            &fsx.input,
+            sfx_id,
             &confirmation,
         )
         .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;

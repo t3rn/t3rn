@@ -83,7 +83,7 @@ impl<T: Config> Optimistic<T> {
                 SecurityLvl::Optimistic,
             )
             .into_iter()
-            .filter(|fsx| fsx.input.generate_id::<SystemHashing<T>>() != sfx_id)
+            .filter(|fsx| fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id) != sfx_id)
             .collect::<Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
