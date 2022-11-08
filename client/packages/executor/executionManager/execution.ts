@@ -13,6 +13,7 @@ export class Execution extends EventEmitter {
     xtxId: H256;
     owner: AccountId32;
     sideEffects: {[key:string]: SideEffect} = {};
+    id: string;
 
     steps: string[][] = [[], []];
     currentStep: number;
@@ -21,6 +22,7 @@ export class Execution extends EventEmitter {
         super();
         this.owner = eventData[0]
         this.xtxId = eventData[1]
+        this.id = this.xtxId.toHex()
         this.initializeSideEffects(eventData[2], eventData[3], sdk)
         this.currentStep = 0;
     }

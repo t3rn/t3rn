@@ -1,40 +1,46 @@
 import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 import SubstrateRelayer from "../relayer";
+import { BehaviorSubject } from 'rxjs';
+
+type Estimate = {
+	tx: SubmittableExtrinsic,
+	costSubject: BehaviorSubject<number>
+}
 
 export default class CostEstimator {
 	relayer: SubstrateRelayer;
+	trackingMap: Map<string, Estimate> = new Map<string, Estimate>();
 
 	constructor(relayer: SubstrateRelayer) {
 		this.relayer = relayer
+		this.update()
 	}
 
 	/// returns the transaction cost of a specific side effect in native asset
-	async currentTransactionCost(tx: SubmittableExtrinsic) {
+	async currentTransactionCost(tx: SubmittableExtrinsic): Promise<number> {
 		const paymentInfo = await tx.paymentInfo(this.relayer.signer);
 		return paymentInfo.partialFee.toJSON()
 	}
 
+	// adds a sfx to tracking list and returns an observable that emits the transaction cost in native asset
+	async getTxCostSubject(sfxId: string, tx: SubmittableExtrinsic): Promise<BehaviorSubject<number>> {
+		const txCost = await this.currentTransactionCost(tx); // get cost of tx
+		const costSubject = new BehaviorSubject<number>(txCost); // create a new subject
+		this.trackingMap.set(sfxId, {tx, costSubject}) // add to tracking map
+		return costSubject
+	}
 
+	// fetch new prices for all tracked transactions
+	async update() {
+		for (const [_sfxId, estimate] of this.trackingMap.entries()) {
+			estimate.costSubject.next(await this.currentTransactionCost(estimate.tx))
+		}
+		// rerun this every 10s
+		setTimeout(this.update.bind(this), 10000);
+	}
 
-	// // fetches tx fee details from endpoint. Not used to estimate fees, but might be useful again
-	// async fetchTxFees(blockHash: string, extrinsicIndex:number) {
-	// 	const { block } = await this.relayer.client.rpc.chain.getBlock(blockHash);
-	//
-	// 	const queryFeeDetails = await this.client.rpc.payment.queryFeeDetails(block.extrinsics[extrinsicIndex].toHex(), blockHash);
-	// 	const queryInfo = await this.client.rpc.payment.queryInfo(block.extrinsics[extrinsicIndex].toHex(), blockHash);
-	//
-	// 	// @ts-ignore
-	// 	const baseFee = queryFeeDetails.inclusionFee.toJSON().baseFee; // the base fee in native asset of an extrinsic. I think this should be be the same for all extrinsics
-	// 	// @ts-ignore
-	// 	const lengthFee = queryFeeDetails.inclusionFee.toJSON().lenFee; // fee based on the byte length of a transaction in native asset
-	// 	// @ts-ignore
-	// 	const adjustedWeightFee =  queryFeeDetails.inclusionFee.toJSON().adjustedWeightFee; // fee based on extrinsic weight in native asset
-	//
-	//
-	// 	const partialFee = queryInfo.partialFee.toNumber(); // tthe total tx fee in the native asset, without tips
-	// 	const txWeight = queryInfo.weight.toNumber(); // weight of the extrinsic
-	//
-	// 	return {baseFee, lengthFee, adjustedWeightFee, txWeight, partialFee}
-	// }
+	async stopTracking(sfxId: string) {
+		this.trackingMap.delete(sfxId)
+	}
 }
 

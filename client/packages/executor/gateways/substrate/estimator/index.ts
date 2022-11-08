@@ -5,6 +5,7 @@ import {PriceEngine} from "../../../pricing";
 import {GatewayDataService} from "../../../utils/gatewayDataService";
 
 import {SfxType, SfxStatus} from "@t3rn/sdk/dist/src/side-effects/types";
+import {BehaviorSubject} from "rxjs";
 
 export default class Estimator {
 
@@ -13,40 +14,34 @@ export default class Estimator {
 	priceEngine: PriceEngine;
 	gatewayService: GatewayDataService;
 
-	constructor(relayer: SubstrateRelayer, priceEngine: PriceEngine, gatewayService: GatewayDataService) {
+	constructor(relayer: SubstrateRelayer) {
 		this.relayer = relayer;
-		this.cost = new CostEstimator(relayer)
-		this.priceEngine = priceEngine;
-		this.gatewayService = gatewayService
+		this.cost = new CostEstimator(relayer);
 	}
 
-	async getTxCostUsd(sideEffect: SideEffect) {
+	async getNativeTxCostSubject(sideEffect: SideEffect): Promise<BehaviorSubject<number>> {
 		const sfxTx = this.relayer.buildTx(sideEffect)
-		const nativeTransactionCost = await this.cost.currentTransactionCost(sfxTx) // cost in native asset
-		let txCostUsd;
-		switch(sideEffect.action){
-			case SfxType.Transfer:
-				const assetId = this.gatewayService.gateways[this.gatewayService.idMapper[sideEffect.target]].ticker
-				const humanTransactionCost = this.gatewayService.valueToHuman(nativeTransactionCost, sideEffect.target) // as float
-				txCostUsd = this.priceEngine.getQuote(assetId, humanTransactionCost)
-		}
-		return txCostUsd
+		return this.cost.getTxCostSubject(sideEffect.id, sfxTx);
 	}
 
-	getAssetCostUsd(sideEffect: SideEffect) {
-		let assetCostUsd;
-		switch(sideEffect.action){
-			case SfxType.Transfer:
-				const assetId = this.gatewayService.gateways[this.gatewayService.idMapper[sideEffect.target]].ticker
-				const humanTransactionCost = this.gatewayService.valueToHuman(sideEffect.getTxOutput(), sideEffect.target) // as float
-				assetCostUsd = this.priceEngine.getQuote(assetId, humanTransactionCost)
-		}
-		return assetCostUsd
+	stopTrackingTxCost(sfxId: string) {
+		this.cost.stopTracking(sfxId)
 	}
 
-	async estimateProfit(sideEffect: SideEffect) {
-		let txCost = await this.getTxCostUsd(sideEffect)
-		let assetCost = this.getAssetCostUsd(sideEffect)
-		return [txCost, assetCost]
-	}
+	// async initTxCostTracking(sideEffect: SideEffect): Promise<Subject<number>> {
+	// 	const sfxTx = this.relayer.buildTx(sideEffect)
+	// 	const txCostSubject = await this.cost.watchTransactionCost(sideEffect.id, sfxTx);
+	// 	return txCostSubject
+	// }
+
+	// getAssetCostUsd(sideEffect: SideEffect) {
+	// 	let assetCostUsd;
+	// 	switch(sideEffect.action){
+	// 		case SfxType.Transfer:
+	// 			const assetId = this.gatewayService.gateways[this.gatewayService.idMapper[sideEffect.target]].ticker
+	// 			const humanTransactionCost = this.gatewayService.valueToHuman(sideEffect.getTxOutput(), sideEffect.target) // as float
+	// 			assetCostUsd = this.priceEngine.getQuote(assetId, humanTransactionCost)
+	// 	}
+	// 	return assetCostUsd
+	// }
 }
