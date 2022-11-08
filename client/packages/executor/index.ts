@@ -19,6 +19,7 @@ import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
 import {PriceEngine} from "./pricing";
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types";
+import Estimator from "./gateways/substrate/estimator";
 
 class InstanceManager {
     static debug = createDebug("instance-manager")
@@ -28,7 +29,7 @@ class InstanceManager {
     circuitListener: CircuitListener;
     circuitRelayer: CircuitRelayer;
     executionManager: ExecutionManager;
-    instances: { [key: string]: SubstrateRelayer } = {};
+    relayers: { [key: string]: SubstrateRelayer } = {};
     gatewayDataService: GatewayDataService;
     sdk: Sdk;
     signer: any;
@@ -66,13 +67,15 @@ class InstanceManager {
             const entry = this.sdk.gateways[gatewayKeys[i]]
 
             if (entry.executionLayerType === ExecutionLayerType.Substrate) {
-                let instance = new SubstrateRelayer()
-                await instance.setup(entry.rpc, undefined)
+                let relayer = new SubstrateRelayer()
+                await relayer.setup(entry.rpc, undefined)
+
+                const estimator = new Estimator(relayer)
 
                 // setup in executionManager
-                this.executionManager.addGateway(entry.id)
+                this.executionManager.addGateway(entry.id, estimator)
                 // store relayer instance locally
-                this.instances[entry.id] = instance
+                this.relayers[entry.id] = relayer
             }
         }
     }
@@ -81,8 +84,8 @@ class InstanceManager {
             switch (eventData.type) {
                 case Events.NewSideEffectsAvailable:
                     console.log("NewSideEffectsAvailable")
-                    console.log(eventData)
                     const xtx = new Execution(eventData.data, this.sdk)
+                    this.executionManager.addXtx(xtx)
             }
 
         })
@@ -124,7 +127,7 @@ class InstanceManager {
        //
        //  // Execute SideEffect on Target
        //  this.executionManager.on("ExecuteSideEffect", async sideEffect => {
-       //      await this.instances[sideEffect.target].executeTx(sideEffect)
+       //      await this.relayers[sideEffect.target].executeTx(sideEffect)
        //  })
        //
        //  // trigger SideEffect confirmation on circuit
