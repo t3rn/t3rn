@@ -1,8 +1,10 @@
 import CostEstimator from "./cost";
 import SubstrateRelayer from "../relayer";
-import {SideEffect, SideEffectStatus, TransactionType} from "../../../executionManager/sideEffect";
+import {SideEffect} from "../../../executionManager/sideEffect";
 import {PriceEngine} from "../../../pricing";
 import {GatewayDataService} from "../../../utils/gatewayDataService";
+
+import {SfxType, SfxStatus} from "@t3rn/sdk/dist/src/side-effects/types";
 
 export default class Estimator {
 
@@ -23,7 +25,7 @@ export default class Estimator {
 		const nativeTransactionCost = await this.cost.currentTransactionCost(sfxTx) // cost in native asset
 		let txCostUsd;
 		switch(sideEffect.action){
-			case TransactionType.Transfer:
+			case SfxType.Transfer:
 				const assetId = this.gatewayService.gateways[this.gatewayService.idMapper[sideEffect.target]].ticker
 				const humanTransactionCost = this.gatewayService.valueToHuman(nativeTransactionCost, sideEffect.target) // as float
 				txCostUsd = this.priceEngine.getQuote(assetId, humanTransactionCost)
@@ -34,7 +36,7 @@ export default class Estimator {
 	getAssetCostUsd(sideEffect: SideEffect) {
 		let assetCostUsd;
 		switch(sideEffect.action){
-			case TransactionType.Transfer:
+			case SfxType.Transfer:
 				const assetId = this.gatewayService.gateways[this.gatewayService.idMapper[sideEffect.target]].ticker
 				const humanTransactionCost = this.gatewayService.valueToHuman(sideEffect.getTxOutput(), sideEffect.target) // as float
 				assetCostUsd = this.priceEngine.getQuote(assetId, humanTransactionCost)

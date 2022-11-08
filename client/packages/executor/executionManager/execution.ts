@@ -1,50 +1,45 @@
 import "@t3rn/types"
 import {AccountId32, H256} from '@polkadot/types/interfaces';
-import {SideEffect, SideEffectStatus} from "./sideEffect";
-import {T3rnTypesSideEffect, } from '@polkadot/types/lookup';
+import {SideEffect} from "./sideEffect";
+// @ts-ignore
+import {T3rnTypesSideEffect,} from '@polkadot/types/lookup';
 import {EventEmitter} from "events";
 
-export enum ExecutionStatus {
-    PendingBidding,
-    Ready,
-    Finished,
-    FinishedAllSteps,
-    RevertTimedOut
-}
+import {SecurityLevel, SfxStatus, XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types";
+import {Sdk} from "@t3rn/sdk";
 
 export class Execution extends EventEmitter {
-    status: ExecutionStatus = ExecutionStatus.PendingBidding;
+    status: XtxStatus = XtxStatus.PendingBidding;
     xtxId: H256;
     owner: AccountId32;
     sideEffects: {[key:string]: SideEffect} = {};
 
-    steps: string[][] = [];
+    steps: string[][] = [[], []];
     currentStep: number;
 
-    constructor(eventData: any) {
+    constructor(eventData: any, sdk: Sdk) {
         super();
         this.owner = eventData[0]
         this.xtxId = eventData[1]
-        this.initializeSideEffects(eventData[2], eventData[3])
+        this.initializeSideEffects(eventData[2], eventData[3], sdk)
         this.currentStep = 0;
     }
 
     // creates the new SideEffect instances, maps them locally and generates the steps as done in circuit.
-    initializeSideEffects(sideEffects: T3rnTypesSideEffect[], ids: H256[]) {
-        let insured: string[] = [];
+    initializeSideEffects(sideEffects: T3rnTypesSideEffect[], ids: H256[], sdk: Sdk) {
         for(let i = 0; i < sideEffects.length; i++) {
-            const sideEffect = new SideEffect(sideEffects[i], ids[i].toHex(), this.xtxId.toHex())
+            const sideEffect = new SideEffect(sideEffects[i], ids[i].toHex(), this.xtxId.toHex(), sdk)
             this.sideEffects[sideEffect.id] = sideEffect
-            if(sideEffect.hasInsurance) { // group insured steps into one step
-                insured.push(ids[i].toHex());
+            if(sideEffect.securityLevel === SecurityLevel.Escrow) { // group escrow steps into one step
+                this.steps[0].push(ids[i].toHex());
             } else {
-                this.steps.push([ids[i].toHex()]) // uninsured get their own step
+                this.steps[1].push(ids[i].toHex()) // optimistic get their own step
             }
         }
 
-        // prepend insured steps if we have any
-        if(insured.length > 0) {
-            this.steps = [insured, ...this.steps]
+        // remove escrow steps, if there are none
+        if(this.steps[0].length === 0) {
+            this.steps = [this.steps[1]]
         }
 
         // set the step index for each sfx
@@ -57,17 +52,17 @@ export class Execution extends EventEmitter {
         })
     }
 
-    generateExecutionSteps(): string[][] {
-
-    }
+    // generateExecutionSteps(): string[][] {
+    //
+    // }
 
     // update the status and set the step counter to the appropriate value.
     sideEffectConfirmed(sfxId: string) {
-        this.sideEffects[sfxId].updateStatus(SideEffectStatus.SideEffectConfirmed)
+        this.sideEffects[sfxId].updateStatus(SfxStatus.Confirmed)
 
         // check how many transactions in the ExecutionStep are still open
         const readyToExecute = this.steps[this.currentStep].filter((sfxId: string) => {
-            return this.sideEffects[sfxId].status === SideEffectStatus.ExecutedOnTarget
+            return this.sideEffects[sfxId].status === SfxStatus.PendingExecution
         }).length;
 
         // If all steps are complete and there is a next step, move into it
@@ -78,9 +73,9 @@ export class Execution extends EventEmitter {
 
             // Check if we have SideEffects in the next step, that are ready to be confirmed
             this.steps[this.currentStep].forEach((sfxId: string) => {
-                if(this.sideEffects[sfxId].status === SideEffectStatus.ExecutedOnTarget) {
+                if(this.sideEffects[sfxId].status === SfxStatus.ExecutedOnTarget) {
                     readyToConfirm.push(this.sideEffects[sfxId])
-                } else if (this.sideEffects[sfxId].status === SideEffectStatus.ReadyForExec) {
+                } else if (this.sideEffects[sfxId].status === SfxStatus.PendingExecution) {
                     readyToExecute.push(this.sideEffects[sfxId])
                 }
             })
@@ -98,17 +93,17 @@ export class Execution extends EventEmitter {
     }
 
     readyToExecute() {
-        this.status = ExecutionStatus.ReadyToExecute;
+        this.status = XtxStatus.Ready;
     }
 
     complete() {
-        this.status = ExecutionStatus.Complete;
+        this.status = XtxStatus.FinishedAllSteps;
     }
 
     // returns the sfxs that ready to execute
     getReadyToExecute(): SideEffect[] {
         return Object.values(this.sideEffects).filter(entry => {
-            return entry.status === SideEffectStatus.ReadyForExec && entry.iAmExecuting && entry.step === this.currentStep
+            return entry.status === SfxStatus.PendingExecution && entry.iAmExecuting && entry.step === this.currentStep
         })
     }
 }

@@ -1,6 +1,8 @@
 import {PriceEngine} from "../pricing";
 import config from "../config/config"
-import {SideEffect, SideEffectStatus} from "../executionManager/sideEffect";
+import {SideEffect} from "../executionManager/sideEffect";
+
+
 
 type Strategy = {
 	minProfitUsd: number,
