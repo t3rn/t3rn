@@ -1,31 +1,28 @@
 import "@t3rn/types"
+// @ts-ignore
 import { T3rnTypesSideEffect } from '@polkadot/types/lookup';
 import { TextDecoder } from "util"
 const BN = require('bn.js')
+import {SfxType, SfxStatus, SecurityLevel} from "@t3rn/sdk/dist/src/side-effects/types";
+import {Sdk} from "@t3rn/sdk";
 
-// contains the different side_effect types
-export enum TransactionType {
-    Transfer,
-}
-
-// maps event names to TransactionType enum;
+// maps event names to SfxType enum;
 export const EventMapper = ["Transfer", "MultiTransfer"]
 
-export enum SideEffectStatus {
-    Invalid,
-    WaitingForInsurance,
-    ReadyForExec,
-    ExecutedOnTarget,
-    SideEffectConfirmed,
-}
 
 export class SideEffect {
     step: number;
-    status: SideEffectStatus;
-    action: TransactionType;
+    status: SfxStatus;
+    action: SfxType;
     target: string;
     hasInsurance: boolean;
+
+    securityLevel: SecurityLevel
     iAmExecuting: boolean;
+
+
+
+
     relayer: any
 
     // SideEffect data
@@ -46,19 +43,29 @@ export class SideEffect {
     maxProfitUsd: number;
     assetCostUsd: number;
 
-    constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string) {
+    constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string, sdk: Sdk) {
         if(this.knownTransactionInterface(sideEffect.encodedAction)) {
             this.raw = sideEffect;
             this.id = id;
             this.xtxId = xtxId
             this.arguments = sideEffect.encodedArgs.map(entry => entry.toString());
-            this.hasInsurance = this.checkForInsurance(this.arguments.length, this.action)
+            // this.hasInsurance = this.checkForInsurance(this.arguments.length, this.action)
             this.target =  new TextDecoder().decode(sideEffect.target.toU8a())
+            this.securityLevel = this.evalSecurityLevel(sdk.gateways[this.target].gatewayType)
+            console.log("SecurityLevel:", this.securityLevel)
             this.txCostUsd = 0;
             this.maxProfitUsd = 0;
             this.assetCostUsd = 0;
         } else {
             console.log("SideEffect interface unknown!!")
+        }
+    }
+
+    evalSecurityLevel(gatewayType: any): SecurityLevel {
+        if (gatewayType.ProgrammableExternal === '0' || gatewayType.OnCircuit === '0') {
+            return SecurityLevel.Escrow
+        } else {
+            return SecurityLevel.Optimistic
         }
     }
 
@@ -72,33 +79,33 @@ export class SideEffect {
         this.assetCostUsd = assetCostUsd;
         this.maxProfitUsd = 10; // hardcode for now
     }
+    //
+    // // ToDo remove once merged https://github.com/t3rn/t3rn/issues/432
+    // checkForInsurance(argsLength: number, action: SfxType): boolean {
+    //     switch(action) {
+    //         case SfxType.Transfer: {
+    //             if(argsLength === 4) {
+    //                 this.status = Sfx.WaitingForInsurance;
+    //                 return true;
+    //             } else {
+    //                 // if the sfx is dirty, its ready on creation.
+    //                 this.status = SfxStatus.ReadyForExec;
+    //                 this.iAmExecuting = true; // Dirty sfx can always be executed without bond
+    //                 return false
+    //             }
+    //             break;
+    //         }
+    //     }
+    // }
 
-    // ToDo remove once merged https://github.com/t3rn/t3rn/issues/432
-    checkForInsurance(argsLength: number, action: TransactionType): boolean {
-        switch(action) {
-            case TransactionType.Transfer: {
-                if(argsLength === 4) {
-                    this.status = SideEffectStatus.WaitingForInsurance;
-                    return true;
-                } else {
-                    // if the sfx is dirty, its ready on creation.
-                    this.status = SideEffectStatus.ReadyForExec;
-                    this.iAmExecuting = true; // Dirty sfx can always be executed without bond
-                    return false
-                }
-                break;
-            }
-        }
-    }
-
-    updateStatus(status: SideEffectStatus) {
+    updateStatus(status: SfxStatus) {
         this.status = status;
     }
 
     // return an array of arguments to execute on target.
     execute(): any[] | void {
         switch(this.action) {
-            case TransactionType.Transfer: {
+            case SfxType.Transfer: {
                 return this.getTransferArguments()
             }
         }
@@ -106,7 +113,7 @@ export class SideEffect {
 
     getTxOutput() {
         switch(this.action) {
-            case TransactionType.Transfer: {
+            case SfxType.Transfer: {
                 return parseInt(this.getTransferArguments()[1])
             }
         }
@@ -114,7 +121,7 @@ export class SideEffect {
 
     // updates status
     insuranceBonded(iAmExecuting: boolean) {
-        this.status = SideEffectStatus.ReadyForExec;
+        this.status = SfxStatus.PendingExecution;
         this.iAmExecuting = iAmExecuting;
     }
 
@@ -123,20 +130,19 @@ export class SideEffect {
         this.inclusionData = inclusionData;
         this.executor = executor;
         this.targetInclusionHeight = targetInclusionHeight;
-        this.status = SideEffectStatus.ExecutedOnTarget;
+        this.status = SfxStatus.ExecutedOnTarget;
     }
 
-    // ensure we can deal with the sfx action and set TransactionType
+    // ensure we can deal with the sfx action and set SfxType
     private knownTransactionInterface(encodedAction: any): boolean {
         switch(encodedAction.toHuman()) {
             case "tran": {
-                this.action = TransactionType.Transfer
+                this.action = SfxType.Transfer
                 return true
                 break;
             }
             default: {
-                this.status = SideEffectStatus.Invalid;
-                return false;
+                return false
             }
         }
     }

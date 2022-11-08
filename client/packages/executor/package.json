@@ -9,8 +9,9 @@
   },
   "dependencies": {
     "@polkadot/api": "^9.2.4",
-    "@t3rn/types": "^0.1.4",
-    "@types/node": "^18.7.13",
+    "@t3rn/sdk": "../sdk",
+    "@t3rn/types": "../types",
+    "@types/node": "^18.11.9",
     "axios": "^1.1.2",
     "bn.js": "^5.2.1",
     "debug": "4.3.4",

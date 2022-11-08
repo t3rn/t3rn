@@ -1,4 +1,5 @@
 import {ApiPromise, WsProvider} from "@polkadot/api";
+// @ts-ignore
 import {T3rnPrimitivesXdnsXdnsRecord} from "@polkadot/types/lookup"
 import createDebug from "debug"
 

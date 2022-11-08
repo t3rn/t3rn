@@ -1,10 +1,11 @@
 import {EventEmitter} from "events"
 import {ApiPromise, Keyring, WsProvider} from "@polkadot/api"
-import {EventMapper, SideEffect, TransactionType} from "../../executionManager/sideEffect"
+import {EventMapper, SideEffect} from "../../executionManager/sideEffect"
 import {fetchNonce, getEventProofs} from "../../utils"
 import createDebug from "debug"
 import Estimator from "./estimator";
 import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
+import {SfxType} from "@t3rn/sdk/dist/src/side-effects/types";
 
 export default class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
@@ -13,9 +14,10 @@ export default class SubstrateRelayer extends EventEmitter {
     signer: any
     nonce: number
 
-    async setup(client: ApiPromise, signer: string | undefined) {
-        this.client = client;
-
+    async setup(rpc: string, signer: string | undefined) {
+        this.client = await ApiPromise.create({
+			provider: new WsProvider(rpc),
+		})
         const keyring = new Keyring({ type: "sr25519" })
 
         this.signer =
@@ -27,9 +29,10 @@ export default class SubstrateRelayer extends EventEmitter {
     }
 
     // Builds tx object for the different side effects. This can be used for estimating fees or to submit tx
+    // @ts-ignore
     buildTx(sideEffect: SideEffect): SubmittableExtrinsic {
         switch(sideEffect.action) {
-            case TransactionType.Transfer: {
+            case SfxType.Transfer: {
                 const data = sideEffect.execute()
                 return this.client.tx.balances
                     .transfer(data[0], data[1])
@@ -84,7 +87,7 @@ export default class SubstrateRelayer extends EventEmitter {
         return (await this.client.rpc.chain.getHeader(hash)).number
     }
 
-    getEvent(transactionType: TransactionType, events: any[]) {
+    getEvent(transactionType: SfxType, events: any[]) {
         const event = events.find(item => {
             return item.event.method === EventMapper[transactionType]
         })
