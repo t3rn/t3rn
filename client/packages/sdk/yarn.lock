@@ -650,6 +650,12 @@
   resolved "https://registry.yarnpkg.com/@substrate/ss58-registry/-/ss58-registry-1.33.0.tgz#b93218fc86405769716b02f0ce5e61df221b37ae"
   integrity sha512-DztMuMcEfu+tJrtIQIIp5gO8/XJZ8N8UwPObDCSNgrp7trtSkPJAUFB9qXaReXtN9UvTcVBMTWk6VPfFi04Wkg==
 
+"@t3rn/sdk@../sdk":
+  version "0.1.4"
+  dependencies:
+    "@polkadot/api" "^9.2.4"
+    "@t3rn/types" "../types"
+
 "@t3rn/types@../types":
   version "0.1.4"
   dependencies:
