@@ -9,6 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod accounts_config;
 pub mod circuit_config;
 pub mod contracts_config;
+pub mod membership_config;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
@@ -21,7 +22,6 @@ pub use circuit_runtime_types::*;
 use codec::Decode;
 use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
-
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
@@ -49,7 +49,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot,
+    EnsureSignedBy,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -76,9 +76,9 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 2,
-    spec_version: 3,
-    impl_version: 1,
+    authoring_version: 3,
+    spec_version: 4,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
     // https://github.com/paritytech/cumulus/issues/998
@@ -120,11 +120,11 @@ impl pallet_identity::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type FieldDeposit = FieldDeposit;
-    type ForceOrigin = EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type MaxSubAccounts = MaxSubAccounts;
-    type RegistrarOrigin = EnsureRoot<AccountId>;
+    type RegistrarOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type Slashed = ();
     type SubAccountDeposit = SubAccountDeposit;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
@@ -167,8 +167,6 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-        // Circuit
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
@@ -190,6 +188,14 @@ construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier::{
             Pallet, Storage
         } = 129,
+
+        // Util - this should be system support
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
+
+        // Members
+        DeveloperMembership: pallet_membership::{
+            Pallet, Call, Event<T>, Config<T>, Storage
+        } = 210,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

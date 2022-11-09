@@ -19,12 +19,12 @@ path = "src/main.rs"
 [dependencies]
 # Extras
 
-clap                   = { version = "3.0", features = [ "derive" ] }
-log                    = "0.4.14"
 async-std              = { version = "1.10.0" }
+clap                   = { version = "3.0", features = [ "derive" ] }
 futures                = "0.3.21"
 jsonrpc-runtime-client = { version = "0.1.0", path = "../../relayers/jsonrpc-runtime-client" }
-jsonrpsee = { version = "0.14.0", features = ["server"] }
+jsonrpsee              = { version = "0.14.0", features = [ "server" ] }
+log                    = "0.4.14"
 
 sc-cli                  = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", features = [ "wasmtime" ] }
 sc-client-api           = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
@@ -63,10 +63,10 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", 
 circuit-standalone-runtime = { path = "../../runtime/standalone" }
 pallet-3vm-contracts-rpc   = { path = "../../3vm/rpc/contracts", package = "pallet-contracts-rpc" }
 pallet-3vm-evm-rpc         = { path = "../../3vm/rpc/evm", package = "pallet-evm-rpc" }
+pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-treasury            = { path = "../../pallets/treasury" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
-pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 t3rn-primitives            = { path = "../../primitives" }
 t3rn-protocol              = { path = "../../protocol" }
 

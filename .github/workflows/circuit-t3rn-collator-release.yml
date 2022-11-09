@@ -12,7 +12,7 @@ env:
 
 jobs:
   build-release:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -54,7 +54,7 @@ jobs:
           retention-days: 1
 
   publish-docker-image:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: build-release
     steps:
       - uses: actions/checkout@v3
@@ -93,7 +93,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
 
   release-on-github:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: build-release
     steps:
       - name: ☁ Checkout git repo
@@ -166,7 +166,7 @@ jobs:
           asset_content_type: application/gzip
 
   trigger-downstream:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: release-on-github
     steps:
       - name: 🏷️ Get the version tag
