@@ -84,8 +84,8 @@ class InstanceManager {
             switch (eventData.type) {
                 case Events.NewSideEffectsAvailable:
                     console.log("NewSideEffectsAvailable")
-                    const xtx = new Execution(eventData.data, this.sdk)
-                    this.executionManager.addXtx(xtx)
+
+                    this.executionManager.addXtx(eventData.data, this.sdk)
             }
 
         })

@@ -5,6 +5,8 @@ import Estimator from "../gateways/substrate/estimator";
 import SubstrateRelayer from "../gateways/substrate/relayer";
 import {PriceEngine} from "../pricing";
 import {BehaviorSubject} from "rxjs";
+import {StrategyEngine} from "../strategy";
+import {Sdk} from "@t3rn/sdk";
 
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
@@ -42,9 +44,11 @@ export class ExecutionManager {
     } = {};
 
 	priceEngine: PriceEngine;
+	strategyEngine: StrategyEngine;
 
 	constructor(priceEngine: PriceEngine) {
 		this.priceEngine = priceEngine;
+		this.strategyEngine = new StrategyEngine();
 	}
 
 
@@ -60,12 +64,19 @@ export class ExecutionManager {
 		this.targetEstimator[id] = estimator;
     }
 
-	async addXtx(xtx: Execution) {
+	async addXtx(xtxData: any, sdk: Sdk) {
+		const xtx = new Execution(xtxData, sdk, this.strategyEngine)
+		try {
+			this.strategyEngine.evaluateXtx(xtx)
+
+		} catch(e) {
+			console.log("Xtx eval failed!", e.toString())
+			return
+		}
+
 		this.xtx[xtx.id] = xtx
-		let sfxId = Object.keys(xtx.sideEffects)
-		for(let i = 0; i < sfxId.length; i++) {
-			const sfx = xtx.sideEffects[sfxId[i]];
-			this.sfxToXtx[sfxId[i]] = xtx.id
+		for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
+			this.sfxToXtx[sfxId] = xtx.id
 			await this.addRiskRewardParameters(sfx)
 		}
 	}

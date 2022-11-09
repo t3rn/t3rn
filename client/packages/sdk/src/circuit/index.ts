@@ -25,4 +25,12 @@ export class Circuit {
 			valueTypeSize: VALUE_TYPE_SIZE}
 		).floatToBn(value)
 	}
+
+	toFloat(value: BN | number): number {
+		return new AmountConverter({
+			value,
+			decimals: DECIMALS,
+			valueTypeSize: VALUE_TYPE_SIZE}
+		).toFloat()
+	}
 }
