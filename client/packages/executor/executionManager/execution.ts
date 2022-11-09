@@ -7,31 +7,33 @@ import {EventEmitter} from "events";
 
 import {SecurityLevel, SfxStatus, XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types";
 import {Sdk} from "@t3rn/sdk";
+import {StrategyEngine} from "../strategy";
 
 export class Execution extends EventEmitter {
     status: XtxStatus = XtxStatus.PendingBidding;
     xtxId: H256;
     owner: AccountId32;
-    sideEffects: {[key:string]: SideEffect} = {};
+    sideEffects: Map<string, SideEffect> = new Map<string, SideEffect>();
     id: string;
 
     steps: string[][] = [[], []];
     currentStep: number;
 
-    constructor(eventData: any, sdk: Sdk) {
+    constructor(eventData: any, sdk: Sdk, strategyEngine: StrategyEngine) {
         super();
         this.owner = eventData[0]
         this.xtxId = eventData[1]
         this.id = this.xtxId.toHex()
-        this.initializeSideEffects(eventData[2], eventData[3], sdk)
+        this.initializeSideEffects(eventData[2], eventData[3], sdk, strategyEngine)
         this.currentStep = 0;
     }
 
     // creates the new SideEffect instances, maps them locally and generates the steps as done in circuit.
-    initializeSideEffects(sideEffects: T3rnTypesSideEffect[], ids: H256[], sdk: Sdk) {
+    initializeSideEffects(sideEffects: T3rnTypesSideEffect[], ids: H256[], sdk: Sdk, strategyEngine: StrategyEngine) {
         for(let i = 0; i < sideEffects.length; i++) {
-            const sideEffect = new SideEffect(sideEffects[i], ids[i].toHex(), this.xtxId.toHex(), sdk)
-            this.sideEffects[sideEffect.id] = sideEffect
+            const sideEffect = new SideEffect(sideEffects[i], ids[i].toHex(), this.xtxId.toHex(), sdk, strategyEngine)
+            this.sideEffects.set(sideEffect.id, sideEffect)
+
             if(sideEffect.securityLevel === SecurityLevel.Escrow) { // group escrow steps into one step
                 this.steps[0].push(ids[i].toHex());
             } else {

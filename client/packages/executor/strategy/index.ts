@@ -1,6 +1,7 @@
 import {PriceEngine} from "../pricing";
 import config from "../config/config"
 import {SideEffect} from "../executionManager/sideEffect";
+import {Execution} from "../executionManager/execution";
 
 
 
@@ -10,6 +11,8 @@ type Strategy = {
 	maxTxFeesUsd: number,
 	maxTxFeeShare: number, // txCost / maxProfit
 	maxAssetCost: number, // maximum value spend
+	minInsuranceAmountUsd: number,
+	minInsuranceShare: number, // minInsuranceAmountUsd / maxProfit
 }
 
 export class StrategyEngine {
@@ -31,78 +34,105 @@ export class StrategyEngine {
 				maxTxFeesUsd: config.strategies[strategyTargets[i]].maxTxFeesUsd,
 				maxTxFeeShare: config.strategies[strategyTargets[i]].maxTxFeeShare,
 				maxAssetCost: config.strategies[strategyTargets[i]].maxAssetCost,
+				minInsuranceAmountUsd: config.strategies[strategyTargets[i]].minInsuranceAmountUsd,
+				minInsuranceShare: config.strategies[strategyTargets[i]].minInsuranceShare,
+			}
+		}
+	}
+
+	// evaluate if the conditions for a given xtx are met. If this is not the case, the xtx will be untracked
+	evaluateXtx(xtx: Execution): void | Error {
+		for (let [_id, sfx] of xtx.sideEffects) {
+			const strategy = this.strategies[sfx.target];
+			try {
+				this.minInsuranceAmountRejected(sfx, strategy)
+				this.minInsuranceShareRejected(sfx, strategy)
+			} catch(e) {
+				break;
+				throw e
 			}
 		}
 	}
 
 	// checks the constraints for any given side effect
-	evaluateSideEffect(sideEffect: SideEffect) {
-		const strategy = this.strategies[sideEffect.target];
+	evaluateSfx(sfx: SideEffect): number | Error {
+		const strategy = this.strategies[sfx.target];
 
-		if (this.minProfitRejected(sideEffect, strategy)) {
-			console.log("minProfitRejected")
-			return false
-		}
-		if (this.minYieldRejected(sideEffect, strategy)) {
-			console.log("minYieldRejected")
-			return false
-		}
-		if (this.maxTxFeesRejected(sideEffect, strategy)) {
-			console.log("maxTxFeesRejected")
-			return false
-		}
-		if (this.maxTxFeeShareRejected(sideEffect, strategy)) {
-			console.log("maxTxFeeShareRejected")
-			return false
-		}
-		if (this.maxAssetCostRejected(sideEffect, strategy)) {
-			console.log("maxAssetCostRejected")
-			return false
+		try {
+			this.minProfitRejected(sfx, strategy)
+			this.minYieldRejected(sfx, strategy)
+			this.maxTxFeesRejected(sfx, strategy)
+			this.maxTxFeeShareRejected(sfx, strategy)
+			this.maxAssetCostRejected(sfx, strategy)
+		} catch(e) {
+			throw e
 		}
 
-		return true;
+		return strategy.minProfitUsd
 	}
 
-	minProfitRejected(sideEffect: SideEffect, strategy: Strategy): boolean {
+	minProfitRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
 		if(strategy.minProfitUsd) {
-			return sideEffect.maxProfitUsd <= strategy.minProfitUsd
+			if(sideEffect.maxProfitUsd.getValue() <= strategy.minProfitUsd) {
+				throw new Error("Min Profit condition not met!")
+			}
 		}
-		return false
 	}
 
-	minYieldRejected(sideEffect: SideEffect, strategy: Strategy): boolean {
+	minYieldRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
 		if(strategy.minYield) {
-			return this.computeYield(sideEffect) <= strategy.minYield
+			if(this.computeYield(sideEffect) <= strategy.minYield) {
+				throw new Error("Min Yield condition not met!")
+			}
 		}
-		return false
 	}
 
-	maxTxFeesRejected(sideEffect: SideEffect, strategy: Strategy): boolean {
+	maxTxFeesRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
 		if(strategy.maxTxFeesUsd) {
-			return sideEffect.txCostUsd >= strategy.maxTxFeesUsd
+			if(sideEffect.txCostUsd >= strategy.maxTxFeesUsd) {
+				throw new Error("Max Tx Fees condition not met!")
+			}
 		}
-		return false
 	}
 
-	maxTxFeeShareRejected(sideEffect: SideEffect, strategy: Strategy): boolean {
+	maxTxFeeShareRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
 		if(strategy.maxTxFeeShare) {
-			return this.computeFeeShare(sideEffect) >= strategy.maxTxFeeShare
+			if(this.computeFeeShare(sideEffect) >= strategy.maxTxFeeShare) {
+				throw new Error("Max Tx Fee Share condition not met!")
+			}
 		}
-		return false
 	}
 
-	maxAssetCostRejected(sideEffect: SideEffect, strategy: Strategy): boolean {
+	maxAssetCostRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
 		if(strategy.maxAssetCost) {
-			return sideEffect.assetCostUsd >= strategy.maxAssetCost
+			if(sideEffect.txOutputCostUsd >= strategy.maxAssetCost) {
+				throw new Error("Max Asset Cost condition not met!")
+			}
 		}
-		return false
+	}
+
+	minInsuranceAmountRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
+		if(strategy.minInsuranceAmountUsd) {
+			if(sideEffect.insurance < strategy.minInsuranceAmountUsd) {
+				throw new Error("Min Insurance Amount  condition not met!")
+			}
+		}
+	}
+
+	minInsuranceShareRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
+		if(strategy.minInsuranceShare) {
+			// reward and insurance are in the same asset, so no USD conversion is needed
+			if((sideEffect.insurance / sideEffect.reward) < strategy.minInsuranceAmountUsd) {
+				throw new Error("Min Insurance Share condition not met!")
+			}
+		}
 	}
 	
 	computeYield(sideEffect: SideEffect) {
-		return sideEffect.maxProfitUsd / sideEffect.assetCostUsd
+		return sideEffect.maxProfitUsd.getValue() / sideEffect.txOutputCostUsd
 	}
 
 	computeFeeShare(sideEffect: SideEffect) {
-		return sideEffect.txCostUsd / sideEffect.maxProfitUsd
+		return sideEffect.txCostUsd / sideEffect.maxProfitUsd.getValue()
 	}
 }
