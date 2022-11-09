@@ -46,8 +46,8 @@ class InstanceManager {
 
         // @ts-ignore
         this.circuitClient = await this.sdk.init()
-        // this.priceEngine = new PriceEngine();
-        this.executionManager = new ExecutionManager();
+        this.priceEngine = new PriceEngine();
+        this.executionManager = new ExecutionManager(this.priceEngine);
         // @ts-ignore
         // this.circuitRelayer = new CircuitRelayer(this.circuitClient, config.circuit.signer)
         this.circuitListener = new CircuitListener(this.circuitClient)

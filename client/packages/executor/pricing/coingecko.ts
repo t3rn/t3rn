@@ -1,4 +1,5 @@
 import config from "../config/config"
+import {BehaviorSubject} from "rxjs";
 const axios = require('axios');
 
 export class CoingeckoPricing {
@@ -9,13 +10,13 @@ export class CoingeckoPricing {
 	} = {};
 
 	prices: {
-		[assetTicker: string]: number
+		[assetTicker: string]: BehaviorSubject<number>
 	} = {};
 
 	constructor() {
 		this.endpoint = config.priceSource.coingecko.endpoint;
 		this.getTrackingAssets()
-		this.getAssetPrices()
+		this.updateAssetPrices()
 	}
 
 	getTrackingAssets() {
@@ -23,11 +24,12 @@ export class CoingeckoPricing {
 		for(let i = 0; i < keys.length; i++) {
 			if(config.assets[keys[i]].priceSource === "coingecko") {
 				this.assets[keys[i]] = config.assets[keys[i]].id;
+				this.prices[keys[i]] = new BehaviorSubject<number>(0)
 			}
 		}
 	}
 
-	async getAssetPrices() {
+	async updateAssetPrices() {
 		const ids = Object.keys(this.assets);
 		for(let i = 0; i < ids.length; i++) {
 			await axios.get(
@@ -35,11 +37,13 @@ export class CoingeckoPricing {
 			)
 			.then(res => {
 				const price = parseFloat(res.data.market_data.current_price["usd"])
-				this.prices[ids[i]] = price
+				this.prices[ids[i]].next(price)
 			})
 		}
-		console.log("Prices:", this.prices);
+		setTimeout(this.updateAssetPrices.bind(this), 30000);
+
 	}
+
 
 
 

@@ -22,6 +22,7 @@ export class Gateway {
 	createSfx: {} = {};
 
 	constructor(xdnsEntry: T3rnPrimitivesXdnsXdnsRecord) {
+		console.log("sys_props", xdnsEntry.toHuman().gateway_sys_props)
 		this.id = xdnsEntry.toHuman().gateway_id;
 		this.rpc = xdnsEntry.url.toHuman();
 		// @ts-ignore
@@ -38,8 +39,6 @@ export class Gateway {
 		this.allowedSideEffects = xdnsEntry.toHuman().allowed_side_effects
 		this.gatewayType = xdnsEntry.toHuman().gateway_type
 		this.setSfxBindings();
-		console.log(`Gateway ${this.id} initialized`)
-		console.log("Gateway type: ", this.gatewayType)
 	}
 
 	createTransferSfx = (
@@ -112,6 +111,14 @@ export class Gateway {
 			decimals: this.decimals,
 			valueTypeSize: this.valueTypeSize}
 		).floatToBn(value)
+	}
+
+	toFloat(value: BN | number): number {
+		return new AmountConverter({
+			value,
+			decimals: this.decimals,
+			valueTypeSize: this.valueTypeSize}
+		).toFloat()
 	}
 
 	getType(vendor: string) {

@@ -3,6 +3,8 @@ import {Execution} from "./execution";
 import {SideEffect} from "./sideEffect";
 import Estimator from "../gateways/substrate/estimator";
 import SubstrateRelayer from "../gateways/substrate/relayer";
+import {PriceEngine} from "../pricing";
+import {BehaviorSubject} from "rxjs";
 
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
@@ -39,6 +41,12 @@ export class ExecutionManager {
         [id: string]: Estimator
     } = {};
 
+	priceEngine: PriceEngine;
+
+	constructor(priceEngine: PriceEngine) {
+		this.priceEngine = priceEngine;
+	}
+
 
 	// adds gateways on startup
     addGateway(id: string, estimator: Estimator) {
@@ -59,11 +67,21 @@ export class ExecutionManager {
 		for(let i = 0; i < sfxId.length; i++) {
 			const sfx = xtx.sideEffects[sfxId[i]];
 			this.sfxToXtx[sfxId[i]] = xtx.id
-			const txCostSubject = await this.targetEstimator[sfx.target].getNativeTxCostSubject(sfx)
-			console.log("txCostSfx", txCostSubject)
-			sfx.setRiskRewardParameters(txCostSubject)
-
+			await this.addRiskRewardParameters(sfx)
 		}
 	}
+
+	async addRiskRewardParameters(sfx: SideEffect) {
+		const txCostSubject = await this.targetEstimator[sfx.target].getNativeTxCostSubject(sfx);
+		const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(sfx.gateway.ticker);
+
+		const txOutput = sfx.getTxOutputs()
+		const txOutputPriceSubject = this.priceEngine.getAssetPrice(txOutput.asset);
+		const rewardAssetPriceSubject = this.priceEngine.getAssetPrice("TRN");
+
+		sfx.setRiskRewardParameters(txCostSubject, nativeAssetPriceSubject, txOutputPriceSubject, rewardAssetPriceSubject)
+	}
+
+
 
 }
