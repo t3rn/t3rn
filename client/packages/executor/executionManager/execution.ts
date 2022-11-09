@@ -8,6 +8,7 @@ import {EventEmitter} from "events";
 import {SecurityLevel, SfxStatus, XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types";
 import {Sdk} from "@t3rn/sdk";
 import {StrategyEngine} from "../strategy";
+import {BiddingEngine} from "../bidding";
 
 export class Execution extends EventEmitter {
     status: XtxStatus = XtxStatus.PendingBidding;
@@ -15,23 +16,25 @@ export class Execution extends EventEmitter {
     owner: AccountId32;
     sideEffects: Map<string, SideEffect> = new Map<string, SideEffect>();
     id: string;
+    humanId: string;
 
     steps: string[][] = [[], []];
     currentStep: number;
 
-    constructor(eventData: any, sdk: Sdk, strategyEngine: StrategyEngine) {
+    constructor(eventData: any, sdk: Sdk, strategyEngine: StrategyEngine, biddingEngine: BiddingEngine) {
         super();
         this.owner = eventData[0]
         this.xtxId = eventData[1]
         this.id = this.xtxId.toHex()
-        this.initializeSideEffects(eventData[2], eventData[3], sdk, strategyEngine)
+        this.humanId = this.id.slice(0, 8);
+        this.initializeSideEffects(eventData[2], eventData[3], sdk, strategyEngine, biddingEngine)
         this.currentStep = 0;
     }
 
     // creates the new SideEffect instances, maps them locally and generates the steps as done in circuit.
-    initializeSideEffects(sideEffects: T3rnTypesSideEffect[], ids: H256[], sdk: Sdk, strategyEngine: StrategyEngine) {
+    initializeSideEffects(sideEffects: T3rnTypesSideEffect[], ids: H256[], sdk: Sdk, strategyEngine: StrategyEngine, biddingEngine: BiddingEngine) {
         for(let i = 0; i < sideEffects.length; i++) {
-            const sideEffect = new SideEffect(sideEffects[i], ids[i].toHex(), this.xtxId.toHex(), sdk, strategyEngine)
+            const sideEffect = new SideEffect(sideEffects[i], ids[i].toHex(), this.xtxId.toHex(), sdk, strategyEngine, biddingEngine)
             this.sideEffects.set(sideEffect.id, sideEffect)
 
             if(sideEffect.securityLevel === SecurityLevel.Escrow) { // group escrow steps into one step
