@@ -250,6 +250,38 @@ impl Type {
         }
     }
 
+    /// Checks that the encoded argument has the same length as the gateway definition.
+    #[cfg(feature = "runtime")]
+    pub fn check_length(
+        &self,
+        encoded_len: usize,
+        config: &GatewayABIConfig,
+    ) -> Result<(), &'static str> {
+        match self {
+            Type::Int(size) | Type::Uint(size) =>
+                if size >= &(config.value_type_size * 8) {
+                    Err("Encoded value has different length than the gateway's configuration")
+                } else {
+                    Ok(())
+                },
+            Type::Address(size) =>
+                if size != &config.address_length {
+                    Err("Encoded address has different length than the gateway's configuration")
+                } else {
+                    Ok(())
+                },
+            Type::DynamicAddress =>
+                if encoded_len != (config.address_length as usize) {
+                    Err("Encoded dynamic address has different length than the gateway's configuration")
+                } else {
+                    Ok(())
+                },
+            _ => {
+                Ok(()) // other types do not need check
+            },
+        }
+    }
+
     /// eval assumes encoded_val is bytes Vector encoded with SCALE
     #[cfg(feature = "runtime")]
     pub fn eval_abi(
@@ -257,6 +289,7 @@ impl Type {
         encoded_val: Vec<u8>,
         gen: &GatewayABIConfig,
     ) -> Result<Vec<u8>, &'static str> {
+        self.check_length(encoded_val.len(), gen)?;
         match self {
             Type::Address(size) => match size {
                 20 => {
@@ -267,7 +300,7 @@ impl Type {
                     let res: [u8; 32] = decode_buf2val(encoded_val)?;
                     Ok(res.encode())
                 },
-                _ => Err("Unknown Address size"),
+                _ => Err("ADDR ERROR: The address length is not correct (should be 20 or 32)"),
             },
             Type::DynamicAddress => match gen.address_length {
                 20 => {
@@ -278,7 +311,9 @@ impl Type {
                     let res: [u8; 32] = decode_buf2val(encoded_val)?;
                     Ok(res.encode())
                 },
-                _ => unimplemented!(),
+                _ => Err(
+                    "DYNAMIC ADDR ERROR: The address length is not correct (should be 20 or 32)",
+                ),
             },
             Type::Bool => {
                 let res: bool = decode_buf2val(encoded_val)?;
@@ -683,6 +718,24 @@ mod tests {
                 0, 0, 0, 0
             ]),
             res
+        );
+    }
+
+    #[test]
+    fn successfully_abi_check_length() {
+        let valid_argument = [0u8; 32].to_vec();
+        let mock_config = GatewayABIConfig::default();
+
+        let addr = Type::Address(32);
+        assert_eq!(
+            addr.check_length(valid_argument.len(), &mock_config),
+            Ok(())
+        );
+
+        let addr = Type::DynamicAddress;
+        assert_eq!(
+            addr.check_length(valid_argument.len(), &mock_config),
+            Ok(())
         );
     }
 }
