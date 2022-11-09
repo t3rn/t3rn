@@ -177,6 +177,8 @@ jobs:
     runs-on: self-hosted
     needs: release-on-github
     steps:
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
       - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
         run: |
           UPGRADE_AT_HEIGHT=$(($(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getHeader", "params": [ ] }' https://dev.net.t3rn.io/http-rpc | jq -r .result.number) + 0x64))
