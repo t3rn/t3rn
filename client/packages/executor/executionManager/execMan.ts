@@ -63,7 +63,6 @@ export class ExecutionManager {
 	async addXtx(xtx: Execution) {
 		this.xtx[xtx.id] = xtx
 		let sfxId = Object.keys(xtx.sideEffects)
-		console.log("sfxIds", sfxId)
 		for(let i = 0; i < sfxId.length; i++) {
 			const sfx = xtx.sideEffects[sfxId[i]];
 			this.sfxToXtx[sfxId[i]] = xtx.id
