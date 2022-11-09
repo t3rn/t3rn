@@ -35,8 +35,8 @@ export default class CostEstimator {
 		for (const [_sfxId, estimate] of this.trackingMap.entries()) {
 			estimate.costSubject.next(await this.currentTransactionCost(estimate.tx))
 		}
-		// rerun this every 10s
-		setTimeout(this.update.bind(this), 10000);
+
+		setTimeout(this.update.bind(this), 30000);
 	}
 
 	async stopTracking(sfxId: string) {

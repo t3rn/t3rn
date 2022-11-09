@@ -27,7 +27,7 @@ export default {
         },
         "ROC": {
             priceSource: "coingecko",
-            id: "polkadot"
+            id: "polkadot" // this is the id of the coin on the source
         },
         "TRN": {
             priceSource: "coingecko",

@@ -1,4 +1,5 @@
 import {CoingeckoPricing} from "./coingecko";
+import {BehaviorSubject} from "rxjs";
 
 
 export class PriceEngine {
@@ -9,9 +10,8 @@ export class PriceEngine {
 		this.coingecko = new CoingeckoPricing();
 	}
 
-	// In USD
-	getQuote(assetId: string, amount: number) {
-		return this.coingecko.prices[assetId] * amount
+	getAssetPrice(assetId: string): BehaviorSubject<number> {
+		return this.coingecko.prices[assetId]
 	}
 
 }
