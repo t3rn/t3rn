@@ -33,7 +33,10 @@ export default class CostEstimator {
 	// fetch new prices for all tracked transactions
 	async update() {
 		for (const [_sfxId, estimate] of this.trackingMap.entries()) {
-			estimate.costSubject.next(await this.currentTransactionCost(estimate.tx))
+			const txCost = await this.currentTransactionCost(estimate.tx);
+			if(txCost !== estimate.costSubject.getValue()) {
+				estimate.costSubject.next(txCost)
+			}
 		}
 
 		setTimeout(this.update.bind(this), 30000);

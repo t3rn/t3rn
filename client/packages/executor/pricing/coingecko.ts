@@ -37,7 +37,9 @@ export class CoingeckoPricing {
 			)
 			.then(res => {
 				const price = parseFloat(res.data.market_data.current_price["usd"])
-				this.prices[ids[i]].next(price)
+				if(price !== this.prices[ids[i]].getValue()) {
+					this.prices[ids[i]].next(price)
+				}
 			})
 		}
 		setTimeout(this.updateAssetPrices.bind(this), 30000);
