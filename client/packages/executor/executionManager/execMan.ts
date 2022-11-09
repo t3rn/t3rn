@@ -7,6 +7,7 @@ import {PriceEngine} from "../pricing";
 import {BehaviorSubject} from "rxjs";
 import {StrategyEngine} from "../strategy";
 import {Sdk} from "@t3rn/sdk";
+import {BiddingEngine} from "../bidding";
 
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
@@ -45,10 +46,12 @@ export class ExecutionManager {
 
 	priceEngine: PriceEngine;
 	strategyEngine: StrategyEngine;
+	biddingEngine: BiddingEngine;
 
 	constructor(priceEngine: PriceEngine) {
 		this.priceEngine = priceEngine;
 		this.strategyEngine = new StrategyEngine();
+		this.biddingEngine = new BiddingEngine();
 	}
 
 
@@ -65,12 +68,12 @@ export class ExecutionManager {
     }
 
 	async addXtx(xtxData: any, sdk: Sdk) {
-		const xtx = new Execution(xtxData, sdk, this.strategyEngine)
+		const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine);
 		try {
 			this.strategyEngine.evaluateXtx(xtx)
 
 		} catch(e) {
-			console.log("Xtx eval failed!", e.toString())
+			console.log(`Xtx ${xtx.humanId} eval failed!`, e.toString())
 			return
 		}
 

@@ -8,6 +8,7 @@ import {Sdk} from "@t3rn/sdk";
 import {BehaviorSubject} from "rxjs";
 import {Gateway} from "@t3rn/sdk/dist/src/gateways";
 import {StrategyEngine} from "../strategy";
+import {BiddingEngine} from "../bidding";
 
 // maps event names to SfxType enum;
 export const EventMapper = ["Transfer", "MultiTransfer"]
@@ -28,6 +29,7 @@ export class SideEffect {
     securityLevel: SecurityLevel;
 
     wantToBid: boolean = false;
+    isBidder: boolean = false;
     minProfitUsd: number = 0;
 
     iAmExecuting: boolean;
@@ -64,9 +66,10 @@ export class SideEffect {
     rewardUsd: number = 0;
 
     strategyEngine: StrategyEngine;
+    biddingEngine: BiddingEngine;
 
 
-    constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string, sdk: Sdk, strategyEngine: StrategyEngine) {
+    constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string, sdk: Sdk, strategyEngine: StrategyEngine, biddingEngine: BiddingEngine) {
         if(this.knownTransactionInterface(sideEffect.encodedAction)) {
             this.raw = sideEffect;
             this.id = id;
@@ -79,6 +82,7 @@ export class SideEffect {
             this.reward = sdk.circuit.toFloat(sideEffect.maxReward) // this is always in TRN (native asset)
             this.insurance = sdk.circuit.toFloat(sideEffect.insurance) // this is always in TRN (native asset)
             this.strategyEngine = strategyEngine;
+            this.biddingEngine = biddingEngine;
         } else {
             console.log("SideEffect interface unknown!!")
         }
@@ -143,13 +147,23 @@ export class SideEffect {
             try {
                 this.minProfitUsd = this.strategyEngine.evaluateSfx(this) as number;
                 this.wantToBid = true;
+
+                if(!this.isBidder && this.wantToBid) {
+                    console.log("minProfitUsd", this.minProfitUsd)
+                    console.log("maxProfitUsd", this.maxProfitUsd.getValue())
+                    const bidUsd = this.biddingEngine.computeBid(this)
+                    console.log("Recomputing bidUsd for sfx " + this.humanId + ": " + bidUsd)
+                    const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue()
+                    console.log("bidRewardAsset", bidRewardAsset)
+
+                }
             } catch(e) {
                 console.log(`Sfx ${this.humanId} eval failed: `, e.toString())
+                this.wantToBid = false;
             }
         }
-
     }
-
+s
     updateStatus(status: SfxStatus) {
         this.status = status;
     }
@@ -209,7 +223,7 @@ export class SideEffect {
     private getTransferArguments(): any[] {
         return [
             this.arguments[1],
-            new BN(this.arguments[2].split("0x")[1], 16,"le"),
+            this.gateway.parseLe(this.arguments[2]).toNumber(),
         ]
     }
 }

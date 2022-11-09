@@ -129,6 +129,14 @@ export class Gateway {
 		}
 	}
 
+	parseLe(value: string): BN {
+		return new AmountConverter({
+			value,
+			decimals: this.decimals,
+			valueTypeSize: this.valueTypeSize}
+		).toBn()
+	}
+
 	setSfxBindings() {
 		for(let i = 0; i < this.allowedSideEffects.length; i++) {
 			switch(this.allowedSideEffects[i]) {
