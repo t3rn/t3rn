@@ -258,28 +258,41 @@ impl Type {
         gen: &GatewayABIConfig,
     ) -> Result<Vec<u8>, &'static str> {
         match self {
-            Type::Address(size) => match size {
-                20 => {
-                    let res: [u8; 20] = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                32 => {
-                    let res: [u8; 32] = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                _ => Err("Unknown Address size"),
+            Type::Address(size) => {
+                if size != &gen.address_length {
+                    Err("Encoded address has different length than the gateway's configuration")
+                } else {
+                    match size {
+                        20 => {
+                            let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        }
+                        32 => {
+                            let res: [u8; 32] = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        }
+                        _ => Err("ADDR ERROR: The address length is not correct (should be 20 or 32)"),
+                    }
+                }
             },
-            Type::DynamicAddress => match gen.address_length {
-                20 => {
-                    let res: [u8; 20] = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                32 => {
-                    let res: [u8; 32] = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                _ => unimplemented!(),
-            },
+            Type::DynamicAddress => {
+                if (gen.address_length as usize) != encoded_val.len() {
+                    Err("Encoded dynamic address has different length than the gateway's configuration")
+                } else {
+                    match gen.address_length {
+                        20 => {
+                            let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        },
+                        32 => {
+                            let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        },
+                        _ => {
+                            Err("DYNAMIC ADDR ERROR: The address length is not correct (should be 20 or 32)")
+                        }
+                    }
+                }}
             Type::Bool => {
                 let res: bool = decode_buf2val(encoded_val)?;
                 Ok(res.encode())
@@ -298,40 +311,52 @@ impl Type {
                     _ => Err("ABI OptionalInsurance eval error - wrong arg size"),
                 }
             },
-            Type::Int(size) => match size {
-                32 => {
-                    let res: i32 = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                64 => {
-                    let res: i64 = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                128 => {
-                    let res: i128 = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                _ => Err("Unknown Int size"),
-            },
-            Type::Uint(size) => match size {
-                32 => {
-                    let res: u32 = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                64 => {
-                    let res: u64 = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                128 => {
-                    let res: u128 = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                256 => {
-                    let res: U256 = decode_buf2val(encoded_val)?;
-                    Ok(res.encode())
-                },
-                _ => Err("Unknown Uint size"),
-            },
+            Type::Int(size) => {
+                if &gen.value_type_size != size {
+                    Err("Encoded int value has different length than the gateway's length")
+                } else {
+                    match size {
+                        32 => {
+                            let res: i32 = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        },
+                        64 => {
+                            let res: i64 = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        },
+                        128 => {
+                            let res: i128 = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        },
+                        _ => Err("Unknown Int size"),
+                    }
+                }
+            }
+            Type::Uint(size) => {
+                if &gen.value_type_size != size {
+                    Err("Encoded uint value has different length than the gateway's length")
+                } else {
+                    match size {
+                        32 => {
+                            let res: u32 = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        }
+                        64 => {
+                            let res: u64 = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        }
+                        128 => {
+                            let res: u128 = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        }
+                        256 => {
+                            let res: U256 = decode_buf2val(encoded_val)?;
+                            Ok(res.encode())
+                        }
+                        _ => Err("Unknown Uint size"),
+                    }
+                }
+            }
             Type::Bytes(_) => {
                 let res: Bytes = decode_buf2val(encoded_val)?;
                 Ok(res.to_vec())
