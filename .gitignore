@@ -20,3 +20,6 @@ client/cli/yarn-error.log
 **/.DS_Store
 
 bin
+
+/tests/pit/node_modules/
+/tests/pit/logs/
