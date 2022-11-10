@@ -101,7 +101,8 @@ construct_runtime!(
         // Monetary
         Balances: pallet_balances = 10,
         TransactionPayment: pallet_transaction_payment = 11,
-        Assets: pallet_assets = 12,
+        Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 12,
+        Assets: pallet_assets = 13,
 
         // Circuit
         // t3rn pallets

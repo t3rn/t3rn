@@ -1,8 +1,8 @@
 use crate::*;
-use frame_system::EnsureRoot;
-
+use frame_support::{traits::NeverEnsureOrigin, PalletId};
+use frame_system::EnsureSignedBy;
 use smallvec::smallvec;
-use sp_runtime::impl_opaque_keys;
+use sp_runtime::{Permill, impl_opaque_keys};
 use sp_std::prelude::*;
 
 #[cfg(any(feature = "std", test))]
@@ -238,6 +238,33 @@ impl pallet_scheduler::Config for Runtime {
     type PreimageProvider = Preimage;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
+    pub const MaxApprovals: u32 = 100;
+    pub const ProposalBond: Permill = Permill::from_percent(3);
+    pub const SpendPeriod: u32 = ((60 * 60 * 24) / 12) * 1;
+    pub const ProposalBondMinimum: u128 = 10_u128 * 1_000_000_000_000_u128;
+}
+
+impl pallet_treasury::Config for Runtime {
+    type Currency = Balances;
+    type Event = Event;
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type RejectOrigin = EnsureRoot<AccountId>;
+    type ApproveOrigin = EnsureRoot<AccountId>;
+    type OnSlash = Treasury;
+    type PalletId = TreasuryId;
+    type ProposalBond = ProposalBond;
+    type SpendPeriod = SpendPeriod;
+    type ProposalBondMinimum = ProposalBondMinimum;
+    type MaxApprovals = MaxApprovals;
+    type ProposalBondMaximum = ();
+    type SpendFunds = ();
+    type Burn = ();
+    type BurnDestination = ();
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 struct CheckInherents;
