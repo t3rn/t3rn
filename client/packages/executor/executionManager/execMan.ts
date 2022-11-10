@@ -1,6 +1,6 @@
 import createDebug from "debug"
 import {Execution} from "./execution";
-import {SideEffect} from "./sideEffect";
+import {SideEffect, Notification, NotificationType} from "./sideEffect";
 import Estimator from "../gateways/substrate/estimator";
 import SubstrateRelayer from "../gateways/substrate/relayer";
 import {PriceEngine} from "../pricing";
@@ -8,6 +8,10 @@ import {BehaviorSubject} from "rxjs";
 import {StrategyEngine} from "../strategy";
 import {Sdk} from "@t3rn/sdk";
 import {BiddingEngine} from "../bidding";
+import {CircuitListener, EventData, Events} from "../circuit/listener"
+import {ApiPromise} from "@polkadot/api";
+import CircuitRelayer from "../circuit/relayer";
+import {ExecutionLayerType} from "@t3rn/sdk/dist/src/gateways/types";
 
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
@@ -48,24 +52,67 @@ export class ExecutionManager {
 	strategyEngine: StrategyEngine;
 	biddingEngine: BiddingEngine;
 
-	constructor(priceEngine: PriceEngine) {
-		this.priceEngine = priceEngine;
+
+    sdk: Sdk;
+    circuitClient: ApiPromise;
+    circuitListener: CircuitListener;
+    circuitRelayer: CircuitRelayer;
+    relayers: { [key: string]: SubstrateRelayer } = {};
+    signer: any;
+
+	constructor(circuitClient: ApiPromise, sdk: Sdk) {
+		this.priceEngine = new PriceEngine();
 		this.strategyEngine = new StrategyEngine();
 		this.biddingEngine = new BiddingEngine();
+		this.circuitClient = circuitClient;
+		this.circuitListener = new CircuitListener(this.circuitClient)
+		this.circuitRelayer = new CircuitRelayer(sdk)
+		this.sdk = sdk;
 	}
 
+	async setup() {
+		await this.initializeGateways()
+		await this.circuitListener.start()
+		await this.initializeEventListeners()
+	}
 
-	// adds gateways on startup
-    addGateway(id: string, estimator: Estimator) {
-        this.queue[id] = {
-            blockHeight: 0,
-            waitingForInsurance: [],
-            readyToExecute: [],
-            readyToConfirm: {},
+	async initializeGateways() {
+        const gatewayKeys = Object.keys(this.sdk.gateways);
+        for (let i = 0; i < gatewayKeys.length; i++) {
+            const entry = this.sdk.gateways[gatewayKeys[i]]
+
+            if (entry.executionLayerType === ExecutionLayerType.Substrate) {
+                let relayer = new SubstrateRelayer()
+                await relayer.setup(entry.rpc, undefined)
+
+                const estimator = new Estimator(relayer)
+
+                // setup in executionManager
+                this.queue[entry.id] = {
+					blockHeight: 0,
+					waitingForInsurance: [],
+					readyToExecute: [],
+					readyToConfirm: {},
+				}
+
+				this.targetEstimator[entry.id] = estimator;
+                // store relayer instance locally
+                this.relayers[entry.id] = relayer
+            }
         }
-
-		this.targetEstimator[id] = estimator;
     }
+
+	async initializeEventListeners() {
+        this.circuitListener.on("Event", async (eventData: EventData) => {
+            switch (eventData.type) {
+                case Events.NewSideEffectsAvailable:
+                    console.log("NewSideEffectsAvailable")
+                    this.addXtx(eventData.data, this.sdk)
+            }
+
+        })
+	}
+
 
 	async addXtx(xtxData: any, sdk: Sdk) {
 		const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine);
@@ -79,9 +126,23 @@ export class ExecutionManager {
 
 		this.xtx[xtx.id] = xtx
 		for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
+			this.initSfxListeners(sfx);
 			this.sfxToXtx[sfxId] = xtx.id
 			await this.addRiskRewardParameters(sfx)
+
 		}
+	}
+
+	async initSfxListeners(sfx: SideEffect) {
+		sfx.on("Notification", (notification: Notification) => {
+			switch(notification.type) {
+				case NotificationType.SubmitBid: {
+					console.log("Submit bid")
+					this.circuitRelayer.bidSfx(notification.payload.sfxId, notification.payload.bid)
+
+				}
+			}
+		})
 	}
 
 	async addRiskRewardParameters(sfx: SideEffect) {

@@ -16,21 +16,14 @@ import config from "./config/config";
 
 // @ts-ignore
 import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
-import {PriceEngine} from "./pricing";
 import { cryptoWaitReady } from '@polkadot/util-crypto';
-import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types";
-import Estimator from "./gateways/substrate/estimator";
 
 class InstanceManager {
     static debug = createDebug("instance-manager")
 
     circuitClient: ApiPromise;
-    priceEngine: PriceEngine;
-    circuitListener: CircuitListener;
-    circuitRelayer: CircuitRelayer;
     executionManager: ExecutionManager;
     relayers: { [key: string]: SubstrateRelayer } = {};
-    gatewayDataService: GatewayDataService;
     sdk: Sdk;
     signer: any;
 
@@ -46,49 +39,24 @@ class InstanceManager {
 
         // @ts-ignore
         this.circuitClient = await this.sdk.init()
-        this.priceEngine = new PriceEngine();
-        this.executionManager = new ExecutionManager(this.priceEngine);
-        // @ts-ignore
-        // this.circuitRelayer = new CircuitRelayer(this.circuitClient, config.circuit.signer)
-        this.circuitListener = new CircuitListener(this.circuitClient)
 
-        // await this.gatewayDataService.init()
-        await this.circuitListener.start()
+        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk);
+        await this.executionManager.setup()
 
-        await this.initializeGateways()
-        await this.initializeEventListeners()
 
         InstanceManager.debug("executor setup")
     }
 
-    async initializeGateways() {
-        const gatewayKeys = Object.keys(this.sdk.gateways);
-        for (let i = 0; i < gatewayKeys.length; i++) {
-            const entry = this.sdk.gateways[gatewayKeys[i]]
-
-            if (entry.executionLayerType === ExecutionLayerType.Substrate) {
-                let relayer = new SubstrateRelayer()
-                await relayer.setup(entry.rpc, undefined)
-
-                const estimator = new Estimator(relayer)
-
-                // setup in executionManager
-                this.executionManager.addGateway(entry.id, estimator)
-                // store relayer instance locally
-                this.relayers[entry.id] = relayer
-            }
-        }
-    }
     async initializeEventListeners() {
-        this.circuitListener.on("Event", async (eventData: EventData) => {
-            switch (eventData.type) {
-                case Events.NewSideEffectsAvailable:
-                    console.log("NewSideEffectsAvailable")
-
-                    this.executionManager.addXtx(eventData.data, this.sdk)
-            }
-
-        })
+        // this.circuitListener.on("Event", async (eventData: EventData) => {
+        //     switch (eventData.type) {
+        //         case Events.NewSideEffectsAvailable:
+        //             console.log("NewSideEffectsAvailable")
+        //
+        //             this.executionManager.addXtx(eventData.data, this.sdk)
+        //     }
+        //
+        // })
        //  // Insurance for all SideEffects has been posted, ready to execute
        //  this.circuitListener.on("XTransactionReadyForExec", async (xtxId: string) => {
        //      this.executionManager.xtxReady(xtxId)
