@@ -11,11 +11,10 @@ export class BiddingEngine {
 	computeBid(sfx: SideEffect): number {
 		const maxProfit = sfx.maxProfitUsd.getValue();
 		const minProfit = sfx.minProfitUsd;
-		const bidUsd = minProfit + (maxProfit - minProfit) * this.bidPercentile;
+		const txOutputCost = sfx.txOutputCostUsd;
+		const bidUsd = txOutputCost + minProfit + (maxProfit - minProfit) * this.bidPercentile;
 
 		return bidUsd;
-
-
 	}
 
 }

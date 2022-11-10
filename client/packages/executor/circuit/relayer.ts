@@ -28,6 +28,8 @@ export default class CircuitRelayer extends EventEmitter {
     }
 
     async bidSfx(sfxId: string, amount: BN) {
+        console.log("Bidding for sfx", sfxId)
+        console.log("Amount", amount.toString())
         const encodedSfxId = this.api.createType("Hash", sfxId);
         const encodedAmount = this.api.createType("u128", amount);
         const tx = this.api.tx.circuit.bidSfx(encodedSfxId, encodedAmount);

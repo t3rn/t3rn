@@ -138,7 +138,7 @@ export class ExecutionManager {
 			switch(notification.type) {
 				case NotificationType.SubmitBid: {
 					console.log("Submit bid")
-					this.circuitRelayer.bidSfx(notification.payload.sfxId, notification.payload.bid)
+					this.circuitRelayer.bidSfx(notification.payload.sfxId, notification.payload.bidAmount)
 
 				}
 			}
