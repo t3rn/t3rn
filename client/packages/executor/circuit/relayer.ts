@@ -3,25 +3,41 @@ import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { fetchNonce } from "../utils/"
 import { SideEffect } from "../executionManager/sideEffect"
 import createDebug from "debug"
+import {BN} from "@polkadot/util";
+import {Sdk} from "@t3rn/sdk";
 const fs = require("fs");
+
 
 export default class CircuitRelayer extends EventEmitter {
     static debug = createDebug("circuit-relayer")
 
-    api: ApiPromise
+    api: ApiPromise;
+    sdk: Sdk;
     id: string
     rpc: string
     signer: any
 
-    constructor(client: ApiPromise, signer: string | undefined) {
+    constructor(sdk: Sdk) {
         super();
-        this.api = client;
+        // @ts-ignore
+        this.api = sdk.client;
+        this.sdk = sdk;
         const keyring = new Keyring({ type: "sr25519" })
-        this.signer =
-            signer === undefined
-                ? keyring.addFromUri("//Executor//default")
-                : keyring.addFromMnemonic(signer)
+        this.signer = keyring.addFromUri("//Executor//default")
 
+    }
+
+    async bidSfx(sfxId: string, amount: BN) {
+        const encodedSfxId = this.api.createType("Hash", sfxId);
+        const encodedAmount = this.api.createType("u128", amount);
+        const tx = this.api.tx.circuit.bidSfx(encodedSfxId, encodedAmount);
+        this.sdk.circuit.tx.signAndSendSafe(tx)
+            .then(res => {
+                console.log(res)
+            })
+            .catch(err => {
+                console.log(err)
+            })
     }
 
     async bondInsuranceDeposits(sideEffects: SideEffect[]) {

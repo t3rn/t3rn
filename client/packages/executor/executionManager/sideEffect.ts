@@ -9,6 +9,8 @@ import {BehaviorSubject} from "rxjs";
 import {Gateway} from "@t3rn/sdk/dist/src/gateways";
 import {StrategyEngine} from "../strategy";
 import {BiddingEngine} from "../bidding";
+import {EventEmitter} from "events";
+import { floatToBn } from "@t3rn/sdk/dist/src/circuit";
 
 // maps event names to SfxType enum;
 export const EventMapper = ["Transfer", "MultiTransfer"]
@@ -19,7 +21,16 @@ export type TxOutput = {
     asset: string,
 }
 
-export class SideEffect {
+export enum NotificationType {
+    SubmitBid,
+}
+
+export type Notification = {
+    type: NotificationType,
+    payload: any,
+}
+
+export class SideEffect extends EventEmitter {
     step: number;
     status: SfxStatus;
     action: SfxType;
@@ -70,6 +81,7 @@ export class SideEffect {
 
 
     constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string, sdk: Sdk, strategyEngine: StrategyEngine, biddingEngine: BiddingEngine) {
+        super();
         if(this.knownTransactionInterface(sideEffect.encodedAction)) {
             this.raw = sideEffect;
             this.id = id;
@@ -153,9 +165,16 @@ export class SideEffect {
                     console.log("maxProfitUsd", this.maxProfitUsd.getValue())
                     const bidUsd = this.biddingEngine.computeBid(this)
                     console.log("Recomputing bidUsd for sfx " + this.humanId + ": " + bidUsd)
-                    const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue()
+                    const bidRewardAsset = (bidUsd / this.rewardAssetPrice.getValue())
                     console.log("bidRewardAsset", bidRewardAsset)
 
+                    this.emit("Notification", {
+                        type: NotificationType.SubmitBid,
+                        payload: {
+                            sfxId: this.id,
+                            bidAmount: floatToBn(bidRewardAsset) // converts human to native
+                        }
+                    })
                 }
             } catch(e) {
                 console.log(`Sfx ${this.humanId} eval failed: `, e.toString())
