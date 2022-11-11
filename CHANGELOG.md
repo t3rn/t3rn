@@ -5,6 +5,10 @@
 * no custom features
 * open collator pool
 * upgradable runtime
+
+## `v1.2.0-rc.1` 2022-11-21
+* fix: restore block time to 12s
+
 ## `v1.2.0-rc.0` 2022-10-24
 ## What's Changed
 
