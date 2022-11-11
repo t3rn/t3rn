@@ -173,11 +173,14 @@ jobs:
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-#      - name: 🔫 Trigger chainops downstream
-#        run: |
-#          curl -XPOST /
-#            -u ${{ secrets.GH_PAT }} /
-#            -H "Accept:application/vnd.github" /
-#            -H "Content-Type:application/json" /
-#            https://api.github.com/repos/t3rn/chainops/cd.yml/dispatches /
-#            --data "{\"action\":\"xtrigger\",\"tag\":\"${{ env.PUSHED_TAG }}\"}"
+  deploy-to-rococo:
+    runs-on: self-hosted
+    needs: release-on-github
+    steps:
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+      - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
+        run: |
+          UPGRADE_AT_HEIGHT=$(($(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getHeader", "params": [ ] }' https://dev.net.t3rn.io/http-rpc | jq -r .result.number) + 0x64))
+          echo "UPGRADE RUNTIME AT:" ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
+          ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://dev.net.t3rn.io https://dev.net.t3rn.io/http-rpc ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}

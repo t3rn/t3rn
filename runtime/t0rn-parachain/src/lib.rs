@@ -80,7 +80,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_version: 4,
     impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 2,
+    transaction_version: 3,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
