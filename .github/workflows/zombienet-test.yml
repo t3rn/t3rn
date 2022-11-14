@@ -16,7 +16,7 @@ env:
 
 jobs:
   smoke-test:
-    runs-on: self-hosted
+    runs-on: ["self-hosted", "ep1c"]
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
