@@ -1,0 +1,37 @@
+name: Perform zombienet tests
+
+on:
+  pull_request:
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/zombienet/*/*.feature"
+      - "**/zombienet/Makefile"
+      - ".github/workflows/smoke-test.yml"
+      - ".git/modules/*/HEAD"
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  smoke-test:
+    runs-on: self-hosted
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-06-17
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+      - name: 📼 Run zombienet tests
+        continue-on-error: false
+        run: |
+          cd tests/zombienet
+          make test

@@ -8,8 +8,7 @@ root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
 export PATH := $(shell echo $$PATH):$(bin_dir)
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
-
-ws_provider := wss://dev.net.t3rn.io
+tmp_dir := $(shell mktemp -d)
 
 ifneq ($(findstring Darwin,$(arch)),)
 	machine := macos
@@ -20,13 +19,15 @@ endif
 clean:
 	rm -rf $(bin_dir)/*
 
+directory:
+	mkdir -p $(bin_dir)
+
 ${bin_dir}/zombienet:
 	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(version)/zombienet-$(machine)
 	# echo "#### Need sudo access for zombienet executable ####"
 	sudo chmod +x $(bin_dir)/zombienet
 
 ${bin_dir}/polkadot:
-	tmp_dir=$(shell mktemp -d)
 	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(tmp_dir)
 	cargo build --manifest-path $(tmp_dir)/Cargo.toml --features fast-runtime --release --locked
 	mv -f $(tmp_dir)/target/release/polkadot $(bin_dir)/polkadot
@@ -39,14 +40,13 @@ ${bin_dir}/t3rn-collator:
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
 	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
 
-setup: ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
+setup: directory ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
 
 ${bin_dir}/subwasm:
 	cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1 --path ${bin_dir}/
 
 test-smoke: setup
-	# TODO: reuse the same network for the test
-	# zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
+	zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
 
 test-upgrade: setup
 	# get versions and bump t0rn
