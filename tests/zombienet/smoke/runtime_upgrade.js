@@ -1,7 +1,7 @@
 const assert = require("assert");
 
 async function run(nodeName, networkInfo, args) {
-    const {wsUri, userDefinedTypes} = networkInfo.nodesByName[nodeName];
+    const { wsUri, userDefinedTypes } = networkInfo.nodesByName[nodeName];
     const api = await zombie.connect(wsUri, userDefinedTypes);
 
     // get blockhash/runtimeVersion at block 1
@@ -12,13 +12,13 @@ async function run(nodeName, networkInfo, args) {
     const currentHeader = await api.rpc.chain.getHeader();
     const hashAtCurrent = await api.rpc.chain.getBlockHash(currentHeader.number.toHuman());
     const versionAtCurrent = await api.rpc.state.getRuntimeVersion(hashAtCurrent.toHuman());
+    const humanCurrent = versionAtCurrent.specVersion.toHuman();
+    console.log("current", humanCurrent);
 
-    const oldVersionIncremented = parseInt(versionAtBlock1.specVersion.toHuman(),10) + 1;
-    console.log("current", versionAtCurrent.specVersion.toHuman());
-    console.log("oldVersionIncremented", oldVersionIncremented);
+    const expectedVersion = parseInt(versionAtBlock1.specVersion.toHuman(), 10) + 1;
+    console.log("expectedVersion", expectedVersion);
 
-    // 2 == 2
-    assert.equal(oldVersionIncremented, versionAtCurrent.specVersion.toHuman(), "Running version should be the incremented version");
+    assert.ok(humanCurrent >= expectedVersion, "Running version should more than or equal to expectedVersion");
 }
 
 module.exports = { run }

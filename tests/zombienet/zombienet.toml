@@ -13,7 +13,7 @@ count = 4
 [[parachains]]
 id = 3000
 cumulus_based = true
-chain = "rococo"
+chain = "rococo-local"
 
 [[parachains.collators]]
 name = "t0rn-collator01"
@@ -30,7 +30,7 @@ rpc_port = 8831
 [[parachains]]
 id = 4000
 cumulus_based = true
-chain = "polkadot"
+chain = "local"
 
 [[parachains.collators]]
 name = "t3rn-collator01"
@@ -55,3 +55,7 @@ sender = 4000
 recipient = 3000
 max_capacity = 8
 max_message_size = 512
+
+[types.Header]
+number = "u64"
+weight = "u64"
