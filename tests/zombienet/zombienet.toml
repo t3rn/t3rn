@@ -1,0 +1,57 @@
+[relaychain]
+command = "polkadot"
+chain = "rococo-local"
+
+[[relaychain.nodes]]
+name = "alice"
+ws_port = 9900
+
+[[relaychain.node_groups]]
+name = "bob"
+count = 4
+
+[[parachains]]
+id = 3000
+cumulus_based = true
+chain = "rococo"
+
+[[parachains.collators]]
+name = "t0rn-collator01"
+command = "t0rn-collator"
+ws_port = 9930
+rpc_port = 8830
+
+[[parachains.collators]]
+name = "t0rn-collator02"
+command = "t0rn-collator"
+ws_port = 9931
+rpc_port = 8831
+
+[[parachains]]
+id = 4000
+cumulus_based = true
+chain = "polkadot"
+
+[[parachains.collators]]
+name = "t3rn-collator01"
+command = "t3rn-collator"
+ws_port = 9940
+rpc_port = 8840
+
+[[parachains.collators]]
+name = "t3rn-collator02"
+command = "t3rn-collator"
+ws_port = 9941
+rpc_port = 8841
+
+[[hrmp_channels]]
+sender = 3000
+recipient = 4000
+max_capacity = 8
+max_message_size = 512
+
+[[hrmp_channels]]
+sender = 4000
+recipient = 3000
+max_capacity = 8
+max_message_size = 512

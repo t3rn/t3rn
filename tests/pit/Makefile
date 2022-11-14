@@ -33,7 +33,7 @@ test: clean-logs clean-bins
 		-m test \
 		-t ./files \
 		-tl ./logs/tests.log
-#
-#	tail -n 100 logs/tests.log
+
+	tail -n 100 logs/tests.log
 
 	printf "\n🎉 integration tests finished! \n\n"

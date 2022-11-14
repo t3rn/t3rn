@@ -5,10 +5,10 @@ settings:
       wsPort: 9900
     t3rn_parachain: &t3rn_parachain
       wsPort: 9930
-      paraId: &ap_id 3000
-    t1rn_parachain: &t1rn_parachain
+      paraId: &t3rn_para_id 3000
+    t0rn_parachain: &t0rn_parachain
       wsPort: 9940
-      paraId: &pp_id 4000
+      paraId: &t0rn_para_id 4000
   variables:
     common:
       xcm_verison: &xcm_version '2'
@@ -16,8 +16,8 @@ settings:
     chains:
       relay_chain:
         signer: &rc_signer //Alice
-        t3rn_parachain_destination: &ap_dest { v1: { 0, interior: { x1: { parachain: *ap_id }}}}
-      t1rn_parachain:
+        t3rn_parachain_destination: &ap_dest { v1: { 0, interior: { x1: { parachain: *t3rn_para_id }}}}
+      t0rn_parachain:
         signer: &pp_signer //Alice
   decodedCalls:
     ap_force_xcm_version:
@@ -48,7 +48,7 @@ tests:
                     parents: 0,
                     interior: {
                       X1: {
-                        Parachain: *ap_id
+                        Parachain: *t3rn_para_id
                       }
                     }
                   },
@@ -63,7 +63,7 @@ tests:
                     attribute:
                       type: u32
                       value: *xcm_version
-          - extrinsics: # Relay Chain sets supported version for Penpal Parachain
+          - extrinsics: # Relay Chain sets supported version for T0rn Parachain
               - chain: *relay_chain
                 sudo: true
                 signer: *rc_signer
@@ -74,7 +74,7 @@ tests:
                     parents: 0,
                     interior: {
                       X1: {
-                        Parachain: *pp_id
+                        Parachain: *t0rn_para_id
                       }
                     }
                   },
