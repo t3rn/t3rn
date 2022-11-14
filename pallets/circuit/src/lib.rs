@@ -405,6 +405,14 @@ pub mod pallet {
                         &mut local_ctx,
                         status_change,
                     );
+
+                    Self::emit(
+                        local_ctx.xtx_id,
+                        Some(local_ctx.xtx),
+                        &Self::account_id(),
+                        &vec![],
+                        None,
+                    );
                 });
             // Go over pending Bids to discover whether
 
@@ -754,11 +762,7 @@ pub mod pallet {
                 accepted_as_best_bid,
             );
 
-            // ToDo: Remove below after ensuring that event clients migrate to the new SFXNewBidReceived
-            Self::deposit_event(Event::SideEffectInsuranceReceived(sfx_id, executor.clone()));
-
             Self::deposit_event(Event::SFXNewBidReceived(
-                xtx_id,
                 sfx_id,
                 executor.clone(),
                 bid_amount,
@@ -937,12 +941,8 @@ pub mod pallet {
         Result(T::AccountId, AccountId32, XBICheckOutStatus, Data, Data),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
-        // ToDo: Obsolete!
-        // Notifies that the bond for a specific side_effect has been bonded.
-        SideEffectInsuranceReceived(XExecSignalId<T>, <T as frame_system::Config>::AccountId),
         // New best bid for SFX has been accepted. Account here is an executor.
         SFXNewBidReceived(
-            XExecSignalId<T>,
             SideEffectId<T>,
             <T as frame_system::Config>::AccountId,
             EscrowedBalanceOf<T, T::Escrowed>,
