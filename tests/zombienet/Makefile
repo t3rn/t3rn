@@ -10,11 +10,16 @@ export PATH := $(shell echo $$PATH):$(bin_dir)
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 tmp_dir := $(shell mktemp -d)
 
+SCCACHE_VERSION := v0.3.1
+SCCACHE_FILE := sccache-$(SCCACHE_VERSION)-x86_64-unknown-linux-musl
+
 ifneq ($(findstring Darwin,$(arch)),)
 	machine := macos
 else ifneq ($(findstring Linux,$(arch)),)
 	machine := linux
 endif
+
+# ====================== Setup ======================
 
 clean:
 	rm -rf $(bin_dir)/*
@@ -22,6 +27,17 @@ clean:
 directory:
 	mkdir -p $(bin_dir)
 
+${bin_dir}/sccache:
+	@if [ $(machine) = "macos" ]; then \
+        brew update; \
+		brew install sccache; \
+	elif [ $(machine) = "linux" ]; then \
+		curl -fL -o $(tmp_dir)/$(SCCACHE_FILE).tar.gz https://github.com/mozilla/sccache/releases/download/$(SCCACHE_VERSION)/$(SCCACHE_FILE).tar.gz; \
+		tar xzvf $(tmp_dir)/$(SCCACHE_FILE).tar.gz -C $(tmp_dir); \
+		mv -f $(tmp_dir)/$(SCCACHE_FILE)/sccache $(bin_dir)/sccache; \
+		sudo chmod +x $(bin_dir)/sccache; \
+	fi
+	
 ${bin_dir}/zombienet:
 	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(version)/zombienet-$(machine)
 	# echo "#### Need sudo access for zombienet executable ####"
@@ -32,20 +48,36 @@ ${bin_dir}/polkadot:
 	cargo build --manifest-path $(tmp_dir)/Cargo.toml --features fast-runtime --release --locked
 	mv -f $(tmp_dir)/target/release/polkadot $(bin_dir)/polkadot
 
-${bin_dir}/t0rn-collator:
+${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml Makefile
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
 	cp -f $(root_dir)/target/release/t0rn-collator $(bin_dir)/
 
-${bin_dir}/t3rn-collator:
+${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(root_dir)/*/t3rn-parachain/Cargo.toml Makefile
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
 	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
-
-setup: directory ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
-
+	
 ${bin_dir}/subwasm:
 	cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1 --path ${bin_dir}/
 
+setup: directory ${bin_dir}/sccache # ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
+
+# ====================== Caching ======================
+
+start-sccache: ${bin_dir}/sccache
+	sccache --start-server
+
+stop-sccache: ${bin_dir}/sccache
+	sccache --stop-server || true
+	
+print-sccache: ${bin_dir}/sccache
+	sccache --show-stats
+	
+# ====================== Testing ======================
+
 test-smoke: setup
+	# FIXME: ensure this runs on all changes
+	# TODO[Optimisation]: loop through directory and test all
+	# TODO[Optimisation]: when zombienet can run on a pre-existing network, run it
 	zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
 
 test-upgrade: setup
@@ -68,8 +100,8 @@ test-upgrade: setup
 	# deploy with test (ensuring old binary, new blob)
 	zombienet --provider=$(provider) test ./smoke/9999-runtime_upgrade.feature
 
-# This should only be run if the spec version is different to the old	
-test-real-upgrade:
+# This should only be run if the spec version is different to the old, simply write the runtime to test to the same file and the test will check it
+test-real-upgrade: setup
 	# build new blobs
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
