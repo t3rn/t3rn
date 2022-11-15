@@ -982,8 +982,7 @@ fn circuit_handles_dropped_at_bidding() {
                     topics: vec![]
                 }
             );
-            // ToDo activate once #504 is fixed
-            // assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
+            assert_eq!(Circuit::get_x_exec_signals(xtx_id), None); // This should pass!
         })
 }
 
