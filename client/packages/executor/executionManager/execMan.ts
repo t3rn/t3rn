@@ -1,10 +1,9 @@
 import createDebug from "debug"
 import {Execution} from "./execution";
-import {SideEffect, Notification, NotificationType} from "./sideEffect";
+import {Notification, NotificationType, SideEffect} from "./sideEffect";
 import Estimator from "../gateways/substrate/estimator";
 import SubstrateRelayer from "../gateways/substrate/relayer";
 import {PriceEngine} from "../pricing";
-import {BehaviorSubject} from "rxjs";
 import {StrategyEngine} from "../strategy";
 import {Sdk} from "@t3rn/sdk";
 import {BiddingEngine} from "../bidding";
@@ -77,6 +76,8 @@ export class ExecutionManager {
 	}
 
 	async initializeGateways() {
+		// @ts-ignore
+		console.log(this.circuitRelayer.signer.address)
         const gatewayKeys = Object.keys(this.sdk.gateways);
         for (let i = 0; i < gatewayKeys.length; i++) {
             const entry = this.sdk.gateways[gatewayKeys[i]]
@@ -108,6 +109,12 @@ export class ExecutionManager {
                 case Events.NewSideEffectsAvailable:
                     console.log("NewSideEffectsAvailable")
                     this.addXtx(eventData.data, this.sdk)
+					break;
+				case Events.SFXNewBidReceived:
+					console.log("SFXNewBidReceived")
+					this.addBid(eventData.data)
+					break;
+
             }
 
         })
@@ -115,7 +122,8 @@ export class ExecutionManager {
 
 
 	async addXtx(xtxData: any, sdk: Sdk) {
-		const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine);
+		// @ts-ignore
+		const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine, this.circuitRelayer.signer.address);
 		try {
 			this.strategyEngine.evaluateXtx(xtx)
 
@@ -131,6 +139,18 @@ export class ExecutionManager {
 			await this.addRiskRewardParameters(sfx)
 
 		}
+	}
+
+	addBid(bidData: any) {
+		const sfxId = bidData[0].toString()
+		const bidder = bidData[1].toString()
+		const amt = bidData[2].toNumber()
+		console.log(sfxId, bidder, amt)
+		this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)?.processBid(bidder, amt)
+		// const xtxId = this.sfxToXtx[bidData.sfxId]
+		// const xtx = this.xtx[xtxId]
+		// const sfx = xtx.sideEffects.get(bidData.sfxId)
+		// sfx.addBid(bidData)
 	}
 
 	async initSfxListeners(sfx: SideEffect) {
