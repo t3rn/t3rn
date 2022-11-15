@@ -33,17 +33,9 @@ jobs:
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
-
-      - name: 🕒 Cache cargo registry and git
-        uses: actions/cache@v2
-        id: cache-rust
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          cache-on-failure: "true"
       - name: 🕒 Cache binaries
         uses: actions/cache@v2
         id: cache-bin

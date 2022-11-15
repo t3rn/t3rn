@@ -59,7 +59,7 @@ ${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(ro
 ${bin_dir}/subwasm:
 	cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1 --path ${bin_dir}/
 
-setup: directory ${bin_dir}/sccache # ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
+setup: directory ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
 
 # ====================== Caching ======================
 
