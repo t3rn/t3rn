@@ -12,6 +12,9 @@
   },
   "relay_chain": "rococo",
   "para_id": 3333,
+  "badBlocks": [
+    "0x2cfa4d955019a553e6c67d375f189730f09ff0f9578e945d554c5fbad2997098"
+  ],
   "codeSubstitutes": {},
   "genesis": {
     "runtime": {

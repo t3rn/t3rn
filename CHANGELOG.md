@@ -6,6 +6,9 @@
 * open collator pool
 * upgradable runtime
 
+## `v1.2.0-rc.2` 2022-11-21
+* fix: add bad_blocks extension to t0rn specs
+
 ## `v1.2.0-rc.1` 2022-11-21
 * fix: restore block time to 12s
 
