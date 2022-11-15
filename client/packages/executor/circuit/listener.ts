@@ -7,11 +7,12 @@ import { Execution } from "../executionManager/execution"
 import createDebug from "debug"
 
 export enum Events {
-    NewSideEffectsAvailable
+    NewSideEffectsAvailable,
+    SFXNewBidReceived
 }
 
 export type EventData = {
-    type: Events.NewSideEffectsAvailable,
+    type: Events,
     data: Execution | any
 }
 
@@ -33,6 +34,14 @@ export class CircuitListener extends EventEmitter {
                         "Event",
                         <EventData>{
                             type: Events.NewSideEffectsAvailable,
+                            data: notifications[i].event.data
+                        }
+                    )
+                } else if(notifications[i].event.method === "SFXNewBidReceived") {
+                    this.emit(
+                        "Event",
+                        <EventData>{
+                            type: Events.SFXNewBidReceived,
                             data: notifications[i].event.data
                         }
                     )

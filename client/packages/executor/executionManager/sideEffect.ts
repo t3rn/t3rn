@@ -11,7 +11,7 @@ import {StrategyEngine} from "../strategy";
 import {BiddingEngine} from "../bidding";
 import {EventEmitter} from "events";
 import { floatToBn } from "@t3rn/sdk/dist/src/circuit";
-
+import { addrToPub } from "@t3rn/sdk/dist/src/converters/address/substrate";
 // maps event names to SfxType enum;
 export const EventMapper = ["Transfer", "MultiTransfer"]
 
@@ -45,6 +45,7 @@ export class SideEffect extends EventEmitter {
     securityLevel: SecurityLevel;
 
     wantToBid: boolean = false;
+    circuitSignerAddress: string;
     isBidder: boolean = false;
     minProfitUsd: number = 0;
 
@@ -85,7 +86,7 @@ export class SideEffect extends EventEmitter {
     biddingEngine: BiddingEngine;
 
 
-    constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string, sdk: Sdk, strategyEngine: StrategyEngine, biddingEngine: BiddingEngine) {
+    constructor(sideEffect: T3rnTypesSideEffect, id: string, xtxId: string, sdk: Sdk, strategyEngine: StrategyEngine, biddingEngine: BiddingEngine, circuitSignerAddress: string) {
         super();
         if(this.knownTransactionInterface(sideEffect.encodedAction)) {
             this.raw = sideEffect;
@@ -100,6 +101,7 @@ export class SideEffect extends EventEmitter {
             this.insurance = sdk.circuit.toFloat(sideEffect.insurance) // this is always in TRN (native asset)
             this.strategyEngine = strategyEngine;
             this.biddingEngine = biddingEngine;
+            this.circuitSignerAddress = circuitSignerAddress;
         } else {
             console.log("SideEffect interface unknown!!")
         }
@@ -243,6 +245,16 @@ export class SideEffect extends EventEmitter {
         this.txStatus = TxStatus.Ready;
     }
 
+    processBid(signer: string, bidAmount: number) {
+        // if this is not own bid, update reward and isBidder
+        if(signer !== this.circuitSignerAddress) {
+            this.isBidder = false;
+            this.reward.next(this.gateway.toFloat(bidAmount));
+            console.log(`Sfx ${this.humanId} received bid from ${signer} for ${bidAmount} ${this.gateway.ticker}`)
+        }
+
+        console.log("own bid detected!")
+    }
 
     // ensure we can deal with the sfx action and set SfxType
     private knownTransactionInterface(encodedAction: any): boolean {
