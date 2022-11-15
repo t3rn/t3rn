@@ -38,7 +38,6 @@ ${bin_dir}/sccache:
 		sudo chmod +x $(bin_dir)/sccache; \
 	fi
 	
-
 ${bin_dir}/zombienet:
 	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(version)/zombienet-$(machine)
 	# echo "#### Need sudo access for zombienet executable ####"
