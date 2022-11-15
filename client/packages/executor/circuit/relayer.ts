@@ -27,19 +27,13 @@ export default class CircuitRelayer extends EventEmitter {
 
     }
 
-    async bidSfx(sfxId: string, amount: BN) {
+    async bidSfx(sfxId: string, amount: BN): Promise<string> {
         console.log("Bidding for sfx", sfxId)
         console.log("Amount", amount.toString())
         const encodedSfxId = this.api.createType("Hash", sfxId);
         const encodedAmount = this.api.createType("u128", amount);
         const tx = this.api.tx.circuit.bidSfx(encodedSfxId, encodedAmount);
-        this.sdk.circuit.tx.signAndSendSafe(tx)
-            .then(res => {
-                console.log(res)
-            })
-            .catch(err => {
-                console.log(err)
-            })
+        return this.sdk.circuit.tx.signAndSendSafe(tx)
     }
 
     async bondInsuranceDeposits(sideEffects: SideEffect[]) {

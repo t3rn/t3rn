@@ -139,6 +139,11 @@ export class ExecutionManager {
 				case NotificationType.SubmitBid: {
 					console.log("Submit bid")
 					this.circuitRelayer.bidSfx(notification.payload.sfxId, notification.payload.bidAmount)
+						.then(() => sfx.bidAccepted(notification.payload.bidAmount))
+						.catch((e) => {
+							console.log("Bid rejected", e)
+							sfx.bidRejected()
+						})
 
 				}
 			}

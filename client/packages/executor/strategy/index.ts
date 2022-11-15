@@ -122,7 +122,7 @@ export class StrategyEngine {
 	minInsuranceShareRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
 		if(strategy.minInsuranceShare) {
 			// reward and insurance are in the same asset, so no USD conversion is needed
-			if((sideEffect.insurance / sideEffect.reward) < strategy.minInsuranceAmountUsd) {
+			if((sideEffect.insurance / sideEffect.reward.getValue()) < strategy.minInsuranceAmountUsd) {
 				throw new Error("Min Insurance Share condition not met!")
 			}
 		}
