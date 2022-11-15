@@ -12,7 +12,7 @@ tmp_dir := $(shell mktemp -d)
 
 SCCACHE_VERSION := v0.3.1
 SCCACHE_FILE := sccache-$(SCCACHE_VERSION)-x86_64-unknown-linux-musl
-
+RUSTC_WRAPPER=sccache
 ifneq ($(findstring Darwin,$(arch)),)
 	machine := macos
 else ifneq ($(findstring Linux,$(arch)),)
