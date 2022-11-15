@@ -367,6 +367,7 @@ pub mod pallet {
             // Check for expiring bids each block
             <PendingXtxBidsTimeoutsMap<T>>::iter()
                 .find(|(_xtx_id, bidding_timeouts_at)| {
+                    // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
                     bidding_timeouts_at <= &frame_system::Pallet::<T>::block_number()
                 })
                 .map(|(xtx_id, _bidding_timeouts_at)| {
@@ -392,6 +393,11 @@ pub mod pallet {
                         } else {
                             // error - some FSX don't have bids
                             Self::kill(&mut local_ctx, CircuitStatus::DroppedAtBidding);
+                            Self::emit_status_update(
+                                local_ctx.xtx_id,
+                                Some(local_ctx.xtx),
+                                None,
+                            );
                             return
                         }
                     }
@@ -404,6 +410,12 @@ pub mod pallet {
                     Self::apply(
                         &mut local_ctx,
                         status_change,
+                    );
+
+                    Self::emit_status_update(
+                        local_ctx.xtx_id,
+                        Some(local_ctx.xtx),
+                        None,
                     );
                 });
             // Go over pending Bids to discover whether
@@ -432,11 +444,9 @@ pub mod pallet {
 
                         Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertTimedOut);
 
-                        Self::emit(
+                        Self::emit_status_update(
                             local_xtx_ctx.xtx_id,
                             Some(local_xtx_ctx.xtx),
-                            &Self::account_id(),
-                            &vec![],
                             None,
                         );
                         deletion_counter += 1;
@@ -596,13 +606,7 @@ pub mod pallet {
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, status_change);
 
             // Emit: From Circuit events
-            Self::emit(
-                local_xtx_ctx.xtx_id,
-                Some(local_xtx_ctx.xtx),
-                &requester,
-                &side_effects,
-                added_full_side_effects,
-            );
+            Self::emit_sfx(local_xtx_ctx.xtx_id, &requester, &side_effects);
 
             Ok(())
         }
@@ -703,13 +707,7 @@ pub mod pallet {
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, status_change);
 
             // Emit: From Circuit events
-            Self::emit(
-                local_xtx_ctx.xtx_id,
-                Some(local_xtx_ctx.xtx),
-                &requester,
-                &side_effects,
-                added_full_side_effects,
-            );
+            Self::emit_sfx(local_xtx_ctx.xtx_id, &requester, &side_effects);
 
             Ok(().into())
         }
@@ -754,11 +752,7 @@ pub mod pallet {
                 accepted_as_best_bid,
             );
 
-            // ToDo: Remove below after ensuring that event clients migrate to the new SFXNewBidReceived
-            Self::deposit_event(Event::SideEffectInsuranceReceived(sfx_id, executor.clone()));
-
             Self::deposit_event(Event::SFXNewBidReceived(
-                xtx_id,
                 sfx_id,
                 executor.clone(),
                 bid_amount,
@@ -883,11 +877,9 @@ pub mod pallet {
             Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
 
             // Emit: From Circuit events
-            Self::emit(
+            Self::emit_status_update(
                 local_xtx_ctx.xtx_id,
                 maybe_xtx_changed,
-                &executor,
-                &vec![],
                 assert_full_side_effects_changed,
             );
 
@@ -937,12 +929,8 @@ pub mod pallet {
         Result(T::AccountId, AccountId32, XBICheckOutStatus, Data, Data),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
-        // ToDo: Obsolete!
-        // Notifies that the bond for a specific side_effect has been bonded.
-        SideEffectInsuranceReceived(XExecSignalId<T>, <T as frame_system::Config>::AccountId),
         // New best bid for SFX has been accepted. Account here is an executor.
         SFXNewBidReceived(
-            XExecSignalId<T>,
             SideEffectId<T>,
             <T as frame_system::Config>::AccountId,
             EscrowedBalanceOf<T, T::Escrowed>,
@@ -957,6 +945,8 @@ pub mod pallet {
         XTransactionXtxFinishedExecAllSteps(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
         XTransactionXtxRevertedAfterTimeOut(XExecSignalId<T>),
+        // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
+        XTransactionXtxDroppedAtBidding(XExecSignalId<T>),
         // Listeners - executioners/relayers to know new challenges and perform offline risk/reward calc
         //  of whether side effect is worth picking up
         NewSideEffectsAvailable(
@@ -1175,10 +1165,6 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Requested => {
                 local_ctx.xtx.steps_cnt = (0, local_ctx.full_side_effects.len() as u32);
             },
-            // CircuitStatus::PendingBidding | CircuitStatus::Ready => {
-            //     local_ctx.xtx.status =
-            //         CircuitStatus::determine_xtx_status::<T>(&local_ctx.full_side_effects)?;
-            // },
             CircuitStatus::RevertTimedOut => {},
             CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
                 // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
@@ -1392,20 +1378,10 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    fn emit(
+    fn emit_sfx(
         xtx_id: XExecSignalId<T>,
-        maybe_xtx: Option<
-            XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
         subjected_account: &T::AccountId,
         side_effects: &Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
-        maybe_full_side_effects: Option<
-            Vec<
-                Vec<
-                    FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-                >,
-            >,
-        >,
     ) {
         if !side_effects.is_empty() {
             Self::deposit_event(Event::NewSideEffectsAvailable(
@@ -1421,7 +1397,24 @@ impl<T: Config> Pallet<T> {
                     })
                     .collect::<Vec<SideEffectId<T>>>(),
             ));
+            // ToDo remove this
+            Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id));
         }
+    }
+
+    fn emit_status_update(
+        xtx_id: XExecSignalId<T>,
+        maybe_xtx: Option<
+            XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >,
+        maybe_full_side_effects: Option<
+            Vec<
+                Vec<
+                    FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+                >,
+            >,
+        >,
+    ) {
         if let Some(xtx) = maybe_xtx {
             match xtx.status {
                 CircuitStatus::PendingBidding =>
@@ -1434,6 +1427,8 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
                 CircuitStatus::RevertTimedOut =>
                     Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id)),
+                CircuitStatus::DroppedAtBidding =>
+                    Self::deposit_event(Event::XTransactionXtxDroppedAtBidding(xtx_id)),
                 _ => {},
             }
             if xtx.status >= CircuitStatus::PendingExecution {
