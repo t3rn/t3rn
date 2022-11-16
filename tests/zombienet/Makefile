@@ -6,12 +6,13 @@ runtime := t3rn
 pdot_branch := release-v0.9.27
 root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
-export PATH := $(shell echo $$PATH):$(bin_dir)
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 tmp_dir := $(shell mktemp -d)
 
 SCCACHE_VERSION := v0.3.1
 SCCACHE_FILE := sccache-$(SCCACHE_VERSION)-x86_64-unknown-linux-musl
+
+export PATH := $(shell echo $$PATH):$(bin_dir)
 
 ifneq ($(findstring Darwin,$(arch)),)
 	machine := macos
@@ -78,7 +79,7 @@ test-smoke: setup
 	# FIXME: ensure this runs on all changes
 	# TODO[Optimisation]: loop through directory and test all
 	# TODO[Optimisation]: when zombienet can run on a pre-existing network, run it
-	zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
+	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
 
 test-upgrade: setup
 	# get versions and bump t0rn
@@ -98,7 +99,7 @@ test-upgrade: setup
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
 
 	# deploy with test (ensuring old binary, new blob)
-	zombienet --provider=$(provider) test ./smoke/9999-runtime_upgrade.feature
+	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/9999-runtime_upgrade.feature
 
 # This should only be run if the spec version is different to the old, simply write the runtime to test to the same file and the test will check it
 test-real-upgrade: setup
@@ -107,7 +108,10 @@ test-real-upgrade: setup
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
 
 	# deploy with test (ensuring old binary, new blob)
-	zombienet --provider=$(provider) test ./smoke/9999-runtime_upgrade.feature
+	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/9999-runtime_upgrade.feature
 
+spawn: setup
+	$(bin_dir)/zombienet --help
+	$(bin_dir)/zombienet --provider=$(provider) spawn ./zombienet.toml
 
 test: test-smoke test-upgrade
