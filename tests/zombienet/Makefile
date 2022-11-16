@@ -45,9 +45,9 @@ ${bin_dir}/zombienet:
 	sudo chmod +x $(bin_dir)/zombienet
 
 ${bin_dir}/polkadot:
-	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(tmp_dir)
-	cargo build --manifest-path $(tmp_dir)/Cargo.toml --features fast-runtime --release --locked
-	mv -f $(tmp_dir)/target/release/polkadot $(bin_dir)/polkadot
+	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(tmp_dir)/polkadot
+	cargo build --manifest-path $(tmp_dir)/polkadot/Cargo.toml --features fast-runtime --release --locked
+	mv -f $(tmp_dir)/polkadot/target/release/polkadot $(bin_dir)/polkadot
 
 ${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml Makefile
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
