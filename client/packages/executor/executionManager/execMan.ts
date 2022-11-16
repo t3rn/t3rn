@@ -105,6 +105,7 @@ export class ExecutionManager {
 
 	async initializeEventListeners() {
         this.circuitListener.on("Event", async (eventData: EventData) => {
+			console.log("Event")
             switch (eventData.type) {
                 case Events.NewSideEffectsAvailable:
                     console.log("NewSideEffectsAvailable")
@@ -113,6 +114,10 @@ export class ExecutionManager {
 				case Events.SFXNewBidReceived:
 					console.log("SFXNewBidReceived")
 					this.addBid(eventData.data)
+					break;
+				case Events.XTransactionReadyForExec:
+					console.log("XTransactionReadyForExec")
+					this.xtxReadyForExec(eventData.data[0].toString())
 					break;
 
             }
@@ -147,10 +152,10 @@ export class ExecutionManager {
 		const amt = bidData[2].toNumber()
 		console.log(sfxId, bidder, amt)
 		this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)?.processBid(bidder, amt)
-		// const xtxId = this.sfxToXtx[bidData.sfxId]
-		// const xtx = this.xtx[xtxId]
-		// const sfx = xtx.sideEffects.get(bidData.sfxId)
-		// sfx.addBid(bidData)
+	}
+
+	xtxReadyForExec(xtxId: string) {
+		this.xtx[xtxId].readyToExecute()
 	}
 
 	async initSfxListeners(sfx: SideEffect) {
@@ -180,7 +185,4 @@ export class ExecutionManager {
 
 		sfx.setRiskRewardParameters(txCostSubject, nativeAssetPriceSubject, txOutputPriceSubject, rewardAssetPriceSubject)
 	}
-
-
-
 }

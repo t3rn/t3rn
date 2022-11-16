@@ -8,7 +8,8 @@ import createDebug from "debug"
 
 export enum Events {
     NewSideEffectsAvailable,
-    SFXNewBidReceived
+    SFXNewBidReceived,
+    XTransactionReadyForExec
 }
 
 export type EventData = {
@@ -42,6 +43,15 @@ export class CircuitListener extends EventEmitter {
                         "Event",
                         <EventData>{
                             type: Events.SFXNewBidReceived,
+                            data: notifications[i].event.data
+                        }
+                    )
+                } else if (notifications[i].event.method === "XTransactionReadyForExec") {
+                    console.log("emitting...")
+                    this.emit(
+                        "Event",
+                        <EventData>{
+                            type: Events.XTransactionReadyForExec,
                             data: notifications[i].event.data
                         }
                     )

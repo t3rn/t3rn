@@ -62,9 +62,10 @@ export class Execution extends EventEmitter {
         })
     }
 
-    // generateExecutionSteps(): string[][] {
-    //
-    // }
+    readyToExecute() {
+        this.status = XtxStatus.Ready;
+        console.log(`Execution ${this.humanId} is ready to execute`)
+    }
 
     // update the status and set the step counter to the appropriate value.
     sideEffectConfirmed(sfxId: string) {
@@ -100,10 +101,6 @@ export class Execution extends EventEmitter {
                 this.emit("ExecuteSideEffectInCurrentStep", readyToExecute)
             }
         }
-    }
-
-    readyToExecute() {
-        this.status = XtxStatus.Ready;
     }
 
     complete() {
