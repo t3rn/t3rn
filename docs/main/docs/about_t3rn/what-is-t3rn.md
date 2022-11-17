@@ -8,7 +8,8 @@ t3rn is a hosting platform for smart contracts that have the ability to perform 
 Developers can write their smart contracts in Solidity, !ink or languages compiling to WASM, since t3rn supports WASM and EVM.
 
 They also have the ability to store smart contracts in the contracts registry and make them available for everyone, so other developers can instantiate these contracts in their contracts and collaborate with them.
-Creators of contracts can set a fixed fee for the use of the contract,so they will be remunerated each time someone executes it.
+
+Creators of contracts will get a share of the gas fee for the use of the contract,so they will be remunerated with a [reward](token-economics/tokenomics-inflation#gas-fees) each time someone executes it.
 
 t3rn uses a special model to perform multichain transactions. Essential components for this are Circuit, Executor and Ranger.
 
