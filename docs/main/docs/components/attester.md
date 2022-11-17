@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Attester
 
-Attesters occupy a unique space within the t3rn protocol. They are an off-chain bonded entity that locks tokens to sign new transactions. Attesters verify that the target chain has successfully received a transaction and are responsible for sending it back to t3rn’s Circuit. 
+Attesters occupy a unique space within the t3rn protocol. They are an off-chain bonded entity that locks tokens to sign new transactions. Attesters aggregare finalised transactions from Circuit that can to be released from Escrow Contracts and create a single proof, which then can be send to the Escrow Contracts by Executors to release locked funds.
 
 First or second generation bridges create separate networks relying on trusted parties to attest a transaction has taken place on-chain to trigger transactions on a second chain. The problem? Parties in this type of system are not bonded, which boosts the risk of malicious behavior, fraud, and illicit collusion. 
 
