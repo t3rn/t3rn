@@ -19,12 +19,12 @@ t3rn uses a special model to perform multichain transactions. Essential componen
 
 
 # Interoperability - How does t3rn handle multichain transaction?
-When a multichain smart contract is executed, it creates transactions on other blockchains, called [Sideeffects](components/sfx/sfx-overview).
+When a multichain smart contract is executed, it creates transactions on other blockchains, called [Side Effects](components/sfx/sfx-overview).
 
-Side Effects are operations that contain parameters for a transaction on a target blockchain. The requester of a side effect specifies the fee he wants to pay for the execution and submits it to the Circuit. 
+Side Effects are operations that contain parameters for a transaction on a target blockchain. The requester of a Side Effect specifies the fee he wants to pay for the execution and submits it to the Circuit. 
 
 They are stored on Circuit and can then be picked up and executed by an [Executor](/components/executor-overview).
-These Sideeffects can be combined with others to execute a sequence of multichain transactions. This enables composition of multichain transactions.
+These Side Effects can be combined with others to execute a sequence of multichain transactions. This enables composition of multichain transactions.
 
 In most cases, each individual transaction must be successful in order to retain the logic of the composite transaction.
 
