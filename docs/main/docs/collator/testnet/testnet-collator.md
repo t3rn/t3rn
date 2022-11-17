@@ -72,6 +72,11 @@ docker pull ghcr.io/t3rn/t0rn-collator:v1.1.0-rc.0
 
 
 ## Select Boot Nodes
+
+:::caution
+We are cuurrently revamping t0rn and will release our updated bootnodes once finished.
+:::
+
 We publish these chain specs alongside our runtime releases.
 
 Also, select a `Rococo` boot node:
