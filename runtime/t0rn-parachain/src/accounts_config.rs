@@ -1,6 +1,6 @@
 use super::*;
 use frame_support::parameter_types;
-use frame_system::EnsureRoot<AccountId>;
+use frame_system::EnsureRoot;
 use sp_core::crypto::AccountId32;
 
 parameter_types! {
