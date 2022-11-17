@@ -258,12 +258,12 @@ impl Type {
         config: &GatewayABIConfig,
     ) -> Result<(), &'static str> {
         match self {
-            Type::Int(size) | Type::Uint(size) =>
-                if size != &config.value_type_size {
-                    Err("Encoded value has different length than the gateway's configuration")
-                } else {
-                    Ok(())
-                },
+            // Type::Int(size) | Type::Uint(size) =>
+            //     if size != &config.value_type_size {
+            //         Err("Encoded value has different length than the gateway's configuration")
+            //     } else {
+            //         Ok(())
+            //     },
             Type::Address(size) =>
                 if size != &config.address_length {
                     Err("Encoded address has different length than the gateway's configuration")
@@ -308,7 +308,7 @@ impl Type {
                     Ok(res.encode())
                 },
                 32 => {
-                    let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                    let res: [u8; 32] = decode_buf2val(encoded_val)?;
                     Ok(res.encode())
                 },
                 _ => Err(
@@ -348,30 +348,25 @@ impl Type {
                 },
                 _ => Err("Unknown Int size"),
             },
-            Type::Uint(size) =>
-                if &gen.value_type_size != size {
-                    Err("Encoded uint value has different length than the gateway's length")
-                } else {
-                    match size {
-                        32 => {
-                            let res: u32 = decode_buf2val(encoded_val)?;
-                            Ok(res.encode())
-                        },
-                        64 => {
-                            let res: u64 = decode_buf2val(encoded_val)?;
-                            Ok(res.encode())
-                        },
-                        128 => {
-                            let res: u128 = decode_buf2val(encoded_val)?;
-                            Ok(res.encode())
-                        },
-                        256 => {
-                            let res: U256 = decode_buf2val(encoded_val)?;
-                            Ok(res.encode())
-                        },
-                        _ => Err("Unknown Uint size"),
-                    }
+            Type::Uint(size) => match size {
+                32 => {
+                    let res: u32 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
                 },
+                64 => {
+                    let res: u64 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                },
+                128 => {
+                    let res: u128 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                },
+                256 => {
+                    let res: U256 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                },
+                _ => Err("Unknown Uint size"),
+            },
             Type::Bytes(_) => {
                 let res: Bytes = decode_buf2val(encoded_val)?;
                 Ok(res.to_vec())
@@ -729,21 +724,18 @@ mod tests {
     #[test]
     fn successfully_abi_check_length() {
         let valid_argument = [0u8; 32].to_vec();
-        let mock_config = GatewayABIConfig {
-            block_number_type_size: 32,
-            hash_size: 32,
-            hasher: HasherAlgo::Blake2,
-            crypto: CryptoAlgo::Sr25519,
-            address_length: 32,
-            value_type_size: 16,
-            decimals: 8,
-            structs: vec![],
-        };
-        let addr = Type::Address(32);
+        let mock_config = GatewayABIConfig::default();
 
+        let addr = Type::Address(32);
         assert_eq!(
             addr.check_length(valid_argument.len(), &mock_config),
             Ok(())
-        )
+        );
+
+        let addr = Type::DynamicAddress;
+        assert_eq!(
+            addr.check_length(valid_argument.len(), &mock_config),
+            Ok(())
+        );
     }
 }
