@@ -18,7 +18,6 @@ impl pallet_clock::Config for Runtime {
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type RoundDuration = ConstU32<500u32>;
-    type Treasury = Treasury;
 }
 
 impl pallet_xdns::Config for Runtime {

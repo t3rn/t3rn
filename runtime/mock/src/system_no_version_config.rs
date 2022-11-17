@@ -5,10 +5,11 @@ use frame_support::{
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
     PalletId,
 };
+use frame_system::EnsureRoot;
 use sp_runtime::{
-    Permill,
     generic,
     traits::{AccountIdLookup, BlakeTwo256},
+    Permill,
 };
 
 // Configure FRAME pallets to include in runtime.
@@ -114,21 +115,21 @@ parameter_types! {
 }
 
 impl pallet_treasury::Config for Runtime {
+    type ApproveOrigin = EnsureRoot<AccountId>;
+    type Burn = ();
+    type BurnDestination = ();
     type Currency = Balances;
     type Event = Event;
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
-    type RejectOrigin = EnsureRoot<AccountId>;
-    type ApproveOrigin = EnsureRoot<AccountId>;
+    type MaxApprovals = MaxApprovals;
     type OnSlash = Treasury;
     type PalletId = TreasuryId;
     type ProposalBond = ProposalBond;
-    type SpendPeriod = SpendPeriod;
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type MaxApprovals = MaxApprovals;
     type ProposalBondMaximum = ();
+    type ProposalBondMinimum = ProposalBondMinimum;
+    type RejectOrigin = EnsureRoot<AccountId>;
     type SpendFunds = ();
-    type Burn = ();
-    type BurnDestination = ();
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type SpendPeriod = SpendPeriod;
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
