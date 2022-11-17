@@ -11,7 +11,7 @@ sidebar_position: 1
 **Inflation**: `4.40%` (yearly)
 
 
-t3rn network participants are able to get `remuniated` through Inflation and Gas fees:
+t3rn network participants are able to get `remunerated` through Inflation and Gas fees:
 
 ## Inflation 
 
@@ -27,9 +27,8 @@ t3rn network participants are able to get `remuniated` through Inflation and Gas
 
 | | Collators | Executors | Attesters | Authors | Treasury | Users |
 |---|---|---|---|---|---|---|
-| Any Other TX| 99% | N/A | N/A | N/A | 1% | 0% |
-| Contracts Call TX | 19% | N/A | N/A | 80% | 1% | 0% |
-| SFX + XTX Confirm Tx | 19% | 80% | N/A | N/A | 1% | 0% |
+| Any TX| 80% | N/A | N/A | N/A | 20% | 0% |
+| Contracts Call TX | 10% | N/A | N/A | 80% | 10% | 0% |
 | SFX Attestations | 19% | N/A | N/A | N/A | 1% | 0% |
 
 
