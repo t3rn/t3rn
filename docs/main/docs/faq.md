@@ -22,7 +22,7 @@ Yes and you can find full roles and opportunities [here](https://angel.co/compan
 We are targeting Q1 of 2023, however blockchain development is a dynamic and complex process and as such no exact date has been set yet.
 
 ### How many times do the users have to sign and what to pay for?
-Answer: The user needs so sign one time to submit their Sideeffects at one. When submitting a Sideeffect, the User pays for the Gasfee for all the transactions involved.
+Answer: The user needs so sign one time to submit their Side Effects at one. When submitting a Side Effect, the User pays for the Gasfee for all the transactions involved.
 
 ### Will t3rn token holders receive rewards?
 Answer: No, members will be able to stake it, but the rewards are meant for the developers.
