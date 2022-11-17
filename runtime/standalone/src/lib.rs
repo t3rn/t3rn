@@ -109,8 +109,7 @@ construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Treasury: pallet_treasury = 109,
-        Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
+        Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
 
         XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>} = 111,
 

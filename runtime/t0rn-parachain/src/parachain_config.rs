@@ -1,8 +1,8 @@
 use crate::*;
 use frame_support::{traits::NeverEnsureOrigin, PalletId};
-use frame_system::EnsureSignedBy;
+use frame_system::{EnsureRoot, EnsureSignedBy};
 use smallvec::smallvec;
-use sp_runtime::{Permill, impl_opaque_keys};
+use sp_runtime::{impl_opaque_keys, Permill};
 use sp_std::prelude::*;
 
 #[cfg(any(feature = "std", test))]
@@ -249,21 +249,21 @@ parameter_types! {
 }
 
 impl pallet_treasury::Config for Runtime {
+    type ApproveOrigin = EnsureRoot<AccountId>;
+    type Burn = ();
+    type BurnDestination = ();
     type Currency = Balances;
     type Event = Event;
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
-    type RejectOrigin = EnsureRoot<AccountId>;
-    type ApproveOrigin = EnsureRoot<AccountId>;
+    type MaxApprovals = MaxApprovals;
     type OnSlash = Treasury;
     type PalletId = TreasuryId;
     type ProposalBond = ProposalBond;
-    type SpendPeriod = SpendPeriod;
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type MaxApprovals = MaxApprovals;
     type ProposalBondMaximum = ();
+    type ProposalBondMinimum = ProposalBondMinimum;
+    type RejectOrigin = EnsureRoot<AccountId>;
     type SpendFunds = ();
-    type Burn = ();
-    type BurnDestination = ();
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type SpendPeriod = SpendPeriod;
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
