@@ -1,5 +1,5 @@
 use crate::*;
-use frame_system::EnsureRoot;
+use frame_system::EnsureRoot<AccountId>;
 
 use smallvec::smallvec;
 use sp_runtime::impl_opaque_keys;
@@ -135,10 +135,10 @@ impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ChannelInfo = ParachainSystem;
-    type ControllerOrigin = EnsureRoot;
+    type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type VersionWrapper = ();
     type WeightInfo = ();
     type XcmExecutor = XcmExecutor<XcmConfig>;
@@ -146,7 +146,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -186,7 +186,7 @@ parameter_types! {
 }
 
 // We allow root only to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureRoot;
+pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl pallet_collator_selection::Config for Runtime {
     type Currency = Balances;
@@ -215,7 +215,7 @@ impl pallet_preimage::Config for Runtime {
     type ByteDeposit = PreImageByteDeposit;
     type Currency = Balances;
     type Event = Event;
-    type ManagerOrigin = EnsureRoot;
+    type ManagerOrigin = EnsureRoot<AccountId>;
     type MaxSize = PreimageMaxSize;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
@@ -236,7 +236,7 @@ impl pallet_scheduler::Config for Runtime {
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type PalletsOrigin = OriginCaller;
     type PreimageProvider = Preimage;
-    type ScheduleOrigin = EnsureRoot;
+    type ScheduleOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 
