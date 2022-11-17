@@ -9,7 +9,6 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod accounts_config;
 pub mod circuit_config;
 pub mod contracts_config;
-pub mod membership_config;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
@@ -120,11 +119,11 @@ impl pallet_identity::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type FieldDeposit = FieldDeposit;
-    type ForceOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
+    type ForceOrigin = EnsureRoot;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type MaxSubAccounts = MaxSubAccounts;
-    type RegistrarOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
+    type RegistrarOrigin = EnsureRoot;
     type Slashed = ();
     type SubAccountDeposit = SubAccountDeposit;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
@@ -191,11 +190,6 @@ construct_runtime!(
 
         // Util - this should be system support
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
-
-        // Members
-        DeveloperMembership: pallet_membership::{
-            Pallet, Call, Event<T>, Config<T>, Storage
-        } = 210,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
