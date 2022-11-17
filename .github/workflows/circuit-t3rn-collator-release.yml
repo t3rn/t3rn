@@ -12,7 +12,7 @@ env:
 
 jobs:
   build-release:
-    runs-on: self-hosted
+    runs-on: ["self-hosted", "ep1c"]
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
