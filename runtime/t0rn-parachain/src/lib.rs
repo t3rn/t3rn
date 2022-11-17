@@ -19,6 +19,7 @@ pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
 
 use codec::Decode;
+use frame_system::EnsureRoot;
 use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
