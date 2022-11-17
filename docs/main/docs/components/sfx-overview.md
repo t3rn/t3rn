@@ -27,10 +27,10 @@ pub struct SideEffect<AccountId, BalanceOf> {
 `max_reward` sets the reward for the Executor in `TRN`.
 
 #### insurance
-`insurance` sets the minimum amount of insurance and Executor has to Bond. This is important for optimistic transactions.
+`insurance` sets the minimum amount of insurance and Executor has to Bond.
 
 #### encoded_action
-`encoded_action` sets the action that should be done on the target chain e.g.: call `function x` on `contract y`.
+`encoded_action` sets the action as an `id` that should be called on smart contract.
 
 #### encoded_args
 `encoded_args` sets the arguments that should be passed in `function_y`, when calling a function on a `contract_x` e.g.: contract_x.function_y(`args`).
