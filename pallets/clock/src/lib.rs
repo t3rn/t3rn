@@ -124,21 +124,23 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-            if n % T::RoundDuration::get() == T::BlockNumber::zero() {
-                let last_round = <CurrentRound<T>>::get();
-                let term = T::RoundDuration::get();
-                let round = RoundInfo {
-                    index: last_round.index.saturating_add(1),
+            let term = T::RoundDuration::get();
+
+            if n % term == T::BlockNumber::zero() {
+                let past_round = <CurrentRound<T>>::get();
+
+                let new_round = RoundInfo {
+                    index: past_round.index.saturating_add(1),
                     head: n,
                     term,
                 };
 
-                <CurrentRound<T>>::put(round);
+                <CurrentRound<T>>::put(new_round);
 
                 Self::deposit_event(Event::NewRound {
-                    index: round.index,
-                    head: n,
-                    term,
+                    index: new_round.index,
+                    head: new_round.head,
+                    term: new_round.term,
                 });
             }
 
