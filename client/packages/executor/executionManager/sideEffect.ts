@@ -1,17 +1,17 @@
 import "@t3rn/types"
 // @ts-ignore
-import { T3rnTypesSideEffect } from '@polkadot/types/lookup';
-import { TextDecoder } from "util"
-const BN = require('bn.js')
-import {SfxType, SfxStatus, SecurityLevel} from "@t3rn/sdk/dist/src/side-effects/types";
+import {T3rnTypesSideEffect} from '@polkadot/types/lookup';
+import {TextDecoder} from "util"
+import {SecurityLevel, SfxStatus, SfxType} from "@t3rn/sdk/dist/src/side-effects/types";
 import {Sdk} from "@t3rn/sdk";
 import {BehaviorSubject} from "rxjs";
 import {Gateway} from "@t3rn/sdk/dist/src/gateways";
 import {StrategyEngine} from "../strategy";
 import {BiddingEngine} from "../bidding";
 import {EventEmitter} from "events";
-import { floatToBn } from "@t3rn/sdk/dist/src/circuit";
-import { addrToPub } from "@t3rn/sdk/dist/src/converters/address/substrate";
+import {floatToBn} from "@t3rn/sdk/dist/src/circuit";
+
+const BN = require('bn.js')
 // maps event names to SfxType enum;
 export const EventMapper = ["Transfer", "MultiTransfer"]
 
@@ -36,7 +36,7 @@ export type Notification = {
 
 export class SideEffect extends EventEmitter {
     step: number;
-    status: SfxStatus;
+    status: SfxStatus = SfxStatus.Bidding;
     action: SfxType;
     txStatus: TxStatus = TxStatus.Ready; // used as mutex to prevent concurrent bids
     target: string;
@@ -255,6 +255,14 @@ export class SideEffect extends EventEmitter {
 
         console.log("own bid detected!")
     }
+
+    readyToExecute() {
+        this.status = SfxStatus.PendingExecution;
+    }
+
+    // droppedAtBidding() {
+    //     this.status = SfxStatus.DroppedAtBidding;
+    // }
 
     // ensure we can deal with the sfx action and set SfxType
     private knownTransactionInterface(encodedAction: any): boolean {

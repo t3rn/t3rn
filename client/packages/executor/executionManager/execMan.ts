@@ -155,7 +155,9 @@ export class ExecutionManager {
 	}
 
 	xtxReadyForExec(xtxId: string) {
-		this.xtx[xtxId].readyToExecute()
+		this.xtx[xtxId].readyToExecute();
+		const ready = this.xtx[xtxId].readyToExecute();
+		console.log("ready", ready)
 	}
 
 	async initSfxListeners(sfx: SideEffect) {

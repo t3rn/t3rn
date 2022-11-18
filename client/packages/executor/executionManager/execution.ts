@@ -64,6 +64,11 @@ export class Execution extends EventEmitter {
 
     readyToExecute() {
         this.status = XtxStatus.Ready;
+
+        //Updates each Sfx
+        for(let [_sfxId,sfx] of this.sideEffects){
+            sfx.readyToExecute();
+        }
         console.log(`Execution ${this.humanId} is ready to execute`)
     }
 
@@ -108,9 +113,10 @@ export class Execution extends EventEmitter {
     }
 
     // returns the sfxs that ready to execute
-    getReadyToExecute(): SideEffect[] {
+    getReadyToExecute(): SideEffect[] { // ToDo this does not work currently
         return Object.values(this.sideEffects).filter(entry => {
-            return entry.status === SfxStatus.PendingExecution && entry.iAmExecuting && entry.step === this.currentStep
+            console.log(entry)
+            return entry.status === SfxStatus.PendingExecution && entry.isBidder && entry.step === this.currentStep
         })
     }
 }
