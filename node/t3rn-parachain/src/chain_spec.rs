@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-use t3rn_primitives::{monetary::TRN, ChainId};
+use t3rn_primitives::monetary::TRN;
 
 const PARACHAIN_ID: u32 = 3000_u32;
 
@@ -209,7 +209,7 @@ fn polkadot_genesis(
         },
         sudo: SudoConfig {
             // Assign network admin rights.
-            key: Some(root_key.clone()),
+            key: Some(root_key),
         },
     }
 }

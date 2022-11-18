@@ -61,7 +61,7 @@ const MT3RN: Balance = MILLIT3RN as Balance;
 
 parameter_types! {
     pub const BasicDeposit: Balance = 5 * MT3RN;
-    pub const FieldDeposit: Balance = 1 * MT3RN;
+    pub const FieldDeposit: Balance = MT3RN;
     pub const SubAccountDeposit: Balance = 2 * MT3RN;
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
