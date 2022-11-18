@@ -38,10 +38,7 @@ use frame_support::{
     },
     PalletId,
 };
-use frame_system::{
-    limits::{BlockLength, BlockWeights},
-    EnsureRoot,
-};
+use frame_system::limits::{BlockLength, BlockWeights};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
