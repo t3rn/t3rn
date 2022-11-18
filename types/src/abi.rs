@@ -258,12 +258,12 @@ impl Type {
         config: &GatewayABIConfig,
     ) -> Result<(), &'static str> {
         match self {
-            // Type::Int(size) | Type::Uint(size) =>
-            //     if size != &config.value_type_size {
-            //         Err("Encoded value has different length than the gateway's configuration")
-            //     } else {
-            //         Ok(())
-            //     },
+            Type::Int(size) | Type::Uint(size) =>
+                if size >= &(config.value_type_size * 8) {
+                    Err("Encoded value has different length than the gateway's configuration")
+                } else {
+                    Ok(())
+                },
             Type::Address(size) =>
                 if size != &config.address_length {
                     Err("Encoded address has different length than the gateway's configuration")
