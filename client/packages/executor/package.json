@@ -8,7 +8,7 @@
     "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./*.ts ./**/*.ts ./**/**/*.ts"
   },
   "dependencies": {
-    "@polkadot/api": "^9.2.4",
+    "@polkadot/api": "^9.8.2",
     "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
     "@types/node": "^18.11.9",
