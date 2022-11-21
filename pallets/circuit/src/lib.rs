@@ -44,7 +44,10 @@ use pallet_xbi_portal::{
     xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
 };
 use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
-use sp_runtime::{traits::Zero, KeyTypeId};
+use sp_runtime::{
+    traits::{CheckedAdd, Zero},
+    KeyTypeId,
+};
 use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
 
 pub use t3rn_primitives::{
@@ -449,7 +452,7 @@ pub mod pallet {
                             Some(local_xtx_ctx.xtx),
                             None,
                         );
-                        deletion_counter += 1;
+                        deletion_counter = deletion_counter.checked_add(1).unwrap();
                     });
             }
 
@@ -1172,8 +1175,10 @@ impl<T: Config> Pallet<T> {
                     .iter()
                     .any(|fsx| fsx.confirmed.is_none())
                 {
-                    local_ctx.xtx.steps_cnt =
-                        (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
+                    local_ctx.xtx.steps_cnt = (
+                        local_ctx.xtx.steps_cnt.0.checked_add(1).unwrap(),
+                        local_ctx.xtx.steps_cnt.1,
+                    );
 
                     local_ctx.xtx.status = CircuitStatus::Finished;
 
@@ -1847,8 +1852,8 @@ impl<T: Config> Pallet<T> {
         let mut queue = <SignalQueue<T>>::get();
 
         // We can do an easy process and only process CONSTANT / something signals for now
-        let mut remaining_key_budget = T::SignalQueueDepth::get() / 4;
-        let mut processed_weight = 0;
+        let mut remaining_key_budget = T::SignalQueueDepth::get().checked_div(4).unwrap();
+        let mut processed_weight = 0_u64;
 
         while !queue.is_empty() && remaining_key_budget > 0 {
             // Cannot panic due to loop condition
@@ -1860,7 +1865,9 @@ impl<T: Config> Pallet<T> {
             };
 
             // worst case 4 from setup
-            processed_weight += db_weight.reads(4 as Weight);
+            processed_weight = processed_weight
+                .checked_add(db_weight.reads(4 as Weight) as u64)
+                .unwrap();
             match Self::setup(
                 CircuitStatus::Ready,
                 requester,
@@ -1872,9 +1879,11 @@ impl<T: Config> Pallet<T> {
 
                     queue.swap_remove(0);
 
-                    remaining_key_budget -= 1;
+                    remaining_key_budget = remaining_key_budget.checked_sub(1).unwrap();
                     // apply has 2
-                    processed_weight += db_weight.reads_writes(2 as Weight, 1 as Weight);
+                    processed_weight = processed_weight
+                        .checked_add(db_weight.reads_writes(2 as Weight, 1 as Weight))
+                        .unwrap();
                 },
                 Err(_err) => {
                     log::error!("Could not handle signal");
@@ -1884,7 +1893,9 @@ impl<T: Config> Pallet<T> {
             }
         }
         // Initial read of queue and update
-        processed_weight += db_weight.reads_writes(1 as Weight, 1 as Weight);
+        processed_weight = processed_weight
+            .checked_add(db_weight.reads_writes(1 as Weight, 1 as Weight))
+            .unwrap();
 
         <SignalQueue<T>>::put(queue);
 
@@ -1956,7 +1967,7 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            acc_rewards += fsx.expect_sfx_bid().bid;
+            acc_rewards = acc_rewards.checked_add(&fsx.expect_sfx_bid().bid).unwrap();
         }
 
         acc_rewards
