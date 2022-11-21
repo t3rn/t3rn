@@ -371,7 +371,8 @@ pub mod pallet {
                     .unwrap()
                     .gateway_abi
                     .value_type_size
-                    * 8,
+                    .checked_mul(8)
+                    .unwrap(),
             )
         }
 
