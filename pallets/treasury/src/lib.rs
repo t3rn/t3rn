@@ -27,7 +27,7 @@ pub mod pallet {
     };
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
-        traits::{Saturating, Zero},
+        traits::{CheckedMul, Saturating, Zero},
         Perbill,
     };
     use t3rn_primitives::{
@@ -304,23 +304,25 @@ pub mod pallet {
 
             // count actors
             let (count_devs, count_execs) =
-                <Beneficiaries<T>>::iter_keys().fold((0, 0), |mut acc, c| {
+                <Beneficiaries<T>>::iter_keys().fold((0, 0), |mut acc: (i64, i64), c| {
                     match c.1 {
                         BeneficiaryRole::Developer => {
-                            acc.0 += 1;
+                            acc.0 = acc.0.checked_add(1).unwrap();
                         },
                         BeneficiaryRole::Executor => {
-                            acc.1 += 1;
+                            acc.1 = acc.1.checked_add(1).unwrap();
                         },
                     }
                     acc
                 });
 
             // calculate relative rewards per actor
-            let relative_per_dev =
-                Perbill::from_rational(1, count_devs as u32) * inflation_alloc.developer;
-            let relative_per_exec =
-                Perbill::from_rational(1, count_execs as u32) * inflation_alloc.executor;
+            let relative_per_dev = Perbill::from_rational(1, count_devs as u32)
+                .checked_mul(&inflation_alloc.developer)
+                .unwrap();
+            let relative_per_exec = Perbill::from_rational(1, count_execs as u32)
+                .checked_mul(&inflation_alloc.executor)
+                .unwrap();
 
             // calculate absoute rewards per actor
             let absolute_per_dev = relative_per_dev * amount;
@@ -570,8 +572,10 @@ pub mod pallet {
             // remaining rounds until perpetual inflation
             let rounds_per_month =
                 rounds_per_year::<T>().unwrap_or(BLOCKS_PER_YEAR / T::MinRoundTerm::get()) / 12;
-            let pending_rounds = (rounds_per_month * T::InflationRegressionMonths::get())
-                .saturating_sub(<CurrentRound<T>>::get().index);
+            let pending_rounds = (rounds_per_month
+                .checked_mul(T::InflationRegressionMonths::get())
+                .unwrap())
+            .saturating_sub(<CurrentRound<T>>::get().index);
 
             // the substrahend with which to adjust the current annual inflation
             let round_substrahend = if pending_rounds == 0 {
