@@ -40,8 +40,11 @@ impl<T: Config> Optimistic<T> {
             }
         }
         // Check if bid candidate has enough balance and reserve
-        <T::Escrowed as EscrowTrait<T>>::Currency::reserve(executor, bid + fsx.input.insurance)
-            .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
+        <T::Escrowed as EscrowTrait<T>>::Currency::reserve(
+            executor,
+            bid.checked_add(&fsx.input.insurance).unwrap(),
+        )
+        .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
 
         let mut sfx_bid =
             SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>::new_none_optimistic(
@@ -58,9 +61,12 @@ impl<T: Config> Optimistic<T> {
         // Un-reserve the funds of discarded bidder.
         // Warning: From this point on all of the next operations must be infallible.
         if let Some(current_best_bid) = &current_accepted_bid {
-            let mut total_unreserve = current_best_bid.insurance + current_best_bid.bid;
+            let mut total_unreserve = current_best_bid
+                .insurance
+                .checked_add(&current_best_bid.bid)
+                .unwrap();
             if let Some(bond) = current_best_bid.reserved_bond {
-                total_unreserve += bond;
+                total_unreserve = total_unreserve.checked_add(&bond).unwrap();
             }
             <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(
                 &current_best_bid.executor,
@@ -118,7 +124,7 @@ impl<T: Config> Optimistic<T> {
 
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
                     &sfx_bid.executor,
-                    insurance + reserved_bond,
+                    insurance.checked_add(&reserved_bond).unwrap(),
                 );
             }
         }
@@ -147,10 +153,14 @@ impl<T: Config> Optimistic<T> {
                 };
 
                 // First slash executor
-                slashed_reserve += insurance + reserved_bond;
+                slashed_reserve = slashed_reserve
+                    .checked_add(&insurance)
+                    .unwrap()
+                    .checked_add(&reserved_bond)
+                    .unwrap();
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
                     &sfx_bid.executor,
-                    insurance + reserved_bond,
+                    insurance.checked_add(&reserved_bond).unwrap(),
                 );
             }
         }
@@ -169,7 +179,7 @@ impl<T: Config> Optimistic<T> {
                 // First unlock honest executor
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
                     &sfx_bid.executor,
-                    insurance + reserved_bond,
+                    insurance.checked_add(&reserved_bond).unwrap(),
                 );
                 // Repatriate the reward to honest executors since the reserved bond was slashed and should always suffice
                 slashed_reserve -= sfx_bid.bid;
