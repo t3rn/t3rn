@@ -1099,7 +1099,9 @@ impl<T: Config> Pallet<T> {
                 }
                 // ToDo: Introduce default delay
                 let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
-                    T::XtxTimeoutDefault::get() + frame_system::Pallet::<T>::block_number(),
+                    T::XtxTimeoutDefault::get()
+                        .checked_add(&frame_system::Pallet::<T>::block_number())
+                        .unwrap(),
                     None,
                 );
 
@@ -1304,7 +1306,9 @@ impl<T: Config> Pallet<T> {
                 );
                 <PendingXtxBidsTimeoutsMap<T>>::insert::<XExecSignalId<T>, T::BlockNumber>(
                     local_ctx.xtx_id,
-                    T::SFXBiddingPeriod::get() + frame_system::Pallet::<T>::block_number(),
+                    T::SFXBiddingPeriod::get()
+                        .checked_add(&frame_system::Pallet::<T>::block_number())
+                        .unwrap(),
                 );
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
