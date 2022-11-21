@@ -621,6 +621,9 @@ mod tests {
                 execution_id, Outcome::UnexpectedFailure, None, None,
             ));
 
+            let test_one_percent_charge_amt = charge_amt.checked_div(100);
+            assert_ne!(test_one_percent_charge_amt, None);
+
             let one_percent_charge_amt = charge_amt.checked_div(100).unwrap();
             let fifty_percent_charge_amt = charge_amt
                 .checked_div(100)
