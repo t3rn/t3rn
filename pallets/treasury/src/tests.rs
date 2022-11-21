@@ -77,20 +77,30 @@ fn hook_mints_for_each_past_round() {
         // fast forward two round begins
         fast_forward_to(<DefaultRoundTerm>::get() as u64);
         let first_round_issuance = Treasury::compute_round_issuance(total_active_executors_stake);
-        fast_forward_to((2 * <DefaultRoundTerm>::get() + 1) as u64);
+        fast_forward_to(
+            (2_u32
+                .checked_mul(<DefaultRoundTerm>::get())
+                .unwrap()
+                .checked_add(1)
+                .unwrap()) as u64,
+        );
 
         assert_last_n_events!(
             6,
             vec![
                 Event::NewRound {
                     round: 2,
-                    head: (<DefaultRoundTerm>::get() + 1) as u64,
+                    head: (<DefaultRoundTerm>::get().checked_add(1).unwrap()) as u64,
                 },
                 Event::BeneficiaryTokensIssued(dev, 527), //TODO
                 Event::RoundTokensIssued(1, first_round_issuance),
                 Event::NewRound {
                     round: 3,
-                    head: (2 * <DefaultRoundTerm>::get() + 1) as u64,
+                    head: (2_u32
+                        .checked_mul(<DefaultRoundTerm>::get())
+                        .unwrap()
+                        .checked_add(1)
+                        .unwrap()) as u64,
                 },
                 Event::BeneficiaryTokensIssued(dev, 526), //TODO
                 Event::RoundTokensIssued(
@@ -418,7 +428,7 @@ fn gradually_decreasing_to_perpetual_inflation() {
         );
 
         // after 3 yrs
-        fast_forward_to((BLOCKS_PER_YEAR * 3) as u64);
+        fast_forward_to((BLOCKS_PER_YEAR.checked_mul(3).unwrap()) as u64);
         assert_eq!(
             Treasury::inflation_config().annual,
             Range {
@@ -429,7 +439,7 @@ fn gradually_decreasing_to_perpetual_inflation() {
         );
 
         // after 6 yrs
-        fast_forward_to((BLOCKS_PER_YEAR * 6) as u64);
+        fast_forward_to((BLOCKS_PER_YEAR.checked_mul(6).unwrap()) as u64);
         assert_eq!(
             Treasury::inflation_config().annual,
             Range {
