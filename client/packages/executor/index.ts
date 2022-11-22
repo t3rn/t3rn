@@ -3,9 +3,6 @@ import { Sdk, Types } from "@t3rn/sdk";
 import { Keyring } from "@polkadot/api"
 require('dotenv').config()
 import "@t3rn/types"
-import {SideEffect} from "./executionManager/sideEffect";
-import {CircuitListener, EventData, Events} from "./circuit/listener"
-import CircuitRelayer from "./circuit/relayer"
 import SubstrateRelayer from "./gateways/substrate/relayer"
 import { ExecutionManager } from "./executionManager/execMan"
 import { GatewayDataService } from "./utils/gatewayDataService";

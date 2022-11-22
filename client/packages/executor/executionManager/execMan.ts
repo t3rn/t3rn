@@ -7,10 +7,11 @@ import {PriceEngine} from "../pricing";
 import {StrategyEngine} from "../strategy";
 import {Sdk} from "@t3rn/sdk";
 import {BiddingEngine} from "../bidding";
-import {CircuitListener, EventData, Events} from "../circuit/listener"
+import {CircuitListener, ListenerEventData, ListenerEvents} from "../circuit/listener"
 import {ApiPromise} from "@polkadot/api";
 import CircuitRelayer from "../circuit/relayer";
 import {ExecutionLayerType} from "@t3rn/sdk/dist/src/gateways/types";
+import {RelayerEventData, RelayerEvents} from "../gateways/types";
 
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
@@ -84,38 +85,59 @@ export class ExecutionManager {
 
             if (entry.executionLayerType === ExecutionLayerType.Substrate) {
                 let relayer = new SubstrateRelayer()
-                await relayer.setup(entry.rpc, undefined)
+                await relayer.setup(entry.rpc, undefined, entry.id)
 
                 const estimator = new Estimator(relayer)
 
                 // setup in executionManager
                 this.queue[entry.id] = {
 					blockHeight: 0,
-					waitingForInsurance: [],
-					readyToExecute: [],
-					readyToConfirm: {},
+					isBidding: [],
+					isExecuting: [],
+					isConfirming: {},
+					complete: []
 				}
 
 				this.targetEstimator[entry.id] = estimator;
                 // store relayer instance locally
                 this.relayers[entry.id] = relayer
+
+				relayer.on("Event", async (eventData: RelayerEventData) => {
+					switch (eventData.type) {
+						case RelayerEvents.SfxExecutedOnTarget:
+							this.removeFromQueue("isExecuting", eventData.sfxId, eventData.target)
+
+							// create array if first for block
+							if (!this.queue[eventData.target].isConfirming[eventData.blockNumber]) {
+								this.queue[eventData.target].isConfirming[eventData.blockNumber] = []
+							}
+							// adds to queue
+							this.queue[eventData.target].isConfirming[eventData.blockNumber].push(eventData.sfxId)
+
+							console.log(this.queue)
+							break;
+						case RelayerEvents.SfxExecutionError:
+							break;
+
+					}
+				})
             }
         }
     }
 
 	async initializeEventListeners() {
-        this.circuitListener.on("Event", async (eventData: EventData) => {
+        this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
 			console.log("Event")
             switch (eventData.type) {
-                case Events.NewSideEffectsAvailable:
+                case ListenerEvents.NewSideEffectsAvailable:
                     console.log("NewSideEffectsAvailable")
                     this.addXtx(eventData.data, this.sdk)
 					break;
-				case Events.SFXNewBidReceived:
+				case ListenerEvents.SFXNewBidReceived:
 					console.log("SFXNewBidReceived")
 					this.addBid(eventData.data)
 					break;
-				case Events.XTransactionReadyForExec:
+				case ListenerEvents.XTransactionReadyForExec:
 					console.log("XTransactionReadyForExec")
 					this.xtxReadyForExec(eventData.data[0].toString())
 					break;
@@ -141,6 +163,7 @@ export class ExecutionManager {
 		for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
 			this.initSfxListeners(sfx);
 			this.sfxToXtx[sfxId] = xtx.id
+			this.queue[sfx.target].isBidding.push(sfxId)
 			await this.addRiskRewardParameters(sfx)
 
 		}
@@ -154,17 +177,22 @@ export class ExecutionManager {
 		this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)?.processBid(bidder, amt)
 	}
 
-	xtxReadyForExec(xtxId: string) {
-		this.xtx[xtxId].readyToExecute();
-		const ready = this.xtx[xtxId].readyToExecute();
-		console.log("ready", ready)
+	async xtxReadyForExec(xtxId: string) {
+		this.xtx[xtxId].setReadyToExecute();
+		const ready = this.xtx[xtxId].getReadyToExecute();
+		for(const sfx of ready) {
+			// move on the queue
+			this.removeFromQueue("isBidding", sfx.id, sfx.target)
+			this.queue[sfx.target].isExecuting.push(sfx.id)
+			// execute
+			this.relayers[sfx.target].executeTx(sfx)
+		}
 	}
 
 	async initSfxListeners(sfx: SideEffect) {
 		sfx.on("Notification", (notification: Notification) => {
 			switch(notification.type) {
 				case NotificationType.SubmitBid: {
-					console.log("Submit bid")
 					this.circuitRelayer.bidSfx(notification.payload.sfxId, notification.payload.bidAmount)
 						.then(() => sfx.bidAccepted(notification.payload.bidAmount))
 						.catch((e) => {
@@ -187,4 +215,10 @@ export class ExecutionManager {
 
 		sfx.setRiskRewardParameters(txCostSubject, nativeAssetPriceSubject, txOutputPriceSubject, rewardAssetPriceSubject)
 	}
+
+	// removes sfx from queue
+    private removeFromQueue(queue: string, id: string, gatewayId: string) {
+        const index = this.queue[gatewayId][queue].indexOf(id)
+        this.queue[gatewayId][queue].splice(index, 1)
+    }
 }
