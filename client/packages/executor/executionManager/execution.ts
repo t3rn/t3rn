@@ -53,20 +53,20 @@ export class Execution extends EventEmitter {
         }
 
         // set the step index for each sfx
-        Object.keys(this.sideEffects).forEach(sfxId => {
+        for(let [sfxId,sfx] of this.sideEffects){
             for(let i = 0; i < this.steps.length; i++) {
                 if(this.steps[i].includes(sfxId)) {
-                    this.sideEffects[sfxId].setStep(i)
+                    sfx.setStep(i)
                 }
             }
-        })
+        }
     }
 
-    readyToExecute() {
+    setReadyToExecute() {
         this.status = XtxStatus.Ready;
 
         //Updates each Sfx
-        for(let [_sfxId,sfx] of this.sideEffects){
+        for(let [sfxId,sfx] of this.sideEffects){
             sfx.readyToExecute();
         }
         console.log(`Execution ${this.humanId} is ready to execute`)
@@ -114,9 +114,12 @@ export class Execution extends EventEmitter {
 
     // returns the sfxs that ready to execute
     getReadyToExecute(): SideEffect[] { // ToDo this does not work currently
-        return Object.values(this.sideEffects).filter(entry => {
-            console.log(entry)
-            return entry.status === SfxStatus.PendingExecution && entry.isBidder && entry.step === this.currentStep
-        })
+        let result: SideEffect[] = [];
+        for(let [_sfxId,sfx] of this.sideEffects){
+            if(sfx.status === SfxStatus.PendingExecution && sfx.isBidder && sfx.step === this.currentStep) {
+                result.push(sfx)
+            }
+        }
+        return result
     }
 }

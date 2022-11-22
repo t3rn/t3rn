@@ -6,6 +6,7 @@ import createDebug from "debug"
 import Estimator from "./estimator";
 import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 import {SfxType} from "@t3rn/sdk/dist/src/side-effects/types";
+import {RelayerEventData, RelayerEvents} from "../types";
 
 export default class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
@@ -13,8 +14,9 @@ export default class SubstrateRelayer extends EventEmitter {
     client: ApiPromise
     signer: any
     nonce: number
+    name: string
 
-    async setup(rpc: string, signer: string | undefined) {
+    async setup(rpc: string, signer: string | undefined, name: string) {
         this.client = await ApiPromise.create({
 			provider: new WsProvider(rpc),
 		})
@@ -26,6 +28,7 @@ export default class SubstrateRelayer extends EventEmitter {
               : keyring.addFromMnemonic(signer)
 
         this.nonce = await this.fetchNonce(this.client, this.signer.address)
+        this.name = name
     }
 
     // Builds tx object for the different side effects. This can be used for estimating fees or to submit tx
@@ -41,27 +44,62 @@ export default class SubstrateRelayer extends EventEmitter {
     }
 
     // Submit the sfx tx to the target
-    async executeTx(sideEffect: SideEffect) {
-        SubstrateRelayer.debug(`Executing sfx ${this.toHuman(sideEffect.id)} - ${sideEffect.target} with nonce: ${this.nonce} 🔮`)
-        const tx: SubmittableExtrinsic = this.buildTx(sideEffect)
-        // tx.signAndSend(this.signer, {nonce: this.nonce}, async result => {
-        //     if (result.status.isFinalized) {
-        //         this.handleTx(sideEffect, result)
-        //     }
-        // })
+    async executeTx(sfx: SideEffect) {
+        SubstrateRelayer.debug(`Executing sfx ${this.toHuman(sfx.id)} - ${sfx.target} with nonce: ${this.nonce} 🔮`)
+        const tx: SubmittableExtrinsic = this.buildTx(sfx)
+
+        return new Promise<void>((resolve, reject) =>
+			tx.signAndSend(this.signer, { nonce: this.nonce }, async ({ dispatchError, status, events }) => {
+				if (dispatchError?.isModule) {
+					let err = this.client.registry.findMetaError(dispatchError.asModule)
+                    this.nonce -= 1;
+                    this.emit(
+                        "Event",
+                        <RelayerEventData>{
+                            type: RelayerEvents.SfxExecutionError,
+                            data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+                            sfxId: sfx.id
+                        }
+                    )
+					reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`))
+				} else if (dispatchError) {
+                    this.nonce -= 1;
+                    this.emit(
+                        "Event",
+                        <RelayerEventData>{
+                            type: RelayerEvents.SfxExecutionError,
+                            data: dispatchError.toString(),
+                            sfxId: sfx.id
+                        }
+                    )
+					reject(Error(dispatchError.toString()))
+				} else if (status.isFinalized) {
+                    const blockNumber = await this.generateInclusionProof(sfx, status.asFinalized, events)
+                    this.emit(
+                        "Event",
+                        <RelayerEventData>{
+                            type: RelayerEvents.SfxExecutedOnTarget,
+                            sfxId: sfx.id,
+                            target: this.name,
+                            data: "",
+                            blockNumber
+                        }
+                    )
+                    resolve()
+                }
+			})
+		)
         this.nonce += 1; // we optimistically increment the nonce. If a transaction fails, this will mess things up. The alternative is to do it sequentially, which is very slow.
     }
 
     // if sfx execution successful, generate inclusion proof and notify of successful execution
-    async handleTx(sideEffect: SideEffect, result) {
-        if (result.status.isFinalized) {
-            const blockHash = result.status.asFinalized
+    async generateInclusionProof(sfx: SideEffect, blockHash: any, events: any[]): Promise<number> {
             const blockNumber = await this.getBlockNumber(blockHash)
-            const event = this.getEvent(sideEffect.action, result.events)
+            const event = this.getEvent(sfx.action, events)
 
             // should always be last event
             const success =
-              result.events[result.events.length - 1].event.method ===
+              events[events.length - 1].event.method ===
               "ExtrinsicSuccess"
 
             const inclusionProof = await getEventProofs(this.client, blockHash)
@@ -73,14 +111,13 @@ export default class SubstrateRelayer extends EventEmitter {
                 block_hash: blockHash
             }
 
-            sideEffect.executedOnTarget(
+            sfx.executedOnTarget(
                 inclusionData,
                 this.signer.addressRaw,
                 blockNumber
             )
 
-            this.emit("SideEffectExecuted", sideEffect.id)
-        }
+            return blockNumber.toNumber()
     }
 
     async getBlockNumber(hash: any) {

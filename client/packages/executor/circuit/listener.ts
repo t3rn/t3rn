@@ -6,14 +6,14 @@ import { H256 } from '@polkadot/types/interfaces';
 import { Execution } from "../executionManager/execution"
 import createDebug from "debug"
 
-export enum Events {
+export enum ListenerEvents {
     NewSideEffectsAvailable,
     SFXNewBidReceived,
-    XTransactionReadyForExec
+    XTransactionReadyForExec,
 }
 
-export type EventData = {
-    type: Events,
+export type ListenerEventData = {
+    type: ListenerEvents,
     data: Execution | any
 }
 
@@ -33,16 +33,16 @@ export class CircuitListener extends EventEmitter {
                 if (notifications[i].event.method === "NewSideEffectsAvailable") { // receives new side effects
                     this.emit(
                         "Event",
-                        <EventData>{
-                            type: Events.NewSideEffectsAvailable,
+                        <ListenerEventData>{
+                            type: ListenerEvents.NewSideEffectsAvailable,
                             data: notifications[i].event.data
                         }
                     )
                 } else if(notifications[i].event.method === "SFXNewBidReceived") {
                     this.emit(
                         "Event",
-                        <EventData>{
-                            type: Events.SFXNewBidReceived,
+                        <ListenerEventData>{
+                            type: ListenerEvents.SFXNewBidReceived,
                             data: notifications[i].event.data
                         }
                     )
@@ -50,8 +50,8 @@ export class CircuitListener extends EventEmitter {
                     console.log("emitting...")
                     this.emit(
                         "Event",
-                        <EventData>{
-                            type: Events.XTransactionReadyForExec,
+                        <ListenerEventData>{
+                            type: ListenerEvents.XTransactionReadyForExec,
                             data: notifications[i].event.data
                         }
                     )
