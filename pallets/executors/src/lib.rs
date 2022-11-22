@@ -39,7 +39,7 @@ pub mod pallet {
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
         // treasury::Treasury as TTreasury,
-        clock::Clock as TClock,
+        clock::Clock,
         common::{OrderedSet, Range, RoundIndex},
         executors::{
             Bond, CancelledScheduledStakingRequest, ExecutorInfo, ExecutorSnapshot,
@@ -127,7 +127,7 @@ pub mod pallet {
         // type RevokeStakeDelay: Get<u32>;
 
         /// Treasury round proveider.
-        type Treasury: TClock<Self>;
+        type Treasury: Clock<Self>;
 
         type WeightInfo: weights::WeightInfo;
     }
