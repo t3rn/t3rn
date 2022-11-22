@@ -29,14 +29,9 @@ jobs:
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
-        uses: actions/cache@v2
-        id: cache-rust
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ./target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('./Cargo.lock') }}
+          cache-on-failure: "true"
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
@@ -172,7 +167,6 @@ jobs:
     steps:
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-
 #      - name: 🔫 Trigger chainops downstream
 #        run: |
 #          curl -XPOST /
