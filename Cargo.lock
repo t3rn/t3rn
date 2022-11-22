@@ -3035,7 +3035,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
  "parity-scale-codec 3.2.1",
  "serde",
  "sp-core",
@@ -3045,7 +3045,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
  "evm",
  "frame-support",
@@ -6840,10 +6840,10 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6874,17 +6874,17 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
  "sp-core",
  "substrate-bn",
 ]
@@ -6892,18 +6892,18 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
  "curve25519-dalek 4.0.0-pre.1",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
  "frame-support",
  "pallet-evm 6.0.0-dev",
 ]
@@ -6911,36 +6911,36 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
  "ed25519-dalek",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
  "num",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
  "tiny-keccak 2.0.2",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.27)",
  "ripemd",
  "sp-io",
 ]
@@ -13055,9 +13055,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.102"
+version = "1.0.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fcd952facd492f9be3ef0d0b7032a6e442ee9b361d4acc2b1d0c4aaa5f613a1"
+checksum = "58dbef6ec655055e20b86b15a8cc6d439cca19b667537ac6a1369572d151ab13"
 dependencies = [
  "proc-macro2",
  "quote",
