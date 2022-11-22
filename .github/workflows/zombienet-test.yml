@@ -21,21 +21,25 @@ jobs:
   smoke-test:
     runs-on: ["self-hosted", "ep1c"]
     steps:
-      - name: ☁️Checkout git repo
+      - name: ☁️ Checkout git repo
         uses: actions/checkout@v2
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
-      - name: ⚙️Get nightly rust toolchain with wasm target
+
+      - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2022-06-17
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
-      - uses: Swatinem/rust-cache@v2
+
+      - name: 🕒 Cache Rust binaries and packages
+        uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: "true"
+
       - name: 🕒 Cache binaries
         uses: actions/cache@v2
         id: cache-bin
@@ -45,7 +49,8 @@ jobs:
           key: ${{ runner.os }}-bin-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-bin-
-      - name: Save sccache
+
+      - name: 🕒 Save sccache
         uses: actions/cache@v2
         continue-on-error: false
         with:
@@ -53,20 +58,20 @@ jobs:
           key: ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-sccache-
+
       - name: Start sccache server
-        run: |
-          cd tests/zombienet
-          make start-sccache
+        working-directory: tests/zombienet
+        run: make start-sccache
+
       - name: 📼 Run zombienet tests
         continue-on-error: false
-        run: |
-          cd tests/zombienet
-          make test
+        working-directory: tests/zombienet
+        run: make test
+
       - name: Print sccache stats
-        run: |
-          cd tests/zombienet
-          make print-sccache
+        working-directory: tests/zombienet
+        run: make print-sccache
+
       - name: Stop sccache server
-        run: |
-          cd tests/zombienet
-          make stop-sccache
+        working-directory: tests/zombienet
+        run: make stop-sccache

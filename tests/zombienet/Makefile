@@ -25,13 +25,14 @@ endif
 clean:
 	rm -rf $(bin_dir)/*
 
-directory:
+directory: Makefile
 	mkdir -p $(bin_dir)
 
-${bin_dir}/sccache:
+${bin_dir}/sccache: Makefile
 	@if [ $(machine) = "macos" ]; then \
         brew update; \
 		brew install sccache; \
+		cp /opt/homebrew/bin/sccache $(bin_dir)/sccache; \
 	elif [ $(machine) = "linux" ]; then \
 		curl -fL -o $(tmp_dir)/$(SCCACHE_FILE).tar.gz https://github.com/mozilla/sccache/releases/download/$(SCCACHE_VERSION)/$(SCCACHE_FILE).tar.gz; \
 		tar xzvf $(tmp_dir)/$(SCCACHE_FILE).tar.gz -C $(tmp_dir); \
@@ -41,7 +42,7 @@ ${bin_dir}/sccache:
 	
 ${bin_dir}/zombienet:
 	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(version)/zombienet-$(machine)
-	# echo "#### Need sudo access for zombienet executable ####"
+	# echo "#### Need sudo access for zombienet executable, make will drop this sudo access after this cmd ####"
 	sudo chmod +x $(bin_dir)/zombienet
 
 ${bin_dir}/polkadot:
@@ -56,9 +57,6 @@ ${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(ro
 ${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(root_dir)/*/t3rn-parachain/Cargo.toml Makefile
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
 	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
-	
-${bin_dir}/subwasm:
-	cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1 --path ${bin_dir}/
 
 setup: directory ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
 
@@ -76,12 +74,11 @@ print-sccache: ${bin_dir}/sccache
 # ====================== Testing ======================
 
 test-smoke: setup
-	# FIXME: ensure this runs on all changes
 	# TODO[Optimisation]: loop through directory and test all
-	# TODO[Optimisation]: when zombienet can run on a pre-existing network, run it
+	# TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
 	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
 
-test-upgrade: setup
+bump-versions:
 	# get versions and bump t0rn
 	cat $(root_dir)/runtime/t0rn-parachain/src/lib.rs | grep -o 'spec_version: [0-9]*' | tail -1 | grep -o '[0-9]' | xargs -I {} ./increment.sh t0rn {} spec_version
 	cat $(root_dir)/runtime/t0rn-parachain/src/lib.rs | grep -o 'impl_version: [0-9]*' | tail -1 | grep -o '[0-9]' | xargs -I {} ./increment.sh t0rn {} impl_version
@@ -93,6 +90,10 @@ test-upgrade: setup
 	cat $(root_dir)/runtime/t3rn-parachain/src/lib.rs | grep -o 'impl_version: [0-9]*' | tail -1 | grep -o '[0-9]' | xargs -I {} ./increment.sh t3rn {} impl_version
 	cat $(root_dir)/runtime/t3rn-parachain/src/lib.rs | grep -o 'transaction_version: [0-9]*' | tail -1 | grep -o '[0-9]' | xargs -I {} ./increment.sh t3rn {} transaction_version
 	cat $(root_dir)/runtime/t3rn-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]' | xargs -I {} ./increment.sh t3rn {} authoring_version
+
+# This isnt quite the entire runtime-upgrade, only that we can bump the versions and upgrade
+# The real approach to runtime upgrades are below where we deploy with an old binary and use a new runtime
+test-upgrade: setup bump-versions
 	
 	# build new blobs
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
@@ -102,7 +103,11 @@ test-upgrade: setup
 	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/9999-runtime_upgrade.feature
 
 # This should only be run if the spec version is different to the old, simply write the runtime to test to the same file and the test will check it
+# NOTE: this does not modify the versions as to provide a true representation of the runtime upgrade
 test-real-upgrade: setup
+	cp $(bin_dir)/t0rn-collator $(bin_dir)/t0rn-collator-old
+	cp $(bin_dir)/t3rn-collator $(bin_dir)/t3rn-collator-old
+
 	# build new blobs
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
