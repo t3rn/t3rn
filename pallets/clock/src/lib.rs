@@ -15,7 +15,7 @@ pub use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
     account_manager::AccountManager,
     claimable::ClaimableArtifacts,
-    clock::Clock as TClock,
+    clock::Clock,
     common::RoundInfo,
     executors::Executors,
     protocol::SideEffectProtocol,
@@ -193,7 +193,7 @@ pub mod pallet {
         fn build(&self) {}
     }
 
-    impl<T: Config> TClock<T> for Pallet<T> {
+    impl<T: Config> Clock<T> for Pallet<T> {
         fn current_round() -> RoundInfo<T::BlockNumber> {
             Self::current_round()
         }

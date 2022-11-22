@@ -149,8 +149,8 @@ construct_runtime!(
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-        Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 12,
-        Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 13,
+        Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
+        Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 13,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
