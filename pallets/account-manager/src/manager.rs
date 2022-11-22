@@ -66,7 +66,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
     fn bump_contracts_registry_nonce() -> Result<T::Hash, DispatchError> {
         let execution_id = ContractsRegistryExecutionNonce::<T>::get();
         ContractsRegistryExecutionNonce::<T>::mutate(|nonce| {
-            *nonce = nonce.checked_add(1).unwrap()
+            *nonce = nonce.checked_add(1).unwrap_or(*nonce)
         });
 
         let charge_id = Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
@@ -93,7 +93,9 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
     ) -> DispatchResult {
         Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
 
-        let total_reserve_deposit = charge_fee.checked_add(&offered_reward).unwrap();
+        let total_reserve_deposit = charge_fee
+            .checked_add(&offered_reward)
+            .unwrap_or(charge_fee);
 
         if total_reserve_deposit == Zero::zero() {
             return Err(Error::<T>::SkippingEmptyCharges.into())
@@ -151,7 +153,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         let total_reserved = charge
             .charge_fee
             .checked_add(&charge.offered_reward)
-            .unwrap();
+            .unwrap_or(charge.charge_fee);
 
         let payee_refund: BalanceOf<T> = if let Some(actual_fees) = maybe_actual_fees {
             // ToDo: Better handle case when actual fees outgrow total_reserved
@@ -185,7 +187,9 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
                 Settlement::<T::AccountId, BalanceOf<T>> {
                     requester: charge.payee,
                     recipient,
-                    settlement_amount: recipient_rewards.checked_add(&recipient_bonus).unwrap(),
+                    settlement_amount: recipient_rewards
+                        .checked_add(&recipient_bonus)
+                        .unwrap_or(recipient_rewards),
                     outcome,
                     source: charge.source,
                     role: charge.role,
@@ -241,7 +245,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
                     active_set_claimable.claimable = active_set_claimable
                         .claimable
                         .checked_add(&settlement.settlement_amount)
-                        .unwrap();
+                        .unwrap_or(active_set_claimable.claimable);
                 }
             }
         }
@@ -251,33 +255,39 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             let nominated_stake =
                 T::Executors::total_nominated_stake(&active_set_claimable.executor);
             // calculate % ratio of rewards proportionally to Executor's own Collateral to Nominated Stake
-            let total_stake_power = collateral_bond.checked_add(&nominated_stake).unwrap();
+            let total_stake_power = collateral_bond
+                .checked_add(&nominated_stake)
+                .unwrap_or(collateral_bond);
 
             // todo: ensure it's in range (0,1>
-            let collateral_bond_power = collateral_bond.checked_div(&total_stake_power).unwrap();
+            let collateral_bond_power = collateral_bond
+                .checked_div(&total_stake_power)
+                .unwrap_or(collateral_bond);
 
             claimable_artifacts.push(ClaimableArtifacts {
                 beneficiary: active_set_claimable.executor.clone(),
                 role: CircuitRole::Executor,
                 total_round_claim: collateral_bond_power
                     .checked_mul(&active_set_claimable.claimable)
-                    .unwrap(),
+                    .unwrap_or(collateral_bond_power),
                 benefit_source: BenefitSource::TrafficRewards,
             });
 
             // todo: ensure it's in range <0,1)
-            let nominated_stake_power = nominated_stake.checked_div(&total_stake_power).unwrap();
+            let nominated_stake_power = nominated_stake
+                .checked_div(&total_stake_power)
+                .unwrap_or(nominated_stake);
 
             let claimable_by_all_stakers_of_executor = nominated_stake_power
                 .checked_mul(&active_set_claimable.claimable)
-                .unwrap();
+                .unwrap_or(nominated_stake_power);
 
             for nominated_stake in T::Executors::stakes_per_executor(&active_set_claimable.executor)
             {
                 let staker_power = nominated_stake
                     .nominated_stake
                     .checked_div(&nominated_stake_power)
-                    .unwrap();
+                    .unwrap_or(nominated_stake.nominated_stake);
                 claimable_artifacts.push(ClaimableArtifacts {
                     beneficiary: nominated_stake.staker,
                     role: CircuitRole::Staker,
@@ -316,7 +326,7 @@ mod tests {
             >>::deposit(
                 execution_id,
                 &ALICE,
-                DEFAULT_BALANCE.checked_div(10).unwrap(),
+                DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE),
                 0,
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
@@ -325,7 +335,7 @@ mod tests {
 
             assert_eq!(
                 Balances::reserved_balance(&ALICE),
-                DEFAULT_BALANCE.checked_div(10).unwrap()
+                DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE)
             );
 
             let charge_item = AccountManager::pending_charges_per_round::<
@@ -337,7 +347,7 @@ mod tests {
             assert_eq!(charge_item.recipient, BOB);
             assert_eq!(
                 charge_item.charge_fee,
-                DEFAULT_BALANCE.checked_div(10).unwrap()
+                DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE)
             );
         });
     }
@@ -357,7 +367,9 @@ mod tests {
             >>::deposit(
                 execution_id,
                 &ALICE,
-                DEFAULT_BALANCE.checked_div(10).unwrap(),
+                DEFAULT_BALANCE
+                    .checked_div(10)
+                    .unwrap_or(DEFAULT_BALANCE.checked_div),
                 0,
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
@@ -373,7 +385,7 @@ mod tests {
                 >>::deposit(
                     execution_id,
                     &ALICE,
-                    DEFAULT_BALANCE.checked_div(10).unwrap(),
+                    DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE.checked_div),
                     0,
                     BenefitSource::TrafficRewards,
                     CircuitRole::ContractAuthor,
@@ -422,19 +434,23 @@ mod tests {
                 execution_id, Outcome::Revert, None, None,
             ));
 
-            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap();
-            let _ten_percent_charge_amt = charge_amt.checked_div(10).unwrap();
+            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap_or(charge_amt);
+            let _ten_percent_charge_amt = charge_amt.checked_div(10).unwrap_or(charge_amt);
 
             assert_eq!(
                 Balances::free_balance(
                     &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
                 ),
-                one_percent_charge_amt.checked_add(DEFAULT_BALANCE).unwrap() // 1% left now
+                one_percent_charge_amt
+                    .checked_add(DEFAULT_BALANCE)
+                    .unwrap_or(one_percent_charge_amt) // 1% left now
             );
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                DEFAULT_BALANCE.checked_sub(one_percent_charge_amt).unwrap()
+                DEFAULT_BALANCE
+                    .checked_sub(one_percent_charge_amt)
+                    .unwrap_or(DEFAULT_BALANCE)
             );
 
             assert_eq!(
@@ -485,7 +501,7 @@ mod tests {
                 Some(BOB),
             ));
 
-            assert_eq!(Balances::reserved_balance(&ALICE), CHARGE.checked_add(INSURANCE).unwrap());
+            assert_eq!(Balances::reserved_balance(&ALICE), CHARGE.checked_add(INSURANCE).unwrap_or(CHARGE));
 
             assert_err!(<AccountManager as AccountManagerExt<
                 AccountId,
@@ -493,7 +509,7 @@ mod tests {
                 Hash,
                 BlockNumber,
             >>::finalize(
-                execution_id, Outcome::Revert, None, Some(CHARGE.checked_add(INSURANCE).unwrap().checked_add(1).unwrap()),
+                execution_id, Outcome::Revert, None, Some(CHARGE.checked_add(INSURANCE).unwrap_or(CHARGE).checked_add(1).unwrap_or(CHARGE)),
             ),
                 circuit_runtime_pallets::pallet_account_manager::Error::<Runtime>::ChargeOrSettlementActualFeesOutgrowReserved,
             );
@@ -548,16 +564,20 @@ mod tests {
                 execution_id, Outcome::Commit, None, None,
             ));
 
-            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap();
+            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap_or(charge_amt);
             assert_eq!(
                 Balances::free_balance(
                     &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
                 ),
-                one_percent_charge_amt.checked_add(DEFAULT_BALANCE).unwrap() // 1% left now
+                one_percent_charge_amt
+                    .checked_add(DEFAULT_BALANCE)
+                    .unwrap_or(one_percent_charge_amt) // 1% left now
             );
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                DEFAULT_BALANCE.checked_sub(charge_amt).unwrap()
+                DEFAULT_BALANCE
+                    .checked_sub(charge_amt)
+                    .unwrap_or(DEFAULT_BALANCE)
             );
 
             assert_eq!(
@@ -624,27 +644,29 @@ mod tests {
             let test_one_percent_charge_amt = charge_amt.checked_div(100);
             assert_ne!(test_one_percent_charge_amt, None);
 
-            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap();
+            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap_or(charge_amt);
             let fifty_percent_charge_amt = charge_amt
                 .checked_div(100)
-                .unwrap()
+                .unwrap_or(charge_amt)
                 .checked_mul(50)
-                .unwrap();
+                .unwrap_or(charge_amt);
 
             assert_eq!(
                 Balances::free_balance(
                     &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
                 ),
-                one_percent_charge_amt.checked_add(DEFAULT_BALANCE).unwrap() // 1% left now
+                one_percent_charge_amt
+                    .checked_add(DEFAULT_BALANCE)
+                    .unwrap_or(one_percent_charge_amt) // 1% left now
             );
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
                 DEFAULT_BALANCE
                     .checked_sub(fifty_percent_charge_amt)
-                    .unwrap()
+                    .unwrap_or(DEFAULT_BALANCE)
                     .checked_sub(one_percent_charge_amt)
-                    .unwrap()
+                    .unwrap_or(DEFAULT_BALANCE)
             );
 
             assert_eq!(

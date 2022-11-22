@@ -442,7 +442,8 @@ pub mod pallet {
                             &vec![],
                             None,
                         );
-                        deletion_counter = deletion_counter.checked_add(1).unwrap();
+                        deletion_counter =
+                            deletion_counter.checked_add(1).unwrap_or(deletion_counter);
                     });
             }
 
@@ -1192,7 +1193,12 @@ impl<T: Config> Pallet<T> {
                     .any(|fsx| fsx.confirmed.is_none())
                 {
                     local_ctx.xtx.steps_cnt = (
-                        local_ctx.xtx.steps_cnt.0.checked_add(1).unwrap(),
+                        local_ctx
+                            .xtx
+                            .steps_cnt
+                            .0
+                            .checked_add(1)
+                            .unwrap_or(local_ctx.xtx.steps_cnt.0),
                         local_ctx.xtx.steps_cnt.1,
                     );
 
@@ -1308,7 +1314,7 @@ impl<T: Config> Pallet<T> {
                     local_ctx.xtx_id,
                     T::SFXBiddingPeriod::get()
                         .checked_add(&frame_system::Pallet::<T>::block_number())
-                        .unwrap(),
+                        .unwrap_or(T::SFXBiddingPeriod::get()),
                 );
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
@@ -1861,7 +1867,9 @@ impl<T: Config> Pallet<T> {
         let mut queue = <SignalQueue<T>>::get();
 
         // We can do an easy process and only process CONSTANT / something signals for now
-        let mut remaining_key_budget = T::SignalQueueDepth::get().checked_div(4).unwrap();
+        let mut remaining_key_budget = T::SignalQueueDepth::get()
+            .checked_div(4)
+            .unwrap_or(T::SignalQueueDepth::get());
         let mut processed_weight = 0_u64;
 
         while !queue.is_empty() && remaining_key_budget > 0 {
@@ -1876,7 +1884,7 @@ impl<T: Config> Pallet<T> {
             // worst case 4 from setup
             processed_weight = processed_weight
                 .checked_add(db_weight.reads(4 as Weight) as u64)
-                .unwrap();
+                .unwrap_or(processed_weight);
             match Self::setup(
                 CircuitStatus::Ready,
                 requester,
@@ -1888,11 +1896,13 @@ impl<T: Config> Pallet<T> {
 
                     queue.swap_remove(0);
 
-                    remaining_key_budget = remaining_key_budget.checked_sub(1).unwrap();
+                    remaining_key_budget = remaining_key_budget
+                        .checked_sub(1)
+                        .unwrap_or(remaining_key_budget);
                     // apply has 2
                     processed_weight = processed_weight
                         .checked_add(db_weight.reads_writes(2 as Weight, 1 as Weight))
-                        .unwrap();
+                        .unwrap_or(processed_weight);
                 },
                 Err(_err) => {
                     log::error!("Could not handle signal");
@@ -1904,7 +1914,7 @@ impl<T: Config> Pallet<T> {
         // Initial read of queue and update
         processed_weight = processed_weight
             .checked_add(db_weight.reads_writes(1 as Weight, 1 as Weight))
-            .unwrap();
+            .unwrap_or(processed_weight);
 
         <SignalQueue<T>>::put(queue);
 
@@ -1976,7 +1986,9 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            acc_rewards = acc_rewards.checked_add(&fsx.expect_sfx_bid().bid).unwrap();
+            acc_rewards = acc_rewards
+                .checked_add(&fsx.expect_sfx_bid().bid)
+                .unwrap_or(acc_rewards);
         }
 
         acc_rewards

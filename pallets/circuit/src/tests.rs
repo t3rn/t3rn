@@ -2003,14 +2003,14 @@ fn insured_unrewarded_single_rococo_transfer() {
             let _ = Balances::deposit_creating(
                 &CLI_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
             let _ = Balances::deposit_creating(
                 &EXECUTOR_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
 
             // Read data from files
@@ -2038,14 +2038,14 @@ fn insured_unrewarded_single_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
 
             let confirm = read_file_and_set_height(
@@ -2087,25 +2087,25 @@ fn insured_unrewarded_single_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 9_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(9_u128)
             );
 
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
-                10u128.pow(12)
+                10u128.checked_pow(12).unwrap_or(10_u128)
             );
 
             assert_ok!(confirm_side_effect(
@@ -2115,28 +2115,28 @@ fn insured_unrewarded_single_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
 
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
 
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
         });
 }
@@ -2174,14 +2174,14 @@ fn insured_rewarded_single_rococo_transfer() {
             let _ = Balances::deposit_creating(
                 &CLI_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
             let _ = Balances::deposit_creating(
                 &EXECUTOR_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
 
             // Read data from files
@@ -2209,22 +2209,22 @@ fn insured_rewarded_single_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 9_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(9_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
 
             assert_eq!(Balances::reserved_balance(&CLI_DEFAULT), 10u128.pow(12));
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
 
             let post_bond = read_file_and_set_height(
@@ -2239,20 +2239,20 @@ fn insured_rewarded_single_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 9_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(9_u128)
             );
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 9_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(9_u128)
             );
 
             assert_eq!(Balances::reserved_balance(&CLI_DEFAULT), 10u128.pow(12));
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
-                10u128.pow(12)
+                10u128.checked_pow(12).unwrap_or(10_u128)
             );
 
             let submit_header_2 =
@@ -2277,27 +2277,27 @@ fn insured_rewarded_single_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 9_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(9_u128)
             );
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 11_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(11_u128)
             );
 
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
         });
 }
@@ -2345,14 +2345,14 @@ fn insured_rewarded_multi_rococo_transfer() {
             let _ = Balances::deposit_creating(
                 &CLI_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
             let _ = Balances::deposit_creating(
                 &EXECUTOR_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
 
             // Read data from files
@@ -2370,27 +2370,27 @@ fn insured_rewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
 
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 3_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(3_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
 
             let post_bond_1 = read_file_and_set_height(
@@ -2414,27 +2414,27 @@ fn insured_rewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
 
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 3_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(3_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 3_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(3_u128)
             );
 
             let submit_header_2 =
@@ -2467,27 +2467,27 @@ fn insured_rewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 13_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(13_u128)
             );
 
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
         });
 }
@@ -2535,14 +2535,14 @@ fn insured_unrewarded_multi_rococo_transfer() {
             let _ = Balances::deposit_creating(
                 &CLI_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
             let _ = Balances::deposit_creating(
                 &EXECUTOR_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
 
             // Read data from files
@@ -2570,27 +2570,27 @@ fn insured_unrewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
 
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
 
             let post_bond_1 = read_file_and_set_height(
@@ -2616,26 +2616,26 @@ fn insured_unrewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 3_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(3_u128)
             );
 
             let submit_header_2 =
@@ -2669,26 +2669,26 @@ fn insured_unrewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
         });
 }
@@ -2739,14 +2739,14 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
             let _ = Balances::deposit_creating(
                 &CLI_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
             let _ = Balances::deposit_creating(
                 &EXECUTOR_DEFAULT,
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128),
             ); // 10 trn
 
             // Read data from files
@@ -2774,26 +2774,26 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
 
             let submit_header_2 =
@@ -2842,26 +2842,26 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 10_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(10_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
         });
 }
@@ -2968,14 +2968,14 @@ fn multi_mixed_rococo() {
             let _ = Balances::deposit_creating(
                 &CLI_DEFAULT,
                 20_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(20_u128),
             ); // 10 trn
             let _ = Balances::deposit_creating(
                 &EXECUTOR_DEFAULT,
                 20_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(20_u128),
             ); // 10 trn
 
             let register_roco =
@@ -3029,26 +3029,26 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 12_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(12_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 20_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(20_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 8_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(8_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
 
             let bond_insurance_1 = read_file_and_set_height(
@@ -3120,26 +3120,26 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 12_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(12_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(13_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 8_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(8_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
 
             // ______Confirm insured step:________
@@ -3153,26 +3153,26 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 12_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(12_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(13_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 8_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(8_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
 
             let confirm_2 = read_file_and_set_height(
@@ -3217,26 +3217,26 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 12_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(12_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(13_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 8_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(8_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
 
             let submit_header_6 =
@@ -3253,26 +3253,26 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 12_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(12_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(13_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 8_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(8_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
 
             let confirm_5 = read_file_and_set_height(
@@ -3298,26 +3298,26 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 12_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(12_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(13_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 8_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(8_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
 
             let submit_header_8 =
@@ -3334,26 +3334,26 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 12_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(12_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(13_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 8_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(8_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 7_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(7_u128)
             );
 
             let confirm_6 = read_file_and_set_height(
@@ -3388,26 +3388,26 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 12_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(12_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 28_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(28_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
         });
 }
@@ -3479,20 +3479,20 @@ fn insured_multi_rococo_multiple_executors() {
             let _ = Balances::deposit_creating(
                 &CLI_DEFAULT,
                 20_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(20_u128),
             );
             let _ = Balances::deposit_creating(
                 &EXECUTOR_DEFAULT,
                 20_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(20_u128),
             );
             let _ = Balances::deposit_creating(
                 &EXECUTOR_SECOND,
                 20_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap(),
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(20_u128),
             );
 
             let register_roco =
@@ -3546,38 +3546,38 @@ fn insured_multi_rococo_multiple_executors() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 15_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(15_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 20_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(20_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_SECOND),
                 20_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(20_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 5_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(5_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_SECOND),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
 
             // bslk bonds
@@ -3620,38 +3620,38 @@ fn insured_multi_rococo_multiple_executors() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 15_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(15_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 17_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(17_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_SECOND),
                 17_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(17_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 5_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(5_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 3_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(3_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_SECOND),
                 3_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(3_u128)
             );
 
             let submit_header_4 =
@@ -3714,38 +3714,38 @@ fn insured_multi_rococo_multiple_executors() {
             assert_eq!(
                 Balances::free_balance(CLI_DEFAULT),
                 15_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(15_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 23_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(23_u128)
             );
             assert_eq!(
                 Balances::free_balance(EXECUTOR_SECOND),
                 22_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(22_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&CLI_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_SECOND),
                 0_u128
-                    .checked_mul(10_u128.checked_pow(12).unwrap())
-                    .unwrap()
+                    .checked_mul(10_u128.checked_pow(12).unwrap_or(10_u128))
+                    .unwrap_or(0_u128)
             );
         });
 }
