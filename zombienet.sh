@@ -10,18 +10,16 @@ esac
 
 provider=${ZOMBIENET_PROVIDER:-native}
 version=${ZOMBIENET_VERSION:-v1.2.59}
-runtime=${RUNTIME:-t3rn}
+runtime=${RUNTIME:-t3rn-parachain}
 pdot_branch=${PDOT_BRANCH:-release-v0.9.27}
 root_dir=$(git rev-parse --show-toplevel)
 [ ! -O /usr/local/bin ] && sudo_maybe=sudo
 
-bin_dir=$root_dir/bin
-mkdir -p $bin_dir
+mkdir -p $root_dir/bin
 
-if [[ ! -x $bin_dir/zombienet ]]; then
-  curl -fL# -o $bin_dir/zombienet https://github.com/paritytech/zombienet/releases/download/$version/zombienet-$machine
-  echo "#### Need sudo access for zombienet executable ####"
-  $sudo_maybe chmod +x $bin_dir/zombienet
+if [[ ! -x /usr/local/bin/zombienet ]]; then
+  $sudo_maybe curl -fL# -o /usr/local/bin/zombienet https://github.com/paritytech/zombienet/releases/download/$version/zombienet-$machine
+  $sudo_maybe chmod +x /usr/local/bin/zombienet
 fi
 
 if [[ ! -x $root_dir/bin/polkadot ]]; then
@@ -31,9 +29,7 @@ if [[ ! -x $root_dir/bin/polkadot ]]; then
   mv -f $tmp_dir/target/release/polkadot $root_dir/bin/polkadot
 fi
 
-cargo build --manifest-path $root_dir/node/$runtime-parachain/Cargo.toml --release --locked
-cp -f $root_dir/target/release/$runtime-collator $root_dir/bin/circuit-collator
+cargo build --manifest-path $root_dir/node/$runtime/Cargo.toml --release --locked
+cp -f $root_dir/target/release/circuit-collator $root_dir/bin/circuit-collator
 
-PATH=$bin_dir:$PATH $bin_dir/zombienet --provider=$provider spawn $root_dir/zombienet.toml
-
-# TODO: expose functions here
+PATH=$root_dir/bin:$PATH /usr/local/bin/zombienet --provider=$provider spawn $root_dir/zombienet.toml
