@@ -1,4 +1,5 @@
 use crate::*;
+use frame_system::EnsureSignedBy;
 
 use smallvec::smallvec;
 use sp_runtime::impl_opaque_keys;
@@ -134,10 +135,10 @@ impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ChannelInfo = ParachainSystem;
-    type ControllerOrigin = EnsureRoot<AccountId>;
+    type ControllerOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type ExecuteOverweightOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type VersionWrapper = ();
     type WeightInfo = ();
     type XcmExecutor = XcmExecutor<XcmConfig>;
@@ -145,7 +146,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type ExecuteOverweightOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -185,7 +186,7 @@ parameter_types! {
 }
 
 // We allow root only to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
+pub type CollatorSelectionUpdateOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
 
 impl pallet_collator_selection::Config for Runtime {
     type Currency = Balances;
@@ -214,7 +215,7 @@ impl pallet_preimage::Config for Runtime {
     type ByteDeposit = PreImageByteDeposit;
     type Currency = Balances;
     type Event = Event;
-    type ManagerOrigin = EnsureRoot<AccountId>;
+    type ManagerOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type MaxSize = PreimageMaxSize;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
@@ -235,7 +236,7 @@ impl pallet_scheduler::Config for Runtime {
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type PalletsOrigin = OriginCaller;
     type PreimageProvider = Preimage;
-    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type ScheduleOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 

@@ -556,5 +556,14 @@ fn testnet_genesis(
                 })
                 .collect(),
         },
+        developer_membership: circuit_parachain_runtime::DeveloperMembershipConfig {
+            members: vec![
+                get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
+                get_account_id_from_adrs("5Cfd51SrYX5gQbdWc5tPg7PuoSGkCkz7G91E9cp8UBkam5Lf"), // CI
+            ]
+            .try_into()
+            .expect("Could not build a bounded vector of members, probably overflowed"),
+            ..Default::default()
+        },
     }
 }

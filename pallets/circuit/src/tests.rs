@@ -492,9 +492,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
             ));
 
             // Assert Circuit::emit generates 5 correct events: 3 from charging and 2 Circuit-specific
-            // assert_eq!(events.len(), 8);
             let mut events = System::events();
-            // assert_eq!(events.len(), 10);
             let event_a = events.pop();
             let event_b = events.pop();
 
@@ -878,6 +876,118 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
 }
 
 #[test]
+fn circuit_handles_dropped_at_bidding() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+
+    let mut local_state = LocalState::new();
+
+    let valid_transfer_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(128), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, reward = 1
+        ],
+        &mut local_state,
+        transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
+    );
+
+    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let fee = 1;
+    const REQUESTED_INSURANCE_AMOUNT: Balance = 1;
+    const BID_AMOUNT: Balance = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ =
+                Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
+
+            System::set_block_number(1);
+            brute_seed_block_1([0, 0, 0, 0]);
+
+            assert_eq!(Balances::free_balance(ALICE), 3);
+            assert_eq!(Balances::reserved_balance(ALICE), 0);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            assert_eq!(Balances::free_balance(ALICE), 2);
+            assert_eq!(Balances::reserved_balance(ALICE), 1);
+
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_transfer_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
+                XExecSignal {
+                    requester: ALICE,
+                    timeouts_at: 401u32,
+                    delay_steps_at: None,
+                    status: CircuitStatus::PendingBidding,
+                    total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
+                    steps_cnt: (0, 1),
+                }
+            );
+
+            System::reset_events();
+            System::set_block_number(4);
+            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(4);
+            let events = System::events();
+
+            assert_eq!(Balances::free_balance(ALICE), 3);
+            assert_eq!(Balances::reserved_balance(ALICE), 0);
+
+            assert_eq!(
+                events[0],
+                EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Balances(
+                        circuit_runtime_pallets::pallet_balances::Event::Unreserved {
+                            who: ALICE,
+                            amount: fee
+                        }
+                    ),
+                    topics: vec![]
+                }
+            );
+            assert_eq!(
+                events[1],
+                EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
+                        Runtime,
+                    >::XTransactionXtxDroppedAtBidding(
+                        xtx_id
+                    )),
+                    topics: vec![]
+                }
+            );
+            // ToDo activate once #504 is fixed
+            // assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
+        })
+}
+
+#[test]
 fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -973,12 +1083,29 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 }]]
             );
 
+            System::reset_events();
             // Bob opens bid with bid = max_reward, the highest possible
             assert_ok!(Circuit::bid_sfx(
                 Origin::signed(BID_WINNER),
                 side_effect_a_id,
                 BID_AMOUNT_C,
             ));
+            let events = System::events();
+
+            assert_eq!(
+                events[1],
+                EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
+                        Runtime,
+                    >::SFXNewBidReceived(
+                        side_effect_a_id,
+                        BID_WINNER,
+                        BID_AMOUNT_C
+                    )),
+                    topics: vec![]
+                }
+            );
 
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
@@ -1632,6 +1759,137 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 }
 
 #[test]
+fn circuit_cancels_xtx_with_bids_after_timeout() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+    let _swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
+
+    let mut local_state = LocalState::new();
+    let valid_transfer_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(128), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::A),
+        ],
+        &mut local_state,
+        transfer_protocol_box,
+        ALICE,
+        FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
+    );
+
+    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let fee = 1;
+    let sequential = false;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1_000_000);
+
+            System::set_block_number(1);
+            brute_seed_block_1([0, 0, 0, 0]);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            let _events = System::events();
+            // assert_eq!(events.len(), 8);
+
+            // let xtx_id: sp_core::H256 =
+            //     hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
+
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+
+            // The tiemout links that will be checked at on_initialize are there
+            assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(401u32)); // 100 offset + current block height 1 = 101
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                Some(XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: 401u32, // 400 offset + current block height 1 = 101
+                    delay_steps_at: None,
+                    status: CircuitStatus::PendingBidding,
+                    total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
+                    steps_cnt: (0, 1),
+                })
+            );
+
+            // let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+            //
+            // let sfx_id_a = valid_transfer_side_effect
+            //     .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            //         &xtx_id.0,
+            //         FIRST_SFX_INDEX,
+            //     );
+            //
+
+            let sfx_id = valid_transfer_side_effect
+                .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                &xtx_id.0,
+                FIRST_SFX_INDEX,
+            );
+
+            place_winning_bid_and_advance_3_blocks(ALICE, xtx_id, sfx_id, 1);
+
+            System::set_block_number(410);
+
+            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                Some(XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: 401u32,
+                    delay_steps_at: None,
+                    status: CircuitStatus::RevertTimedOut,
+                    total_reward: Some(fee),
+                    requester_nonce: FIRST_REQUESTER_NONCE,
+                    steps_cnt: (0, 1),
+                })
+            );
+
+            assert_eq!(Circuit::get_active_timing_links(xtx_id), None);
+
+            // Emits event notifying about cancellation
+            let mut events = System::events();
+            // assert_eq!(events.len(), 9);
+            assert_eq!(
+                events.pop(),
+                Some(
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
+                            Runtime,
+                        >::XTransactionXtxRevertedAfterTimeOut(
+                            xtx_id
+                        )),
+                        topics: vec![]
+                    }
+                ),
+            );
+            // Voids all associated side effects with Xtx by setting their confirmation to Err
+        });
+}
+
+#[test]
 fn circuit_cancels_xtx_after_timeout() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -1741,7 +1999,6 @@ fn circuit_cancels_xtx_after_timeout() {
                     }
                 ),
             );
-
             // Voids all associated side effects with Xtx by setting their confirmation to Err
         });
 }
@@ -4016,7 +4273,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
         0,
     );
 
-    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let side_effects = vec![valid_transfer_side_effect];
     let fee = 1;
     let sequential = true;
 

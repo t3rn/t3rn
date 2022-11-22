@@ -3,7 +3,7 @@
 set -x
 
 if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 || -z $6 ]]; then
-  echo "usage 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
+  echo "usage: $0 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
   # fx: $0 'collator sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up 33 t0rn --dryrun
   exit 1
 fi
@@ -79,9 +79,6 @@ new_spec_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs 
 new_impl_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'impl_version: [0-9]*' | tail -1 | grep -o '[0-9]')
 new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'transaction_version: [0-9]*' | tail -1 | grep -o '[0-9]')
 new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]')
-#new_impl_version=$(grep -Pom1 'impl_version: *\K[0-9]+' $root_dir/runtime/${parachain_name}-parachain/src/lib.rs)
-#new_tx_version=$(grep -Pom1 'transaction_version: *\K[0-9]+' $root_dir/runtime/${parachain_name}-parachain/src/lib.rs)
-#new_author_version=$(grep -Pom1 'authoring_version: *\K[0-9]+' $root_dir/runtime/${parachain_name}-parachain/src/lib.rs)
 
 if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
   echo "runtime spec version not incremented" >&2
@@ -118,15 +115,16 @@ echo "🔢 hashing ${parachain_name}_parachain_runtime.compact.compressed.wasm..
 
 hash=$(subwasm info --json $used_wasm | jq -r .blake2_256)
 
-read -n 1 -p "e2e-tested on rococo-local?
-runtime upgrade tested on rococo-local?
-runtime benchmarked?
-storage migrated?
-(y/n) " answer
+# Unsafe runtime upgrade script assumes below are checked.
+#read -n 1 -p "e2e-tested on rococo-local?
+#runtime upgrade tested on rococo-local?
+#runtime benchmarked?
+#storage migrated?
+#(y/n) " answer
+#
+#echo
 
-echo
-
-if [[ "${answer,,}" != "y" ]]; then exit 1; fi
+#if [[ "${answer,,}" != "y" ]]; then exit 1; fi
 
 head=$(get_finalized_head)
 

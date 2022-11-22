@@ -1,6 +1,6 @@
 use super::*;
 use frame_support::parameter_types;
-use frame_system::EnsureRoot;
+use frame_system::EnsureSignedBy;
 use sp_core::crypto::AccountId32;
 
 parameter_types! {
@@ -40,7 +40,7 @@ impl pallet_assets::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Extra = ();
-    type ForceOrigin = EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
