@@ -6,6 +6,9 @@
 * open collator pool
 * upgradable runtime
 
+## `v1.2.0-rc.4` 2022-11-23
+* fix: add t0rn chainspec code_substitutes on height 845420
+
 ## `v1.2.0-rc.3` 2022-11-19
 * fix: add t0rn chainspec bad_blocks on height 845420
 

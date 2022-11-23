@@ -6,7 +6,7 @@ We maintain collator binaries which we release alongside every runtime release. 
 
 ```sh
 curl -sSfL \
-   https://github.com/t3rn/t3rn/releases/download/v1.2.0-rc.3/t0rn-t0rn-collator-v1.2.0-rc.3-x86_64-unknown-linux-gnu.gz \
+   https://github.com/t3rn/t3rn/releases/download/v1.2.0-rc.4/t0rn-t0rn-collator-v1.2.0-rc.4-x86_64-unknown-linux-gnu.gz \
 | gunzip > ~/t0rn/circuit-collator
 ```
 
@@ -23,17 +23,17 @@ To associate your node to the correct network we need to provide the t0rn chain 
 ```sh
 curl -sSfL \
   -o ~/t0rn/specs/rococo.raw.json \
-  https://raw.githubusercontent.com/t3rn/t3rn/v1.2.0-rc.3/specs/rococo.raw.json
+  https://raw.githubusercontent.com/t3rn/t3rn/v1.2.0-rc.4/specs/rococo.raw.json
 
 curl -sSfL \
   -o ~/t0rn/specs/t0rn.raw.json \
-  https://raw.githubusercontent.com/t3rn/t3rn/v1.2.0-rc.3/specs/t0rn.raw.json
+  https://raw.githubusercontent.com/t3rn/t3rn/v1.2.0-rc.4/specs/t0rn.raw.json
 ```
 
 ## Option 2: Pull latest Docker image
 
 ```sh
-docker pull ghcr.io/t3rn/t0rn-collator:v1.2.0-rc.3
+docker pull ghcr.io/t3rn/t0rn-collator:v1.2.0-rc.4
 ```
 
 
