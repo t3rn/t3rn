@@ -40,11 +40,13 @@ impl<T: Config> Optimistic<T> {
             }
         }
         // Check if bid candidate has enough balance and reserve
-        <T::Escrowed as EscrowTrait<T>>::Currency::reserve(
-            executor,
-            bid.checked_add(&fsx.input.insurance).unwrap_or(bid),
-        )
-        .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
+        let _bid = if let Some(v) = bid.checked_add(&fsx.input.insurance) {
+            v
+        } else {
+            return Err(Error::<T>::ArithmeticErrorOverflow)
+        };
+        <T::Escrowed as EscrowTrait<T>>::Currency::reserve(executor, _bid)
+            .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
 
         let mut sfx_bid =
             SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>::new_none_optimistic(
@@ -61,14 +63,20 @@ impl<T: Config> Optimistic<T> {
         // Un-reserve the funds of discarded bidder.
         // Warning: From this point on all of the next operations must be infallible.
         if let Some(current_best_bid) = &current_accepted_bid {
-            let mut total_unreserve = current_best_bid
+            let mut total_unreserve = if let Some(v) = current_best_bid
                 .insurance
                 .checked_add(&current_best_bid.bid)
-                .unwrap_or(current_best_bid.insurance);
+            {
+                v
+            } else {
+                return Err(Error::<T>::ArithmeticErrorOverflow)
+            };
             if let Some(bond) = current_best_bid.reserved_bond {
-                total_unreserve = total_unreserve
-                    .checked_add(&bond)
-                    .unwrap_or(total_unreserve);
+                if let Some(v) = total_unreserve.checked_add(&bond) {
+                    total_unreserve = v
+                } else {
+                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                }
             }
             <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(
                 &current_best_bid.executor,
@@ -124,9 +132,14 @@ impl<T: Config> Optimistic<T> {
                 let (insurance, reserved_bond) =
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
+                let nsrnc = if let Some(v) = insurance.checked_add(&reserved_bond) {
+                    v
+                } else {
+                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                };
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
                     &sfx_bid.executor,
-                    insurance.checked_add(&reserved_bond).unwrap_or(insurance),
+                    nsrnc,
                 );
             }
         }
@@ -134,7 +147,7 @@ impl<T: Config> Optimistic<T> {
         Ok(())
     }
 
-    pub fn try_slash(local_ctx: &mut LocalXtxCtx<T>) {
+    pub fn try_slash(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
         let mut slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> = Zero::zero();
 
         let optimistic_fsx_in_step = &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
@@ -155,14 +168,24 @@ impl<T: Config> Optimistic<T> {
                 };
 
                 // First slash executor
-                slashed_reserve = slashed_reserve
+                if let Some(v) = slashed_reserve
                     .checked_add(&insurance)
-                    .unwrap_or(slashed_reserve)
+                    .unwrap()
                     .checked_add(&reserved_bond)
-                    .unwrap_or(slashed_reserve);
+                {
+                    slashed_reserve = v
+                } else {
+                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                }
+
+                let nsrce = if let Some(v) = insurance.checked_add(&reserved_bond) {
+                    v
+                } else {
+                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                };
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
                     &sfx_bid.executor,
-                    insurance.checked_add(&reserved_bond).unwrap_or(insurance),
+                    nsrce,
                 );
             }
         }
@@ -200,5 +223,7 @@ impl<T: Config> Optimistic<T> {
                 slashed_reserve,
             );
         }
+
+        Ok(())
     }
 }
