@@ -173,6 +173,7 @@ pub mod pallet {
         RoundTermTooShort,
         NotBeneficiary,
         NoRewardsAvailable,
+        ArithmeticError,
     }
 
     #[pallet::hooks]
@@ -307,22 +308,51 @@ pub mod pallet {
                 <Beneficiaries<T>>::iter_keys().fold((0, 0), |mut acc: (i64, i64), c| {
                     match c.1 {
                         BeneficiaryRole::Developer => {
-                            acc.0 = acc.0.checked_add(1).unwrap();
+                            if let Some(v) = acc.0.checked_add(1) {
+                                acc.0 = v
+                            }
+                            // cannot return Err
+                            // else {
+                            //     return Err(Error::ArithmeticError);
+                            // }
                         },
                         BeneficiaryRole::Executor => {
-                            acc.1 = acc.1.checked_add(1).unwrap();
+                            if let Some(v) = acc.1.checked_add(1) {
+                                acc.1 = v
+                            }
+                            // cannot return Err
+                            // else {
+                            //     return Err(Error::ArithmeticError);
+                            // }
                         },
                     }
                     acc
                 });
 
             // calculate relative rewards per actor
-            let relative_per_dev = Perbill::from_rational(1, count_devs as u32)
-                .checked_mul(&inflation_alloc.developer)
-                .unwrap();
-            let relative_per_exec = Perbill::from_rational(1, count_execs as u32)
-                .checked_mul(&inflation_alloc.executor)
-                .unwrap();
+            let relative_per_dev = if let Some(v) =
+                Perbill::from_rational(1, count_devs as u32).checked_mul(&inflation_alloc.developer)
+            {
+                v
+            } else {
+                Perbill::from_rational(1, count_devs as u32)
+            };
+            // cannot return Err
+            // else {
+            // return Err(Error::InvalidInflationAllocation)
+            // };
+
+            let relative_per_exec = if let Some(v) =
+                Perbill::from_rational(1, count_execs as u32).checked_mul(&inflation_alloc.executor)
+            {
+                v
+            } else {
+                Perbill::from_rational(1, count_execs as u32)
+            };
+            // cannot return Err
+            // else {
+            // return Err(Error::InvalidInflationAllocation)
+            // };
 
             // calculate absoute rewards per actor
             let absolute_per_dev = relative_per_dev * amount;
@@ -572,10 +602,13 @@ pub mod pallet {
             // remaining rounds until perpetual inflation
             let rounds_per_month =
                 rounds_per_year::<T>().unwrap_or(BLOCKS_PER_YEAR / T::MinRoundTerm::get()) / 12;
-            let pending_rounds = (rounds_per_month
-                .checked_mul(T::InflationRegressionMonths::get())
-                .unwrap())
-            .saturating_sub(<CurrentRound<T>>::get().index);
+            let pending_rounds = if let Some(v) =
+                rounds_per_month.checked_mul(T::InflationRegressionMonths::get())
+            {
+                v.saturating_sub(<CurrentRound<T>>::get().index)
+            } else {
+                rounds_per_month
+            };
 
             // the substrahend with which to adjust the current annual inflation
             let round_substrahend = if pending_rounds == 0 {
