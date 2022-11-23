@@ -170,7 +170,7 @@ pub struct LocalXtxCtx<T: Config> {
     pub local_state: LocalState,
     pub use_protocol: UniversalSideEffectsProtocol,
     pub xtx_id: XExecSignalId<T>,
-    pub xtx: XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+    pub xtx: XExecSignal<T::AccountId, T::BlockNumber>,
     pub full_side_effects:
         Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>>,
 }
@@ -183,7 +183,7 @@ impl Default for CircuitStatus {
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
+pub struct XExecSignal<AccountId, BlockNumber> {
     /// The owner of the bid
     pub requester: AccountId,
 
@@ -201,16 +201,12 @@ pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
 
     /// Has returned status already and what
     pub steps_cnt: (u32, u32),
-
-    /// Total reward
-    pub total_reward: Option<BalanceOf>,
 }
 
 impl<
         AccountId: Encode + Clone + Debug,
         BlockNumber: Ord + Copy + Zero + Encode + Clone + Debug,
-        BalanceOf: Copy + Zero + Encode + Decode + Clone + Debug,
-    > XExecSignal<AccountId, BlockNumber, BalanceOf>
+    > XExecSignal<AccountId, BlockNumber>
 {
     pub fn new(
         // Requester of xtx
@@ -221,8 +217,6 @@ impl<
         timeouts_at: BlockNumber,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<BlockNumber>>,
-        // Total reward
-        total_reward: Option<BalanceOf>,
         // Current steps count
         steps_cnt: (u32, u32),
     ) -> Self {
@@ -232,7 +226,6 @@ impl<
             timeouts_at,
             delay_steps_at,
             status: Default::default(),
-            total_reward,
             steps_cnt,
         }
     }
@@ -260,12 +253,7 @@ impl<
         timeouts_at: T::BlockNumber,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<T::BlockNumber>>,
-        // Total reward
-        total_reward: Option<BalanceOf>,
-    ) -> (
-        XExecSignalId<T>,
-        XExecSignal<T::AccountId, T::BlockNumber, BalanceOf>,
-    ) {
+    ) -> (XExecSignalId<T>, XExecSignal<T::AccountId, T::BlockNumber>) {
         let requester_nonce = Decode::decode(
             &mut &frame_system::Pallet::<T>::account_nonce(requester).encode()[..],
         )
@@ -277,7 +265,6 @@ impl<
             requester_nonce,
             timeouts_at,
             delay_steps_at,
-            total_reward,
             (0, 0),
         );
         let id = signal.generate_id::<T>();

@@ -174,11 +174,11 @@ fn on_extrinsic_trigger(
         Decode::decode(&mut &*hex::decode(json["encoded_side_effects"].as_str().unwrap()).unwrap())
             .unwrap();
 
-    let fee = 0u128;
+    let _fee = 0u128;
     let sequential: bool =
         Decode::decode(&mut &*hex::decode(json["encoded_sequential"].as_str().unwrap()).unwrap())
             .unwrap();
-    Circuit::on_extrinsic_trigger(origin, side_effects, fee, sequential)
+    Circuit::on_extrinsic_trigger(origin, side_effects, sequential)
 }
 
 fn confirm_side_effect(
@@ -375,7 +375,7 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
 
     let mut ext = TestExternalities::new_empty();
     let side_effects = vec![];
-    let fee = 1;
+
     let sequential = true;
 
     ext.execute_with(|| {
@@ -384,7 +384,6 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
         assert_ok!(Circuit::on_extrinsic_trigger(
             origin,
             side_effects,
-            fee,
             sequential,
         ));
     });
@@ -426,7 +425,6 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
         insurance: 3,
     }];
 
-    let fee = 1;
     let sequential = true;
 
     ExtBuilder::default()
@@ -442,7 +440,6 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
         });
@@ -471,7 +468,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1;
+
     let sequential = true;
 
     ExtBuilder::default()
@@ -487,7 +484,6 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -579,7 +575,6 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -623,7 +618,7 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     );
 
     let side_effects = vec![valid_transfer_side_effect];
-    let fee = 1;
+
     let sequential = true;
 
     ExtBuilder::default()
@@ -639,7 +634,6 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
         });
@@ -669,7 +663,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
     );
 
     let side_effects = vec![valid_transfer_side_effect];
-    let fee = 1;
+
     let sequential = true;
 
     ExtBuilder::default()
@@ -685,7 +679,6 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -781,7 +774,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1;
+
     const REQUESTED_INSURANCE_AMOUNT: Balance = 1;
     const BID_AMOUNT: Balance = 1;
     let sequential = true;
@@ -801,7 +794,6 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -821,7 +813,6 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -869,7 +860,6 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -901,7 +891,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1;
+
     const REQUESTED_INSURANCE_AMOUNT: Balance = 3;
     const BID_AMOUNT_A: Balance = 1;
     const BID_AMOUNT_B: Balance = 2;
@@ -928,12 +918,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             System::set_block_number(BIDDING_BLOCK_NO);
             brute_seed_block_1([0, 0, 0, 0]);
 
-            assert_ok!(Circuit::on_extrinsic_trigger(
-                origin,
-                side_effects,
-                fee,
-                true,
-            ));
+            assert_ok!(Circuit::on_extrinsic_trigger(origin, side_effects, true,));
             // Requester should have offered SFX::max_reward reserved
             assert_eq!(Balances::reserved_balance(&REQUESTER), MAX_FEE);
             assert_eq!(
@@ -955,7 +940,6 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -1040,7 +1024,6 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -1059,7 +1042,6 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
@@ -1093,7 +1075,7 @@ fn circuit_handles_swap_with_insurance() {
     );
 
     let side_effects = vec![valid_swap_side_effect.clone()];
-    let fee = 1;
+
     let sequential = true;
 
     ext.with_default_xdns_records()
@@ -1109,7 +1091,6 @@ fn circuit_handles_swap_with_insurance() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -1129,7 +1110,6 @@ fn circuit_handles_swap_with_insurance() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -1163,7 +1143,6 @@ fn circuit_handles_swap_with_insurance() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -1201,7 +1180,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
-    let fee = 1;
+
     let sequential = true;
 
     ext.with_default_xdns_records()
@@ -1217,7 +1196,6 @@ fn circuit_handles_add_liquidity_without_insurance() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -1265,7 +1243,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
-    let fee = 1;
+
     let sequential = true;
 
     ext.with_default_xdns_records()
@@ -1281,7 +1259,6 @@ fn circuit_handles_add_liquidity_with_insurance() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -1301,7 +1278,6 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -1335,7 +1311,6 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -1462,7 +1437,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
-    let fee = 1;
+
     let sequential = true;
 
     ExtBuilder::default()
@@ -1478,7 +1453,6 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -1526,7 +1500,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
-    let fee = 1;
+
     let sequential = true;
 
     ExtBuilder::default()
@@ -1542,7 +1516,6 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
         });
@@ -1609,7 +1582,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         valid_transfer_side_effect_2,
         valid_swap_side_effect,
     ];
-    let fee = 1;
+
     let sequential = true;
 
     ExtBuilder::default()
@@ -1625,7 +1598,6 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
         });
@@ -1657,7 +1629,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1;
+
     let sequential = false;
 
     ExtBuilder::default()
@@ -1673,7 +1645,6 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -1697,7 +1668,6 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                     timeouts_at: 401u32, // 400 offset + current block height 1 = 101
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
@@ -1733,7 +1703,6 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::RevertTimedOut,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
@@ -1788,7 +1757,7 @@ fn circuit_cancels_xtx_after_timeout() {
     );
 
     let side_effects = vec![valid_transfer_side_effect];
-    let fee = 1;
+
     let sequential = false;
 
     ExtBuilder::default()
@@ -1804,7 +1773,6 @@ fn circuit_cancels_xtx_after_timeout() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -1825,7 +1793,6 @@ fn circuit_cancels_xtx_after_timeout() {
                     timeouts_at: 401u32, // 100 offset + current block height 1 = 101
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
@@ -1844,7 +1811,6 @@ fn circuit_cancels_xtx_after_timeout() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::RevertTimedOut,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
@@ -3899,7 +3865,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
     valid_transfer_side_effect.target = [3, 3, 3, 3];
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1;
+
     let sequential = true;
 
     const MAX_FEE: Balance = 1;
@@ -3928,7 +3894,6 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin.clone(),
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -3939,7 +3904,6 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -4034,7 +3998,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
     // assert target
     valid_evm_sfx.target = [1u8, 1u8, 1u8, 1u8];
     let side_effects = vec![valid_evm_sfx.clone()];
-    let fee = 1;
+
     let sequential = true;
 
     ExtBuilder::default()
@@ -4055,7 +4019,6 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin.clone(),
                 side_effects,
-                fee,
                 sequential,
             ));
 
@@ -4066,7 +4029,6 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                     timeouts_at: 401u32,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
-                    total_reward: Some(fee),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -4147,7 +4109,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
     );
 
     let side_effects = vec![valid_transfer_side_effect];
-    let fee = 1;
+
     let sequential = true;
 
     ExtBuilder::default()
@@ -4163,7 +4125,6 @@ fn no_duplicate_xtx_and_sfx_ids() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin.clone(),
                 side_effects.clone(),
-                fee,
                 sequential,
             ));
 
@@ -4192,7 +4153,6 @@ fn no_duplicate_xtx_and_sfx_ids() {
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
                 side_effects.clone(),
-                fee,
                 sequential,
             ));
 
