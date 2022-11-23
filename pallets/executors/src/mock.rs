@@ -162,7 +162,11 @@ pub(crate) fn fast_forward_to(n: u64) {
         Treasury::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
-        System::set_block_number(System::block_number().checked_add(1).unwrap());
+        System::set_block_number(if let Some(v) = System::block_number().checked_add(1) {
+            v
+        } else {
+            System::block_number()
+        });
         System::on_initialize(System::block_number());
         Balances::on_initialize(System::block_number());
         Executors::on_initialize(System::block_number());

@@ -367,12 +367,17 @@ pub mod pallet {
 
         fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {
             Type::Uint(
-                <XDNSRegistry<T>>::get(chain_id)
+                if let Some(v) = <XDNSRegistry<T>>::get(chain_id)
                     .unwrap()
                     .gateway_abi
                     .value_type_size
                     .checked_mul(8)
-                    .unwrap(),
+                {
+                    v
+                } else {
+                    // return default value
+                    0
+                },
             )
         }
 
