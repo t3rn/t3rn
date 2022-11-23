@@ -1,3 +1,32 @@
+# Run a t0rn Testnet Collator
+
+
+This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn on the Rococo testnet. This guide uses the `v1.1.0-rc.0` release, however always use the latest available version.
+
+Make sure to have your machine setup for [Rust and Substrate development](https://docs.substrate.io/v3/getting-started/installation/).
+
+## Generate a Collator Keypair
+
+Install the `subkey` tool:
+
+```sh
+cargo install subkey --git https://github.com/paritytech/substrate
+```
+
+To generate a new generic Substrate keypair just run:
+
+```sh
+subkey generate
+```
+
+Save the entire output to a proper secret vault or at least keep note of the secret phrase.
+
+## Setup Directories
+
+Create the collator node's data and a specs directory:
+
+```sh
+mkdir -p ~/t0rn/{data,specs}
 ```
 
 ## Option 1: Install a Prebuilt Collator
