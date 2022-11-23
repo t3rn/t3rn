@@ -53,7 +53,7 @@ jobs:
       - name: 📼 Run zombienet runtime upgrade test
         continue-on-error: false
         working-directory: tests/zombienet
-        run: make test-real-upgrade
+        run: make test-real-upgrade parachain=t3rn
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2

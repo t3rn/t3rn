@@ -26,13 +26,13 @@ clean:
 	rm -rf $(bin_dir)/*
 
 directory: Makefile
-	mkdir -p $(bin_dir)
+	@mkdir -p $(bin_dir)
 
-${bin_dir}/sccache: Makefile
+${bin_dir}/sccache: # Makefile
 	@if [ $(machine) = "macos" ]; then \
         brew update; \
-		brew install sccache; \
-		cp /opt/homebrew/bin/sccache $(bin_dir)/sccache; \
+		brew install -qf sccache | true; \
+		cp -n /opt/homebrew/bin/sccache $(bin_dir)/sccache; \
 	elif [ $(machine) = "linux" ]; then \
 		curl -fL -o $(tmp_dir)/$(SCCACHE_FILE).tar.gz https://github.com/mozilla/sccache/releases/download/$(SCCACHE_VERSION)/$(SCCACHE_FILE).tar.gz; \
 		tar xzvf $(tmp_dir)/$(SCCACHE_FILE).tar.gz -C $(tmp_dir); \
@@ -50,7 +50,7 @@ ${bin_dir}/polkadot:
 	cargo build --manifest-path $(tmp_dir)/polkadot/Cargo.toml --features fast-runtime --release --locked
 	mv -f $(tmp_dir)/polkadot/target/release/polkadot $(bin_dir)/polkadot
 
-${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml Makefile
+${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml #Makefile
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
 	cp -f $(root_dir)/target/release/t0rn-collator $(bin_dir)/
 
@@ -104,16 +104,44 @@ test-upgrade: setup bump-versions
 
 # This should only be run if the spec version is different to the old, simply write the runtime to test to the same file and the test will check it
 # NOTE: this does not modify the versions as to provide a true representation of the runtime upgrade
-test-real-upgrade: setup
-	cp $(bin_dir)/t0rn-collator $(bin_dir)/t0rn-collator-old
-	cp $(bin_dir)/t3rn-collator $(bin_dir)/t3rn-collator-old
+# NOTE: this probably will only work on linux since we only release linux binaries and they aren't musl, so strictly this works for CI.
+# TODO[Optimisation]: get last tag and build in a fake directory instead
+test-real-upgrade: directory ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/$(parachain)-collator 
+	@echo "Testing real upgrade for parachain: $(parachain)"
 
-	# build new blobs
-	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
-	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
+	@if [ $(machine) = "macos" ]; then \
+        echo "You're on macos, this is for CI :< - it uses previously built binaries from this machine only"; \
+		exit 1; \
+	fi
+
+	# get last release binary from github
+	git fetch --all --tags
+
+	# get last release
+	@if [ $(parachain) = "t0rn" ]; then \
+        export version=$(git tag --list --sort=-version:refname "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*" | head -n 1); \
+		export url=$(curl -s https://api.github.com/repos/t3rn/t3rn/releases/tags/$version | jq -r '.assets[0].browser_download_url'); \
+		curl -L -o - $(url) | gunzip -c > $(bin_dir)/collator-old; \
+		chmod +x $(bin_dir)/collator-old; \
+		echo =========== OLD COLLATOR ===========; \
+		echo $(version); \
+		echo $(url); \
+	elif [ $(parachain) = "t3rn" ]; then \
+        export version=$(version=git tag --list --sort=-version:refname "v[0-9]*.[0-9].[0-9]" | head -n 1); \
+		export url=$(curl -s https://api.github.com/repos/t3rn/t3rn/releases/tags/$version | jq -r '.assets[0].browser_download_url'); \
+		curl -L -o - $url | gunzip -c > $(bin_dir)/collator-old; \
+		chmod +x $(bin_dir)/collator-old; \
+	fi
+
+	# build new blob
+	cargo build --manifest-path $(root_dir)/node/$(parachain)-parachain/Cargo.toml --release --locked
+	
+	# copy the blob to where the feature file expects it
+	cp $(root_dir)/target/release/wbuild/$(parachain)-parachain-runtime/$(parachain)_parachain_runtime.compact.compressed.wasm \
+		$(root_dir)/target/release/wbuild/parachain_runtime.compact.compressed.wasm
 
 	# deploy with test (ensuring old binary, new blob)
-	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/9999-runtime_upgrade.feature
+	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/9999-real_runtime_upgrade.feature
 
 spawn: setup
 	$(bin_dir)/zombienet --help
