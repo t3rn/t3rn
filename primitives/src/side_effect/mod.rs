@@ -182,6 +182,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         assert_eq!(
@@ -193,7 +194,8 @@ mod tests {
                 encoded_args: vec![],
                 signature: vec![],
                 insurance: 1,
-                enforce_executor: None
+                enforce_executor: None,
+                reward_asset_id: None,
             }
         );
     }
@@ -219,6 +221,7 @@ mod tests {
             ],
             signature: vec![],
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         let tfsfx = FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -295,7 +298,8 @@ mod tests {
                 ],
                 signature: vec![],
                 insurance: 2,
-                enforce_executor: None
+                enforce_executor: None,
+                reward_asset_id: None,
             }
         );
     }
@@ -311,6 +315,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         assert_eq!(
@@ -334,6 +339,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         assert_ne!(

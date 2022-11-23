@@ -37,6 +37,7 @@ pub struct SideEffect<AccountId, BalanceOf> {
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
     pub enforce_executor: Option<AccountId>,
+    pub reward_asset_id: Option<u32>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
@@ -131,6 +132,7 @@ where
             signature: vec![],
             insurance: Zero::zero(),
             enforce_executor: None,
+            reward_asset_id: None,
         })
     }
 }
@@ -407,6 +409,7 @@ mod tests {
             signature: vec![],
             insurance: 0,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         assert_eq!(
@@ -418,7 +421,8 @@ mod tests {
                 encoded_args: vec![],
                 signature: vec![],
                 insurance: 0,
-                enforce_executor: None
+                enforce_executor: None,
+                reward_asset_id: None,
             }
         );
     }
@@ -444,6 +448,7 @@ mod tests {
             signature: vec![],
             insurance: 0,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         assert_eq!(
@@ -470,6 +475,7 @@ mod tests {
                 ],
                 signature: vec![],
                 enforce_executor: None
+                reward_asset_id: None,
             }
         );
     }

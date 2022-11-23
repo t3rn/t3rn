@@ -198,6 +198,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -264,6 +265,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
@@ -274,6 +276,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -395,6 +398,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
@@ -405,6 +409,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
@@ -525,6 +530,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
@@ -535,6 +541,7 @@ mod tests {
             signature: vec![],
             insurance: 1,
             enforce_executor: None,
+            reward_asset_id: None,
         };
 
         let _completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {

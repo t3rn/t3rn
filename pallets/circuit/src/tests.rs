@@ -423,6 +423,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
             .into(),
         ),
         insurance: 3,
+        reward_asset_id: None,
     }];
 
     let sequential = true;
@@ -530,6 +531,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                 ],
                                 signature: vec![],
                                 enforce_executor: None,
+                                reward_asset_id: None,
                                 insurance: 1,
                             }],
                             vec![hex!(
@@ -724,7 +726,8 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                     ]
                                 ],
                                 signature: vec![],
-                                enforce_executor: None
+                                enforce_executor: None,
+                                reward_asset_id: None,
                             }],
                             vec![hex!(
                                 "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
@@ -3801,6 +3804,7 @@ fn into_se_from_chain() {
             ],
             signature: vec![],
             enforce_executor: None,
+            reward_asset_id: None,
         }
     )
 }

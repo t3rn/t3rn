@@ -26,6 +26,7 @@ export class SideEffect {
     action: TransactionType;
     target: string;
     hasInsurance: boolean;
+    hasRewardAsset: boolean;
     iAmExecuting: boolean;
 
     // SideEffect data
@@ -46,6 +47,7 @@ export class SideEffect {
             this.xtxId = xtxId
             this.arguments = sideEffect.encodedArgs.map(entry => entry.toString());
             this.hasInsurance = this.checkForInsurance(this.arguments.length, this.action)
+            this.hasRewardAsset = false;
             this.target =  new TextDecoder().decode(sideEffect.target.toU8a())
         } else {
             console.log("SideEffect interface unknown!!")
