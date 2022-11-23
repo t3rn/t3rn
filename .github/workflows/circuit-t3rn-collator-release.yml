@@ -46,7 +46,7 @@ jobs:
         with:
           path: |
             bin
-          key: ${{ runner.os }}-bin-${{ hashFiles('Cargo.lock') }}
+          key: ${{ runner.os }}-bin-${{ hashFiles('tests/zombienet/Makefile') }}
           restore-keys: |
             ${{ runner.os }}-bin-
 
