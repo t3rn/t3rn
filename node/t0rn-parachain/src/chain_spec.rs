@@ -3,7 +3,7 @@ use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,
 };
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Encode, Pair, Public};
@@ -200,15 +200,15 @@ pub type ChainSpec =
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// The extensions for the [`ChainSpec`].
-#[derive(
-    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {
     /// The relay chain of the Parachain.
     pub relay_chain: String,
     /// The id of the Parachain.
     pub para_id: u32,
+    /// Known bad block hashes.
+    pub bad_blocks: sc_client_api::BadBlocks<circuit_parachain_runtime::Block>,
 }
 
 impl Extensions {
@@ -327,6 +327,7 @@ pub fn development_config() -> ChainSpec {
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: PARACHAIN_ID,              // You MUST set this correctly!
+            bad_blocks: None,
         },
     )
 }
@@ -395,6 +396,7 @@ pub fn local_testnet_config() -> ChainSpec {
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: PARACHAIN_ID,              // You MUST set this correctly!
+            bad_blocks: None,
         },
     )
 }
@@ -465,6 +467,7 @@ pub fn rococo_config() -> ChainSpec {
         Extensions {
             relay_chain: "rococo".into(), // You MUST set this to the correct network!
             para_id: PARACHAIN_ID,        // You MUST set this correctly!
+            bad_blocks: None,
         },
     )
 }
@@ -555,15 +558,6 @@ fn testnet_genesis(
                     )
                 })
                 .collect(),
-        },
-        developer_membership: circuit_parachain_runtime::DeveloperMembershipConfig {
-            members: vec![
-                get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
-                get_account_id_from_adrs("5Cfd51SrYX5gQbdWc5tPg7PuoSGkCkz7G91E9cp8UBkam5Lf"), // CI
-            ]
-            .try_into()
-            .expect("Could not build a bounded vector of members, probably overflowed"),
-            ..Default::default()
         },
     }
 }

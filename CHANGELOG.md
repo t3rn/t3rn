@@ -5,6 +5,19 @@
 * no custom features
 * open collator pool
 * upgradable runtime
+
+## `v1.2.0-rc.4` 2022-11-23
+* fix: add t0rn chainspec code_substitutes on height 845420
+
+## `v1.2.0-rc.3` 2022-11-19
+* fix: add t0rn chainspec bad_blocks on height 845420
+
+## `v1.2.0-rc.2` 2022-11-11
+* fix: add bad_blocks extension to t0rn specs
+
+## `v1.2.0-rc.1` 2022-11-11
+* fix: restore block time to 12s
+
 ## `v1.2.0-rc.0` 2022-10-24
 ## What's Changed
 

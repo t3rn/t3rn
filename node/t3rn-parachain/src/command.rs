@@ -259,6 +259,7 @@ pub fn run() -> Result<()> {
                 Err("Try-runtime must be enabled by `--features try-runtime`.".into())
             }
         },
+        Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
