@@ -57,6 +57,7 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber> {
         source: BenefitSource,
         role: CircuitRole,
         recipient: Option<Account>,
+        maybe_asset_id: Option<u32>,
     ) -> DispatchResult;
     /// Finalize a transaction, with an optional reason for failures
     fn finalize(

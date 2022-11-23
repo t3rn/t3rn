@@ -115,6 +115,7 @@ pub mod pallet {
             source: BenefitSource,
             role: CircuitRole,
             maybe_recipient: Option<T::AccountId>,
+            maybe_asset_id: Option<u32>,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
@@ -126,6 +127,7 @@ pub mod pallet {
                 source,
                 role,
                 maybe_recipient,
+                maybe_asset_id,
             )
             .map(|_| ())
         }

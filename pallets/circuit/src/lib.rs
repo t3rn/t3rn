@@ -1437,10 +1437,13 @@ impl<T: Config> Pallet<T> {
                 total_max_rewards += fsx.input.max_reward;
             }
 
+            // Monetary::<T>::unlock_requester(&requester, &current_step_fsx);
             <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(&requester, total_max_rewards);
         };
         match local_ctx.xtx.status {
             CircuitStatus::Requested => {
+                // Monetary::<T>::lock_requester(&requester, &Self::get_current_step_fsx(local_ctx));
+
                 let mut total_max_rewards = Zero::zero();
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     total_max_rewards += fsx.input.max_reward;
@@ -1473,6 +1476,7 @@ impl<T: Config> Pallet<T> {
                             BenefitSource::TrafficRewards,
                             CircuitRole::Requester,
                             Some(bid_4_fsx.executor.clone()),
+                            fsx.input.reward_asset_id,
                         )
                         .map_err(|_e| Error::<T>::ChargingTransferFailed)?;
                     }
@@ -1489,6 +1493,7 @@ impl<T: Config> Pallet<T> {
                     Zero::zero(),
                     BenefitSource::TrafficFees,
                     CircuitRole::Executor,
+                    None,
                     None,
                 )
                 .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;

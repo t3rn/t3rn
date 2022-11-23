@@ -88,6 +88,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         source: BenefitSource,
         role: CircuitRole,
         maybe_recipient: Option<T::AccountId>,
+        _maybe_asset_id: Option<u32>,
     ) -> DispatchResult {
         Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
 
@@ -307,6 +308,7 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
             assert_eq!(Balances::reserved_balance(&ALICE), DEFAULT_BALANCE / 10);
@@ -342,6 +344,7 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
             assert_err!(
@@ -358,6 +361,7 @@ mod tests {
                     BenefitSource::TrafficRewards,
                     CircuitRole::ContractAuthor,
                     Some(BOB),
+                                    None,
                 ),
                 pallet_account_manager::Error::<Runtime>::ExecutionAlreadyRegistered
             );
@@ -389,6 +393,7 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
             assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
@@ -463,6 +468,7 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                                    None,
             ));
 
             assert_eq!(Balances::reserved_balance(&ALICE), CHARGE + INSURANCE);
@@ -515,6 +521,7 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
             assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
@@ -585,6 +592,7 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
             assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
