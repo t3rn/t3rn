@@ -10,6 +10,10 @@ export enum ListenerEvents {
     NewSideEffectsAvailable,
     SFXNewBidReceived,
     XTransactionReadyForExec,
+    HeaderSubmitted,
+    SideEffectConfirmed,
+    XtxCompleted
+
 }
 
 export type ListenerEventData = {
@@ -47,11 +51,43 @@ export class CircuitListener extends EventEmitter {
                         }
                     )
                 } else if (notifications[i].event.method === "XTransactionReadyForExec") {
-                    console.log("emitting...")
                     this.emit(
                         "Event",
                         <ListenerEventData>{
                             type: ListenerEvents.XTransactionReadyForExec,
+                            data: notifications[i].event.data
+                        }
+                    )
+                } else if (notifications[i].event.method === "HeaderSubmitted") {
+                    console.log(notifications[i].event.data[1].toString())
+                    const data = {
+                        gatewayId: new TextDecoder().decode(
+                            notifications[i].event.data[0].toU8a()
+                        ),
+                        height: parseInt(notifications[i].event.data[1].toString(), 16)
+                    }
+                    this.emit(
+                        "Event",
+                        <ListenerEventData>{
+                            type: ListenerEvents.HeaderSubmitted,
+                            data
+                        }
+                    )
+                } else if (notifications[i].event.method === "SideEffectConfirmed") {
+                    console.log("Caught SideEffectConfirmed event")
+                    this.emit(
+                        "Event",
+                        <ListenerEventData>{
+                            type: ListenerEvents.SideEffectConfirmed,
+                            data: notifications[i].event.data
+                        }
+                    )
+                } else if (notifications[i].event.method === "XTransactionXtxFinishedExecAllSteps") {
+                    console.log("XTransactionXtxFinishedExecAllSteps")
+                    this.emit(
+                        "Event",
+                        <ListenerEventData>{
+                            type: ListenerEvents.XtxCompleted,
                             data: notifications[i].event.data
                         }
                     )

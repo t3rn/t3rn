@@ -220,18 +220,16 @@ export class SideEffect extends EventEmitter {
         }
     }
 
-    // updates status
-    insuranceBonded(iAmExecuting: boolean) {
-        this.status = SfxStatus.PendingExecution;
-        this.iAmExecuting = iAmExecuting;
-    }
-
     // sfx was successfully executed on target and has the inclusion proof data
     executedOnTarget(inclusionData: any, executor: any, targetInclusionHeight: any) {
         this.inclusionData = inclusionData;
         this.executor = executor;
         this.targetInclusionHeight = targetInclusionHeight;
         this.status = SfxStatus.ExecutedOnTarget;
+    }
+
+    confirmedOnCircuit() {
+        this.status = SfxStatus.Confirmed;
     }
 
     bidAccepted(bidAmount: number) {
