@@ -189,4 +189,35 @@ impl<T: Config> Optimistic<T> {
             );
         }
     }
+
+    pub fn try_dropped_at_bidding_refund(local_ctx: &mut LocalXtxCtx<T>) {
+        let mut total_max_rewards: EscrowedBalanceOf<T, T::Escrowed> = Zero::zero();
+
+        for phase in local_ctx.full_side_effects.clone() {
+            for fsx in phase {
+                if fsx.is_bid_resolved() {
+                    log::info!(
+                        "Refunding bid: {:?}",
+                        fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
+                    );
+                    let sfx_bid = fsx.expect_sfx_bid();
+                    let (insurance, reserved_bond) =
+                        (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
+
+                    <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                        &sfx_bid.executor,
+                        insurance + reserved_bond + sfx_bid.bid,
+                    );
+
+                    log::info!(
+                        "Dropped at bidding refund: {:?} + {:?} + {:?} -> {:?}",
+                        insurance,
+                        reserved_bond,
+                        &sfx_bid.bid,
+                        &sfx_bid.executor
+                    );
+                }
+            }
+        }
+    }
 }
