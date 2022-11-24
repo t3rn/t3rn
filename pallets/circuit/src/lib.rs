@@ -1442,7 +1442,11 @@ impl<T: Config> Pallet<T> {
 
     fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
         local_ctx.xtx.status = cause.clone();
-        Optimistic::<T>::try_slash(local_ctx);
+        if let CircuitStatus::RevertTimedOut = cause {
+            Optimistic::<T>::try_slash(local_ctx);
+        } else {
+            Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
+        }
 
         Self::square_up(local_ctx, None)
             .expect("Expect Revert and RevertKill options to square up to be infallible");
@@ -1957,7 +1961,7 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            acc_rewards += fsx.expect_sfx_bid().bid;
+            acc_rewards += fsx.get_bond_value(fsx.input.max_reward);
         }
 
         acc_rewards
