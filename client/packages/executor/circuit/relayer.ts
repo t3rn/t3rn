@@ -5,6 +5,7 @@ import { SideEffect } from "../executionManager/sideEffect"
 import createDebug from "debug"
 import {BN} from "@polkadot/util";
 import {Sdk} from "@t3rn/sdk";
+import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 const fs = require("fs");
 
 
@@ -36,74 +37,83 @@ export default class CircuitRelayer extends EventEmitter {
         return this.sdk.circuit.tx.signAndSendSafe(tx)
     }
 
-    async bondInsuranceDeposits(sideEffects: SideEffect[]) {
-        for(const sideEffect of sideEffects) {
-            const nonce = await fetchNonce(this.api, this.signer.address)
-            const xtxId = this.api.createType("Hash", sideEffect.xtxId);
-            const id = this.api.createType("Hash", sideEffect.id);
-
-            await this.api.tx.circuit.bondInsuranceDeposit(xtxId, id)
-                .signAndSend(this.signer, {nonce}, async res => {
-                    if(res.status.isFinalized) {
-                        exportData([{xtxId, id}], `bond-insurance-${sideEffect.id.substring(2, 10)}.json`, "confirm")
-
-                    } else {
-                        // console.log(res.status.toHuman())
-                        // add some error handling here
-                    }
-                })
+    async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
+        const txs: SubmittableExtrinsic[] = sfxs.map(sfx => this.createConfirmTx(sfx))
+        const nonce = await fetchNonce(this.api, this.signer.address)
+        if (txs.length > 1) { // only batch if more than one tx
+            return this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createBatch(txs))
+        } else {
+            return this.sdk.circuit.tx.signAndSendSafe(txs[0])
         }
     }
 
-    async confirmSideEffects(sideEffects: SideEffect[]) {
-        for (const sideEffect of sideEffects) {
-            const nonce = await fetchNonce(this.api, this.signer.address)
+    // async confirmSideEffects(sfxs: SideEffect[]) {
+    //     for (const sideEffect of sfxs) {
+    //         // const nonce = await fetchNonce(this.api, this.signer.address)
+    //
+    //         // const inclusionData = this.api.createType("InclusionData", sideEffect.inclusionData);
+    //         // const receivedAt = this.api.createType("BlockNumber", 0); // ToDo figure out what to do here
+    //         // const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
+    //         //     err: null,
+    //         //     output: null,
+    //         //     inclusion_data: inclusionData.toHex(),
+    //         //     executioner: sideEffect.executor,
+    //         //     receivedAt: receivedAt,
+    //         //     cost: null,
+    //         // })
+    //
+    //         const tx = this.createConfirmTx(sideEffect)
+    //
+    //         const xtxId: any = this.api.createType("XtxId", sideEffect.xtxId);
+    //         exportData([{xtxId, sideEffect: sideEffect.raw, confirmedSideEffect}], `confirm-transfer-${sideEffect.id.substring(2, 10)}.json`, "confirm")
+    //
+    //         await new Promise((resolve, reject) => {
+    //             this.api.tx.circuit
+    //                 .confirmSideEffect(
+    //                     sfx.id,
+    //                     { // for some reason im not able to pass confirmedSideEffect here
+    //                         err: null,
+    //                         output: null,
+    //                         inclusionData: inclusionData.toHex(),
+    //                         executioner: sideEffect.executor,
+    //                         receivedAt: receivedAt,
+    //                         cost: null,
+    //                     },
+    //                 )
+    //                 .signAndSend(this.signer, { nonce }, result => {
+    //                     if (result.status.isFinalized) {
+    //                         const success =
+    //                             result.events[result.events.length - 1].event.method ===
+    //                             "ExtrinsicSuccess"
+    //
+    //                         if (success) resolve(undefined)
+    //                     else
+    //                         reject(
+    //                           Error(`sfx confirmation failed for ${sideEffect.id}`)
+    //                         )
+    //                     }
+    //                 })
+    //           })
+    //     }
+    // }
 
-            const inclusionData = this.api.createType("InclusionData", sideEffect.inclusionData);
-            const receivedAt = this.api.createType("BlockNumber", 0); // ToDo figure out what to do here
-            const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
-                err: null,
-                output: null,
-                inclusion_data: inclusionData.toHex(),
-                executioner: sideEffect.executor,
-                receivedAt: receivedAt,
-                cost: null,
-            })
+    createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
+        const inclusionData = this.api.createType("InclusionData", sfx.inclusionData);
+        const receivedAt = this.api.createType("BlockNumber", 0); // ToDo figure out what to do here
 
-            const xtxId: any = this.api.createType("XtxId", sideEffect.xtxId);
-            exportData([{xtxId, sideEffect: sideEffect.raw, confirmedSideEffect}], `confirm-transfer-${sideEffect.id.substring(2, 10)}.json`, "confirm")
-
-            await new Promise((resolve, reject) => {
-                this.api.tx.circuit
-                    .confirmSideEffect(
-                        xtxId.toHuman(),
-                        sideEffect.raw.toHuman(),
-                        { // for some reason im not able to pass confirmedSideEffect here
-                            err: null,
-                            output: null,
-                            inclusionData: inclusionData.toHex(),
-                            executioner: sideEffect.executor,
-                            receivedAt: receivedAt,
-                            cost: null,
-                        },
-                        null,
-                        null
-                    )
-                    .signAndSend(this.signer, { nonce }, result => {
-                        if (result.status.isFinalized) {
-                            const success =
-                                result.events[result.events.length - 1].event.method ===
-                                "ExtrinsicSuccess"
-
-                            if (success) resolve(undefined)
-                        else
-                            reject(
-                              Error(`sfx confirmation failed for ${sideEffect.id}`)
-                            )
-                        }
-                    })
-              })
-        }
+        const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
+            err: null,
+            output: null,
+            inclusion_data: inclusionData.toHex(),
+            executioner: sfx.executor,
+            receivedAt: receivedAt,
+            cost: null,
+        })
+        return this.api.tx.circuit
+            .confirmSideEffect(
+                sfx.id,
+                confirmedSideEffect.toJSON()
+            )
     }
 }
 

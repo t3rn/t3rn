@@ -25,7 +25,7 @@ type Queue = {
         isConfirming: {
             [block: number]: string[]
         },
-		complete: string[]
+		completed: string[]
     }
 }
 
@@ -77,14 +77,12 @@ export class ExecutionManager {
 	}
 
 	async initializeGateways() {
-		// @ts-ignore
-		console.log(this.circuitRelayer.signer.address)
         const gatewayKeys = Object.keys(this.sdk.gateways);
         for (let i = 0; i < gatewayKeys.length; i++) {
             const entry = this.sdk.gateways[gatewayKeys[i]]
 
             if (entry.executionLayerType === ExecutionLayerType.Substrate) {
-                let relayer = new SubstrateRelayer()
+                const relayer = new SubstrateRelayer()
                 await relayer.setup(entry.rpc, undefined, entry.id)
 
                 const estimator = new Estimator(relayer)
@@ -95,7 +93,7 @@ export class ExecutionManager {
 					isBidding: [],
 					isExecuting: [],
 					isConfirming: {},
-					complete: []
+					completed: []
 				}
 
 				this.targetEstimator[entry.id] = estimator;
@@ -127,7 +125,6 @@ export class ExecutionManager {
 
 	async initializeEventListeners() {
         this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
-			console.log("Event")
             switch (eventData.type) {
                 case ListenerEvents.NewSideEffectsAvailable:
                     console.log("NewSideEffectsAvailable")
@@ -141,7 +138,17 @@ export class ExecutionManager {
 					console.log("XTransactionReadyForExec")
 					this.xtxReadyForExec(eventData.data[0].toString())
 					break;
-
+				case ListenerEvents.HeaderSubmitted:
+					console.log("HeaderSubmitted")
+					this.updateGatewayHeight(eventData.data.gatewayId, eventData.data.height)
+					break;
+				case ListenerEvents.SideEffectConfirmed:
+					console.log("SideEffectConfirmed")
+					const sfxId = eventData.data[0].toString()
+					this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)!.confirmedOnCircuit()
+				case ListenerEvents.XtxCompleted:
+					console.log("XtxCompleted")
+					this.xtx[eventData.data[0].toString()].completed()
             }
 
         })
@@ -186,7 +193,71 @@ export class ExecutionManager {
 			this.queue[sfx.target].isExecuting.push(sfx.id)
 			// execute
 			this.relayers[sfx.target].executeTx(sfx)
+				.then()
 		}
+	}
+
+	// New header range was submitted on circuit
+    // update local params and check which SideEffects can be confirmed
+    updateGatewayHeight(gatewayId: string, blockHeight: number) {
+		console.log("Update Gateway Height", gatewayId, blockHeight)
+        if (this.queue[gatewayId]) {
+            this.queue[gatewayId].blockHeight = blockHeight
+            this.executeConfirmationQueue(gatewayId)
+        }
+	}
+
+	// checks which executed SideEffects can be confirmed on circuit
+    async executeConfirmationQueue(gatewayId: string) {
+        // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
+        let readyByHeight: string[] = [];
+		// stores the block height of the SideEffects that are ready to be confirmed. Needed for clearing the queue
+		let batchBlocks: string[] = [];
+		const queuedBlocks = Object.keys(this.queue[gatewayId].isConfirming);
+		for(let i = 0; i < queuedBlocks.length; i++) {
+            if(parseInt(queuedBlocks[i]) <= this.queue[gatewayId].blockHeight) {
+				batchBlocks.push(queuedBlocks[i])
+                readyByHeight = readyByHeight.concat(this.queue[gatewayId].isConfirming[queuedBlocks[i]])
+            }
+		}
+
+		console.log("Ready by height", readyByHeight)
+
+        const readyByStep: SideEffect[] = [];
+
+        // filter the SideEffects that can be confirmed in the current step
+		for(let i = 0; i < readyByHeight.length; i++) {
+            const sfx: SideEffect = this.xtx[this.sfxToXtx[readyByHeight[i]]].sideEffects.get(readyByHeight[i])!;
+            if(sfx.step === this.xtx[sfx.xtxId].currentStep) {
+                readyByStep.push(sfx)
+            }
+        }
+
+        ExecutionManager.debug(`${gatewayId} - ${this.queue[gatewayId].blockHeight}: ReadyToConfirm: ${readyByStep.length}`)
+
+		if(readyByStep.length > 0) {
+			this.circuitRelayer.confirmSideEffects(readyByStep)
+				.then((res: any) => {
+					// remove from queue and update status
+					this.processConfirmationBatch(readyByStep, batchBlocks, gatewayId)
+				})
+
+		}
+	}
+
+	// updates queue and sfx state after confirmation batch was submitted. This always has the same target
+	processConfirmationBatch(sfxs: SideEffect[], batchBlocks: string[], gatewayId: string) {
+		// remove from queue
+		batchBlocks.forEach((block) => {
+			delete this.queue[gatewayId].isConfirming[block]
+		})
+
+		// add to completed queue and update status
+		for (const sfx of sfxs) {
+			this.queue[gatewayId].completed.push(sfx.id)
+			sfx.confirmedOnCircuit() // maybe we leave this part and trigger via event, which is done in any case
+		}
+		console.log("Queue after confirmation batch", this.queue[gatewayId])
 	}
 
 	async initSfxListeners(sfx: SideEffect) {

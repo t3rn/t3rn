@@ -47,9 +47,10 @@ export default class SubstrateRelayer extends EventEmitter {
     async executeTx(sfx: SideEffect) {
         SubstrateRelayer.debug(`Executing sfx ${this.toHuman(sfx.id)} - ${sfx.target} with nonce: ${this.nonce} 🔮`)
         const tx: SubmittableExtrinsic = this.buildTx(sfx)
-
+        let nonce = this.nonce
+        this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
         return new Promise<void>((resolve, reject) =>
-			tx.signAndSend(this.signer, { nonce: this.nonce }, async ({ dispatchError, status, events }) => {
+			tx.signAndSend(this.signer, { nonce }, async ({ dispatchError, status, events }) => {
 				if (dispatchError?.isModule) {
 					let err = this.client.registry.findMetaError(dispatchError.asModule)
                     this.nonce -= 1;
@@ -89,7 +90,6 @@ export default class SubstrateRelayer extends EventEmitter {
                 }
 			})
 		)
-        this.nonce += 1; // we optimistically increment the nonce. If a transaction fails, this will mess things up. The alternative is to do it sequentially, which is very slow.
     }
 
     // if sfx execution successful, generate inclusion proof and notify of successful execution

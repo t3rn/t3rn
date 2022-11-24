@@ -108,12 +108,12 @@ export class Execution extends EventEmitter {
         }
     }
 
-    complete() {
+    completed() {
         this.status = XtxStatus.FinishedAllSteps;
     }
 
     // returns the sfxs that ready to execute
-    getReadyToExecute(): SideEffect[] { // ToDo this does not work currently
+    getReadyToExecute(): SideEffect[] {
         let result: SideEffect[] = [];
         for(let [_sfxId,sfx] of this.sideEffects){
             if(sfx.status === SfxStatus.PendingExecution && sfx.isBidder && sfx.step === this.currentStep) {
