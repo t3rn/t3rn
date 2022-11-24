@@ -6,9 +6,8 @@ alice: is up
 bob: is up
 
 alice: parachain 3000 is registered within 225 seconds
-alice: parachain 4000 is registered within 225 seconds
 
-{% set nodes = ["collator1", "collator0"] %}
+{% set nodes = ["collator01", "collator02"] %}
 {% for node in nodes %}
 {{node}}: reports block height is at least 5 within 250 seconds
 {% endfor %}

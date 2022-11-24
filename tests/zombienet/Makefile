@@ -1,14 +1,13 @@
 .EXPORT_ALL_VARIABLES:
 
 provider := native
-version := v1.3.17
+zombienet_version := v1.3.17
 runtime := t3rn
 pdot_branch := release-v0.9.27
 root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
-tmp_dir := $(shell mktemp -d)
-
+polkadot_tmp_dir := $(shell mktemp -d)
 SCCACHE_VERSION := v0.3.1
 SCCACHE_FILE := sccache-$(SCCACHE_VERSION)-x86_64-unknown-linux-musl
 
@@ -25,32 +24,32 @@ endif
 clean:
 	rm -rf $(bin_dir)/*
 
-directory: Makefile
+$(bin_dir): 
 	@mkdir -p $(bin_dir)
 
-${bin_dir}/sccache: # Makefile
+${bin_dir}/sccache:
 	@if [ $(machine) = "macos" ]; then \
         brew update; \
 		brew install -qf sccache | true; \
 		cp -n /opt/homebrew/bin/sccache $(bin_dir)/sccache; \
 	elif [ $(machine) = "linux" ]; then \
-		curl -fL -o $(tmp_dir)/$(SCCACHE_FILE).tar.gz https://github.com/mozilla/sccache/releases/download/$(SCCACHE_VERSION)/$(SCCACHE_FILE).tar.gz; \
-		tar xzvf $(tmp_dir)/$(SCCACHE_FILE).tar.gz -C $(tmp_dir); \
-		mv -f $(tmp_dir)/$(SCCACHE_FILE)/sccache $(bin_dir)/sccache; \
+		tmp_dir=$(shell mktemp -d); \
+		curl -fL https://github.com/mozilla/sccache/releases/download/$(SCCACHE_VERSION)/$(SCCACHE_FILE).tar.gz | tar xzvf - -C $(bin_dir)/; \
+		mv $(bin_dir)/$(SCCACHE_FILE)/sccache $(bin_dir)/; \
 		sudo chmod +x $(bin_dir)/sccache; \
 	fi
 	
 ${bin_dir}/zombienet:
-	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(version)/zombienet-$(machine)
+	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(zombienet_version)/zombienet-$(machine)
 	# echo "#### Need sudo access for zombienet executable, make will drop this sudo access after this cmd ####"
 	sudo chmod +x $(bin_dir)/zombienet
 
 ${bin_dir}/polkadot:
-	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(tmp_dir)/polkadot
-	cargo build --manifest-path $(tmp_dir)/polkadot/Cargo.toml --features fast-runtime --release --locked
-	mv -f $(tmp_dir)/polkadot/target/release/polkadot $(bin_dir)/polkadot
+	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/polkadot
+	cargo build --manifest-path $(polkadot_tmp_dir)/polkadot/Cargo.toml --features fast-runtime --release --locked
+	mv -f $(polkadot_tmp_dir)/polkadot/target/release/polkadot $(bin_dir)/polkadot
 
-${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml #Makefile
+${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml Makefile
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
 	cp -f $(root_dir)/target/release/t0rn-collator $(bin_dir)/
 
@@ -58,12 +57,12 @@ ${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(ro
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
 	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
 
-setup: directory ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
+setup: $(bin_dir) ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
 
 # ====================== Caching ======================
 
-start-sccache: ${bin_dir}/sccache
-	sccache --start-server
+start-sccache: $(bin_dir) ${bin_dir}/sccache
+	sccache --start-server || true
 
 stop-sccache: ${bin_dir}/sccache
 	sccache --stop-server || true
@@ -106,7 +105,7 @@ test-upgrade: setup bump-versions
 # NOTE: this does not modify the versions as to provide a true representation of the runtime upgrade
 # NOTE: this probably will only work on linux since we only release linux binaries and they aren't musl, so strictly this works for CI.
 # TODO[Optimisation]: get last tag and build in a fake directory instead
-test-real-upgrade: directory ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/$(parachain)-collator 
+test-real-upgrade: $(bin_dir) ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/$(parachain)-collator 
 	@echo "Testing real upgrade for parachain: $(parachain)"
 
 	@if [ $(machine) = "macos" ]; then \
@@ -115,23 +114,10 @@ test-real-upgrade: directory ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/
 	fi
 
 	# get last release binary from github
-	git fetch --all --tags
+	git fetch --all --tags -f || true
 
 	# get last release
-	@if [ $(parachain) = "t0rn" ]; then \
-        export version=$(git tag --list --sort=-version:refname "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*" | head -n 1); \
-		export url=$(curl -s https://api.github.com/repos/t3rn/t3rn/releases/tags/$version | jq -r '.assets[0].browser_download_url'); \
-		curl -L -o - $(url) | gunzip -c > $(bin_dir)/collator-old; \
-		chmod +x $(bin_dir)/collator-old; \
-		echo =========== OLD COLLATOR ===========; \
-		echo $(version); \
-		echo $(url); \
-	elif [ $(parachain) = "t3rn" ]; then \
-        export version=$(version=git tag --list --sort=-version:refname "v[0-9]*.[0-9].[0-9]" | head -n 1); \
-		export url=$(curl -s https://api.github.com/repos/t3rn/t3rn/releases/tags/$version | jq -r '.assets[0].browser_download_url'); \
-		curl -L -o - $url | gunzip -c > $(bin_dir)/collator-old; \
-		chmod +x $(bin_dir)/collator-old; \
-	fi
+	./download_previous_version.sh $(parachain)
 
 	# build new blob
 	cargo build --manifest-path $(root_dir)/node/$(parachain)-parachain/Cargo.toml --release --locked
