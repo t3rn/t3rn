@@ -63,15 +63,10 @@ jobs:
         working-directory: tests/zombienet
         run: make start-sccache
 
-      # - name: 📼 Run zombienet tests
-      #   continue-on-error: false
-      #   working-directory: tests/zombienet
-      #   run: make test
-
-      - name: 📼 Run zombienet runtime upgrade test
+      - name: 📼 Run zombienet tests
         continue-on-error: false
         working-directory: tests/zombienet
-        run: make test-real-upgrade parachain=t0rn
+        run: make test
 
       - name: Print sccache stats
         working-directory: tests/zombienet
