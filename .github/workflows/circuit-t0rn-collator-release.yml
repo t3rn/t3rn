@@ -3,7 +3,7 @@ name: Circuit t0rn Rococo Collator Release
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
 env:
   PARACHAIN_NAME: t0rn
@@ -29,14 +29,9 @@ jobs:
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
-        uses: actions/cache@v2
-        id: cache-rust
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ./target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('./Cargo.lock') }}
+          cache-on-failure: "true"
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
@@ -44,6 +39,21 @@ jobs:
         with:
           command: build
           args: --manifest-path ./node/t0rn-parachain/Cargo.toml --locked --release
+
+      - name: 🕒 Cache binaries
+        uses: actions/cache@v2
+        id: cache-bin
+        with:
+          path: |
+            bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('tests/zombienet/Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-bin-
+
+      - name: 📼 Run zombienet runtime upgrade test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: make test-real-upgrade parachain=t0rn
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2

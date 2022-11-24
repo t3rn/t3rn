@@ -3,9 +3,9 @@ name: Circuit PR Alerting
 on:
   pull_request:
     paths:
-      - '**/*.rs'
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
       - .github/workflows/circuit.yml
 
 jobs:
@@ -22,8 +22,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           timeoutSeconds: 3600
 
-      - name: Alert the team
-        if: ${{ steps.wait-for-build-test.outputs.conclusion == 'success' }}
+      - name: Alert the team for new pr
+        if: ${{ steps.wait-for-build-test.outputs.conclusion == 'success' && github.event.pull_request.opened }}
         uses: appleboy/telegram-action@v0.1.1
         with:
           to: ${{ secrets.TELEGRAM_TO }}
