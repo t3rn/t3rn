@@ -78,9 +78,13 @@ export class SideEffect extends EventEmitter {
     // price for reward assert in USD
     rewardAssetPrice: BehaviorSubject<number> = new BehaviorSubject<number>(0);
 
+    subscriptions: any[] = [];
+
     txCostUsd: number = 0;
     txOutputCostUsd: number = 0;
     rewardUsd: number = 0;
+
+    txReceipt: any; // store tx receipt
 
     strategyEngine: StrategyEngine;
     biddingEngine: BiddingEngine;
@@ -131,25 +135,35 @@ export class SideEffect extends EventEmitter {
         this.txOutputAssetPrice = txOutputAssetPrice;
         this.rewardAssetPrice = rewardAssetPrice;
 
-        this.txCostNative.subscribe(() => {
+        const txCostNativeSubscription = this.txCostNative.subscribe(() => {
             this.recomputeMaxProfit()
         })
 
-        this.nativeAssetPrice.subscribe(() => {
+        this.subscriptions.push(txCostNativeSubscription)
+
+        const nativeAssetPriceSubscription = this.nativeAssetPrice.subscribe(() => {
             this.recomputeMaxProfit()
         })
 
-        this.txOutputAssetPrice.subscribe(() => {
+        this.subscriptions.push(nativeAssetPriceSubscription)
+
+        const txOutputAssetPriceSubscription = this.txOutputAssetPrice.subscribe(() => {
             this.recomputeMaxProfit()
         })
 
-        this.rewardAssetPrice.subscribe(() => {
+        this.subscriptions.push(txOutputAssetPriceSubscription)
+
+        const rewardAssetPriceSubscription = this.rewardAssetPrice.subscribe(() => {
             this.recomputeMaxProfit()
         })
 
-        this.reward.subscribe(() => {
+        this.subscriptions.push(rewardAssetPriceSubscription)
+
+        const rewardSubscription = this.reward.subscribe(() => {
             this.recomputeMaxProfit()
         })
+
+        this.subscriptions.push(rewardSubscription)
 
         this.recomputeMaxProfit();
 
@@ -172,7 +186,7 @@ export class SideEffect extends EventEmitter {
                 this.minProfitUsd = this.strategyEngine.evaluateSfx(this) as number;
                 this.wantToBid = true;
 
-                if(!this.isBidder && this.wantToBid && this.txStatus === TxStatus.Ready) {
+                if(!this.isBidder && this.wantToBid && this.txStatus === TxStatus.Ready && this.status === SfxStatus.Bidding) {
                     this.txStatus = TxStatus.Pending; //
                     const bidUsd = this.biddingEngine.computeBid(this)
                     const bidRewardAsset = (bidUsd / this.rewardAssetPrice.getValue())
@@ -230,6 +244,13 @@ export class SideEffect extends EventEmitter {
 
     confirmedOnCircuit() {
         this.status = SfxStatus.Confirmed;
+
+        // unsubscribing from all subjects, as no longer needed
+        this.subscriptions.forEach(subscription => {
+            subscription.unsubscribe()
+        })
+
+        // this.txReceipt = txReceipt;
     }
 
     bidAccepted(bidAmount: number) {

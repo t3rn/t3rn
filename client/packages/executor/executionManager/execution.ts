@@ -110,6 +110,7 @@ export class Execution extends EventEmitter {
 
     completed() {
         this.status = XtxStatus.FinishedAllSteps;
+        console.log(`Execution ${this.humanId} is completed`)
     }
 
     // returns the sfxs that ready to execute

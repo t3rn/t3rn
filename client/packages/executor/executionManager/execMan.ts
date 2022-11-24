@@ -146,6 +146,7 @@ export class ExecutionManager {
 					console.log("SideEffectConfirmed")
 					const sfxId = eventData.data[0].toString()
 					this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)!.confirmedOnCircuit()
+					break;
 				case ListenerEvents.XtxCompleted:
 					console.log("XtxCompleted")
 					this.xtx[eventData.data[0].toString()].completed()
@@ -257,7 +258,6 @@ export class ExecutionManager {
 			this.queue[gatewayId].completed.push(sfx.id)
 			sfx.confirmedOnCircuit() // maybe we leave this part and trigger via event, which is done in any case
 		}
-		console.log("Queue after confirmation batch", this.queue[gatewayId])
 	}
 
 	async initSfxListeners(sfx: SideEffect) {
