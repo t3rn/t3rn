@@ -59,7 +59,6 @@ export class CircuitListener extends EventEmitter {
                         }
                     )
                 } else if (notifications[i].event.method === "HeaderSubmitted") {
-                    console.log(notifications[i].event.data[1].toString())
                     const data = {
                         gatewayId: new TextDecoder().decode(
                             notifications[i].event.data[0].toU8a()
@@ -74,7 +73,6 @@ export class CircuitListener extends EventEmitter {
                         }
                     )
                 } else if (notifications[i].event.method === "SideEffectConfirmed") {
-                    console.log("Caught SideEffectConfirmed event")
                     this.emit(
                         "Event",
                         <ListenerEventData>{
@@ -83,7 +81,6 @@ export class CircuitListener extends EventEmitter {
                         }
                     )
                 } else if (notifications[i].event.method === "XTransactionXtxFinishedExecAllSteps") {
-                    console.log("XTransactionXtxFinishedExecAllSteps")
                     this.emit(
                         "Event",
                         <ListenerEventData>{
