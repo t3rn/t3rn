@@ -4,10 +4,12 @@ export enum SfxType {
 
 export enum SfxStatus {
     Ready,
+    Bidding,
     PendingExecution,
     ExecutedOnTarget,
     Confirmed,
-    Bidding
+    Dropped,
+    Reverted
 }
 
 export enum XtxStatus {

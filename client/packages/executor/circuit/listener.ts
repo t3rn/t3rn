@@ -12,8 +12,9 @@ export enum ListenerEvents {
     XTransactionReadyForExec,
     HeaderSubmitted,
     SideEffectConfirmed,
-    XtxCompleted
-
+    XtxCompleted,
+    DroppedAtBidding,
+    RevertTimedOut,
 }
 
 export type ListenerEventData = {
@@ -85,6 +86,22 @@ export class CircuitListener extends EventEmitter {
                         "Event",
                         <ListenerEventData>{
                             type: ListenerEvents.XtxCompleted,
+                            data: notifications[i].event.data
+                        }
+                    )
+                } else if (notifications[i].event.method === "XTransactionXtxDroppedAtBidding") {
+                    this.emit(
+                        "Event",
+                        <ListenerEventData>{
+                            type: ListenerEvents.DroppedAtBidding,
+                            data: notifications[i].event.data
+                        }
+                    )
+                } else if (notifications[i].event.method === "XTransactionXtxRevertedAfterTimeOut") {
+                    this.emit(
+                        "Event",
+                        <ListenerEventData>{
+                            type: ListenerEvents.RevertTimedOut,
                             data: notifications[i].event.data
                         }
                     )
