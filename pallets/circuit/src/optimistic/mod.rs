@@ -106,6 +106,7 @@ impl<T: Config> Optimistic<T> {
     }
 
     pub fn try_unbond(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
+        log::info!("try_unbond");
         let optimistic_fsx_in_step = crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
             local_ctx,
             SecurityLvl::Optimistic,
