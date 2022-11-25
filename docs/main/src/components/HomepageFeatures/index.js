@@ -26,17 +26,6 @@ const FeatureList = [
     link: "/docs/intro",
     button: "Getting Started"
   },
-  {
-    title: 'Typescript Client Library',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
-    description: (
-      <>
-        Checkout the TS package documentation.
-      </>
-    ),
-    link: "http://google.com",
-    button: "TS Docs"
-  },
 ];
 
 function Feature({Svg, title, description, link, button}) {
