@@ -91,28 +91,11 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Concepts',
-                to: '/concepts/intro',
-              },
-              {
-                label: 'Tutorials',
-                to: '/concepts/intro',
-              },
-              {
-                label: 'Examples',
-                to: '/concepts/intro',
-              },
-            ],
-          },
-          {
             title: 'Community',
             items: [
               {
                 label: 'Discord',
-                href: 'https://discord.com/invite/ZYNrU4aAdg',
+                href: 'https://discord.gg/9hU9qrv2xV',
               },
               {
                 label: 'Twitter',
