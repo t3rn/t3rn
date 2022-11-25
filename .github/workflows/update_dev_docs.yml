@@ -80,4 +80,4 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_DOCS_PROJECT_ID}}
           scope: "t3rn"
           alias-domains: |
-            docs.t3rn.io
+            docs-t3rn.vercel.app
