@@ -2,11 +2,11 @@
 
 This guide outlines the essential minimum of steps required to run a collator for t3rn - a release candidate of t3rn on the Polkadot mainnet. This guide uses the `v1.0.0` release, however always use the latest available version.
 
-:::caution
+:::warning
 The mainnet collator is currently **not** available and will be rolled out once we are live on Polkadot.
 :::
 
-Make sure to have your machine setup for [Rust and Substrate development](https://docs.substrate.io/v3/getting-started/installation/).
+Make sure to have your machine setup for [Rust and Substrate development](https://docs.substrate.io/install/).
 
 ## Generate a Collator Keypair
 

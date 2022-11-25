@@ -5,7 +5,7 @@ sidebar_position: 1
 # Run a t0rn Testnet Collator
 
 
-This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn on the Rococo testnet. This guide uses the `v1.1.0-rc.0` release, however always use the latest available version.
+This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn on the Rococo testnet. This guide uses the `v1.2.0-rc.4` release, however always use the latest available version.
 
 Make sure to have your machine setup for [Rust and Substrate development](https://docs.substrate.io/v3/getting-started/installation/).
 
@@ -39,7 +39,7 @@ We maintain collator binaries which we release alongside every runtime release. 
 
 ```sh
 curl -sSfL \
-  https://github.com/t3rn/t3rn/releases/download/v1.1.0-rc.0/t0rn-circuit-collator-v1.1.0-rc.0-x86_64-unknown-linux-gnu.gz \
+  https://github.com/t3rn/t3rn/releases/download/v1.2.0-rc.4/t0rn-t0rn-collator-v1.2.0-rc.4-x86_64-unknown-linux-gnu.gz \
 | gunzip > ~/t0rn/circuit-collator
 ```
 
@@ -56,17 +56,17 @@ To associate your node to the correct network we need to provide the t0rn chain 
 ```sh
 curl -sSfL \
   -o ~/t0rn/specs/rococo.raw.json \
-  https://raw.githubusercontent.com/t3rn/t3rn/v1.1.0-rc.0/specs/rococo.raw.json
+  https://raw.githubusercontent.com/t3rn/t3rn/v1.2.0-rc.4/specs/rococo.raw.json
 
 curl -sSfL \
   -o ~/t0rn/specs/t0rn.raw.json \
-  https://raw.githubusercontent.com/t3rn/t3rn/v1.1.0-rc.0/specs/t0rn.raw.json
+  https://raw.githubusercontent.com/t3rn/t3rn/v1.2.0-rc.4/specs/t0rn.raw.json
 ```
 
 ## Option 2: Pull latest Docker image
 
 ```sh
-docker pull ghcr.io/t3rn/t0rn-collator:v1.1.0-rc.0
+docker pull ghcr.io/t3rn/t0rn-collator:v1.2.0-rc.4
 ```
 
 
@@ -94,7 +94,7 @@ rococo_boot_node=/ip4/34.90.151.124/tcp/30333/p2p/12D3KooWF7BUbG5ErMZ47ZdarRwtpZ
 The `t0rn` boot node reads:
 
 ```sh
-t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqYPFTWxSo1keuvenBdDKzdTCf
+t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWEXwTktuERRvV3NCqmBuco7bYBaU7zRnwQCp4GEDYpS1v
 ```
 
 ## Option 1: Start the Collator (Binary)
