@@ -29,5 +29,3 @@ Answer: No, members will be able to stake it, but the rewards are meant for the 
 
 ### What will the users have to pay fees with tokens, how many times do you need to sign TX?
 Answer: Just once, that’s all!
-
-

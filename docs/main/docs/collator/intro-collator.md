@@ -12,4 +12,3 @@ Unlike validators, collator nodes do not secure the network. If a parachain bloc
 <p align="center">
     <img height="150" src="/img/collator.png?raw=true"/>
 </p>
-

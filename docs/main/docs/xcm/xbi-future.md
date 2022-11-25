@@ -19,4 +19,3 @@ Some examples are:
 - custom storage approaches
 - only transmitters
 - only receivers
-

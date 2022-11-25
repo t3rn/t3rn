@@ -13,5 +13,3 @@ This allows XBI-enabled Parachains to create multichain transactions outside of 
 <p align="center">
     <img height="150" src="/img/t3rn_circuit.png?raw=true"/>
 </p>
-
-

@@ -4,6 +4,3 @@ Rangers listen to blockchains connected to t3rn and submit the latest block head
 
 
 This architecture enables even more security infor the t3rn ecosystem.
-
-
-

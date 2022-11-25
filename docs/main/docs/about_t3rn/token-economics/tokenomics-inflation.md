@@ -31,5 +31,3 @@ t3rn network participants are able to get `remunerated` through Inflation and Ga
 | Contracts Call TX | 10% | N/A | N/A | 80% | 10% | 0% |
 | SFX + XTX Confirm Tx | 19% | 80% | N/A | N/A | 1% | 0% |
 | SFX Attestations | 19% | N/A | N/A | N/A | 1% | 0% |
-
-

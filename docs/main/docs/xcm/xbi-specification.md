@@ -238,4 +238,3 @@ The future extensions to XBI foresee communication with remote to Polkadot conse
         actual_aggregated_costs: Value,
     },
 ```
-

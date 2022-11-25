@@ -31,9 +31,3 @@ For more information users are able to see more details of the transaction on th
 <p align="center">
     <img height="150" src="/img/t3rn-ui-transaction-history.png?raw=true"/>
 </p>
-
-
-
-
-
-

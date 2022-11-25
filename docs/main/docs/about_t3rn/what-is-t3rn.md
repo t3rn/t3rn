@@ -31,7 +31,3 @@ In most cases, each individual transaction must be successful in order to retain
 
 That's why the Circuit keeps updating the state of each atomic transaction of the composite transactions and revert the entire composed transaction in case of failure of one or multiple transactions. 
 That means that smart contracts executed on t3rn are fail-safe and reversible.
-
-
-
-
