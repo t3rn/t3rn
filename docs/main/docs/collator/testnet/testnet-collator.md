@@ -126,7 +126,7 @@ t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWEXwTktuERRvV3NCqmBuco7bYB
 
 ```sh
 docker run -p 33333:33333 -p 8833:8833 -p 9933:9933 \
-  -v /node ghcr.io/t3rn/t0rn-collator:v1.1.0-rc.0 \
+  -v /node ghcr.io/t3rn/t0rn-collator:v1.2.0-rc.4 \
   --collator \
   --name genius \
   --base-path /node \
