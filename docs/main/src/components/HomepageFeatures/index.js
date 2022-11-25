@@ -5,17 +5,6 @@ import Link from '@docusaurus/Link';
 
 const FeatureList = [
   {
-    title: 't3rn Concepts',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
-    description: (
-      <>
-        A deep dive into the concepts that power t3rn
-      </>
-    ),
-    link: "/concepts/intro",
-    button: "Concepts"
-  },
-  {
     title: 'Getting started',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
