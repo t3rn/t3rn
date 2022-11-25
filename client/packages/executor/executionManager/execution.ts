@@ -113,6 +113,22 @@ export class Execution extends EventEmitter {
         console.log(`Execution ${this.humanId} is completed`)
     }
 
+    droppedAtBidding() {
+        this.status = XtxStatus.DroppedAtBidding;
+        for(let [sfxId,sfx] of this.sideEffects){
+            sfx.droppedAtBidding();
+        }
+        console.log(`Execution ${this.humanId} was dropped at bidding`)
+    }
+
+    revertTimeout() {
+        this.status = XtxStatus.RevertTimedOut;
+        for(let [sfxId,sfx] of this.sideEffects){
+            sfx.reverted();
+        }
+        console.log(`Execution ${this.humanId} was reverted due to timeout`)
+    }
+
     // returns the sfxs that ready to execute
     getReadyToExecute(): SideEffect[] {
         let result: SideEffect[] = [];

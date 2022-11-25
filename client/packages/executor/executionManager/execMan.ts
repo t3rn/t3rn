@@ -25,7 +25,9 @@ type Queue = {
         isConfirming: {
             [block: number]: string[]
         },
-		completed: string[]
+		completed: string[],
+		dropped: string[],
+		reverted: string[],
     }
 }
 
@@ -93,7 +95,9 @@ export class ExecutionManager {
 					isBidding: [],
 					isExecuting: [],
 					isConfirming: {},
-					completed: []
+					completed: [],
+					dropped: [],
+					reverted: [],
 				}
 
 				this.targetEstimator[entry.id] = estimator;
@@ -150,6 +154,14 @@ export class ExecutionManager {
 				case ListenerEvents.XtxCompleted:
 					console.log("XtxCompleted")
 					this.xtx[eventData.data[0].toString()].completed()
+					break;
+				case ListenerEvents.DroppedAtBidding:
+					this.droppedAtBidding(eventData.data[0].toString());
+					break;
+				case ListenerEvents.RevertTimedOut:
+					console.log("RevertTimedOut")
+					this.xtx[eventData.data[0].toString()].revertTimeout()
+
             }
 
         })
@@ -287,9 +299,42 @@ export class ExecutionManager {
 		sfx.setRiskRewardParameters(txCostSubject, nativeAssetPriceSubject, txOutputPriceSubject, rewardAssetPriceSubject)
 	}
 
+	droppedAtBidding(xtxId: string) {
+		const xtx = this.xtx[xtxId]
+
+		if(xtx) { // ToDo remove once 504 is fixed
+			console.log("Dropped at bidding", xtxId)
+			xtx.droppedAtBidding()
+			for(const sfx of xtx.sideEffects.values()) {
+				this.removeFromQueue("isBidding", sfx.id, sfx.target)
+				this.queue[sfx.target].dropped.push(sfx.id)
+			}
+		}
+
+		console.log(this.queue)
+	}
+
+	revertTimeout(xtxId: string) {
+		const xtx = this.xtx[xtxId]
+		for(const sfx of xtx.sideEffects.values()) {
+			// sfx could either be in isExecuting or isConfirming
+			this.removeFromQueue("isExecuting", sfx.id, sfx.target)
+			const confirmBatch = this.queue[sfx.target].isConfirming[sfx.targetInclusionHeight.toString()];
+			if(confirmBatch.includes(sfx.id)) {
+				const index = confirmBatch.indexOf(sfx.id)
+				confirmBatch.splice(index, 1)
+			}
+
+			// add to reverted queue
+			this.queue[sfx.target].reverted.push(sfx.id)
+		}
+	}
+
 	// removes sfx from queue
     private removeFromQueue(queue: string, id: string, gatewayId: string) {
         const index = this.queue[gatewayId][queue].indexOf(id)
-        this.queue[gatewayId][queue].splice(index, 1)
+		if(index > -1) {
+        	this.queue[gatewayId][queue].splice(index, 1)
+		}
     }
 }

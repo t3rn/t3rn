@@ -246,11 +246,7 @@ export class SideEffect extends EventEmitter {
         this.status = SfxStatus.Confirmed;
 
         // unsubscribing from all subjects, as no longer needed
-        this.subscriptions.forEach(subscription => {
-            subscription.unsubscribe()
-        })
-
-        // this.txReceipt = txReceipt;
+        this.unsubscribe()
     }
 
     bidAccepted(bidAmount: number) {
@@ -279,9 +275,15 @@ export class SideEffect extends EventEmitter {
         this.status = SfxStatus.PendingExecution;
     }
 
-    // droppedAtBidding() {
-    //     this.status = SfxStatus.DroppedAtBidding;
-    // }
+    droppedAtBidding() {
+        this.status = SfxStatus.Dropped;
+        this.unsubscribe()
+    }
+
+    reverted() {
+        this.status = SfxStatus.Reverted;
+        this.unsubscribe()
+    }
 
     // ensure we can deal with the sfx action and set SfxType
     private knownTransactionInterface(encodedAction: any): boolean {
@@ -303,5 +305,11 @@ export class SideEffect extends EventEmitter {
             this.arguments[1],
             this.gateway.parseLe(this.arguments[2]).toNumber(),
         ]
+    }
+
+    private unsubscribe() {
+        this.subscriptions.forEach(subscription => {
+            subscription.unsubscribe()
+        })
     }
 }
