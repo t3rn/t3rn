@@ -202,7 +202,9 @@ pub mod pallet {
     /// LocalXtxStates stores the map of LocalState - additional state to be used to communicate between SFX that belong to the same Xtx
     ///
     /// - @Circuit::Requested: create LocalXtxStates array without confirmations or bids
-    /// - @Circuit::PendingExecution: entries to LocalState can be updated.
+    /// - @Circuit::PendingExecution: entries to LocalState can be updated.macio12
+    /// macio1
+    /// mca
     /// If no bids have been received @Circuit::PendingBidding, LocalXtxStates entries are removed since Xtx won't be executed
     #[pallet::storage]
     #[pallet::getter(fn get_local_xtx_state)]
@@ -317,6 +319,7 @@ pub mod pallet {
             >>::Balance,
             Self::Hash,
             Self::BlockNumber,
+            u32,
         >;
 
         // type FreeVM: FreeVM<Self>;
@@ -570,7 +573,7 @@ pub mod pallet {
                 Error::<T>::ContractXtxKilledRunOutOfFunds
             })?;
 
-            // ToDo: Align whether 3vm wants enfore side effects sequence into steps
+            // ToDo: Align whether 3vm wants to enforce side effects sequence into steps
             let sequential = false;
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
@@ -669,7 +672,7 @@ pub mod pallet {
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, None)?;
 
-            // Validate: Side Effects
+            // Validate: Side Effects - refactor: remove local_ctx
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
                 |e| {
                     log::error!("Self::validate hit an error -- {:?}", e);
@@ -1432,24 +1435,33 @@ impl<T: Config> Pallet<T> {
                 EscrowedBalanceOf<T, <T as Config>::Escrowed>,
             >,
         >| {
-            let mut total_max_rewards = Zero::zero();
             for fsx in current_step_fsx.iter() {
-                total_max_rewards += fsx.input.max_reward;
+                <T as Config>::AccountManager::deposit_immediately(
+                    &requester,
+                    fsx.input.max_reward,
+                    fsx.input.reward_asset_id,
+                )
             }
-
-            // Monetary::<T>::unlock_requester(&requester, &current_step_fsx);
-            <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(&requester, total_max_rewards);
         };
         match local_ctx.xtx.status {
             CircuitStatus::Requested => {
-                // Monetary::<T>::lock_requester(&requester, &Self::get_current_step_fsx(local_ctx));
-
-                let mut total_max_rewards = Zero::zero();
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    total_max_rewards += fsx.input.max_reward;
+                    if !<T as Config>::AccountManager::can_withdraw(
+                        &requester,
+                        fsx.input.max_reward,
+                        fsx.input.reward_asset_id,
+                    ) {
+                        return Err(Error::<T>::XtxChargeFailedRequesterBalanceTooLow)
+                    }
                 }
-                <T::Escrowed as EscrowTrait<T>>::Currency::reserve(&requester, total_max_rewards)
-                    .map_err(|_e| Error::<T>::XtxChargeFailedRequesterBalanceTooLow)?;
+                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
+                    <T as Config>::AccountManager::withdraw_immediately(
+                        &requester,
+                        fsx.input.max_reward,
+                        fsx.input.reward_asset_id,
+                    )
+                    .expect("Ensured can withdraw in can_withdraw loop over FSX")
+                }
             },
             CircuitStatus::DroppedAtBidding => {
                 unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));

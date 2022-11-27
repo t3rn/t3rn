@@ -64,6 +64,7 @@ pub mod pallet {
             BalanceOf<Self>,
             Self::Hash,
             Self::BlockNumber,
+            u32,
         >;
     }
 

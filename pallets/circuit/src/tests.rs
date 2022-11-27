@@ -899,7 +899,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
     const BID_AMOUNT_A: Balance = 1;
     const BID_AMOUNT_B: Balance = 2;
     const BID_AMOUNT_C: Balance = 3;
-    const MAX_FEE: Balance = 3;
+    const MAX_REWARD: Balance = 3;
 
     const INITIAL_BALANCE: Balance = 10;
 
@@ -923,10 +923,9 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
             assert_ok!(Circuit::on_extrinsic_trigger(origin, side_effects, true,));
             // Requester should have offered SFX::max_reward reserved
-            assert_eq!(Balances::reserved_balance(&REQUESTER), MAX_FEE);
             assert_eq!(
                 Balances::free_balance(&REQUESTER),
-                INITIAL_BALANCE - MAX_FEE
+                INITIAL_BALANCE - MAX_REWARD
             );
 
             let (xtx_id, side_effect_a_id) = set_ids(
@@ -1460,7 +1459,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             ));
 
             let events = System::events();
-            assert_eq!(events.len(), 6);
+            assert_eq!(events.len(), 7);
         });
 }
 
