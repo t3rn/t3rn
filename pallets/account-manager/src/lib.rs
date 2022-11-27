@@ -10,7 +10,7 @@
 pub use crate::pallet::*;
 use frame_support::{
     pallet_prelude::Weight,
-    traits::{Currency, Get},
+    traits::{fungibles::Inspect, Currency, Get},
 };
 use sp_runtime::traits::Convert;
 
@@ -31,23 +31,37 @@ mod tests;
 mod benchmarking;
 
 pub mod manager;
+pub mod monetary;
 pub mod transaction;
 pub mod weights;
 
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
+pub type AssetsBalanceOf<T> =
+    <<T as Config>::Assets as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+
+// impl <AccountId, Assets: Balanced<AccountId>, NativeCurrency: ReservableCurrency<AccountId>> From<BalanceOf<T>> for Assets::Balance {
+//     fn from(asset: NativeCurrency::Balance) -> Assets::Balance {
+//         asset
+//     }
+// }
+
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
 #[frame_support::pallet]
 pub mod pallet {
+    use codec::FullCodec;
+    use sp_std::fmt::Debug;
     // Import various types used to declare pallet in scope.
     use super::*;
     use frame_support::{
         pallet_prelude::*,
-        traits::{Currency, ReservableCurrency},
+        traits::{tokens::fungibles::Balanced, Currency, ReservableCurrency},
     };
+    // use frame_support::traits::tokens::Balance;
     use frame_system::pallet_prelude::*;
+
     use t3rn_primitives::account_manager::{ExecutionId, RequestCharge, Settlement};
 
     #[pallet::config]
@@ -60,6 +74,8 @@ pub mod pallet {
 
         type Currency: ReservableCurrency<Self::AccountId>;
 
+        type Assets: Balanced<Self::AccountId>;
+
         type Clock: Clock<Self>;
 
         type Executors: Executors<Self, BalanceOf<Self>>;
@@ -69,6 +85,21 @@ pub mod pallet {
 
         #[pallet::constant]
         type EscrowAccount: Get<Self::AccountId>;
+
+        type AssetBalanceOf: Convert<BalanceOf<Self>, AssetsBalanceOf<Self>>;
+
+        // type Balance: Self::Currency::Balance;
+
+        // type Balance: Member
+        //     + Parameter
+        //     + AtLeast32BitUnsigned
+        //     + Default
+        //     + Copy
+        //     + MaybeSerializeDeserialize
+        //     + MaxEncodedLen
+        //     + TypeInfo;
+
+        type AssetId: FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default + Eq + TypeInfo;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -89,7 +120,11 @@ pub mod pallet {
         RoundInfo<T::BlockNumber>,
         Identity,
         T::Hash, // sfx_id
-        RequestCharge<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
+        RequestCharge<
+            T::AccountId,
+            <T::Currency as Currency<T::AccountId>>::Balance,
+            <T::Assets as Inspect<T::AccountId>>::AssetId,
+        >,
     >;
 
     #[pallet::storage]
@@ -115,11 +150,17 @@ pub mod pallet {
             source: BenefitSource,
             role: CircuitRole,
             maybe_recipient: Option<T::AccountId>,
-            maybe_asset_id: Option<u32>,
+            maybe_asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>>::deposit(
+            <Self as AccountManager<
+                T::AccountId,
+                BalanceOf<T>,
+                T::Hash,
+                T::BlockNumber,
+                <T::Assets as Inspect<T::AccountId>>::AssetId,
+            >>::deposit(
                 charge_id,
                 &payee,
                 charge_fee,
@@ -142,12 +183,13 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>>::finalize(
-                charge_id,
-                outcome,
-                maybe_recipient,
-                maybe_actual_fees,
-            )
+            <Self as AccountManager<
+                T::AccountId,
+                BalanceOf<T>,
+                T::Hash,
+                T::BlockNumber,
+                <T::Assets as Inspect<T::AccountId>>::AssetId,
+            >>::finalize(charge_id, outcome, maybe_recipient, maybe_actual_fees)
         }
     }
 
