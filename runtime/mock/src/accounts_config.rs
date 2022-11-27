@@ -13,7 +13,6 @@ parameter_types! {
 
 impl pallet_account_manager::Config for Runtime {
     type AssetBalanceOf = ConvertInto;
-    // type Balance = Balance;
     type AssetId = AssetId;
     type Assets = Assets;
     type Clock = Clock;
