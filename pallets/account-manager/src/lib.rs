@@ -41,12 +41,6 @@ pub type BalanceOf<T> =
 pub type AssetsBalanceOf<T> =
     <<T as Config>::Assets as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 
-// impl <AccountId, Assets: Balanced<AccountId>, NativeCurrency: ReservableCurrency<AccountId>> From<BalanceOf<T>> for Assets::Balance {
-//     fn from(asset: NativeCurrency::Balance) -> Assets::Balance {
-//         asset
-//     }
-// }
-
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
 #[frame_support::pallet]
@@ -59,7 +53,6 @@ pub mod pallet {
         pallet_prelude::*,
         traits::{tokens::fungibles::Balanced, Currency, ReservableCurrency},
     };
-    // use frame_support::traits::tokens::Balance;
     use frame_system::pallet_prelude::*;
 
     use t3rn_primitives::account_manager::{ExecutionId, RequestCharge, Settlement};
@@ -87,17 +80,6 @@ pub mod pallet {
         type EscrowAccount: Get<Self::AccountId>;
 
         type AssetBalanceOf: Convert<BalanceOf<Self>, AssetsBalanceOf<Self>>;
-
-        // type Balance: Self::Currency::Balance;
-
-        // type Balance: Member
-        //     + Parameter
-        //     + AtLeast32BitUnsigned
-        //     + Default
-        //     + Copy
-        //     + MaybeSerializeDeserialize
-        //     + MaxEncodedLen
-        //     + TypeInfo;
 
         type AssetId: FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default + Eq + TypeInfo;
     }

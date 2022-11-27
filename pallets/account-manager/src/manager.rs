@@ -109,7 +109,6 @@ impl<T: Config>
             return Err(Error::<T>::SkippingEmptyCharges.into())
         }
 
-        // T::Currency::reserve(payee, total_reserve_deposit)?;
         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::withdraw(
             payee,
             total_reserve_deposit,
@@ -176,9 +175,7 @@ impl<T: Config>
             percent_ratio::<BalanceOf<T>>(total_reserved, payee_split)?
         };
 
-        // T::Currency::slash_reserved(&charge.payee, total_reserved);
         if payee_refund > Zero::zero() {
-            // T::Currency::deposit_creating(&charge.payee, payee_refund);
             Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
                 &charge.payee,
                 charge.maybe_asset_id,
@@ -218,10 +215,6 @@ impl<T: Config>
             charge.maybe_asset_id,
             total_reserved - payee_refund - recipient_rewards,
         );
-        // T::Currency::deposit_creating(
-        //     &T::EscrowAccount::get(),
-        //     total_reserved - payee_refund - recipient_rewards,
-        // );
 
         Ok(())
     }
