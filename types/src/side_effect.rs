@@ -474,7 +474,7 @@ mod tests {
                     ]
                 ],
                 signature: vec![],
-                enforce_executor: None
+                enforce_executor: None,
                 reward_asset_id: None,
             }
         );
