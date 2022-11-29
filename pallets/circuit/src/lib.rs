@@ -1441,10 +1441,12 @@ impl<T: Config> Pallet<T> {
 
     fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
         local_ctx.xtx.status = cause.clone();
-        if let CircuitStatus::RevertTimedOut = cause {
-            Optimistic::<T>::try_slash(local_ctx);
-        } else {
-            Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
+
+        match cause {
+            CircuitStatus::RevertTimedOut => Optimistic::<T>::try_slash(local_ctx),
+            CircuitStatus::DroppedAtBidding =>
+                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx),
+            _ => {},
         }
 
         Self::square_up(local_ctx, None)
