@@ -2,7 +2,6 @@ import CostEstimator from "./cost";
 import SubstrateRelayer from "../relayer";
 import {SideEffect} from "../../../executionManager/sideEffect";
 import {PriceEngine} from "../../../pricing";
-import {GatewayDataService} from "../../../utils/gatewayDataService";
 
 import {SfxType, SfxStatus} from "@t3rn/sdk/dist/src/side-effects/types";
 import {BehaviorSubject} from "rxjs";
@@ -12,7 +11,6 @@ export default class Estimator {
 	cost: CostEstimator;
 	relayer: SubstrateRelayer;
 	priceEngine: PriceEngine;
-	gatewayService: GatewayDataService;
 
 	constructor(relayer: SubstrateRelayer) {
 		this.relayer = relayer;

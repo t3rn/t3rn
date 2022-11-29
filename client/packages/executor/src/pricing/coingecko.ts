@@ -43,7 +43,6 @@ export class CoingeckoPricing {
 			})
 		}
 		setTimeout(this.updateAssetPrices.bind(this), 30000);
-
 	}
 
 

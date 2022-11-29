@@ -16,9 +16,11 @@
     "noImplicitAny": false,
     "noImplicitReturns": true,
     "noImplicitThis": true,
+    "skipLibCheck": true,
 //    "noUnusedLocals": true,
     "resolveJsonModule": true,
   },
-  "references": [],
-  "exclude": ["node_modules", "dist", "*.d.ts"]
+//  "references": [],
+  "exclude": ["node_modules", "dist", "*.d.ts"],
+//  "include": ["src/**/*"]
 }

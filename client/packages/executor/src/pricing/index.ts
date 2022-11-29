@@ -15,3 +15,5 @@ export class PriceEngine {
 	}
 
 }
+
+export{CoingeckoPricing}
