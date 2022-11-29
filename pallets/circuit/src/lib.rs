@@ -1344,21 +1344,38 @@ impl<T: Config> Pallet<T> {
             },
             // fixme: Separate for Bonded
             CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
-                // Update set of full side effects assuming the new confirmed has appeared
-                <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.full_side_effects.clone())
-                });
+                match new_status {
+                    CircuitStatus::FinishedAllSteps => {
+                        // todo: cleanup all of the local storage
+                        // TODO cleanup sfx2xtx map
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.xtx.clone())
+                        });
 
-                <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.xtx.clone())
-                });
-                if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
-                    (
-                        Some(local_ctx.xtx.clone()),
-                        Some(local_ctx.full_side_effects.clone()),
-                    )
-                } else {
-                    (None, Some(local_ctx.full_side_effects.to_vec()))
+                        <Self as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                        (
+                            Some(local_ctx.xtx.clone()),
+                            Some(local_ctx.full_side_effects.clone()),
+                        )
+                    },
+                    _ => {
+                        // Update set of full side effects assuming the new confirmed has appeared
+                        <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.full_side_effects.clone())
+                        });
+
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.xtx.clone())
+                        });
+                        if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
+                            (
+                                Some(local_ctx.xtx.clone()),
+                                Some(local_ctx.full_side_effects.clone()),
+                            )
+                        } else {
+                            (None, Some(local_ctx.full_side_effects.to_vec()))
+                        }
+                    },
                 }
             },
             CircuitStatus::FinishedAllSteps => {
