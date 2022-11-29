@@ -3,6 +3,7 @@ import { u8aToHex } from "@polkadot/util"
 import { xxhashAsU8a } from "@polkadot/util-crypto"
 import { BN } from "@polkadot/util"
 
+
 export async function getStorage(api: ApiPromise, parameters: any) {
   let res = await api.rpc.state.getStorage(parameters.key)
   return {
@@ -31,6 +32,13 @@ export const getEventProofs = async (api: ApiPromise, blockHash: any) => {
   return proofs
 }
 
+/**
+ * Fetches the nonce for a specific account.
+ *
+ * @param api the api instance
+ * @param address the account for which the nonce should be fetched
+ * @returns the account nonce
+ */
 export async function fetchNonce(
   api: ApiPromise,
   address: string

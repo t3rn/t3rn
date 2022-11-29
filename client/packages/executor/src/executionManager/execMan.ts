@@ -9,9 +9,10 @@ import {Sdk} from "@t3rn/sdk";
 import {BiddingEngine} from "../bidding";
 import {CircuitListener, ListenerEventData, ListenerEvents} from "../circuit/listener"
 import {ApiPromise} from "@polkadot/api";
-import CircuitRelayer from "../circuit/relayer";
+import {CircuitRelayer} from "../circuit/relayer";
 import {ExecutionLayerType} from "@t3rn/sdk/dist/src/gateways/types";
 import {RelayerEventData, RelayerEvents} from "../gateways/types";
+import {XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types";
 
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
@@ -160,7 +161,8 @@ export class ExecutionManager {
 					break;
 				case ListenerEvents.RevertTimedOut:
 					console.log("RevertTimedOut")
-					this.xtx[eventData.data[0].toString()].revertTimeout()
+					console.log()
+					this.revertTimeout(eventData.data[0].toString())
 
             }
 
@@ -302,7 +304,7 @@ export class ExecutionManager {
 	droppedAtBidding(xtxId: string) {
 		const xtx = this.xtx[xtxId]
 
-		if(xtx) { // ToDo remove once 504 is fixed
+		if(xtx && !(xtx.status === XtxStatus.DroppedAtBidding)) { // ToDo remove once 504 is fixed
 			console.log("Dropped at bidding", xtxId)
 			xtx.droppedAtBidding()
 			for(const sfx of xtx.sideEffects.values()) {
@@ -319,7 +321,8 @@ export class ExecutionManager {
 		for(const sfx of xtx.sideEffects.values()) {
 			// sfx could either be in isExecuting or isConfirming
 			this.removeFromQueue("isExecuting", sfx.id, sfx.target)
-			const confirmBatch = this.queue[sfx.target].isConfirming[sfx.targetInclusionHeight.toString()];
+			let confirmBatch = this.queue[sfx.target].isConfirming[sfx.targetInclusionHeight.toString()];
+			if(!confirmBatch) confirmBatch = [];
 			if(confirmBatch.includes(sfx.id)) {
 				const index = confirmBatch.indexOf(sfx.id)
 				confirmBatch.splice(index, 1)
@@ -328,6 +331,8 @@ export class ExecutionManager {
 			// add to reverted queue
 			this.queue[sfx.target].reverted.push(sfx.id)
 		}
+		this.xtx[xtxId].revertTimeout()
+		console.log(this.queue)
 	}
 
 	// removes sfx from queue

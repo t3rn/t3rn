@@ -1,6 +1,7 @@
 import {SideEffect} from "../executionManager/sideEffect";
 
 
+
 export class BiddingEngine {
 
 	// for now, we create bids based on the bidding percentile. In the future, we might want to use a more sophisticated bidding strategy

@@ -49,8 +49,7 @@ export class SideEffect extends EventEmitter {
     isBidder: boolean = false;
     minProfitUsd: number = 0;
 
-    iAmExecuting: boolean;
-    relayer: any
+    relayer: string;
 
     // SideEffect data
     id: string;
@@ -63,7 +62,7 @@ export class SideEffect extends EventEmitter {
 
     // TargetConfirmation
     inclusionData: any; // contains encoded payload, inclusionProof, and blockHash
-    targetInclusionHeight: any;
+    targetInclusionHeight: number = 0;
     executor: string;
 
     // Risk/Reward Parameters:
