@@ -10,21 +10,37 @@ import { Sdk } from "@t3rn/sdk"
 import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"
 
+/** Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.*/
 export class Execution extends EventEmitter {
+    /** The current status of the XTX. */
     status: XtxStatus = XtxStatus.PendingBidding
+    /** SCALE encoded XTX  */
     xtxId: H256
-    owner: AccountId32
-    sideEffects: Map<string, SideEffect> = new Map<string, SideEffect>()
+    /** XTX id as String */
     id: string
+    /** XTX id as String, shortened to 8 characters */
     humanId: string
-
+    /** The owner of the XTX. This is the on-chain creator */
+    owner: AccountId32
+    /** Mapping of the included SFXs */
+    sideEffects: Map<string, SideEffect> = new Map<string, SideEffect>()
+    /** Stores SFX ids in the corresponding XTX phase */
     phases: string[][] = [[], []]
+    /** The current phase of the XTX */
     currentPhase: number
-
+    /** The circuit signer address */
     circuitSignerAddress: string
-
     logger: any
 
+    /** Creates a new Execution instance.
+     *
+     * @param eventData The event data of the XTX creation event.
+     * @param sdk The @t3rn/sdk instance.
+     * @param strategyEngine The strategy engine instance.
+     * @param biddingEngine The bidding engine instance.
+     * @param circuitSignerAddress The circuit signer address.
+     * @param logger The logger instance.
+     */
     constructor(
         eventData: any,
         sdk: Sdk,
@@ -44,7 +60,14 @@ export class Execution extends EventEmitter {
         this.currentPhase = 0
     }
 
-    // creates the new SideEffect instances, maps them locally and generates the phases as done in circuit.
+    /** creates the new SideEffect instances, maps them locally and generates the phases as done in circuit.
+     *
+     * @param sideEffects array of SCALE encoded SFXs
+     * @param ids array of SCALE encoded SFX ids
+     * @param sdk The @t3rn/sdk instance.
+     * @param strategyEngine The strategy engine instance.
+     * @param biddingEngine The bidding engine instance.
+     */
     initializeSideEffects(
         sideEffects: T3rnTypesSideEffect[],
         ids: H256[],
@@ -88,7 +111,8 @@ export class Execution extends EventEmitter {
         }
     }
 
-    setReadyToExecute() {
+    /** Update XTX and all its SFX status to ready. */
+    readyToExecute() {
         this.status = XtxStatus.Ready
 
         //Updates each Sfx
@@ -100,12 +124,14 @@ export class Execution extends EventEmitter {
         this.addLog({msg: "Ready XTX"})
     }
 
+    /** Update XTX status to complete */
     completed() {
         this.status = XtxStatus.FinishedAllSteps
         this.logger.info(`Completed XTX: ✨${this.humanId}✨`)
         this.addLog({msg: "Completed XTX"})
     }
 
+    /** Update XTX and all its SFX status to ready. */
     droppedAtBidding() {
         this.status = XtxStatus.DroppedAtBidding
         for (let [_sfxId, sfx] of this.sideEffects) {
@@ -115,6 +141,7 @@ export class Execution extends EventEmitter {
         this.addLog({ msg: "Dropped XTX", xtxId: this.id })
     }
 
+    /** Update XTX and all its SFX status to reverted. */
     revertTimeout() {
         this.status = XtxStatus.RevertTimedOut
         for (let [_sfxId, sfx] of this.sideEffects) {
@@ -125,7 +152,10 @@ export class Execution extends EventEmitter {
         this.addLog({ msg: "Revert XTX", xtxId: this.id })
     }
 
-    // returns the sfxs that ready to execute
+    /** Returns the sfxs that ready to execute.
+     * This depends on the SFX status, if the executor has won the bid and if the SFX is in the current phase.
+     * @returns {SideEffect[]} array of SideEffect instances that are ready
+     */
     getReadyToExecute(): SideEffect[] {
         let result: SideEffect[] = []
         for (let [_sfxId, sfx] of this.sideEffects) {

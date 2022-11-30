@@ -13,12 +13,19 @@ import {floatToBn, toFloat} from "@t3rn/sdk/dist/src/circuit"
 import {bnToFloat} from "@t3rn/sdk/dist/src/converters/amounts";
 import {InclusionData} from "../gateways/types";
 
-// maps event names to SfxType enum;
+/** map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"]
 
+/**
+ * Type used for representing a Txoutput
+ * @typedef {Object} TxOutput
+ */
 export type TxOutput = {
+    /** output amount as integer */
     amount: BigInt
+    /** output amount in human-readable float */
     amountHuman: number
+    /** output asset tickker */
     asset: string
 }
 
@@ -30,6 +37,7 @@ export enum TxStatus {
     Pending,
     Ready,
 }
+
 export type Notification = {
     type: NotificationType
     payload: any

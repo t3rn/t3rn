@@ -200,7 +200,7 @@ export class ExecutionManager {
     }
 
     async xtxReadyForExec(xtxId: string) {
-        this.xtx[xtxId].setReadyToExecute()
+        this.xtx[xtxId].readyToExecute()
         const ready = this.xtx[xtxId].getReadyToExecute()
         this.logger.info(`Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map((sfx) => sfx.humanId)} 🏆`)
         for (const sfx of ready) {
