@@ -23,13 +23,17 @@ impl<
         beneficiary: &AccountId,
         asset_id: Option<Assets::AssetId>,
         amount: NativeCurrency::Balance,
-    ) {
+    ) -> DispatchResult {
         match asset_id {
             None => {
                 NativeCurrency::deposit_creating(beneficiary, amount);
+                Ok(())
             },
             Some(asset_id) => {
-                Assets::deposit(asset_id, beneficiary, AssetBalanceOf::convert(amount)).unwrap();
+                match Assets::deposit(asset_id, beneficiary, AssetBalanceOf::convert(amount)) {
+                    Ok(_debt_of) => Ok(()),
+                    Err(err) => Err(err),
+                }
             },
         }
     }
@@ -102,7 +106,8 @@ mod tests {
                 &ALICE,
                 None,
                 DEFAULT_BALANCE / 10,
-            );
+            )
+            .unwrap();
             assert_eq!(
                 Balances::free_balance(ALICE),
                 DEFAULT_BALANCE + DEPOSIT_AMOUNT
@@ -132,7 +137,8 @@ mod tests {
                 &ALICE,
                 Some(FOREIGN_ASSET_A),
                 DEPOSIT_AMOUNT,
-            );
+            )
+            .unwrap();
             assert_eq!(
                 Assets::balance(FOREIGN_ASSET_A, ALICE),
                 DEFAULT_BALANCE + DEPOSIT_AMOUNT

@@ -214,9 +214,7 @@ impl<T: Config>
             &T::EscrowAccount::get(),
             charge.maybe_asset_id,
             total_reserved - payee_refund - recipient_rewards,
-        );
-
-        Ok(())
+        )
     }
 
     fn try_finalize(
@@ -313,7 +311,7 @@ impl<T: Config>
         beneficiary: &T::AccountId,
         amount: BalanceOf<T>,
         asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
-    ) {
+    ) -> DispatchResult {
         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
             beneficiary,
             asset_id,

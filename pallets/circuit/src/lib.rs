@@ -1434,6 +1434,7 @@ impl<T: Config> Pallet<T> {
                     fsx.input.max_reward,
                     fsx.input.reward_asset_id,
                 )
+                .expect("refunds with deposit to always be valid post withdrawals")
             }
         };
         match local_ctx.xtx.status {
