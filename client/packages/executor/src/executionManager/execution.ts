@@ -5,11 +5,7 @@ import { SideEffect } from "./sideEffect"
 import { T3rnTypesSideEffect } from "@polkadot/types/lookup"
 import { EventEmitter } from "events"
 
-import {
-    SecurityLevel,
-    SfxStatus,
-    XtxStatus,
-} from "@t3rn/sdk/dist/src/side-effects/types"
+import { SecurityLevel, SfxStatus, XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
 import { Sdk } from "@t3rn/sdk"
 import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"
@@ -43,15 +39,9 @@ export class Execution extends EventEmitter {
         this.id = this.xtxId.toHex()
         this.humanId = this.id.slice(0, 8)
         this.circuitSignerAddress = circuitSignerAddress
-        this.initializeSideEffects(
-            eventData[2],
-            eventData[3],
-            sdk,
-            strategyEngine,
-            biddingEngine
-        )
-        this.currentStep = 0
         this.logger = logger
+        this.initializeSideEffects(eventData[2], eventData[3], sdk, strategyEngine, biddingEngine)
+        this.currentStep = 0
     }
 
     // creates the new SideEffect instances, maps them locally and generates the steps as done in circuit.
@@ -102,16 +92,18 @@ export class Execution extends EventEmitter {
         this.status = XtxStatus.Ready
 
         //Updates each Sfx
-        for (let [sfxId, sfx] of this.sideEffects) {
+        for (let [_sfxId, sfx] of this.sideEffects) {
             sfx.readyToExecute()
         }
 
-        this.addLog("Ready to execute")
+        this.logger.info(`Ready XTX: ${this.humanId}`)
+        this.addLog({msg: "Ready XTX"})
     }
 
     completed() {
         this.status = XtxStatus.FinishedAllSteps
-        this.addLog("Completed all steps")
+        this.logger.info(`Completed XTX: ✨${this.humanId}✨`)
+        this.addLog({msg: "Completed XTX"})
     }
 
     droppedAtBidding() {
@@ -119,6 +111,8 @@ export class Execution extends EventEmitter {
         for (let [_sfxId, sfx] of this.sideEffects) {
             sfx.droppedAtBidding()
         }
+        this.logger.info(`Dropped XTX: ${this.humanId}`)
+        this.addLog({ msg: "Dropped XTX", xtxId: this.id })
     }
 
     revertTimeout() {
@@ -126,17 +120,16 @@ export class Execution extends EventEmitter {
         for (let [_sfxId, sfx] of this.sideEffects) {
             sfx.reverted()
         }
+
+        this.logger.info(`Revert XTX: ${this.humanId}`)
+        this.addLog({ msg: "Revert XTX", xtxId: this.id })
     }
 
     // returns the sfxs that ready to execute
     getReadyToExecute(): SideEffect[] {
         let result: SideEffect[] = []
         for (let [_sfxId, sfx] of this.sideEffects) {
-            if (
-                sfx.status === SfxStatus.PendingExecution &&
-                sfx.isBidder &&
-                sfx.step === this.currentStep
-            ) {
+            if (sfx.status === SfxStatus.PendingExecution && sfx.isBidder && sfx.step === this.currentStep) {
                 result.push(sfx)
             }
         }

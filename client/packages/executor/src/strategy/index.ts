@@ -25,19 +25,13 @@ export class StrategyEngine {
         const strategyTargets = Object.keys(config.strategies)
         for (let i = 0; i < strategyTargets.length; i++) {
             this.strategies[strategyTargets[i]] = {
-                minProfitUsd:
-                    config.strategies[strategyTargets[i]].minProfitUsd,
+                minProfitUsd: config.strategies[strategyTargets[i]].minProfitUsd,
                 minYield: config.strategies[strategyTargets[i]].minYield,
-                maxTxFeesUsd:
-                    config.strategies[strategyTargets[i]].maxTxFeesUsd,
-                maxTxFeeShare:
-                    config.strategies[strategyTargets[i]].maxTxFeeShare,
-                maxAssetCost:
-                    config.strategies[strategyTargets[i]].maxAssetCost,
-                minInsuranceAmountUsd:
-                    config.strategies[strategyTargets[i]].minInsuranceAmountUsd,
-                minInsuranceShare:
-                    config.strategies[strategyTargets[i]].minInsuranceShare,
+                maxTxFeesUsd: config.strategies[strategyTargets[i]].maxTxFeesUsd,
+                maxTxFeeShare: config.strategies[strategyTargets[i]].maxTxFeeShare,
+                maxAssetCost: config.strategies[strategyTargets[i]].maxAssetCost,
+                minInsuranceAmountUsd: config.strategies[strategyTargets[i]].minInsuranceAmountUsd,
+                minInsuranceShare: config.strategies[strategyTargets[i]].minInsuranceShare,
             }
         }
     }
@@ -76,10 +70,7 @@ export class StrategyEngine {
         return strategy.minProfitUsd
     }
 
-    minProfitRejected(
-        sideEffect: SideEffect,
-        strategy: Strategy
-    ): void | Error {
+    minProfitRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
         if (strategy.minProfitUsd) {
             if (sideEffect.maxProfitUsd.getValue() <= strategy.minProfitUsd) {
                 throw new Error("Min Profit condition not met!")
@@ -95,10 +86,7 @@ export class StrategyEngine {
         }
     }
 
-    maxTxFeesRejected(
-        sideEffect: SideEffect,
-        strategy: Strategy
-    ): void | Error {
+    maxTxFeesRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
         if (strategy.maxTxFeesUsd) {
             if (sideEffect.txCostUsd >= strategy.maxTxFeesUsd) {
                 throw new Error("Max Tx Fees condition not met!")
@@ -106,10 +94,7 @@ export class StrategyEngine {
         }
     }
 
-    maxTxFeeShareRejected(
-        sideEffect: SideEffect,
-        strategy: Strategy
-    ): void | Error {
+    maxTxFeeShareRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
         if (strategy.maxTxFeeShare) {
             if (this.computeFeeShare(sideEffect) >= strategy.maxTxFeeShare) {
                 throw new Error("Max Tx Fee Share condition not met!")
@@ -117,10 +102,7 @@ export class StrategyEngine {
         }
     }
 
-    maxAssetCostRejected(
-        sideEffect: SideEffect,
-        strategy: Strategy
-    ): void | Error {
+    maxAssetCostRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
         if (strategy.maxAssetCost) {
             if (sideEffect.txOutputCostUsd >= strategy.maxAssetCost) {
                 throw new Error("Max Asset Cost condition not met!")
@@ -128,10 +110,7 @@ export class StrategyEngine {
         }
     }
 
-    minInsuranceAmountRejected(
-        sideEffect: SideEffect,
-        strategy: Strategy
-    ): void | Error {
+    minInsuranceAmountRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
         if (strategy.minInsuranceAmountUsd) {
             if (sideEffect.insurance < strategy.minInsuranceAmountUsd) {
                 throw new Error("Min Insurance Amount  condition not met!")
@@ -139,16 +118,10 @@ export class StrategyEngine {
         }
     }
 
-    minInsuranceShareRejected(
-        sideEffect: SideEffect,
-        strategy: Strategy
-    ): void | Error {
+    minInsuranceShareRejected(sideEffect: SideEffect, strategy: Strategy): void | Error {
         if (strategy.minInsuranceShare) {
             // reward and insurance are in the same asset, so no USD conversion is needed
-            if (
-                sideEffect.insurance / sideEffect.reward.getValue() <
-                strategy.minInsuranceAmountUsd
-            ) {
+            if (sideEffect.insurance / sideEffect.reward.getValue() < strategy.minInsuranceAmountUsd) {
                 throw new Error("Min Insurance Share condition not met!")
             }
         }

@@ -9,10 +9,7 @@ export class BiddingEngine {
         const maxProfit = sfx.maxProfitUsd.getValue()
         const minProfit = sfx.minProfitUsd
         const txOutputCost = sfx.txOutputCostUsd
-        const bidUsd =
-            txOutputCost +
-            minProfit +
-            (maxProfit - minProfit) * this.bidPercentile
+        const bidUsd = txOutputCost + minProfit + (maxProfit - minProfit) * this.bidPercentile
 
         return bidUsd
     }

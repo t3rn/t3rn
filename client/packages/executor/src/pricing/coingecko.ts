@@ -38,9 +38,7 @@ export class CoingeckoPricing {
                         "?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false"
                 )
                 .then((res) => {
-                    const price = parseFloat(
-                        res.data.market_data.current_price["usd"]
-                    )
+                    const price = parseFloat(res.data.market_data.current_price["usd"])
                     if (price !== this.prices[ids[i]].getValue()) {
                         this.prices[ids[i]].next(price)
                     }

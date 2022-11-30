@@ -34,25 +34,18 @@ export class CircuitRelayer extends EventEmitter {
     }
 
     async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
-        const txs: SubmittableExtrinsic[] = sfxs.map((sfx) =>
-            this.createConfirmTx(sfx)
-        )
+        const txs: SubmittableExtrinsic[] = sfxs.map((sfx) => this.createConfirmTx(sfx))
         const nonce = await fetchNonce(this.api, this.signer.address)
         if (txs.length > 1) {
             // only batch if more than one tx
-            return this.sdk.circuit.tx.signAndSendSafe(
-                this.sdk.circuit.tx.createBatch(txs)
-            )
+            return this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createBatch(txs))
         } else {
             return this.sdk.circuit.tx.signAndSendSafe(txs[0])
         }
     }
 
     createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
-        const inclusionData = this.api.createType(
-            "InclusionData",
-            sfx.inclusionData
-        )
+        const inclusionData = this.api.createType("InclusionData", sfx.inclusionData)
         const receivedAt = this.api.createType("BlockNumber", 0) // ToDo figure out what to do here
 
         const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
@@ -63,23 +56,14 @@ export class CircuitRelayer extends EventEmitter {
             receivedAt: receivedAt,
             cost: null,
         })
-        return this.api.tx.circuit.confirmSideEffect(
-            sfx.id,
-            confirmedSideEffect.toJSON()
-        )
+        return this.api.tx.circuit.confirmSideEffect(sfx.id, confirmedSideEffect.toJSON())
     }
 }
 
 // in combination with transfer.ts
-let indexes = [
-    7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 9999, 111111, 222222, 33333, 444444,
-]
+let indexes = [7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 9999, 111111, 222222, 33333, 444444]
 let counter = 0
-export const exportData = (
-    data: any,
-    fileName: string,
-    transactionType: string
-) => {
+export const exportData = (data: any, fileName: string, transactionType: string) => {
     let deepCopy
     // since its pass-by-reference
     if (Array.isArray(data)) {
@@ -88,16 +72,12 @@ export const exportData = (
         deepCopy = { ...data }
     }
     let encoded = encodeExport(deepCopy, transactionType)
-    fs.writeFile(
-        "exports/" + indexes[counter] + "-" + fileName,
-        JSON.stringify(encoded, null, 4),
-        (err) => {
-            if (err) {
-                console.log("Err", err)
-            } else {
-            }
+    fs.writeFile("exports/" + indexes[counter] + "-" + fileName, JSON.stringify(encoded, null, 4), (err) => {
+        if (err) {
+            console.log("Err", err)
+        } else {
         }
-    )
+    })
 
     counter += 1
 }
@@ -125,9 +105,7 @@ const iterateEncode = (data: any, transactionType: string) => {
         }
     } else {
         for (let i = 0; i < keys.length; i++) {
-            result["encoded_" + toSnakeCase(keys[i])] = data[keys[i]]
-                .toHex()
-                .substring(2)
+            result["encoded_" + toSnakeCase(keys[i])] = data[keys[i]].toHex().substring(2)
             result[toSnakeCase(keys[i])] = data[keys[i]].toHuman()
         }
         result["transaction_type"] = transactionType
@@ -139,8 +117,6 @@ const iterateEncode = (data: any, transactionType: string) => {
 const toSnakeCase = (str) =>
     str &&
     str
-        .match(
-            /[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g
-        )
+        .match(/[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g)
         .map((x) => x.toLowerCase())
         .join("_")

@@ -7,11 +7,7 @@ import { PriceEngine } from "../pricing"
 import { StrategyEngine } from "../strategy"
 import { Sdk } from "@t3rn/sdk"
 import { BiddingEngine } from "../bidding"
-import {
-    CircuitListener,
-    ListenerEventData,
-    ListenerEvents,
-} from "../circuit/listener"
+import { CircuitListener, ListenerEventData, ListenerEvents } from "../circuit/listener"
 import { ApiPromise } from "@polkadot/api"
 import { CircuitRelayer } from "../circuit/relayer"
 import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types"
@@ -88,7 +84,7 @@ export class ExecutionManager {
 
             if (entry.executionLayerType === ExecutionLayerType.Substrate) {
                 const relayer = new SubstrateRelayer()
-                await relayer.setup(entry.rpc, undefined, entry.id)
+                await relayer.setup(entry.rpc, undefined, entry.id, this.logger)
 
                 const estimator = new Estimator(relayer)
 
@@ -110,26 +106,14 @@ export class ExecutionManager {
                 relayer.on("Event", async (eventData: RelayerEventData) => {
                     switch (eventData.type) {
                         case RelayerEvents.SfxExecutedOnTarget:
-                            this.removeFromQueue(
-                                "isExecuting",
-                                eventData.sfxId,
-                                eventData.target
-                            )
+                            this.removeFromQueue("isExecuting", eventData.sfxId, eventData.target)
 
                             // create array if first for block
-                            if (
-                                !this.queue[eventData.target].isConfirming[
-                                    eventData.blockNumber
-                                ]
-                            ) {
-                                this.queue[eventData.target].isConfirming[
-                                    eventData.blockNumber
-                                ] = []
+                            if (!this.queue[eventData.target].isConfirming[eventData.blockNumber]) {
+                                this.queue[eventData.target].isConfirming[eventData.blockNumber] = []
                             }
                             // adds to queue
-                            this.queue[eventData.target].isConfirming[
-                                eventData.blockNumber
-                            ].push(eventData.sfxId)
+                            this.queue[eventData.target].isConfirming[eventData.blockNumber].push(eventData.sfxId)
 
                             this.addLog({
                                 msg: "moved sfx from isExecuting to isConfirming",
@@ -148,59 +132,44 @@ export class ExecutionManager {
     }
 
     async initializeEventListeners() {
-        this.circuitListener.on(
-            "Event",
-            async (eventData: ListenerEventData) => {
-                switch (eventData.type) {
-                    case ListenerEvents.NewSideEffectsAvailable:
-                        this.addXtx(eventData.data, this.sdk)
-                        break
-                    case ListenerEvents.SFXNewBidReceived:
-                        this.addBid(eventData.data)
-                        break
-                    case ListenerEvents.XTransactionReadyForExec:
-                        this.xtxReadyForExec(eventData.data[0].toString())
-                        break
-                    case ListenerEvents.HeaderSubmitted:
-                        this.updateGatewayHeight(
-                            eventData.data.gatewayId,
-                            eventData.data.height
-                        )
-                        break
-                    case ListenerEvents.SideEffectConfirmed:
-                        const sfxId = eventData.data[0].toString()
-                        this.xtx[this.sfxToXtx[sfxId]].sideEffects
-                            .get(sfxId)!
-                            .confirmedOnCircuit()
-                        this.addLog({
-                            msg: "Sfx confirmed",
-                            sfxId: sfxId,
-                            xtxId: this.sfxToXtx[sfxId],
-                        })
-                        break
-                    case ListenerEvents.XtxCompleted:
-                        this.xtx[eventData.data[0].toString()].completed()
-                        break
-                    case ListenerEvents.DroppedAtBidding:
-                        this.droppedAtBidding(eventData.data[0].toString())
-                        break
-                    case ListenerEvents.RevertTimedOut:
-                        this.revertTimeout(eventData.data[0].toString())
-                }
+        this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
+            switch (eventData.type) {
+                case ListenerEvents.NewSideEffectsAvailable:
+                    this.addXtx(eventData.data, this.sdk)
+                    break
+                case ListenerEvents.SFXNewBidReceived:
+                    this.addBid(eventData.data)
+                    break
+                case ListenerEvents.XTransactionReadyForExec:
+                    this.xtxReadyForExec(eventData.data[0].toString())
+                    break
+                case ListenerEvents.HeaderSubmitted:
+                    this.updateGatewayHeight(eventData.data.gatewayId, eventData.data.height)
+                    break
+                case ListenerEvents.SideEffectConfirmed:
+                    const sfxId = eventData.data[0].toString()
+                    this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)!.confirmedOnCircuit()
+                    this.addLog({
+                        msg: "Sfx confirmed",
+                        sfxId: sfxId,
+                        xtxId: this.sfxToXtx[sfxId],
+                    })
+                    break
+                case ListenerEvents.XtxCompleted:
+                    this.xtx[eventData.data[0].toString()].completed()
+                    break
+                case ListenerEvents.DroppedAtBidding:
+                    this.droppedAtBidding(eventData.data[0].toString())
+                    break
+                case ListenerEvents.RevertTimedOut:
+                    this.revertTimeout(eventData.data[0].toString())
             }
-        )
+        })
     }
 
     async addXtx(xtxData: any, sdk: Sdk) {
         // @ts-ignore
-        const xtx = new Execution(
-            xtxData,
-            sdk,
-            this.strategyEngine,
-            this.biddingEngine,
-            this.circuitRelayer.signer.address,
-            this.logger
-        )
+        const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine, this.circuitRelayer.signer.address, this.logger)
         try {
             this.strategyEngine.evaluateXtx(xtx)
             this.addLog({ msg: "XTX strategy passed!", xtxId: xtx.id })
@@ -212,6 +181,7 @@ export class ExecutionManager {
             })
             return
         }
+        this.logger.info(`Received XTX ${xtx.humanId} 🌱`) // XTX is valid for execution
 
         this.xtx[xtx.id] = xtx
         for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
@@ -220,7 +190,6 @@ export class ExecutionManager {
             this.queue[sfx.target].isBidding.push(sfxId)
             await this.addRiskRewardParameters(sfx)
         }
-
         this.addLog({ msg: "XTX initialized", xtxId: xtx.id })
     }
 
@@ -228,14 +197,13 @@ export class ExecutionManager {
         const sfxId = bidData[0].toString()
         const bidder = bidData[1].toString()
         const amt = bidData[2].toNumber()
-        this.xtx[this.sfxToXtx[sfxId]].sideEffects
-            .get(sfxId)
-            ?.processBid(bidder, amt)
+        this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)?.processBid(bidder, amt)
     }
 
     async xtxReadyForExec(xtxId: string) {
         this.xtx[xtxId].setReadyToExecute()
         const ready = this.xtx[xtxId].getReadyToExecute()
+        this.logger.info(`Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map((sfx) => sfx.humanId)} 🏆`)
         for (const sfx of ready) {
             // move on the queue
             this.removeFromQueue("isBidding", sfx.id, sfx.target)
@@ -243,6 +211,7 @@ export class ExecutionManager {
             // execute
             this.relayers[sfx.target].executeTx(sfx).then()
         }
+
     }
 
     // New header range was submitted on circuit
@@ -253,6 +222,7 @@ export class ExecutionManager {
             gatewayId: gatewayId,
             blockHeight: blockHeight,
         })
+        this.logger.info(`Gateway height updated: ${gatewayId} #${blockHeight} 🧱`)
 
         if (this.queue[gatewayId]) {
             this.queue[gatewayId].blockHeight = blockHeight
@@ -268,13 +238,9 @@ export class ExecutionManager {
         let batchBlocks: string[] = []
         const queuedBlocks = Object.keys(this.queue[gatewayId].isConfirming)
         for (let i = 0; i < queuedBlocks.length; i++) {
-            if (
-                parseInt(queuedBlocks[i]) <= this.queue[gatewayId].blockHeight
-            ) {
+            if (parseInt(queuedBlocks[i]) <= this.queue[gatewayId].blockHeight) {
                 batchBlocks.push(queuedBlocks[i])
-                readyByHeight = readyByHeight.concat(
-                    this.queue[gatewayId].isConfirming[queuedBlocks[i]]
-                )
+                readyByHeight = readyByHeight.concat(this.queue[gatewayId].isConfirming[queuedBlocks[i]])
             }
         }
 
@@ -282,30 +248,25 @@ export class ExecutionManager {
 
         // filter the SideEffects that can be confirmed in the current step
         for (let i = 0; i < readyByHeight.length; i++) {
-            const sfx: SideEffect = this.xtx[
-                this.sfxToXtx[readyByHeight[i]]
-            ].sideEffects.get(readyByHeight[i])!
+            const sfx: SideEffect = this.xtx[this.sfxToXtx[readyByHeight[i]]].sideEffects.get(readyByHeight[i])!
             if (sfx.step === this.xtx[sfx.xtxId].currentStep) {
                 readyByStep.push(sfx)
             }
         }
 
-        this.addLog({
-            msg: "Executing confirmation queue",
-            gatewayId: gatewayId,
-            sfxIds: readyByStep.map((sfx) => sfx.id),
-        })
 
         if (readyByStep.length > 0) {
+            this.addLog({
+                msg: "Execute confirmation queue",
+                gatewayId: gatewayId,
+                sfxIds: readyByStep.map((sfx) => sfx.id),
+            })
             this.circuitRelayer
                 .confirmSideEffects(readyByStep)
                 .then((res: any) => {
                     // remove from queue and update status
-                    this.processConfirmationBatch(
-                        readyByStep,
-                        batchBlocks,
-                        gatewayId
-                    )
+                    this.logger.info(`Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`)
+                    this.processConfirmationBatch(readyByStep, batchBlocks, gatewayId)
                     this.addLog({
                         msg: "Confirmation batch successful",
                         gatewayId: gatewayId,
@@ -326,11 +287,7 @@ export class ExecutionManager {
     }
 
     // updates queue and sfx state after confirmation batch was submitted. This always has the same target
-    processConfirmationBatch(
-        sfxs: SideEffect[],
-        batchBlocks: string[],
-        gatewayId: string
-    ) {
+    processConfirmationBatch(sfxs: SideEffect[], batchBlocks: string[], gatewayId: string) {
         // remove from queue
         batchBlocks.forEach((block) => {
             delete this.queue[gatewayId].isConfirming[block]
@@ -348,14 +305,13 @@ export class ExecutionManager {
             switch (notification.type) {
                 case NotificationType.SubmitBid: {
                     this.circuitRelayer
-                        .bidSfx(
-                            notification.payload.sfxId,
-                            notification.payload.bidAmount
-                        )
-                        .then(() =>
+                        .bidSfx(notification.payload.sfxId, notification.payload.bidAmount)
+                        .then(() => {
+                            this.logger.info(`Bid accepted for SFX ${sfx.humanId} ✅`)
                             sfx.bidAccepted(notification.payload.bidAmount)
-                        )
+                        })
                         .catch((e) => {
+                            this.logger.info(`Bid rejected for SFX ${sfx.humanId} ❌`)
                             sfx.bidRejected(e)
                         })
                 }
@@ -364,25 +320,14 @@ export class ExecutionManager {
     }
 
     async addRiskRewardParameters(sfx: SideEffect) {
-        const txCostSubject = await this.targetEstimator[
-            sfx.target
-        ].getNativeTxCostSubject(sfx)
-        const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(
-            sfx.gateway.ticker
-        )
+        const txCostSubject = await this.targetEstimator[sfx.target].getNativeTxCostSubject(sfx)
+        const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(sfx.gateway.ticker)
 
         const txOutput = sfx.getTxOutputs()
-        const txOutputPriceSubject = this.priceEngine.getAssetPrice(
-            txOutput.asset
-        )
+        const txOutputPriceSubject = this.priceEngine.getAssetPrice(txOutput.asset)
         const rewardAssetPriceSubject = this.priceEngine.getAssetPrice("TRN")
 
-        sfx.setRiskRewardParameters(
-            txCostSubject,
-            nativeAssetPriceSubject,
-            txOutputPriceSubject,
-            rewardAssetPriceSubject
-        )
+        sfx.setRiskRewardParameters(txCostSubject, nativeAssetPriceSubject, txOutputPriceSubject, rewardAssetPriceSubject)
     }
 
     droppedAtBidding(xtxId: string) {
@@ -395,7 +340,6 @@ export class ExecutionManager {
                 this.removeFromQueue("isBidding", sfx.id, sfx.target)
                 this.queue[sfx.target].dropped.push(sfx.id)
             }
-            this.addLog({ msg: "Dropped at bidding", xtxId: xtxId })
         }
     }
 
@@ -405,10 +349,7 @@ export class ExecutionManager {
             for (const sfx of xtx.sideEffects.values()) {
                 // sfx could either be in isExecuting or isConfirming
                 this.removeFromQueue("isExecuting", sfx.id, sfx.target)
-                let confirmBatch =
-                    this.queue[sfx.target].isConfirming[
-                        sfx.targetInclusionHeight.toString()
-                    ]
+                let confirmBatch = this.queue[sfx.target].isConfirming[sfx.targetInclusionHeight.toString()]
                 if (!confirmBatch) confirmBatch = []
                 if (confirmBatch.includes(sfx.id)) {
                     const index = confirmBatch.indexOf(sfx.id)
@@ -419,7 +360,6 @@ export class ExecutionManager {
                 this.queue[sfx.target].reverted.push(sfx.id)
             }
             this.xtx[xtxId].revertTimeout()
-            this.addLog({ msg: "Revert timeout", xtxId: xtxId })
         }
     }
 

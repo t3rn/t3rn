@@ -41,21 +41,14 @@ class InstanceManager {
     async setup(signer: string | undefined) {
         await cryptoWaitReady()
         const keyring = new Keyring({ type: "sr25519" })
-        this.signer =
-            signer === undefined
-                ? keyring.addFromUri("//Executor//default")
-                : keyring.addFromMnemonic(signer)
+        this.signer = signer === undefined ? keyring.addFromUri("//Executor//default") : keyring.addFromMnemonic(signer)
 
         this.sdk = new Sdk(config.circuit.rpc, this.signer)
 
         // @ts-ignore
         this.circuitClient = await this.sdk.init()
 
-        this.executionManager = new ExecutionManager(
-            this.circuitClient,
-            this.sdk,
-            logger
-        )
+        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
         await this.executionManager.setup()
 
         logger.info("Executor: setup complete")
