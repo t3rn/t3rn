@@ -138,20 +138,22 @@ export class SideEffect extends EventEmitter {
         logger: any
     ) {
         super()
-        this.raw = sideEffect
-        this.id = id
-        this.humanId = id.substring(0, 8)
-        this.xtxId = xtxId
-        this.arguments = sideEffect.encodedArgs.map((entry) => entry.toString())
-        this.target = new TextDecoder().decode(sideEffect.target.toU8a())
-        this.gateway = sdk.gateways[this.target]
-        this.securityLevel = this.evalSecurityLevel(this.gateway.gatewayType)
-        this.reward = new BehaviorSubject(sdk.circuit.toFloat(sideEffect.maxReward)) // this is always in TRN (native asset)
-        this.insurance = sdk.circuit.toFloat(sideEffect.insurance) // this is always in TRN (native asset)
-        this.strategyEngine = strategyEngine
-        this.biddingEngine = biddingEngine
-        this.circuitSignerAddress = circuitSignerAddress
-        this.logger = logger
+        if (this.decodeAction(sideEffect.encodedAction)) {
+            this.raw = sideEffect
+            this.id = id
+            this.humanId = id.substring(0, 8)
+            this.xtxId = xtxId
+            this.arguments = sideEffect.encodedArgs.map((entry) => entry.toString())
+            this.target = new TextDecoder().decode(sideEffect.target.toU8a())
+            this.gateway = sdk.gateways[this.target]
+            this.securityLevel = this.evalSecurityLevel(this.gateway.gatewayType)
+            this.reward = new BehaviorSubject(sdk.circuit.toFloat(sideEffect.maxReward)) // this is always in TRN (native asset)
+            this.insurance = sdk.circuit.toFloat(sideEffect.insurance) // this is always in TRN (native asset)
+            this.strategyEngine = strategyEngine
+            this.biddingEngine = biddingEngine
+            this.circuitSignerAddress = circuitSignerAddress
+            this.logger = logger
+        }
     }
 
     /**
@@ -413,6 +415,19 @@ export class SideEffect extends EventEmitter {
         this.unsubscribe()
     }
 
+    /** Maps action to enum */
+    private decodeAction(encodedAction: any): boolean {
+        switch (encodedAction.toHuman()) {
+            case "tran": {
+                this.action = SfxType.Transfer
+                return true
+                break
+            }
+            default: {
+                return false
+            }
+        }
+    }
 
     // returns the arguments
     private getTransferArguments(): any[] {
