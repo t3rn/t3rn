@@ -10,3 +10,11 @@ export type RelayerEventData = {
     target: string
     blockNumber: number
 }
+
+export type InclusionData = {
+    encoded_payload: string,
+    proof: {
+        trieNodes: string,
+    },
+    block_hash: string,
+}

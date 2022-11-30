@@ -5,7 +5,7 @@ import { getEventProofs } from "../../utils"
 import createDebug from "debug"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
-import { RelayerEventData, RelayerEvents } from "../types"
+import {InclusionData, RelayerEventData, RelayerEvents} from "../types"
 
 export default class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
@@ -91,15 +91,16 @@ export default class SubstrateRelayer extends EventEmitter {
         const success = events[events.length - 1].event.method === "ExtrinsicSuccess"
 
         const inclusionProof = await getEventProofs(this.client, blockHash)
-        const inclusionData = {
+        const inclusionData: InclusionData = {
             encoded_payload: event.toHex(),
             proof: {
+                // @ts-ignore
                 trieNodes: inclusionProof.toJSON().proof,
             },
             block_hash: blockHash,
         }
 
-        sfx.executedOnTarget(inclusionData, this.signer.addressRaw, blockNumber)
+        sfx.executedOnTarget(inclusionData, this.signer.addressRaw, blockNumber.toNumber())
 
         return blockNumber.toNumber()
     }

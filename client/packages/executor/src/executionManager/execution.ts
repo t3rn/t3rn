@@ -18,8 +18,8 @@ export class Execution extends EventEmitter {
     id: string
     humanId: string
 
-    steps: string[][] = [[], []]
-    currentStep: number
+    phases: string[][] = [[], []]
+    currentPhase: number
 
     circuitSignerAddress: string
 
@@ -41,10 +41,10 @@ export class Execution extends EventEmitter {
         this.circuitSignerAddress = circuitSignerAddress
         this.logger = logger
         this.initializeSideEffects(eventData[2], eventData[3], sdk, strategyEngine, biddingEngine)
-        this.currentStep = 0
+        this.currentPhase = 0
     }
 
-    // creates the new SideEffect instances, maps them locally and generates the steps as done in circuit.
+    // creates the new SideEffect instances, maps them locally and generates the phases as done in circuit.
     initializeSideEffects(
         sideEffects: T3rnTypesSideEffect[],
         ids: H256[],
@@ -66,23 +66,23 @@ export class Execution extends EventEmitter {
             this.sideEffects.set(sideEffect.id, sideEffect)
 
             if (sideEffect.securityLevel === SecurityLevel.Escrow) {
-                // group escrow steps into one step
-                this.steps[0].push(ids[i].toHex())
+                // group escrow phases into one step
+                this.phases[0].push(ids[i].toHex())
             } else {
-                this.steps[1].push(ids[i].toHex()) // optimistic get their own step
+                this.phases[1].push(ids[i].toHex()) // optimistic get their own step
             }
         }
 
-        // remove escrow steps, if there are none
-        if (this.steps[0].length === 0) {
-            this.steps = [this.steps[1]]
+        // remove escrow phases, if there are none
+        if (this.phases[0].length === 0) {
+            this.phases = [this.phases[1]]
         }
 
         // set the step index for each sfx
         for (let [sfxId, sfx] of this.sideEffects) {
-            for (let i = 0; i < this.steps.length; i++) {
-                if (this.steps[i].includes(sfxId)) {
-                    sfx.setStep(i)
+            for (let i = 0; i < this.phases.length; i++) {
+                if (this.phases[i].includes(sfxId)) {
+                    sfx.setPhase(i)
                 }
             }
         }
@@ -129,7 +129,7 @@ export class Execution extends EventEmitter {
     getReadyToExecute(): SideEffect[] {
         let result: SideEffect[] = []
         for (let [_sfxId, sfx] of this.sideEffects) {
-            if (sfx.status === SfxStatus.PendingExecution && sfx.isBidder && sfx.step === this.currentStep) {
+            if (sfx.status === SfxStatus.PendingExecution && sfx.isBidder && sfx.phase === this.currentPhase) {
                 result.push(sfx)
             }
         }

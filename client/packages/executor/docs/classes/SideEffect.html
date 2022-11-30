@@ -15,6 +15,9 @@
 <li><a href="../modules.html">executor</a></li>
 <li><a href="SideEffect.html">SideEffect</a></li></ul>
 <h1>Class SideEffect</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Class used for tracking the state of a side effect. It contains all needed data and helper functions to go through the lifecycle of a XTX.</p>
+</div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
@@ -22,7 +25,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="target">SideEffect</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L37">src/executionManager/sideEffect.ts:37</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L41">src/executionManager/sideEffect.ts:41</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -45,17 +48,17 @@
 <a href="SideEffect.html#inclusionData" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>inclusion<wbr/>Data</span></a>
 <a href="SideEffect.html#insurance" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>insurance</span></a>
 <a href="SideEffect.html#isBidder" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>is<wbr/>Bidder</span></a>
+<a href="SideEffect.html#logger" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>logger</span></a>
 <a href="SideEffect.html#maxProfitUsd" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>max<wbr/>Profit<wbr/>Usd</span></a>
 <a href="SideEffect.html#minProfitUsd" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>min<wbr/>Profit<wbr/>Usd</span></a>
 <a href="SideEffect.html#nativeAssetPrice" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>native<wbr/>Asset<wbr/>Price</span></a>
+<a href="SideEffect.html#phase" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>phase</span></a>
 <a href="SideEffect.html#raw" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>raw</span></a>
-<a href="SideEffect.html#relayer" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>relayer</span></a>
 <a href="SideEffect.html#reward" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>reward</span></a>
 <a href="SideEffect.html#rewardAssetPrice" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>reward<wbr/>Asset<wbr/>Price</span></a>
 <a href="SideEffect.html#rewardUsd" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>reward<wbr/>Usd</span></a>
 <a href="SideEffect.html#securityLevel" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>security<wbr/>Level</span></a>
 <a href="SideEffect.html#status" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>status</span></a>
-<a href="SideEffect.html#step" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>step</span></a>
 <a href="SideEffect.html#strategyEngine" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>strategy<wbr/>Engine</span></a>
 <a href="SideEffect.html#subscriptions" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>subscriptions</span></a>
 <a href="SideEffect.html#target" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>target</span></a>
@@ -66,7 +69,6 @@
 <a href="SideEffect.html#txOutputCostUsd" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>tx<wbr/>Output<wbr/>Cost<wbr/>Usd</span></a>
 <a href="SideEffect.html#txReceipt" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>tx<wbr/>Receipt</span></a>
 <a href="SideEffect.html#txStatus" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>tx<wbr/>Status</span></a>
-<a href="SideEffect.html#wantToBid" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>want<wbr/>To<wbr/>Bid</span></a>
 <a href="SideEffect.html#xtxId" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>xtx<wbr/>Id</span></a>
 <a href="SideEffect.html#captureRejectionSymbol" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>capture<wbr/>Rejection<wbr/>Symbol</span></a>
 <a href="SideEffect.html#captureRejections" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>capture<wbr/>Rejections</span></a>
@@ -76,6 +78,7 @@
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Methods</h3>
 <div class="tsd-index-list"><a href="SideEffect.html#addListener" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-2048-path"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)" id="icon-2048-text"></path></svg><span>add<wbr/>Listener</span></a>
+<a href="SideEffect.html#addLog" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>add<wbr/>Log</span></a>
 <a href="SideEffect.html#bidAccepted" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>bid<wbr/>Accepted</span></a>
 <a href="SideEffect.html#bidRejected" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>bid<wbr/>Rejected</span></a>
 <a href="SideEffect.html#confirmedOnCircuit" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>confirmed<wbr/>On<wbr/>Circuit</span></a>
@@ -85,10 +88,10 @@
 <a href="SideEffect.html#eventNames" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>event<wbr/>Names</span></a>
 <a href="SideEffect.html#execute" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>execute</span></a>
 <a href="SideEffect.html#executedOnTarget" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>executed<wbr/>On<wbr/>Target</span></a>
+<a href="SideEffect.html#generateBid" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>generate<wbr/>Bid</span></a>
 <a href="SideEffect.html#getMaxListeners" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Max<wbr/>Listeners</span></a>
 <a href="SideEffect.html#getTransferArguments" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Transfer<wbr/>Arguments</span></a>
 <a href="SideEffect.html#getTxOutputs" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Tx<wbr/>Outputs</span></a>
-<a href="SideEffect.html#knownTransactionInterface" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>known<wbr/>Transaction<wbr/>Interface</span></a>
 <a href="SideEffect.html#listenerCount" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>listener<wbr/>Count</span></a>
 <a href="SideEffect.html#listeners" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>listeners</span></a>
 <a href="SideEffect.html#off" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>off</span></a>
@@ -104,10 +107,9 @@
 <a href="SideEffect.html#removeListener" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>remove<wbr/>Listener</span></a>
 <a href="SideEffect.html#reverted" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>reverted</span></a>
 <a href="SideEffect.html#setMaxListeners" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>set<wbr/>Max<wbr/>Listeners</span></a>
+<a href="SideEffect.html#setPhase" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>set<wbr/>Phase</span></a>
 <a href="SideEffect.html#setRiskRewardParameters" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>set<wbr/>Risk<wbr/>Reward<wbr/>Parameters</span></a>
-<a href="SideEffect.html#setStep" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>set<wbr/>Step</span></a>
 <a href="SideEffect.html#unsubscribe" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>unsubscribe</span></a>
-<a href="SideEffect.html#updateStatus" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>update<wbr/>Status</span></a>
 <a href="SideEffect.html#getEventListeners" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Event<wbr/>Listeners</span></a>
 <a href="SideEffect.html#listenerCount-2" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>listener<wbr/>Count</span></a>
 <a href="SideEffect.html#on-2" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>on</span></a>
@@ -119,201 +121,269 @@
 <section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class"><a id="constructor" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>constructor</span><a href="#constructor" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="constructor.new_SideEffect">new <wbr/>Side<wbr/>Effect<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T3rnTypesSideEffect</span>, id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, xtxId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, sdk<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Sdk</span>, strategyEngine<span class="tsd-signature-symbol">: </span><a href="StrategyEngine.html" class="tsd-signature-type" data-tsd-kind="Class">StrategyEngine</a>, biddingEngine<span class="tsd-signature-symbol">: </span><a href="BiddingEngine.html" class="tsd-signature-type" data-tsd-kind="Class">BiddingEngine</a>, circuitSignerAddress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a><a href="#constructor.new_SideEffect" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="constructor.new_SideEffect">new <wbr/>Side<wbr/>Effect<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T3rnTypesSideEffect</span>, id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, xtxId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, sdk<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Sdk</span>, strategyEngine<span class="tsd-signature-symbol">: </span><a href="StrategyEngine.html" class="tsd-signature-type" data-tsd-kind="Class">StrategyEngine</a>, biddingEngine<span class="tsd-signature-symbol">: </span><a href="BiddingEngine.html" class="tsd-signature-type" data-tsd-kind="Class">BiddingEngine</a>, circuitSignerAddress<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, logger<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a><a href="#constructor.new_SideEffect" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography">
+<h3>Returns</h3><p>SideEffect instance</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <span class="tsd-signature-type">T3rnTypesSideEffect</span></h5></li>
+<h5>sideEffect: <span class="tsd-signature-type">T3rnTypesSideEffect</span></h5>
+<div class="tsd-comment tsd-typography"><p>Scale encoded side effect</p>
+</div></li>
 <li>
-<h5>id: <span class="tsd-signature-type">string</span></h5></li>
+<h5>id: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>Id of the SFX</p>
+</div></li>
 <li>
-<h5>xtxId: <span class="tsd-signature-type">string</span></h5></li>
+<h5>xtxId: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>Id of the SFXs XTX</p>
+</div></li>
 <li>
-<h5>sdk: <span class="tsd-signature-type">Sdk</span></h5></li>
+<h5>sdk: <span class="tsd-signature-type">Sdk</span></h5>
+<div class="tsd-comment tsd-typography"><p>Instance of @t3rn/sdk</p>
+</div></li>
 <li>
-<h5>strategyEngine: <a href="StrategyEngine.html" class="tsd-signature-type" data-tsd-kind="Class">StrategyEngine</a></h5></li>
+<h5>strategyEngine: <a href="StrategyEngine.html" class="tsd-signature-type" data-tsd-kind="Class">StrategyEngine</a></h5>
+<div class="tsd-comment tsd-typography"><p>Instance of the strategy engine</p>
+</div></li>
 <li>
-<h5>biddingEngine: <a href="BiddingEngine.html" class="tsd-signature-type" data-tsd-kind="Class">BiddingEngine</a></h5></li>
+<h5>biddingEngine: <a href="BiddingEngine.html" class="tsd-signature-type" data-tsd-kind="Class">BiddingEngine</a></h5>
+<div class="tsd-comment tsd-typography"><p>Instance of the bidding engine</p>
+</div></li>
 <li>
-<h5>circuitSignerAddress: <span class="tsd-signature-type">string</span></h5></li></ul></div>
+<h5>circuitSignerAddress: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>Address of the executor account used for transaction on circuit</p>
+</div></li>
+<li>
+<h5>logger: <span class="tsd-signature-type">any</span></h5>
+<div class="tsd-comment tsd-typography"><p>The logger instance</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h4><aside class="tsd-sources">
 <p>Overrides EventEmitter.constructor</p>
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L92">src/executionManager/sideEffect.ts:92</a></li></ul></aside></li></ul></section></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L122">src/executionManager/sideEffect.ts:122</a></li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="action" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>action</span><a href="#action" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">action<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Transfer</span></div><aside class="tsd-sources">
+<div class="tsd-signature">action<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Transfer</span></div>
+<div class="tsd-comment tsd-typography"><p>SFX action, e.g. tran, swap, etc</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L40">src/executionManager/sideEffect.ts:40</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L47">src/executionManager/sideEffect.ts:47</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="arguments" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>arguments</span><a href="#arguments" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">arguments<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div><aside class="tsd-sources">
+<div class="tsd-signature">arguments<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+<div class="tsd-comment tsd-typography"><p>Encoded arguments, containing the description of what should be executed</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L58">src/executionManager/sideEffect.ts:58</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L68">src/executionManager/sideEffect.ts:68</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="biddingEngine" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>bidding<wbr/>Engine</span><a href="#biddingEngine" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">bidding<wbr/>Engine<span class="tsd-signature-symbol">:</span> <a href="BiddingEngine.html" class="tsd-signature-type" data-tsd-kind="Class">BiddingEngine</a></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L89">src/executionManager/sideEffect.ts:89</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L109">src/executionManager/sideEffect.ts:109</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="circuitSignerAddress" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>circuit<wbr/>Signer<wbr/>Address</span><a href="#circuitSignerAddress" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">circuit<wbr/>Signer<wbr/>Address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
+<div class="tsd-signature">circuit<wbr/>Signer<wbr/>Address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>Executor address on circuit</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L48">src/executionManager/sideEffect.ts:48</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L57">src/executionManager/sideEffect.ts:57</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="executor" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>executor</span><a href="#executor" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">executor<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
+<div class="tsd-signature">executor<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>The address of this SFXs executor</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L66">src/executionManager/sideEffect.ts:66</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L82">src/executionManager/sideEffect.ts:82</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="gateway" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>gateway</span><a href="#gateway" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">gateway<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Gateway</span></div><aside class="tsd-sources">
+<div class="tsd-signature">gateway<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Gateway</span></div>
+<div class="tsd-comment tsd-typography"><p>gateway helper instance</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L43">src/executionManager/sideEffect.ts:43</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L53">src/executionManager/sideEffect.ts:53</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="humanId" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>human<wbr/>Id</span><a href="#humanId" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">human<wbr/>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L56">src/executionManager/sideEffect.ts:56</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L65">src/executionManager/sideEffect.ts:65</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="id" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>id</span><a href="#id" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L55">src/executionManager/sideEffect.ts:55</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L64">src/executionManager/sideEffect.ts:64</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="inclusionData" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>inclusion<wbr/>Data</span><a href="#inclusionData" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">inclusion<wbr/>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div><aside class="tsd-sources">
+<div class="tsd-signature">inclusion<wbr/>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
+<div class="tsd-comment tsd-typography"><p>Required data for confirming the inclusion on circuit. contains encoded payload, inclusionProof, and blockHash</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L64">src/executionManager/sideEffect.ts:64</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L78">src/executionManager/sideEffect.ts:78</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="insurance" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>insurance</span><a href="#insurance" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">insurance<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<div class="tsd-signature">insurance<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+<div class="tsd-comment tsd-typography"><p>Insurance required for executing this SFX. Amount is deposited throughout the XTX lifecycle and refunded on confirmation</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L59">src/executionManager/sideEffect.ts:59</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L70">src/executionManager/sideEffect.ts:70</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="isBidder" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Bidder</span><a href="#isBidder" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">is<wbr/>Bidder<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
+<div class="tsd-signature">is<wbr/>Bidder<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+<div class="tsd-comment tsd-typography"><p>Is currently the winning bidder of the SFX</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L49">src/executionManager/sideEffect.ts:49</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L59">src/executionManager/sideEffect.ts:59</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="logger" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>logger</span><a href="#logger" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">logger<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L106">src/executionManager/sideEffect.ts:106</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="maxProfitUsd" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>max<wbr/>Profit<wbr/>Usd</span><a href="#maxProfitUsd" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">max<wbr/>Profit<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
+<div class="tsd-signature">max<wbr/>Profit<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-comment tsd-typography"><p>Current max profit in USD that can be made when executing</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L76">src/executionManager/sideEffect.ts:76</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L92">src/executionManager/sideEffect.ts:92</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="minProfitUsd" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>min<wbr/>Profit<wbr/>Usd</span><a href="#minProfitUsd" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">min<wbr/>Profit<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div><aside class="tsd-sources">
+<div class="tsd-signature">min<wbr/>Profit<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
+<div class="tsd-comment tsd-typography"><p>The minimum profit in USD required for executing this SFX. Number is computed by strategy engine</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L50">src/executionManager/sideEffect.ts:50</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L61">src/executionManager/sideEffect.ts:61</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="nativeAssetPrice" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>native<wbr/>Asset<wbr/>Price</span><a href="#nativeAssetPrice" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">native<wbr/>Asset<wbr/>Price<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
+<div class="tsd-signature">native<wbr/>Asset<wbr/>Price<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></div>
+<div class="tsd-comment tsd-typography"><p>Cost of targets native asset in USD. Used for tx cost calculation</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L72">src/executionManager/sideEffect.ts:72</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L88">src/executionManager/sideEffect.ts:88</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="phase" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>phase</span><a href="#phase" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">phase<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+<div class="tsd-comment tsd-typography"><p>The phase in which the SFX is part of. First Escrow, then Optimistic</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L43">src/executionManager/sideEffect.ts:43</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="raw" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>raw</span><a href="#raw" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">raw<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T3rnTypesSideEffect</span></div><aside class="tsd-sources">
+<div class="tsd-signature">raw<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T3rnTypesSideEffect</span></div>
+<div class="tsd-comment tsd-typography"><p>The raw SideEffect, encoded in SCALE</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L61">src/executionManager/sideEffect.ts:61</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="relayer" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>relayer</span><a href="#relayer" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">relayer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L52">src/executionManager/sideEffect.ts:52</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L74">src/executionManager/sideEffect.ts:74</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="reward" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>reward</span><a href="#reward" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">reward<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
+<div class="tsd-signature">reward<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></div>
+<div class="tsd-comment tsd-typography"><p>The current reward paid by the user for executing this SFX. This amount can reduce through executor bidding</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L60">src/executionManager/sideEffect.ts:60</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L72">src/executionManager/sideEffect.ts:72</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="rewardAssetPrice" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>reward<wbr/>Asset<wbr/>Price</span><a href="#rewardAssetPrice" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">reward<wbr/>Asset<wbr/>Price<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
+<div class="tsd-signature">reward<wbr/>Asset<wbr/>Price<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-comment tsd-typography"><p>Price for reward assert in USD</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L78">src/executionManager/sideEffect.ts:78</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L94">src/executionManager/sideEffect.ts:94</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="rewardUsd" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>reward<wbr/>Usd</span><a href="#rewardUsd" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">reward<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div><aside class="tsd-sources">
+<div class="tsd-signature">reward<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
+<div class="tsd-comment tsd-typography"><p>Total reward value in USD. This is not profit, as it includes the payment for the assets that are being spent/output by the executor</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L84">src/executionManager/sideEffect.ts:84</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L102">src/executionManager/sideEffect.ts:102</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="securityLevel" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>security<wbr/>Level</span><a href="#securityLevel" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">security<wbr/>Level<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">SecurityLevel</span></div><aside class="tsd-sources">
+<div class="tsd-signature">security<wbr/>Level<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">SecurityLevel</span></div>
+<div class="tsd-comment tsd-typography"><p>Security Level, e.g. Escrow or Optimistic</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L45">src/executionManager/sideEffect.ts:45</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L55">src/executionManager/sideEffect.ts:55</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="status" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>status</span><a href="#status" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">status<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">SfxStatus</span><span class="tsd-signature-symbol"> = SfxStatus.Bidding</span></div><aside class="tsd-sources">
+<div class="tsd-signature">status<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">SfxStatus</span><span class="tsd-signature-symbol"> = SfxStatus.Bidding</span></div>
+<div class="tsd-comment tsd-typography"><p>SFX status, always starting with Bidding on creation</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L39">src/executionManager/sideEffect.ts:39</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="step" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>step</span><a href="#step" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">step<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L38">src/executionManager/sideEffect.ts:38</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L45">src/executionManager/sideEffect.ts:45</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="strategyEngine" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>strategy<wbr/>Engine</span><a href="#strategyEngine" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">strategy<wbr/>Engine<span class="tsd-signature-symbol">:</span> <a href="StrategyEngine.html" class="tsd-signature-type" data-tsd-kind="Class">StrategyEngine</a></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L88">src/executionManager/sideEffect.ts:88</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L108">src/executionManager/sideEffect.ts:108</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="subscriptions" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>subscriptions</span><a href="#subscriptions" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">subscriptions<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L80">src/executionManager/sideEffect.ts:80</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L96">src/executionManager/sideEffect.ts:96</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="target" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>target</span><a href="#target" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">target<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
+<div class="tsd-signature">target<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>Target gateway of the SFX</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L42">src/executionManager/sideEffect.ts:42</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L51">src/executionManager/sideEffect.ts:51</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="targetInclusionHeight" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>target<wbr/>Inclusion<wbr/>Height</span><a href="#targetInclusionHeight" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">target<wbr/>Inclusion<wbr/>Height<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div><aside class="tsd-sources">
+<div class="tsd-signature">target<wbr/>Inclusion<wbr/>Height<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
+<div class="tsd-comment tsd-typography"><p>The block number in which the SFX was included on the target</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L65">src/executionManager/sideEffect.ts:65</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L80">src/executionManager/sideEffect.ts:80</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="txCostNative" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tx<wbr/>Cost<wbr/>Native</span><a href="#txCostNative" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">tx<wbr/>Cost<wbr/>Native<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
+<div class="tsd-signature">tx<wbr/>Cost<wbr/>Native<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></div>
+<div class="tsd-comment tsd-typography"><p>Tx cost in the native currency of the target</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L70">src/executionManager/sideEffect.ts:70</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L86">src/executionManager/sideEffect.ts:86</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="txCostUsd" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tx<wbr/>Cost<wbr/>Usd</span><a href="#txCostUsd" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">tx<wbr/>Cost<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div><aside class="tsd-sources">
+<div class="tsd-signature">tx<wbr/>Cost<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
+<div class="tsd-comment tsd-typography"><p>Tx cost in USD</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L82">src/executionManager/sideEffect.ts:82</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L98">src/executionManager/sideEffect.ts:98</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="txOutputAssetPrice" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tx<wbr/>Output<wbr/>Asset<wbr/>Price</span><a href="#txOutputAssetPrice" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">tx<wbr/>Output<wbr/>Asset<wbr/>Price<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
+<div class="tsd-signature">tx<wbr/>Output<wbr/>Asset<wbr/>Price<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></div>
+<div class="tsd-comment tsd-typography"><p>Current price of the assets that are used for the sfx execution</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L74">src/executionManager/sideEffect.ts:74</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L90">src/executionManager/sideEffect.ts:90</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="txOutputCostUsd" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tx<wbr/>Output<wbr/>Cost<wbr/>Usd</span><a href="#txOutputCostUsd" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">tx<wbr/>Output<wbr/>Cost<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div><aside class="tsd-sources">
+<div class="tsd-signature">tx<wbr/>Output<wbr/>Cost<wbr/>Usd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
+<div class="tsd-comment tsd-typography"><p>Cost of output assets in USD</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L83">src/executionManager/sideEffect.ts:83</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L100">src/executionManager/sideEffect.ts:100</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="txReceipt" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tx<wbr/>Receipt</span><a href="#txReceipt" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">tx<wbr/>Receipt<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div><aside class="tsd-sources">
+<div class="tsd-signature">tx<wbr/>Receipt<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
+<div class="tsd-comment tsd-typography"><p>Tx receipt of the execution on target</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L86">src/executionManager/sideEffect.ts:86</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L105">src/executionManager/sideEffect.ts:105</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="txStatus" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>tx<wbr/>Status</span><a href="#txStatus" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">tx<wbr/>Status<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">TxStatus</span><span class="tsd-signature-symbol"> = TxStatus.Ready</span></div><aside class="tsd-sources">
+<div class="tsd-signature">tx<wbr/>Status<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">TxStatus</span><span class="tsd-signature-symbol"> = TxStatus.Ready</span></div>
+<div class="tsd-comment tsd-typography"><p>Acts as mutex lock to prevent parallel txs on the same SFX</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L41">src/executionManager/sideEffect.ts:41</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="wantToBid" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>want<wbr/>To<wbr/>Bid</span><a href="#wantToBid" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">want<wbr/>To<wbr/>Bid<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L47">src/executionManager/sideEffect.ts:47</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L49">src/executionManager/sideEffect.ts:49</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="xtxId" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>xtx<wbr/>Id</span><a href="#xtxId" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">xtx<wbr/>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L57">src/executionManager/sideEffect.ts:57</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L66">src/executionManager/sideEffect.ts:66</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="captureRejectionSymbol" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>capture<wbr/>Rejection<wbr/>Symbol</span><a href="#captureRejectionSymbol" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">capture<wbr/>Rejection<wbr/>Symbol<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">typeof </span><a href="SubstrateRelayer.html#captureRejectionSymbol" class="tsd-signature-type" data-tsd-kind="Property">captureRejectionSymbol</a></div><aside class="tsd-sources">
@@ -380,43 +450,75 @@ regular <code>&#39;error&#39;</code> listener is installed.</p>
 <p>Inherited from EventEmitter.addListener</p>
 <ul>
 <li>Defined in node_modules/@types/node/ts4.8/events.d.ts:354</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="bidAccepted" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>bid<wbr/>Accepted</span><a href="#bidAccepted" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="bidAccepted.bidAccepted-1">bid<wbr/>Accepted<span class="tsd-signature-symbol">(</span>bidAmount<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#bidAccepted.bidAccepted-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="addLog" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>add<wbr/>Log</span><a href="#addLog" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+<li class="tsd-signature tsd-anchor-link" id="addLog.addLog-1">add<wbr/>Log<span class="tsd-signature-symbol">(</span>msg<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, debug<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#addLog.addLog-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>bidAmount: <span class="tsd-signature-type">number</span></h5></li></ul></div>
+<h5>msg: <span class="tsd-signature-type">any</span></h5></li>
+<li>
+<h5>debug: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L251">src/executionManager/sideEffect.ts:251</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L420">src/executionManager/sideEffect.ts:420</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="bidAccepted" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>bid<wbr/>Accepted</span><a href="#bidAccepted" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="bidAccepted.bidAccepted-1">bid<wbr/>Accepted<span class="tsd-signature-symbol">(</span>bidAmount<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#bidAccepted.bidAccepted-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Perform state updates if our bid has been accepted.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>bidAmount: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>The bidding amount that was accepted. This is the reward amount, which is added to the subject</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L330">src/executionManager/sideEffect.ts:330</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="bidRejected" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>bid<wbr/>Rejected</span><a href="#bidRejected" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="bidRejected.bidRejected-1">bid<wbr/>Rejected<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#bidRejected.bidRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="bidRejected.bidRejected-1">bid<wbr/>Rejected<span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#bidRejected.bidRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Perform state updates if out bid has been rejected.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>error: <span class="tsd-signature-type">any</span></h5>
+<div class="tsd-comment tsd-typography"><p>Error message used for logging</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L257">src/executionManager/sideEffect.ts:257</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L342">src/executionManager/sideEffect.ts:342</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="confirmedOnCircuit" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>confirmed<wbr/>On<wbr/>Circuit</span><a href="#confirmedOnCircuit" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="confirmedOnCircuit.confirmedOnCircuit-1">confirmed<wbr/>On<wbr/>Circuit<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#confirmedOnCircuit.confirmedOnCircuit-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>SFX is confirmed, so wecan update the status and emit an event</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L244">src/executionManager/sideEffect.ts:244</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L389">src/executionManager/sideEffect.ts:389</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="droppedAtBidding" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>dropped<wbr/>At<wbr/>Bidding</span><a href="#droppedAtBidding" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="droppedAtBidding.droppedAtBidding-1">dropped<wbr/>At<wbr/>Bidding<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#droppedAtBidding.droppedAtBidding-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Update the SFX status to dropped at bidding and unsubscribe all subjects</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L277">src/executionManager/sideEffect.ts:277</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L397">src/executionManager/sideEffect.ts:397</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="emit" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>emit</span><a href="#emit" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
@@ -446,6 +548,10 @@ to each.</p>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="evalSecurityLevel.evalSecurityLevel-1">eval<wbr/>Security<wbr/>Level<span class="tsd-signature-symbol">(</span>gatewayType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SecurityLevel</span><a href="#evalSecurityLevel.evalSecurityLevel-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Evaluates the security level of the SFX based on the target gateway type.</p>
+
+<h3>Returns</h3><p>SecurityLevel</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
@@ -453,7 +559,7 @@ to each.</p>
 <h5>gatewayType: <span class="tsd-signature-type">any</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">SecurityLevel</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L113">src/executionManager/sideEffect.ts:113</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L156">src/executionManager/sideEffect.ts:156</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="eventNames" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>event<wbr/>Names</span><a href="#eventNames" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
@@ -473,28 +579,54 @@ listeners. The values in the array are strings or <code>Symbol</code>s.</p>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="execute" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>execute</span><a href="#execute" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="execute.execute-1">execute<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><a href="#execute.execute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="execute.execute-1">execute<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><a href="#execute.execute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>Generate an array of arguments for the SFX execution.</p>
+
+<h3>Returns</h3><p>any[] - Array of arguments for the SFX execution in the corresponding type</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L214">src/executionManager/sideEffect.ts:214</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L301">src/executionManager/sideEffect.ts:301</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="executedOnTarget" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>executed<wbr/>On<wbr/>Target</span><a href="#executedOnTarget" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="executedOnTarget.executedOnTarget-1">executed<wbr/>On<wbr/>Target<span class="tsd-signature-symbol">(</span>inclusionData<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, executor<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, targetInclusionHeight<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#executedOnTarget.executedOnTarget-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="executedOnTarget.executedOnTarget-1">executed<wbr/>On<wbr/>Target<span class="tsd-signature-symbol">(</span>inclusionData<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InclusionData</span>, executor<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, targetInclusionHeight<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#executedOnTarget.executedOnTarget-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>SFX was successfully executed and the required proof data generated</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>inclusionData: <span class="tsd-signature-type">any</span></h5></li>
+<h5>inclusionData: <span class="tsd-signature-type">InclusionData</span></h5>
+<div class="tsd-comment tsd-typography"><p>Inclusion proof data</p>
+</div></li>
 <li>
-<h5>executor: <span class="tsd-signature-type">any</span></h5></li>
+<h5>executor: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>Address of the executor on target</p>
+</div></li>
 <li>
-<h5>targetInclusionHeight: <span class="tsd-signature-type">any</span></h5></li></ul></div>
+<h5>targetInclusionHeight: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>Block height on target where transaction was included</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L237">src/executionManager/sideEffect.ts:237</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L381">src/executionManager/sideEffect.ts:381</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="generateBid" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>generate<wbr/>Bid</span><a href="#generateBid" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+<li class="tsd-signature tsd-anchor-link" id="generateBid.generateBid-1">generate<wbr/>Bid<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><a href="#generateBid.generateBid-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description"><code class="tsd-tag ts-flagPrivate">Private</code> 
+<div class="tsd-comment tsd-typography"><p>Evaluate the SFX via the strategy engine.
+If the SFX passes all constraints defined by the executor, the bidding engine is triggered, computing the bid price.
+The bid price is then returned</p>
+
+<h3>Returns</h3><p>any</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L277">src/executionManager/sideEffect.ts:277</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="getMaxListeners" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get<wbr/>Max<wbr/>Listeners</span><a href="#getMaxListeners" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
@@ -516,28 +648,19 @@ set by <code>emitter.setMaxListeners(n)</code> or defaults to <a href="SideEffec
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L302">src/executionManager/sideEffect.ts:302</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L410">src/executionManager/sideEffect.ts:410</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="getTxOutputs" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get<wbr/>Tx<wbr/>Outputs</span><a href="#getTxOutputs" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="getTxOutputs.getTxOutputs-1">get<wbr/>Tx<wbr/>Outputs<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TxOutput</span><a href="#getTxOutputs.getTxOutputs-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Returns TxOutput containing the outputs required for a SFXs execution</p>
+
+<h3>Returns</h3><p>TxOutput.</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">TxOutput</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L223">src/executionManager/sideEffect.ts:223</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="knownTransactionInterface" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>known<wbr/>Transaction<wbr/>Interface</span><a href="#knownTransactionInterface" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-<li class="tsd-signature tsd-anchor-link" id="knownTransactionInterface.knownTransactionInterface-1">known<wbr/>Transaction<wbr/>Interface<span class="tsd-signature-symbol">(</span>encodedAction<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><a href="#knownTransactionInterface.knownTransactionInterface-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>encodedAction: <span class="tsd-signature-type">any</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L288">src/executionManager/sideEffect.ts:288</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L313">src/executionManager/sideEffect.ts:313</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="listenerCount" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>listener<wbr/>Count</span><a href="#listenerCount" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
@@ -782,16 +905,23 @@ listener is removed, and then invoked.</p>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="processBid.processBid-1">process<wbr/>Bid<span class="tsd-signature-symbol">(</span>signer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, bidAmount<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#processBid.processBid-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Process an incoming bid event.
+The bid amount is now the new reward amount and the SFX is evaluated again, potentially triggering a counter bid.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>signer: <span class="tsd-signature-type">string</span></h5></li>
+<h5>signer: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>signer of the incoming bid</p>
+</div></li>
 <li>
-<h5>bidAmount: <span class="tsd-signature-type">number</span></h5></li></ul></div>
+<h5>bidAmount: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>amount of the incoming bid</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L262">src/executionManager/sideEffect.ts:262</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L355">src/executionManager/sideEffect.ts:355</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="rawListeners" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>raw<wbr/>Listeners</span><a href="#rawListeners" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
@@ -818,17 +948,23 @@ including any wrappers (such as those created by <code>.once()</code>).</p>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="readyToExecute.readyToExecute-1">ready<wbr/>To<wbr/>Execute<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#readyToExecute.readyToExecute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Update the SFX status</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L273">src/executionManager/sideEffect.ts:273</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L370">src/executionManager/sideEffect.ts:370</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="recomputeMaxProfit" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>recompute<wbr/>Max<wbr/>Profit</span><a href="#recomputeMaxProfit" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="recomputeMaxProfit.recomputeMaxProfit-1">recompute<wbr/>Max<wbr/>Profit<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#recomputeMaxProfit.recomputeMaxProfit-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Computes the potential profit of the SFX based on the current risk/reward parameters.
+ Once the max profit is computed, the SFX is evaluated via the strategy engine.
+ Depending on the result, a bid is placed or the SFX is ignored.</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L172">src/executionManager/sideEffect.ts:172</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L237">src/executionManager/sideEffect.ts:237</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="removeAllListeners" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>remove<wbr/>All<wbr/>Listeners</span><a href="#removeAllListeners" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
@@ -909,9 +1045,11 @@ recently added instance. In the example the <code>once(&#39;ping&#39;)</code>lis
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="reverted.reverted-1">reverted<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#reverted.reverted-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Update the SFX status to reverted and unsubscribe all subjects</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L282">src/executionManager/sideEffect.ts:282</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L403">src/executionManager/sideEffect.ts:403</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="setMaxListeners" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>set<wbr/>Max<wbr/>Listeners</span><a href="#setMaxListeners" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
@@ -934,38 +1072,54 @@ modified for this specific <code>EventEmitter</code> instance. The value can be 
 <p>Inherited from EventEmitter.setMaxListeners</p>
 <ul>
 <li>Defined in node_modules/@types/node/ts4.8/events.d.ts:520</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="setPhase" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>set<wbr/>Phase</span><a href="#setPhase" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="setPhase.setPhase-1">set<wbr/>Phase<span class="tsd-signature-symbol">(</span>phase<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#setPhase.setPhase-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Set the correct phase index</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>phase: <span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>the index of the SFXs phase</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L168">src/executionManager/sideEffect.ts:168</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="setRiskRewardParameters" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>set<wbr/>Risk<wbr/>Reward<wbr/>Parameters</span><a href="#setRiskRewardParameters" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="setRiskRewardParameters.setRiskRewardParameters-1">set<wbr/>Risk<wbr/>Reward<wbr/>Parameters<span class="tsd-signature-symbol">(</span>txCostNative<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span>, nativeAssetPrice<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span>, txOutputAssetPrice<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span>, rewardAssetPrice<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#setRiskRewardParameters.setRiskRewardParameters-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Adds the required risk parameter subjects to the SFX instance.
+These values are used to determine if the SFX is profitable to execute.
+The values are added as subjects to allow for dynamic updates, triggering the re-evaluation of the SFXs profitability.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>txCostNative: <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5></li>
+<h5>txCostNative: <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+<div class="tsd-comment tsd-typography"><p>Tx cost in the native currency of the target</p>
+</div></li>
 <li>
-<h5>nativeAssetPrice: <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5></li>
+<h5>nativeAssetPrice: <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+<div class="tsd-comment tsd-typography"><p>Cost of targets native asset in USD. Used for tx cost calculation</p>
+</div></li>
 <li>
-<h5>txOutputAssetPrice: <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5></li>
+<h5>txOutputAssetPrice: <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+<div class="tsd-comment tsd-typography"><p>Current price of the assets that are used for the sfx execution</p>
+</div></li>
 <li>
-<h5>rewardAssetPrice: <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div>
+<h5>rewardAssetPrice: <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h5>
+<div class="tsd-comment tsd-typography"><p>Price for reward assert in USD</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L126">src/executionManager/sideEffect.ts:126</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="setStep" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>set<wbr/>Step</span><a href="#setStep" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="setStep.setStep-1">set<wbr/>Step<span class="tsd-signature-symbol">(</span>step<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#setStep.setStep-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>step: <span class="tsd-signature-type">number</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L122">src/executionManager/sideEffect.ts:122</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L181">src/executionManager/sideEffect.ts:181</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="unsubscribe" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>unsubscribe</span><a href="#unsubscribe" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -973,20 +1127,7 @@ modified for this specific <code>EventEmitter</code> instance. The value can be 
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L309">src/executionManager/sideEffect.ts:309</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="updateStatus" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>update<wbr/>Status</span><a href="#updateStatus" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="updateStatus.updateStatus-1">update<wbr/>Status<span class="tsd-signature-symbol">(</span>status<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SfxStatus</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#updateStatus.updateStatus-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>status: <span class="tsd-signature-type">SfxStatus</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/cb543d80/client/packages/executor/src/executionManager/sideEffect.ts#L209">src/executionManager/sideEffect.ts:209</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/969e4a60/client/packages/executor/src/executionManager/sideEffect.ts#L414">src/executionManager/sideEffect.ts:414</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a id="getEventListeners" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <span>get<wbr/>Event<wbr/>Listeners</span><a href="#getEventListeners" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
@@ -1187,17 +1328,17 @@ special handling:</p>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#inclusionData" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>inclusion<wbr/>Data</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#insurance" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>insurance</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#isBidder" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>is<wbr/>Bidder</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#logger" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>logger</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#maxProfitUsd" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>max<wbr/>Profit<wbr/>Usd</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#minProfitUsd" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>min<wbr/>Profit<wbr/>Usd</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#nativeAssetPrice" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>native<wbr/>Asset<wbr/>Price</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#phase" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>phase</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#raw" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>raw</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#relayer" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>relayer</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#reward" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>reward</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#rewardAssetPrice" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>reward<wbr/>Asset<wbr/>Price</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#rewardUsd" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>reward<wbr/>Usd</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#securityLevel" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>security<wbr/>Level</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#status" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>status</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#step" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>step</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#strategyEngine" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>strategy<wbr/>Engine</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#subscriptions" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>subscriptions</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#target" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>target</a></li>
@@ -1208,13 +1349,13 @@ special handling:</p>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#txOutputCostUsd" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>tx<wbr/>Output<wbr/>Cost<wbr/>Usd</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#txReceipt" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>tx<wbr/>Receipt</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#txStatus" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>tx<wbr/>Status</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#wantToBid" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>want<wbr/>To<wbr/>Bid</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SideEffect.html#xtxId" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>xtx<wbr/>Id</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#captureRejectionSymbol" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>capture<wbr/>Rejection<wbr/>Symbol</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#captureRejections" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>capture<wbr/>Rejections</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#defaultMaxListeners" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>default<wbr/>Max<wbr/>Listeners</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#errorMonitor" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>error<wbr/>Monitor</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#addListener" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>add<wbr/>Listener</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SideEffect.html#addLog" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>add<wbr/>Log</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#bidAccepted" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>bid<wbr/>Accepted</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#bidRejected" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>bid<wbr/>Rejected</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#confirmedOnCircuit" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>confirmed<wbr/>On<wbr/>Circuit</a></li>
@@ -1224,10 +1365,10 @@ special handling:</p>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#eventNames" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>event<wbr/>Names</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#execute" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>execute</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#executedOnTarget" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>executed<wbr/>On<wbr/>Target</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SideEffect.html#generateBid" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>generate<wbr/>Bid</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#getMaxListeners" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Max<wbr/>Listeners</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SideEffect.html#getTransferArguments" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Transfer<wbr/>Arguments</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#getTxOutputs" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Tx<wbr/>Outputs</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SideEffect.html#knownTransactionInterface" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>known<wbr/>Transaction<wbr/>Interface</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#listenerCount" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>listener<wbr/>Count</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#listeners" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>listeners</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#off" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>off</a></li>
@@ -1243,10 +1384,9 @@ special handling:</p>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#removeListener" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>remove<wbr/>Listener</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#reverted" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>reverted</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#setMaxListeners" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>set<wbr/>Max<wbr/>Listeners</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#setPhase" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>set<wbr/>Phase</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#setRiskRewardParameters" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>set<wbr/>Risk<wbr/>Reward<wbr/>Parameters</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#setStep" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>set<wbr/>Step</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SideEffect.html#unsubscribe" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>unsubscribe</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="SideEffect.html#updateStatus" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>update<wbr/>Status</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#getEventListeners" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Event<wbr/>Listeners</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#listenerCount-2" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>listener<wbr/>Count</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="SideEffect.html#on-2" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>on</a></li>
