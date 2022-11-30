@@ -177,6 +177,7 @@ export class ExecutionManager {
 			this.strategyEngine.evaluateXtx(xtx)
 
 		} catch(e) {
+			// XTX does not meet strategy requirements
 			console.log(`Xtx ${xtx.humanId} eval failed!`, e.toString())
 			return
 		}
@@ -195,7 +196,6 @@ export class ExecutionManager {
 		const sfxId = bidData[0].toString()
 		const bidder = bidData[1].toString()
 		const amt = bidData[2].toNumber()
-		console.log(sfxId, bidder, amt)
 		this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)?.processBid(bidder, amt)
 	}
 
@@ -318,20 +318,22 @@ export class ExecutionManager {
 
 	revertTimeout(xtxId: string) {
 		const xtx = this.xtx[xtxId]
-		for(const sfx of xtx.sideEffects.values()) {
-			// sfx could either be in isExecuting or isConfirming
-			this.removeFromQueue("isExecuting", sfx.id, sfx.target)
-			let confirmBatch = this.queue[sfx.target].isConfirming[sfx.targetInclusionHeight.toString()];
-			if(!confirmBatch) confirmBatch = [];
-			if(confirmBatch.includes(sfx.id)) {
-				const index = confirmBatch.indexOf(sfx.id)
-				confirmBatch.splice(index, 1)
-			}
+		if(xtx) {
+			for(const sfx of xtx.sideEffects.values()) {
+				// sfx could either be in isExecuting or isConfirming
+				this.removeFromQueue("isExecuting", sfx.id, sfx.target)
+				let confirmBatch = this.queue[sfx.target].isConfirming[sfx.targetInclusionHeight.toString()];
+				if(!confirmBatch) confirmBatch = [];
+				if(confirmBatch.includes(sfx.id)) {
+					const index = confirmBatch.indexOf(sfx.id)
+					confirmBatch.splice(index, 1)
+				}
 
-			// add to reverted queue
-			this.queue[sfx.target].reverted.push(sfx.id)
+				// add to reverted queue
+				this.queue[sfx.target].reverted.push(sfx.id)
+			}
+			this.xtx[xtxId].revertTimeout()
 		}
-		this.xtx[xtxId].revertTimeout()
 		console.log(this.queue)
 	}
 

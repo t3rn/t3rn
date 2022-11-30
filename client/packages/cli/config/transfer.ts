@@ -4,9 +4,9 @@ export default {
             target: "roco",
             type: "tran",
             to: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
-            amount: "0.1", // in ROC
-            insurance: "0.8", // in TRN
-            reward: "8", // in TRN
+            amount: "0.01", // in ROC
+            insurance: "0.1", // in TRN
+            reward: "2", // in TRN
         },
         {
             target: "roco",

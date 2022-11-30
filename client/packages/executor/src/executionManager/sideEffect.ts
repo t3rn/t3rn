@@ -255,19 +255,22 @@ export class SideEffect extends EventEmitter {
     }
 
     bidRejected() {
+        // a better bid was submitted before this one was accepted. A new eval will be triggered with the incoming bid event
         this.isBidder = false;
         this.txStatus = TxStatus.Ready;
     }
 
     processBid(signer: string, bidAmount: number) {
+        console.log(`${this.gateway.ticker}: Sfx ${this.humanId} - ${signer} for ${bidAmount}`)
         // if this is not own bid, update reward and isBidder
         if(signer !== this.circuitSignerAddress) {
+            console.log("Competitor bid detected!")
             this.isBidder = false;
             this.reward.next(this.gateway.toFloat(bidAmount));
-            console.log(`Sfx ${this.humanId} received bid from ${signer} for ${bidAmount} ${this.gateway.ticker}`)
+        } else {
+            console.log("own bid detected!")
         }
 
-        console.log("own bid detected!")
     }
 
     readyToExecute() {
