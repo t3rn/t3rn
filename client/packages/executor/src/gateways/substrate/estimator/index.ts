@@ -22,10 +22,6 @@ export default class Estimator {
 		return this.cost.getTxCostSubject(sideEffect.id, sfxTx);
 	}
 
-	stopTrackingTxCost(sfxId: string) {
-		this.cost.stopTracking(sfxId)
-	}
-
 	// async initTxCostTracking(sideEffect: SideEffect): Promise<Subject<number>> {
 	// 	const sfxTx = this.relayer.buildTx(sideEffect)
 	// 	const txCostSubject = await this.cost.watchTransactionCost(sideEffect.id, sfxTx);

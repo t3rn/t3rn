@@ -4,8 +4,10 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "DEBUG=instance-manager,execution-manager,substrate-relayer,circuit-relayer,circuit-listener ts-node ./src/index.ts",
-    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./*.ts ./**/*.ts ./**/**/*.ts"
+    "start": "ts-node src/index.ts | npx pino-pretty -c -S",
+    "dev": "LOG_LEVEL=debug yarn start | npx pino-pretty -c -S",
+    "export": "LOG_LEVEL=debug yarn start >> logger.log",
+    "fmt": "npx prettier --no-semi --tab-width 4 --print-width 80 --write src/*.ts src/**/*.ts src/**/**/*.ts"
   },
   "dependencies": {
     "@polkadot/api": "^9.8.2",
@@ -16,6 +18,8 @@
     "bn.js": "^5.2.1",
     "debug": "4.3.4",
     "dotenv": "16.0.0",
+    "pino": "^8.7.0",
+    "pino-pretty": "^9.1.1",
     "rxjs": "^7.5.7",
     "ts-node": "10.7.0",
     "typedoc": "^0.23.21",
