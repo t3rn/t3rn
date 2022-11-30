@@ -1,12 +1,12 @@
 export enum RelayerEvents {
-	SfxExecutedOnTarget,
-	SfxExecutionError
+    SfxExecutedOnTarget,
+    SfxExecutionError,
 }
 
 export type RelayerEventData = {
-    type: RelayerEvents,
-    data: string,
-	sfxId: string,
-	target: string,
-	blockNumber: number
+    type: RelayerEvents
+    data: string
+    sfxId: string
+    target: string
+    blockNumber: number
 }
