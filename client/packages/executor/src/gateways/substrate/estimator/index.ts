@@ -2,10 +2,11 @@ import CostEstimator from "./cost";
 import SubstrateRelayer from "../relayer";
 import {SideEffect} from "../../../executionManager/sideEffect";
 import {PriceEngine} from "../../../pricing";
-
-import {SfxType, SfxStatus} from "@t3rn/sdk/dist/src/side-effects/types";
 import {BehaviorSubject} from "rxjs";
 
+/** Class used for estimating the TX cost on the target chain
+ * It uses the relayer to estimate the cost of the TX which is part of the risk/reward computation
+ */
 export default class Estimator {
 
 	cost: CostEstimator;
@@ -17,25 +18,16 @@ export default class Estimator {
 		this.cost = new CostEstimator(relayer);
 	}
 
+	/** Estimates the cost of the side effect on the target chain.
+	 * We first build the rtx object we would use to execute the TX on target.
+	 * The cost estimator class then uses the relayer to estimate the cost of the TX.
+	 * We then convert the cost to USD using the price engine.
+	 *
+	 * @param sideEffect object of SFX we want to estimate the cost for
+	 * @returns the cost of the SFX in USD as a subject
+	 */
 	async getNativeTxCostSubject(sideEffect: SideEffect): Promise<BehaviorSubject<number>> {
 		const sfxTx = this.relayer.buildTx(sideEffect)
 		return this.cost.getTxCostSubject(sideEffect.id, sfxTx);
 	}
-
-	// async initTxCostTracking(sideEffect: SideEffect): Promise<Subject<number>> {
-	// 	const sfxTx = this.relayer.buildTx(sideEffect)
-	// 	const txCostSubject = await this.cost.watchTransactionCost(sideEffect.id, sfxTx);
-	// 	return txCostSubject
-	// }
-
-	// getAssetCostUsd(sideEffect: SideEffect) {
-	// 	let assetCostUsd;
-	// 	switch(sideEffect.action){
-	// 		case SfxType.Transfer:
-	// 			const assetId = this.gatewayService.gateways[this.gatewayService.idMapper[sideEffect.target]].ticker
-	// 			const humanTransactionCost = this.gatewayService.valueToHuman(sideEffect.getTxOutput(), sideEffect.target) // as float
-	// 			assetCostUsd = this.priceEngine.getQuote(assetId, humanTransactionCost)
-	// 	}
-	// 	return assetCostUsd
-	// }
 }
