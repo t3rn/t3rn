@@ -1,4 +1,3 @@
-import createDebug from "debug"
 import { Execution } from "./execution"
 import { Notification, NotificationType, SideEffect } from "./sideEffect"
 import Estimator from "../gateways/substrate/estimator"
@@ -249,7 +248,7 @@ export class ExecutionManager {
         // filter the SideEffects that can be confirmed in the current step
         for (let i = 0; i < readyByHeight.length; i++) {
             const sfx: SideEffect = this.xtx[this.sfxToXtx[readyByHeight[i]]].sideEffects.get(readyByHeight[i])!
-            if (sfx.step === this.xtx[sfx.xtxId].currentStep) {
+            if (sfx.phase === this.xtx[sfx.xtxId].currentPhase) {
                 readyByStep.push(sfx)
             }
         }
