@@ -250,6 +250,12 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             // fixme: test that actually updates active_set_claimables or are the references wrong
             for active_set_claimable in active_set_claimables.iter_mut() {
                 if active_set_claimable.executor == settlement.recipient {
+
+                    active_set_claimable.claimable.checked_add(&settlement.settlement_amount)
+                        .map(|amt| active_set_claimable.claimable = amt)
+                        .ok_or(Err(DispatchError::Arithmetic(ArithmeticError::Overflow)))?;
+
+
                     if let Some(v) = active_set_claimable
                         .claimable
                         .checked_add(&settlement.settlement_amount)
