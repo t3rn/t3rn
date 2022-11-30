@@ -38,9 +38,6 @@ export const getEventProofs = async (api: ApiPromise, blockHash: any) => {
  * @param address The account for which the nonce should be fetched
  * @returns The account nonce
  */
-export async function fetchNonce(
-    api: ApiPromise,
-    address: string
-): Promise<BN> {
+export async function fetchNonce(api: ApiPromise, address: string): Promise<BN> {
     return api.rpc.system.accountNextIndex(address)
 }
