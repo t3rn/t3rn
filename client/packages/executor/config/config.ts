@@ -41,7 +41,7 @@ export default {
     },
     strategies: {
         "roco": {
-            minProfitUsd: 1,
+            minProfitUsd: 3,
             minYield: 0.05,
             minInsuranceAmountUsd: 1,
             minInsuranceShare: 0.1, // insurance / maxReward

@@ -1,4 +1,4 @@
-import config from "../config/config"
+import config from "../../config/config"
 import {BehaviorSubject} from "rxjs";
 const axios = require('axios');
 

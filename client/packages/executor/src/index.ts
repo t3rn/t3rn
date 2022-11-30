@@ -5,10 +5,9 @@ require('dotenv').config()
 import "@t3rn/types"
 import SubstrateRelayer from "./gateways/substrate/relayer"
 import { ExecutionManager } from "./executionManager/execMan"
-import { BN } from "@polkadot/util"
 import createDebug from "debug"
 import { ApiPromise, WsProvider } from "@polkadot/api"
-import config from "./config/config";
+import config from "../config/config";
 import { BiddingEngine} from "./bidding";
 import { PriceEngine} from "./pricing";
 import { StrategyEngine} from "./strategy";
@@ -16,8 +15,6 @@ import { SideEffect } from "./executionManager/sideEffect";
 import { Execution} from "./executionManager/execution";
 import {CircuitListener} from "./circuit/listener";
 import {CircuitRelayer} from "./circuit/relayer";
-
-
 
 // @ts-ignore
 import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"

@@ -5,6 +5,7 @@ import {getEventProofs} from "../../utils"
 import createDebug from "debug"
 import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 import {SfxType} from "@t3rn/sdk/dist/src/side-effects/types";
+import {RelayerEventData, RelayerEvents} from "../types";
 
 export default class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
@@ -47,47 +48,47 @@ export default class SubstrateRelayer extends EventEmitter {
         const tx: SubmittableExtrinsic = this.buildTx(sfx)
         let nonce = this.nonce
         this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
-        // return new Promise<void>((resolve, reject) =>
-		// 	tx.signAndSend(this.signer, { nonce }, async ({ dispatchError, status, events }) => {
-		// 		if (dispatchError?.isModule) {
-		// 			let err = this.client.registry.findMetaError(dispatchError.asModule)
-        //             this.nonce -= 1;
-        //             this.emit(
-        //                 "Event",
-        //                 <RelayerEventData>{
-        //                     type: RelayerEvents.SfxExecutionError,
-        //                     data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
-        //                     sfxId: sfx.id
-        //                 }
-        //             )
-		// 			reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`))
-		// 		} else if (dispatchError) {
-        //             this.nonce -= 1;
-        //             this.emit(
-        //                 "Event",
-        //                 <RelayerEventData>{
-        //                     type: RelayerEvents.SfxExecutionError,
-        //                     data: dispatchError.toString(),
-        //                     sfxId: sfx.id
-        //                 }
-        //             )
-		// 			reject(Error(dispatchError.toString()))
-		// 		} else if (status.isFinalized) {
-        //             const blockNumber = await this.generateInclusionProof(sfx, status.asFinalized, events)
-        //             this.emit(
-        //                 "Event",
-        //                 <RelayerEventData>{
-        //                     type: RelayerEvents.SfxExecutedOnTarget,
-        //                     sfxId: sfx.id,
-        //                     target: this.name,
-        //                     data: "",
-        //                     blockNumber
-        //                 }
-        //             )
-        //             resolve()
-        //         }
-		// 	})
-		// )
+        return new Promise<void>((resolve, reject) =>
+			tx.signAndSend(this.signer, { nonce }, async ({ dispatchError, status, events }) => {
+				if (dispatchError?.isModule) {
+					let err = this.client.registry.findMetaError(dispatchError.asModule)
+                    this.nonce -= 1;
+                    this.emit(
+                        "Event",
+                        <RelayerEventData>{
+                            type: RelayerEvents.SfxExecutionError,
+                            data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
+                            sfxId: sfx.id
+                        }
+                    )
+					reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`))
+				} else if (dispatchError) {
+                    this.nonce -= 1;
+                    this.emit(
+                        "Event",
+                        <RelayerEventData>{
+                            type: RelayerEvents.SfxExecutionError,
+                            data: dispatchError.toString(),
+                            sfxId: sfx.id
+                        }
+                    )
+					reject(Error(dispatchError.toString()))
+				} else if (status.isFinalized) {
+                    const blockNumber = await this.generateInclusionProof(sfx, status.asFinalized, events)
+                    this.emit(
+                        "Event",
+                        <RelayerEventData>{
+                            type: RelayerEvents.SfxExecutedOnTarget,
+                            sfxId: sfx.id,
+                            target: this.name,
+                            data: "",
+                            blockNumber
+                        }
+                    )
+                    resolve()
+                }
+			})
+		)
     }
 
     // if sfx execution successful, generate inclusion proof and notify of successful execution
