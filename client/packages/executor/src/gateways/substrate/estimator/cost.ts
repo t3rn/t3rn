@@ -7,8 +7,14 @@ type Estimate = {
 	costSubject: BehaviorSubject<number>
 }
 
+/** Class used for estimating the TX cost on the target chain.
+ * 	It makes use of substrates ts.estimateFee() method to estimate the cost of the TX.
+ * 	It is also a producer, able to trigger the re-evaluation of a given SFX. Currently, this is triggered every 30s
+ */
 export default class CostEstimator {
 	relayer: SubstrateRelayer;
+	//ToDo we need to stop tracking when the SFX is completed
+	/** Map containg the estimates for each SFX */
 	trackingMap: Map<string, Estimate> = new Map<string, Estimate>();
 
 	constructor(relayer: SubstrateRelayer) {
@@ -16,13 +22,21 @@ export default class CostEstimator {
 		this.update()
 	}
 
-	/// returns the transaction cost of a specific side effect in native asset
+	/** returns the transaction cost of a specific side effect in native asset
+	 *
+	 * @param tx of the SFX on target
+	 * @returns the cost of the SFX in native asset
+	 */
 	async currentTransactionCost(tx: SubmittableExtrinsic): Promise<number> {
 		const paymentInfo = await tx.paymentInfo(this.relayer.signer);
 		return paymentInfo.partialFee.toJSON()
 	}
 
-	// adds a sfx to tracking list and returns an observable that emits the transaction cost in native asset
+	/** adds a sfx to tracking list and returns an observable that emits the transaction cost in native asset
+	 *
+	 * @param sfxId
+	 * @param tx of the SFX on target
+	 */
 	async getTxCostSubject(sfxId: string, tx: SubmittableExtrinsic): Promise<BehaviorSubject<number>> {
 		const txCost = await this.currentTransactionCost(tx); // get cost of tx
 		const costSubject = new BehaviorSubject<number>(txCost); // create a new subject
@@ -30,7 +44,9 @@ export default class CostEstimator {
 		return costSubject
 	}
 
-	// fetch new prices for all tracked transactions
+	/** Automatically fetch new prices for all tracked transactions and publish
+	 *
+	 */
 	async update() {
 		for (const [_sfxId, estimate] of this.trackingMap.entries()) {
 			const txCost = await this.currentTransactionCost(estimate.tx);

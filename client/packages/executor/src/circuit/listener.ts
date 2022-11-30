@@ -3,16 +3,26 @@ import { EventEmitter } from "events"
 import { TextDecoder } from "util"
 import { ApiPromise } from "@polkadot/api"
 import { Execution } from "../executionManager/execution"
-import createDebug from "debug"
 
+/**
+ * Enum for the different types of events emitted by the relayer
+ */
 export enum ListenerEvents {
+    /** A new XTX was detected on Circuit */
     NewSideEffectsAvailable,
+    /** A new SFX bid was detected */
     SFXNewBidReceived,
+    /** An XTX is ready to be executed */
     XTransactionReadyForExec,
+    /** New headers where detected for a specific gateway */
     HeaderSubmitted,
+    /** A SFX was confirmed on circuit */
     SideEffectConfirmed,
+    /** A XTX was finalized */
     XtxCompleted,
+    /** A XTX was dropped at bidding */
     DroppedAtBidding,
+    /** A XTX was reverted */
     RevertTimedOut,
 }
 
@@ -22,8 +32,6 @@ export type ListenerEventData = {
 }
 
 export class CircuitListener extends EventEmitter {
-    static debug = createDebug("circuit-listener")
-
     client: ApiPromise
 
     constructor(client: ApiPromise) {

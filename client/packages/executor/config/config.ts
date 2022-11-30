@@ -41,16 +41,14 @@ export default {
   },
   strategies: {
     roco: {
-      minProfitUsd: 3,
-      minYield: 0.05,
-      minInsuranceAmountUsd: 1,
-      minInsuranceShare: 0.1, // insurance / maxReward
-    },
-    bslk: {
-      minProfitUsd: 1,
-      minYield: 0.03,
-      maxTxFeesUsd: 1,
-      maxTxFeeShare: 10,
+      sfx: {
+        minProfitUsd: 3,
+        minYield: 0.05,
+      },
+      xtx: {
+        minInsuranceAmountUsd: 1,
+        minInsuranceShare: 0.1, // insurance / maxReward
+      }
     },
   },
 }
