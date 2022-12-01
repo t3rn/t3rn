@@ -1610,6 +1610,14 @@ impl<T: Config> Pallet<T> {
                 e
             })?;
 
+            if index < side_effects.len() - 1
+                && side_effects[index].reward_asset_id != side_effects[index + 1].reward_asset_id
+            {
+                return Err(
+                    "SFX validate failed - enforce all SFX to have the same reward asset field",
+                )
+            }
+
             let (insurance, reward) = if let Some(insurance_and_reward) =
                 UniversalSideEffectsProtocol::ensure_required_insurance::<
                     T::AccountId,
