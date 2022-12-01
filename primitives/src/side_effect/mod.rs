@@ -1,5 +1,6 @@
 use crate::Bytes;
 use codec::{Decode, Encode};
+use frame_support::traits::tokens::AssetId;
 use num_traits::Zero;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
@@ -33,7 +34,7 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
     pub security_lvl: SecurityLvl,
     pub submission_target_height: Bytes,
-    pub best_bid: Option<SFXBid<AccountId, BalanceOf>>,
+    pub best_bid: Option<SFXBid<AccountId, BalanceOf, u32>>,
     pub index: u32,
 }
 
@@ -43,25 +44,28 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
 ///     other Optimistic Executors co-executing given Xtx with their bonded collateral (reserved_bond)
 /// Their balance
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
-pub struct SFXBid<AccountId, BalanceOf> {
+pub struct SFXBid<AccountId, BalanceOf, AssetId> {
     /// Bid amount - always below SFX::max_fee requested by a user
     pub bid: BalanceOf,
     /// Insurance in case of optimistic FSX
     pub insurance: BalanceOf,
     /// Optional reserved bond in case of optimistic FSX
     pub reserved_bond: Option<BalanceOf>,
+    /// Optional reserved asset id in case execution on foreign assets
+    pub reward_asset_id: Option<AssetId>,
     /// Bidding Executor belonging to the active set
     pub executor: AccountId,
     /// Executor - subject of SFX
     pub requester: AccountId,
 }
 
-impl<AccountId, BalanceOf> SFXBid<AccountId, BalanceOf> {
+impl<AccountId, BalanceOf, AssetId> SFXBid<AccountId, BalanceOf, AssetId> {
     pub fn new_none_optimistic(
         bid: BalanceOf,
         insurance: BalanceOf,
         executor: AccountId,
         requester: AccountId,
+        reward_asset_id: Option<AssetId>,
     ) -> Self {
         SFXBid {
             bid,
@@ -69,6 +73,7 @@ impl<AccountId, BalanceOf> SFXBid<AccountId, BalanceOf> {
             reserved_bond: None,
             executor,
             requester,
+            reward_asset_id,
         }
     }
 
@@ -105,7 +110,7 @@ where
         self.best_bid.is_some()
     }
 
-    pub fn expect_sfx_bid(&self) -> &SFXBid<AccountId, BalanceOf> {
+    pub fn expect_sfx_bid(&self) -> &SFXBid<AccountId, BalanceOf, u32> {
         self.best_bid
             .as_ref()
             .expect("Accessed expected Bid and expected it to be a part of FSX")

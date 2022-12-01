@@ -144,6 +144,7 @@ pub mod pallet {
         SFXBid<
             <T as frame_system::Config>::AccountId,
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            u32,
         >,
         OptionQuery,
     >;
@@ -1466,7 +1467,7 @@ impl<T: Config> Pallet<T> {
                 unreserve_requester_xtx_max_rewards(current_step_sfx);
                 for fsx in current_step_sfx.iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    let bid_4_fsx: &SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>> =
+                    let bid_4_fsx: &SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32> =
                         if let Some(bid) = &fsx.best_bid {
                             bid
                         } else {
@@ -1900,6 +1901,7 @@ impl<T: Config> Pallet<T> {
         sfx_bid: SFXBid<
             <T as frame_system::Config>::AccountId,
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            u32,
         >,
     ) {
         <PendingSFXBids<T>>::insert(local_ctx.xtx_id, sfx_id, sfx_bid)
@@ -1912,6 +1914,7 @@ impl<T: Config> Pallet<T> {
         SFXBid<
             <T as frame_system::Config>::AccountId,
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            u32,
         >,
     > {
         // fixme: This accesses storage and therefor breaks the rule of a single-storage access at setup.
