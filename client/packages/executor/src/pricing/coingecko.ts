@@ -2,12 +2,17 @@ import config from "../../config/config"
 import { BehaviorSubject } from "rxjs"
 const axios = require("axios")
 
+/** MVP implementation of sourcing prices from coingecko
+ *
+ */
 export class CoingeckoPricing {
     endpoint: string
+    /** Maps ticker to coingecko ID */
     assets: {
         [assetTicker: string]: string
     } = {}
 
+    /** Stores price in USD as a subject */
     prices: {
         [assetTicker: string]: BehaviorSubject<number>
     } = {}
@@ -18,6 +23,7 @@ export class CoingeckoPricing {
         this.updateAssetPrices()
     }
 
+    /** Read the config file to initialize the list of assets we want to track */
     getTrackingAssets() {
         let keys = Object.keys(config.assets)
         for (let i = 0; i < keys.length; i++) {
@@ -28,6 +34,9 @@ export class CoingeckoPricing {
         }
     }
 
+    /** Update the price of all assets we are tracking
+     * This is called every 30 seconds
+     */
     async updateAssetPrices() {
         const ids = Object.keys(this.assets)
         for (let i = 0; i < ids.length; i++) {

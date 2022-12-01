@@ -7,12 +7,22 @@ import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
 import {InclusionData, RelayerEventData, RelayerEvents} from "../types"
 
+/** Class responsible for submitting transactions to a target chain.
+ * Three main tasks are handled by this class:
+ * - Build correct TX objects for the target chain
+ * - Sign and submit the TXs
+ * - Generate inclusion proofs for the TXs
+ */
 export default class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
 
+    /** Target chain client */
     client: ApiPromise
+    /** Signer for target */
     signer: any
+    /** Nonce of the signer, tracked locally to enable optimistic nonce increment */
     nonce: number
+    /** Name of the target */
     name: string
     logger: any
 
@@ -29,8 +39,11 @@ export default class SubstrateRelayer extends EventEmitter {
         this.logger = logger
     }
 
-    // Builds tx object for the different side effects. This can be used for estimating fees or to submit tx
-    // @ts-ignore
+    /** Builds the TX object for the different types of SFX
+     *
+     * @param sideEffect object
+     * @returns SubmittableExtrinsic tx that can be submitted to the target
+     */
     buildTx(sideEffect: SideEffect): SubmittableExtrinsic {
         switch (sideEffect.action) {
             case SfxType.Transfer: {
@@ -40,7 +53,12 @@ export default class SubstrateRelayer extends EventEmitter {
         }
     }
 
-    // Submit the sfx tx to the target
+    /** Submit the transaction to the target chain.
+     * This function increments the nonce locally to enable optimistic nonce increment.
+     * This allows transaction to be submitted in parallel without waiting for the previous one to be included.
+     * A successful submission will trigger inclusion proof generation.
+     * @param sfx object to execute
+     */
     async executeTx(sfx: SideEffect) {
         this.logger.info(`Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`)
         const tx: SubmittableExtrinsic = this.buildTx(sfx)
@@ -49,22 +67,26 @@ export default class SubstrateRelayer extends EventEmitter {
         return new Promise<void>((resolve, reject) =>
             tx.signAndSend(this.signer, { nonce }, async ({ dispatchError, status, events }) => {
                 if (dispatchError?.isModule) {
+                    // something went wrong and we can decode the error
                     let err = this.client.registry.findMetaError(dispatchError.asModule)
-                    this.nonce -= 1
                     this.logger.info(`Execution failed SFX: ${sfx.humanId}`)
                     this.emit("Event", <RelayerEventData>{
                         type: RelayerEvents.SfxExecutionError,
                         data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
                         sfxId: sfx.id,
                     })
+                    // we attempt to restore the correct nonce
+                    this.nonce = await this.fetchNonce(this.client, this.signer.address)
                     reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`))
                 } else if (dispatchError) {
-                    this.nonce -= 1
+                    // something went wrong and we can't decode the error
                     this.emit("Event", <RelayerEventData>{
                         type: RelayerEvents.SfxExecutionError,
                         data: dispatchError.toString(),
                         sfxId: sfx.id,
                     })
+                    // we attempt to restore the correct nonce
+                    this.nonce = await this.fetchNonce(this.client, this.signer.address)
                     reject(Error(dispatchError.toString()))
                 } else if (status.isFinalized) {
                     const blockNumber = await this.generateInclusionProof(sfx, status.asFinalized, events)
@@ -82,13 +104,16 @@ export default class SubstrateRelayer extends EventEmitter {
         )
     }
 
-    // if sfx execution successful, generate inclusion proof and notify of successful execution
+    /** Generates the inclusion proof of an executed transaction/SFX and adds it to the SFX object
+     *
+     * @param sfx object
+     * @param blockHash hash of the block in which the transaction was included
+     * @param events events emitted by the transaction
+     * @returns block number in which the transaction was included
+     */
     async generateInclusionProof(sfx: SideEffect, blockHash: any, events: any[]): Promise<number> {
         const blockNumber = await this.getBlockNumber(blockHash)
         const event = this.getEvent(sfx.action, events)
-
-        // should always be last event
-        const success = events[events.length - 1].event.method === "ExtrinsicSuccess"
 
         const inclusionProof = await getEventProofs(this.client, blockHash)
         const inclusionData: InclusionData = {
@@ -100,29 +125,47 @@ export default class SubstrateRelayer extends EventEmitter {
             block_hash: blockHash,
         }
 
+        // Add the inclusion proof to the SFX object
         sfx.executedOnTarget(inclusionData, this.signer.addressRaw, blockNumber.toNumber())
 
         return blockNumber.toNumber()
     }
 
+    /** Fetch block number from block hash
+     *
+     * @param hash of block
+     * @returns block number
+     */
     async getBlockNumber(hash: any) {
         return (await this.client.rpc.chain.getHeader(hash)).number
     }
 
+    /** Filter events for the event emitted by the transaction
+     *
+     * @param transactionType of the transaction
+     * @param events array of events in that block
+     * @returns event emitted by the transaction
+     */
     getEvent(transactionType: SfxType, events: any[]) {
         const event = events.find((item) => {
             return item.event.method === EventMapper[transactionType]
         })
 
-        if (event) return event.event
-        SubstrateRelayer.debug("cannot find transaction's event")
+        if (event) {
+            return event.event
+        } else {
+            //Todo: deal with this somehow
+            console.log("Event not found")
+        }
     }
 
+    /** Fetch nonce of the signer
+     *
+     * @param api client
+     * @param address of the signer
+     * @returns nonce of the signer
+     */
     async fetchNonce(api: ApiPromise, address: string): Promise<number> {
         return parseInt((await api.rpc.system.accountNextIndex(address)).toHuman())
-    }
-
-    private toHuman(id: string) {
-        return id.substring(0, 8)
     }
 }
