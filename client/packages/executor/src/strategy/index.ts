@@ -61,6 +61,10 @@ export class StrategyEngine {
         [target: string]: XtxStrategy
     } = {}
 
+    supportedAssets: {
+        [target: string]: string[]
+    } = {}
+
     constructor() {
         this.loadStrategies()
     }
@@ -71,20 +75,10 @@ export class StrategyEngine {
         for (let i = 0; i < strategyTargets.length; i++) {
             const strategy = config.strategies[strategyTargets[i]]
             this.sfxStrategies[strategyTargets[i]] = strategy.sfx
-
-            //     {
-            //     minProfitUsd: strategy.sfx.minProfitUsd,
-            //     minYield: strategy.sfx.minYield,
-            //     maxTxFeesUsd: strategy.sfx.maxTxFeesUsd,
-            //     maxTxFeeShare: strategy.sfx.maxTxFeeShare,
-            //     maxAssetCost: strategy.sfx.maxAssetCost,
-            // }
             this.xtxStrategies[strategyTargets[i]] = strategy.xtx
-            //
-            //     {
-            //     minInsuranceAmountUsd: strategy.xtx.minInsuranceAmountUsd,
-            //     minInsuranceShare: strategy.xtx.minInsuranceShare,
-            // }
+        }
+        for(let i = 0; i < config.gateways.length; i++) {
+            this.supportedAssets[config.gateways[i].id] = config.gateways[i].supportedAssets;
         }
     }
 
@@ -115,6 +109,7 @@ export class StrategyEngine {
         const strategy = this.sfxStrategies[sfx.target]
 
         try {
+            this.assetIsSupported(sfx)
             this.minProfitRejected(sfx, strategy)
             this.minYieldRejected(sfx, strategy)
             this.maxTxFeesRejected(sfx, strategy)
@@ -181,6 +176,19 @@ export class StrategyEngine {
             if (sfx.txCostUsd >= strategy.maxTxFeesUsd) {
                 throw new Error("Max Tx Fees condition not met!")
             }
+        }
+    }
+
+    /**
+     * Evaluates the output asset is supported by the executor
+     *
+     * @param sfx Side effect to be evaluated
+     * @returns Error if asset is not supported
+     */
+    assetIsSupported(sfx: SideEffect): void | Error {
+        const assetTicker = sfx.getTxOutputs().asset;
+        if(!this.supportedAssets[sfx.target].includes(assetTicker)) {
+            throw new Error("Asset is not supported by the target gateway!")
         }
     }
 
