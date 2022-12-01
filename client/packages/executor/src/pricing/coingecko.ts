@@ -3,7 +3,7 @@ import { BehaviorSubject } from "rxjs"
 const axios = require("axios")
 
 /** MVP implementation of sourcing prices from coingecko
- *
+ * @group Pricing
  */
 export class CoingeckoPricing {
     endpoint: string

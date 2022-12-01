@@ -1,17 +1,19 @@
-import CostEstimator from "./cost";
-import SubstrateRelayer from "../relayer";
+import {CostEstimator} from "./cost";
+import {SubstrateRelayer} from "../relayer";
 import {SideEffect} from "../../../executionManager/sideEffect";
-import {PriceEngine} from "../../../pricing";
 import {BehaviorSubject} from "rxjs";
 
 /** Class used for estimating the TX cost on the target chain
  * It uses the relayer to estimate the cost of the TX which is part of the risk/reward computation
+ *
+ *
+ * @group Gateways
+ * @category Substrate
  */
 export default class Estimator {
 
 	cost: CostEstimator;
 	relayer: SubstrateRelayer;
-	priceEngine: PriceEngine;
 
 	constructor(relayer: SubstrateRelayer) {
 		this.relayer = relayer;

@@ -6,6 +6,7 @@ import { Execution } from "../executionManager/execution"
 
 /**
  * Enum for the different types of events emitted by the relayer
+ * @group t3rn Circuit
  */
 export enum ListenerEvents {
     /** A new XTX was detected on Circuit */
@@ -26,11 +27,18 @@ export enum ListenerEvents {
     RevertTimedOut,
 }
 
+/**
+ * Type for transporting events
+ * @group t3rn Circuit
+ */
 export type ListenerEventData = {
     type: ListenerEvents
-    data: Execution | any
+    data: any
 }
 
+/**
+ * @group t3rn Circuit
+ */
 export class CircuitListener extends EventEmitter {
     client: ApiPromise
 

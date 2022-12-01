@@ -1,6 +1,7 @@
 import { SideEffect } from "../executionManager/sideEffect"
 /** The bidding engine is used for determining the bidding amount for a given side effect.
  * It expects SFXs that have already been evaluated by the strategy engine and are deemed profitable.
+ * @group Bidding
  */
 export class BiddingEngine {
     /** for now, we create bids based on the bidding percentile. In the future, we might want to use a more sophisticated bidding strategy

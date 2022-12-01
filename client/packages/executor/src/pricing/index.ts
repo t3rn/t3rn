@@ -4,6 +4,7 @@ import { BehaviorSubject } from "rxjs"
 /** Class used for keeping track of asset prices.
  * This class has access to different price sources, allowing the generation of averages of any kind.
  * All values are subjects, allowing the user to subscribe to price updates.
+ * @group Pricing
  */
 export class PriceEngine {
     coingecko: CoingeckoPricing

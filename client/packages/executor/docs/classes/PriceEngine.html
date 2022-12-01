@@ -15,12 +15,17 @@
 <li><a href="../modules.html">executor</a></li>
 <li><a href="PriceEngine.html">PriceEngine</a></li></ul>
 <h1>Class PriceEngine</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Class used for keeping track of asset prices.
+This class has access to different price sources, allowing the generation of averages of any kind.
+All values are subjects, allowing the user to subscribe to price updates.</p>
+</div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
 <li><span class="target">PriceEngine</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/pricing/index.ts#L4">src/pricing/index.ts:4</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/pricing/index.ts#L9">src/pricing/index.ts:9</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -47,14 +52,14 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <a href="PriceEngine.html" class="tsd-signature-type" data-tsd-kind="Class">PriceEngine</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/pricing/index.ts#L7">src/pricing/index.ts:7</a></li></ul></aside></li></ul></section></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/pricing/index.ts#L12">src/pricing/index.ts:12</a></li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="coingecko" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>coingecko</span><a href="#coingecko" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">coingecko<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">CoingeckoPricing</span></div><aside class="tsd-sources">
+<div class="tsd-signature">coingecko<span class="tsd-signature-symbol">:</span> <a href="CoingeckoPricing.html" class="tsd-signature-type" data-tsd-kind="Class">CoingeckoPricing</a></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/pricing/index.ts#L5">src/pricing/index.ts:5</a></li></ul></aside></section></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/pricing/index.ts#L10">src/pricing/index.ts:10</a></li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="getAssetPrice" class="tsd-anchor"></a>
@@ -62,14 +67,20 @@
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="getAssetPrice.getAssetPrice-1">get<wbr/>Asset<wbr/>Price<span class="tsd-signature-symbol">(</span>assetId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><a href="#getAssetPrice.getAssetPrice-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Returns the price of an asset in USD</p>
+
+<h3>Returns</h3><p>the price of the asset in USD as a subject</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>assetId: <span class="tsd-signature-type">string</span></h5></li></ul></div>
+<h5>assetId: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>ticker of the asset we want the price of. These are set in the config file.</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">BehaviorSubject</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/pricing/index.ts#L11">src/pricing/index.ts:11</a></li></ul></aside></li></ul></section></section></div>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/pricing/index.ts#L21">src/pricing/index.ts:21</a></li></ul></aside></li></ul></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
