@@ -68,7 +68,7 @@ impl<T: Config> Optimistic<T> {
             <T as Config>::AccountManager::deposit_immediately(
                 &current_best_bid.executor,
                 total_unreserve,
-                None,
+                current_best_bid.reward_asset_id,
             )
             .expect("executors refunds for bids to always be valid post withdrawals")
         }
