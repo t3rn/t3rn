@@ -310,21 +310,16 @@ pub mod pallet {
                         BeneficiaryRole::Developer => {
                             if let Some(v) = acc.0.checked_add(1) {
                                 acc.0 = v
-                            }
-                            // cannot return Err
-                            // else {
-                            //     return Err(Error::ArithmeticError);
-                            // }
+                            } else {
+                                log::error!("Cannot accumulate for developer");
+                            };
                         },
-                        BeneficiaryRole::Executor => {
+                        BeneficiaryRole::Executor =>
                             if let Some(v) = acc.1.checked_add(1) {
                                 acc.1 = v
-                            }
-                            // cannot return Err
-                            // else {
-                            //     return Err(Error::ArithmeticError);
-                            // }
-                        },
+                            } else {
+                                log::error!("Cannot accumulate for executor");
+                            },
                     }
                     acc
                 });
@@ -335,24 +330,18 @@ pub mod pallet {
             {
                 v
             } else {
+                log::error!("Cannot calculate relative rewards per developer");
                 Perbill::from_rational(1, count_devs as u32)
             };
-            // cannot return Err
-            // else {
-            // return Err(Error::InvalidInflationAllocation)
-            // };
 
             let relative_per_exec = if let Some(v) =
                 Perbill::from_rational(1, count_execs as u32).checked_mul(&inflation_alloc.executor)
             {
                 v
             } else {
-                Perbill::from_rational(1, count_execs as u32)
+                log::error!("Cannot calculate relative rewards per executor");
+                Perbill::from_rational(1, count_devs as u32)
             };
-            // cannot return Err
-            // else {
-            // return Err(Error::InvalidInflationAllocation)
-            // };
 
             // calculate absoute rewards per actor
             let absolute_per_dev = relative_per_dev * amount;
@@ -607,6 +596,7 @@ pub mod pallet {
             {
                 v.saturating_sub(<CurrentRound<T>>::get().index)
             } else {
+                log::error!("Cannot calculate remaining rounds until perpetual inflation. Defaulted to `rounds_per_month`");
                 rounds_per_month
             };
 

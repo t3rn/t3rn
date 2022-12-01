@@ -132,14 +132,14 @@ impl<T: Config> Optimistic<T> {
                 let (insurance, reserved_bond) =
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
-                let nsrnc = if let Some(v) = insurance.checked_add(&reserved_bond) {
+                let checked_insurance = if let Some(v) = insurance.checked_add(&reserved_bond) {
                     v
                 } else {
                     return Err(Error::<T>::ArithmeticErrorOverflow)
                 };
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
                     &sfx_bid.executor,
-                    nsrnc,
+                    checked_insurance,
                 );
             }
         }
@@ -178,14 +178,14 @@ impl<T: Config> Optimistic<T> {
                     return Err(Error::<T>::ArithmeticErrorOverflow)
                 }
 
-                let nsrce = if let Some(v) = insurance.checked_add(&reserved_bond) {
+                let checked_insurance = if let Some(v) = insurance.checked_add(&reserved_bond) {
                     v
                 } else {
                     return Err(Error::<T>::ArithmeticErrorOverflow)
                 };
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
                     &sfx_bid.executor,
-                    nsrce,
+                    checked_insurance,
                 );
             }
         }

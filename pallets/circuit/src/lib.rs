@@ -444,11 +444,9 @@ pub mod pallet {
                         );
                         if let Some(v) = deletion_counter.checked_add(1) {
                             deletion_counter = v;
+                        } else {
+                            return
                         }
-                        // cannot return the error
-                        // else {
-                        //     return Err(Error::<T>::ArithmeticErrorOverflow)
-                        // }
                     });
             }
 
@@ -1317,7 +1315,7 @@ impl<T: Config> Pallet<T> {
                     local_ctx.xtx_id,
                     local_ctx.xtx.timeouts_at,
                 );
-                // cannot return an error if checked_add fails
+                // TODO: return an error if checked_add fails
                 if let Some(v) = T::SFXBiddingPeriod::get()
                     .checked_add(&frame_system::Pallet::<T>::block_number())
                 {
@@ -1325,6 +1323,8 @@ impl<T: Config> Pallet<T> {
                         local_ctx.xtx_id,
                         v,
                     )
+                } else {
+                    log::error!("Could not get `SFX bidding period` plus `block number`.");
                 };
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
@@ -1880,8 +1880,8 @@ impl<T: Config> Pallet<T> {
         let mut remaining_key_budget = if let Some(v) = T::SignalQueueDepth::get().checked_div(4) {
             v
         } else {
-            // cannot return an error and types must match
-            T::SignalQueueDepth::get()
+            log::error!("Division error on signal queue depth (`SignalQueueDepth::get()`).");
+            return Err(Error::<T>::ArithmeticErrorDivisionByZero)
         };
         let mut processed_weight = 0_u64;
 
