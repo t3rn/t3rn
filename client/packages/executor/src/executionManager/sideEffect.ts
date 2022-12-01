@@ -9,35 +9,40 @@ import { Gateway } from "@t3rn/sdk/dist/src/gateways"
 import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"
 import { EventEmitter } from "events"
-import {floatToBn, toFloat} from "@t3rn/sdk/dist/src/circuit"
-import {bnToFloat} from "@t3rn/sdk/dist/src/converters/amounts";
-import {InclusionData} from "../gateways/types";
+import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
+import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
+import { InclusionData } from "../gateways/types"
 
-/** map event names to SfxType enum */
+/** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"]
 
 /**
  * Type used for representing a Txoutput
+ *
  * @typedef {Object} TxOutput
  * @group Execution Manager
  */
 export type TxOutput = {
-    /** output amount as integer */
+    /** Output amount as integer */
     amount: BigInt
-    /** output amount in human-readable float */
+    /** Output amount in human-readable float */
     amountHuman: number
-    /** output asset tickker */
+    /** Output asset tickker */
     asset: string
 }
 
-/** Event notifications
+/**
+ * Event notifications
+ *
  * @group Execution Manager
  */
 export enum NotificationType {
     SubmitBid,
 }
 
-/** Status for executing a side effect
+/**
+ * Status for executing a side effect
+ *
  * @group Execution Manager
  */
 export enum TxStatus {
@@ -47,7 +52,9 @@ export enum TxStatus {
     Ready,
 }
 
-/** Event notification type
+/**
+ * Event notification type
+ *
  * @group Execution Manager
  */
 export type Notification = {
@@ -57,6 +64,7 @@ export type Notification = {
 
 /**
  * Class used for tracking the state of a side effect. It contains all needed data and helper functions to go through the lifecycle of a XTX.
+ *
  * @group Execution Manager
  */
 export class SideEffect extends EventEmitter {
@@ -68,9 +76,9 @@ export class SideEffect extends EventEmitter {
     action: SfxType
     /** Acts as mutex lock to prevent parallel txs on the same SFX */
     txStatus: TxStatus = TxStatus.Ready
-    /** Target gateway of the SFX  */
+    /** Target gateway of the SFX */
     target: string
-    /** gateway helper instance */
+    /** Gateway helper instance */
     gateway: Gateway
     /** Security Level, e.g. Escrow or Optimistic */
     securityLevel: SecurityLevel
@@ -184,17 +192,18 @@ export class SideEffect extends EventEmitter {
         }
     }
 
-    /** Set the correct phase index
+    /**
+     * Set the correct phase index
      *
-     * @param phase the index of the SFXs phase
+     * @param phase The index of the SFXs phase
      */
     setPhase(phase: number) {
         this.phase = phase
     }
 
-    /** Adds the required risk parameter subjects to the SFX instance.
-     * These values are used to determine if the SFX is profitable to execute.
-     * The values are added as subjects to allow for dynamic updates, triggering the re-evaluation of the SFXs profitability.
+    /**
+     * Adds the required risk parameter subjects to the SFX instance. These values are used to determine if the SFX is profitable to
+     * execute. The values are added as subjects to allow for dynamic updates, triggering the re-evaluation of the SFXs profitability.
      *
      * @param txCostNative Tx cost in the native currency of the target
      * @param nativeAssetPrice Cost of targets native asset in USD. Used for tx cost calculation
@@ -253,10 +262,10 @@ export class SideEffect extends EventEmitter {
         this.recomputeMaxProfit()
     }
 
-    /** Computes the potential profit of the SFX based on the current risk/reward parameters.
-     *  Once the max profit is computed, the SFX is evaluated via the strategy engine.
-     *  Depending on the result, a bid is placed or the SFX is ignored.
-     * */
+    /**
+     * Computes the potential profit of the SFX based on the current risk/reward parameters. Once the max profit is computed, the SFX is
+     * evaluated via the strategy engine. Depending on the result, a bid is placed or the SFX is ignored.
+     */
     recomputeMaxProfit() {
         const txCostUsd = this.gateway.toFloat(this.txCostNative.getValue()) * this.nativeAssetPrice.getValue()
         this.txCostUsd = txCostUsd
@@ -274,7 +283,7 @@ export class SideEffect extends EventEmitter {
                     msg: "Bid generated",
                     bid: result?.bidAmount.toString(),
                 })
-                this.logger.info(`Bidding on SFX ${this.humanId}: ${bnToFloat(result.bidAmount, 12)} TRN 🎰`);
+                this.logger.info(`Bidding on SFX ${this.humanId}: ${bnToFloat(result.bidAmount, 12)} TRN 🎰`)
 
                 this.emit("Notification", {
                     type: NotificationType.SubmitBid,
@@ -289,12 +298,12 @@ export class SideEffect extends EventEmitter {
         }
     }
 
-    /** Evaluate the SFX via the strategy engine.
-     * If the SFX passes all constraints defined by the executor, the bidding engine is triggered, computing the bid price.
-     * The bid price is then returned
+    /**
+     * Evaluate the SFX via the strategy engine. If the SFX passes all constraints defined by the executor, the bidding engine is triggered,
+     * computing the bid price. The bid price is then returned
      *
      * @private
-     * @returns any
+     * @returns Any
      */
     // ToDo fix return type
     private generateBid(): any {
@@ -305,7 +314,7 @@ export class SideEffect extends EventEmitter {
         try {
             this.strategyEngine.evaluateSfx(this)
         } catch (e: any) {
-            this.logger.info(`Not bidding SFX ${this.humanId}`);
+            this.logger.info(`Not bidding SFX ${this.humanId}`)
             return { trigger: false, reason: e.toString() }
         }
 
@@ -318,8 +327,10 @@ export class SideEffect extends EventEmitter {
         return { trigger: true, bidAmount: floatToBn(bidRewardAsset) }
     }
 
-    /** Generate an array of arguments for the SFX execution.
-     * @returns any[] - Array of arguments for the SFX execution in the corresponding type
+    /**
+     * Generate an array of arguments for the SFX execution.
+     *
+     * @returns Any[] - Array of arguments for the SFX execution in the corresponding type
      */
     execute(): any[] {
         switch (this.action) {
@@ -331,6 +342,7 @@ export class SideEffect extends EventEmitter {
 
     /**
      * Returns TxOutput containing the outputs required for a SFXs execution
+     *
      * @returns TxOutput.
      */
     getTxOutputs(): TxOutput {
@@ -346,7 +358,8 @@ export class SideEffect extends EventEmitter {
         }
     }
 
-    /** Perform state updates if our bid has been accepted.
+    /**
+     * Perform state updates if our bid has been accepted.
      *
      * @param bidAmount The bidding amount that was accepted. This is the reward amount, which is added to the subject
      */
@@ -358,7 +371,8 @@ export class SideEffect extends EventEmitter {
         this.addLog({ msg: "Bid accepted", bidAmount: bidAmount.toString() })
     }
 
-    /** Perform state updates if out bid has been rejected.
+    /**
+     * Perform state updates if out bid has been rejected.
      *
      * @param error Error message used for logging
      */
@@ -369,16 +383,17 @@ export class SideEffect extends EventEmitter {
         this.addLog({ msg: "Bid rejected", err: error.toString() })
     }
 
-    /** Process an incoming bid event.
-     * The bid amount is now the new reward amount and the SFX is evaluated again, potentially triggering a counter bid.
+    /**
+     * Process an incoming bid event. The bid amount is now the new reward amount and the SFX is evaluated again, potentially triggering a
+     * counter bid.
      *
-     * @param signer signer of the incoming bid
-     * @param bidAmount amount of the incoming bid
+     * @param signer Signer of the incoming bid
+     * @param bidAmount Amount of the incoming bid
      */
     processBid(signer: string, bidAmount: number) {
         // if this is not own bid, update reward and isBidder
         if (signer !== this.circuitSignerAddress) {
-            this.logger.info(`Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(bidAmount,)} TRN 🎰`);
+            this.logger.info(`Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(bidAmount)} TRN 🎰`)
             this.addLog({ msg: "Competing bid received", signer, bidAmount })
             this.isBidder = false
             this.reward.next(this.gateway.toFloat(bidAmount)) // this will trigger the re-eval of submitting a new bid
@@ -387,15 +402,14 @@ export class SideEffect extends EventEmitter {
         }
     }
 
-    /** Update the SFX status
-     *
-     */
+    /** Update the SFX status */
     readyToExecute() {
         this.status = SfxStatus.PendingExecution
     }
 
     // sfx was successfully executed on target and has the inclusion proof data
-    /** SFX was successfully executed and the required proof data generated
+    /**
+     * SFX was successfully executed and the required proof data generated
      *
      * @param inclusionData Inclusion proof data
      * @param executor Address of the executor on target

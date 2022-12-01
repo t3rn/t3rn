@@ -5,18 +5,19 @@ import { getEventProofs } from "../../utils"
 import createDebug from "debug"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
-import {InclusionData, RelayerEventData, RelayerEvents} from "../types"
+import { InclusionData, RelayerEventData, RelayerEvents } from "../types"
 import Estimator from "./estimator"
-import {CostEstimator, Estimate} from "./estimator/cost"
+import { CostEstimator, Estimate } from "./estimator/cost"
 
-/** Class responsible for submitting transactions to a target chain.
- * Three main tasks are handled by this class:
+/**
+ * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
+ *
  * - Build correct TX objects for the target chain
  * - Sign and submit the TXs
  * - Generate inclusion proofs for the TXs
  *
- * @group Gateways
  * @category Substrate
+ * @group Gateways
  */
 export class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
@@ -44,9 +45,10 @@ export class SubstrateRelayer extends EventEmitter {
         this.logger = logger
     }
 
-    /** Builds the TX object for the different types of SFX
+    /**
+     * Builds the TX object for the different types of SFX
      *
-     * @param sideEffect object
+     * @param sideEffect Object
      * @returns SubmittableExtrinsic tx that can be submitted to the target
      */
     buildTx(sideEffect: SideEffect): SubmittableExtrinsic {
@@ -58,11 +60,12 @@ export class SubstrateRelayer extends EventEmitter {
         }
     }
 
-    /** Submit the transaction to the target chain.
-     * This function increments the nonce locally to enable optimistic nonce increment.
-     * This allows transaction to be submitted in parallel without waiting for the previous one to be included.
-     * A successful submission will trigger inclusion proof generation.
-     * @param sfx object to execute
+    /**
+     * Submit the transaction to the target chain. This function increments the nonce locally to enable optimistic nonce increment. This
+     * allows transaction to be submitted in parallel without waiting for the previous one to be included. A successful submission will
+     * trigger inclusion proof generation.
+     *
+     * @param sfx Object to execute
      */
     async executeTx(sfx: SideEffect) {
         this.logger.info(`Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`)
@@ -109,12 +112,13 @@ export class SubstrateRelayer extends EventEmitter {
         )
     }
 
-    /** Generates the inclusion proof of an executed transaction/SFX and adds it to the SFX object
+    /**
+     * Generates the inclusion proof of an executed transaction/SFX and adds it to the SFX object
      *
-     * @param sfx object
-     * @param blockHash hash of the block in which the transaction was included
-     * @param events events emitted by the transaction
-     * @returns block number in which the transaction was included
+     * @param sfx Object
+     * @param blockHash Hash of the block in which the transaction was included
+     * @param events Events emitted by the transaction
+     * @returns Block number in which the transaction was included
      */
     async generateInclusionProof(sfx: SideEffect, blockHash: any, events: any[]): Promise<number> {
         const blockNumber = await this.getBlockNumber(blockHash)
@@ -136,20 +140,22 @@ export class SubstrateRelayer extends EventEmitter {
         return blockNumber.toNumber()
     }
 
-    /** Fetch block number from block hash
+    /**
+     * Fetch block number from block hash
      *
-     * @param hash of block
-     * @returns block number
+     * @param hash Of block
+     * @returns Block number
      */
     async getBlockNumber(hash: any) {
         return (await this.client.rpc.chain.getHeader(hash)).number
     }
 
-    /** Filter events for the event emitted by the transaction
+    /**
+     * Filter events for the event emitted by the transaction
      *
-     * @param transactionType of the transaction
-     * @param events array of events in that block
-     * @returns event emitted by the transaction
+     * @param transactionType Of the transaction
+     * @param events Array of events in that block
+     * @returns Event emitted by the transaction
      */
     getEvent(transactionType: SfxType, events: any[]) {
         const event = events.find((item) => {
@@ -164,15 +170,16 @@ export class SubstrateRelayer extends EventEmitter {
         }
     }
 
-    /** Fetch nonce of the signer
+    /**
+     * Fetch nonce of the signer
      *
-     * @param api client
-     * @param address of the signer
-     * @returns nonce of the signer
+     * @param api Client
+     * @param address Of the signer
+     * @returns Nonce of the signer
      */
     async fetchNonce(api: ApiPromise, address: string): Promise<number> {
         return parseInt((await api.rpc.system.accountNextIndex(address)).toHuman())
     }
 }
 
-export{Estimator, CostEstimator, Estimate, InclusionData}
+export { Estimator, CostEstimator, Estimate, InclusionData }

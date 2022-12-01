@@ -1,7 +1,7 @@
 import { Execution } from "./execution"
 import { Notification, NotificationType, SideEffect } from "./sideEffect"
 import Estimator from "../gateways/substrate/estimator"
-import {SubstrateRelayer} from "../gateways/substrate/relayer"
+import { SubstrateRelayer } from "../gateways/substrate/relayer"
 import { PriceEngine } from "../pricing"
 import { StrategyEngine } from "../strategy"
 import { Sdk } from "@t3rn/sdk"
@@ -15,12 +15,13 @@ import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
-/** The queue type is used to track the incoming SFXs throughout their life-cycle.
- * Each gateway has its own queue, tracking its height on the light-client.
- * When an SFX was executed, it is moved to the isConfirming queue.
- * Once the gateway has reached the required block height, the SFXs can be confirmed.
+/**
+ * The queue type is used to track the incoming SFXs throughout their life-cycle. Each gateway has its own queue, tracking its height on the
+ * light-client. When an SFX was executed, it is moved to the isConfirming queue. Once the gateway has reached the required block height,
+ * the SFXs can be confirmed.
+ *
  * @group Execution Manager
- * */
+ */
 export type Queue = {
     /** Each gateway has its own queue, which can be accessed via gateway id */
     gateways: {
@@ -43,9 +44,10 @@ export type Queue = {
     }
 }
 
-/** The ExecutionManager lies at the heart of the t3rn executor.
- * It is responsible for managing and coordinating the execution of incoming XTXs and the corresponding SFXs.
- * It processes incoming events, triggering the creation/execution/confirmation of SFXs.
+/**
+ * The ExecutionManager lies at the heart of the t3rn executor. It is responsible for managing and coordinating the execution of incoming
+ * XTXs and the corresponding SFXs. It processes incoming events, triggering the creation/execution/confirmation of SFXs.
+ *
  * @group Execution Manager
  */
 export class ExecutionManager {
@@ -190,12 +192,12 @@ export class ExecutionManager {
         })
     }
 
-    /** Add a new XTX to the execution manager.
-     * This is triggered when a new XTX is available on the circuit.
+    /**
+     * Add a new XTX to the execution manager. This is triggered when a new XTX is available on the circuit.
+     *
      * @param xtxData The SCALE encoded XTX data, as emitted by the circuit
      * @param sdk The SDK instance
-     *
-     * */
+     */
     async addXtx(xtxData: any, sdk: Sdk) {
         // create the XTX object
         const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine, this.circuitRelayer.signer.address, this.logger)
@@ -225,7 +227,8 @@ export class ExecutionManager {
         this.addLog({ msg: "XTX initialized", xtxId: xtx.id })
     }
 
-    /** Add an incoming bid to the corresponding SFX
+    /**
+     * Add an incoming bid to the corresponding SFX
      *
      * @param bidData SCALE encoded bid data, as emitted by the circuit
      */
@@ -236,9 +239,10 @@ export class ExecutionManager {
         this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)?.processBid(bidder, amt)
     }
 
-    /** Update a XTX status to ready.
-     * This is triggered by an incoming circuit event
-     * Next, this will trigger the execution of SFX the executor has won the bid on.
+    /**
+     * Update a XTX status to ready. This is triggered by an incoming circuit event Next, this will trigger the execution of SFX the
+     * executor has won the bid on.
+     *
      * @param xtxId The XTX ID
      */
     async xtxReadyForExec(xtxId: string) {
@@ -253,17 +257,16 @@ export class ExecutionManager {
             // execute
             this.relayers[sfx.target].executeTx(sfx).then()
         }
-
     }
 
     // New header range was submitted on circuit
     // update local params and check which SideEffects can be confirmed
-    /** Update the gateway height in the queue.
-     * This is triggered by an incoming circuit event.
-     * Next, this will trigger the confirmation of SFX that have been executed.
+    /**
+     * Update the gateway height in the queue. This is triggered by an incoming circuit event. Next, this will trigger the confirmation of
+     * SFX that have been executed.
      *
-     * @param gatewayId id of the gateway
-     * @param blockHeight the latest block height
+     * @param gatewayId Id of the gateway
+     * @param blockHeight The latest block height
      */
     updateGatewayHeight(gatewayId: string, blockHeight: number) {
         this.addLog({
@@ -280,12 +283,12 @@ export class ExecutionManager {
     }
 
     // checks which executed SideEffects can be confirmed on circuit
-    /** Trigger the confirmation of SFX that have been executed.
-     * When the gateway height is updated, this will check the isConfirming queue for the gateway.
-     * The confirmation of any waiting SFXs is now triggered.
-     * Requirement for the confirmation is that the circuit has received the corresponding headers,
-     * the SFXs where included in.
-     * @param gatewayId of the updated gateway
+    /**
+     * Trigger the confirmation of SFX that have been executed. When the gateway height is updated, this will check the isConfirming queue
+     * for the gateway. The confirmation of any waiting SFXs is now triggered. Requirement for the confirmation is that the circuit has
+     * received the corresponding headers, the SFXs where included in.
+     *
+     * @param gatewayId Of the updated gateway
      */
     async executeConfirmationQueue(gatewayId: string) {
         // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
@@ -344,11 +347,12 @@ export class ExecutionManager {
     }
 
     // updates queue and sfx state after confirmation batch was submitted. This always has the same target
-    /** Update the queue and SFX state after a confirmation batch was submitted.
+    /**
+     * Update the queue and SFX state after a confirmation batch was submitted.
      *
-     * @param sfxs array of sfx objects
-     * @param batchBlocks array of block heights of the sfxs where confirmed for. Needed for cleaning up the queue
-     * @param gatewayId id of the gateway
+     * @param sfxs Array of sfx objects
+     * @param batchBlocks Array of block heights of the sfxs where confirmed for. Needed for cleaning up the queue
+     * @param gatewayId Id of the gateway
      */
     processConfirmationBatch(sfxs: SideEffect[], batchBlocks: string[], gatewayId: string) {
         // remove from queue
@@ -363,9 +367,10 @@ export class ExecutionManager {
         }
     }
 
-    /** Initialize SFX event listeners.
+    /**
+     * Initialize SFX event listeners.
      *
-     * @param sfx object of the sfx
+     * @param sfx Object of the sfx
      */
     initSfxListeners(sfx: SideEffect) {
         sfx.on("Notification", (notification: Notification) => {
@@ -386,9 +391,10 @@ export class ExecutionManager {
         })
     }
 
-    /** Gather and add the required risk/reward parameters for a new SFX.
+    /**
+     * Gather and add the required risk/reward parameters for a new SFX.
      *
-     * @param sfx the sfx object
+     * @param sfx The sfx object
      */
     async addRiskRewardParameters(sfx: SideEffect) {
         // get txCost on target
@@ -405,10 +411,10 @@ export class ExecutionManager {
         sfx.setRiskRewardParameters(txCostSubject, nativeAssetPriceSubject, txOutputPriceSubject, rewardAssetPriceSubject)
     }
 
-    /** Update XTX status after it was dropped on circuit.
-     * Cleans up queue and updates the SFXs
+    /**
+     * Update XTX status after it was dropped on circuit. Cleans up queue and updates the SFXs
      *
-     * @param xtxId id of XTX that was dropped
+     * @param xtxId Id of XTX that was dropped
      */
     droppedAtBidding(xtxId: string) {
         const xtx = this.xtx[xtxId]
@@ -421,10 +427,10 @@ export class ExecutionManager {
         }
     }
 
-    /** Update XTX status after it was reverted on circuit.
-     * Cleans up queue and updates the SFXs
+    /**
+     * Update XTX status after it was reverted on circuit. Cleans up queue and updates the SFXs
      *
-     * @param xtxId id of XTX that was reverted
+     * @param xtxId Id of XTX that was reverted
      */
     revertTimeout(xtxId: string) {
         const xtx = this.xtx[xtxId]

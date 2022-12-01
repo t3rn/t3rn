@@ -6,6 +6,7 @@ import { Execution } from "../executionManager/execution"
 
 /**
  * Enum for the different types of events emitted by the relayer
+ *
  * @group t3rn Circuit
  */
 export enum ListenerEvents {
@@ -29,6 +30,7 @@ export enum ListenerEvents {
 
 /**
  * Type for transporting events
+ *
  * @group t3rn Circuit
  */
 export type ListenerEventData = {
@@ -36,9 +38,7 @@ export type ListenerEventData = {
     data: any
 }
 
-/**
- * @group t3rn Circuit
- */
+/** @group t3rn Circuit */
 export class CircuitListener extends EventEmitter {
     client: ApiPromise
 

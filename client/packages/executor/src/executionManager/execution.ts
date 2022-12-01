@@ -10,13 +10,15 @@ import { Sdk } from "@t3rn/sdk"
 import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"
 
-/** Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.
+/**
+ * Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.
+ *
  * @group Execution Manager
- * */
+ */
 export class Execution extends EventEmitter {
     /** The current status of the XTX. */
     status: XtxStatus = XtxStatus.PendingBidding
-    /** SCALE encoded XTX  */
+    /** SCALE encoded XTX */
     xtxId: H256
     /** XTX id as String */
     id: string
@@ -34,7 +36,8 @@ export class Execution extends EventEmitter {
     circuitSignerAddress: string
     logger: any
 
-    /** Creates a new Execution instance.
+    /**
+     * Creates a new Execution instance.
      *
      * @param eventData The event data of the XTX creation event.
      * @param sdk The @t3rn/sdk instance.
@@ -62,10 +65,11 @@ export class Execution extends EventEmitter {
         this.currentPhase = 0
     }
 
-    /** creates the new SideEffect instances, maps them locally and generates the phases as done in circuit.
+    /**
+     * Creates the new SideEffect instances, maps them locally and generates the phases as done in circuit.
      *
-     * @param sideEffects array of SCALE encoded SFXs
-     * @param ids array of SCALE encoded SFX ids
+     * @param sideEffects Array of SCALE encoded SFXs
+     * @param ids Array of SCALE encoded SFX ids
      * @param sdk The @t3rn/sdk instance.
      * @param strategyEngine The strategy engine instance.
      * @param biddingEngine The bidding engine instance.
@@ -123,14 +127,14 @@ export class Execution extends EventEmitter {
         }
 
         this.logger.info(`Ready XTX: ${this.humanId}`)
-        this.addLog({msg: "Ready XTX"})
+        this.addLog({ msg: "Ready XTX" })
     }
 
     /** Update XTX status to complete */
     completed() {
         this.status = XtxStatus.FinishedAllSteps
         this.logger.info(`Completed XTX: ✨${this.humanId}✨`)
-        this.addLog({msg: "Completed XTX"})
+        this.addLog({ msg: "Completed XTX" })
     }
 
     /** Update XTX and all its SFX status to ready. */
@@ -154,9 +158,10 @@ export class Execution extends EventEmitter {
         this.addLog({ msg: "Revert XTX", xtxId: this.id })
     }
 
-    /** Returns the sfxs that ready to execute.
-     * This depends on the SFX status, if the executor has won the bid and if the SFX is in the current phase.
-     * @returns {SideEffect[]} array of SideEffect instances that are ready
+    /**
+     * Returns the sfxs that ready to execute. This depends on the SFX status, if the executor has won the bid and if the SFX is in the current phase.
+     *
+     * @returns {SideEffect[]} Array of SideEffect instances that are ready
      */
     getReadyToExecute(): SideEffect[] {
         let result: SideEffect[] = []
