@@ -8,8 +8,8 @@ import { Sdk } from "@t3rn/sdk"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 const fs = require("fs")
 
-/** Class responsible for submitting any type of transaction to the circuit.
- * All communication with the circuit is done through the circuit relayer.
+/**
+ * Class responsible for submitting any type of transaction to the circuit. All communication with the circuit is done through the circuit relayer.
  *
  * @group t3rn Circuit
  */
@@ -31,10 +31,11 @@ export class CircuitRelayer extends EventEmitter {
         this.signer = keyring.addFromUri("//Executor//default")
     }
 
-    /** Builds and submits a sfxBid to the circuit
+    /**
+     * Builds and submits a sfxBid to the circuit
      *
-     * @param sfxId the bid is for
-     * @param amount the bidding amount, as integer in the reward asset
+     * @param sfxId The bid is for
+     * @param amount The bidding amount, as integer in the reward asset
      */
     async bidSfx(sfxId: string, amount: BN): Promise<string> {
         const encodedSfxId = this.api.createType("Hash", sfxId)
@@ -43,11 +44,11 @@ export class CircuitRelayer extends EventEmitter {
         return this.sdk.circuit.tx.signAndSendSafe(tx)
     }
 
-    /** Builds and submits a SFX confirmation tx to the circuit.
-     * These confirmations are submitted as TX batch
+    /**
+     * Builds and submits a SFX confirmation tx to the circuit. These confirmations are submitted as TX batch
      *
-     * @param sfxs array of SideEffect objects that should be confirmed
-     * @returns the block height of the included tx
+     * @param sfxs Array of SideEffect objects that should be confirmed
+     * @returns The block height of the included tx
      */
     async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
         const txs: SubmittableExtrinsic[] = sfxs.map((sfx) => this.createConfirmTx(sfx))
@@ -60,9 +61,10 @@ export class CircuitRelayer extends EventEmitter {
         }
     }
 
-    /** Builds the actual confirm tx for a given SideEffect
+    /**
+     * Builds the actual confirm tx for a given SideEffect
      *
-     * @param sfx the SideEffect to confirm
+     * @param sfx The SideEffect to confirm
      */
     createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
         const inclusionData = this.api.createType("InclusionData", sfx.inclusionData)

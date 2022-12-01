@@ -3,7 +3,7 @@ import { Sdk } from "@t3rn/sdk"
 import { Keyring } from "@polkadot/api"
 require("dotenv").config()
 import "@t3rn/types"
-import {SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionData} from "./gateways/substrate/relayer"
+import { SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionData } from "./gateways/substrate/relayer"
 import { ExecutionManager, Queue } from "./executionManager"
 import { ApiPromise } from "@polkadot/api"
 import config from "../config/config"
@@ -31,7 +31,9 @@ const logger = pino(
     // pino.destination(`${__dirname}/logger.log`) // remove comment to export to file
 )
 
-/** Class used for initializing the executor
+/**
+ * Class used for initializing the executor
+ *
  * @group Utils
  */
 class InstanceManager {
