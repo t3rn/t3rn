@@ -11,6 +11,10 @@ export type RelayerEventData = {
     blockNumber: number
 }
 
+/** Type for creating the inclusion proof for a given SFX in substrate
+ * @group Gateways
+ * @category Substrate
+ */
 export type InclusionData = {
     encoded_payload: string,
     proof: {

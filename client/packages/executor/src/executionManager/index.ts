@@ -1,7 +1,7 @@
 import { Execution } from "./execution"
 import { Notification, NotificationType, SideEffect } from "./sideEffect"
 import Estimator from "../gateways/substrate/estimator"
-import SubstrateRelayer from "../gateways/substrate/relayer"
+import {SubstrateRelayer} from "../gateways/substrate/relayer"
 import { PriceEngine } from "../pricing"
 import { StrategyEngine } from "../strategy"
 import { Sdk } from "@t3rn/sdk"
@@ -19,8 +19,9 @@ import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
  * Each gateway has its own queue, tracking its height on the light-client.
  * When an SFX was executed, it is moved to the isConfirming queue.
  * Once the gateway has reached the required block height, the SFXs can be confirmed.
+ * @group Execution Manager
  * */
-type Queue = {
+export type Queue = {
     /** Each gateway has its own queue, which can be accessed via gateway id */
     gateways: {
         /** Stores the latest block height know by the corresponding circuit light client */
@@ -45,6 +46,7 @@ type Queue = {
 /** The ExecutionManager lies at the heart of the t3rn executor.
  * It is responsible for managing and coordinating the execution of incoming XTXs and the corresponding SFXs.
  * It processes incoming events, triggering the creation/execution/confirmation of SFXs.
+ * @group Execution Manager
  */
 export class ExecutionManager {
     // we map the current state in the queue

@@ -1,8 +1,12 @@
 import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
-import SubstrateRelayer from "../relayer";
+import {SubstrateRelayer} from "../relayer";
 import { BehaviorSubject } from 'rxjs';
 
-type Estimate = {
+/** Type used for storing an TX cost estimate
+ * @group Gateways
+ * @category Substrate
+ */
+export type Estimate = {
 	tx: SubmittableExtrinsic,
 	costSubject: BehaviorSubject<number>
 }
@@ -10,8 +14,11 @@ type Estimate = {
 /** Class used for estimating the TX cost on the target chain.
  * 	It makes use of substrates ts.estimateFee() method to estimate the cost of the TX.
  * 	It is also a producer, able to trigger the re-evaluation of a given SFX. Currently, this is triggered every 30s
+ *
+ * @group Gateways
+ * @category Substrate
  */
-export default class CostEstimator {
+export class CostEstimator {
 	relayer: SubstrateRelayer;
 	//ToDo we need to stop tracking when the SFX is completed
 	/** Map containg the estimates for each SFX */

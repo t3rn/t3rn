@@ -10,7 +10,9 @@ import { Sdk } from "@t3rn/sdk"
 import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"
 
-/** Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.*/
+/** Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.
+ * @group Execution Manager
+ * */
 export class Execution extends EventEmitter {
     /** The current status of the XTX. */
     status: XtxStatus = XtxStatus.PendingBidding

@@ -6,14 +6,19 @@ import createDebug from "debug"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
 import {InclusionData, RelayerEventData, RelayerEvents} from "../types"
+import Estimator from "./estimator"
+import {CostEstimator, Estimate} from "./estimator/cost"
 
 /** Class responsible for submitting transactions to a target chain.
  * Three main tasks are handled by this class:
  * - Build correct TX objects for the target chain
  * - Sign and submit the TXs
  * - Generate inclusion proofs for the TXs
+ *
+ * @group Gateways
+ * @category Substrate
  */
-export default class SubstrateRelayer extends EventEmitter {
+export class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
 
     /** Target chain client */
@@ -169,3 +174,5 @@ export default class SubstrateRelayer extends EventEmitter {
         return parseInt((await api.rpc.system.accountNextIndex(address)).toHuman())
     }
 }
+
+export{Estimator, CostEstimator, Estimate, InclusionData}

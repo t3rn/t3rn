@@ -19,6 +19,7 @@ export const EventMapper = ["Transfer", "MultiTransfer"]
 /**
  * Type used for representing a Txoutput
  * @typedef {Object} TxOutput
+ * @group Execution Manager
  */
 export type TxOutput = {
     /** output amount as integer */
@@ -29,15 +30,26 @@ export type TxOutput = {
     asset: string
 }
 
+/** Event notifications
+ * @group Execution Manager
+ */
 export enum NotificationType {
     SubmitBid,
 }
 
+/** Status for executing a side effect
+ * @group Execution Manager
+ */
 export enum TxStatus {
+    /** The execution is currently pending, meaning another instance is in progress */
     Pending,
+    /** The execution ready to be submitted */
     Ready,
 }
 
+/** Event notification type
+ * @group Execution Manager
+ */
 export type Notification = {
     type: NotificationType
     payload: any
@@ -45,6 +57,7 @@ export type Notification = {
 
 /**
  * Class used for tracking the state of a side effect. It contains all needed data and helper functions to go through the lifecycle of a XTX.
+ * @group Execution Manager
  */
 export class SideEffect extends EventEmitter {
     /** The phase in which the SFX is part of. First Escrow, then Optimistic */

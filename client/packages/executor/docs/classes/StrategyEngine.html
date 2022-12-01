@@ -15,12 +15,29 @@
 <li><a href="../modules.html">executor</a></li>
 <li><a href="StrategyEngine.html">StrategyEngine</a></li></ul>
 <h1>Class StrategyEngine</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>The strategy engine is used to decide if a SFX should be executed or not.
+The decision is seperated into two parts:</p>
+<p>XTX Strategy:
+Before the strategy engine evaluates individual SFXs, it evaluates the XTX as a whole.
+To complete a XTX, all SFXs must be executed and confirmed.
+For this reason the XTX strategy can be used to evaluate a set of constraints for each SFX in the XTX.
+If any of the SFXs in the XTX fail the XTX strategy, the XTX will be rejected and not further tracked.</p>
+<p>For example, this can be useful for ensuring every SFX as a certain amount of insurance.
+XTXs containing SFXs with low insurance risk being reverted, as the fine for not completing the SFX is potentially too low.
+Executors can use the parameters provided in the XtXStrategy to enforce XTX-wide constraints.</p>
+<p>SFX Strategy:
+If an XTX passes the XTX strategy, the strategy engine will evaluate each SFX individually.
+To goal here is to determine if a SFX passes all constraints set by the SFX strategy.
+If so, the executor will then submit a bid for the SFX.
+The bid amount is <em>not</em> determined by the strategy engine, but by the bidding engine.</p>
+</div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
 <li><span class="target">StrategyEngine</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L26">src/strategy/index.ts:26</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L62">src/strategy/index.ts:62</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -37,8 +54,7 @@
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Methods</h3>
-<div class="tsd-index-list"><a href="StrategyEngine.html#computeFeeShare" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-2048-path"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)" id="icon-2048-text"></path></svg><span>compute<wbr/>Fee<wbr/>Share</span></a>
-<a href="StrategyEngine.html#computeYield" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>compute<wbr/>Yield</span></a>
+<div class="tsd-index-list"><a href="StrategyEngine.html#computeShare" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-2048-path"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)" id="icon-2048-text"></path></svg><span>compute<wbr/>Share</span></a>
 <a href="StrategyEngine.html#evaluateSfx" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>evaluate<wbr/>Sfx</span></a>
 <a href="StrategyEngine.html#evaluateXtx" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>evaluate<wbr/>Xtx</span></a>
 <a href="StrategyEngine.html#getMinProfitUsd" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Min<wbr/>Profit<wbr/>Usd</span></a>
@@ -60,57 +76,54 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <a href="StrategyEngine.html" class="tsd-signature-type" data-tsd-kind="Class">StrategyEngine</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L35">src/strategy/index.ts:35</a></li></ul></aside></li></ul></section></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L71">src/strategy/index.ts:71</a></li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="sfxStrategies" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>sfx<wbr/>Strategies</span><a href="#sfxStrategies" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">sfx<wbr/>Strategies<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[target: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SfxStrategy</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></div>
+<div class="tsd-signature">sfx<wbr/>Strategies<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[target: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></div>
 <div class="tsd-type-declaration">
 <h4>Type declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter-index-signature">
-<h5><span class="tsd-signature-symbol">[</span>target: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">SfxStrategy</span></h5></li></ul></div><aside class="tsd-sources">
+<h5><span class="tsd-signature-symbol">[</span>target: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a></h5></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L27">src/strategy/index.ts:27</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L63">src/strategy/index.ts:63</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="xtxStrategies" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>xtx<wbr/>Strategies</span><a href="#xtxStrategies" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">xtx<wbr/>Strategies<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[target: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">XtxStrategy</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></div>
+<div class="tsd-signature">xtx<wbr/>Strategies<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[target: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><a href="../types/XtxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">XtxStrategy</a><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></div>
 <div class="tsd-type-declaration">
 <h4>Type declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter-index-signature">
-<h5><span class="tsd-signature-symbol">[</span>target: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">XtxStrategy</span></h5></li></ul></div><aside class="tsd-sources">
+<h5><span class="tsd-signature-symbol">[</span>target: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><a href="../types/XtxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">XtxStrategy</a></h5></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L31">src/strategy/index.ts:31</a></li></ul></aside></section></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L67">src/strategy/index.ts:67</a></li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="computeFeeShare" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>compute<wbr/>Fee<wbr/>Share</span><a href="#computeFeeShare" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="computeShare" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>compute<wbr/>Share</span><a href="#computeShare" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="computeFeeShare.computeFeeShare-1">compute<wbr/>Fee<wbr/>Share<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><a href="#computeFeeShare.computeFeeShare-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="computeShare.computeShare-1">compute<wbr/>Share<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, type<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><a href="#computeShare.computeShare-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Computes different types of shares for a given SFX.</p>
+
+<h3>Returns</h3><p>share of the given type</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L159">src/strategy/index.ts:159</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="computeYield" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>compute<wbr/>Yield</span><a href="#computeYield" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="computeYield.computeYield-1">compute<wbr/>Yield<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><a href="#computeYield.computeYield-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>object of SFX compute</p>
+</div></li>
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li></ul></div>
+<h5>type: <span class="tsd-signature-type">string</span></h5>
+<div class="tsd-comment tsd-typography"><p>fee, insurance or yield</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L155">src/strategy/index.ts:155</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L244">src/strategy/index.ts:244</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="evaluateSfx" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>evaluate<wbr/>Sfx</span><a href="#evaluateSfx" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -127,7 +140,7 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L79">src/strategy/index.ts:79</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L115">src/strategy/index.ts:115</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="evaluateXtx" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>evaluate<wbr/>Xtx</span><a href="#evaluateXtx" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -145,20 +158,26 @@ If the XTX fails the evaluation, the XTX will be rejected, preventing any bids t
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L62">src/strategy/index.ts:62</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L98">src/strategy/index.ts:98</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="getMinProfitUsd" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get<wbr/>Min<wbr/>Profit<wbr/>Usd</span><a href="#getMinProfitUsd" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="getMinProfitUsd.getMinProfitUsd-1">get<wbr/>Min<wbr/>Profit<wbr/>Usd<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><a href="#getMinProfitUsd.getMinProfitUsd-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Returns minProfitUsd constraint from the SFX strategy for a given target.</p>
+
+<h3>Returns</h3><p>minProfitUsd constraint from the SFX strategy for a given target</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li></ul></div>
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>object of SFX to be evaluated</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L93">src/strategy/index.ts:93</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L134">src/strategy/index.ts:134</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="loadStrategies" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>load<wbr/>Strategies</span><a href="#loadStrategies" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -168,112 +187,168 @@ If the XTX fails the evaluation, the XTX will be rejected, preventing any bids t
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L40">src/strategy/index.ts:40</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L76">src/strategy/index.ts:76</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="maxAssetCostRejected" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>max<wbr/>Asset<wbr/>Cost<wbr/>Rejected</span><a href="#maxAssetCostRejected" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="maxAssetCostRejected.maxAssetCostRejected-1">max<wbr/>Asset<wbr/>Cost<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SfxStrategy</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#maxAssetCostRejected.maxAssetCostRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="maxAssetCostRejected.maxAssetCostRejected-1">max<wbr/>Asset<wbr/>Cost<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#maxAssetCostRejected.maxAssetCostRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Evaluates the maxAssetCost constraint from the SFX strategy for a given SFX.</p>
+
+<h3>Returns</h3><p>error if the maxAssetCost constraint is not met</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li>
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>side effect to be evaluated</p>
+</div></li>
 <li>
-<h5>strategy: <span class="tsd-signature-type">SfxStrategy</span></h5></li></ul></div>
+<h5>strategy: <a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a></h5>
+<div class="tsd-comment tsd-typography"><p>strategy for the specific target</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L130">src/strategy/index.ts:130</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L201">src/strategy/index.ts:201</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="maxTxFeeShareRejected" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>max<wbr/>Tx<wbr/>Fee<wbr/>Share<wbr/>Rejected</span><a href="#maxTxFeeShareRejected" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="maxTxFeeShareRejected.maxTxFeeShareRejected-1">max<wbr/>Tx<wbr/>Fee<wbr/>Share<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SfxStrategy</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#maxTxFeeShareRejected.maxTxFeeShareRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="maxTxFeeShareRejected.maxTxFeeShareRejected-1">max<wbr/>Tx<wbr/>Fee<wbr/>Share<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#maxTxFeeShareRejected.maxTxFeeShareRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Evaluates the maxTxFeeShare constraint from the SFX strategy for a given SFX.</p>
+
+<h3>Returns</h3><p>error if the maxTxFeeShare constraint is not met</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li>
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>side effect to be evaluated</p>
+</div></li>
 <li>
-<h5>strategy: <span class="tsd-signature-type">SfxStrategy</span></h5></li></ul></div>
+<h5>strategy: <a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a></h5>
+<div class="tsd-comment tsd-typography"><p>strategy for the specific target</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L122">src/strategy/index.ts:122</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L187">src/strategy/index.ts:187</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="maxTxFeesRejected" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>max<wbr/>Tx<wbr/>Fees<wbr/>Rejected</span><a href="#maxTxFeesRejected" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="maxTxFeesRejected.maxTxFeesRejected-1">max<wbr/>Tx<wbr/>Fees<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SfxStrategy</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#maxTxFeesRejected.maxTxFeesRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="maxTxFeesRejected.maxTxFeesRejected-1">max<wbr/>Tx<wbr/>Fees<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#maxTxFeesRejected.maxTxFeesRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Evaluates the maxTxFeesUsd constraint from the SFX strategy for a given SFX.</p>
+
+<h3>Returns</h3><p>error if the maxTxFeesUsd constraint is not met</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li>
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>side effect to be evaluated</p>
+</div></li>
 <li>
-<h5>strategy: <span class="tsd-signature-type">SfxStrategy</span></h5></li></ul></div>
+<h5>strategy: <a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a></h5>
+<div class="tsd-comment tsd-typography"><p>strategy for the specific target</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L114">src/strategy/index.ts:114</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L173">src/strategy/index.ts:173</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="minInsuranceAmountRejected" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>min<wbr/>Insurance<wbr/>Amount<wbr/>Rejected</span><a href="#minInsuranceAmountRejected" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="minInsuranceAmountRejected.minInsuranceAmountRejected-1">min<wbr/>Insurance<wbr/>Amount<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">XtxStrategy</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#minInsuranceAmountRejected.minInsuranceAmountRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="minInsuranceAmountRejected.minInsuranceAmountRejected-1">min<wbr/>Insurance<wbr/>Amount<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><a href="../types/XtxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">XtxStrategy</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#minInsuranceAmountRejected.minInsuranceAmountRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Evaluates the minInsuranceAmountUsd constraint from the SFX strategy for a given SFX.</p>
+
+<h3>Returns</h3><p>error if the minInsuranceAmountUsd constraint is not met</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li>
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>side effect to be evaluated</p>
+</div></li>
 <li>
-<h5>strategy: <span class="tsd-signature-type">XtxStrategy</span></h5></li></ul></div>
+<h5>strategy: <a href="../types/XtxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">XtxStrategy</a></h5>
+<div class="tsd-comment tsd-typography"><p>strategy for the specific target</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L138">src/strategy/index.ts:138</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L215">src/strategy/index.ts:215</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="minInsuranceShareRejected" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>min<wbr/>Insurance<wbr/>Share<wbr/>Rejected</span><a href="#minInsuranceShareRejected" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="minInsuranceShareRejected.minInsuranceShareRejected-1">min<wbr/>Insurance<wbr/>Share<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">XtxStrategy</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#minInsuranceShareRejected.minInsuranceShareRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="minInsuranceShareRejected.minInsuranceShareRejected-1">min<wbr/>Insurance<wbr/>Share<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><a href="../types/XtxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">XtxStrategy</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#minInsuranceShareRejected.minInsuranceShareRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Evaluates the minInsuranceAmountUsd constraint from the SFX strategy for a given SFX.</p>
+
+<h3>Returns</h3><p>error if the minInsuranceAmountUsd constraint is not met</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li>
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>side effect to be evaluated</p>
+</div></li>
 <li>
-<h5>strategy: <span class="tsd-signature-type">XtxStrategy</span></h5></li></ul></div>
+<h5>strategy: <a href="../types/XtxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">XtxStrategy</a></h5>
+<div class="tsd-comment tsd-typography"><p>strategy for the specific target</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L146">src/strategy/index.ts:146</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L229">src/strategy/index.ts:229</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="minProfitRejected" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>min<wbr/>Profit<wbr/>Rejected</span><a href="#minProfitRejected" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="minProfitRejected.minProfitRejected-1">min<wbr/>Profit<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SfxStrategy</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#minProfitRejected.minProfitRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="minProfitRejected.minProfitRejected-1">min<wbr/>Profit<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#minProfitRejected.minProfitRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Evaluates the minProfitUsd constraint from the SFX strategy for a given SFX.</p>
+
+<h3>Returns</h3><p>error if the minProfitUsd constraint is not met</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li>
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>side effect to be evaluated</p>
+</div></li>
 <li>
-<h5>strategy: <span class="tsd-signature-type">SfxStrategy</span></h5></li></ul></div>
+<h5>strategy: <a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a></h5>
+<div class="tsd-comment tsd-typography"><p>strategy for the specific target</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L98">src/strategy/index.ts:98</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L145">src/strategy/index.ts:145</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="minYieldRejected" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>min<wbr/>Yield<wbr/>Rejected</span><a href="#minYieldRejected" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="minYieldRejected.minYieldRejected-1">min<wbr/>Yield<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sideEffect<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SfxStrategy</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#minYieldRejected.minYieldRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="minYieldRejected.minYieldRejected-1">min<wbr/>Yield<wbr/>Rejected<span class="tsd-signature-symbol">(</span>sfx<span class="tsd-signature-symbol">: </span><a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a>, strategy<span class="tsd-signature-symbol">: </span><a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span><a href="#minYieldRejected.minYieldRejected-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Evaluates the minYield constraint from the SFX strategy for a given SFX.</p>
+
+<h3>Returns</h3><p>error if the minYield constraint is not met</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>sideEffect: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5></li>
+<h5>sfx: <a href="SideEffect.html" class="tsd-signature-type" data-tsd-kind="Class">SideEffect</a></h5>
+<div class="tsd-comment tsd-typography"><p>side effect to be evaluated</p>
+</div></li>
 <li>
-<h5>strategy: <span class="tsd-signature-type">SfxStrategy</span></h5></li></ul></div>
+<h5>strategy: <a href="../types/SfxStrategy.html" class="tsd-signature-type" data-tsd-kind="Type alias">SfxStrategy</a></h5>
+<div class="tsd-comment tsd-typography"><p>strategy for the specific target</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Error</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/248c8569/client/packages/executor/src/strategy/index.ts#L106">src/strategy/index.ts:106</a></li></ul></aside></li></ul></section></section></div>
+<li>Defined in <a href="https://github.com/t3rn/t3rn/blob/f37265f8/client/packages/executor/src/strategy/index.ts#L159">src/strategy/index.ts:159</a></li></ul></aside></li></ul></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
@@ -302,8 +377,7 @@ If the XTX fails the evaluation, the XTX will be rejected, preventing any bids t
 <li class="tsd-kind-constructor tsd-parent-kind-class"><a href="StrategyEngine.html#constructor" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-512-path"></use><use href="#icon-512-text"></use></svg>constructor</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="StrategyEngine.html#sfxStrategies" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>sfx<wbr/>Strategies</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="StrategyEngine.html#xtxStrategies" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>xtx<wbr/>Strategies</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="StrategyEngine.html#computeFeeShare" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>compute<wbr/>Fee<wbr/>Share</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="StrategyEngine.html#computeYield" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>compute<wbr/>Yield</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="StrategyEngine.html#computeShare" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>compute<wbr/>Share</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="StrategyEngine.html#evaluateSfx" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>evaluate<wbr/>Sfx</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="StrategyEngine.html#evaluateXtx" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>evaluate<wbr/>Xtx</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="StrategyEngine.html#getMinProfitUsd" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Min<wbr/>Profit<wbr/>Usd</a></li>

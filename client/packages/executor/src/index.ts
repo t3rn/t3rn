@@ -3,16 +3,16 @@ import { Sdk } from "@t3rn/sdk"
 import { Keyring } from "@polkadot/api"
 require("dotenv").config()
 import "@t3rn/types"
-import SubstrateRelayer from "./gateways/substrate/relayer"
-import { ExecutionManager } from "./executionManager/execMan"
+import {SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionData} from "./gateways/substrate/relayer"
+import { ExecutionManager, Queue } from "./executionManager"
 import { ApiPromise } from "@polkadot/api"
 import config from "../config/config"
 import { BiddingEngine } from "./bidding"
-import { PriceEngine } from "./pricing"
-import { StrategyEngine } from "./strategy"
-import { SideEffect } from "./executionManager/sideEffect"
+import { PriceEngine, CoingeckoPricing } from "./pricing"
+import { StrategyEngine, SfxStrategy, XtxStrategy } from "./strategy"
+import { SideEffect, Notification, NotificationType, TxOutput, TxStatus } from "./executionManager/sideEffect"
 import { Execution } from "./executionManager/execution"
-import { CircuitListener } from "./circuit/listener"
+import { CircuitListener, ListenerEvents, ListenerEventData } from "./circuit/listener"
 import { CircuitRelayer } from "./circuit/relayer"
 // @ts-ignore
 import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
@@ -31,6 +31,9 @@ const logger = pino(
     // pino.destination(`${__dirname}/logger.log`) // remove comment to export to file
 )
 
+/** Class used for initializing the executor
+ * @group Utils
+ */
 class InstanceManager {
     circuitClient: ApiPromise
     executionManager: ExecutionManager
@@ -56,15 +59,29 @@ class InstanceManager {
 }
 
 export {
-    ExecutionManager,
-    SubstrateRelayer,
     InstanceManager,
-    BiddingEngine,
-    StrategyEngine,
-    PriceEngine,
+    ExecutionManager,
+    Queue,
     Execution,
     SideEffect,
+    Notification,
+    NotificationType,
+    TxOutput,
+    TxStatus,
+    SubstrateRelayer,
+    Estimator,
+    CostEstimator,
+    Estimate,
+    InclusionData,
+    BiddingEngine,
+    StrategyEngine,
+    SfxStrategy,
+    XtxStrategy,
+    PriceEngine,
+    CoingeckoPricing,
     CircuitListener,
+    ListenerEvents,
+    ListenerEventData,
     CircuitRelayer,
 }
 

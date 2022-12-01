@@ -11,6 +11,7 @@ const fs = require("fs")
 /** Class responsible for submitting any type of transaction to the circuit.
  * All communication with the circuit is done through the circuit relayer.
  *
+ * @group t3rn Circuit
  */
 export class CircuitRelayer extends EventEmitter {
     static debug = createDebug("circuit-relayer")

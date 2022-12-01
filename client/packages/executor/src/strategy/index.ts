@@ -5,16 +5,18 @@ import { Execution } from "../executionManager/execution"
 /** Type used for describing XTX strategies
  * When an XTX is created, the XTX strategy will be evaluated.
  * If the XTX fails the evaluation, the XTX will be rejected, preventing any bids to be submitted
+ * @group Strategy
  */
-type XtxStrategy = {
+export type XtxStrategy = {
     minInsuranceAmountUsd: number
     minInsuranceShare: number // minInsuranceAmountUsd / maxProfit
 }
 
 /** Type used for describing SFX strategies.
  * These are used to determine the profitability of a given SFX, deciding if a bid should be submitted.
+ * @group Strategy
  */
-type SfxStrategy = {
+export type SfxStrategy = {
     /** Minimum profit in USD that a SFX should have to be considered profitable.*/
     minProfitUsd: number
     /** A percentage value for the minimum yield that a SFX should have
@@ -55,6 +57,7 @@ type SfxStrategy = {
  * If so, the executor will then submit a bid for the SFX.
  * The bid amount is _not_ determined by the strategy engine, but by the bidding engine.
  *
+ * @group Strategy
  */
 export class StrategyEngine {
     sfxStrategies: {
