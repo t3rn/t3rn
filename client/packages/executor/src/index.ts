@@ -6,7 +6,7 @@ import "@t3rn/types"
 import { SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionData } from "./gateways/substrate/relayer"
 import { ExecutionManager, Queue } from "./executionManager"
 import { ApiPromise } from "@polkadot/api"
-import config from "../config/config"
+import { config, Config, Gateway, Circuit, Strategy } from "../config/config"
 import { BiddingEngine } from "./bidding"
 import { PriceEngine, CoingeckoPricing } from "./pricing"
 import { StrategyEngine, SfxStrategy, XtxStrategy } from "./strategy"
@@ -85,6 +85,10 @@ export {
     ListenerEvents,
     ListenerEventData,
     CircuitRelayer,
+    Config,
+    Circuit,
+    Gateway,
+    Strategy,
 }
 
 async function main() {
