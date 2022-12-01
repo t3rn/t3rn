@@ -19,9 +19,9 @@ pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
 
 use codec::Decode;
+use frame_system::EnsureRoot;
 use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
-
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
@@ -47,16 +47,13 @@ use frame_support::{
     },
     PalletId,
 };
-use frame_system::{
-    limits::{BlockLength, BlockWeights},
-    EnsureRoot,
-};
+use frame_system::limits::{BlockLength, BlockWeights};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::{monetary::MILLIT3RN, ReadLatestGatewayHeight};
+use t3rn_primitives::monetary::MILLIT3RN;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
@@ -76,11 +73,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 2,
-    spec_version: 3,
-    impl_version: 1,
+    authoring_version: 3,
+    spec_version: 4,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 2,
+    transaction_version: 3,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -108,7 +105,7 @@ const MT3RN: Balance = MILLIT3RN as Balance;
 
 parameter_types! {
     pub const BasicDeposit: Balance = 5 * MT3RN;
-    pub const FieldDeposit: Balance = 1 * MT3RN;
+    pub const FieldDeposit: Balance = MT3RN;
     pub const SubAccountDeposit: Balance = 2 * MT3RN;
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
@@ -167,8 +164,6 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-        // Circuit
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
@@ -190,6 +185,9 @@ construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier::{
             Pallet, Storage
         } = 129,
+
+        // Util - this should be system support
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

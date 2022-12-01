@@ -1,0 +1,77 @@
+name: Perform zombienet tests
+
+env:
+  RUST_BACKTRACE: full
+  RUSTC_WRAPPER: sccache
+  SCCACHE_CACHE_SIZE: 3G
+  SCCACHE_DIR: /home/sysi-epyc/.cache/sccache # Linux runner only, shouldnt affect this workflow
+  # SCCACHE_RECACHE: 1 # Uncomment this to clear cache, then comment it back out
+on:
+  pull_request:
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/zombienet/*/*.feature"
+      - "**/zombienet/Makefile"
+      - ".github/workflows/smoke-test.yml"
+      - ".git/modules/*/HEAD"
+
+jobs:
+  smoke-test:
+    runs-on: ["self-hosted", "ep1c"]
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+
+      - name: ⚙️ Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-06-17
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+
+      - name: 🕒 Cache Rust binaries and packages
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: "true"
+
+      - name: 🕒 Cache binaries
+        uses: actions/cache@v2
+        id: cache-bin
+        with:
+          path: |
+            bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('tests/zombienet/Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-bin-
+
+      - name: 🕒 Save sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: ${{ env.SCCACHE_DIR }}
+          key: ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-sccache-
+
+      - name: Start sccache server
+        working-directory: tests/zombienet
+        run: make start-sccache
+
+      - name: 📼 Run zombienet tests
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: make test
+
+      - name: Print sccache stats
+        working-directory: tests/zombienet
+        run: make print-sccache
+
+      - name: Stop sccache server
+        working-directory: tests/zombienet
+        run: make stop-sccache

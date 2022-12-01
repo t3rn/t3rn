@@ -1,4 +1,5 @@
 use crate::*;
+use frame_system::EnsureRoot;
 
 use smallvec::smallvec;
 use sp_runtime::impl_opaque_keys;

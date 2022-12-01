@@ -3,7 +3,7 @@
 set -x
 
 if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 || -z $6 ]]; then
-  echo "usage: $0 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
+  echo "usage 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
   # fx: $0 'collator sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up 33 t0rn --dryrun
   exit 1
 fi

@@ -1,0 +1,29 @@
+[relaychain]
+command = "polkadot"
+chain = "rococo-local"
+
+[[relaychain.nodes]]
+name = "alice"
+ws_port = 9900
+
+[[relaychain.node_groups]]
+name = "bob"
+count = 2
+
+[[parachains]]
+id = 3000
+cumulus_based = true
+chain = "rococo-local"
+
+# Arbitrary collator needs to be set based on param
+[[parachains.collators]]
+name = "collator01"
+command = "collator-old"
+ws_port = 9930
+rpc_port = 8830
+
+[[parachains.collators]]
+name = "collator02"
+command = "collator-old"
+ws_port = 9931
+rpc_port = 8831

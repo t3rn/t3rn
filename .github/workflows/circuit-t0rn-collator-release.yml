@@ -3,7 +3,7 @@ name: Circuit t0rn Rococo Collator Release
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
 env:
   PARACHAIN_NAME: t0rn
@@ -12,7 +12,7 @@ env:
 
 jobs:
   build-release:
-    runs-on: ubuntu-22.04
+    runs-on: ["self-hosted", "ep1c"]
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -29,14 +29,9 @@ jobs:
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
-        uses: actions/cache@v2
-        id: cache-rust
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ./target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('./Cargo.lock') }}
+          cache-on-failure: "true"
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
@@ -44,6 +39,21 @@ jobs:
         with:
           command: build
           args: --manifest-path ./node/t0rn-parachain/Cargo.toml --locked --release
+
+      - name: 🕒 Cache binaries
+        uses: actions/cache@v2
+        id: cache-bin
+        with:
+          path: |
+            bin
+          key: ${{ runner.os }}-bin-${{ hashFiles('tests/zombienet/Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-bin-
+
+      - name: 📼 Run zombienet runtime upgrade test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: make test-real-upgrade parachain=t0rn
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
@@ -54,7 +64,7 @@ jobs:
           retention-days: 1
 
   publish-docker-image:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: build-release
     steps:
       - uses: actions/checkout@v3
@@ -94,7 +104,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
 
   release-on-github:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: build-release
     steps:
       - name: ☁ Checkout git repo
@@ -167,17 +177,20 @@ jobs:
           asset_content_type: application/gzip
 
   trigger-downstream:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: release-on-github
     steps:
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-#      - name: 🔫 Trigger chainops downstream
-#        run: |
-#          curl -XPOST /
-#            -u ${{ secrets.GH_PAT }} /
-#            -H "Accept:application/vnd.github" /
-#            -H "Content-Type:application/json" /
-#            https://api.github.com/repos/t3rn/chainops/cd.yml/dispatches /
-#            --data "{\"action\":\"xtrigger\",\"tag\":\"${{ env.PUSHED_TAG }}\"}"
+  deploy-to-rococo:
+    runs-on: self-hosted
+    needs: release-on-github
+    steps:
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+      - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
+        run: |
+          UPGRADE_AT_HEIGHT=$(($(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getHeader", "params": [ ] }' https://dev.net.t3rn.io/http-rpc | jq -r .result.number) + 0x64))
+          echo "UPGRADE RUNTIME AT:" ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
+          ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://dev.net.t3rn.io https://dev.net.t3rn.io/http-rpc ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}

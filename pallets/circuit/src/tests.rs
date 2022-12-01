@@ -1778,7 +1778,9 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
         ],
         &mut local_state,
         transfer_protocol_box,
+        ALICE,
         FIRST_REQUESTER_NONCE,
+        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -1805,8 +1807,10 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
             let _events = System::events();
             // assert_eq!(events.len(), 8);
 
-            let xtx_id: sp_core::H256 =
-                hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
+            // let xtx_id: sp_core::H256 =
+            //     hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
+
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
 
             // The tiemout links that will be checked at on_initialize are there
             assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(401u32)); // 100 offset + current block height 1 = 101
@@ -1826,9 +1830,21 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                 })
             );
 
+            // let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+            //
+            // let sfx_id_a = valid_transfer_side_effect
+            //     .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            //         &xtx_id.0,
+            //         FIRST_SFX_INDEX,
+            //     );
+            //
+
             let sfx_id = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                &xtx_id.0,
+                FIRST_SFX_INDEX,
             );
+
             place_winning_bid_and_advance_3_blocks(ALICE, xtx_id, sfx_id, 1);
 
             System::set_block_number(410);
@@ -1863,10 +1879,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                         event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
                             Runtime,
                         >::XTransactionXtxRevertedAfterTimeOut(
-                            hex!(
-                                "9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331"
-                            )
-                            .into()
+                            xtx_id
                         )),
                         topics: vec![]
                     }
@@ -4260,7 +4273,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
         0,
     );
 
-    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let side_effects = vec![valid_transfer_side_effect];
     let fee = 1;
     let sequential = true;
 

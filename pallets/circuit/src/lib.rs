@@ -441,7 +441,6 @@ pub mod pallet {
                             Some(xtx_id),
                         )
                         .unwrap();
-                        log::info!("Timeout Xtx: {:?}", xtx_id);
 
                         Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertTimedOut);
 
@@ -888,7 +887,6 @@ pub mod pallet {
         }
     }
 
-    use crate::CircuitStatus::RevertKill;
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
@@ -1346,21 +1344,38 @@ impl<T: Config> Pallet<T> {
             },
             // fixme: Separate for Bonded
             CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
-                // Update set of full side effects assuming the new confirmed has appeared
-                <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.full_side_effects.clone())
-                });
+                match new_status {
+                    CircuitStatus::FinishedAllSteps => {
+                        // todo: cleanup all of the local storage
+                        // TODO cleanup sfx2xtx map
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.xtx.clone())
+                        });
 
-                <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.xtx.clone())
-                });
-                if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
-                    (
-                        Some(local_ctx.xtx.clone()),
-                        Some(local_ctx.full_side_effects.clone()),
-                    )
-                } else {
-                    (None, Some(local_ctx.full_side_effects.to_vec()))
+                        <Self as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                        (
+                            Some(local_ctx.xtx.clone()),
+                            Some(local_ctx.full_side_effects.clone()),
+                        )
+                    },
+                    _ => {
+                        // Update set of full side effects assuming the new confirmed has appeared
+                        <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.full_side_effects.clone())
+                        });
+
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.xtx.clone())
+                        });
+                        if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
+                            (
+                                Some(local_ctx.xtx.clone()),
+                                Some(local_ctx.full_side_effects.clone()),
+                            )
+                        } else {
+                            (None, Some(local_ctx.full_side_effects.to_vec()))
+                        }
+                    },
                 }
             },
             CircuitStatus::FinishedAllSteps => {
@@ -1443,10 +1458,12 @@ impl<T: Config> Pallet<T> {
 
     fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
         local_ctx.xtx.status = cause.clone();
-        if let CircuitStatus::RevertTimedOut = cause {
-            Optimistic::<T>::try_slash(local_ctx);
-        } else {
-            Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
+
+        match cause {
+            CircuitStatus::RevertTimedOut => Optimistic::<T>::try_slash(local_ctx),
+            CircuitStatus::DroppedAtBidding =>
+                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx),
+            _ => {},
         }
 
         Self::square_up(local_ctx, None)
@@ -1538,10 +1555,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::RevertTimedOut
             | CircuitStatus::Reverted
             | CircuitStatus::RevertMisbehaviour => {
-                log::info!("RevertTimedOut or Reverted or RevertMisbehaviour");
-                log::info!("xtx_id: {:?}", local_ctx.xtx_id);
                 Optimistic::<T>::try_slash(local_ctx);
-                log::info!("slashing worked");
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     <T as Config>::AccountManager::try_finalize(
@@ -1634,7 +1648,7 @@ impl<T: Config> Pallet<T> {
                     sfx.clone(),
                     gateway_abi,
                     &mut local_ctx.local_state,
-                    &local_ctx.xtx_id.as_ref(),
+                    local_ctx.xtx_id.as_ref(),
                     index as u32
                 ).map_err(|e| {
                 log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
@@ -1650,7 +1664,7 @@ impl<T: Config> Pallet<T> {
                 >(
                     sfx.clone(),
                     &mut local_ctx.local_state,
-                    &local_ctx.xtx_id.as_ref(),
+                    local_ctx.xtx_id.as_ref(),
                     index as u32,
                 )? {
                 (insurance_and_reward[0], insurance_and_reward[1])
@@ -1785,7 +1799,7 @@ impl<T: Config> Pallet<T> {
             fsx.input.target,
             fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
-            side_effect_id.clone(),
+            side_effect_id,
         )
         .map_err(|_| "SideEffect confirmation failed!")?;
         // ToDo: handle misbehaviour
@@ -1923,8 +1937,6 @@ impl<T: Config> Pallet<T> {
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
     > {
-        log::info!("get_current_step_fsx");
-        log::info!("xtx_id: {:?}", local_ctx.xtx_id);
         let current_step = local_ctx.xtx.steps_cnt.0;
         local_ctx.full_side_effects[current_step as usize]
             .iter()

@@ -387,7 +387,6 @@ pub enum Error {
 mod tests {
     use super::*;
 
-    use scale_info::prelude::vec::Vec;
     use sp_core::crypto::AccountId32;
 
     type BlockNumber = u64;

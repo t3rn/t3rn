@@ -5,17 +5,6 @@ import Link from '@docusaurus/Link';
 
 const FeatureList = [
   {
-    title: 't3rn Concepts',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
-    description: (
-      <>
-        A deep dive into the concepts that power t3rn
-      </>
-    ),
-    link: "/concepts/intro",
-    button: "Concepts"
-  },
-  {
     title: 'Getting started',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
@@ -25,17 +14,6 @@ const FeatureList = [
     ),
     link: "/docs/intro",
     button: "Getting Started"
-  },
-  {
-    title: 'Typescript Client Library',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
-    description: (
-      <>
-        Checkout the TS package documentation.
-      </>
-    ),
-    link: "http://google.com",
-    button: "TS Docs"
   },
 ];
 

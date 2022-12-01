@@ -5,7 +5,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 name       = "t0rn-parachain-collator"
 repository = 'https://github.com/t3rn/t3rn'
-version    = "1.0.0-beta.0"
+version    = "1.2.0-rc.4"
 
 [[bin]]
 name = "t0rn-collator"
@@ -28,13 +28,13 @@ pallet-treasury           = { path = "../../pallets/treasury" }
 pallet-xdns               = { path = "../../pallets/xdns" } # TODO: the pallet shouldnt be imported in the node, expose primitives or export the type from runtime
 pallet-xdns-rpc           = { path = "../../pallets/xdns/rpc" }
 t3rn-primitives           = { path = "../../primitives" }
-t3rn-protocol              = { path = "../../protocol" }
+t3rn-protocol             = { path = "../../protocol" }
 
 # Extras
 async-std              = { version = "1.10.0" }
 futures                = "0.3.21"
 jsonrpc-runtime-client = { version = "0.1.0", path = "../../relayers/jsonrpc-runtime-client" }
-jsonrpsee = { version = "0.14.0", features = ["server"] }
+jsonrpsee              = { version = "0.14.0", features = [ "server" ] }
 
 # Substrate
 frame-benchmarking             = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
@@ -51,11 +51,11 @@ sc-network                     = { git = "https://github.com/paritytech/substrat
 sc-rpc                         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sc-rpc-api                     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sc-service                     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", features = [ "wasmtime" ] }
+sc-sysinfo                     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sc-telemetry                   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sc-tracing                     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sc-transaction-pool            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sc-transaction-pool-api        = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
-sc-sysinfo                     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sp-api                         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sp-block-builder               = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 sp-blockchain                  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }

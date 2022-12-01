@@ -106,7 +106,6 @@ impl<T: Config> Optimistic<T> {
     }
 
     pub fn try_unbond(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
-        log::info!("try_unbond");
         let optimistic_fsx_in_step = crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
             local_ctx,
             SecurityLvl::Optimistic,
@@ -192,7 +191,6 @@ impl<T: Config> Optimistic<T> {
     }
 
     pub fn try_dropped_at_bidding_refund(local_ctx: &mut LocalXtxCtx<T>) {
-        // the user is refunded in fn square_up()
         for phase in local_ctx.full_side_effects.clone() {
             for fsx in phase {
                 if fsx.is_bid_resolved() {
