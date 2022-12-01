@@ -82,7 +82,11 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
 
     fn can_withdraw(beneficiary: &Account, amount: Balance, asset_id: Option<AssetId>) -> bool;
 
-    fn deposit_immediately(beneficiary: &Account, amount: Balance, asset_id: Option<AssetId>) -> DispatchResult;
+    fn deposit_immediately(
+        beneficiary: &Account,
+        amount: Balance,
+        asset_id: Option<AssetId>,
+    ) -> DispatchResult;
 
     fn withdraw_immediately(
         beneficiary: &Account,
