@@ -1,4 +1,4 @@
-import config from "../../config/config"
+import { config } from "../../config/config"
 import { BehaviorSubject } from "rxjs"
 const axios = require("axios")
 
@@ -14,13 +14,13 @@ export class CoingeckoPricing {
         [assetTicker: string]: string
     } = {}
 
-    /** Stores price in USD as a subject */
+    /** Stores price in USD as a subject */ å
     prices: {
         [assetTicker: string]: BehaviorSubject<number>
     } = {}
 
     constructor() {
-        this.endpoint = config.priceSource.coingecko.endpoint
+        this.endpoint = config.pricing.coingecko.endpoint
         this.getTrackingAssets()
         this.updateAssetPrices()
     }
@@ -29,10 +29,12 @@ export class CoingeckoPricing {
     getTrackingAssets() {
         let keys = Object.keys(config.assets)
         for (let i = 0; i < keys.length; i++) {
-            if (config.assets[keys[i]].priceSource === "coingecko") {
-                this.assets[keys[i]] = config.assets[keys[i]].id
-                this.prices[keys[i]] = new BehaviorSubject<number>(0)
-            }
+            config.assets[keys[i]].forEach((asset) => {
+                if (asset.priceSource === "coingecko") {
+                    this.assets[keys[i]] = asset.id
+                    this.prices[keys[i]] = new BehaviorSubject<number>(0)
+                }
+            })
         }
     }
 
@@ -42,7 +44,7 @@ export class CoingeckoPricing {
         for (let i = 0; i < ids.length; i++) {
             await axios
                 .get(
-                    config.priceSource.coingecko.endpoint +
+                    config.pricing.coingecko.endpoint +
                         this.assets[ids[i]] +
                         "?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false"
                 )

@@ -1,6 +1,7 @@
-import config from "../../config/config"
+// import config from "../../config/config"
 import { SideEffect } from "../executionManager/SideEffect"
 import { Execution } from "../executionManager/execution"
+import { config } from "../../config/config"
 
 /**
  * Type used for describing XTX strategies When an XTX is created, the XTX strategy will be evaluated. If the XTX fails the evaluation, the
@@ -9,8 +10,8 @@ import { Execution } from "../executionManager/execution"
  * @group Strategy
  */
 export type XtxStrategy = {
-    minInsuranceAmountUsd: number
-    minInsuranceShare: number // minInsuranceAmountUsd / maxProfit
+    minInsuranceAmountUsd?: number
+    minInsuranceShare?: number // minInsuranceAmountUsd / maxProfit
 }
 
 /**
@@ -20,18 +21,18 @@ export type XtxStrategy = {
  */
 export type SfxStrategy = {
     /** Minimum profit in USD that a SFX should have to be considered profitable. */
-    minProfitUsd: number
+    minProfitUsd?: number
     /** A percentage value for the minimum yield that a SFX should have Yield is defined by (minProfit / totalCost) */
-    minYield: number
+    minYield?: number
     /** The max tx costs in USD for an execution. This can be useful to prevent executions during network congestion. */
-    maxTxFeesUsd: number
+    maxTxFeesUsd?: number
     /** The max share of txCost to profit. This is defined by txCost / maxProfit */
-    maxTxFeeShare: number // txCost / maxProfit
+    maxTxFeeShare?: number // txCost / maxProfit
     /**
      * The maximum cost in USD to spend on a single SFX. This only includes the cost of the assets that are being sent. This puts a cap on
      * the value of assets to be sent.
      */
-    maxAssetCost: number // maximum value spend
+    maxAssetCost?: number // maximum value spend
 }
 
 /**
@@ -68,17 +69,22 @@ export class StrategyEngine {
     loadStrategies() {
         const strategyTargets = Object.keys(config.strategies)
         for (let i = 0; i < strategyTargets.length; i++) {
-            this.sfxStrategies[strategyTargets[i]] = {
-                minProfitUsd: config.strategies[strategyTargets[i]].sfx.minProfitUsd,
-                minYield: config.strategies[strategyTargets[i]].sfx.minYield,
-                maxTxFeesUsd: config.strategies[strategyTargets[i]].sfx.maxTxFeesUsd,
-                maxTxFeeShare: config.strategies[strategyTargets[i]].sfx.maxTxFeeShare,
-                maxAssetCost: config.strategies[strategyTargets[i]].sfx.maxAssetCost,
-            }
-            this.xtxStrategies[strategyTargets[i]] = {
-                minInsuranceAmountUsd: config.strategies[strategyTargets[i]].xtx.minInsuranceAmountUsd,
-                minInsuranceShare: config.strategies[strategyTargets[i]].xtx.minInsuranceShare,
-            }
+            const strategy = config.strategies[strategyTargets[i]]
+            this.sfxStrategies[strategyTargets[i]] = strategy.sfx
+
+            //     {
+            //     minProfitUsd: strategy.sfx.minProfitUsd,
+            //     minYield: strategy.sfx.minYield,
+            //     maxTxFeesUsd: strategy.sfx.maxTxFeesUsd,
+            //     maxTxFeeShare: strategy.sfx.maxTxFeeShare,
+            //     maxAssetCost: strategy.sfx.maxAssetCost,
+            // }
+            this.xtxStrategies[strategyTargets[i]] = strategy.xtx
+            //
+            //     {
+            //     minInsuranceAmountUsd: strategy.xtx.minInsuranceAmountUsd,
+            //     minInsuranceShare: strategy.xtx.minInsuranceShare,
+            // }
         }
     }
 
@@ -127,7 +133,10 @@ export class StrategyEngine {
      */
     getMinProfitUsd(sfx: SideEffect): number {
         const strategy = this.sfxStrategies[sfx.target]
-        return strategy.minProfitUsd
+        if (strategy.minProfitUsd) {
+            return strategy.minProfitUsd
+        }
+        return 0
     }
 
     /**
