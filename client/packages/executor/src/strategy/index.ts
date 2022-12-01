@@ -77,8 +77,8 @@ export class StrategyEngine {
             this.sfxStrategies[strategyTargets[i]] = strategy.sfx
             this.xtxStrategies[strategyTargets[i]] = strategy.xtx
         }
-        for(let i = 0; i < config.gateways.length; i++) {
-            this.supportedAssets[config.gateways[i].id] = config.gateways[i].supportedAssets;
+        for (let i = 0; i < config.gateways.length; i++) {
+            this.supportedAssets[config.gateways[i].id] = config.gateways[i].supportedAssets
         }
     }
 
@@ -186,8 +186,8 @@ export class StrategyEngine {
      * @returns Error if asset is not supported
      */
     assetIsSupported(sfx: SideEffect): void | Error {
-        const assetTicker = sfx.getTxOutputs().asset;
-        if(!this.supportedAssets[sfx.target].includes(assetTicker)) {
+        const assetTicker = sfx.getTxOutputs().asset
+        if (!this.supportedAssets[sfx.target].includes(assetTicker)) {
             throw new Error("Asset is not supported by the target gateway!")
         }
     }
