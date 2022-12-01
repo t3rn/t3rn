@@ -1344,21 +1344,38 @@ impl<T: Config> Pallet<T> {
             },
             // fixme: Separate for Bonded
             CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
-                // Update set of full side effects assuming the new confirmed has appeared
-                <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.full_side_effects.clone())
-                });
+                match new_status {
+                    CircuitStatus::FinishedAllSteps => {
+                        // todo: cleanup all of the local storage
+                        // TODO cleanup sfx2xtx map
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.xtx.clone())
+                        });
 
-                <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.xtx.clone())
-                });
-                if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
-                    (
-                        Some(local_ctx.xtx.clone()),
-                        Some(local_ctx.full_side_effects.clone()),
-                    )
-                } else {
-                    (None, Some(local_ctx.full_side_effects.to_vec()))
+                        <Self as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                        (
+                            Some(local_ctx.xtx.clone()),
+                            Some(local_ctx.full_side_effects.clone()),
+                        )
+                    },
+                    _ => {
+                        // Update set of full side effects assuming the new confirmed has appeared
+                        <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.full_side_effects.clone())
+                        });
+
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.xtx.clone())
+                        });
+                        if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
+                            (
+                                Some(local_ctx.xtx.clone()),
+                                Some(local_ctx.full_side_effects.clone()),
+                            )
+                        } else {
+                            (None, Some(local_ctx.full_side_effects.to_vec()))
+                        }
+                    },
                 }
             },
             CircuitStatus::FinishedAllSteps => {
@@ -1441,7 +1458,13 @@ impl<T: Config> Pallet<T> {
 
     fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
         local_ctx.xtx.status = cause.clone();
-        Optimistic::<T>::try_slash(local_ctx);
+
+        match cause {
+            CircuitStatus::RevertTimedOut => Optimistic::<T>::try_slash(local_ctx),
+            CircuitStatus::DroppedAtBidding =>
+                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx),
+            _ => {},
+        }
 
         Self::square_up(local_ctx, None)
             .expect("Expect Revert and RevertKill options to square up to be infallible");
@@ -1956,7 +1979,7 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            acc_rewards += fsx.expect_sfx_bid().bid;
+            acc_rewards += fsx.get_bond_value(fsx.input.max_reward);
         }
 
         acc_rewards
