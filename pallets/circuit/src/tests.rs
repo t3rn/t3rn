@@ -845,6 +845,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                 executor: BOB_RELAYER,
                 reserved_bond: None,
                 insurance: REQUESTED_INSURANCE_AMOUNT,
+                reward_asset_id: None,
             };
 
             assert_eq!(
@@ -1092,8 +1093,8 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
-                Balances::reserved_balance(&BID_WINNER),
-                BID_AMOUNT_C + REQUESTED_INSURANCE_AMOUNT
+                Balances::free_balance(&BID_WINNER),
+                INITIAL_BALANCE - (BID_AMOUNT_C + REQUESTED_INSURANCE_AMOUNT)
             );
 
             // Charlie bids better offer
@@ -1105,11 +1106,11 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
-                Balances::reserved_balance(&BID_LOOSER),
-                BID_AMOUNT_B + REQUESTED_INSURANCE_AMOUNT
+                Balances::free_balance(&BID_LOOSER),
+                INITIAL_BALANCE - (BID_AMOUNT_B + REQUESTED_INSURANCE_AMOUNT)
             );
             // Unreserve insurance + bid amounts of the previous bidder
-            assert_eq!(Balances::reserved_balance(&BID_WINNER), 0);
+            assert_eq!(Balances::free_balance(&BID_WINNER), INITIAL_BALANCE);
             // Bidding with the same amount should not be accepted
             assert_err!(
                 Circuit::bid_sfx(Origin::signed(BID_WINNER), side_effect_a_id, BID_AMOUNT_B,),
@@ -1124,11 +1125,11 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             ));
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
-                Balances::reserved_balance(&BID_WINNER),
-                BID_AMOUNT_A + REQUESTED_INSURANCE_AMOUNT
+                Balances::free_balance(&BID_WINNER),
+                INITIAL_BALANCE - (BID_AMOUNT_A + REQUESTED_INSURANCE_AMOUNT)
             );
             // Unreserve insurance + bid amounts of the previous bidder
-            assert_eq!(Balances::reserved_balance(&BID_LOOSER), 0);
+            assert_eq!(Balances::free_balance(&BID_LOOSER), INITIAL_BALANCE);
 
             let expected_bonded_sfx_bid = SFXBid {
                 bid: BID_AMOUNT_A,
@@ -1136,6 +1137,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 executor: BID_WINNER,
                 reserved_bond: None,
                 insurance: REQUESTED_INSURANCE_AMOUNT,
+                reward_asset_id: None,
             };
 
             assert_eq!(

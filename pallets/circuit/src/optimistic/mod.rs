@@ -2,8 +2,6 @@ use crate::{pallet::Error, *};
 use frame_support::traits::fungible::Inspect;
 use sp_runtime::traits::Zero;
 
-use frame_support::traits::ReservableCurrency;
-
 use sp_std::marker::PhantomData;
 use t3rn_primitives::{side_effect::SFXBid, transfers::EscrowedBalanceOf};
 
@@ -17,8 +15,8 @@ impl<T: Config> Optimistic<T> {
         executor: &T::AccountId,
         bid: EscrowedBalanceOf<T, T::Escrowed>,
         sfx_id: SideEffectId<T>,
-        current_accepted_bid: Option<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
-    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>, Error<T>> {
+        current_accepted_bid: Option<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>>,
+    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
         // Check if Xtx is in the bidding state
         if local_ctx.xtx.status != CircuitStatus::PendingBidding {
             return Err(Error::<T>::BiddingInactive)
@@ -40,15 +38,20 @@ impl<T: Config> Optimistic<T> {
             }
         }
         // Check if bid candidate has enough balance and reserve
-        <T::Escrowed as EscrowTrait<T>>::Currency::reserve(executor, bid + fsx.input.insurance)
-            .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
+        <T as Config>::AccountManager::withdraw_immediately(
+            executor,
+            bid + fsx.input.insurance,
+            fsx.input.reward_asset_id,
+        )
+        .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
 
         let mut sfx_bid =
-            SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>::new_none_optimistic(
+            SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>::new_none_optimistic(
                 bid,
                 fsx.input.insurance,
                 executor.clone(),
                 local_ctx.xtx.requester.clone(),
+                fsx.input.reward_asset_id,
             );
         // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
         if sfx_security_lvl == SecurityLvl::Optimistic {
@@ -62,10 +65,12 @@ impl<T: Config> Optimistic<T> {
             if let Some(bond) = current_best_bid.reserved_bond {
                 total_unreserve += bond;
             }
-            <T::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+            <T as Config>::AccountManager::deposit_immediately(
                 &current_best_bid.executor,
                 total_unreserve,
-            );
+                None,
+            )
+            .expect("executors refunds for bids to always be valid post withdrawals")
         }
 
         Ok(sfx_bid)
@@ -74,9 +79,9 @@ impl<T: Config> Optimistic<T> {
     pub(self) fn bond_4_sfx(
         executor: &T::AccountId,
         local_ctx: &mut LocalXtxCtx<T>,
-        sfx_bid: &mut SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>,
+        sfx_bid: &mut SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>,
         sfx_id: SideEffectId<T>,
-    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>, Error<T>> {
+    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
         let total_xtx_step_optimistic_rewards_of_others = crate::Pallet::<T>::get_fsx_total_rewards(
             &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
                 local_ctx,
@@ -94,9 +99,10 @@ impl<T: Config> Optimistic<T> {
         );
 
         if total_xtx_step_optimistic_rewards_of_others > Zero::zero() {
-            <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve(
+            <T as Config>::AccountManager::withdraw_immediately(
                 executor,
                 total_xtx_step_optimistic_rewards_of_others,
+                sfx_bid.reward_asset_id,
             )
             .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
             sfx_bid.reserved_bond = Some(total_xtx_step_optimistic_rewards_of_others);
@@ -116,10 +122,12 @@ impl<T: Config> Optimistic<T> {
                 let (insurance, reserved_bond) =
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
-                <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                <T as Config>::AccountManager::deposit_immediately(
                     &sfx_bid.executor,
                     insurance + reserved_bond,
-                );
+                    sfx_bid.reward_asset_id,
+                )
+                .expect("executors refunds for bids to always be valid post withdrawals")
             }
         }
 
@@ -127,8 +135,6 @@ impl<T: Config> Optimistic<T> {
     }
 
     pub fn try_slash(local_ctx: &mut LocalXtxCtx<T>) {
-        let mut slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> = Zero::zero();
-
         let optimistic_fsx_in_step = &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
             local_ctx,
             SecurityLvl::Optimistic,
@@ -146,12 +152,15 @@ impl<T: Config> Optimistic<T> {
                     Zero::zero()
                 };
 
-                // First slash executor
-                slashed_reserve += insurance + reserved_bond;
-                <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
-                    &sfx_bid.executor,
-                    insurance + reserved_bond,
-                );
+                // ToDo: Introduce more sophisticated slashed rewards split between
+                //  treasury, users, honest executors
+                let slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> = insurance + reserved_bond;
+                <T as Config>::AccountManager::deposit_immediately(
+                    &T::SelfAccountId::get(),
+                    slashed_reserve,
+                    sfx_bid.reward_asset_id,
+                )
+                .expect("deposits to escrow account to always accept slashed deposits");
             }
         }
 
@@ -167,26 +176,14 @@ impl<T: Config> Optimistic<T> {
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
                 // First unlock honest executor
-                <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                //  and the reward to honest executors since the reserved bond was slashed and should always suffice
+                <T as Config>::AccountManager::deposit_immediately(
                     &sfx_bid.executor,
-                    insurance + reserved_bond,
-                );
-                // Repatriate the reward to honest executors since the reserved bond was slashed and should always suffice
-                slashed_reserve -= sfx_bid.bid;
-                <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::deposit_creating(
-                    &sfx_bid.executor,
-                    sfx_bid.bid,
-                );
+                    insurance + reserved_bond + sfx_bid.bid,
+                    sfx_bid.reward_asset_id,
+                )
+                .expect("refunds with deposit to always be valid post withdrawals");
             }
-        }
-
-        // ToDo: Introduce more sophisticated slashed rewards split between
-        //  treasury, users, honest executors
-        if slashed_reserve > Zero::zero() {
-            <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::deposit_creating(
-                &T::SelfAccountId::get(),
-                slashed_reserve,
-            );
         }
     }
 }
