@@ -11,7 +11,7 @@ pub struct Optimistic<T: Config> {
 
 impl<T: Config> Optimistic<T> {
     pub fn try_bid_4_sfx(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
         executor: &T::AccountId,
         bid: EscrowedBalanceOf<T, T::Escrowed>,
         sfx_id: SideEffectId<T>,
@@ -78,7 +78,7 @@ impl<T: Config> Optimistic<T> {
 
     pub(self) fn bond_4_sfx(
         executor: &T::AccountId,
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
         sfx_bid: &mut SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>,
         sfx_id: SideEffectId<T>,
     ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
@@ -111,7 +111,7 @@ impl<T: Config> Optimistic<T> {
         Ok(sfx_bid.clone())
     }
 
-    pub fn try_unbond(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
+    pub fn try_unbond(local_ctx: &LocalXtxCtx<T>) -> Result<(), Error<T>> {
         let optimistic_fsx_in_step = crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
             local_ctx,
             SecurityLvl::Optimistic,
@@ -134,7 +134,7 @@ impl<T: Config> Optimistic<T> {
         Ok(())
     }
 
-    pub fn try_slash(local_ctx: &mut LocalXtxCtx<T>) {
+    pub fn try_slash(local_ctx: &LocalXtxCtx<T>) {
         let optimistic_fsx_in_step = &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
             local_ctx,
             SecurityLvl::Optimistic,
@@ -187,7 +187,7 @@ impl<T: Config> Optimistic<T> {
         }
     }
 
-    pub fn try_dropped_at_bidding_refund(local_ctx: &mut LocalXtxCtx<T>) {
+    pub fn try_dropped_at_bidding_refund(local_ctx: &LocalXtxCtx<T>) {
         for phase in local_ctx.full_side_effects.clone() {
             for fsx in phase {
                 if fsx.is_bid_resolved() {

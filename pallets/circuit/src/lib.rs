@@ -81,6 +81,7 @@ pub mod tests;
 mod benchmarking;
 
 pub mod escrow;
+pub mod machine;
 pub mod optimistic;
 pub mod state;
 pub mod weights;
@@ -583,9 +584,9 @@ pub mod pallet {
             })?;
 
             // ToDo: Align whether 3vm wants enfore side effects sequence into steps
-            let sequential = false;
+            let _sequential = false;
             // Validate: Side Effects
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
+            Self::validate(&side_effects, &mut local_xtx_ctx)?;
 
             // Account fees and charges
             Self::square_up(&mut local_xtx_ctx, None)?;
@@ -667,33 +668,24 @@ pub mod pallet {
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
-            sequential: bool,
+            _sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
-            // Setup: new xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::Requested, &requester, None)?;
-
-            // Validate: Side Effects
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
-                |e| {
-                    log::error!("Self::validate hit an error -- {:?}", e);
-                    Error::<T>::SideEffectsValidationFailed
+            // Setup: new xtx context with SFX validation
+            let fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+            // Compile: apply the new state post squaring up and emit
+            Machine::<T>::compile(
+                fresh_xtx.xtx_id,
+                vec![],
+                |_status_change, local_ctx, _to_update_fsx| {
+                    // Square Up: do internal accounting
+                    Self::square_up(&local_ctx, None)?;
+                    // Emit: circuit events
+                    Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
+                    Ok(())
                 },
             )?;
-
-            // Account fees and charges
-            Self::square_up(&mut local_xtx_ctx, None)?;
-
-            // Update local context
-            let status_change = Self::update(&mut local_xtx_ctx)?;
-
-            // Apply: all necessary changes to state in 1 go
-            let (_, _added_full_side_effects) = Self::apply(&mut local_xtx_ctx, status_change);
-
-            // Emit: From Circuit events
-            Self::emit_sfx(local_xtx_ctx.xtx_id, &requester, &side_effects);
 
             Ok(().into())
         }
@@ -734,11 +726,7 @@ pub mod pallet {
                 accepted_as_best_bid,
             );
 
-            Self::deposit_event(Event::SFXNewBidReceived(
-                sfx_id,
-                executor.clone(),
-                bid_amount,
-            ));
+            Self::deposit_event(Event::SFXNewBidReceived(sfx_id, executor, bid_amount));
 
             Ok(().into())
         }
@@ -861,6 +849,7 @@ pub mod pallet {
         }
     }
 
+    use crate::machine::Machine;
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
@@ -1165,7 +1154,7 @@ impl<T: Config> Pallet<T> {
     /// Returns: Returns changes written to the state if there are any.
     ///     For now only returns Xtx and FullSideEffects that changed.
     fn apply(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
         status_change: (CircuitStatus, CircuitStatus),
     ) -> (
         Option<XExecSignal<T::AccountId, T::BlockNumber>>,
@@ -1436,7 +1425,7 @@ impl<T: Config> Pallet<T> {
     }
 
     fn square_up(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
         maybe_xbi_execution_charge: Option<(
             T::Hash,
             <T as frame_system::Config>::AccountId,
@@ -1587,8 +1576,6 @@ impl<T: Config> Pallet<T> {
     fn validate(
         side_effects: &[SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>],
         local_ctx: &mut LocalXtxCtx<T>,
-        _requester: &T::AccountId,
-        _sequential: bool,
     ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
@@ -1909,7 +1896,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(self) fn get_current_step_fsx_by_security_lvl(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
         security_lvl: SecurityLvl,
     ) -> Vec<
         FullSideEffect<
@@ -1927,7 +1914,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(self) fn storage_write_new_sfx_accepted_bid(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
         sfx_id: SideEffectId<T>,
         sfx_bid: SFXBid<
             <T as frame_system::Config>::AccountId,
@@ -1939,7 +1926,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(self) fn storage_read_sfx_accepted_bid(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
         sfx_id: SideEffectId<T>,
     ) -> Option<
         SFXBid<
