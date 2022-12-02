@@ -195,10 +195,12 @@ impl<T: Config> Optimistic<T> {
                     let (insurance, reserved_bond) =
                         (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
-                    <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                    <T as Config>::AccountManager::deposit_immediately(
                         &sfx_bid.executor,
                         insurance + reserved_bond + sfx_bid.bid,
-                    );
+                        sfx_bid.reward_asset_id,
+                    )
+                    .expect("refunds with deposit to always be valid post withdrawals");
                 }
             }
         }
