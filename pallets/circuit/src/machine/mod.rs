@@ -70,40 +70,70 @@ impl<T: Config> Machine<T> {
     // - confirm side effect via XBI
     pub fn compile(
         xtx_id: XtxId<T>,
-        to_update_fsx: Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
-            >,
-        >,
-        // // todo: refactor
-        // _maybe_xbi_execution_charge: Option<(
-        //     T::Hash,
-        //     <T as frame_system::Config>::AccountId,
-        //     EscrowedBalanceOf<T, T::Escrowed>,
-        // )>,
-        process: impl FnOnce(
-            (CircuitStatus, CircuitStatus),
-            &LocalXtxCtx<T>,
-            Vec<
+        pre_update: impl FnOnce(
+            &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
                 >,
             >,
+            LocalState,
+        ) -> Result<
+            &Vec<
+                FullSideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    EscrowedBalanceOf<T, T::Escrowed>,
+                >,
+            >,
+            Error<T>,
+        >,
+        post_update: impl FnOnce(
+            (CircuitStatus, CircuitStatus),
+            &LocalXtxCtx<T>,
         ) -> Result<(), Error<T>>,
     ) -> Result<(), Error<T>> {
-        let mut local_ctx = Self::read_xtx(xtx_id).ok_or(Error::<T>::SetupFailedUnknownXtx)?;
+        let mut local_ctx = Self::load_xtx(xtx_id)?;
+        let current_fsx = Self::read_current_step_fsx(&local_ctx).clone();
+        let local_state = local_ctx.local_state.clone();
+        Self::update_current_step_fsx(
+            &mut local_ctx,
+            pre_update(&mut current_fsx.clone(), local_state)?,
+        );
         let status_change = Self::update_status(&mut local_ctx)?;
-        process(status_change.clone(), &local_ctx, to_update_fsx)?;
+        post_update(status_change.clone(), &local_ctx)?;
         Self::apply(&mut local_ctx, status_change);
         Ok(())
     }
 
-    fn read_xtx(_xtx_id: XtxId<T>) -> Option<LocalXtxCtx<T>> {
-        None
+    pub fn load_xtx(xtx_id: XtxId<T>) -> Result<LocalXtxCtx<T>, Error<T>> {
+        let xtx = <pallet::Pallet<T> as Store>::XExecSignals::get(xtx_id)
+            .ok_or(Error::<T>::SetupFailedUnknownXtx)?;
+        // Make sure in case of commit_relay to only check finished Xtx
+        // if current_status == CircuitStatus::Finished
+        //     && xtx.status < CircuitStatus::Finished
+        // {
+        //     log::debug!(
+        //                     "Incorrect status current_status: {:?} xtx_status {:?}",
+        //                     current_status,
+        //                     xtx.status
+        //                 );
+        //     return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
+        // }
+
+        let full_side_effects = <pallet::Pallet<T> as Store>::FullSideEffects::get(xtx_id)
+            .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
+        let local_state = <pallet::Pallet<T> as Store>::LocalXtxStates::get(xtx_id)
+            .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
+
+        Ok(LocalXtxCtx {
+            local_state,
+            use_protocol: UniversalSideEffectsProtocol::new(),
+            xtx_id,
+            xtx,
+            full_side_effects,
+        })
     }
 
     fn read_all_fsx(
@@ -133,6 +163,21 @@ impl<T: Config> Machine<T> {
         None
     }
 
+    fn update_current_step_fsx(
+        local_ctx: &mut LocalXtxCtx<T>,
+        updated_fsx: &Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+        >,
+    ) {
+        let current_step = local_ctx.xtx.steps_cnt.0;
+        // todo: iterate and change one by one
+        local_ctx.full_side_effects[current_step as usize] = updated_fsx.clone();
+    }
+
     pub fn read_current_step_fsx(
         local_ctx: &LocalXtxCtx<T>,
     ) -> &Vec<
@@ -142,8 +187,7 @@ impl<T: Config> Machine<T> {
             EscrowedBalanceOf<T, T::Escrowed>,
         >,
     > {
-        let current_step = local_ctx.xtx.steps_cnt.0;
-        &local_ctx.full_side_effects[current_step as usize]
+        &local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
     }
 
     // Following methods aren't exposed to Pallet - internal use by compile only

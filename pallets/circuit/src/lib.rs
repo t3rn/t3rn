@@ -71,6 +71,7 @@ use t3rn_protocol::side_effects::{
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };
 
+use crate::machine::Machine;
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
@@ -677,10 +678,10 @@ pub mod pallet {
             // Compile: apply the new state post squaring up and emit
             Machine::<T>::compile(
                 fresh_xtx.xtx_id,
-                vec![],
-                |_status_change, local_ctx, _to_update_fsx| {
+                |current_fsx, _local_state| Ok(current_fsx),
+                |_status_change, local_ctx| {
                     // Square Up: do internal accounting
-                    Self::square_up(&local_ctx, None)?;
+                    Self::square_up(local_ctx, None)?;
                     // Emit: circuit events
                     Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
                     Ok(())
@@ -703,14 +704,13 @@ pub mod pallet {
             let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
-            // Setup: retrieve local xtx context
-            let mut local_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::PendingBidding, &executor, Some(xtx_id))?;
+            // Read: retrieve local xtx context
+            let mut local_ctx = Machine::<T>::load_xtx(xtx_id)?;
 
             // Check for the previous bids for SFX.
             // ToDo: Consider moving to setup to keep the rule of single storage access at setup.
             let current_accepted_bid =
-                crate::Pallet::<T>::storage_read_sfx_accepted_bid(&mut local_ctx, sfx_id);
+                crate::Pallet::<T>::storage_read_sfx_accepted_bid(xtx_id, sfx_id);
 
             let accepted_as_best_bid = Optimistic::<T>::try_bid_4_sfx(
                 &mut local_ctx,
@@ -824,26 +824,33 @@ pub mod pallet {
             let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
-            // Setup: retrieve local xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::PendingExecution, &executor, Some(xtx_id))?;
-
-            Self::confirm(&mut local_xtx_ctx, &executor, &sfx_id, &confirmation)?;
-
-            let status_change = Self::update(&mut local_xtx_ctx)?;
-
-            // Apply: all necessary changes to state in 1 go
-            let (maybe_xtx_changed, assert_full_side_effects_changed) =
-                Self::apply(&mut local_xtx_ctx, status_change);
-
-            Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
-
-            // Emit: From Circuit events
-            Self::emit_status_update(
-                local_xtx_ctx.xtx_id,
-                maybe_xtx_changed,
-                assert_full_side_effects_changed,
-            );
+            Machine::<T>::compile(
+                xtx_id,
+                |mut current_fsx, local_state| {
+                    Self::confirm(
+                        xtx_id,
+                        &mut current_fsx,
+                        &local_state,
+                        &sfx_id,
+                        &confirmation,
+                    )
+                    .map_err(|e| {
+                        log::error!("Self::confirm hit an error -- {:?}", e);
+                        Error::<T>::ConfirmationFailed
+                    })?;
+                    Ok(current_fsx)
+                },
+                |_status_change, local_ctx| {
+                    Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
+                    // Emit: From Circuit events
+                    Self::emit_status_update(
+                        local_ctx.xtx_id,
+                        Some(local_ctx.xtx.clone()),
+                        Some(local_ctx.full_side_effects.clone()),
+                    );
+                    Ok(())
+                },
+            )?;
 
             Ok(().into())
         }
@@ -959,6 +966,7 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         UpdateXtxTriggeredWithUnexpectedStatus,
+        ConfirmationFailed,
         ApplyTriggeredWithUnexpectedStatus,
         RequesterNotEnoughBalance,
         ContractXtxKilledRunOutOfFunds,
@@ -1697,8 +1705,15 @@ impl<T: Config> Pallet<T> {
     }
 
     fn confirm(
-        local_ctx: &mut LocalXtxCtx<T>,
-        _relayer: &T::AccountId,
+        xtx_id: XExecSignalId<T>,
+        step_side_effects: &mut Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+        >,
+        local_state: &LocalState,
         sfx_id: &SideEffectId<T>,
         confirmation: &ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -1754,12 +1769,7 @@ impl<T: Config> Pallet<T> {
         }
 
         // confirm order of current season, by passing the side_effects of it to confirm order.
-        let fsx = confirm_order::<T>(
-            local_ctx.xtx_id,
-            *sfx_id,
-            confirmation,
-            &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
-        )?;
+        let fsx = confirm_order::<T>(xtx_id, *sfx_id, confirmation, step_side_effects)?;
 
         log::debug!("Order confirmed!");
 
@@ -1787,7 +1797,7 @@ impl<T: Config> Pallet<T> {
             &Box::new(side_effect_interface.unwrap()),
             params,
             source,
-            &local_ctx.local_state,
+            local_state,
             Some(sfx_id.as_ref().to_vec()),
             fsx.security_lvl,
             <T as Config>::Xdns::get_gateway_security_coordinates(&fsx.input.target)?,
@@ -1926,7 +1936,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(self) fn storage_read_sfx_accepted_bid(
-        local_ctx: &LocalXtxCtx<T>,
+        xtx_id: XExecSignalId<T>,
         sfx_id: SideEffectId<T>,
     ) -> Option<
         SFXBid<
@@ -1936,7 +1946,7 @@ impl<T: Config> Pallet<T> {
         >,
     > {
         // fixme: This accesses storage and therefor breaks the rule of a single-storage access at setup.
-        <PendingSFXBids<T>>::get(local_ctx.xtx_id, sfx_id)
+        <PendingSFXBids<T>>::get(xtx_id, sfx_id)
     }
 
     pub(self) fn get_fsx_total_rewards(
@@ -2129,9 +2139,12 @@ impl<T: Config> Pallet<T> {
         .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
 
         let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_xtx_ctx.xtx_id);
+
+        let mut fsx = Machine::<T>::read_current_step_fsx(&local_xtx_ctx);
         Self::confirm(
-            &mut local_xtx_ctx,
-            &Self::account_id(),
+            local_xtx_ctx.xtx_id,
+            &mut fsx.clone(),
+            &local_xtx_ctx.local_state,
             sfx_id,
             &confirmation,
         )
