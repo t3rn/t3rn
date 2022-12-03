@@ -7,7 +7,36 @@ pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,
 }
 
+pub fn no_fsx_mangle<T: Config>(
+    _current_fsx: &mut Vec<
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >,
+    >,
+    _local_state: LocalState,
+    _steps_cnt: (u32, u32),
+    _status: CircuitStatus,
+) -> Result<PrecompileResult<T>, Error<T>> {
+    Ok(PrecompileResult::Continue)
+}
+
 pub struct CircuitLog {}
+
+pub enum PrecompileResult<T: Config> {
+    UpdateFSX(
+        Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+        >,
+    ),
+    Continue,
+    Kill,
+}
 
 // Further Refactors:
 // - move all square_up actions to monetary module that always interacts with AccounManager and doesn't lock up balances directly
@@ -70,7 +99,7 @@ impl<T: Config> Machine<T> {
     // - confirm side effect via XBI
     pub fn compile(
         xtx_id: XtxId<T>,
-        pre_update: impl FnOnce(
+        precompile: impl FnOnce(
             &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
@@ -79,28 +108,27 @@ impl<T: Config> Machine<T> {
                 >,
             >,
             LocalState,
-        ) -> Result<
-            &Vec<
-                FullSideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
-                >,
-            >,
-            Error<T>,
-        >,
+            // steps count
+            (u32, u32),
+            CircuitStatus,
+        ) -> Result<PrecompileResult<T>, Error<T>>,
         post_update: impl FnOnce(
             (CircuitStatus, CircuitStatus),
             &LocalXtxCtx<T>,
         ) -> Result<(), Error<T>>,
     ) -> Result<(), Error<T>> {
         let mut local_ctx = Self::load_xtx(xtx_id)?;
-        let current_fsx = Self::read_current_step_fsx(&local_ctx).clone();
+        let mut current_fsx = Self::read_current_step_fsx(&local_ctx).clone();
         let local_state = local_ctx.local_state.clone();
-        Self::update_current_step_fsx(
-            &mut local_ctx,
-            pre_update(&mut current_fsx.clone(), local_state)?,
-        );
+        let steps_cnt = local_ctx.xtx.steps_cnt.clone();
+        let status = local_ctx.xtx.status.clone();
+        match precompile(&mut current_fsx.clone(), local_state, steps_cnt, status)? {
+            PrecompileResult::UpdateFSX(updated_fsx) =>
+                Self::update_current_step_fsx(&mut local_ctx, &updated_fsx),
+            PrecompileResult::Continue => {},
+            PrecompileResult::Kill => Self::kill(local_ctx.xtx_id),
+        }
+
         let status_change = Self::update_status(&mut local_ctx)?;
         post_update(status_change.clone(), &local_ctx)?;
         Self::apply(&mut local_ctx, status_change);

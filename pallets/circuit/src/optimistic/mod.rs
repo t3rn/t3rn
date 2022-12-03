@@ -1,5 +1,4 @@
 use crate::{pallet::Error, *};
-use frame_support::traits::fungible::Inspect;
 use sp_runtime::traits::Zero;
 
 use sp_std::marker::PhantomData;

@@ -71,7 +71,7 @@ use t3rn_protocol::side_effects::{
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };
 
-use crate::machine::Machine;
+use crate::machine::{Machine, *};
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
@@ -553,53 +553,43 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
-            let fresh_or_revoked_exec = match trigger.maybe_xtx_id {
-                Some(_xtx_id) => CircuitStatus::Ready,
-                None => CircuitStatus::Requested,
-            };
-            // Setup: new xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
-                fresh_or_revoked_exec.clone(),
-                &requester,
-                trigger.maybe_xtx_id,
-            )?;
+            let local_ctx = match trigger.maybe_xtx_id {
+                Some(xtx_id) => Machine::<T>::load_xtx(xtx_id),
+                None => Machine::<T>::setup(&[], &requester),
+            }?;
 
             log::debug!(
                 target: "runtime::circuit",
                 "submit_side_effects xtx state with status: {:?}",
-                local_xtx_ctx.xtx.status
+                local_ctx.xtx.status
             );
 
-            // ToDo: This should be converting the side effect from local trigger to FSE
-            let side_effects = Self::exec_in_xtx_ctx(
-                local_xtx_ctx.xtx_id,
-                local_xtx_ctx.local_state.clone(),
-                local_xtx_ctx.full_side_effects.clone(),
-                local_xtx_ctx.xtx.steps_cnt,
-            )
-            .map_err(|_e| {
-                if fresh_or_revoked_exec == CircuitStatus::Ready {
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
-                }
-                Error::<T>::ContractXtxKilledRunOutOfFunds
-            })?;
+            Machine::<T>::compile(
+                local_ctx.xtx_id,
+                |mut current_fsx, local_state, steps_cnt, status| match Self::exec_in_xtx_ctx(
+                    local_ctx.xtx_id,
+                    local_state,
+                    &mut current_fsx,
+                    local_ctx.xtx.steps_cnt,
+                ) {
+                    Err(err) => {
+                        if status == CircuitStatus::Ready {
+                            return Ok(PrecompileResult::Kill)
+                        }
+                        return Err(err)
+                    },
+                    Ok(new_fsx) => Ok(PrecompileResult::UpdateFSX(new_fsx)),
+                },
+                |_status_change, local_ctx| {
+                    // Account fees and charges
+                    Self::square_up(local_ctx, None)?;
 
-            // ToDo: Align whether 3vm wants enfore side effects sequence into steps
-            let _sequential = false;
-            // Validate: Side Effects
-            Self::validate(&side_effects, &mut local_xtx_ctx)?;
-
-            // Account fees and charges
-            Self::square_up(&mut local_xtx_ctx, None)?;
-
-            // Update local context
-            let status_change = Self::update(&mut local_xtx_ctx)?;
-
-            // Apply: all necessary changes to state in 1 go
-            let (_, _added_full_side_effects) = Self::apply(&mut local_xtx_ctx, status_change);
-
-            // Emit: From Circuit events
-            Self::emit_sfx(local_xtx_ctx.xtx_id, &requester, &side_effects);
+                    // Emit: From Circuit events
+                    // ToDo: impl FSX convert to SFX
+                    // Self::emit_sfx(local_ctx.xtx_id, &requester, &local_ctx.full_side_effects.into());
+                    Ok(())
+                },
+            )?;
 
             Ok(())
         }
@@ -678,7 +668,7 @@ pub mod pallet {
             // Compile: apply the new state post squaring up and emit
             Machine::<T>::compile(
                 fresh_xtx.xtx_id,
-                |current_fsx, _local_state| Ok(current_fsx),
+                no_fsx_mangle,
                 |_status_change, local_ctx| {
                     // Square Up: do internal accounting
                     Self::square_up(local_ctx, None)?;
@@ -826,7 +816,7 @@ pub mod pallet {
 
             Machine::<T>::compile(
                 xtx_id,
-                |mut current_fsx, local_state| {
+                |mut current_fsx, local_state, _steps_cnt, _status| {
                     Self::confirm(
                         xtx_id,
                         &mut current_fsx,
@@ -838,7 +828,7 @@ pub mod pallet {
                         log::error!("Self::confirm hit an error -- {:?}", e);
                         Error::<T>::ConfirmationFailed
                     })?;
-                    Ok(current_fsx)
+                    Ok(PrecompileResult::UpdateFSX(current_fsx.clone()))
                 },
                 |_status_change, local_ctx| {
                     Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
@@ -856,7 +846,7 @@ pub mod pallet {
         }
     }
 
-    use crate::machine::Machine;
+    use crate::machine::{no_fsx_mangle, Machine};
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
@@ -1812,12 +1802,14 @@ impl<T: Config> Pallet<T> {
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
         _local_state: LocalState,
-        _full_side_effects: Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+        _full_side_effects: &mut Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         >,
         _steps_cnt: (u32, u32),
-    ) -> Result<Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>, &'static str>
-    {
+    ) -> Result<
+        Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+        Error<T>,
+    > {
         Ok(vec![])
     }
 
