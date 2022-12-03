@@ -45,6 +45,7 @@ pub enum PrecompileResult<T: Config> {
         >,
     ),
     Continue,
+    ForceUpdateStatus(CircuitStatus),
     TryKill(CircuitStatus),
 }
 
@@ -210,7 +211,9 @@ impl<T: Config> Machine<T> {
             PrecompileResult::Continue => None,
             // Assume kill attempt with fallible post_update to be intended as infallible cleanup to kill op
             //  in case fallible post_update passes, proceed with kill op
+            // ToDo: check between allowed status enforcements - kill status / allowed enforced status
             PrecompileResult::TryKill(status) => Some(status),
+            PrecompileResult::ForceUpdateStatus(status) => Some(status),
         };
 
         let mut status_change = Self::update_status(&mut local_ctx)?;

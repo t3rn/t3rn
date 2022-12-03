@@ -728,10 +728,6 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let executor = Self::authorize(origin, CircuitRole::Executor)?;
 
-            // Setup: retrieve local xtx context
-            let mut local_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::PendingExecution, &executor, Some(xtx_id))?;
-
             let xbi =
                 sfx_2_xbi::<T, T::Escrowed>(
                     &side_effect,
@@ -752,24 +748,29 @@ pub mod pallet {
             let charge_id = T::Hashing::hash(&xbi.encode()[..]);
             let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
 
-            // fixme: must be solved with charging and update status order if XBI is the first SFX
-            if local_ctx.xtx.status == CircuitStatus::Ready {
-                local_ctx.xtx.status = CircuitStatus::PendingExecution;
-            }
-
-            Self::square_up(
-                &mut local_ctx,
-                Some((charge_id, executor, total_max_rewards)),
+            Machine::<T>::compile(
+                xtx_id,
+                |mut current_fsx, local_state, steps_cnt, status, _requester| {
+                    // fixme: must be solved with charging and update status order if XBI is the first SFX
+                    return if status == CircuitStatus::Ready {
+                        Ok(PrecompileResult::ForceUpdateStatus(
+                            CircuitStatus::PendingExecution,
+                        ))
+                    } else {
+                        Ok(PrecompileResult::Continue)
+                    }
+                },
+                |_status_change, local_ctx| {
+                    // Account fees and charges
+                    Self::square_up(local_ctx, Some((charge_id, executor, total_max_rewards)))?;
+                    T::XBIPromise::then(
+                        xbi,
+                        pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
+                    )
+                    .map_err(|e| Error::<T>::FailedToEnterXBIPortal)?;
+                    Ok(())
+                },
             )?;
-
-            T::XBIPromise::then(
-                xbi,
-                pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
-            )?;
-
-            let status_change = Self::update(&mut local_ctx)?;
-
-            Self::apply(&mut local_ctx, status_change);
 
             Ok(().into())
         }
