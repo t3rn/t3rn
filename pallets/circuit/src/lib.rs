@@ -476,64 +476,71 @@ pub mod pallet {
         ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
-            let fresh_or_revoked_exec = match maybe_xtx_id {
-                Some(_xtx_id) => CircuitStatus::Ready,
-                None => CircuitStatus::Requested,
+            // We must apply the state only if its generated and fresh
+            let xtx_id = match maybe_xtx_id {
+                Some(xtx_id) => xtx_id,
+                None => {
+                    let local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    local_ctx.xtx_id
+                },
             };
 
-            let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(fresh_or_revoked_exec, &requester, maybe_xtx_id)?;
-            log::debug!(
-                target: "runtime::circuit",
-                "load_local_state with status: {:?}",
-                local_xtx_ctx.xtx.status
-            );
+            let mut hardened_side_effects = vec![];
+            let mut local_state_execution_view = LocalStateExecutionView {
+                local_state: Default::default(),
+                hardened_side_effects: vec![],
+                steps_cnt: (0, 0),
+                xtx_id: Default::default(),
+            };
 
-            // There should be no apply step since no change could have happen during the state access
-            let hardened_side_effects = local_xtx_ctx
-                .full_side_effects
-                .iter()
-                .map(|step| {
-                    step.iter()
-                        .map(|fsx| {
-                            let effect: HardenedSideEffect<
-                                T::AccountId,
-                                T::BlockNumber,
-                                BalanceOf<T>,
-                            > = fsx.clone().try_into().map_err(|e| {
-                                log::debug!(
-                                    target: "runtime::circuit",
-                                    "Error converting side effect to runtime: {:?}",
-                                    e
-                                );
-                                Error::<T>::FailedToHardenFullSideEffect
-                            })?;
-                            Ok(effect)
-                        })
-                        .collect::<Result<
-                            Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-                            Error<T>,
-                        >>()
-                })
-                .collect::<Result<
-                    Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
-                    Error<T>,
-                >>()?;
+            Machine::<T>::compile(xtx_id, no_mangle, |status_change, local_ctx| {
+                hardened_side_effects = local_ctx
+                    .full_side_effects
+                    .iter()
+                    .map(|step| {
+                        step.iter()
+                            .map(|fsx| {
+                                let effect: HardenedSideEffect<
+                                    T::AccountId,
+                                    T::BlockNumber,
+                                    BalanceOf<T>,
+                                > = fsx.clone().try_into().map_err(|e| {
+                                    log::debug!(
+                                        target: "runtime::circuit",
+                                        "Error converting side effect to runtime: {:?}",
+                                        e
+                                    );
+                                    Error::<T>::FailedToHardenFullSideEffect
+                                })?;
+                                Ok(effect)
+                            })
+                            .collect::<Result<
+                                Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                                Error<T>,
+                            >>()
+                    })
+                    .collect::<Result<
+                        Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+                        Error<T>,
+                    >>()?;
 
-            // We must apply the state only if its generated and fresh
-            if maybe_xtx_id.is_none() {
-                // Update local context
-                let local_ctx = Machine::<T>::setup(&[], &requester)?;
-                Machine::<T>::compile(local_ctx.xtx_id, no_mangle, no_post_updates)?;
-            }
+                local_state_execution_view = LocalStateExecutionView::<T, BalanceOf<T>>::new(
+                    local_ctx.xtx_id,
+                    local_ctx.local_state.clone(),
+                    hardened_side_effects,
+                    local_ctx.xtx.steps_cnt,
+                );
 
-            // There should be no apply step since no change could have happen during the state access
-            Ok(LocalStateExecutionView::<T, BalanceOf<T>>::new(
-                local_xtx_ctx.xtx_id,
-                local_xtx_ctx.local_state.clone(),
-                hardened_side_effects,
-                local_xtx_ctx.xtx.steps_cnt,
-            ))
+                log::debug!(
+                    target: "runtime::circuit",
+                    "load_local_state with status: {:?}",
+                    local_ctx.xtx.status
+                );
+
+                Ok(())
+            })?;
+
+            Ok(local_state_execution_view)
         }
 
         fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
@@ -1836,9 +1843,9 @@ impl<T: Config> Pallet<T> {
             // worst case 4 from setup
             processed_weight += db_weight.reads(4 as Weight);
             match Machine::<T>::load_xtx(signal.execution_id) {
-                Ok(mut local_xtx_ctx) => {
+                Ok(mut local_ctx) => {
                     let _success: bool = Machine::<T>::kill(
-                        local_xtx_ctx.xtx_id,
+                        local_ctx.xtx_id,
                         intended_status,
                         |status_change, local_ctx| {
                             queue.swap_remove(0);
@@ -1965,12 +1972,7 @@ impl<T: Config> Pallet<T> {
     ) -> Result<LocalXtxCtx<T>, Error<T>> {
         let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
             .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
-        Self::setup(
-            CircuitStatus::PendingExecution,
-            &Self::account_id(),
-            Some(xtx_id),
-        )
-        // todo: ensure recovered via XBIPromise are Local (Type::Internal)
+        Machine::<T>::load_xtx(xtx_id)
     }
 
     pub fn do_xbi_exit(
@@ -1982,9 +1984,9 @@ impl<T: Config> Pallet<T> {
             Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
                 .expect("XBI metadata id conversion should always decode to Sfx ID");
 
-        let mut local_xtx_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
+        let mut local_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
 
-        let fsx = Self::recover_fsx_by_id(sfx_id, &local_xtx_ctx)?;
+        let fsx = Self::recover_fsx_by_id(sfx_id, &local_ctx)?;
 
         // todo#2: local fail Xtx if xbi_checkout::result errored
 
@@ -2109,13 +2111,13 @@ impl<T: Config> Pallet<T> {
         )
         .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
 
-        let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_xtx_ctx.xtx_id);
+        let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
 
-        let mut fsx = Machine::<T>::read_current_step_fsx(&local_xtx_ctx);
+        let mut fsx = Machine::<T>::read_current_step_fsx(&local_ctx);
         Self::confirm(
-            local_xtx_ctx.xtx_id,
+            local_ctx.xtx_id,
             &mut fsx.clone(),
-            &local_xtx_ctx.local_state,
+            &local_ctx.local_state,
             sfx_id,
             &confirmation,
         )
