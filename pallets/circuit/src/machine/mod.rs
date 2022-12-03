@@ -7,7 +7,7 @@ pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,
 }
 
-pub fn no_fsx_mangle<T: Config>(
+pub fn no_mangle<T: Config>(
     _current_fsx: &mut Vec<
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -18,9 +18,19 @@ pub fn no_fsx_mangle<T: Config>(
     _local_state: LocalState,
     _steps_cnt: (u32, u32),
     _status: CircuitStatus,
+    _requester: T::AccountId,
 ) -> Result<PrecompileResult<T>, Error<T>> {
     Ok(PrecompileResult::Continue)
 }
+
+pub fn no_post_updates<T: Config>(
+    status_change: (CircuitStatus, CircuitStatus),
+    local_ctx: &LocalXtxCtx<T>,
+) -> Result<(), Error<T>> {
+    Ok(())
+}
+
+// pub fn infallible_no_op<T: Config>(_local_ctx: &LocalXtxCtx<T>) {}
 
 pub struct CircuitLog {}
 
@@ -35,7 +45,7 @@ pub enum PrecompileResult<T: Config> {
         >,
     ),
     Continue,
-    Kill,
+    TryKill(CircuitStatus),
 }
 
 // Further Refactors:
@@ -89,8 +99,69 @@ impl<T: Config> Machine<T> {
     //  - global clock on timeout after exceeding timeout
     //  - global clock after bids weren't collected to all FSX
     // Since infallible (must be bc of global clock is based on on_initialized block hooks returns bool if killed successfully or false if not found
-    pub fn kill(_xtx_id: XtxId<T>) -> bool {
-        false
+    pub fn kill(
+        xtx_id: XtxId<T>,
+        cause: CircuitStatus,
+        infallible_post_update: impl FnOnce((CircuitStatus, CircuitStatus), &LocalXtxCtx<T>),
+    ) -> bool {
+        let mut local_ctx = match Self::load_xtx(xtx_id) {
+            Ok(ctx) => ctx,
+            Err(err) => {
+                log::info!("Kill attempt failed with an error: {:?}", err);
+                return false
+            },
+        };
+
+        Self::compile_infallible(
+            xtx_id,
+            |_, _, _, _, _| -> PrecompileResult<T> { PrecompileResult::TryKill(cause) },
+            infallible_post_update,
+        );
+
+        true
+    }
+
+    pub fn compile_infallible(
+        xtx_id: XtxId<T>,
+        infallible_precompile: impl FnOnce(
+            &mut Vec<
+                FullSideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    EscrowedBalanceOf<T, T::Escrowed>,
+                >,
+            >,
+            LocalState,
+            // steps count
+            (u32, u32),
+            CircuitStatus,
+            // requester
+            T::AccountId,
+        ) -> PrecompileResult<T>,
+        infallible_post_update: impl FnOnce((CircuitStatus, CircuitStatus), &LocalXtxCtx<T>),
+    ) {
+        Self::compile(
+            xtx_id,
+            |
+                fsx: &mut Vec<
+                    FullSideEffect<
+                        <T as frame_system::Config>::AccountId,
+                        <T as frame_system::Config>::BlockNumber,
+                        EscrowedBalanceOf<T, T::Escrowed>,
+                    >,
+                >,
+                local_state: LocalState,
+                steps_count: (u32, u32),
+                status: CircuitStatus,
+                requester: T::AccountId,
+            | -> Result<PrecompileResult<T>, Error<T>> {
+                Ok(infallible_precompile(fsx, local_state, steps_count, status, requester))
+            },
+            |status_change, local_ctx: &LocalXtxCtx<T>| -> Result<(), Error<T>> {
+                infallible_post_update(status_change, local_ctx);
+                Ok(())
+            }
+        ).expect("Expect compile to be infallible when called with infallible precompile and post_update");
     }
 
     // External interface exposed to all of the that can transition state, multiple FSX at the time i.e:
@@ -111,6 +182,7 @@ impl<T: Config> Machine<T> {
             // steps count
             (u32, u32),
             CircuitStatus,
+            T::AccountId,
         ) -> Result<PrecompileResult<T>, Error<T>>,
         post_update: impl FnOnce(
             (CircuitStatus, CircuitStatus),
@@ -122,14 +194,27 @@ impl<T: Config> Machine<T> {
         let local_state = local_ctx.local_state.clone();
         let steps_cnt = local_ctx.xtx.steps_cnt.clone();
         let status = local_ctx.xtx.status.clone();
-        match precompile(&mut current_fsx.clone(), local_state, steps_cnt, status)? {
-            PrecompileResult::UpdateFSX(updated_fsx) =>
-                Self::update_current_step_fsx(&mut local_ctx, &updated_fsx),
-            PrecompileResult::Continue => {},
-            PrecompileResult::Kill => Self::kill(local_ctx.xtx_id),
-        }
+        let requester = local_ctx.xtx.requester.clone();
 
-        let status_change = Self::update_status(&mut local_ctx)?;
+        let enforced_new_status: Option<CircuitStatus> = match precompile(
+            &mut current_fsx.clone(),
+            local_state,
+            steps_cnt,
+            status,
+            requester,
+        )? {
+            PrecompileResult::UpdateFSX(updated_fsx) => {
+                Self::update_current_step_fsx(&mut local_ctx, &updated_fsx);
+                None
+            },
+            PrecompileResult::Continue => None,
+            // Assume kill attempt with fallible post_update to be intended as infallible cleanup to kill op
+            //  in case fallible post_update passes, proceed with kill op
+            PrecompileResult::TryKill(status) => Some(status),
+        };
+
+        let mut status_change = Self::update_status(&mut local_ctx)?;
+        status_change.1 = enforced_new_status.unwrap_or(status_change.1);
         post_update(status_change.clone(), &local_ctx)?;
         Self::apply(&mut local_ctx, status_change);
         Ok(())
@@ -138,18 +223,6 @@ impl<T: Config> Machine<T> {
     pub fn load_xtx(xtx_id: XtxId<T>) -> Result<LocalXtxCtx<T>, Error<T>> {
         let xtx = <pallet::Pallet<T> as Store>::XExecSignals::get(xtx_id)
             .ok_or(Error::<T>::SetupFailedUnknownXtx)?;
-        // Make sure in case of commit_relay to only check finished Xtx
-        // if current_status == CircuitStatus::Finished
-        //     && xtx.status < CircuitStatus::Finished
-        // {
-        //     log::debug!(
-        //                     "Incorrect status current_status: {:?} xtx_status {:?}",
-        //                     current_status,
-        //                     xtx.status
-        //                 );
-        //     return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
-        // }
-
         let full_side_effects = <pallet::Pallet<T> as Store>::FullSideEffects::get(xtx_id)
             .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
         let local_state = <pallet::Pallet<T> as Store>::LocalXtxStates::get(xtx_id)
@@ -430,16 +503,5 @@ impl<T: Config> Machine<T> {
             CircuitStatus::RevertKill => {},
             CircuitStatus::RevertMisbehaviour => {},
         }
-    }
-
-    fn square_up(
-        _local_ctx: &mut LocalXtxCtx<T>,
-        _maybe_xbi_execution_charge: Option<(
-            T::Hash,
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        )>,
-    ) -> Result<(), Error<T>> {
-        Ok(())
     }
 }

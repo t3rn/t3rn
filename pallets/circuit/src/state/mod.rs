@@ -45,6 +45,14 @@ pub enum CircuitStatus {
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum CircuitKillCause {
+    DroppedAtBidding,
+    RevertTimedOut,
+    // Attempt to kill on user's request
+    RevertKill,
+}
+
+#[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitRole {
     Relayer,
     Executor,
