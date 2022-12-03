@@ -1867,7 +1867,7 @@ impl<T: Config> Pallet<T> {
 
             // worst case 4 from setup
             processed_weight += db_weight.reads(4 as Weight);
-            match Self::setup(CircuitStatus::Ready, requester, Some(signal.execution_id)) {
+            match Machine::<T>::load_xtx(signal.execution_id) {
                 Ok(mut local_xtx_ctx) => {
                     Self::kill(&mut local_xtx_ctx, intended_status);
 
