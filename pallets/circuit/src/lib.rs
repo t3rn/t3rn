@@ -375,7 +375,7 @@ pub mod pallet {
                 })
                 .map(|(xtx_id, _bidding_timeouts_at)| {
                     Machine::<T>::compile_infallible(
-                        xtx_id,
+                        &mut Machine::<T>::load_xtx(xtx_id).expect("xtx_id corresponds to a valid Xtx when reading from PendingXtxBidsTimeoutsMap storage"),
                         |current_fsx, _local_state, _steps_cnt, status, _requester| {
                             if status != CircuitStatus::PendingBidding {
                                 return PrecompileResult::TryKill(Cause::Timeout)
@@ -393,9 +393,9 @@ pub mod pallet {
                             }
                             PrecompileResult::UpdateFSX(current_fsx.clone())
                         },
-                        |_status_change, local_ctx| {
+                        |status_change, local_ctx| {
                             // Account fees and charges
-                            Self::square_up(local_ctx, None).expect(
+                            Self::square_up(local_ctx, status_change, None).expect(
                                 "Expect square up at DroppedAtBidding loop to be infallible",
                             );
                             Self::emit_status_update(
@@ -425,8 +425,8 @@ pub mod pallet {
                             xtx_id,
                             Cause::Timeout,
                             &T::SelfAccountId::get(),
-                            |_status_change, local_ctx| {
-                                Self::square_up(local_ctx, None).expect(
+                            |status_change, local_ctx| {
+                                Self::square_up(local_ctx, status_change, None).expect(
                                     "Expect RevertTimedOut options to square up to be infallible",
                                 );
                                 Self::emit_status_update(
@@ -472,68 +472,57 @@ pub mod pallet {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             // We must apply the state only if its generated and fresh
-            let xtx_id = match maybe_xtx_id {
-                Some(xtx_id) => xtx_id,
+            let local_ctx = match maybe_xtx_id {
+                Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let local_ctx = Machine::<T>::setup(&[], &requester)?;
-                    local_ctx.xtx_id
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
+                    local_ctx
                 },
             };
 
-            let mut hardened_side_effects = vec![];
-            let mut local_state_execution_view = LocalStateExecutionView {
-                local_state: Default::default(),
-                hardened_side_effects: vec![],
-                steps_cnt: (0, 0),
-                xtx_id: Default::default(),
-            };
+            let hardened_side_effects = local_ctx
+                .full_side_effects
+                .iter()
+                .map(|step| {
+                    step.iter()
+                        .map(|fsx| {
+                            let effect: HardenedSideEffect<
+                                T::AccountId,
+                                T::BlockNumber,
+                                BalanceOf<T>,
+                            > = fsx.clone().try_into().map_err(|e| {
+                                log::debug!(
+                                    target: "runtime::circuit",
+                                    "Error converting side effect to runtime: {:?}",
+                                    e
+                                );
+                                Error::<T>::FailedToHardenFullSideEffect
+                            })?;
+                            Ok(effect)
+                        })
+                        .collect::<Result<
+                            Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                            Error<T>,
+                        >>()
+                })
+                .collect::<Result<
+                    Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+                    Error<T>,
+                >>()?;
 
-            Machine::<T>::compile(xtx_id, no_mangle, |_status_change, local_ctx| {
-                hardened_side_effects = local_ctx
-                    .full_side_effects
-                    .iter()
-                    .map(|step| {
-                        step.iter()
-                            .map(|fsx| {
-                                let effect: HardenedSideEffect<
-                                    T::AccountId,
-                                    T::BlockNumber,
-                                    BalanceOf<T>,
-                                > = fsx.clone().try_into().map_err(|e| {
-                                    log::debug!(
-                                        target: "runtime::circuit",
-                                        "Error converting side effect to runtime: {:?}",
-                                        e
-                                    );
-                                    Error::<T>::FailedToHardenFullSideEffect
-                                })?;
-                                Ok(effect)
-                            })
-                            .collect::<Result<
-                                Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-                                Error<T>,
-                            >>()
-                    })
-                    .collect::<Result<
-                        Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
-                        Error<T>,
-                    >>()?;
+            let local_state_execution_view = LocalStateExecutionView::<T, BalanceOf<T>>::new(
+                local_ctx.xtx_id,
+                local_ctx.local_state.clone(),
+                hardened_side_effects,
+                local_ctx.xtx.steps_cnt,
+            );
 
-                local_state_execution_view = LocalStateExecutionView::<T, BalanceOf<T>>::new(
-                    local_ctx.xtx_id,
-                    local_ctx.local_state.clone(),
-                    hardened_side_effects,
-                    local_ctx.xtx.steps_cnt,
-                );
-
-                log::debug!(
-                    target: "runtime::circuit",
-                    "load_local_state with status: {:?}",
-                    local_ctx.xtx.status
-                );
-
-                Ok(())
-            })?;
+            log::debug!(
+                target: "runtime::circuit",
+                "load_local_state with status: {:?}",
+                local_ctx.xtx.status
+            );
 
             Ok(local_state_execution_view)
         }
@@ -549,26 +538,30 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
-            let local_ctx = match trigger.maybe_xtx_id {
-                Some(xtx_id) => Machine::<T>::load_xtx(xtx_id),
-                None => Machine::<T>::setup(&[], &requester),
-            }?;
+            let mut local_ctx = match trigger.maybe_xtx_id {
+                Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
+                None => {
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
+                    local_ctx
+                },
+            };
 
+            let xtx_id = local_ctx.xtx_id.clone();
+            println!(
+                "on local trigguer submit_side_effects full_side_effects {:?}",
+                local_ctx.full_side_effects
+            );
             log::debug!(
                 target: "runtime::circuit",
                 "submit_side_effects xtx state with status: {:?}",
-                local_ctx.xtx.status
+                local_ctx.xtx.status.clone()
             );
 
             Machine::<T>::compile(
-                local_ctx.xtx_id,
-                |mut current_fsx, local_state, _steps_cnt, status, _requester| {
-                    match Self::exec_in_xtx_ctx(
-                        local_ctx.xtx_id,
-                        local_state,
-                        &mut current_fsx,
-                        local_ctx.xtx.steps_cnt,
-                    ) {
+                &mut local_ctx,
+                |mut current_fsx, local_state, steps_cnt, status, _requester| {
+                    match Self::exec_in_xtx_ctx(xtx_id, local_state, &mut current_fsx, steps_cnt) {
                         Err(err) => {
                             if status == CircuitStatus::Ready {
                                 return Ok(PrecompileResult::TryKill(Cause::IntentionalKill))
@@ -578,9 +571,9 @@ pub mod pallet {
                         Ok(new_fsx) => Ok(PrecompileResult::UpdateFSX(new_fsx)),
                     }
                 },
-                |_status_change, local_ctx| {
+                |status_change, local_ctx| {
                     // Account fees and charges
-                    Self::square_up(local_ctx, None)?;
+                    Self::square_up(local_ctx, status_change, None)?;
 
                     // Emit: From Circuit events
                     // ToDo: impl FSX convert to SFX
@@ -632,7 +625,7 @@ pub mod pallet {
             let attempting_requester = Self::authorize(origin, CircuitRole::Requester)?;
 
             Machine::<T>::compile(
-                xtx_id,
+                &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, status, requester| {
                     if attempting_requester != requester || status > CircuitStatus::PendingBidding {
                         return Err(Error::<T>::UnauthorizedCancellation.into())
@@ -658,11 +651,13 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Setup: new xtx context with SFX validation
-            let fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+            println!("on_extrinsic_trigger -- xtx id {:?}", fresh_xtx.xtx_id);
+
             // Compile: apply the new state post squaring up and emit
-            Machine::<T>::compile(fresh_xtx.xtx_id, no_mangle, |_status_change, local_ctx| {
+            Machine::<T>::compile(&mut fresh_xtx, no_mangle, |status_change, local_ctx| {
                 // Square Up: do internal accounting
-                Self::square_up(local_ctx, None)?;
+                Self::square_up(local_ctx, status_change, None)?;
                 // Emit: circuit events
                 Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
                 Ok(())
@@ -685,7 +680,7 @@ pub mod pallet {
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             Machine::<T>::compile(
-                xtx_id,
+                &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, status, requester| {
                     // Check if Xtx is in the bidding state
                     if status != CircuitStatus::PendingBidding {
@@ -695,7 +690,7 @@ pub mod pallet {
                     // Check for the previous bids for SFX.
                     // ToDo: Consider moving to setup to keep the rule of single storage access at setup.
                     let current_accepted_bid =
-                        crate::Pallet::<T>::storage_read_sfx_accepted_bid(xtx_id, sfx_id);
+                        crate::Pallet::<T>::get_pending_sfx_bids(xtx_id, sfx_id);
 
                     let accepted_as_best_bid = Optimistic::<T>::try_bid_4_sfx(
                         current_fsx,
@@ -712,6 +707,7 @@ pub mod pallet {
                         sfx_id,
                         accepted_as_best_bid,
                     );
+
                     Ok(PrecompileResult::ForceUpdateStatus(
                         CircuitStatus::InBidding,
                     ))
@@ -722,6 +718,8 @@ pub mod pallet {
                         executor.clone(),
                         bid_amount,
                     ));
+                    println!("BID -- emit SFXNewBidReceived {:?}", _status_change);
+
                     Ok(())
                 },
             )?;
@@ -769,7 +767,7 @@ pub mod pallet {
             let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
 
             Machine::<T>::compile(
-                xtx_id,
+                &mut Machine::<T>::load_xtx(xtx_id)?,
                 |_current_fsx, _local_state, _steps_cnt, status, _requester| {
                     // fixme: must be solved with charging and update status order if XBI is the first SFX
                     return if status == CircuitStatus::Ready {
@@ -780,9 +778,13 @@ pub mod pallet {
                         Ok(PrecompileResult::Continue)
                     }
                 },
-                |_status_change, local_ctx| {
+                |status_change, local_ctx| {
                     // Account fees and charges
-                    Self::square_up(local_ctx, Some((charge_id, executor, total_max_rewards)))?;
+                    Self::square_up(
+                        local_ctx,
+                        status_change,
+                        Some((charge_id, executor, total_max_rewards)),
+                    )?;
                     T::XBIPromise::then(
                         xbi,
                         pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
@@ -824,7 +826,7 @@ pub mod pallet {
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             Machine::<T>::compile(
-                xtx_id,
+                &mut Machine::<T>::load_xtx(xtx_id)?,
                 |mut current_fsx, local_state, _steps_cnt, __status, _requester| {
                     Self::confirm(
                         xtx_id,
@@ -966,6 +968,8 @@ pub mod pallet {
     pub enum Error<T> {
         UpdateAttemptDoubleRevert,
         UpdateAttemptDoubleKill,
+        UpdateStateTransitionDisallowed,
+        UpdateForcedStateTransitionDisallowed,
         UpdateXtxTriggeredWithUnexpectedStatus,
         ConfirmationFailed,
         ApplyTriggeredWithUnexpectedStatus,
@@ -1013,6 +1017,7 @@ pub mod pallet {
         FSXNotFoundById,
         LocalSideEffectExecutionNotApplicable,
         LocalExecutionUnauthorized,
+        OnLocalTriggerFailedToSetupXtx,
         UnauthorizedCancellation,
         FailedToConvertSFX2XBI,
         FailedToCheckInOverXBI,
@@ -1105,12 +1110,15 @@ impl<T: Config> Pallet<T> {
 
     fn square_up(
         local_ctx: &LocalXtxCtx<T>,
+        status_change: (CircuitStatus, CircuitStatus),
         maybe_xbi_execution_charge: Option<(
             T::Hash,
             <T as frame_system::Config>::AccountId,
             EscrowedBalanceOf<T, T::Escrowed>,
         )>,
     ) -> Result<(), Error<T>> {
+        let (old_status, _new_status) = (status_change.0.clone(), status_change.1.clone());
+
         let requester = local_ctx.xtx.requester.clone();
 
         let unreserve_requester_xtx_max_rewards = |current_step_fsx: &Vec<
@@ -1129,7 +1137,8 @@ impl<T: Config> Pallet<T> {
                 .expect("refunds with deposit to always be valid post withdrawals")
             }
         };
-        match local_ctx.xtx.status.clone() {
+
+        match old_status.clone() {
             CircuitStatus::Requested => {
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     if !<T as Config>::AccountManager::can_withdraw(
@@ -1140,7 +1149,12 @@ impl<T: Config> Pallet<T> {
                         return Err(Error::<T>::XtxChargeFailedRequesterBalanceTooLow)
                     }
                 }
+                println!("proceed with <T as Config>::AccountManager::withdraw_immediately");
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
+                    println!(
+                        "proceed with <T as Config>::AccountManager::withdraw_immediately {:?}",
+                        fsx.input.max_reward
+                    );
                     <T as Config>::AccountManager::withdraw_immediately(
                         &requester,
                         fsx.input.max_reward,

@@ -32,6 +32,8 @@ type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub enum CircuitStatus {
     /// unvalidated xtx requested
     Requested,
+    /// validated xtx with empty side effects - reserved for 3vm following execution
+    Reserved,
     /// validated xtx pending for bidding; no bids has been posted so far
     PendingBidding,
     /// at least one bid has already been posted, still awaiting for bidding resolution
@@ -88,6 +90,10 @@ impl CircuitStatus {
                     (CircuitStatus::Requested, CircuitStatus::Requested) =>
                         Ok(CircuitStatus::Requested),
                     (CircuitStatus::Requested, CircuitStatus::PendingBidding) => Ok(new),
+                    // todo: shouldn't be allowed to schedule empty Xtx with no SFX, but load_local_state uses a lot for 3VM setup
+                    (CircuitStatus::Requested, CircuitStatus::Reserved) => Ok(new),
+                    (CircuitStatus::Reserved, CircuitStatus::Reserved) => Ok(new),
+
                     (CircuitStatus::PendingBidding, CircuitStatus::InBidding) => Ok(new),
                     (CircuitStatus::PendingBidding, CircuitStatus::Ready) => Ok(new),
                     (CircuitStatus::Ready, CircuitStatus::PendingExecution) => Ok(new),
@@ -100,7 +106,13 @@ impl CircuitStatus {
                     (CircuitStatus::Finished, CircuitStatus::FinishedAllSteps) => Ok(new),
 
                     (CircuitStatus::FinishedAllSteps, CircuitStatus::Committed) => Ok(new),
-                    (_, _) => Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus),
+                    (_, _) => {
+                        println!(
+                            "Error::<T>::UpdateStateTransitionDisallowed {:?} {:?}",
+                            previous, new
+                        );
+                        Err(Error::<T>::UpdateStateTransitionDisallowed)
+                    },
                 }
             },
             Some(forced) => {
@@ -112,6 +124,7 @@ impl CircuitStatus {
                 // kill either by protocol or user's attempt,
                 // from ready to pending execution for XBI's execution
                 // from pending bidding to in bidding for posted bid
+                // from reserved to pending execution
                 match forced.clone() {
                     CircuitStatus::Killed(cause) =>
                         return match cause {
@@ -119,13 +132,13 @@ impl CircuitStatus {
                                 if new <= CircuitStatus::PendingBidding {
                                     Ok(forced.clone())
                                 } else {
-                                    Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                                    Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                                 },
                             Cause::Timeout =>
                                 if new <= CircuitStatus::InBidding {
                                     Ok(forced.clone())
                                 } else {
-                                    Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                                    Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                                 },
                         },
                     CircuitStatus::Reverted(cause) =>
@@ -134,22 +147,28 @@ impl CircuitStatus {
                                 if new < CircuitStatus::FinishedAllSteps {
                                     Ok(forced.clone())
                                 } else {
-                                    Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                                    Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                                 },
                         },
                     CircuitStatus::InBidding =>
                         if new == CircuitStatus::PendingBidding {
                             Ok(forced.clone())
                         } else {
-                            Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                            Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                         },
                     CircuitStatus::PendingExecution =>
                         if new == CircuitStatus::Ready {
                             Ok(forced.clone())
                         } else {
-                            Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                            Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                         },
-                    _ => Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus),
+                    CircuitStatus::Reserved =>
+                        if new <= CircuitStatus::Reserved {
+                            Ok(forced.clone())
+                        } else {
+                            Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
+                        },
+                    _ => Err(Error::<T>::UpdateForcedStateTransitionDisallowed),
                 }
             },
         }
@@ -240,6 +259,11 @@ impl CircuitStatus {
         >],
     ) -> Result<CircuitStatus, Error<T>> {
         let mut lowest_determined_status = CircuitStatus::Requested;
+
+        // If all of the steps are empty assume CircuitStatus::Reserved status
+        if steps.iter().all(|step| step.is_empty()) {
+            return Ok(CircuitStatus::Reserved)
+        }
 
         for step in steps.iter() {
             let current_step_status = Self::determine_step_status::<T>(step)?;

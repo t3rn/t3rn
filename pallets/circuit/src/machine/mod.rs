@@ -107,7 +107,7 @@ impl<T: Config> Machine<T> {
         origin: &T::AccountId,
         infallible_post_update: impl FnOnce((CircuitStatus, CircuitStatus), &LocalXtxCtx<T>),
     ) -> bool {
-        let _local_ctx = match Self::load_xtx(xtx_id) {
+        let mut local_ctx = match Self::load_xtx(xtx_id) {
             Ok(ctx) => ctx,
             Err(err) => {
                 log::info!("Kill attempt failed with an error: {:?}", err);
@@ -116,7 +116,7 @@ impl<T: Config> Machine<T> {
         };
 
         Self::compile_infallible(
-            xtx_id,
+            &mut local_ctx,
             |_, _, _, _, _| -> PrecompileResult<T> {
                 if origin == &T::SelfAccountId::get() {
                     PrecompileResult::Revert(cause)
@@ -131,7 +131,7 @@ impl<T: Config> Machine<T> {
     }
 
     pub fn compile_infallible(
-        xtx_id: XtxId<T>,
+        local_ctx: &mut LocalXtxCtx<T>,
         infallible_precompile: impl FnOnce(
             &mut Vec<
                 FullSideEffect<
@@ -150,7 +150,7 @@ impl<T: Config> Machine<T> {
         infallible_post_update: impl FnOnce((CircuitStatus, CircuitStatus), &LocalXtxCtx<T>),
     ) {
         Self::compile(
-            xtx_id,
+            local_ctx,
             |
                 fsx: &mut Vec<
                     FullSideEffect<
@@ -178,7 +178,7 @@ impl<T: Config> Machine<T> {
     // - confirm_side_effect
     // - confirm side effect via XBI
     pub fn compile(
-        xtx_id: XtxId<T>,
+        local_ctx: &mut LocalXtxCtx<T>,
         precompile: impl FnOnce(
             &mut Vec<
                 FullSideEffect<
@@ -198,7 +198,8 @@ impl<T: Config> Machine<T> {
             &LocalXtxCtx<T>,
         ) -> Result<(), Error<T>>,
     ) -> Result<(), Error<T>> {
-        let mut local_ctx = Self::load_xtx(xtx_id)?;
+        println!("compile:: loaded xtx id {:?}", local_ctx.xtx_id);
+
         let current_fsx = Self::read_current_step_fsx(&local_ctx).clone();
         let local_state = local_ctx.local_state.clone();
         let steps_cnt = local_ctx.xtx.steps_cnt.clone();
@@ -213,7 +214,7 @@ impl<T: Config> Machine<T> {
             requester,
         )? {
             PrecompileResult::UpdateFSX(updated_fsx) => {
-                Self::update_current_step_fsx(&mut local_ctx, &updated_fsx);
+                Self::update_current_step_fsx(local_ctx, &updated_fsx);
                 None
             },
             PrecompileResult::Continue => None,
@@ -225,9 +226,20 @@ impl<T: Config> Machine<T> {
             PrecompileResult::Revert(cause) => Some(CircuitStatus::Reverted(cause)),
         };
 
-        let status_change = Self::update_status(&mut local_ctx, enforced_new_status)?;
+        println!(
+            "compile:: precompiled -- force status {:?}",
+            enforced_new_status.clone()
+        );
+
+        let status_change = Self::update_status(local_ctx, enforced_new_status)?;
+        println!("compile:: updated status {:?}", status_change.clone());
+
         post_update(status_change.clone(), &local_ctx)?;
-        Self::apply(&mut local_ctx, status_change);
+        println!("compile:: post_update status");
+
+        Self::apply(local_ctx, status_change);
+
+        println!("compile:: applied xtx");
         Ok(())
     }
 
@@ -353,8 +365,8 @@ impl<T: Config> Machine<T> {
     fn apply(local_ctx: &LocalXtxCtx<T>, status_change: (CircuitStatus, CircuitStatus)) {
         let (old_status, new_status) = (status_change.0, status_change.1);
 
-        match old_status {
-            CircuitStatus::Requested => {
+        match (old_status, new_status) {
+            (CircuitStatus::Requested, _) => {
                 // Iterate over full side effects to detect ones to execute locally.
                 fn is_local<T: Config>(gateway_id: &[u8; 4]) -> bool {
                     if *gateway_id == T::SelfGatewayId::get() {
@@ -433,79 +445,50 @@ impl<T: Config> Machine<T> {
                     XExecSignal<T::AccountId, T::BlockNumber>,
                 >(local_ctx.xtx_id, local_ctx.xtx.clone());
             },
-            CircuitStatus::PendingBidding => {
+            (CircuitStatus::PendingBidding, CircuitStatus::InBidding) => {
+                <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.xtx.clone())
+                });
+            },
+            (CircuitStatus::PendingBidding, CircuitStatus::Ready) => {
+                <pallet::Pallet<T> as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.full_side_effects.clone())
+                });
+                <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.xtx.clone())
+                });
                 // Always clean temporary PendingSFXBids and TimeoutsMap after bidding
                 <pallet::Pallet<T> as Store>::PendingSFXBids::remove_prefix(local_ctx.xtx_id, None);
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
-                match new_status {
-                    CircuitStatus::Ready => {
-                        <pallet::Pallet<T> as Store>::FullSideEffects::mutate(
-                            local_ctx.xtx_id,
-                            |x| *x = Some(local_ctx.full_side_effects.clone()),
-                        );
-                        <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.xtx.clone())
-                        });
-                    },
-                    CircuitStatus::Killed(_cause) => {
-                        // Clean all associated Xtx entries
-                        <pallet::Pallet<T> as Store>::XExecSignals::remove(local_ctx.xtx_id);
-                        <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(
-                            local_ctx.xtx_id,
-                        );
-                        <pallet::Pallet<T> as Store>::LocalXtxStates::remove(local_ctx.xtx_id);
-                        <pallet::Pallet<T> as Store>::FullSideEffects::remove(local_ctx.xtx_id);
-                        for fsx_step in &local_ctx.full_side_effects {
-                            for fsx in fsx_step {
-                                <pallet::Pallet<T> as Store>::SFX2XTXLinksMap::remove(
-                                    fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
-                                );
-                            }
-                        }
-                    },
-                    _ => {},
-                }
             },
-            CircuitStatus::Reverted(_cause) => {
+            (_, CircuitStatus::Killed(_cause)) => {
+                println!("APPLY:: remove xtx ");
+                // Clean all associated Xtx entries
+                <pallet::Pallet<T> as Store>::XExecSignals::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::LocalXtxStates::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::FullSideEffects::remove(local_ctx.xtx_id);
+                for fsx_step in &local_ctx.full_side_effects {
+                    for fsx in fsx_step {
+                        <pallet::Pallet<T> as Store>::SFX2XTXLinksMap::remove(
+                            fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
+                        );
+                    }
+                }
+                // Always clean temporary PendingSFXBids and TimeoutsMap after bidding
+                <pallet::Pallet<T> as Store>::PendingSFXBids::remove_prefix(local_ctx.xtx_id, None);
+                <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
+            },
+            (_, CircuitStatus::Reverted(_cause)) => {
+                println!("APPLY:: remove xtx ");
+
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
 
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
             },
-            // fixme: Separate for Bonded
-            CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
-                match new_status {
-                    CircuitStatus::FinishedAllSteps => {
-                        // todo: cleanup all of the local storage
-                        // TODO cleanup sfx2xtx map
-                        <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.xtx.clone())
-                        });
-
-                        <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(
-                            local_ctx.xtx_id,
-                        );
-
-                        <pallet::Pallet<T> as Store>::LocalXtxStates::remove::<XExecSignalId<T>>(
-                            local_ctx.xtx_id,
-                        );
-                    },
-                    _ => {
-                        // Update set of full side effects assuming the new confirmed has appeared
-                        <pallet::Pallet<T> as Store>::FullSideEffects::mutate(
-                            local_ctx.xtx_id,
-                            |x| *x = Some(local_ctx.full_side_effects.clone()),
-                        );
-
-                        <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.xtx.clone())
-                        });
-                    },
-                }
-            },
-            CircuitStatus::FinishedAllSteps => {
-                // TODO cleanup sfx2xtx map
+            (_, CircuitStatus::FinishedAllSteps) => {
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
@@ -516,10 +499,21 @@ impl<T: Config> Machine<T> {
                     local_ctx.xtx_id,
                 );
             },
-            CircuitStatus::Committed => {},
-            CircuitStatus::Killed(_) => {},
-            // todo: consider moving bids to local xtx state
-            CircuitStatus::InBidding => {},
+            // ongoing execution - update FSX and Xtx status
+            (
+                CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished,
+                CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished,
+            ) => {
+                // Update set of full side effects assuming the new confirmed has appeared
+                <pallet::Pallet<T> as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.full_side_effects.clone())
+                });
+
+                <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.xtx.clone())
+                });
+            },
+            (_, _) => {},
         }
     }
 }
