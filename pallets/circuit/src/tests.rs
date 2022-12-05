@@ -1830,7 +1830,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::RevertTimedOut,
+                    status: CircuitStatus::Reverted(Cause::Timeout),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
@@ -1938,7 +1938,7 @@ fn circuit_cancels_xtx_after_timeout() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::RevertTimedOut,
+                    status: CircuitStatus::Reverted(Cause::Timeout),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })

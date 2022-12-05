@@ -24,8 +24,8 @@ pub fn no_mangle<T: Config>(
 }
 
 pub fn no_post_updates<T: Config>(
-    status_change: (CircuitStatus, CircuitStatus),
-    local_ctx: &LocalXtxCtx<T>,
+    _status_change: (CircuitStatus, CircuitStatus),
+    _local_ctx: &LocalXtxCtx<T>,
 ) -> Result<(), Error<T>> {
     Ok(())
 }
@@ -46,7 +46,8 @@ pub enum PrecompileResult<T: Config> {
     ),
     Continue,
     ForceUpdateStatus(CircuitStatus),
-    TryKill(CircuitStatus),
+    TryKill(Cause),
+    Revert(Cause),
 }
 
 // Further Refactors:
@@ -102,10 +103,11 @@ impl<T: Config> Machine<T> {
     // Since infallible (must be bc of global clock is based on on_initialized block hooks returns bool if killed successfully or false if not found
     pub fn kill(
         xtx_id: XtxId<T>,
-        cause: CircuitStatus,
+        cause: Cause,
+        origin: &T::AccountId,
         infallible_post_update: impl FnOnce((CircuitStatus, CircuitStatus), &LocalXtxCtx<T>),
     ) -> bool {
-        let mut local_ctx = match Self::load_xtx(xtx_id) {
+        let _local_ctx = match Self::load_xtx(xtx_id) {
             Ok(ctx) => ctx,
             Err(err) => {
                 log::info!("Kill attempt failed with an error: {:?}", err);
@@ -115,7 +117,13 @@ impl<T: Config> Machine<T> {
 
         Self::compile_infallible(
             xtx_id,
-            |_, _, _, _, _| -> PrecompileResult<T> { PrecompileResult::TryKill(cause) },
+            |_, _, _, _, _| -> PrecompileResult<T> {
+                if origin == &T::SelfAccountId::get() {
+                    PrecompileResult::Revert(cause)
+                } else {
+                    PrecompileResult::TryKill(cause)
+                }
+            },
             infallible_post_update,
         );
 
@@ -191,7 +199,7 @@ impl<T: Config> Machine<T> {
         ) -> Result<(), Error<T>>,
     ) -> Result<(), Error<T>> {
         let mut local_ctx = Self::load_xtx(xtx_id)?;
-        let mut current_fsx = Self::read_current_step_fsx(&local_ctx).clone();
+        let current_fsx = Self::read_current_step_fsx(&local_ctx).clone();
         let local_state = local_ctx.local_state.clone();
         let steps_cnt = local_ctx.xtx.steps_cnt.clone();
         let status = local_ctx.xtx.status.clone();
@@ -212,12 +220,12 @@ impl<T: Config> Machine<T> {
             // Assume kill attempt with fallible post_update to be intended as infallible cleanup to kill op
             //  in case fallible post_update passes, proceed with kill op
             // ToDo: check between allowed status enforcements - kill status / allowed enforced status
-            PrecompileResult::TryKill(status) => Some(status),
+            PrecompileResult::TryKill(cause) => Some(CircuitStatus::Killed(cause)),
             PrecompileResult::ForceUpdateStatus(status) => Some(status),
+            PrecompileResult::Revert(cause) => Some(CircuitStatus::Reverted(cause)),
         };
 
-        let mut status_change = Self::update_status(&mut local_ctx)?;
-        status_change.1 = enforced_new_status.unwrap_or(status_change.1);
+        let status_change = Self::update_status(&mut local_ctx, enforced_new_status)?;
         post_update(status_change.clone(), &local_ctx)?;
         Self::apply(&mut local_ctx, status_change);
         Ok(())
@@ -299,6 +307,7 @@ impl<T: Config> Machine<T> {
     // Update should have all of the info accessible in LocalXtxCtx to transition between next states.
     fn update_status(
         local_ctx: &mut LocalXtxCtx<T>,
+        enforce_new_status: Option<CircuitStatus>,
     ) -> Result<(CircuitStatus, CircuitStatus), Error<T>> {
         let current_status = local_ctx.xtx.status.clone();
         // Apply will try to move the status of Xtx from the current to the closest valid one.
@@ -306,7 +315,8 @@ impl<T: Config> Machine<T> {
             CircuitStatus::Requested => {
                 local_ctx.xtx.steps_cnt = (0, local_ctx.full_side_effects.len() as u32);
             },
-            CircuitStatus::RevertTimedOut => {},
+            CircuitStatus::Reverted(_cause) => return Err(Error::<T>::UpdateAttemptDoubleRevert),
+            CircuitStatus::Killed(_cause) => return Err(Error::<T>::UpdateAttemptDoubleKill),
             CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
                 // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
                 if !Self::read_current_step_fsx(local_ctx)
@@ -328,8 +338,14 @@ impl<T: Config> Machine<T> {
             _ => {},
         }
 
-        let new_status = CircuitStatus::determine_xtx_status(&local_ctx.full_side_effects)?;
+        let mut new_status = CircuitStatus::determine_xtx_status(&local_ctx.full_side_effects)?;
         local_ctx.xtx.status = new_status.clone();
+
+        new_status = CircuitStatus::check_transition(
+            current_status.clone(),
+            new_status,
+            enforce_new_status,
+        )?;
 
         Ok((current_status, new_status))
     }
@@ -431,7 +447,7 @@ impl<T: Config> Machine<T> {
                             *x = Some(local_ctx.xtx.clone())
                         });
                     },
-                    CircuitStatus::DroppedAtBidding => {
+                    CircuitStatus::Killed(_cause) => {
                         // Clean all associated Xtx entries
                         <pallet::Pallet<T> as Store>::XExecSignals::remove(local_ctx.xtx_id);
                         <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(
@@ -450,7 +466,7 @@ impl<T: Config> Machine<T> {
                     _ => {},
                 }
             },
-            CircuitStatus::RevertTimedOut => {
+            CircuitStatus::Reverted(_cause) => {
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
@@ -501,10 +517,9 @@ impl<T: Config> Machine<T> {
                 );
             },
             CircuitStatus::Committed => {},
-            CircuitStatus::DroppedAtBidding => {},
-            CircuitStatus::Reverted => {},
-            CircuitStatus::RevertKill => {},
-            CircuitStatus::RevertMisbehaviour => {},
+            CircuitStatus::Killed(_) => {},
+            // todo: consider moving bids to local xtx state
+            CircuitStatus::InBidding => {},
         }
     }
 }

@@ -376,9 +376,9 @@ pub mod pallet {
                 .map(|(xtx_id, _bidding_timeouts_at)| {
                     Machine::<T>::compile_infallible(
                         xtx_id,
-                        |mut current_fsx, local_state, steps_cnt, status, _requester| {
+                        |current_fsx, _local_state, _steps_cnt, status, _requester| {
                             if status != CircuitStatus::PendingBidding {
-                                return PrecompileResult::TryKill(CircuitStatus::DroppedAtBidding)
+                                return PrecompileResult::TryKill(Cause::Timeout)
                             }
                             for mut fsx in current_fsx.iter_mut() {
                                 let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(xtx_id);
@@ -388,21 +388,16 @@ pub mod pallet {
                                     fsx.best_bid = Some(best_sfx_bid);
                                 } else {
                                     // Error - at least one FSX has no bid
-                                    return PrecompileResult::TryKill(
-                                        CircuitStatus::DroppedAtBidding,
-                                    )
+                                    return PrecompileResult::TryKill(Cause::Timeout)
                                 }
                             }
                             PrecompileResult::UpdateFSX(current_fsx.clone())
                         },
-                        |status_change, local_ctx| {
+                        |_status_change, local_ctx| {
                             // Account fees and charges
                             Self::square_up(local_ctx, None).expect(
                                 "Expect square up at DroppedAtBidding loop to be infallible",
                             );
-                            if status_change.1 == CircuitStatus::DroppedAtBidding {
-                                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
-                            }
                             Self::emit_status_update(
                                 local_ctx.xtx_id,
                                 Some(local_ctx.xtx.clone()),
@@ -428,9 +423,9 @@ pub mod pallet {
                         }
                         let _success: bool = Machine::<T>::kill(
                             xtx_id,
-                            CircuitStatus::RevertTimedOut,
-                            |status_change, local_ctx| {
-                                Optimistic::<T>::try_slash(local_ctx);
+                            Cause::Timeout,
+                            &T::SelfAccountId::get(),
+                            |_status_change, local_ctx| {
                                 Self::square_up(local_ctx, None).expect(
                                     "Expect RevertTimedOut options to square up to be infallible",
                                 );
@@ -493,7 +488,7 @@ pub mod pallet {
                 xtx_id: Default::default(),
             };
 
-            Machine::<T>::compile(xtx_id, no_mangle, |status_change, local_ctx| {
+            Machine::<T>::compile(xtx_id, no_mangle, |_status_change, local_ctx| {
                 hardened_side_effects = local_ctx
                     .full_side_effects
                     .iter()
@@ -567,7 +562,7 @@ pub mod pallet {
 
             Machine::<T>::compile(
                 local_ctx.xtx_id,
-                |mut current_fsx, local_state, steps_cnt, status, _requester| {
+                |mut current_fsx, local_state, _steps_cnt, status, _requester| {
                     match Self::exec_in_xtx_ctx(
                         local_ctx.xtx_id,
                         local_state,
@@ -576,7 +571,7 @@ pub mod pallet {
                     ) {
                         Err(err) => {
                             if status == CircuitStatus::Ready {
-                                return Ok(PrecompileResult::TryKill(CircuitStatus::RevertKill))
+                                return Ok(PrecompileResult::TryKill(Cause::IntentionalKill))
                             }
                             return Err(err)
                         },
@@ -638,7 +633,7 @@ pub mod pallet {
 
             Machine::<T>::compile(
                 xtx_id,
-                |current_fsx, local_state, _steps_cnt, status, requester| {
+                |current_fsx, _local_state, _steps_cnt, status, requester| {
                     if attempting_requester != requester || status > CircuitStatus::PendingBidding {
                         return Err(Error::<T>::UnauthorizedCancellation.into())
                     }
@@ -646,7 +641,7 @@ pub mod pallet {
                     if current_fsx.iter().any(|fsx| fsx.best_bid.is_some()) {
                         return Err(Error::<T>::UnauthorizedCancellation.into())
                     }
-                    Ok(PrecompileResult::TryKill(CircuitStatus::DroppedAtBidding))
+                    Ok(PrecompileResult::TryKill(Cause::IntentionalKill))
                 },
                 no_post_updates,
             )?;
@@ -689,29 +684,47 @@ pub mod pallet {
             let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
-            // Read: retrieve local xtx context
-            let mut local_ctx = Machine::<T>::load_xtx(xtx_id)?;
+            Machine::<T>::compile(
+                xtx_id,
+                |current_fsx, _local_state, _steps_cnt, status, requester| {
+                    // Check if Xtx is in the bidding state
+                    if status != CircuitStatus::PendingBidding {
+                        return Err(Error::<T>::BiddingInactive)
+                    }
 
-            // Check for the previous bids for SFX.
-            // ToDo: Consider moving to setup to keep the rule of single storage access at setup.
-            let current_accepted_bid =
-                crate::Pallet::<T>::storage_read_sfx_accepted_bid(xtx_id, sfx_id);
+                    // Check for the previous bids for SFX.
+                    // ToDo: Consider moving to setup to keep the rule of single storage access at setup.
+                    let current_accepted_bid =
+                        crate::Pallet::<T>::storage_read_sfx_accepted_bid(xtx_id, sfx_id);
 
-            let accepted_as_best_bid = Optimistic::<T>::try_bid_4_sfx(
-                &mut local_ctx,
-                &executor,
-                bid_amount,
-                sfx_id,
-                current_accepted_bid,
+                    let accepted_as_best_bid = Optimistic::<T>::try_bid_4_sfx(
+                        current_fsx,
+                        &executor.clone(),
+                        &requester.clone(),
+                        bid_amount,
+                        sfx_id,
+                        xtx_id,
+                        current_accepted_bid,
+                    )?;
+
+                    crate::Pallet::<T>::storage_write_new_sfx_accepted_bid(
+                        xtx_id,
+                        sfx_id,
+                        accepted_as_best_bid,
+                    );
+                    Ok(PrecompileResult::ForceUpdateStatus(
+                        CircuitStatus::InBidding,
+                    ))
+                },
+                |_status_change, _local_ctx| {
+                    Self::deposit_event(Event::SFXNewBidReceived(
+                        sfx_id,
+                        executor.clone(),
+                        bid_amount,
+                    ));
+                    Ok(())
+                },
             )?;
-
-            crate::Pallet::<T>::storage_write_new_sfx_accepted_bid(
-                &mut local_ctx,
-                sfx_id,
-                accepted_as_best_bid,
-            );
-
-            Self::deposit_event(Event::SFXNewBidReceived(sfx_id, executor, bid_amount));
 
             Ok(().into())
         }
@@ -757,7 +770,7 @@ pub mod pallet {
 
             Machine::<T>::compile(
                 xtx_id,
-                |mut current_fsx, local_state, steps_cnt, status, _requester| {
+                |_current_fsx, _local_state, _steps_cnt, status, _requester| {
                     // fixme: must be solved with charging and update status order if XBI is the first SFX
                     return if status == CircuitStatus::Ready {
                         Ok(PrecompileResult::ForceUpdateStatus(
@@ -774,7 +787,7 @@ pub mod pallet {
                         xbi,
                         pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
                     )
-                    .map_err(|e| Error::<T>::FailedToEnterXBIPortal)?;
+                    .map_err(|_e| Error::<T>::FailedToEnterXBIPortal)?;
                     Ok(())
                 },
             )?;
@@ -806,7 +819,7 @@ pub mod pallet {
             >,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let executor = Self::authorize(origin, CircuitRole::Executor)?;
+            let _executor = Self::authorize(origin, CircuitRole::Executor)?;
             let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
@@ -842,10 +855,7 @@ pub mod pallet {
         }
     }
 
-    use crate::{
-        machine::{no_mangle, Machine},
-        CircuitStatus::DroppedAtBidding,
-    };
+    use crate::machine::{no_mangle, Machine};
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
@@ -954,6 +964,8 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        UpdateAttemptDoubleRevert,
+        UpdateAttemptDoubleKill,
         UpdateXtxTriggeredWithUnexpectedStatus,
         ConfirmationFailed,
         ApplyTriggeredWithUnexpectedStatus,
@@ -998,6 +1010,7 @@ pub mod pallet {
         ApplyFailed,
         DeterminedForbiddenXtxStatus,
         SideEffectIsAlreadyScheduledToExecuteOverXBI,
+        FSXNotFoundById,
         LocalSideEffectExecutionNotApplicable,
         LocalExecutionUnauthorized,
         UnauthorizedCancellation,
@@ -1076,13 +1089,13 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionStepFinishedExec(xtx_id)),
                 CircuitStatus::FinishedAllSteps =>
                     Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
-                CircuitStatus::RevertTimedOut =>
+                CircuitStatus::Reverted(ref _cause) =>
                     Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id)),
-                CircuitStatus::DroppedAtBidding =>
+                CircuitStatus::Killed(ref _cause) =>
                     Self::deposit_event(Event::XTransactionXtxDroppedAtBidding(xtx_id)),
                 _ => {},
             }
-            if xtx.status >= CircuitStatus::PendingExecution {
+            if xtx.status.clone() >= CircuitStatus::PendingExecution {
                 if let Some(full_side_effects) = maybe_full_side_effects {
                     Self::deposit_event(Event::SideEffectsConfirmed(xtx_id, full_side_effects));
                 }
@@ -1116,7 +1129,7 @@ impl<T: Config> Pallet<T> {
                 .expect("refunds with deposit to always be valid post withdrawals")
             }
         };
-        match local_ctx.xtx.status {
+        match local_ctx.xtx.status.clone() {
             CircuitStatus::Requested => {
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     if !<T as Config>::AccountManager::can_withdraw(
@@ -1135,9 +1148,6 @@ impl<T: Config> Pallet<T> {
                     )
                     .expect("Ensured can withdraw in can_withdraw loop over FSX")
                 }
-            },
-            CircuitStatus::DroppedAtBidding => {
-                unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
             },
             CircuitStatus::Ready => {
                 let current_step_sfx = Self::get_current_step_fsx(local_ctx);
@@ -1183,11 +1193,14 @@ impl<T: Config> Pallet<T> {
                 )
                 .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;
             },
+            CircuitStatus::Killed(_cause) => {
+                // todo: can check for try_dropped_at_bidding_refund in cause == Timeout
+                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
+                unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
+            },
             // todo: make sure callable once
             // todo: distinct between RevertTimedOut to iterate over all steps vs single step for Revert
-            CircuitStatus::RevertTimedOut
-            | CircuitStatus::Reverted
-            | CircuitStatus::RevertMisbehaviour => {
+            CircuitStatus::Reverted(_cause) => {
                 Optimistic::<T>::try_slash(local_ctx);
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
@@ -1520,19 +1533,15 @@ impl<T: Config> Pallet<T> {
             // Cannot panic due to loop condition
             let (requester, signal) = &mut queue[0];
 
-            let intended_status = match signal.kind {
-                SignalKind::Complete => CircuitStatus::Finished, // Fails bc no executor tried to execute, maybe a new enum?
-                SignalKind::Kill(_) => CircuitStatus::RevertKill,
-            };
-
             // worst case 4 from setup
             processed_weight += db_weight.reads(4 as Weight);
             match Machine::<T>::load_xtx(signal.execution_id) {
-                Ok(mut local_ctx) => {
+                Ok(local_ctx) => {
                     let _success: bool = Machine::<T>::kill(
                         local_ctx.xtx_id,
-                        intended_status,
-                        |status_change, local_ctx| {
+                        Cause::IntentionalKill,
+                        &requester.clone(),
+                        |_status_change, _local_ctx| {
                             queue.swap_remove(0);
                             remaining_key_budget -= 1;
                             // apply has 2
@@ -1568,6 +1577,25 @@ impl<T: Config> Pallet<T> {
         &local_ctx.full_side_effects[current_step as usize]
     }
 
+    pub(self) fn filter_fsx_by_security_lvl(
+        fsx_array: &Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >,
+        security_lvl: SecurityLvl,
+    ) -> Vec<
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >,
+    > {
+        fsx_array
+            .iter()
+            .filter(|&fsx| fsx.security_lvl == security_lvl)
+            .cloned()
+            .collect()
+    }
+
     pub(self) fn get_current_step_fsx_by_security_lvl(
         local_ctx: &LocalXtxCtx<T>,
         security_lvl: SecurityLvl,
@@ -1587,7 +1615,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub(self) fn storage_write_new_sfx_accepted_bid(
-        local_ctx: &LocalXtxCtx<T>,
+        xtx_id: T::Hash,
         sfx_id: SideEffectId<T>,
         sfx_bid: SFXBid<
             <T as frame_system::Config>::AccountId,
@@ -1595,7 +1623,7 @@ impl<T: Config> Pallet<T> {
             u32,
         >,
     ) {
-        <PendingSFXBids<T>>::insert(local_ctx.xtx_id, sfx_id, sfx_bid)
+        <PendingSFXBids<T>>::insert(xtx_id, sfx_id, sfx_bid)
     }
 
     pub(self) fn storage_read_sfx_accepted_bid(
@@ -1626,6 +1654,36 @@ impl<T: Config> Pallet<T> {
         }
 
         acc_rewards
+    }
+
+    pub(self) fn find_fsx_by_id(
+        fsx_array: &Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            >,
+        >,
+        sfx_id: T::Hash,
+        xtx_id: T::Hash,
+    ) -> Result<
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >,
+        Error<T>,
+    > {
+        let maybe_fsx = fsx_array
+            .iter()
+            .filter(|&fsx| fsx.confirmed.is_none())
+            .find(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id);
+
+        if let Some(fsx) = maybe_fsx {
+            Ok(fsx.clone())
+        } else {
+            Err(Error::<T>::FSXNotFoundById)
+        }
     }
 
     pub(self) fn recover_fsx_by_id(
@@ -1669,7 +1727,7 @@ impl<T: Config> Pallet<T> {
             Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
                 .expect("XBI metadata id conversion should always decode to Sfx ID");
 
-        let mut local_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
+        let local_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
 
         let fsx = Self::recover_fsx_by_id(sfx_id, &local_ctx)?;
 
@@ -1798,7 +1856,7 @@ impl<T: Config> Pallet<T> {
 
         let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
 
-        let mut fsx = Machine::<T>::read_current_step_fsx(&local_ctx);
+        let fsx = Machine::<T>::read_current_step_fsx(&local_ctx);
         Self::confirm(
             local_ctx.xtx_id,
             &mut fsx.clone(),

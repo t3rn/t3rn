@@ -30,26 +30,34 @@ type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 ///     Ready -> Reverted: Some of the side effects failed and the Xtx was reverted
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitStatus {
+    /// unvalidated xtx requested
     Requested,
+    /// validated xtx pending for bidding; no bids has been posted so far
     PendingBidding,
+    /// at least one bid has already been posted, still awaiting for bidding resolution
+    InBidding,
+    /// xtx killed on user's request or Dropped at Bidding
+    Killed(Cause),
+    /// all bids has been posted and xtx is awaiting confirmations of execution
     Ready,
+    /// at least one valid confirmation of execution has already been accepted; xtx still in progress
     PendingExecution,
+    /// xtx step successfully finished
     Finished,
+    /// all of the steps has successfully finished - can still await for attestations to move to foreign consensus targets
     FinishedAllSteps,
+    /// xtx reverts due timeout when confirmations haven't arrived on time,
+    Reverted(Cause),
     Committed,
-    DroppedAtBidding,
-    Reverted,
-    RevertTimedOut,
-    RevertKill,
-    RevertMisbehaviour,
 }
 
+/// Kill or Revert cause
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum CircuitKillCause {
-    DroppedAtBidding,
-    RevertTimedOut,
-    // Attempt to kill on user's request
-    RevertKill,
+pub enum Cause {
+    /// timeout expired with incomplete expectations: either bids or SFX confirmations
+    Timeout,
+    /// Attempt to kill on user's request
+    IntentionalKill,
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -69,6 +77,84 @@ pub enum InsuranceEnact {
 }
 
 impl CircuitStatus {
+    pub(crate) fn check_transition<T: Config>(
+        previous: CircuitStatus,
+        new: CircuitStatus,
+        maybe_forced: Option<CircuitStatus>,
+    ) -> Result<CircuitStatus, Error<T>> {
+        match maybe_forced {
+            None => {
+                match (previous.clone(), new.clone()) {
+                    (CircuitStatus::Requested, CircuitStatus::Requested) =>
+                        Ok(CircuitStatus::Requested),
+                    (CircuitStatus::Requested, CircuitStatus::PendingBidding) => Ok(new),
+                    (CircuitStatus::PendingBidding, CircuitStatus::InBidding) => Ok(new),
+                    (CircuitStatus::PendingBidding, CircuitStatus::Ready) => Ok(new),
+                    (CircuitStatus::Ready, CircuitStatus::PendingExecution) => Ok(new),
+                    (CircuitStatus::PendingExecution, CircuitStatus::Finished) => Ok(new),
+                    (CircuitStatus::PendingExecution, CircuitStatus::FinishedAllSteps) => Ok(new),
+                    (CircuitStatus::PendingExecution, CircuitStatus::Committed) => Ok(new),
+                    // next steps transitions
+                    (CircuitStatus::Finished, CircuitStatus::PendingExecution) => Ok(new),
+                    (CircuitStatus::Finished, CircuitStatus::Ready) => Ok(new),
+                    (CircuitStatus::Finished, CircuitStatus::FinishedAllSteps) => Ok(new),
+
+                    (CircuitStatus::FinishedAllSteps, CircuitStatus::Committed) => Ok(new),
+                    (_, _) => Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus),
+                }
+            },
+            Some(forced) => {
+                if forced == new {
+                    return Ok(new)
+                }
+                // Only cases we allow forced transitions are:
+                // revert by protocol,
+                // kill either by protocol or user's attempt,
+                // from ready to pending execution for XBI's execution
+                // from pending bidding to in bidding for posted bid
+                match forced.clone() {
+                    CircuitStatus::Killed(cause) =>
+                        return match cause {
+                            Cause::IntentionalKill =>
+                                if new <= CircuitStatus::PendingBidding {
+                                    Ok(forced.clone())
+                                } else {
+                                    Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                                },
+                            Cause::Timeout =>
+                                if new <= CircuitStatus::InBidding {
+                                    Ok(forced.clone())
+                                } else {
+                                    Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                                },
+                        },
+                    CircuitStatus::Reverted(cause) =>
+                        return match cause {
+                            _ =>
+                                if new < CircuitStatus::FinishedAllSteps {
+                                    Ok(forced.clone())
+                                } else {
+                                    Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                                },
+                        },
+                    CircuitStatus::InBidding =>
+                        if new == CircuitStatus::PendingBidding {
+                            Ok(forced.clone())
+                        } else {
+                            Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                        },
+                    CircuitStatus::PendingExecution =>
+                        if new == CircuitStatus::Ready {
+                            Ok(forced.clone())
+                        } else {
+                            Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus)
+                        },
+                    _ => Err(Error::<T>::UpdateXtxTriggeredWithUnexpectedStatus),
+                }
+            },
+        }
+    }
+
     fn determine_fsx_bidding_status<T: Config>(
         fsx: FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
     ) -> Result<CircuitStatus, Error<T>> {

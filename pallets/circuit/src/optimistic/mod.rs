@@ -10,17 +10,17 @@ pub struct Optimistic<T: Config> {
 
 impl<T: Config> Optimistic<T> {
     pub fn try_bid_4_sfx(
-        local_ctx: &LocalXtxCtx<T>,
+        current_fsx: &Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >,
         executor: &T::AccountId,
+        requester: &T::AccountId,
         bid: EscrowedBalanceOf<T, T::Escrowed>,
         sfx_id: SideEffectId<T>,
+        xtx_id: T::Hash,
         current_accepted_bid: Option<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>>,
     ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
-        // Check if Xtx is in the bidding state
-        if local_ctx.xtx.status != CircuitStatus::PendingBidding {
-            return Err(Error::<T>::BiddingInactive)
-        }
-        let fsx = crate::Pallet::<T>::recover_fsx_by_id(sfx_id, local_ctx)?;
+        let fsx = crate::Pallet::<T>::find_fsx_by_id(current_fsx, sfx_id, xtx_id)?;
         let (sfx_max_reward, sfx_security_lvl) = (fsx.input.max_reward, fsx.security_lvl.clone());
         // Check if bid doesn't go below dust
         if bid < <T::Escrowed as EscrowTrait<T>>::Currency::minimum_balance() {
@@ -49,12 +49,12 @@ impl<T: Config> Optimistic<T> {
                 bid,
                 fsx.input.insurance,
                 executor.clone(),
-                local_ctx.xtx.requester.clone(),
+                requester.clone(),
                 fsx.input.reward_asset_id,
             );
         // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
         if sfx_security_lvl == SecurityLvl::Optimistic {
-            sfx_bid = Self::bond_4_sfx(executor, local_ctx, &mut sfx_bid, sfx_id)?;
+            sfx_bid = Self::bond_4_sfx(executor, xtx_id, current_fsx, &mut sfx_bid, sfx_id)?;
         }
 
         // Un-reserve the funds of discarded bidder.
@@ -77,24 +77,24 @@ impl<T: Config> Optimistic<T> {
 
     pub(self) fn bond_4_sfx(
         executor: &T::AccountId,
-        local_ctx: &LocalXtxCtx<T>,
+        xtx_id: T::Hash,
+        current_fsx: &Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >,
         sfx_bid: &mut SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>,
         sfx_id: SideEffectId<T>,
     ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
         let total_xtx_step_optimistic_rewards_of_others = crate::Pallet::<T>::get_fsx_total_rewards(
-            &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
-                local_ctx,
-                SecurityLvl::Optimistic,
-            )
-            .into_iter()
-            .filter(|fsx| fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id) != sfx_id)
-            .collect::<Vec<
-                FullSideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-                >,
-            >>(),
+            &crate::Pallet::<T>::filter_fsx_by_security_lvl(current_fsx, SecurityLvl::Optimistic)
+                .into_iter()
+                .filter(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) != sfx_id)
+                .collect::<Vec<
+                    FullSideEffect<
+                        <T as frame_system::Config>::AccountId,
+                        <T as frame_system::Config>::BlockNumber,
+                        EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                    >,
+                >>(),
         );
 
         if total_xtx_step_optimistic_rewards_of_others > Zero::zero() {
