@@ -263,8 +263,9 @@ export class SideEffect extends EventEmitter {
     }
 
     /**
-     * Computes the potential profit of the SFX based on the current risk/reward parameters. Once the max profit is computed, the SFX is
-     * evaluated via the strategy engine. Depending on the result, a bid is placed or the SFX is ignored.
+     * Computes the potential profit of the SFX based on the current risk/reward parameters.
+     * This function is primarily used to react to changes in the risk/reward parameters and reevalute the bidding decision.
+     * If a new maxProfit has been computed, the bidding engine is used to determine if another bid should be placed.
      */
     recomputeMaxProfit() {
         const txCostUsd = this.gateway.toFloat(this.txCostNative.getValue()) * this.nativeAssetPrice.getValue()
@@ -276,25 +277,31 @@ export class SideEffect extends EventEmitter {
         const maxProfitUsd = rewardValueUsd - txCostUsd - txOutputCostUsd
         if (maxProfitUsd !== this.maxProfitUsd.getValue()) {
             this.maxProfitUsd.next(maxProfitUsd)
-            const result = this.generateBid()
+            this.triggerBid()
+        }
+    }
 
-            if (result?.trigger) {
-                this.addLog({
-                    msg: "Bid generated",
-                    bid: result?.bidAmount.toString(),
-                })
-                this.logger.info(`Bidding on SFX ${this.humanId}: ${bnToFloat(result.bidAmount, 12)} TRN 🎰`)
+    /**
+     * Triggers the bidding engine to place a new bid for the SFX.
+     */
+    triggerBid(){
+        const result = this.generateBid()
+        if (result?.trigger) {
+            this.addLog({
+                msg: "Bid generated",
+                bid: result?.bidAmount.toString(),
+            })
+            this.logger.info(`Bidding on SFX ${this.humanId}: ${bnToFloat(result.bidAmount, 12)} TRN 🎰`)
 
-                this.emit("Notification", {
-                    type: NotificationType.SubmitBid,
-                    payload: {
-                        sfxId: this.id,
-                        bidAmount: result.bidAmount, // converts human to native
-                    },
-                })
-            } else {
-                this.addLog({ msg: "Not bidding", reason: result.reason })
-            }
+            this.emit("Notification", {
+                type: NotificationType.SubmitBid,
+                payload: {
+                    sfxId: this.id,
+                    bidAmount: result.bidAmount, // converts human to native
+                },
+            })
+        } else {
+            this.addLog({ msg: "Not bidding", reason: result.reason })
         }
     }
 
@@ -364,11 +371,19 @@ export class SideEffect extends EventEmitter {
      * @param bidAmount The bidding amount that was accepted. This is the reward amount, which is added to the subject
      */
     bidAccepted(bidAmount: number) {
-        this.isBidder = true
         this.txStatus = TxStatus.Ready // open mutex lock
-        this.reward.next(this.gateway.toFloat(bidAmount)) // not sure if we want to do this tbh. Reacting to other bids should be sufficient
 
-        this.addLog({ msg: "Bid accepted", bidAmount: bidAmount.toString() })
+        // usually, event fire quicker then a TX resolves. This prevents that we overwrite the TX status, when a lower bid was in the same block
+        if (this.reward.getValue() >= this.gateway.toFloat(bidAmount)) {
+            this.isBidder = true
+            this.reward.next(this.gateway.toFloat(bidAmount)) // not sure if we want to do this tbh. Reacting to other bids should be sufficient
+            this.logger.info(`Bid accepted for SFX ${this.humanId} ✅`)
+            this.addLog({ msg: "Bid accepted", bidAmount: bidAmount.toString() })
+        } else {
+            this.triggerBid() // trigger another bid, as we have been outbid. The risk parameters are updated automatically by events.
+            this.logger.info(`Bid undercut in block for SFX ${this.humanId} ❌`)
+            this.addLog({ msg: "Bid accepted, but undercut in same block", bidAmount: bidAmount.toString() })
+        }
     }
 
     /**
@@ -378,9 +393,10 @@ export class SideEffect extends EventEmitter {
      */
     bidRejected(error: any) {
         // a better bid was submitted before this one was accepted. A new eval will be triggered with the incoming bid event
+        this.txStatus = TxStatus.Ready // open mutex lock
         this.isBidder = false
-        this.txStatus = TxStatus.Ready
         this.addLog({ msg: "Bid rejected", err: error.toString() })
+        this.triggerBid()
     }
 
     /**

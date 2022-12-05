@@ -246,16 +246,18 @@ export class ExecutionManager {
      * @param xtxId The XTX ID
      */
     async xtxReadyForExec(xtxId: string) {
-        this.xtx[xtxId].readyToExecute()
-        // Get the SFX that the executor has won the bid on and can execute now
-        const ready = this.xtx[xtxId].getReadyToExecute()
-        this.logger.info(`Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map((sfx) => sfx.humanId)} 🏆`)
-        for (const sfx of ready) {
-            // move on the queue
-            this.removeFromQueue("isBidding", sfx.id, sfx.target)
-            this.queue[sfx.target].isExecuting.push(sfx.id)
-            // execute
-            this.relayers[sfx.target].executeTx(sfx).then()
+        if(this.xtx[xtxId]) {
+            this.xtx[xtxId].readyToExecute()
+            // Get the SFX that the executor has won the bid on and can execute now
+            const ready = this.xtx[xtxId].getReadyToExecute()
+            this.logger.info(`Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map((sfx) => sfx.humanId)} 🏆`)
+            for (const sfx of ready) {
+                // move on the queue
+                this.removeFromQueue("isBidding", sfx.id, sfx.target)
+                this.queue[sfx.target].isExecuting.push(sfx.id)
+                // execute
+                this.relayers[sfx.target].executeTx(sfx).then()
+            }
         }
     }
 
@@ -379,7 +381,6 @@ export class ExecutionManager {
                     this.circuitRelayer
                         .bidSfx(notification.payload.sfxId, notification.payload.bidAmount)
                         .then(() => {
-                            this.logger.info(`Bid accepted for SFX ${sfx.humanId} ✅`)
                             sfx.bidAccepted(notification.payload.bidAmount)
                         })
                         .catch((e) => {
