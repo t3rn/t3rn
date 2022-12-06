@@ -1930,16 +1930,14 @@ impl<T: Config> Pallet<T> {
                     if let Some(v) = remaining_key_budget.checked_sub(1) {
                         remaining_key_budget = v
                     } else {
-                        log::error!("Could not compute remaining key budget");
-                        remaining_key_budget
+                        log::error!("Could not compute remaining key budget")
                     }
                     if let Some(v) = processed_weight
                         .checked_add(db_weight.reads_writes(2 as Weight, 1 as Weight))
                     {
                         processed_weight = v
                     } else {
-                        log::error!("Could not compute processed weight");
-                        processed_weight
+                        log::error!("Could not compute processed weight")
                     }
                 },
                 Err(_err) => {
@@ -1954,7 +1952,9 @@ impl<T: Config> Pallet<T> {
             processed_weight.checked_add(db_weight.reads_writes(1 as Weight, 1 as Weight))
         {
             processed_weight = v
-        } // cannot return an error, signature is Weight
+        } else {
+            log::error!("Could not initial read of queue and update")
+        }
 
         <SignalQueue<T>>::put(queue);
 
