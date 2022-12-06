@@ -1899,7 +1899,7 @@ impl<T: Config> Pallet<T> {
             v
         } else {
             log::error!("Division error on signal queue depth (`SignalQueueDepth::get()`).");
-            return Err(Error::<T>::ArithmeticErrorDivisionByZero)
+            T::SignalQueueDepth::get()
         };
         let mut processed_weight = 0_u64;
 
