@@ -226,4 +226,21 @@ impl<T: Config> Optimistic<T> {
 
         Ok(())
     }
+
+    pub fn try_dropped_at_bidding_refund(local_ctx: &mut LocalXtxCtx<T>) {
+        for phase in local_ctx.full_side_effects.clone() {
+            for fsx in phase {
+                if fsx.is_bid_resolved() {
+                    let sfx_bid = fsx.expect_sfx_bid();
+                    let (insurance, reserved_bond) =
+                        (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
+
+                    <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::unreserve(
+                        &sfx_bid.executor,
+                        insurance + reserved_bond + sfx_bid.bid,
+                    );
+                }
+            }
+        }
+    }
 }

@@ -9,7 +9,6 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod accounts_config;
 pub mod circuit_config;
 pub mod contracts_config;
-pub mod membership_config;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
@@ -20,6 +19,7 @@ pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
 
 use codec::Decode;
+use frame_system::EnsureRoot;
 use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
@@ -47,16 +47,13 @@ use frame_support::{
     },
     PalletId,
 };
-use frame_system::{
-    limits::{BlockLength, BlockWeights},
-    EnsureSignedBy,
-};
+use frame_system::limits::{BlockLength, BlockWeights};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::{monetary::MILLIT3RN, ReadLatestGatewayHeight};
+use t3rn_primitives::monetary::MILLIT3RN;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
@@ -108,7 +105,7 @@ const MT3RN: Balance = MILLIT3RN as Balance;
 
 parameter_types! {
     pub const BasicDeposit: Balance = 5 * MT3RN;
-    pub const FieldDeposit: Balance = 1 * MT3RN;
+    pub const FieldDeposit: Balance = MT3RN;
     pub const SubAccountDeposit: Balance = 2 * MT3RN;
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
@@ -120,11 +117,11 @@ impl pallet_identity::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type FieldDeposit = FieldDeposit;
-    type ForceOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type MaxSubAccounts = MaxSubAccounts;
-    type RegistrarOrigin = EnsureSignedBy<DeveloperMembership, AccountId>;
+    type RegistrarOrigin = EnsureRoot<AccountId>;
     type Slashed = ();
     type SubAccountDeposit = SubAccountDeposit;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
@@ -191,11 +188,6 @@ construct_runtime!(
 
         // Util - this should be system support
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
-
-        // Members
-        DeveloperMembership: pallet_membership::{
-            Pallet, Call, Event<T>, Config<T>, Storage
-        } = 210,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

@@ -25,6 +25,7 @@ use crate::{
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
+        "local" => Box::new(chain_spec::local_testnet_config()),
         "polkadot" | "polkadot-live" => Box::new(chain_spec::polkadot_config()),
         path => Box::new(chain_spec::ChainSpec::from_json_file(
             std::path::PathBuf::from(path),
@@ -259,6 +260,7 @@ pub fn run() -> Result<()> {
                 Err("Try-runtime must be enabled by `--features try-runtime`.".into())
             }
         },
+        Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
