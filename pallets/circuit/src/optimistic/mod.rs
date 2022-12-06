@@ -168,20 +168,24 @@ impl<T: Config> Optimistic<T> {
                 };
 
                 // First slash executor
-                if let Some(v) = slashed_reserve
-                    .checked_add(&insurance)
-                    .unwrap()
-                    .checked_add(&reserved_bond)
-                {
+                if let Some(v) = slashed_reserve.checked_add(&insurance) {
                     slashed_reserve = v
                 } else {
+                    log::error!("Could not compute slashed reserve, overflow error.");
+                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                }
+                if let Some(v) = slashed_reseve.checked_add(&reserved_bond) {
+                    slashed_reserve = v
+                } else {
+                    log::error!("Could not compute slashed reserve, overflow error.");
                     return Err(Error::<T>::ArithmeticErrorOverflow)
                 }
 
                 let checked_insurance = if let Some(v) = insurance.checked_add(&reserved_bond) {
                     v
                 } else {
-                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                    log::error!("Could not compute remaining key budget");
+                    insurance
                 };
                 <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::slash_reserved(
                     &sfx_bid.executor,

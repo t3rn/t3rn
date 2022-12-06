@@ -1929,13 +1929,18 @@ impl<T: Config> Pallet<T> {
 
                     if let Some(v) = remaining_key_budget.checked_sub(1) {
                         remaining_key_budget = v
-                    } // cannot return an error, signature is Weight
-                      // apply has 2
+                    } else {
+                        log::error!("Could not compute remaining key budget");
+                        remaining_key_budget
+                    }
                     if let Some(v) = processed_weight
                         .checked_add(db_weight.reads_writes(2 as Weight, 1 as Weight))
                     {
                         processed_weight = v
-                    } // cannot return an error, signature is Weight
+                    } else {
+                        log::error!("Could not compute processed weight");
+                        processed_weight
+                    }
                 },
                 Err(_err) => {
                     log::error!("Could not handle signal");
