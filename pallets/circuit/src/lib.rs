@@ -1487,7 +1487,7 @@ impl<T: Config> Pallet<T> {
         match cause {
             CircuitStatus::RevertTimedOut => Optimistic::<T>::try_slash(local_ctx),
             CircuitStatus::DroppedAtBidding =>
-                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx),
+                Ok(Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx)),
             _ => {},
         }
 
