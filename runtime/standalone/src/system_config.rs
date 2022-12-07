@@ -1,8 +1,12 @@
 use super::*;
 use crate::Hash as HashPrimitive;
 
-use frame_support::{parameter_types, traits::ConstU32};
-use sp_runtime::traits::*;
+use frame_support::{
+    parameter_types,
+    traits::{ConstU32, NeverEnsureOrigin},
+    PalletId,
+};
+use sp_runtime::{traits::*, Permill};
 
 use crate::impl_versioned_runtime_with_api::Version;
 
@@ -98,6 +102,33 @@ impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = CurrencyAdapter;
     type OperationalFeeMultiplier = ConstU8<5>;
     type WeightToFee = IdentityFee<Balance>;
+}
+
+parameter_types! {
+    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
+    pub const MaxApprovals: u32 = 10;
+    pub const ProposalBond: Permill = Permill::from_percent(1);
+    pub const SpendPeriod: u32 = 60 / 12;
+    pub const ProposalBondMinimum: u128 = 1_u128 * 1_000_000_000_000_u128;
+}
+
+impl pallet_treasury::Config for Runtime {
+    type ApproveOrigin = EnsureRoot<AccountId>;
+    type Burn = ();
+    type BurnDestination = ();
+    type Currency = Balances;
+    type Event = Event;
+    type MaxApprovals = MaxApprovals;
+    type OnSlash = Treasury;
+    type PalletId = TreasuryId;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMaximum = ();
+    type ProposalBondMinimum = ProposalBondMinimum;
+    type RejectOrigin = EnsureRoot<AccountId>;
+    type SpendFunds = ();
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type SpendPeriod = SpendPeriod;
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {

@@ -20,7 +20,6 @@ pub use t3rn_primitives::{
     executors::Executors,
     protocol::SideEffectProtocol,
     transfers::EscrowedBalanceOf,
-    treasury::Treasury,
     ChainId, EscrowTrait, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 
@@ -54,8 +53,6 @@ pub mod pallet {
         #[pallet::constant]
         type RoundDuration: Get<Self::BlockNumber>;
 
-        type Treasury: Treasury<Self>;
-
         type Executors: Executors<Self, BalanceOf<Self>>;
 
         /// A type that provides access to AccountManager
@@ -86,10 +83,15 @@ pub mod pallet {
         Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>,
     >;
 
+    #[pallet::storage]
+    #[pallet::getter(fn current_round)]
+    /// Information on the current round.
+    pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
+
     impl<T: Config> Pallet<T> {
         fn calculate_claimable_for_round(n: T::BlockNumber) -> DispatchResult {
             // fixme: move current_round from treasury to circuit-clock
-            let r = T::Treasury::current_round();
+            let r = Self::current_round();
             let mut claimable_artifacts = vec![];
             claimable_artifacts.extend(T::AccountManager::on_collect_claimable(n, r)?);
             // claimable_artifacts.push(T::Treasury::on_collect_claimable(n, r)?);
@@ -121,11 +123,28 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
-            // TODO: we may want to retry failed transactions here, ensuring a max weight and max retry list
-            // Anything that needs to be done at the start of the block.
-            // We don't do anything here.
-            0
+        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+            let term = T::RoundDuration::get();
+
+            if n % term == T::BlockNumber::zero() {
+                let past_round = <CurrentRound<T>>::get();
+
+                let new_round = RoundInfo {
+                    index: past_round.index.saturating_add(1),
+                    head: n,
+                    term,
+                };
+
+                <CurrentRound<T>>::put(new_round);
+
+                Self::deposit_event(Event::NewRound {
+                    index: new_round.index,
+                    head: new_round.head,
+                    term: new_round.term,
+                });
+            }
+
+            99 //TODO T::WeightInfo::on_initialize()
         }
 
         // A runtime code run after every block and have access to extended set of APIs.
@@ -142,7 +161,13 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
-    pub enum Event<T: Config> {}
+    pub enum Event<T: Config> {
+        NewRound {
+            index: u32,
+            head: T::BlockNumber,
+            term: T::BlockNumber,
+        },
+    }
 
     #[pallet::error]
     pub enum Error<T> {}
@@ -170,8 +195,7 @@ pub mod pallet {
 
     impl<T: Config> Clock<T> for Pallet<T> {
         fn current_round() -> RoundInfo<T::BlockNumber> {
-            // todo: move current round from treasury to circui-clock
-            T::Treasury::current_round()
+            Self::current_round()
         }
     }
 }

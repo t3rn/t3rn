@@ -4,7 +4,6 @@ sidebar_position: 2
 
 # Collator Requirements
 
-
 ## Hardware Requirements
 | Component | Requirement |
 |---|---|
