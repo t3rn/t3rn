@@ -1486,7 +1486,9 @@ impl<T: Config> Pallet<T> {
 
         match cause {
             CircuitStatus::RevertTimedOut => {
-                Optimistic::<T>::try_slash(local_ctx);
+                if let Err(err) = Optimistic::<T>::try_slash(local_ctx) {
+                    log::error!(target: "circuit", "Failed to slash {:?} for xtx {:?}", err, local_ctx.xtx_id);
+                }
             },
             CircuitStatus::DroppedAtBidding => {
                 Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
