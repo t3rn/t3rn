@@ -441,7 +441,6 @@ pub mod pallet {
                             Some(xtx_id),
                         )
                         .unwrap();
-                        log::info!("Timeout Xtx: {:?}", xtx_id);
 
                         Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertTimedOut);
 
