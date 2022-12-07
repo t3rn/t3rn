@@ -44,7 +44,10 @@ use pallet_xbi_portal::{
     xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
 };
 use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
-use sp_runtime::{traits::Zero, KeyTypeId};
+use sp_runtime::{
+    traits::{CheckedAdd, Zero},
+    KeyTypeId,
+};
 use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
 
 pub use t3rn_primitives::{
@@ -449,7 +452,11 @@ pub mod pallet {
                             Some(local_xtx_ctx.xtx),
                             None,
                         );
-                        deletion_counter += 1;
+                        if let Some(v) = deletion_counter.checked_add(1) {
+                            deletion_counter = v;
+                        } else {
+                            return
+                        }
                     });
             }
 
@@ -1051,6 +1058,9 @@ pub mod pallet {
         UnsupportedRole,
         InvalidLocalTrigger,
         SignalQueueFull,
+        ArithmeticErrorOverflow,
+        ArithmeticErrorUnderflow,
+        ArithmeticErrorDivisionByZero,
     }
 }
 
@@ -1085,10 +1095,14 @@ impl<T: Config> Pallet<T> {
                     }
                 }
                 // ToDo: Introduce default delay
-                let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
-                    T::XtxTimeoutDefault::get() + frame_system::Pallet::<T>::block_number(),
-                    None,
-                );
+                let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) =
+                    if let Some(v) = T::XtxTimeoutDefault::get()
+                        .checked_add(&frame_system::Pallet::<T>::block_number())
+                    {
+                        (v, None)
+                    } else {
+                        return Err(Error::<T>::ArithmeticErrorOverflow)
+                    };
 
                 let (x_exec_signal_id, x_exec_signal) = XExecSignal::<
                     T::AccountId,
@@ -1173,7 +1187,11 @@ impl<T: Config> Pallet<T> {
                     .any(|fsx| fsx.confirmed.is_none())
                 {
                     local_ctx.xtx.steps_cnt =
-                        (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
+                        if let Some(v) = local_ctx.xtx.steps_cnt.0.checked_add(1) {
+                            (v, local_ctx.xtx.steps_cnt.1)
+                        } else {
+                            return Err(Error::<T>::ArithmeticErrorOverflow)
+                        };
 
                     local_ctx.xtx.status = CircuitStatus::Finished;
 
@@ -1283,10 +1301,17 @@ impl<T: Config> Pallet<T> {
                     local_ctx.xtx_id,
                     local_ctx.xtx.timeouts_at,
                 );
-                <PendingXtxBidsTimeoutsMap<T>>::insert::<XExecSignalId<T>, T::BlockNumber>(
-                    local_ctx.xtx_id,
-                    T::SFXBiddingPeriod::get() + frame_system::Pallet::<T>::block_number(),
-                );
+                // TODO: return an error if checked_add fails
+                if let Some(v) = T::SFXBiddingPeriod::get()
+                    .checked_add(&frame_system::Pallet::<T>::block_number())
+                {
+                    <PendingXtxBidsTimeoutsMap<T>>::insert::<XExecSignalId<T>, T::BlockNumber>(
+                        local_ctx.xtx_id,
+                        v,
+                    )
+                } else {
+                    log::error!("Could not get `SFX bidding period` plus `block number`.");
+                };
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
                     XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
@@ -1460,9 +1485,14 @@ impl<T: Config> Pallet<T> {
         local_ctx.xtx.status = cause.clone();
 
         match cause {
-            CircuitStatus::RevertTimedOut => Optimistic::<T>::try_slash(local_ctx),
-            CircuitStatus::DroppedAtBidding =>
-                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx),
+            CircuitStatus::RevertTimedOut => {
+                if let Err(err) = Optimistic::<T>::try_slash(local_ctx) {
+                    log::error!(target: "circuit", "Failed to slash {:?} for xtx {:?}", err, local_ctx.xtx_id);
+                }
+            },
+            CircuitStatus::DroppedAtBidding => {
+                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
+            },
             _ => {},
         }
 
@@ -1870,8 +1900,13 @@ impl<T: Config> Pallet<T> {
         let mut queue = <SignalQueue<T>>::get();
 
         // We can do an easy process and only process CONSTANT / something signals for now
-        let mut remaining_key_budget = T::SignalQueueDepth::get() / 4;
-        let mut processed_weight = 0;
+        let mut remaining_key_budget = if let Some(v) = T::SignalQueueDepth::get().checked_div(4) {
+            v
+        } else {
+            log::error!("Division error on signal queue depth (`SignalQueueDepth::get()`).");
+            T::SignalQueueDepth::get()
+        };
+        let mut processed_weight = 0_u64;
 
         while !queue.is_empty() && remaining_key_budget > 0 {
             // Cannot panic due to loop condition
@@ -1883,7 +1918,9 @@ impl<T: Config> Pallet<T> {
             };
 
             // worst case 4 from setup
-            processed_weight += db_weight.reads(4 as Weight);
+            if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as u64) {
+                processed_weight = v
+            } // cannot return an error, signature is Weight
             match Self::setup(
                 CircuitStatus::Ready,
                 requester,
@@ -1895,9 +1932,18 @@ impl<T: Config> Pallet<T> {
 
                     queue.swap_remove(0);
 
-                    remaining_key_budget -= 1;
-                    // apply has 2
-                    processed_weight += db_weight.reads_writes(2 as Weight, 1 as Weight);
+                    if let Some(v) = remaining_key_budget.checked_sub(1) {
+                        remaining_key_budget = v
+                    } else {
+                        log::error!("Could not compute remaining key budget")
+                    }
+                    if let Some(v) = processed_weight
+                        .checked_add(db_weight.reads_writes(2 as Weight, 1 as Weight))
+                    {
+                        processed_weight = v
+                    } else {
+                        log::error!("Could not compute processed weight")
+                    }
                 },
                 Err(_err) => {
                     log::error!("Could not handle signal");
@@ -1907,7 +1953,13 @@ impl<T: Config> Pallet<T> {
             }
         }
         // Initial read of queue and update
-        processed_weight += db_weight.reads_writes(1 as Weight, 1 as Weight);
+        if let Some(v) =
+            processed_weight.checked_add(db_weight.reads_writes(1 as Weight, 1 as Weight))
+        {
+            processed_weight = v
+        } else {
+            log::error!("Could not initial read of queue and update")
+        }
 
         <SignalQueue<T>>::put(queue);
 
@@ -1979,7 +2031,9 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            acc_rewards += fsx.get_bond_value(fsx.input.max_reward);
+            if let Some(v) = acc_rewards.checked_add(&fsx.expect_sfx_bid().bid) {
+                acc_rewards = v
+            } // cannot return an error, signature is Weight
         }
 
         acc_rewards
