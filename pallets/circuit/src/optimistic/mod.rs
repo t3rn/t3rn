@@ -174,7 +174,7 @@ impl<T: Config> Optimistic<T> {
                     log::error!("Could not compute slashed reserve, overflow error.");
                     return Err(Error::<T>::ArithmeticErrorOverflow)
                 }
-                if let Some(v) = slashed_reseve.checked_add(&reserved_bond) {
+                if let Some(v) = slashed_reserve.checked_add(&reserved_bond) {
                     slashed_reserve = v
                 } else {
                     log::error!("Could not compute slashed reserve, overflow error.");
