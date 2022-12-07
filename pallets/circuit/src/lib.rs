@@ -1488,7 +1488,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::RevertTimedOut => Optimistic::<T>::try_slash(local_ctx),
             CircuitStatus::DroppedAtBidding =>
                 Ok(Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx)),
-            _ => {},
+            _ => Ok({}),
         }
 
         Self::square_up(local_ctx, None)
