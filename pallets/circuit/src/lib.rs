@@ -1556,10 +1556,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::RevertTimedOut
             | CircuitStatus::Reverted
             | CircuitStatus::RevertMisbehaviour => {
-                log::info!("RevertTimedOut or Reverted or RevertMisbehaviour");
-                log::info!("xtx_id: {:?}", local_ctx.xtx_id);
                 Optimistic::<T>::try_slash(local_ctx);
-                log::info!("slashing worked");
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     <T as Config>::AccountManager::try_finalize(
@@ -1941,8 +1938,6 @@ impl<T: Config> Pallet<T> {
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
     > {
-        log::info!("get_current_step_fsx");
-        log::info!("xtx_id: {:?}", local_ctx.xtx_id);
         let current_step = local_ctx.xtx.steps_cnt.0;
         local_ctx.full_side_effects[current_step as usize]
             .iter()
