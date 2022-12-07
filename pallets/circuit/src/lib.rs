@@ -377,8 +377,9 @@ pub mod pallet {
                     Machine::<T>::compile_infallible(
                         &mut Machine::<T>::load_xtx(xtx_id).expect("xtx_id corresponds to a valid Xtx when reading from PendingXtxBidsTimeoutsMap storage"),
                         |current_fsx, _local_state, _steps_cnt, status, _requester| {
-                            if status != CircuitStatus::PendingBidding {
-                                return PrecompileResult::TryKill(Cause::Timeout)
+                            match status {
+                                CircuitStatus::PendingBidding | CircuitStatus::InBidding => {},
+                                _ => return PrecompileResult::TryKill(Cause::Timeout)
                             }
                             for mut fsx in current_fsx.iter_mut() {
                                 let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(xtx_id);
@@ -429,14 +430,11 @@ pub mod pallet {
                                 Self::square_up(local_ctx, status_change, None).expect(
                                     "Expect RevertTimedOut options to square up to be infallible",
                                 );
-                                Self::emit_status_update(
-                                    local_ctx.xtx_id,
-                                    Some(local_ctx.xtx.clone()),
-                                    None,
-                                );
+                                Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(
+                                    xtx_id,
+                                ));
                             },
                         );
-
                         deletion_counter += 1;
                     });
             }
@@ -548,10 +546,6 @@ pub mod pallet {
             };
 
             let xtx_id = local_ctx.xtx_id.clone();
-            println!(
-                "on local trigguer submit_side_effects full_side_effects {:?}",
-                local_ctx.full_side_effects
-            );
             log::debug!(
                 target: "runtime::circuit",
                 "submit_side_effects xtx state with status: {:?}",
@@ -652,8 +646,6 @@ pub mod pallet {
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Setup: new xtx context with SFX validation
             let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
-            println!("on_extrinsic_trigger -- xtx id {:?}", fresh_xtx.xtx_id);
-
             // Compile: apply the new state post squaring up and emit
             Machine::<T>::compile(&mut fresh_xtx, no_mangle, |status_change, local_ctx| {
                 // Square Up: do internal accounting
@@ -683,8 +675,9 @@ pub mod pallet {
                 &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, status, requester| {
                     // Check if Xtx is in the bidding state
-                    if status != CircuitStatus::PendingBidding {
-                        return Err(Error::<T>::BiddingInactive)
+                    match status {
+                        CircuitStatus::PendingBidding | CircuitStatus::InBidding => {},
+                        _ => return Err(Error::<T>::BiddingInactive),
                     }
 
                     // Check for the previous bids for SFX.
@@ -718,8 +711,6 @@ pub mod pallet {
                         executor.clone(),
                         bid_amount,
                     ));
-                    println!("BID -- emit SFXNewBidReceived {:?}", _status_change);
-
                     Ok(())
                 },
             )?;
@@ -1117,10 +1108,7 @@ impl<T: Config> Pallet<T> {
             EscrowedBalanceOf<T, T::Escrowed>,
         )>,
     ) -> Result<(), Error<T>> {
-        let (old_status, _new_status) = (status_change.0.clone(), status_change.1.clone());
-
         let requester = local_ctx.xtx.requester.clone();
-
         let unreserve_requester_xtx_max_rewards = |current_step_fsx: &Vec<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -1138,8 +1126,8 @@ impl<T: Config> Pallet<T> {
             }
         };
 
-        match old_status.clone() {
-            CircuitStatus::Requested => {
+        match status_change {
+            (CircuitStatus::Requested, _) => {
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     if !<T as Config>::AccountManager::can_withdraw(
                         &requester,
@@ -1149,12 +1137,7 @@ impl<T: Config> Pallet<T> {
                         return Err(Error::<T>::XtxChargeFailedRequesterBalanceTooLow)
                     }
                 }
-                println!("proceed with <T as Config>::AccountManager::withdraw_immediately");
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    println!(
-                        "proceed with <T as Config>::AccountManager::withdraw_immediately {:?}",
-                        fsx.input.max_reward
-                    );
                     <T as Config>::AccountManager::withdraw_immediately(
                         &requester,
                         fsx.input.max_reward,
@@ -1163,7 +1146,7 @@ impl<T: Config> Pallet<T> {
                     .expect("Ensured can withdraw in can_withdraw loop over FSX")
                 }
             },
-            CircuitStatus::Ready => {
+            (_, CircuitStatus::Ready) => {
                 let current_step_sfx = Self::get_current_step_fsx(local_ctx);
                 // Unreserve the max_rewards and replace with possibly lower bids of executor in following loop
                 unreserve_requester_xtx_max_rewards(current_step_sfx);
@@ -1191,7 +1174,7 @@ impl<T: Config> Pallet<T> {
                     }
                 }
             },
-            CircuitStatus::PendingExecution => {
+            (_, CircuitStatus::PendingExecution) => {
                 let (charge_id, executor_payee, charge_fee) =
                     maybe_xbi_execution_charge.ok_or(Error::<T>::ChargingTransferFailed)?;
 
@@ -1207,14 +1190,14 @@ impl<T: Config> Pallet<T> {
                 )
                 .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;
             },
-            CircuitStatus::Killed(_cause) => {
+            (_, CircuitStatus::Killed(_cause)) => {
                 // todo: can check for try_dropped_at_bidding_refund in cause == Timeout
                 Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
                 unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
             },
             // todo: make sure callable once
             // todo: distinct between RevertTimedOut to iterate over all steps vs single step for Revert
-            CircuitStatus::Reverted(_cause) => {
+            (_, CircuitStatus::Reverted(_cause)) => {
                 Optimistic::<T>::try_slash(local_ctx);
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
@@ -1226,7 +1209,7 @@ impl<T: Config> Pallet<T> {
                     );
                 }
             },
-            CircuitStatus::Finished | CircuitStatus::FinishedAllSteps => {
+            (_, CircuitStatus::Finished | CircuitStatus::FinishedAllSteps) => {
                 Optimistic::<T>::try_unbond(local_ctx)?;
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
@@ -1313,12 +1296,12 @@ impl<T: Config> Pallet<T> {
                 e
             })?;
 
-            if index < side_effects.len() - 1
-                && side_effects[index].reward_asset_id != side_effects[index + 1].reward_asset_id
-            {
-                return Err(
-                    "SFX validate failed - enforce all SFX to have the same reward asset field",
-                )
+            if let Some(next) = side_effects.get(index + 1) {
+                if sfx.reward_asset_id != next.reward_asset_id {
+                    return Err(
+                        "SFX validate failed - enforce all SFX to have the same reward asset field",
+                    )
+                }
             }
 
             let (insurance, reward) = if let Some(insurance_and_reward) =

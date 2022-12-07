@@ -253,10 +253,6 @@ pub fn place_winning_bid_and_advance_3_blocks(
     sfx_id: sp_core::H256,
     bid_amount: Balance,
 ) {
-    println!(
-        "tests::place_winning_bid_and_advance_3_blocks {:?} {:?}",
-        xtx_id, sfx_id
-    );
     assert_ok!(Circuit::bid_sfx(
         Origin::signed(executor.clone()), // Active relayer
         sfx_id,
@@ -843,20 +839,19 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                 BID_AMOUNT,
             ));
 
-            let _expected_bonded_sfx_bid = SFXBid::<AccountId32, Balance, u32> {
-                bid: BID_AMOUNT,
-                requester: ALICE,
-                executor: BOB_RELAYER,
-                reserved_bond: None,
-                insurance: REQUESTED_INSURANCE_AMOUNT,
-                reward_asset_id: None,
-            };
-
             // assert_eq!(
             //     Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
-            //     expected_bonded_sfx_bid
+            //     SFXBid::<AccountId32, Balance, u32> {
+            //                 bid: BID_AMOUNT,
+            //                 requester: ALICE,
+            //                 executor: BOB_RELAYER,
+            //                 reserved_bond: None,
+            //                 insurance: REQUESTED_INSURANCE_AMOUNT,
+            //                 reward_asset_id: None,
+            //             }
             // );
 
+            // changes status to InBidding
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
@@ -865,7 +860,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingBidding,
+                    status: CircuitStatus::InBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -899,7 +894,9 @@ fn circuit_handles_dropped_at_bidding() {
     let side_effects = vec![valid_transfer_side_effect.clone()];
     let fee = 1;
     const REQUESTED_INSURANCE_AMOUNT: Balance = 1;
+    const INITIAL_BALANCE: Balance = 3;
     const BID_AMOUNT: Balance = 1;
+    const MAX_REWARD: Balance = 1;
     let sequential = true;
 
     ExtBuilder::default()
@@ -907,14 +904,14 @@ fn circuit_handles_dropped_at_bidding() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
             let _ =
                 Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
-            assert_eq!(Balances::free_balance(ALICE), 3);
+            assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE);
             assert_eq!(Balances::reserved_balance(ALICE), 0);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -923,7 +920,7 @@ fn circuit_handles_dropped_at_bidding() {
                 sequential,
             ));
 
-            assert_eq!(Balances::free_balance(ALICE), 2);
+            assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE - MAX_REWARD);
 
             let (xtx_id, _side_effect_a_id) = set_ids(
                 valid_transfer_side_effect.clone(),
@@ -949,8 +946,7 @@ fn circuit_handles_dropped_at_bidding() {
             <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(4);
             let events = System::events();
 
-            assert_eq!(Balances::free_balance(ALICE), 3);
-            assert_eq!(Balances::reserved_balance(ALICE), 0);
+            assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE);
 
             assert_eq!(
                 events[0],
@@ -978,7 +974,7 @@ fn circuit_handles_dropped_at_bidding() {
                 }
             );
             // ToDo activate once #504 is fixed
-            // assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
+            assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
         })
 }
 
@@ -1155,7 +1151,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     requester: REQUESTER,
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingBidding,
+                    status: CircuitStatus::InBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -4148,6 +4144,10 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
 
     let sequential = true;
 
+    const BID_AMOUNT: Balance = 1;
+    const INSURANCE: Balance = 1;
+    const MAX_REWARD: Balance = 1;
+
     ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
@@ -4199,7 +4199,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                     .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
                         &xtx_id.0, 0,
                     ),
-                1,
+                BID_AMOUNT,
             );
 
             assert_ok!(Circuit::execute_side_effects_with_xbi(
@@ -4212,7 +4212,12 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                INITIAL_BALANCE - MAX_EXECUTION_COST - MAX_NOTIFICATION_COST
+                INITIAL_BALANCE
+                    - BID_AMOUNT
+                    - MAX_REWARD
+                    - INSURANCE
+                    - MAX_EXECUTION_COST
+                    - MAX_NOTIFICATION_COST
             );
         });
 }

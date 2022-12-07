@@ -87,15 +87,16 @@ impl CircuitStatus {
         match maybe_forced {
             None => {
                 match (previous.clone(), new.clone()) {
-                    (CircuitStatus::Requested, CircuitStatus::Requested) =>
-                        Ok(CircuitStatus::Requested),
-                    (CircuitStatus::Requested, CircuitStatus::PendingBidding) => Ok(new),
+                    (CircuitStatus::Requested, CircuitStatus::Requested) => Ok(new),
                     // todo: shouldn't be allowed to schedule empty Xtx with no SFX, but load_local_state uses a lot for 3VM setup
-                    (CircuitStatus::Requested, CircuitStatus::Reserved) => Ok(new),
                     (CircuitStatus::Reserved, CircuitStatus::Reserved) => Ok(new),
+                    (CircuitStatus::Reserved, CircuitStatus::PendingBidding) => Ok(new),
+                    (CircuitStatus::Requested, CircuitStatus::Reserved) => Ok(new),
 
+                    // success flow
+                    (CircuitStatus::Requested, CircuitStatus::PendingBidding) => Ok(new),
                     (CircuitStatus::PendingBidding, CircuitStatus::InBidding) => Ok(new),
-                    (CircuitStatus::PendingBidding, CircuitStatus::Ready) => Ok(new),
+                    (CircuitStatus::InBidding, CircuitStatus::Ready) => Ok(new),
                     (CircuitStatus::Ready, CircuitStatus::PendingExecution) => Ok(new),
                     (CircuitStatus::PendingExecution, CircuitStatus::Finished) => Ok(new),
                     (CircuitStatus::PendingExecution, CircuitStatus::FinishedAllSteps) => Ok(new),
@@ -106,13 +107,7 @@ impl CircuitStatus {
                     (CircuitStatus::Finished, CircuitStatus::FinishedAllSteps) => Ok(new),
 
                     (CircuitStatus::FinishedAllSteps, CircuitStatus::Committed) => Ok(new),
-                    (_, _) => {
-                        println!(
-                            "Error::<T>::UpdateStateTransitionDisallowed {:?} {:?}",
-                            previous, new
-                        );
-                        Err(Error::<T>::UpdateStateTransitionDisallowed)
-                    },
+                    (_, _) => Err(Error::<T>::UpdateStateTransitionDisallowed),
                 }
             },
             Some(forced) => {
@@ -178,7 +173,7 @@ impl CircuitStatus {
         fsx: FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
     ) -> Result<CircuitStatus, Error<T>> {
         if let Some(_bid) = fsx.best_bid {
-            Ok(CircuitStatus::Ready)
+            Ok(CircuitStatus::InBidding)
         } else {
             Ok(CircuitStatus::PendingBidding)
         }
@@ -195,14 +190,53 @@ impl CircuitStatus {
             EscrowedBalanceOf<T, T::Escrowed>,
         >],
     ) -> Result<CircuitStatus, Error<T>> {
+        let mut lowest_bidding_status = CircuitStatus::PendingBidding;
+        let mut highest_bidding_status = CircuitStatus::InBidding;
+
         for fsx in fsx_step.iter() {
-            if Self::determine_fsx_bidding_status::<T>(fsx.clone())?
-                == CircuitStatus::PendingBidding
-            {
-                return Ok(CircuitStatus::PendingBidding)
+            let current_bidding_status = Self::determine_fsx_bidding_status::<T>(fsx.clone())?;
+            if current_bidding_status > lowest_bidding_status {
+                lowest_bidding_status = current_bidding_status.clone();
+            }
+            if current_bidding_status < highest_bidding_status {
+                highest_bidding_status = current_bidding_status;
             }
         }
-        Ok(CircuitStatus::Ready)
+
+        if lowest_bidding_status == CircuitStatus::InBidding {
+            Ok(CircuitStatus::Ready)
+        } else if highest_bidding_status == CircuitStatus::PendingBidding {
+            Ok(CircuitStatus::PendingBidding)
+        } else {
+            Ok(CircuitStatus::InBidding)
+        }
+    }
+
+    pub fn determine_execution_status<T: Config>(
+        fsx_step: &[FullSideEffect<
+            T::AccountId,
+            T::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >],
+    ) -> Result<CircuitStatus, Error<T>> {
+        let mut lowest_execution_status = CircuitStatus::Ready;
+        let mut highest_execution_status = CircuitStatus::PendingExecution;
+
+        for fsx in fsx_step.iter() {
+            if fsx.confirmed.is_some() {
+                lowest_execution_status = CircuitStatus::PendingExecution;
+            } else {
+                highest_execution_status = CircuitStatus::Ready;
+            }
+        }
+
+        if lowest_execution_status == CircuitStatus::PendingExecution {
+            Ok(CircuitStatus::Finished)
+        } else if highest_execution_status == CircuitStatus::Ready {
+            Ok(CircuitStatus::Ready)
+        } else {
+            Ok(CircuitStatus::PendingExecution)
+        }
     }
 
     /// Based solely on full steps + insurance deposits determine the execution status.
@@ -210,47 +244,17 @@ impl CircuitStatus {
     pub fn determine_step_status<T: Config>(
         step: &[FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>],
     ) -> Result<CircuitStatus, Error<T>> {
-        // Those are determined post - ready
-        let mut highest_post_ready_determined_status = CircuitStatus::Ready;
-        let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
-
-        let current_determined_status = Self::determine_bidding_status::<T>(step)?;
-
-        for (_step_cnt, full_side_effect) in step.iter().enumerate() {
-            if current_determined_status == CircuitStatus::PendingBidding
-                && highest_post_ready_determined_status > CircuitStatus::Ready
-            {
-                // If we are here it means that the side effect has requested for insurance that is still pending
-                //  but at the same time some of the previous side effects already has been confirmed.
-                // This should never happen and the refund for users should be handled
-                //  with the same time punishing relayers responsible for too early execution
+        let determined_bidding_status = Self::determine_bidding_status::<T>(step)?;
+        let determined_execution_status = Self::determine_execution_status::<T>(step)?;
+        // still in bidding - don't check for confirmations yet
+        if determined_bidding_status < CircuitStatus::Ready {
+            if determined_execution_status > CircuitStatus::Ready {
                 return Err(Error::<T>::DeterminedForbiddenXtxStatus)
             }
-
-            if current_determined_status != CircuitStatus::Ready {
-                return Ok(current_determined_status)
-            }
-            // Checking further only if CircuitStatus::Ready after this point
-            if full_side_effect.confirmed.is_some() {
-                highest_post_ready_determined_status = CircuitStatus::Finished
-            } else {
-                lowest_post_ready_determined_status = CircuitStatus::PendingExecution
-            }
+            return Ok(determined_bidding_status)
         }
 
-        // Find CircuitStatus::min(lowest_determined, highest_determined)
-        let lowest_determined =
-            if highest_post_ready_determined_status >= lowest_post_ready_determined_status {
-                // Either CircuitStatus::Finished if never found a side effect with CircuitStatus::PendingExecution
-                //  Or CircuitStatus::PendingExecution otherwise
-                lowest_post_ready_determined_status
-            } else {
-                // Either CircuitStatus::Finished if never found a side effect with CircuitStatus::PendingExecution
-                //  Or CircuitStatus::Ready otherwise if None of the side effects are confirmed yet
-                highest_post_ready_determined_status
-            };
-
-        Ok(lowest_determined)
+        Ok(determined_execution_status)
     }
 
     pub fn determine_xtx_status<T: Config>(
@@ -267,20 +271,17 @@ impl CircuitStatus {
 
         for step in steps.iter() {
             let current_step_status = Self::determine_step_status::<T>(step)?;
-            log::debug!(
-                "Determine determine_xtx_status in loop Before -- {:?}",
-                current_step_status.clone()
-            );
             if current_step_status > lowest_determined_status {
-                lowest_determined_status = current_step_status;
+                lowest_determined_status = current_step_status.clone();
             }
             // Xtx status is reflected with the lowest status of unresolved Step -
             //  break the loop on the first unresolved step
             if lowest_determined_status < CircuitStatus::Finished {
-                break
+                return Ok(current_step_status)
             }
         }
-        Ok(lowest_determined_status)
+
+        Ok(CircuitStatus::FinishedAllSteps)
     }
 }
 

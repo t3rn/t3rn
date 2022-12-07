@@ -198,8 +198,6 @@ impl<T: Config> Machine<T> {
             &LocalXtxCtx<T>,
         ) -> Result<(), Error<T>>,
     ) -> Result<(), Error<T>> {
-        println!("compile:: loaded xtx id {:?}", local_ctx.xtx_id);
-
         let current_fsx = Self::read_current_step_fsx(&local_ctx).clone();
         let local_state = local_ctx.local_state.clone();
         let steps_cnt = local_ctx.xtx.steps_cnt.clone();
@@ -225,21 +223,9 @@ impl<T: Config> Machine<T> {
             PrecompileResult::ForceUpdateStatus(status) => Some(status),
             PrecompileResult::Revert(cause) => Some(CircuitStatus::Reverted(cause)),
         };
-
-        println!(
-            "compile:: precompiled -- force status {:?}",
-            enforced_new_status.clone()
-        );
-
         let status_change = Self::update_status(local_ctx, enforced_new_status)?;
-        println!("compile:: updated status {:?}", status_change.clone());
-
         post_update(status_change.clone(), &local_ctx)?;
-        println!("compile:: post_update status");
-
         Self::apply(local_ctx, status_change);
-
-        println!("compile:: applied xtx");
         Ok(())
     }
 
@@ -351,13 +337,14 @@ impl<T: Config> Machine<T> {
         }
 
         let mut new_status = CircuitStatus::determine_xtx_status(&local_ctx.full_side_effects)?;
-        local_ctx.xtx.status = new_status.clone();
 
         new_status = CircuitStatus::check_transition(
             current_status.clone(),
             new_status,
             enforce_new_status,
         )?;
+
+        local_ctx.xtx.status = new_status.clone();
 
         Ok((current_status, new_status))
     }
@@ -450,7 +437,7 @@ impl<T: Config> Machine<T> {
                     *x = Some(local_ctx.xtx.clone())
                 });
             },
-            (CircuitStatus::PendingBidding, CircuitStatus::Ready) => {
+            (CircuitStatus::InBidding, CircuitStatus::Ready) => {
                 <pallet::Pallet<T> as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.full_side_effects.clone())
                 });
@@ -462,7 +449,6 @@ impl<T: Config> Machine<T> {
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
             },
             (_, CircuitStatus::Killed(_cause)) => {
-                println!("APPLY:: remove xtx ");
                 // Clean all associated Xtx entries
                 <pallet::Pallet<T> as Store>::XExecSignals::remove(local_ctx.xtx_id);
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
@@ -480,8 +466,6 @@ impl<T: Config> Machine<T> {
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
             },
             (_, CircuitStatus::Reverted(_cause)) => {
-                println!("APPLY:: remove xtx ");
-
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
