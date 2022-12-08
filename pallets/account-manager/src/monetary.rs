@@ -3,7 +3,7 @@ use sp_std::marker::PhantomData;
 use frame_support::{
     pallet_prelude::*,
     traits::{
-        tokens::{fungibles::Balanced, WithdrawConsequence},
+        tokens::{fungibles::Unbalanced, WithdrawConsequence},
         Currency, ExistenceRequirement, ReservableCurrency, WithdrawReasons,
     },
 };
@@ -14,7 +14,7 @@ pub struct Monetary<AccountId, Assets, NativeCurrency, AssetBalanceOf>(
 );
 impl<
         AccountId,
-        Assets: Balanced<AccountId>,
+        Assets: Unbalanced<AccountId>,
         NativeCurrency: ReservableCurrency<AccountId>,
         AssetBalanceOf: Convert<NativeCurrency::Balance, Assets::Balance>,
     > Monetary<AccountId, Assets, NativeCurrency, AssetBalanceOf>
@@ -23,17 +23,17 @@ impl<
         beneficiary: &AccountId,
         asset_id: Option<Assets::AssetId>,
         amount: NativeCurrency::Balance,
-    ) -> DispatchResult {
+    ) {
         match asset_id {
             None => {
                 NativeCurrency::deposit_creating(beneficiary, amount);
-                Ok(())
             },
             Some(asset_id) => {
-                match Assets::deposit(asset_id, beneficiary, AssetBalanceOf::convert(amount)) {
-                    Ok(_debt_of) => Ok(()),
-                    Err(err) => Err(err),
-                }
+                Assets::increase_balance_at_most(
+                    asset_id,
+                    beneficiary,
+                    AssetBalanceOf::convert(amount),
+                );
             },
         }
     }
@@ -72,7 +72,7 @@ impl<
                 Ok(_imbalance) => Ok(()),
             },
             Some(asset_id) => {
-                match Assets::withdraw(asset_id, source, AssetBalanceOf::convert(amount)) {
+                match Assets::decrease_balance(asset_id, source, AssetBalanceOf::convert(amount)) {
                     Err(e) => Err(e),
                     Ok(_imbalance) => Ok(()),
                 }
@@ -106,8 +106,7 @@ mod tests {
                 &ALICE,
                 None,
                 DEFAULT_BALANCE / 10,
-            )
-            .unwrap();
+            );
             assert_eq!(
                 Balances::free_balance(ALICE),
                 DEFAULT_BALANCE + DEPOSIT_AMOUNT
@@ -137,8 +136,7 @@ mod tests {
                 &ALICE,
                 Some(FOREIGN_ASSET_A),
                 DEPOSIT_AMOUNT,
-            )
-            .unwrap();
+            );
             assert_eq!(
                 Assets::balance(FOREIGN_ASSET_A, ALICE),
                 DEFAULT_BALANCE + DEPOSIT_AMOUNT

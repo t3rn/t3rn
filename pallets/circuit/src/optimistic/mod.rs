@@ -70,7 +70,6 @@ impl<T: Config> Optimistic<T> {
                 total_unreserve,
                 current_best_bid.reward_asset_id,
             )
-            .expect("executors refunds for bids to always be valid post withdrawals")
         }
 
         Ok(sfx_bid)
@@ -127,7 +126,6 @@ impl<T: Config> Optimistic<T> {
                     insurance + reserved_bond,
                     sfx_bid.reward_asset_id,
                 )
-                .expect("executors refunds for bids to always be valid post withdrawals")
             }
         }
 
@@ -160,7 +158,6 @@ impl<T: Config> Optimistic<T> {
                     slashed_reserve,
                     sfx_bid.reward_asset_id,
                 )
-                .expect("deposits to escrow account to always accept slashed deposits");
             }
         }
 
@@ -182,7 +179,6 @@ impl<T: Config> Optimistic<T> {
                     insurance + reserved_bond + sfx_bid.bid,
                     sfx_bid.reward_asset_id,
                 )
-                .expect("refunds with deposit to always be valid post withdrawals");
             }
         }
     }
@@ -200,7 +196,6 @@ impl<T: Config> Optimistic<T> {
                         insurance + reserved_bond + sfx_bid.bid,
                         sfx_bid.reward_asset_id,
                     )
-                    .expect("refunds with deposit to always be valid post withdrawals");
                 }
             }
         }

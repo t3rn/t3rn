@@ -3,7 +3,7 @@ use crate::{
     common::RoundInfo,
 };
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResult, traits::tokens::AssetId};
+use frame_support::{dispatch::DispatchResult};
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::{fmt::Debug, prelude::*};
@@ -68,7 +68,7 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
         maybe_actual_fees: Option<Balance>,
     ) -> DispatchResult;
     /// Assert infallible finalize of a transaction if exists
-    fn try_finalize(
+    fn finalize_infallible(
         charge_id: Hash,
         outcome: Outcome,
         maybe_recipient: Option<Account>,
@@ -82,11 +82,7 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
 
     fn can_withdraw(beneficiary: &Account, amount: Balance, asset_id: Option<AssetId>) -> bool;
 
-    fn deposit_immediately(
-        beneficiary: &Account,
-        amount: Balance,
-        asset_id: Option<AssetId>,
-    ) -> DispatchResult;
+    fn deposit_immediately(beneficiary: &Account, amount: Balance, asset_id: Option<AssetId>);
 
     fn withdraw_immediately(
         beneficiary: &Account,

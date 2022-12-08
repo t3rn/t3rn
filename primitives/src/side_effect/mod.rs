@@ -1,6 +1,6 @@
 use crate::Bytes;
 use codec::{Decode, Encode};
-use frame_support::traits::tokens::AssetId;
+
 use num_traits::Zero;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
