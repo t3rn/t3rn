@@ -1122,7 +1122,6 @@ impl<T: Config> Pallet<T> {
                     fsx.input.max_reward,
                     fsx.input.reward_asset_id,
                 )
-                .expect("refunds with deposit to always be valid post withdrawals")
             }
         };
 
@@ -1201,7 +1200,7 @@ impl<T: Config> Pallet<T> {
                 Optimistic::<T>::try_slash(local_ctx);
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    <T as Config>::AccountManager::try_finalize(
+                    <T as Config>::AccountManager::finalize_infallible(
                         charge_id,
                         Outcome::Revert,
                         None,

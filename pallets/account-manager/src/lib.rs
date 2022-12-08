@@ -51,7 +51,7 @@ pub mod pallet {
     use super::*;
     use frame_support::{
         pallet_prelude::*,
-        traits::{tokens::fungibles::Balanced, Currency, ReservableCurrency},
+        traits::{tokens::fungibles::Unbalanced, Currency, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
 
@@ -67,7 +67,7 @@ pub mod pallet {
 
         type Currency: ReservableCurrency<Self::AccountId>;
 
-        type Assets: Balanced<Self::AccountId>;
+        type Assets: Unbalanced<Self::AccountId>;
 
         type Clock: Clock<Self>;
 

@@ -5,7 +5,7 @@ use sp_std::vec::Vec;
 
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 pub use crate::volatile::{LocalState, Volatile};
-use core::convert::TryInto;
+
 use scale_info::TypeInfo;
 use sp_std::fmt::Debug;
 
@@ -154,7 +154,6 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bridges::test_utils::ALICE;
 
     type BlockNumber = u64;
     type BalanceOf = u64;
