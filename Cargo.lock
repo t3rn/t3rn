@@ -1012,6 +1012,7 @@ dependencies = [
  "log",
  "pallet-3vm",
  "pallet-account-manager",
+ "pallet-asset-tx-payment",
  "pallet-assets",
  "pallet-aura",
  "pallet-authorship",

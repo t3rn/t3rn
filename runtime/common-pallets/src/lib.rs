@@ -1,6 +1,8 @@
 pub use frame_system;
+pub use pallet_asset_tx_payment;
 pub use pallet_assets;
 pub use pallet_aura;
+pub use pallet_authorship;
 pub use pallet_babe;
 pub use pallet_balances;
 pub use pallet_grandpa;

@@ -48,6 +48,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances = 10,
         TransactionPayment: pallet_transaction_payment = 11,
         Assets: pallet_assets = 12,
+        AssetTxPayment: pallet_asset_tx_payment = 13,
 
         // Circuit
         // t3rn pallets
