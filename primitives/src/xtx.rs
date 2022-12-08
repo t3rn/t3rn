@@ -154,7 +154,6 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     type BlockNumber = u64;
     type BalanceOf = u64;
