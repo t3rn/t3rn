@@ -12,7 +12,7 @@ import { CircuitRelayer } from "../circuit/relayer"
 import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types"
 import { RelayerEventData, RelayerEvents } from "../gateways/types"
 import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
-import {Gateway} from "../../config/config";
+import { Gateway } from "../../config/config"
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -255,11 +255,11 @@ export class ExecutionManager {
      * @param xtxId The XTX ID
      */
     async xtxReadyForExec(xtxId: string) {
-        if(this.xtx[xtxId]) {
+        if (this.xtx[xtxId]) {
             this.xtx[xtxId].readyToExecute()
             // Get the SFX that the executor has won the bid on and can execute now
             const ready = this.xtx[xtxId].getReadyToExecute()
-            if(ready.length > 0) {
+            if (ready.length > 0) {
                 this.logger.info(`Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map((sfx) => sfx.humanId)} 🏆`)
             }
             for (const sfx of ready) {

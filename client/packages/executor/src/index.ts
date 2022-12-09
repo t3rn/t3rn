@@ -45,7 +45,7 @@ class InstanceManager {
     async setup(signer: string | undefined) {
         await cryptoWaitReady()
         const keyring = new Keyring({ type: "sr25519" })
-        this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default");
+        this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default")
 
         this.sdk = new Sdk(config.circuit.rpc, this.signer)
 

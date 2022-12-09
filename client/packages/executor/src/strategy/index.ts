@@ -119,8 +119,8 @@ export class StrategyEngine {
         }
     }
 
-    /** Checks if the gateway is supported by the executor.
-     * If a config for the gateway exists, this is the case.
+    /**
+     * Checks if the gateway is supported by the executor. If a config for the gateway exists, this is the case.
      *
      * @param sfx Object of SFX to be evaluated
      */

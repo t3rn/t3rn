@@ -35,7 +35,7 @@ export class SubstrateRelayer extends EventEmitter {
         })
         const keyring = new Keyring({ type: "sr25519" })
 
-        this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default");
+        this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default")
 
         this.nonce = await this.fetchNonce(this.client, this.signer.address)
         this.name = name
