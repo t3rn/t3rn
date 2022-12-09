@@ -15,8 +15,6 @@ export type Gateway = {
     /** Gateway type, currently only Substrate */
     type: string
     /** The assets the executor is willing to execute on the target. Matches the key used in assets */
-    supportedAssets: string[]
-    /** The mnemonic used on the target */
     signerKey?: string
 }
 
@@ -43,7 +41,9 @@ export type Circuit = {
  */
 export type Strategy = {
     sfx: SfxStrategy
-    xtx: XtxStrategy
+    xtx: XtxStrategy,
+    /** Assets that are supported for the target */
+    supportedAssets: string[]
 }
 
 /**
@@ -64,14 +64,12 @@ export type Strategy = {
  *             id: "roco",
  *             rpc: "wss://rococo-rpc.polkadot.io",
  *             type: "Substrate",
- *             supportedAssets: ["ROC"],
  *         },
  *         {
  *             name: "Basilisk",
  *             id: "bslk",
  *             rpc: "wss://rpc-01.basilisk-rococo.hydradx.io",
  *             type: "Substrate",
- *             supportedAssets: ["BSX"],
  *         },
  *     ],
  *     pricing: {
@@ -101,6 +99,7 @@ export type Strategy = {
  *     },
  *     strategies: {
  *         roco: {
+ *             supportedAssets: ["ROC"],
  *             sfx: {
  *                 minProfitUsd: 3,
  *                 minYield: 0.05,
@@ -157,14 +156,13 @@ export const config: Config = {
             id: "roco",
             rpc: "wss://rococo-rpc.polkadot.io",
             type: "Substrate",
-            supportedAssets: ["ROC"],
+            signerKey: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561"
         },
         {
             name: "Basilisk",
             id: "bslk",
             rpc: "wss://rpc-01.basilisk-rococo.hydradx.io",
             type: "Substrate",
-            supportedAssets: ["BSX"],
         },
     ],
     pricing: {
@@ -194,6 +192,7 @@ export const config: Config = {
     },
     strategies: {
         roco: {
+            supportedAssets: ["ROC"],
             sfx: {
                 minProfitUsd: 3,
                 minYield: 0.05,

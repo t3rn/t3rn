@@ -76,9 +76,7 @@ export class StrategyEngine {
             const strategy = config.strategies[strategyTargets[i]]
             this.sfxStrategies[strategyTargets[i]] = strategy.sfx
             this.xtxStrategies[strategyTargets[i]] = strategy.xtx
-        }
-        for (let i = 0; i < config.gateways.length; i++) {
-            this.supportedAssets[config.gateways[i].id] = config.gateways[i].supportedAssets
+            this.supportedAssets[strategyTargets[i]] = strategy.supportedAssets
         }
     }
 
