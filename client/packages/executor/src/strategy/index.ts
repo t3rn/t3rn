@@ -109,6 +109,7 @@ export class StrategyEngine {
         const strategy = this.sfxStrategies[sfx.target]
 
         try {
+            this.isSupportedGateway(sfx)
             this.assetIsSupported(sfx)
             this.minProfitRejected(sfx, strategy)
             this.minYieldRejected(sfx, strategy)
@@ -117,6 +118,17 @@ export class StrategyEngine {
             this.maxAssetCostRejected(sfx, strategy)
         } catch (e) {
             throw e
+        }
+    }
+
+    /** Checks if the gateway is supported by the executor.
+     * If a config for the gateway exists, this is the case.
+     *
+     * @param sfx Object of SFX to be evaluated
+     */
+    isSupportedGateway(sfx: SideEffect): void | Error {
+        if (!(sfx.target in this.sfxStrategies)) {
+            throw new Error("Gateway not supported")
         }
     }
 
