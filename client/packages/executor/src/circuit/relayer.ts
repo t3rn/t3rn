@@ -20,15 +20,12 @@ export class CircuitRelayer extends EventEmitter {
     sdk: Sdk
     id: string
     rpc: string
-    signer: any
 
     constructor(sdk: Sdk) {
         super()
         // @ts-ignore
         this.api = sdk.client
         this.sdk = sdk
-        const keyring = new Keyring({ type: "sr25519" })
-        this.signer = keyring.addFromUri("//Executor//default")
     }
 
     /**
@@ -52,7 +49,7 @@ export class CircuitRelayer extends EventEmitter {
      */
     async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
         const txs: SubmittableExtrinsic[] = sfxs.map((sfx) => this.createConfirmTx(sfx))
-        const nonce = await fetchNonce(this.api, this.signer.address)
+        const nonce = await fetchNonce(this.api, this.sdk.signer.address)
         if (txs.length > 1) {
             // only batch if more than one tx
             return this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createBatch(txs))

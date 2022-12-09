@@ -21,7 +21,7 @@ export class Sdk {
 		[id: string]: Gateway
 	}
 	circuit: Circuit
-	private signer: any;
+	signer: any;
 
 	constructor(rpcUrl: string, circuitSigner: any) {
 		this.rpcUrl = rpcUrl;

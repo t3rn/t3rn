@@ -200,7 +200,7 @@ export class ExecutionManager {
      */
     async addXtx(xtxData: any, sdk: Sdk) {
         // create the XTX object
-        const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine, this.circuitRelayer.signer.address, this.logger)
+        const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine, sdk.signer.address, this.logger)
 
         // Run the XTX strategy checks
         try {
