@@ -2,7 +2,6 @@ import { EventEmitter } from "events"
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { EventMapper, SideEffect } from "../../executionManager/sideEffect"
 import { getEventProofs } from "../../utils"
-import createDebug from "debug"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
 import { InclusionData, RelayerEventData, RelayerEvents } from "../types"
@@ -20,8 +19,6 @@ import { CostEstimator, Estimate } from "./estimator/cost"
  * @group Gateways
  */
 export class SubstrateRelayer extends EventEmitter {
-    static debug = createDebug("substrate-relayer")
-
     /** Target chain client */
     client: ApiPromise
     /** Signer for target */
@@ -38,7 +35,7 @@ export class SubstrateRelayer extends EventEmitter {
         })
         const keyring = new Keyring({ type: "sr25519" })
 
-        this.signer = signer === undefined ? keyring.addFromUri("//Executor//default") : keyring.addFromMnemonic(signer)
+        this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default");
 
         this.nonce = await this.fetchNonce(this.client, this.signer.address)
         this.name = name

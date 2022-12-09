@@ -12,6 +12,7 @@ import { CircuitRelayer } from "../circuit/relayer"
 import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types"
 import { RelayerEventData, RelayerEvents } from "../gateways/types"
 import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
+import {Gateway} from "../../config/config";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -93,15 +94,15 @@ export class ExecutionManager {
     }
 
     /** Setup all instances and listeners for the execution manager */
-    async setup() {
-        await this.initializeGateways()
+    async setup(gatewayConfig: Gateway[]) {
+        await this.initializeGateways(gatewayConfig)
         await this.circuitListener.start()
         await this.initializeEventListeners()
         this.addLog({ msg: "Setup Successful" })
     }
 
     /** Initialize all gateways and their corresponding relayers, event listeners and estimators */
-    async initializeGateways() {
+    async initializeGateways(gatewayConfig: Gateway[]) {
         const gatewayKeys = Object.keys(this.sdk.gateways)
         for (let i = 0; i < gatewayKeys.length; i++) {
             const entry = this.sdk.gateways[gatewayKeys[i]]
@@ -109,7 +110,15 @@ export class ExecutionManager {
             if (entry.executionLayerType === ExecutionLayerType.Substrate) {
                 // initialize gateway relayer
                 const relayer = new SubstrateRelayer()
-                await relayer.setup(entry.rpc, undefined, entry.id, this.logger)
+
+                const config = gatewayConfig.find((g) => g.id === entry.id)
+
+                if (config) {
+                    await relayer.setup(config.rpc, config.signerKey, entry.id, this.logger)
+                } else {
+                    await relayer.setup(entry.rpc, undefined, entry.id, this.logger)
+                }
+
                 this.relayers[entry.id] = relayer
 
                 // initialize gateway estimator

@@ -39,7 +39,6 @@ const logger = pino(
 class InstanceManager {
     circuitClient: ApiPromise
     executionManager: ExecutionManager
-    relayers: { [key: string]: SubstrateRelayer } = {}
     sdk: Sdk
     signer: any
 
@@ -54,7 +53,7 @@ class InstanceManager {
         this.circuitClient = await this.sdk.init()
 
         this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
-        await this.executionManager.setup()
+        await this.executionManager.setup(config.gateways)
 
         logger.info("Executor: setup complete")
     }
