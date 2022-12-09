@@ -5,17 +5,15 @@ import * as address from "../converters/address";
 import * as BN from 'bn.js'
 import { toU8aId } from "../converters/utils";
 import { createSfx } from "../side-effects";
+import {ExecutionLayerType} from "./types";
 
-export enum GatewayType {
-	Substrate,
-	Evm
-}
 
 export class Gateway {
 	id: string;
 	rpc: string;
 	vendor: string;
-	type: GatewayType;
+	executionLayerType: ExecutionLayerType;
+	gatewayType: any
 	ticker: string;
 	decimals: number;
 	addressFormat: number;
@@ -24,11 +22,12 @@ export class Gateway {
 	createSfx: {} = {};
 
 	constructor(xdnsEntry: T3rnPrimitivesXdnsXdnsRecord) {
+		console.log("sys_props", xdnsEntry.toHuman().gateway_sys_props)
 		this.id = xdnsEntry.toHuman().gateway_id;
 		this.rpc = xdnsEntry.url.toHuman();
 		// @ts-ignore
 		this.vendor = xdnsEntry.toHuman().gateway_vendor.toString();
-		this.type = this.getType(xdnsEntry.toHuman().gateway_vendor.toString());
+		this.executionLayerType = this.getType(xdnsEntry.toHuman().gateway_vendor.toString());
 		// @ts-ignore
 		this.ticker = xdnsEntry.toHuman().gateway_sys_props.token_symbol;
 		// @ts-ignore
@@ -38,6 +37,7 @@ export class Gateway {
 		// @ts-ignore
 		this.valueTypeSize = parseInt(xdnsEntry.toHuman().gateway_abi.value_type_size);
 		this.allowedSideEffects = xdnsEntry.toHuman().allowed_side_effects
+		this.gatewayType = xdnsEntry.toHuman().gateway_type
 		this.setSfxBindings();
 	}
 
@@ -96,8 +96,8 @@ export class Gateway {
 
 	// Convert an address into t3rn compatible form. For example, we want to ensure we pass the public key for polkadot addresses
 	validateAddress(addr: string) {
-		switch(this.type) {
-			case GatewayType.Substrate:
+		switch(this.executionLayerType) {
+			case ExecutionLayerType.Substrate:
 				return address.substrate.addrToPub(addr)
 				break;
 			default:
@@ -113,12 +113,28 @@ export class Gateway {
 		).floatToBn(value)
 	}
 
+	toFloat(value: BN | number): number {
+		return new AmountConverter({
+			value,
+			decimals: this.decimals,
+			valueTypeSize: this.valueTypeSize}
+		).toFloat()
+	}
+
 	getType(vendor: string) {
 		if(vendor === "Rococo" || vendor === 'Kusama' || vendor === 'Polkadot') {
-			return GatewayType.Substrate
+			return ExecutionLayerType.Substrate
 		} else if(vendor === "Ethereum") {
-			return GatewayType.Evm
+			return ExecutionLayerType.Evm
 		}
+	}
+
+	parseLe(value: string): BN {
+		return new AmountConverter({
+			value,
+			decimals: this.decimals,
+			valueTypeSize: this.valueTypeSize}
+		).toBn()
 	}
 
 	setSfxBindings() {
@@ -130,6 +146,6 @@ export class Gateway {
 			}
 		}
 	}
-
-
 }
+
+export{ExecutionLayerType}

@@ -292,7 +292,6 @@
         "proof": "StorageProof"
     },
     "InclusionData": {
-        "side_effect_id": "[u8; 4]",
         "encoded_payload": "Vec<u8>",
         "proof": "StorageProof",
         "block_hash": "Header::Hash"

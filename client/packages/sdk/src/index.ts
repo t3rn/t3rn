@@ -4,6 +4,9 @@ import { ApiPromise, WsProvider } from "@polkadot/api"
 import types from './config/types.json';
 import rpc from './config/rpc.json';
 import {Gateway, initGateways} from "./gateways";
+
+import * as Types from "./types";
+
 // @ts-ignore
 import {T3rnTypesSideEffect} from "@polkadot/types/lookup";
 import * as encodings from './encodings'
@@ -18,7 +21,7 @@ export class Sdk {
 		[id: string]: Gateway
 	}
 	circuit: Circuit
-	private signer: any;
+	signer: any;
 
 	constructor(rpcUrl: string, circuitSigner: any) {
 		this.rpcUrl = rpcUrl;
@@ -39,7 +42,7 @@ export class Sdk {
 	}
 }
 
-export{encodings, converters}
+export{encodings, converters, Types}
 
 
 // (async () => {
