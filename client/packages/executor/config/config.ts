@@ -16,7 +16,7 @@ export type Gateway = {
     type: string
     /** The assets the executor is willing to execute on the target. Matches the key used in assets */
     supportedAssets: string[]
-    /** The private key used on the target */
+    /** The mnemonic used on the target */
     signerKey?: string
 }
 
@@ -149,6 +149,7 @@ export const config: Config = {
         rpc: "ws://127.0.0.1::9944",
         ticker: "TRN",
         decimals: 12,
+        signerKey: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561"
     },
     gateways: [
         {
