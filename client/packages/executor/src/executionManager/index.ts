@@ -259,7 +259,9 @@ export class ExecutionManager {
             this.xtx[xtxId].readyToExecute()
             // Get the SFX that the executor has won the bid on and can execute now
             const ready = this.xtx[xtxId].getReadyToExecute()
-            this.logger.info(`Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map((sfx) => sfx.humanId)} 🏆`)
+            if(ready.length > 0) {
+                this.logger.info(`Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map((sfx) => sfx.humanId)} 🏆`)
+            }
             for (const sfx of ready) {
                 // move on the queue
                 this.removeFromQueue("isBidding", sfx.id, sfx.target)
