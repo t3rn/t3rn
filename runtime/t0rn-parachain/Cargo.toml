@@ -44,6 +44,7 @@ pallet-sudo                                = { git = "https://github.com/parityt
 pallet-timestamp                           = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
+pallet-treasury                            = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 pallet-utility                             = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.27' }
 pallet-identity                            = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.27' }
 sp-api                                     = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
@@ -83,7 +84,6 @@ parachain-info                      = { git = 'https://github.com/paritytech/cum
 parachains-common                   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 
 # t3rn Deps
-pallet-treasury = { default-features = false, path = "../../pallets/treasury" }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-protocol   = { default-features = false, path = "../../protocol" }
 

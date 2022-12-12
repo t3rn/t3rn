@@ -346,6 +346,7 @@ fn testnet_genesis(
                 .map(|k| (k, (10000 * 10u128.pow(12))))
                 .collect(),
         },
+        treasury: Default::default(),
         aura: AuraConfig {
             authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
         },
@@ -367,7 +368,7 @@ fn testnet_genesis(
         },
         contracts_registry: Default::default(),
         account_manager: Default::default(),
-        treasury: Default::default(),
+        clock: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers\
         evm: EvmConfig {
             // We need _some_ code inserted at the precompile address so that

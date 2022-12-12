@@ -41,7 +41,6 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = '
 
 pallet-account-manager = { path = "../../pallets/account-manager" }
 pallet-executors       = { path = "../../pallets/executors" }
-pallet-treasury        = { path = "../../pallets/treasury" }
 
 [features]
 default = [ "std" ]
