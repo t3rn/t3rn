@@ -99,11 +99,11 @@ const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any): Codec => {
 
 const createGatewaySysProps = (circuiApi: ApiPromise, gatewaySysProps: any): Codec => {
     const props: GatewaySysProps = {
-        ss58Format: gatewaySysProps.ss58Format,
-        tokenSymbol: gatewaySysProps.tokenSymbol,
-        tokenDecimals: gatewaySysProps.tokenDecimals
+        ss58_format: gatewaySysProps.ss58Format,
+        token_symbol: gatewaySysProps.tokenSymbol,
+        token_decimals: gatewaySysProps.tokenDecimals
     }
-   return circuiApi.createType('GatewaySysProps', props);
+    return circuiApi.createType('GatewaySysProps', props);
 }
 
 const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {

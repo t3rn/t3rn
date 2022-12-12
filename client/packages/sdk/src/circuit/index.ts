@@ -20,9 +20,25 @@ export class Circuit {
 
 	// converts a float to a BN with the correct decimal precision
 	floatToBn(value: number): BN {
-		return new AmountConverter({
-			decimals: DECIMALS,
-			valueTypeSize: VALUE_TYPE_SIZE}
-		).floatToBn(value)
+		return floatToBn(value)
 	}
+
+	toFloat(value: BN | number): number {
+		return toFloat(value)
+	}
+}
+
+export const toFloat = (value: BN | number): number => {
+	return new AmountConverter({
+		value,
+		decimals: DECIMALS,
+		valueTypeSize: VALUE_TYPE_SIZE}
+	).toFloat()
+}
+
+export const floatToBn = (value: number): BN => {
+	return new AmountConverter({
+		decimals: DECIMALS,
+		valueTypeSize: VALUE_TYPE_SIZE}
+	).floatToBn(value)
 }
