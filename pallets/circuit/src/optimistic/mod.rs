@@ -174,7 +174,7 @@ impl<T: Config> Optimistic<T> {
                 // ToDo: Introduce more sophisticated slashed rewards split between
                 //  treasury, users, honest executors
                 let slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> =
-                    if let Some(v) = insurance.checked_add(reserved_bond) {
+                    if let Some(v) = insurance.checked_add(&reserved_bond) {
                         v
                     } else {
                         return Err(Error::<T>::ArithmeticErrorOverflow)
