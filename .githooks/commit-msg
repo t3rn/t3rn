@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+import re, sys, os
+
+sys.tracebacklimit = 0
+
+FAIL_MESSAGE = """
+
+ERROR: Conventional Commit validation failed.
+
+A commit message must be as follows:
+
+    <type>[optional scope]: <description>
+
+    [optional body]
+
+    [optional footer(s)]
+
+where:
+<type> must be: build, ci, chore, docs, feat, fix, perf, refactor, revert, style, test;  
+<description> must be in lower-case letters (e.g., re-write "Merge branch..." to "chore: merge branch...");
+
+Please, rewrite your commit message, or use `git commit --no-verify` to bypass this hook.
+
+More information: https://www.conventionalcommits.org
+"""
+
+def main():
+    pattern = r'(build|ci|docs|feat|fix|perf|refactor|style|test|chore|revert)(\([\w\-]+\))?:\s.*'
+    filename = sys.argv[1]
+    ss = open(filename, 'r').read()
+    m = re.match(pattern, ss)
+    if m == None: raise Exception(FAIL_MESSAGE)
+
+if __name__ == "__main__":
+    main()
