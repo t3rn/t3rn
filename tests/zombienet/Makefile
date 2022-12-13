@@ -46,8 +46,10 @@ ${bin_dir}/zombienet:
 
 ${bin_dir}/polkadot:
 	mkdir -p $(polkadot_tmp_dir)
-	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch)
-	cargo build --manifest-path $(polkadot_tmp_dir)/$(pdot_branch)/Cargo.toml --features fast-runtime --release --locked
+	@if [ ! -d $(polkadot_tmp_dir) ]; then \
+		git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch); \
+		cargo build --manifest-path $(polkadot_tmp_dir)/$(pdot_branch)/Cargo.toml --features fast-runtime --release --locked; \
+	fi
 	cp $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot $(bin_dir)/polkadot
 
 ${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml Makefile
