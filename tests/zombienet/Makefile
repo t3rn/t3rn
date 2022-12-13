@@ -7,7 +7,7 @@ pdot_branch := release-v0.9.27
 root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
-polkadot_tmp_dir := $(shell mktemp -d)
+polkadot_tmp_dir := /tmp/polkadot
 SCCACHE_VERSION := v0.3.1
 SCCACHE_FILE := sccache-$(SCCACHE_VERSION)-x86_64-unknown-linux-musl
 
@@ -45,9 +45,10 @@ ${bin_dir}/zombienet:
 	sudo chmod +x $(bin_dir)/zombienet
 
 ${bin_dir}/polkadot:
-	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/polkadot
-	cargo build --manifest-path $(polkadot_tmp_dir)/polkadot/Cargo.toml --features fast-runtime --release --locked
-	mv -f $(polkadot_tmp_dir)/polkadot/target/release/polkadot $(bin_dir)/polkadot
+	mkdir -p $(polkadot_tmp_dir)
+	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch)
+	cargo build --manifest-path $(polkadot_tmp_dir)/$(pdot_branch)/Cargo.toml --features fast-runtime --release --locked
+	cp $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot $(bin_dir)/polkadot
 
 ${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml Makefile
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
