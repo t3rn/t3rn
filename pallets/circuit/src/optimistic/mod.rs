@@ -198,11 +198,22 @@ impl<T: Config> Optimistic<T> {
                 let (insurance, reserved_bond) =
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
-                // First unlock honest executor
-                //  and the reward to honest executors since the reserved bond was slashed and should always suffice
+                // First unlock honest executor  and the reward to honest executors
+                // since the reserved bond was slashed and should always suffice.
+                let checked_reward = if let Some(v) = insurance.checked_add(&reserved_bond) {
+                    if let Some(w) = v.checked_add(&sfx_bid.bid) {
+                        w
+                    } else {
+                        log::error!("Could not compute honest reward");
+                        return Err(Error::<T>::ArithmeticErrorOverflow)
+                    }
+                } else {
+                    log::error!("Could not compute honest reward");
+                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                };
                 <T as Config>::AccountManager::deposit_immediately(
                     &sfx_bid.executor,
-                    insurance + reserved_bond + sfx_bid.bid,
+                    checked_reward,
                     sfx_bid.reward_asset_id,
                 )
             }
