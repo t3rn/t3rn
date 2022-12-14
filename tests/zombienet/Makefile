@@ -45,7 +45,6 @@ ${bin_dir}/zombienet:
 	sudo chmod +x $(bin_dir)/zombienet
 
 ${bin_dir}/polkadot:
-	@echo "RUSTC_WRAPPER: $(RUSTC_WRAPPER)"
 	mkdir -p $(polkadot_tmp_dir)
 	@if [ ! -d $(polkadot_tmp_dir) ]; then \
 		git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch); \
