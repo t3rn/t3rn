@@ -200,9 +200,9 @@ impl<T: Config> Optimistic<T> {
 
                 // First unlock honest executor  and the reward to honest executors
                 // since the reserved bond was slashed and should always suffice.
-                let checked_reward = if let Some(v) = insurance.checked_add(&reserved_bond) {
-                    if let Some(w) = v.checked_add(&sfx_bid.bid) {
-                        w
+                let checked_reward = if let Some(insurance_plus_bond) = insurance.checked_add(&reserved_bond) {
+                    if let Some(insurance_plus_bond_plus_bid) = insurance_plus_bond.checked_add(&sfx_bid.bid) {
+                        insurance_plus_bond_plus_bid
                     } else {
                         log::error!("Could not compute honest reward");
                         return Err(Error::<T>::ArithmeticErrorOverflow)
