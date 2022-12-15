@@ -1,35 +1,84 @@
-#!/usr/bin/env python
-import re, sys, os
+# Checks that jq is usable
+function check_jq_exists_and_executable {
+if ! [ -x "$(command -v jq)" ]; then
+  echo -e "\`commit-msg\` hook failed. Please install \`jq\`."
+  exit 1
+fi
+}
 
-sys.tracebacklimit = 0
+# Check if the config file exists. If not, the hook doesn't run.
+function check_config_exists {
+  if [[ ! -f "$CONFIG" ]]; then
+    echo -e "Config file is missing, not running commit-msg hook."
+    exit 0
+  fi
+}
 
-FAIL_MESSAGE = """
+# Set the configuration from file.
+function set_config {
+  local_config="$PWD/.githooks/commit-msg.config.json"
 
-ERROR: Conventional Commit validation failed.
+  if [ -f "$local_config" ]; then
+    CONFIG=$local_config
+  fi
+}
 
-A commit message must be as follows:
+# Set values from config.
+function set_config_values() {
+  enabled=$(jq -r .enabled "$CONFIG")
 
-    <type>[optional scope]: <description>
+  if [[ ! $enabled ]]; then
+    exit 0
+  fi
 
-    [optional body]
+  revert=$(jq -r .revert "$CONFIG")
+  types=($(jq -r '.types[]' "$CONFIG"))
+  min_length=$(jq -r .length.min "$CONFIG")
+  max_length=$(jq -r .length.max "$CONFIG")
+}
 
-    [optional footer(s)]
+# build the regex pattern based on the config file
+function build_regex() {
+  set_config_values
 
-where:
-<type> must be: build, ci, chore, docs, feat, fix, perf, refactor, revert, style, test;  
-<description> must be in lower-case letters (e.g., re-write "Merge branch..." to "chore: merge branch...");
+  regexp="^[.0-9]+$|"
 
-Please, rewrite your commit message, or use `git commit --no-verify` to bypass this hook.
+  if $revert; then
+      # regexp="${regexp}^([Rr]evert|[Mm]erge):? )?.*$|^("
+      regexp="${regexp}^(revert|merge):? )?.*$|^("
+  fi
 
-More information: https://www.conventionalcommits.org
-"""
+  for type in "${types[@]}"
+  do
+    regexp="${regexp}$type|"
+  done
 
-def main():
-    pattern = r'(build|ci|docs|feat|fix|perf|refactor|style|test|chore|revert)(\([\w\-]+\))?:\s.*'
-    filename = sys.argv[1]
-    ss = open(filename, 'r').read()
-    m = re.match(pattern, ss)
-    if m == None: raise Exception(FAIL_MESSAGE)
+  regexp="${regexp%|})(\(.+\))?: "
 
-if __name__ == "__main__":
-    main()
+  regexp="${regexp}.{$min_length,$max_length}$"
+}
+
+# Print out an error message which an explanation.
+function print_error() {
+  echo "\n[ERROR] INVALID COMMIT MESSAGE: Your commit message was blocked."
+  echo "------------------------"
+  echo "Valid types: ${types[@]}"
+  echo "First line length (in chars): max $max_length, min $min_length"
+  echo "------------------------"
+  echo "Please, write it again or bypass it with \`git commit --no-verify\`.\n"
+}
+
+set_config
+check_config_exists
+check_jq_exists_and_executable
+
+INPUT_FILE=$1
+START_LINE=`head -n1 $INPUT_FILE`
+
+build_regex
+
+if [[ ! $START_LINE =~ $regexp ]]; then
+  # block commit if invalid
+  print_error
+  exit 1
+fi
