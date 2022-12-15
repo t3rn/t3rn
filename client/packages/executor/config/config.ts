@@ -41,7 +41,7 @@ export type Circuit = {
  */
 export type Strategy = {
     sfx: SfxStrategy
-    xtx: XtxStrategy,
+    xtx: XtxStrategy
     /** Assets that are supported for the target */
     supportedAssets: string[]
 }
@@ -148,7 +148,7 @@ export const config: Config = {
         rpc: "ws://127.0.0.1::9944",
         ticker: "TRN",
         decimals: 12,
-        signerKey: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561"
+        signerKey: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561",
     },
     gateways: [
         {
@@ -156,7 +156,7 @@ export const config: Config = {
             id: "roco",
             rpc: "wss://rococo-rpc.polkadot.io",
             type: "Substrate",
-            signerKey: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561"
+            signerKey: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561",
         },
         {
             name: "Basilisk",

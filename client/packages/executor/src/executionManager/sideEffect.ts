@@ -263,9 +263,9 @@ export class SideEffect extends EventEmitter {
     }
 
     /**
-     * Computes the potential profit of the SFX based on the current risk/reward parameters.
-     * This function is primarily used to react to changes in the risk/reward parameters and reevalute the bidding decision.
-     * If a new maxProfit has been computed, the bidding engine is used to determine if another bid should be placed.
+     * Computes the potential profit of the SFX based on the current risk/reward parameters. This function is primarily used to react to
+     * changes in the risk/reward parameters and reevalute the bidding decision. If a new maxProfit has been computed, the bidding engine is
+     * used to determine if another bid should be placed.
      */
     recomputeMaxProfit() {
         const txCostUsd = this.gateway.toFloat(this.txCostNative.getValue()) * this.nativeAssetPrice.getValue()
@@ -281,10 +281,8 @@ export class SideEffect extends EventEmitter {
         }
     }
 
-    /**
-     * Triggers the bidding engine to place a new bid for the SFX.
-     */
-    triggerBid(){
+    /** Triggers the bidding engine to place a new bid for the SFX. */
+    triggerBid() {
         const result = this.generateBid()
         if (result?.trigger) {
             this.addLog({
