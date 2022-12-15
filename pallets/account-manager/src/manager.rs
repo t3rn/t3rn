@@ -9,8 +9,8 @@ use frame_support::{
     traits::{fungibles::Inspect, Get},
 };
 use sp_runtime::{
-    traits::{CheckedDiv, CheckedMul, Zero},
-    DispatchError,
+    traits::{CheckedAdd, CheckedDiv, CheckedMul, Zero},
+    ArithmeticError, DispatchError,
 };
 use sp_std::{prelude::*, vec};
 
@@ -103,7 +103,13 @@ impl<T: Config>
     ) -> DispatchResult {
         Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
 
-        let total_reserve_deposit = charge_fee + offered_reward;
+        let total_reserve_deposit =
+            if let Some(checked_reserve) = charge_fee.checked_add(&offered_reward) {
+                checked_reserve
+            } else {
+                log::error!("Could nor compute collateral bond power, arithmetic overflow");
+                return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+            };
 
         if total_reserve_deposit == Zero::zero() {
             return Err(Error::<T>::SkippingEmptyCharges.into())
@@ -266,31 +272,78 @@ impl<T: Config>
             let nominated_stake =
                 T::Executors::total_nominated_stake(&active_set_claimable.executor);
             // calculate % ratio of rewards proportionally to Executor's own Collateral to Nominated Stake
-            let total_stake_power = collateral_bond + nominated_stake;
+            let total_stake_power =
+                if let Some(checked_stake) = collateral_bond.checked_add(&nominated_stake) {
+                    checked_stake
+                } else {
+                    log::error!("Could nor compute collateral bond power, arithmetic overflow");
+                    return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+                };
 
-            // todo: ensure it's in range (0,1>
-            let collateral_bond_power = collateral_bond / total_stake_power;
+            // TODO: ensure it's in range (0,1>
+            let round_claim = if let Some(collateral_bond_power) =
+                collateral_bond.checked_div(&total_stake_power)
+            {
+                if let Some(total_round_claim) =
+                    collateral_bond_power.checked_mul(&active_set_claimable.claimable)
+                {
+                    total_round_claim
+                } else {
+                    log::error!("Could nor compute collateral bond power, division by zero");
+                    return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+                }
+            } else {
+                log::error!("Could not compute total round claim, arithmetic overflow");
+                return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+            };
 
             claimable_artifacts.push(ClaimableArtifacts {
                 beneficiary: active_set_claimable.executor.clone(),
                 role: CircuitRole::Executor,
-                total_round_claim: collateral_bond_power * active_set_claimable.claimable,
+                total_round_claim: round_claim,
                 benefit_source: BenefitSource::TrafficRewards,
             });
 
-            // todo: ensure it's in range <0,1)
-            let nominated_stake_power = nominated_stake / total_stake_power;
+            // TODO: ensure it's in range <0,1)
+            let nominated_stake_power =
+                if let Some(checked_nominated) = nominated_stake.checked_div(&total_stake_power) {
+                    checked_nominated
+                } else {
+                    log::error!("Could nor compute collateral bond power, division by zero");
+                    return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+                };
 
-            let claimable_by_all_stakers_of_executor =
-                nominated_stake_power * active_set_claimable.claimable;
+            let claimable_by_all_stakers_of_executor = if let Some(checked_claimable) =
+                nominated_stake_power.checked_mul(&active_set_claimable.claimable)
+            {
+                checked_claimable
+            } else {
+                log::error!("Could nor compute collateral bond power, arithmetic overflow");
+                return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+            };
 
             for nominated_stake in T::Executors::stakes_per_executor(&active_set_claimable.executor)
             {
-                let staker_power = nominated_stake.nominated_stake / nominated_stake_power;
+                let total_claim = if let Some(checked_nominated) = nominated_stake
+                    .nominated_stake
+                    .checked_div(&nominated_stake_power)
+                {
+                    if let Some(checked_claim) =
+                        checked_nominated.checked_mul(&claimable_by_all_stakers_of_executor)
+                    {
+                        checked_claim
+                    } else {
+                        log::error!("Could nor compute collateral bond power, arithmetic overflow");
+                        return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+                    }
+                } else {
+                    log::error!("Could nor compute collateral bond power, division by zero");
+                    return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+                };
                 claimable_artifacts.push(ClaimableArtifacts {
                     beneficiary: nominated_stake.staker,
                     role: CircuitRole::Staker,
-                    total_round_claim: staker_power * claimable_by_all_stakers_of_executor,
+                    total_round_claim: total_claim,
                     benefit_source: BenefitSource::TrafficRewards,
                 });
             }
