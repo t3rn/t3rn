@@ -5,13 +5,9 @@
     "baseUrl": "./src",
     "moduleResolution": "Node",
     "module": "commonjs",
-    "target": "esnext",
+    "target": "es2018",
     "sourceMap": true,
-    "lib": [
-      "es6",
-      "es2018",
-      "es2020.bigint"
-    ],
+    "lib": ["es6", "es2018", "es2020.bigint"],
     "esModuleInterop": true,
     "alwaysStrict": false,
     "strictNullChecks": false,
@@ -25,5 +21,5 @@
   },
   "references": [],
   "exclude": ["node_modules", "dist", "*.d.ts"],
-  "include": ["src", "src/config/types.json", "src/config/rpc.json"]
+  "include": ["./src/**/*.ts", "./src/**/*.json"]
 }

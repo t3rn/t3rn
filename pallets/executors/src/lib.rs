@@ -38,6 +38,8 @@ pub mod pallet {
     };
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
+        // treasury::Treasury as TTreasury,
+        clock::Clock,
         common::{OrderedSet, Range, RoundIndex},
         executors::{
             Bond, CancelledScheduledStakingRequest, ExecutorInfo, ExecutorSnapshot,
@@ -45,7 +47,6 @@ pub mod pallet {
             StakeAdjust, StakerAdded, StakingAction, EXECUTOR_LOCK_ID, STAKER_LOCK_ID,
         },
         monetary::DECIMALS,
-        treasury::Treasury as TTreasury,
     };
 
     pub type BalanceOf<T> =
@@ -126,7 +127,7 @@ pub mod pallet {
         // type RevokeStakeDelay: Get<u32>;
 
         /// Treasury round proveider.
-        type Treasury: TTreasury<Self>;
+        type Treasury: Clock<Self>;
 
         type WeightInfo: weights::WeightInfo;
     }

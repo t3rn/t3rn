@@ -101,15 +101,15 @@ construct_runtime!(
         // Monetary
         Balances: pallet_balances = 10,
         TransactionPayment: pallet_transaction_payment = 11,
-        Assets: pallet_assets = 12,
+        Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 12,
+        Assets: pallet_assets = 13,
 
         // Circuit
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Treasury: pallet_treasury = 109,
-        Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
+        Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
 
         XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>} = 111,
 

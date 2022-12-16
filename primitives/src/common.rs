@@ -53,14 +53,14 @@ pub struct RoundInfo<BlockNumber> {
     /// The first block of the current round.
     pub head: BlockNumber,
     /// The length of the current round in number of blocks.
-    pub term: u32,
+    pub term: BlockNumber,
 }
 
 impl<
         B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
     > RoundInfo<B>
 {
-    pub fn new(index: RoundIndex, head: B, term: u32) -> RoundInfo<B> {
+    pub fn new(index: RoundIndex, head: B, term: B) -> RoundInfo<B> {
         RoundInfo { index, head, term }
     }
 
@@ -81,7 +81,7 @@ impl<
     > Default for RoundInfo<B>
 {
     fn default() -> RoundInfo<B> {
-        RoundInfo::new(1u32, 1u32.into(), 20u32)
+        RoundInfo::new(1u32, 1u32.into(), 20u32.into())
     }
 }
 

@@ -65,7 +65,6 @@ pub mod signature_caster;
 pub mod storage;
 pub mod threevm;
 pub mod transfers;
-pub mod treasury;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;

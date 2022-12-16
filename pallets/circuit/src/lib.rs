@@ -44,7 +44,10 @@ use pallet_xbi_portal::{
     xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
 };
 use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
-use sp_runtime::{traits::Zero, KeyTypeId};
+use sp_runtime::{
+    traits::{CheckedAdd, Zero},
+    KeyTypeId,
+};
 use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
 
 pub use t3rn_primitives::{
@@ -435,7 +438,11 @@ pub mod pallet {
                                 ));
                             },
                         );
-                        deletion_counter += 1;
+                        if let Some(v) = deletion_counter.checked_add(1) {
+                            deletion_counter = v;
+                        } else {
+                            return
+                        }
                     });
             }
 
@@ -1020,6 +1027,9 @@ pub mod pallet {
         UnsupportedRole,
         InvalidLocalTrigger,
         SignalQueueFull,
+        ArithmeticErrorOverflow,
+        ArithmeticErrorUnderflow,
+        ArithmeticErrorDivisionByZero,
     }
 }
 
@@ -1517,15 +1527,22 @@ impl<T: Config> Pallet<T> {
         let mut queue = <SignalQueue<T>>::get();
 
         // We can do an easy process and only process CONSTANT / something signals for now
-        let mut remaining_key_budget = T::SignalQueueDepth::get() / 4;
-        let mut processed_weight = 0;
+        let mut remaining_key_budget = if let Some(v) = T::SignalQueueDepth::get().checked_div(4) {
+            v
+        } else {
+            log::error!("Division error on signal queue depth (`SignalQueueDepth::get()`).");
+            T::SignalQueueDepth::get()
+        };
+        let mut processed_weight = 0_u64;
 
         while !queue.is_empty() && remaining_key_budget > 0 {
             // Cannot panic due to loop condition
             let (requester, signal) = &mut queue[0];
 
             // worst case 4 from setup
-            processed_weight += db_weight.reads(4 as Weight);
+            if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as u64) {
+                processed_weight = v
+            }
             match Machine::<T>::load_xtx(signal.execution_id) {
                 Ok(local_ctx) => {
                     let _success: bool = Machine::<T>::kill(
@@ -1548,7 +1565,13 @@ impl<T: Config> Pallet<T> {
             }
         }
         // Initial read of queue and update
-        processed_weight += db_weight.reads_writes(1 as Weight, 1 as Weight);
+        if let Some(v) =
+            processed_weight.checked_add(db_weight.reads_writes(1 as Weight, 1 as Weight))
+        {
+            processed_weight = v
+        } else {
+            log::error!("Could not initial read of queue and update")
+        }
 
         <SignalQueue<T>>::put(queue);
 
@@ -1641,7 +1664,9 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            acc_rewards += fsx.get_bond_value(fsx.input.max_reward);
+            if let Some(v) = acc_rewards.checked_add(&fsx.expect_sfx_bid().bid) {
+                acc_rewards = v
+            } // cannot return an error, signature is Weight
         }
 
         acc_rewards

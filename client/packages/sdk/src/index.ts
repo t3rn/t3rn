@@ -1,46 +1,60 @@
-import '@polkadot/api-augment'; // DO NOT REMOVE THIS LINE
-import { ApiPromise, WsProvider } from "@polkadot/api"
+import "@polkadot/api-augment"; // DO NOT REMOVE THIS LINE
+import { ApiPromise, WsProvider } from "@polkadot/api";
 
-import types from './config/types.json';
-import rpc from './config/rpc.json';
-import {Gateway, initGateways} from "./gateways";
+import types from "./config/types.json";
+import rpc from "./config/rpc.json";
+import { Gateway, initGateways } from "./gateways";
+
+import * as Types from "./types";
+
 // @ts-ignore
-import {T3rnTypesSideEffect} from "@polkadot/types/lookup";
-import * as encodings from './encodings'
-import * as converters from './converters'
-import {Circuit} from "./circuit";
+import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
+import * as encodings from "./encodings";
+import * as converters from "./converters";
+import { Circuit } from "./circuit";
+
+/**
+ * The main class for the SDK
+ */
 
 export class Sdk {
+  rpcUrl: string;
+  client: ApiPromise;
+  gateways: {
+    [id: string]: Gateway;
+  };
+  circuit: Circuit;
+  signer: any;
 
-	rpcUrl: string;
-	client: ApiPromise;
-	gateways: {
-		[id: string]: Gateway
-	}
-	circuit: Circuit
-	private signer: any;
+  /**
+   * @param rpcUrl - The RPC URL of the node to connect to
+   * @param circuitSigner - The signer to use for signing transactions
+   */
 
-	constructor(rpcUrl: string, circuitSigner: any) {
-		this.rpcUrl = rpcUrl;
-		this.signer = circuitSigner;
-	}
+  constructor(rpcUrl: string, circuitSigner: any) {
+    this.rpcUrl = rpcUrl;
+    this.signer = circuitSigner;
+  }
 
-	// Initializes ApiPromise instance and loads available gateways via XDNS
-	async init(): Promise<ApiPromise> {
-		this.client = await ApiPromise.create({
-			provider: new WsProvider(this.rpcUrl),
-			types: types as any,
-			rpc: rpc as any
-		})
-		this.gateways = await initGateways(this.client)
-		this.circuit = new Circuit(this.client, this.signer)
+  /**
+   * Initializes ApiPromise instance and loads available gateways via XDNS
+   * @returns ApiPromise instance
+   */
 
-		return this.client
-	}
+  async init(): Promise<ApiPromise> {
+    this.client = await ApiPromise.create({
+      provider: new WsProvider(this.rpcUrl),
+      types: types as any,
+      rpc: rpc as any,
+    });
+    this.gateways = await initGateways(this.client);
+    this.circuit = new Circuit(this.client, this.signer);
+
+    return this.client;
+  }
 }
 
-export{encodings, converters}
-
+export { encodings, converters, Types };
 
 // (async () => {
 //

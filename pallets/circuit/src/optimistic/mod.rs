@@ -36,10 +36,15 @@ impl<T: Config> Optimistic<T> {
                 return Err(Error::<T>::BiddingRejectedBetterBidFound)
             }
         }
-        // Check if bid candidate has enough balance and witdraw
+        // Check if bid candidate has enough balance and withdraw
+        let checked_bid = if let Some(v) = bid.checked_add(&fsx.input.insurance) {
+            v
+        } else {
+            return Err(Error::<T>::ArithmeticErrorOverflow)
+        };
         <T as Config>::AccountManager::withdraw_immediately(
             executor,
-            bid + fsx.input.insurance,
+            checked_bid,
             fsx.input.reward_asset_id,
         )
         .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
@@ -60,9 +65,20 @@ impl<T: Config> Optimistic<T> {
         // Un-reserve the funds of discarded bidder.
         // Warning: From this point on all of the next operations must be infallible.
         if let Some(current_best_bid) = &current_accepted_bid {
-            let mut total_unreserve = current_best_bid.insurance + current_best_bid.bid;
+            let mut total_unreserve = if let Some(v) = current_best_bid
+                .insurance
+                .checked_add(&current_best_bid.bid)
+            {
+                v
+            } else {
+                return Err(Error::<T>::ArithmeticErrorOverflow)
+            };
             if let Some(bond) = current_best_bid.reserved_bond {
-                total_unreserve += bond;
+                if let Some(v) = total_unreserve.checked_add(&bond) {
+                    total_unreserve = v
+                } else {
+                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                }
             }
             <T as Config>::AccountManager::deposit_immediately(
                 &current_best_bid.executor,
@@ -120,9 +136,14 @@ impl<T: Config> Optimistic<T> {
                 let (insurance, reserved_bond) =
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
+                let checked_insurance = if let Some(v) = insurance.checked_add(&reserved_bond) {
+                    v
+                } else {
+                    return Err(Error::<T>::ArithmeticErrorOverflow)
+                };
                 <T as Config>::AccountManager::deposit_immediately(
                     &sfx_bid.executor,
-                    insurance + reserved_bond,
+                    checked_insurance,
                     sfx_bid.reward_asset_id,
                 )
             }
@@ -151,7 +172,13 @@ impl<T: Config> Optimistic<T> {
 
                 // ToDo: Introduce more sophisticated slashed rewards split between
                 //  treasury, users, honest executors
-                let slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> = insurance + reserved_bond;
+                let slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> =
+                    if let Some(v) = insurance.checked_add(&reserved_bond) {
+                        v
+                    } else {
+                        log::error!("Could not compute slashed reserve");
+                        return
+                    };
                 <T as Config>::AccountManager::deposit_immediately(
                     &T::SelfAccountId::get(),
                     slashed_reserve,
@@ -171,11 +198,25 @@ impl<T: Config> Optimistic<T> {
                 let (insurance, reserved_bond) =
                     (*sfx_bid.get_insurance(), *sfx_bid.expect_reserved_bond());
 
-                // First unlock honest executor
-                //  and the reward to honest executors since the reserved bond was slashed and should always suffice
+                // First unlock honest executor  and the reward to honest executors
+                // since the reserved bond was slashed and should always suffice.
+                let checked_reward =
+                    if let Some(insurance_plus_bond) = insurance.checked_add(&reserved_bond) {
+                        if let Some(insurance_plus_bond_plus_bid) =
+                            insurance_plus_bond.checked_add(&sfx_bid.bid)
+                        {
+                            insurance_plus_bond_plus_bid
+                        } else {
+                            log::error!("Could not compute honest reward");
+                            return
+                        }
+                    } else {
+                        log::error!("Could not compute honest reward");
+                        return
+                    };
                 <T as Config>::AccountManager::deposit_immediately(
                     &sfx_bid.executor,
-                    insurance + reserved_bond + sfx_bid.bid,
+                    checked_reward,
                     sfx_bid.reward_asset_id,
                 )
             }

@@ -150,6 +150,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
         Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
+        Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 13,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -168,8 +169,7 @@ construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Treasury: pallet_treasury = 109,
-        Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
+        Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,
