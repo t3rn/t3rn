@@ -36,7 +36,7 @@ impl<T: Config> Optimistic<T> {
                 return Err(Error::<T>::BiddingRejectedBetterBidFound)
             }
         }
-        // Check if bid candidate has enough balance and reserve
+        // Check if bid candidate has enough balance and witdraw
         <T as Config>::AccountManager::withdraw_immediately(
             executor,
             bid + fsx.input.insurance,
