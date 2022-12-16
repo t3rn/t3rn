@@ -95,7 +95,8 @@
         "encoded_action": "Bytes",
         "encoded_args": "Vec<Bytes>",
         "signature": "Bytes",
-        "enforce_executioner": "Option<AccountId>"
+        "enforce_executioner": "Option<AccountId>",
+        "reward_asset_id": "Option<u32>"
     },
     "SideEffectId": "Hash",
     "ConfirmedSideEffect": {

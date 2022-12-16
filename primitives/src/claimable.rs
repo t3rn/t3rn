@@ -19,10 +19,11 @@ pub enum CircuitRole {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum BenefitSource {
-    TrafficFees,
-    TrafficRewards,
     BootstrapPool,
     Inflation,
+    TrafficFees,
+    TrafficRewards,
+    Unsettled,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]

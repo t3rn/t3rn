@@ -23,9 +23,10 @@ pub struct Settlement<Account, Balance> {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
-pub struct RequestCharge<Account, Balance> {
+pub struct RequestCharge<Account, Balance, AssetId> {
     pub payee: Account,
     pub offered_reward: Balance,
+    pub maybe_asset_id: Option<AssetId>,
     pub charge_fee: Balance,
     pub recipient: Account,
     pub source: BenefitSource,
@@ -39,11 +40,11 @@ pub enum Outcome {
     Commit,
 }
 
-pub trait AccountManager<Account, Balance, Hash, BlockNumber> {
+pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
     /// Lookup charge by Id and fail if not found
     fn get_charge_or_fail(
         charge_id: Hash,
-    ) -> Result<RequestCharge<Account, Balance>, DispatchError>;
+    ) -> Result<RequestCharge<Account, Balance, AssetId>, DispatchError>;
     /// Lookup charge by Id and fail if not found
     fn no_charge_or_fail(charge_id: Hash) -> Result<(), DispatchError>;
     /// Bump contracts registry nonce in Account Manager nonce state and return charge request Id
@@ -57,6 +58,7 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber> {
         source: BenefitSource,
         role: CircuitRole,
         recipient: Option<Account>,
+        maybe_asset_id: Option<AssetId>,
     ) -> DispatchResult;
     /// Finalize a transaction, with an optional reason for failures
     fn finalize(
@@ -66,7 +68,7 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber> {
         maybe_actual_fees: Option<Balance>,
     ) -> DispatchResult;
     /// Assert infallible finalize of a transaction if exists
-    fn try_finalize(
+    fn finalize_infallible(
         charge_id: Hash,
         outcome: Outcome,
         maybe_recipient: Option<Account>,
@@ -77,4 +79,14 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber> {
         n: BlockNumber,
         r: RoundInfo<BlockNumber>,
     ) -> Result<Vec<ClaimableArtifacts<Account, Balance>>, DispatchError>;
+
+    fn can_withdraw(beneficiary: &Account, amount: Balance, asset_id: Option<AssetId>) -> bool;
+
+    fn deposit_immediately(beneficiary: &Account, amount: Balance, asset_id: Option<AssetId>);
+
+    fn withdraw_immediately(
+        beneficiary: &Account,
+        amount: Balance,
+        asset_id: Option<AssetId>,
+    ) -> DispatchResult;
 }

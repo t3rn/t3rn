@@ -211,7 +211,7 @@ pub mod test {
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];
         let side_effects = vec![valid_transfer_side_effect.clone()];
-        let fee = 1;
+
         let sequential = true;
 
         ExtBuilder::default()
@@ -226,7 +226,6 @@ pub mod test {
                 assert_ok!(Circuit::on_extrinsic_trigger(
                     origin,
                     side_effects,
-                    fee,
                     sequential,
                 ));
 
@@ -297,7 +296,7 @@ pub mod test {
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];
         let side_effects = vec![valid_transfer_side_effect.clone()];
-        let fee = 1;
+
         let sequential = true;
 
         ExtBuilder::default()
@@ -313,7 +312,6 @@ pub mod test {
                 assert_ok!(Circuit::on_extrinsic_trigger(
                     origin,
                     side_effects,
-                    fee,
                     sequential,
                 ));
 

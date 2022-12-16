@@ -2,6 +2,7 @@ use super::*;
 use frame_support::parameter_types;
 use frame_system::EnsureRoot;
 use sp_core::crypto::AccountId32;
+use sp_runtime::traits::ConvertInto;
 
 parameter_types! {
     // TODO: update me to be better
@@ -9,6 +10,9 @@ parameter_types! {
 }
 
 impl pallet_account_manager::Config for Runtime {
+    type AssetBalanceOf = ConvertInto;
+    type AssetId = AssetId;
+    type Assets = Assets;
     type Clock = Clock;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;

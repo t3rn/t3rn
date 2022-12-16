@@ -2,10 +2,11 @@ use crate::{
     AccountManager as AccountManagerExt, BalanceOf, Config, ContractsRegistryExecutionNonce, Error,
     Outcome, Pallet, PendingChargesPerRound, SettlementsPerRound,
 };
+
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResult,
-    traits::{Currency, Get, ReservableCurrency},
+    traits::{fungibles::Inspect, Get},
 };
 use sp_runtime::{
     traits::{CheckedAdd, CheckedDiv, CheckedMul, Zero},
@@ -21,6 +22,7 @@ use t3rn_primitives::{
     executors::Executors,
 };
 
+use crate::monetary::Monetary;
 use pallet_xbi_portal::sabi::Sabi;
 
 pub struct ActiveSetClaimablePerRound<Account, Balance> {
@@ -38,12 +40,21 @@ pub fn percent_ratio<BalanceOf: Zero + CheckedDiv + CheckedMul + From<u8>>(
         .ok_or::<DispatchError>("PercentRatio::ChargeOrSettlementCalculationOverflow".into())
 }
 
-impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
-    for Pallet<T>
+impl<T: Config>
+    AccountManagerExt<
+        T::AccountId,
+        BalanceOf<T>,
+        T::Hash,
+        T::BlockNumber,
+        <T::Assets as Inspect<T::AccountId>>::AssetId,
+    > for Pallet<T>
 {
     fn get_charge_or_fail(
         charge_id: T::Hash,
-    ) -> Result<RequestCharge<T::AccountId, BalanceOf<T>>, DispatchError> {
+    ) -> Result<
+        RequestCharge<T::AccountId, BalanceOf<T>, <T::Assets as Inspect<T::AccountId>>::AssetId>,
+        DispatchError,
+    > {
         if let Some(pending_charge) =
             PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
         {
@@ -65,10 +76,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
 
     fn bump_contracts_registry_nonce() -> Result<T::Hash, DispatchError> {
         let execution_id = ContractsRegistryExecutionNonce::<T>::get();
-        let _ = ContractsRegistryExecutionNonce::<T>::mutate(|nonce| match nonce.checked_add(1) {
-            Some(v) => Ok(*nonce = v),
-            None => return Err(DispatchError::Arithmetic(ArithmeticError::Overflow)),
-        });
+        ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
 
         let charge_id = Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
             .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
@@ -91,20 +99,27 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         source: BenefitSource,
         role: CircuitRole,
         maybe_recipient: Option<T::AccountId>,
+        maybe_asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
     ) -> DispatchResult {
         Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
 
-        let total_reserve_deposit = if let Some(v) = charge_fee.checked_add(&offered_reward) {
-            v
-        } else {
-            return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
-        };
+        let total_reserve_deposit =
+            if let Some(checked_reserve) = charge_fee.checked_add(&offered_reward) {
+                checked_reserve
+            } else {
+                log::error!("Could nor compute collateral bond power, arithmetic overflow");
+                return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+            };
 
         if total_reserve_deposit == Zero::zero() {
             return Err(Error::<T>::SkippingEmptyCharges.into())
         }
 
-        T::Currency::reserve(payee, total_reserve_deposit)?;
+        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::withdraw(
+            payee,
+            total_reserve_deposit,
+            maybe_asset_id,
+        )?;
 
         let recipient = if let Some(recipient) = maybe_recipient {
             recipient
@@ -123,6 +138,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
                 recipient: recipient.clone(),
                 source,
                 role,
+                maybe_asset_id,
             },
         );
 
@@ -153,12 +169,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             Outcome::UnexpectedFailure => (49, 50, Zero::zero()),
         };
 
-        let total_reserved = if let Some(v) = charge.charge_fee.checked_add(&charge.offered_reward)
-        {
-            v
-        } else {
-            return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
-        };
+        let total_reserved = charge.charge_fee + charge.offered_reward;
 
         let payee_refund: BalanceOf<T> = if let Some(actual_fees) = maybe_actual_fees {
             // ToDo: Better handle case when actual fees outgrow total_reserved
@@ -170,9 +181,12 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             percent_ratio::<BalanceOf<T>>(total_reserved, payee_split)?
         };
 
-        T::Currency::slash_reserved(&charge.payee, total_reserved);
         if payee_refund > Zero::zero() {
-            T::Currency::deposit_creating(&charge.payee, payee_refund);
+            Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+                &charge.payee,
+                charge.maybe_asset_id,
+                payee_refund,
+            );
         }
 
         // Check if recipient has been updated
@@ -186,18 +200,13 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
 
         // Create Settlement for the future async claim
         if recipient_rewards > Zero::zero() {
-            let sttl_amt = if let Some(v) = recipient_rewards.checked_add(&recipient_bonus) {
-                v
-            } else {
-                return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
-            };
             SettlementsPerRound::<T>::insert(
                 T::Clock::current_round(),
                 charge_id,
                 Settlement::<T::AccountId, BalanceOf<T>> {
                     requester: charge.payee,
                     recipient,
-                    settlement_amount: sttl_amt,
+                    settlement_amount: recipient_rewards + recipient_bonus,
                     outcome,
                     source: charge.source,
                     role: charge.role,
@@ -207,27 +216,30 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
 
         // Take what's left to treasury
-        T::Currency::deposit_creating(
+        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
             &T::EscrowAccount::get(),
+            charge.maybe_asset_id,
             total_reserved - payee_refund - recipient_rewards,
         );
 
         Ok(())
     }
 
-    fn try_finalize(
+    fn finalize_infallible(
         charge_id: T::Hash,
         outcome: Outcome,
         maybe_recipient: Option<T::AccountId>,
         maybe_actual_fees: Option<BalanceOf<T>>,
     ) {
         if PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id).is_some() {
-            <Self as AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>>::finalize(
-                charge_id,
-                outcome,
-                maybe_recipient,
-                maybe_actual_fees
-            ).expect("Expect try finalize to be infallible");
+            <Self as AccountManagerExt<
+                T::AccountId,
+                BalanceOf<T>,
+                T::Hash,
+                T::BlockNumber,
+                <T::Assets as Inspect<T::AccountId>>::AssetId,
+            >>::finalize(charge_id, outcome, maybe_recipient, maybe_actual_fees)
+            .expect("Expect try finalize to be infallible");
         }
     }
 
@@ -250,14 +262,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             // fixme: test that actually updates active_set_claimables or are the references wrong
             for active_set_claimable in active_set_claimables.iter_mut() {
                 if active_set_claimable.executor == settlement.recipient {
-                    if let Some(v) = active_set_claimable
-                        .claimable
-                        .checked_add(&settlement.settlement_amount)
-                    {
-                        active_set_claimable.claimable = v
-                    } else {
-                        return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
-                    }
+                    active_set_claimable.claimable += settlement.settlement_amount;
                 }
             }
         }
@@ -267,70 +272,116 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             let nominated_stake =
                 T::Executors::total_nominated_stake(&active_set_claimable.executor);
             // calculate % ratio of rewards proportionally to Executor's own Collateral to Nominated Stake
-            let total_stake_power = if let Some(v) = collateral_bond.checked_add(&nominated_stake) {
-                v
-            } else {
-                return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
-            };
-
-            // todo: ensure it's in range (0,1>
-            let collateral_bond_power =
-                if let Some(v) = collateral_bond.checked_div(&total_stake_power) {
-                    v
+            let total_stake_power =
+                if let Some(checked_stake) = collateral_bond.checked_add(&nominated_stake) {
+                    checked_stake
                 } else {
-                    return Err(DispatchError::Arithmetic(ArithmeticError::DivisionByZero))
+                    log::error!("Could nor compute collateral bond power, arithmetic overflow");
+                    return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
                 };
 
-            let clltrl_bond_power = if let Some(v) =
-                collateral_bond_power.checked_mul(&active_set_claimable.claimable)
+            // TODO: ensure it's in range (0,1>
+            let round_claim = if let Some(collateral_bond_power) =
+                collateral_bond.checked_div(&total_stake_power)
             {
-                v
+                if let Some(total_round_claim) =
+                    collateral_bond_power.checked_mul(&active_set_claimable.claimable)
+                {
+                    total_round_claim
+                } else {
+                    log::error!("Could nor compute collateral bond power, division by zero");
+                    return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+                }
             } else {
+                log::error!("Could not compute total round claim, arithmetic overflow");
                 return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
             };
+
             claimable_artifacts.push(ClaimableArtifacts {
                 beneficiary: active_set_claimable.executor.clone(),
                 role: CircuitRole::Executor,
-                total_round_claim: clltrl_bond_power,
+                total_round_claim: round_claim,
                 benefit_source: BenefitSource::TrafficRewards,
             });
 
-            // todo: ensure it's in range <0,1)
+            // TODO: ensure it's in range <0,1)
             let nominated_stake_power =
-                if let Some(v) = nominated_stake.checked_div(&total_stake_power) {
-                    v
+                if let Some(checked_nominated) = nominated_stake.checked_div(&total_stake_power) {
+                    checked_nominated
                 } else {
-                    return Err(DispatchError::Arithmetic(ArithmeticError::DivisionByZero))
+                    log::error!("Could nor compute collateral bond power, division by zero");
+                    return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
                 };
 
-            let claimable_by_all_stakers_of_executor = if let Some(v) =
+            let claimable_by_all_stakers_of_executor = if let Some(checked_claimable) =
                 nominated_stake_power.checked_mul(&active_set_claimable.claimable)
             {
-                v
+                checked_claimable
             } else {
+                log::error!("Could nor compute collateral bond power, arithmetic overflow");
                 return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
             };
 
             for nominated_stake in T::Executors::stakes_per_executor(&active_set_claimable.executor)
             {
-                let staker_power = if let Some(v) = nominated_stake
+                let total_claim = if let Some(checked_nominated) = nominated_stake
                     .nominated_stake
                     .checked_div(&nominated_stake_power)
                 {
-                    v
+                    if let Some(checked_claim) =
+                        checked_nominated.checked_mul(&claimable_by_all_stakers_of_executor)
+                    {
+                        checked_claim
+                    } else {
+                        log::error!("Could nor compute collateral bond power, arithmetic overflow");
+                        return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+                    }
                 } else {
-                    return Err(DispatchError::Arithmetic(ArithmeticError::DivisionByZero))
+                    log::error!("Could nor compute collateral bond power, division by zero");
+                    return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
                 };
                 claimable_artifacts.push(ClaimableArtifacts {
                     beneficiary: nominated_stake.staker,
                     role: CircuitRole::Staker,
-                    total_round_claim: staker_power * claimable_by_all_stakers_of_executor,
+                    total_round_claim: total_claim,
                     benefit_source: BenefitSource::TrafficRewards,
                 });
             }
         }
 
         Ok(claimable_artifacts)
+    }
+
+    fn can_withdraw(
+        payee: &T::AccountId,
+        amount: BalanceOf<T>,
+        asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
+    ) -> bool {
+        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::can_withdraw(
+            payee, asset_id, amount,
+        )
+    }
+
+    fn deposit_immediately(
+        beneficiary: &T::AccountId,
+        amount: BalanceOf<T>,
+        asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
+    ) {
+        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+            beneficiary,
+            asset_id,
+            amount,
+        )
+    }
+
+    fn withdraw_immediately(
+        payee: &T::AccountId,
+        amount: BalanceOf<T>,
+        asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
+    ) -> DispatchResult {
+        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::withdraw(
+            payee, amount, asset_id,
+        )
     }
 }
 
@@ -341,8 +392,10 @@ mod tests {
 
     use frame_support::{assert_err, assert_ok};
 
+    pub use frame_support::traits::Currency;
+
     use sp_core::H256;
-    use t3rn_primitives::common::RoundInfo;
+    use t3rn_primitives::{common::RoundInfo, Balance};
 
     const DEFAULT_BALANCE: Balance = 1_000_000;
 
@@ -351,24 +404,28 @@ mod tests {
         ExtBuilder::default().build().execute_with(|| {
             let execution_id: H256 = H256::repeat_byte(0);
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+
+            const DEPOSIT_AMOUNT: Balance = DEFAULT_BALANCE / 10;
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 Balance,
                 Hash,
                 BlockNumber,
+                AssetId,
             >>::deposit(
                 execution_id,
                 &ALICE,
-                DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE),
+                DEPOSIT_AMOUNT,
                 0,
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
             assert_eq!(
-                Balances::reserved_balance(&ALICE),
-                DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE)
+                Balances::free_balance(&ALICE),
+                DEFAULT_BALANCE - DEPOSIT_AMOUNT
             );
 
             let charge_item = AccountManager::pending_charges_per_round::<
@@ -378,10 +435,7 @@ mod tests {
             .unwrap();
             assert_eq!(charge_item.payee, ALICE);
             assert_eq!(charge_item.recipient, BOB);
-            assert_eq!(
-                charge_item.charge_fee,
-                DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE)
-            );
+            assert_eq!(charge_item.charge_fee, DEPOSIT_AMOUNT);
         });
     }
 
@@ -392,19 +446,24 @@ mod tests {
 
             let execution_id: H256 = H256::repeat_byte(0);
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+
+            const DEPOSIT_AMOUNT: Balance = DEFAULT_BALANCE / 10;
+
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 Balance,
                 Hash,
                 BlockNumber,
+                AssetId,
             >>::deposit(
                 execution_id,
                 &ALICE,
-                DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE),
+                DEPOSIT_AMOUNT,
                 0,
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
             assert_err!(
@@ -413,14 +472,16 @@ mod tests {
                     Balance,
                     Hash,
                     BlockNumber,
+                    AssetId,
                 >>::deposit(
                     execution_id,
                     &ALICE,
-                    DEFAULT_BALANCE.checked_div(10).unwrap_or(DEFAULT_BALANCE),
+                    DEPOSIT_AMOUNT,
                     0,
                     BenefitSource::TrafficRewards,
                     CircuitRole::ContractAuthor,
                     Some(BOB),
+                    None,
                 ),
                 pallet_account_manager::Error::<Runtime>::ExecutionAlreadyRegistered
             );
@@ -444,6 +505,7 @@ mod tests {
                 Balance,
                 Hash,
                 BlockNumber,
+                AssetId,
             >>::deposit(
                 execution_id,
                 &ALICE,
@@ -452,36 +514,34 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
-            assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
+            assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 Balance,
                 Hash,
                 BlockNumber,
+                AssetId,
             >>::finalize(
                 execution_id, Outcome::Revert, None, None,
             ));
 
-            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap_or(charge_amt);
-            let _ten_percent_charge_amt = charge_amt.checked_div(10).unwrap_or(charge_amt);
+            let one_percent_charge_amt = charge_amt / 100;
+            let _ten_percent_charge_amt = charge_amt / 10;
 
             assert_eq!(
                 Balances::free_balance(
                     &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
                 ),
-                one_percent_charge_amt
-                    .checked_add(DEFAULT_BALANCE)
-                    .unwrap_or(one_percent_charge_amt) // 1% left now
+                one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
             );
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                DEFAULT_BALANCE
-                    .checked_sub(one_percent_charge_amt)
-                    .unwrap_or(DEFAULT_BALANCE)
+                DEFAULT_BALANCE - one_percent_charge_amt
             );
 
             assert_eq!(
@@ -521,7 +581,7 @@ mod tests {
                 AccountId,
                 Balance,
                 Hash,
-                BlockNumber,
+                BlockNumber, AssetId,
             >>::deposit(
                 execution_id,
                 &ALICE,
@@ -529,18 +589,18 @@ mod tests {
                 INSURANCE,
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
-                Some(BOB),
+                Some(BOB), None,
             ));
 
-            assert_eq!(Balances::reserved_balance(&ALICE), CHARGE.checked_add(INSURANCE).unwrap_or(CHARGE));
+            assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - (CHARGE + INSURANCE));
 
             assert_err!(<AccountManager as AccountManagerExt<
                 AccountId,
                 Balance,
                 Hash,
-                BlockNumber,
+                BlockNumber, AssetId,
             >>::finalize(
-                execution_id, Outcome::Revert, None, Some(CHARGE.checked_add(INSURANCE).unwrap_or(CHARGE).checked_add(1).unwrap_or(CHARGE)),
+                execution_id, Outcome::Revert, None, Some(CHARGE + INSURANCE + 1),
             ),
                 circuit_runtime_pallets::pallet_account_manager::Error::<Runtime>::ChargeOrSettlementActualFeesOutgrowReserved,
             );
@@ -574,6 +634,7 @@ mod tests {
                 Balance,
                 Hash,
                 BlockNumber,
+                AssetId,
             >>::deposit(
                 execution_id,
                 &ALICE,
@@ -582,34 +643,29 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
-            assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
+            assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 Balance,
                 Hash,
                 BlockNumber,
+                AssetId,
             >>::finalize(
                 execution_id, Outcome::Commit, None, None,
             ));
 
-            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap_or(charge_amt);
+            let one_percent_charge_amt = charge_amt / 100;
             assert_eq!(
                 Balances::free_balance(
                     &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
                 ),
-                one_percent_charge_amt
-                    .checked_add(DEFAULT_BALANCE)
-                    .unwrap_or(one_percent_charge_amt) // 1% left now
+                one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
             );
-            assert_eq!(
-                Balances::free_balance(&ALICE),
-                DEFAULT_BALANCE
-                    .checked_sub(charge_amt)
-                    .unwrap_or(DEFAULT_BALANCE)
-            );
+            assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
 
             assert_eq!(
                 AccountManager::pending_charges_per_round::<RoundInfo<BlockNumber>, H256>(
@@ -651,6 +707,7 @@ mod tests {
                 Balance,
                 Hash,
                 BlockNumber,
+                AssetId,
             >>::deposit(
                 execution_id,
                 &ALICE,
@@ -659,45 +716,34 @@ mod tests {
                 BenefitSource::TrafficRewards,
                 CircuitRole::ContractAuthor,
                 Some(BOB),
+                None,
             ));
 
-            assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
+            assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 Balance,
                 Hash,
                 BlockNumber,
+                AssetId,
             >>::finalize(
                 execution_id, Outcome::UnexpectedFailure, None, None,
             ));
 
-            let test_one_percent_charge_amt = charge_amt.checked_div(100);
-            assert_ne!(test_one_percent_charge_amt, None);
-
-            let one_percent_charge_amt = charge_amt.checked_div(100).unwrap_or(charge_amt);
-            let fifty_percent_charge_amt = charge_amt
-                .checked_div(100)
-                .unwrap_or(charge_amt)
-                .checked_mul(50)
-                .unwrap_or(charge_amt);
+            let one_percent_charge_amt = charge_amt / 100;
+            let fifty_percent_charge_amt = charge_amt / 100 * 50;
 
             assert_eq!(
                 Balances::free_balance(
                     &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
                 ),
-                one_percent_charge_amt
-                    .checked_add(DEFAULT_BALANCE)
-                    .unwrap_or(one_percent_charge_amt) // 1% left now
+                one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
             );
 
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                DEFAULT_BALANCE
-                    .checked_sub(fifty_percent_charge_amt)
-                    .unwrap_or(DEFAULT_BALANCE)
-                    .checked_sub(one_percent_charge_amt)
-                    .unwrap_or(DEFAULT_BALANCE)
+                DEFAULT_BALANCE - fifty_percent_charge_amt - one_percent_charge_amt
             );
 
             assert_eq!(

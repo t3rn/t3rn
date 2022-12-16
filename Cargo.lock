@@ -1081,6 +1081,7 @@ version = "1.0.0-alpha.0"
 dependencies = [
  "frame-support",
  "frame-system",
+ "parachains-common",
  "sp-core",
  "sp-runtime",
 ]
