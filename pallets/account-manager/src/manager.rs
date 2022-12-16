@@ -108,12 +108,13 @@ impl<T: Config>
         if total_reserve_deposit == Zero::zero() {
             return Err(Error::<T>::SkippingEmptyCharges.into())
         }
+        Self::withdraw_immediately(payee, total_reserve_deposit, maybe_asset_id)?;
 
-        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::withdraw(
-            payee,
-            total_reserve_deposit,
-            maybe_asset_id,
-        )?;
+        // Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::withdraw(
+        //     payee,
+        //     total_reserve_deposit,
+        //     maybe_asset_id,
+        // )?;
 
         let recipient = if let Some(recipient) = maybe_recipient {
             recipient
@@ -219,21 +220,99 @@ impl<T: Config>
         Ok(())
     }
 
-    fn finalize_infallible(
+    fn finalize_infallible(charge_id: T::Hash, outcome: Outcome) -> bool {
+        if let Some(charge) = PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+        {
+            if charge.offered_reward > Zero::zero() {
+                match outcome {
+                    Outcome::Commit => {
+                        SettlementsPerRound::<T>::insert(
+                            T::Clock::current_round(),
+                            charge_id,
+                            Settlement::<T::AccountId, BalanceOf<T>> {
+                                requester: charge.payee,
+                                recipient: charge.recipient,
+                                settlement_amount: charge.offered_reward,
+                                outcome,
+                                source: charge.source,
+                                role: charge.role,
+                            },
+                        );
+                    },
+                    Outcome::Revert | Outcome::UnexpectedFailure => {
+                        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+                            &charge.payee,
+                            charge.maybe_asset_id,
+                            charge.offered_reward,
+                        );
+                    },
+                };
+            }
+
+            // Take charge fee to treasury
+            if charge.charge_fee > Zero::zero() {
+                Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+                    &T::EscrowAccount::get(),
+                    charge.maybe_asset_id,
+                    charge.charge_fee,
+                );
+            }
+            PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
+            true
+        } else {
+            false
+        }
+    }
+
+    fn cancel_deposit(charge_id: T::Hash) -> bool {
+        match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
+            Some(_charge) => {
+                PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
+                true
+            },
+            None => false,
+        }
+    }
+
+    fn transfer_deposit(
         charge_id: T::Hash,
-        outcome: Outcome,
-        maybe_recipient: Option<T::AccountId>,
-        maybe_actual_fees: Option<BalanceOf<T>>,
-    ) {
-        if PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id).is_some() {
-            <Self as AccountManagerExt<
-                T::AccountId,
-                BalanceOf<T>,
-                T::Hash,
-                T::BlockNumber,
-                <T::Assets as Inspect<T::AccountId>>::AssetId,
-            >>::finalize(charge_id, outcome, maybe_recipient, maybe_actual_fees)
-            .expect("Expect try finalize to be infallible");
+        new_reward: Option<BalanceOf<T>>,
+        new_payee: Option<T::AccountId>,
+    ) -> DispatchResult {
+        match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
+            Some(charge) => {
+                let reward = if let Some(reward) = new_reward {
+                    reward
+                } else {
+                    charge.offered_reward
+                };
+
+                let payee = if let Some(payee) = new_payee {
+                    payee
+                } else {
+                    charge.payee
+                };
+
+                // Release previous payee
+                Self::cancel_deposit(charge_id);
+                <Self as AccountManagerExt<
+                    T::AccountId,
+                    BalanceOf<T>,
+                    T::Hash,
+                    T::BlockNumber,
+                    <T::Assets as Inspect<T::AccountId>>::AssetId,
+                >>::deposit(
+                    charge_id,
+                    &payee,
+                    charge.charge_fee,
+                    reward,
+                    charge.source,
+                    charge.role,
+                    Some(charge.recipient),
+                    charge.maybe_asset_id,
+                )
+            },
+            None => Ok(()),
         }
     }
 

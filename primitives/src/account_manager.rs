@@ -68,12 +68,15 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
         maybe_actual_fees: Option<Balance>,
     ) -> DispatchResult;
     /// Assert infallible finalize of a transaction if exists
-    fn finalize_infallible(
+    fn finalize_infallible(charge_id: Hash, outcome: Outcome) -> bool;
+
+    fn cancel_deposit(charge_id: Hash) -> bool;
+
+    fn transfer_deposit(
         charge_id: Hash,
-        outcome: Outcome,
-        maybe_recipient: Option<Account>,
-        maybe_actual_fees: Option<Balance>,
-    );
+        new_reward: Option<Balance>,
+        new_payee: Option<Account>,
+    ) -> DispatchResult;
 
     fn on_collect_claimable(
         n: BlockNumber,
