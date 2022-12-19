@@ -19,7 +19,6 @@ export const onExtrinsicTrigger = (circuitApi: ApiPromise, sideEffects: any[], s
                 return obj
             })
         ),
-        fee: circuitApi.createType("u128", 0),
         sequential: circuitApi.createType("bool", sequential),
     }
 }
