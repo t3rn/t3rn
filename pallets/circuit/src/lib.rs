@@ -2013,7 +2013,7 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            if let Some(v) = acc_rewards.checked_add(&fsx.expect_sfx_bid().bid) {
+            if let Some(v) = acc_rewards.checked_add(&fsx.get_bond_value(fsx.input.max_reward)) {
                 acc_rewards = v
             } // cannot return an error, signature is Weight
         }
