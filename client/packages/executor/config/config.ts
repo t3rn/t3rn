@@ -1,5 +1,7 @@
 import { SfxStrategy, XtxStrategy } from "../src"
 
+const WS_CIRCUIT_ENDPOINT = process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944";
+
 /**
  * The gateway configuration for the executor.
  *
@@ -145,7 +147,7 @@ export type Config = {
 
 export const config: Config = {
     circuit: {
-        rpc: "ws://127.0.0.1::9944",
+        rpc: WS_CIRCUIT_ENDPOINT,
         ticker: "TRN",
         decimals: 12,
         signerKey: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561",
