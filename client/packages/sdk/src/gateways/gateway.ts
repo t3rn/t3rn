@@ -179,6 +179,34 @@ export class Gateway {
   }
 
   /**
+   * Parse LE encoded value to correct integer, accounting for decimals
+   * @param value - The value to convert
+   */
+
+  parseLe(value: string): BN {
+    return new AmountConverter({
+      value,
+      decimals: this.decimals,
+      valueTypeSize: this.valueTypeSize
+    }
+    ).toBn()
+  }
+
+  /**
+     * Parse integer to float, accounting for decimals
+     * @param value - The value to convert
+     */
+
+  toFloat(value: BN | number): number {
+    return new AmountConverter({
+      value,
+      decimals: this.decimals,
+      valueTypeSize: this.valueTypeSize
+    }
+    ).toFloat()
+  }
+
+  /**
    * Get gateway type from vendor
    * @param vendor - The vendor of the gateway
    */
