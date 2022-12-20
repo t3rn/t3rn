@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["LocalStateExecutionView",""],["LocalTrigger",""]],"trait":[["OnLocalTrigger",""]],"type":[["XExecSignalId",""],["XExecStepSideEffectId",""]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["SIDE_EFFECT_HEADER_SIZE",""],["SIDE_EFFECT_NAME_SIZE",""],["SIDE_EFFECT_TYPE_SIZE",""],["TARGET_ID_SIZE",""]],"enum":[["Surrounding",""]],"fn":[["read_raw_side_effect_header",""],["validate_next_arg",""],["validate_next_args",""]],"struct":[["Signature",""]],"trait":[["HasXDNSAccess",""]],"type":[["RawSideEffectHeader",""]]};

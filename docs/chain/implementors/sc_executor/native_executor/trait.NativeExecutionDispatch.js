@@ -1,0 +1,6 @@
+(function() {var implementors = {
+"circuit_standalone":[["impl NativeExecutionDispatch for <a class=\"struct\" href=\"circuit_standalone/service/struct.ExecutorDispatch.html\" title=\"struct circuit_standalone::service::ExecutorDispatch\">ExecutorDispatch</a>"]],
+"circuit_standalone_node":[["impl NativeExecutionDispatch for <a class=\"struct\" href=\"circuit_standalone_node/service/struct.ExecutorDispatch.html\" title=\"struct circuit_standalone_node::service::ExecutorDispatch\">ExecutorDispatch</a>"]],
+"t0rn_collator":[["impl NativeExecutionDispatch for <a class=\"struct\" href=\"t0rn_collator/service/struct.TemplateRuntimeExecutor.html\" title=\"struct t0rn_collator::service::TemplateRuntimeExecutor\">TemplateRuntimeExecutor</a>"]],
+"t3rn_collator":[["impl NativeExecutionDispatch for <a class=\"struct\" href=\"t3rn_collator/service/struct.TemplateRuntimeExecutor.html\" title=\"struct t3rn_collator::service::TemplateRuntimeExecutor\">TemplateRuntimeExecutor</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

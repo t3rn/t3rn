@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["initialize_logger","Initialize Relay logger instance."],["initialize_relay","Initialize relay environment."]]};

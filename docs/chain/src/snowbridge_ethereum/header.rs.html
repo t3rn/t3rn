@@ -1,0 +1,836 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/src/bridges/snowfork/ethereum/src/header.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>header.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../snowbridge_ethereum/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../snowbridge_ethereum/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../snowbridge_ethereum/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+</pre><pre class="rust"><code><span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>ethbloom::Bloom <span class="kw">as </span>EthBloom;
+<span class="kw">use </span>hex_literal::hex;
+<span class="kw">use </span>parity_bytes::Bytes;
+<span class="kw">use </span>rlp::RlpStream;
+<span class="kw">use </span>scale_info::TypeInfo;
+<span class="kw">use </span>sp_io::hashing::keccak_256;
+<span class="kw">use </span>sp_runtime::RuntimeDebug;
+<span class="kw">use </span>sp_std::{convert::TryInto, prelude::<span class="kw-2">*</span>};
+
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>serde::{Deserialize, Serialize};
+
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>serde_big_array::BigArray;
+
+<span class="kw">use </span>ethereum_types::{Address, H256, H64, U256};
+<span class="comment">// use ethereum_types::{Address};
+// use sp_core::{H256, H64, U256};
+
+</span><span class="kw">use crate</span>::{mpt, receipt};
+
+<span class="doccomment">/// Complete block header id.
+</span><span class="attribute">#[derive(Clone, Copy, Default, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+</span><span class="kw">pub struct </span>HeaderId {
+    <span class="doccomment">/// Header number.
+    </span><span class="kw">pub </span>number: u64,
+    <span class="doccomment">/// Header hash.
+    </span><span class="kw">pub </span>hash: H256,
+}
+
+<span class="kw">const </span>EMPTY_OMMERS_HASH: [u8; <span class="number">32</span>] =
+    <span class="macro">hex!</span>(<span class="string">&quot;1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347&quot;</span>);
+
+<span class="doccomment">/// An Ethereum block header.
+</span><span class="attribute">#[derive(Clone, Default, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+</span><span class="kw">pub struct </span>Header {
+    <span class="doccomment">/// Parent block hash.
+    </span><span class="kw">pub </span>parent_hash: H256,
+    <span class="doccomment">/// Block timestamp.
+    </span><span class="kw">pub </span>timestamp: u64,
+    <span class="doccomment">/// Block number.
+    </span><span class="kw">pub </span>number: u64,
+    <span class="doccomment">/// Block author.
+    </span><span class="kw">pub </span>author: Address,
+
+    <span class="doccomment">/// Transactions root.
+    </span><span class="kw">pub </span>transactions_root: H256,
+    <span class="doccomment">/// Block ommers hash.
+    </span><span class="kw">pub </span>ommers_hash: H256,
+    <span class="doccomment">/// Block extra data.
+    </span><span class="kw">pub </span>extra_data: Bytes,
+
+    <span class="doccomment">/// State root.
+    </span><span class="kw">pub </span>state_root: H256,
+    <span class="doccomment">/// Block receipts root.
+    </span><span class="kw">pub </span>receipts_root: H256,
+    <span class="doccomment">/// Block bloom.
+    </span><span class="kw">pub </span>logs_bloom: Bloom,
+    <span class="doccomment">/// Gas used for contracts execution.
+    </span><span class="kw">pub </span>gas_used: U256,
+    <span class="doccomment">/// Block gas limit.
+    </span><span class="kw">pub </span>gas_limit: U256,
+
+    <span class="doccomment">/// Block difficulty.
+    </span><span class="kw">pub </span>difficulty: U256,
+    <span class="doccomment">/// Vector of post-RLP-encoded fields.
+    </span><span class="kw">pub </span>seal: Vec&lt;Bytes&gt;,
+
+    <span class="comment">// Base fee per gas (EIP-1559), only in headers from the London hardfork onwards.
+    </span><span class="kw">pub </span>base_fee: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+}
+
+<span class="kw">impl </span>Header {
+    <span class="doccomment">/// Compute hash of this header (keccak of the RLP with seal).
+    </span><span class="kw">pub fn </span>compute_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H256 {
+        keccak_256(<span class="kw-2">&amp;</span><span class="self">self</span>.rlp(<span class="bool-val">true</span>)).into()
+    }
+
+    <span class="doccomment">/// Compute hash of the truncated header i.e. excluding seal.
+    </span><span class="kw">pub fn </span>compute_partial_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H256 {
+        keccak_256(<span class="kw-2">&amp;</span><span class="self">self</span>.rlp(<span class="bool-val">false</span>)).into()
+    }
+
+    <span class="kw">pub fn </span>check_receipt_proof(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        proof: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="prelude-ty">Result</span>&lt;receipt::Receipt, rlp::DecoderError&gt;&gt; {
+        <span class="kw">match </span><span class="self">self</span>.apply_merkle_proof(proof) {
+            <span class="prelude-val">Some</span>((root, data)) <span class="kw">if </span>root == <span class="self">self</span>.receipts_root =&gt; <span class="prelude-val">Some</span>(rlp::decode(<span class="kw-2">&amp;</span>data)),
+            <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="kw">_</span>)) =&gt; <span class="prelude-val">None</span>,
+            <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+        }
+    }
+
+    <span class="kw">pub fn </span>apply_merkle_proof(<span class="kw-2">&amp;</span><span class="self">self</span>, proof: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;]) -&gt; <span class="prelude-ty">Option</span>&lt;(H256, Vec&lt;u8&gt;)&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>iter = proof.iter().rev();
+        <span class="kw">let </span>first_bytes = <span class="kw">match </span>iter.next() {
+            <span class="prelude-val">Some</span>(b) =&gt; b,
+            <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
+        };
+        <span class="kw">let </span>item_to_prove: mpt::ShortNode = rlp::decode(first_bytes).ok()<span class="question-mark">?</span>;
+
+        <span class="kw">let </span>final_hash: <span class="prelude-ty">Option</span>&lt;[u8; <span class="number">32</span>]&gt; =
+            iter.fold(<span class="prelude-val">Some</span>(keccak_256(first_bytes)), |maybe_hash, bytes| {
+                <span class="kw">let </span>expected_hash = maybe_hash<span class="question-mark">?</span>;
+                <span class="kw">let </span>node: Box&lt;<span class="kw">dyn </span>mpt::Node&gt; = bytes.as_slice().try_into().ok()<span class="question-mark">?</span>;
+                <span class="kw">if </span>(<span class="kw-2">*</span>node).contains_hash(expected_hash.into()) {
+                    <span class="kw">return </span><span class="prelude-val">Some</span>(keccak_256(bytes))
+                }
+                <span class="prelude-val">None
+            </span>});
+
+        final_hash.map(|hash| (hash.into(), item_to_prove.value))
+    }
+
+    <span class="kw">pub fn </span>mix_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
+        <span class="kw">let </span>bytes: Bytes = <span class="self">self</span>.decoded_seal_field(<span class="number">0</span>, <span class="number">32</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>size = bytes.len();
+        <span class="kw">let </span><span class="kw-2">mut </span>mix_hash = [<span class="number">0u8</span>; <span class="number">32</span>];
+        <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..size {
+            mix_hash[<span class="number">31 </span>- i] = bytes[size - <span class="number">1 </span>- i];
+        }
+        <span class="prelude-val">Some</span>(mix_hash.into())
+    }
+
+    <span class="kw">pub fn </span>nonce(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;H64&gt; {
+        <span class="kw">let </span>bytes: Bytes = <span class="self">self</span>.decoded_seal_field(<span class="number">1</span>, <span class="number">8</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>size = bytes.len();
+        <span class="kw">let </span><span class="kw-2">mut </span>nonce = [<span class="number">0u8</span>; <span class="number">8</span>];
+        <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..size {
+            nonce[<span class="number">7 </span>- i] = bytes[size - <span class="number">1 </span>- i];
+        }
+        <span class="prelude-val">Some</span>(nonce.into())
+    }
+
+    <span class="kw">pub fn </span>has_ommers(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="self">self</span>.ommers_hash != EMPTY_OMMERS_HASH.into()
+    }
+
+    <span class="kw">fn </span>decoded_seal_field(<span class="kw-2">&amp;</span><span class="self">self</span>, index: usize, max_len: usize) -&gt; <span class="prelude-ty">Option</span>&lt;Bytes&gt; {
+        <span class="kw">let </span>bytes: Bytes = rlp::decode(<span class="self">self</span>.seal.get(index)<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
+        <span class="kw">if </span>bytes.len() &gt; max_len {
+            <span class="kw">return </span><span class="prelude-val">None
+        </span>}
+        <span class="prelude-val">Some</span>(bytes)
+    }
+
+    <span class="doccomment">/// Returns header RLP with or without seals.
+    ///	For EIP-1559 baseFee addition refer to:
+    /// https://github.com/openethereum/openethereum/blob/193b25a22d5ff07759c6431129e95235510516f9/crates/ethcore/types/src/header.rs#L341
+    </span><span class="kw">fn </span>rlp(<span class="kw-2">&amp;</span><span class="self">self</span>, with_seal: bool) -&gt; Bytes {
+        <span class="kw">let </span><span class="kw-2">mut </span>s = RlpStream::new();
+
+        <span class="kw">let </span>stream_length_without_seal = <span class="kw">if </span><span class="self">self</span>.base_fee.is_some() { <span class="number">14 </span>} <span class="kw">else </span>{ <span class="number">13 </span>};
+
+        <span class="kw">if </span>with_seal {
+            s.begin_list(stream_length_without_seal + <span class="self">self</span>.seal.len());
+        } <span class="kw">else </span>{
+            s.begin_list(stream_length_without_seal);
+        }
+
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.parent_hash);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.ommers_hash);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.author);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.state_root);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.transactions_root);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.receipts_root);
+        s.append(<span class="kw-2">&amp;</span>EthBloom::from(<span class="self">self</span>.logs_bloom.<span class="number">0</span>));
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.difficulty);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.number);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.gas_limit);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.gas_used);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.timestamp);
+        s.append(<span class="kw-2">&amp;</span><span class="self">self</span>.extra_data);
+
+        <span class="kw">if </span>with_seal {
+            <span class="kw">for </span>b <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.seal {
+                s.append_raw(b, <span class="number">1</span>);
+            }
+        }
+
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(base_fee) = <span class="self">self</span>.base_fee {
+            s.append(<span class="kw-2">&amp;</span>base_fee);
+        }
+
+        s.out().to_vec()
+    }
+}
+
+<span class="doccomment">/// Logs bloom.
+</span><span class="attribute">#[derive(Clone, Debug, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+</span><span class="kw">pub struct </span>Bloom(<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, serde(with = <span class="string">&quot;BigArray&quot;</span>))] </span>[u8; <span class="number">256</span>]);
+
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; From&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8; <span class="number">256</span>]&gt; <span class="kw">for </span>Bloom {
+    <span class="kw">fn </span>from(buffer: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8; <span class="number">256</span>]) -&gt; Bloom {
+        Bloom(<span class="kw-2">*</span>buffer)
+    }
+}
+
+<span class="kw">impl </span>PartialEq&lt;Bloom&gt; <span class="kw">for </span>Bloom {
+    <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>Bloom) -&gt; bool {
+        <span class="self">self</span>.<span class="number">0</span>.iter().zip(other.<span class="number">0</span>.iter()).all(|(l, r)| l == r)
+    }
+}
+
+<span class="kw">impl </span>Default <span class="kw">for </span>Bloom {
+    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+        Bloom([<span class="number">0</span>; <span class="number">256</span>])
+    }
+}
+
+<span class="kw">impl </span>rlp::Decodable <span class="kw">for </span>Bloom {
+    <span class="kw">fn </span>decode(rlp: <span class="kw-2">&amp;</span>rlp::Rlp) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, rlp::DecoderError&gt; {
+        <span class="kw">let </span>v: Vec&lt;u8&gt; = rlp.as_val()<span class="question-mark">?</span>;
+        <span class="kw">match </span>v.len() {
+            <span class="number">256 </span>=&gt; {
+                <span class="kw">let </span><span class="kw-2">mut </span>bytes = [<span class="number">0u8</span>; <span class="number">256</span>];
+                bytes.copy_from_slice(<span class="kw-2">&amp;</span>v);
+                <span class="prelude-val">Ok</span>(<span class="self">Self</span>(bytes))
+            },
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(rlp::DecoderError::Custom(<span class="string">&quot;Expected 256 bytes&quot;</span>)),
+        }
+    }
+}
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>bloom_decode_rlp() {
+        <span class="kw">let </span>raw_bloom = <span class="macro">hex!</span>(
+            <span class="string">&quot;
+			b901000420000000000000000000008002000000000001000000000001000000000000000000
+			0000000000000000000000000002000000080000000000000000200000000000000000000000
+			0000080000002200000000004000100000000000000000000000000000000000000000000000
+			0000000000000004000000001000010000000000080000000000400000000000000000000000
+			0000080000004000000000020000000000020000000000000000000000000000000000000000
+			0000040000000000020000000001000000000000000000000000000010000000020000200000
+			10200000000000010000000000000000000000000000000000000010000000
+		&quot;
+        </span>);
+        <span class="kw">let </span>expected_bytes = <span class="kw-2">&amp;</span>raw_bloom[<span class="number">3</span>..];
+        <span class="kw">let </span>bloom: Bloom = rlp::decode(<span class="kw-2">&amp;</span>raw_bloom).unwrap();
+        <span class="macro">assert_eq!</span>(bloom.<span class="number">0</span>, expected_bytes);
+    }
+
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>header_compute_hash_poa() {
+        <span class="comment">// PoA header
+        </span><span class="kw">let </span>header = Header {
+            parent_hash: Default::default(),
+            timestamp: <span class="number">0</span>,
+            number: <span class="number">0</span>,
+            author: Default::default(),
+            transactions_root: <span class="macro">hex!</span>(
+                <span class="string">&quot;56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421&quot;
+            </span>)
+            .into(),
+            ommers_hash: <span class="macro">hex!</span>(<span class="string">&quot;1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347&quot;</span>)
+                .into(),
+            extra_data: <span class="macro">vec!</span>[],
+            state_root: <span class="macro">hex!</span>(<span class="string">&quot;eccf6b74c2bcbe115c71116a23fe963c54406010c244d9650526028ad3e32cce&quot;</span>)
+                .into(),
+            receipts_root: <span class="macro">hex!</span>(<span class="string">&quot;56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421&quot;</span>)
+                .into(),
+            logs_bloom: Default::default(),
+            gas_used: Default::default(),
+            gas_limit: <span class="number">0x222222</span>.into(),
+            difficulty: <span class="number">0x20000</span>.into(),
+            seal: <span class="macro">vec!</span>[<span class="macro">vec!</span>[<span class="number">0x80</span>], {
+                <span class="kw">let </span><span class="kw-2">mut </span>vec = <span class="macro">vec!</span>[<span class="number">0xb8</span>, <span class="number">0x41</span>];
+                vec.resize(<span class="number">67</span>, <span class="number">0</span>);
+                vec
+            }],
+            base_fee: <span class="prelude-val">None</span>,
+        };
+        <span class="macro">assert_eq!</span>(
+            header.compute_hash().as_bytes(),
+            <span class="macro">hex!</span>(<span class="string">&quot;9ff57c7fa155853586382022f0982b71c51fa313a0942f8c456300896643e890&quot;</span>),
+        );
+    }
+
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>header_compute_hash_pow() {
+        <span class="comment">// https://etherscan.io/block/11090290
+        </span><span class="kw">let </span>nonce = <span class="macro">hex!</span>(<span class="string">&quot;6935bbe7b63c4f8e&quot;</span>).to_vec();
+        <span class="kw">let </span>mix_hash =
+            <span class="macro">hex!</span>(<span class="string">&quot;be3adfb0087be62b28b716e2cdf3c79329df5caa04c9eee035d35b5d52102815&quot;</span>).to_vec();
+        <span class="kw">let </span>header = Header {
+            parent_hash: <span class="macro">hex!</span>(<span class="string">&quot;bede0bddd6f32c895fc505ffe0c39d9bde58e9a5272f31a3dee448b796edcbe3&quot;</span>)
+                .into(),
+            timestamp: <span class="number">1603160977</span>,
+            number: <span class="number">11090290</span>,
+            author: <span class="macro">hex!</span>(<span class="string">&quot;ea674fdde714fd979de3edf0f56aa9716b898ec8&quot;</span>).into(),
+            transactions_root: <span class="macro">hex!</span>(
+                <span class="string">&quot;56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421&quot;
+            </span>)
+            .into(),
+            ommers_hash: <span class="macro">hex!</span>(<span class="string">&quot;1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347&quot;</span>)
+                .into(),
+            extra_data: <span class="macro">hex!</span>(<span class="string">&quot;65746865726d696e652d61736961312d33&quot;</span>).to_vec(),
+            state_root: <span class="macro">hex!</span>(<span class="string">&quot;7dcb8aca872b712bad81df34a89d4efedc293566ffc3eeeb5cbcafcc703e42c9&quot;</span>)
+                .into(),
+            receipts_root: <span class="macro">hex!</span>(<span class="string">&quot;56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421&quot;</span>)
+                .into(),
+            logs_bloom: Default::default(),
+            gas_used: <span class="number">0</span>.into(),
+            gas_limit: <span class="number">0xbe8c19</span>.into(),
+            difficulty: <span class="number">0xbc140caa61087i64</span>.into(),
+            seal: <span class="macro">vec!</span>[
+                rlp::encode(<span class="kw-2">&amp;</span>mix_hash).to_vec(),
+                rlp::encode(<span class="kw-2">&amp;</span>nonce).to_vec(),
+            ],
+            base_fee: <span class="prelude-val">None</span>,
+        };
+        <span class="macro">assert_eq!</span>(
+            header.compute_hash().as_bytes(),
+            <span class="macro">hex!</span>(<span class="string">&quot;0f9bdc91c2e0140acb873330742bda8c8181fa3add91fe7ae046251679cedef7&quot;</span>),
+        );
+    }
+
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>header_pow_seal_fields_extracted_correctly() {
+        <span class="kw">let </span>nonce: H64 = <span class="macro">hex!</span>(<span class="string">&quot;6935bbe7b63c4f8e&quot;</span>).into();
+        <span class="kw">let </span>mix_hash: H256 =
+            <span class="macro">hex!</span>(<span class="string">&quot;be3adfb0087be62b28b716e2cdf3c79329df5caa04c9eee035d35b5d52102815&quot;</span>).into();
+        <span class="kw">let </span><span class="kw-2">mut </span>header: Header = Default::default();
+        header.seal = <span class="macro">vec!</span>[
+            rlp::encode(<span class="kw-2">&amp;</span>mix_hash.<span class="number">0</span>.to_vec()).to_vec(),
+            rlp::encode(<span class="kw-2">&amp;</span>nonce.<span class="number">0</span>.to_vec()).to_vec(),
+        ];
+        <span class="macro">assert_eq!</span>(header.nonce().unwrap(), nonce);
+        <span class="macro">assert_eq!</span>(header.mix_hash().unwrap(), mix_hash);
+    }
+
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>header_pow_seal_fields_return_none_for_invalid_values() {
+        <span class="kw">let </span>nonce = <span class="macro">hex!</span>(<span class="string">&quot;696935bbe7b63c4f8e&quot;</span>).to_vec();
+        <span class="kw">let </span>mix_hash =
+            <span class="macro">hex!</span>(<span class="string">&quot;bebe3adfb0087be62b28b716e2cdf3c79329df5caa04c9eee035d35b5d52102815&quot;</span>).to_vec();
+        <span class="kw">let </span><span class="kw-2">mut </span>header: Header = Default::default();
+        header.seal = <span class="macro">vec!</span>[
+            rlp::encode(<span class="kw-2">&amp;</span>mix_hash).to_vec(),
+            rlp::encode(<span class="kw-2">&amp;</span>nonce).to_vec(),
+        ];
+        <span class="macro">assert_eq!</span>(header.nonce(), <span class="prelude-val">None</span>);
+        <span class="macro">assert_eq!</span>(header.mix_hash(), <span class="prelude-val">None</span>);
+
+        header.seal = Vec::new();
+        <span class="macro">assert_eq!</span>(header.nonce(), <span class="prelude-val">None</span>);
+        <span class="macro">assert_eq!</span>(header.mix_hash(), <span class="prelude-val">None</span>);
+    }
+
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>header_check_receipt_proof() {
+        <span class="kw">let </span><span class="kw-2">mut </span>header: Header = Default::default();
+        header.receipts_root =
+            <span class="macro">hex!</span>(<span class="string">&quot;fd5e397a84884641f53c496804f24b5276cbb8c5c9cfc2342246be8e3ce5ad02&quot;</span>).into();
+
+        <span class="comment">// Valid proof
+        </span><span class="kw">let </span>proof_receipt5 = <span class="macro">vec!</span>(
+			<span class="macro">hex!</span>(<span class="string">&quot;f90131a0b5ba404eb5a6a88e56579f4d37ef9813b5ad7f86f0823ff3b407ac5a6bb465eca0398ead2655e78e03c127ce22c5830e90f18b1601ec055f938336c084feb915a9a026d322c26e46c50942c1aabde50e36df5cde572aed650ce73ea3182c6e90a02ca00600a356135f4db1db0d9842264cdff2652676f881669e91e316c0b6dd783011a0837f1deb4075336da320388c1edfffc56c448a43f4a5ba031300d32a7b509fc5a01c3ac82fd65b4aba7f9afaf604d9c82ec7e2deb573a091ae235751bc5c0c288da05d454159d9071b0f68b6e0503d290f23ac7602c1db0c569dee4605d8f5298f09a00bbed10350ec954448df795f6fd46e3faefc800ede061b3840eedc6e2b07a74da0acb02d26a3650f2064c14a435fdf1f668d8655daf455ebdf671713a7c089b3898080808080808080&quot;</span>).to_vec(),
+			<span class="macro">hex!</span>(<span class="string">&quot;f901f180a00046a08d4f0bdbdc6b31903086ce323182bce6725e7d9415f7ff91ee8f4820bda0e7cd26ad5f3d2771e4b5ab788e268a14a10209f94ee918eb6c829d21d3d11c1da00d4a56d9e9a6751874fd86c7e3cb1c6ad5a848da62751325f478978a00ea966ea064b81920c8f04a8a1e21f53a8280e739fbb7b00b2ab92493ca3f610b70e8ac85a0b1040ed4c55a73178b76abb16f946ce5bebd6b93ab873c83327df54047d12c27a0de6485e9ac58dc6e2b04b4bb38f562684f0b1a2ee586cc11079e7d9a9dc40b32a0d394f4d3532c3124a65fa36e69147e04fd20453a72ee9c50660f17e13ce9df48a066501003fc3e3478efd2803cd0eded6bbe9243ca01ba754d6327071ddbcbc649a0b2684e518f325fee39fc8ea81b68f3f5c785be00d087f3bed8857ae2ee8da26ea071060a5c52042e8d7ce21092f8ecf06053beb9a0b773a6f91a30c4220aa276b2a0fc22436632574ccf6043d0986dede27ea94c9ca9a3bb5ec03ce776a4ddef24a9a05a8a1d6698c4e7d8cc3a2506cb9b12ea9a079c9c7099bc919dc804033cc556e4a0170c468b0716fd36d161f0bf05875f15756a2976de92f9efe7716320509d79c9a0182f909a90cab169f3efb62387f9cccdd61440acc4deec42f68a4f7ca58075c7a055cf0e9202ac75689b76318f1171f3a44465eddc06aae0713bfb6b34fdd27b7980&quot;</span>).to_vec(),
+			<span class="macro">hex!</span>(<span class="string">&quot;f904de20b904daf904d701830652f0b9010004200000000000000000000080020000000000010000000000010000000000000000000000000000000000000000000002000000080000000000000000200000000000000000000000000008000000220000000000400010000000000000000000000000000000000000000000000000000000000000040000000010000100000000000800000000004000000000000000000000000000080000004000000000020000000000020000000000000000000000000000000000000000000004000000000002000000000100000000000000000000000000001000000002000020000010200000000000010000000000000000000000000000000000000010000000f903ccf89b9421130f34829b4c343142047a28ce96ec07814b15f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa00000000000000000000000007d843005c7433c16b27ff939cb37471541561ebda0000000000000000000000000e9c1281aae66801fa35ec404d5f2aea393ff6988a000000000000000000000000000000000000000000000000000000005d09b7380f89b9421130f34829b4c343142047a28ce96ec07814b15f863a08c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925a00000000000000000000000007d843005c7433c16b27ff939cb37471541561ebda00000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488da0ffffffffffffffffffffffffffffffffffffffffffffffffffffffcc840c6920f89b94c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa0000000000000000000000000e9c1281aae66801fa35ec404d5f2aea393ff6988a00000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488da000000000000000000000000000000000000000000000000003e973b5a5d1078ef87994e9c1281aae66801fa35ec404d5f2aea393ff6988e1a01c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1b840000000000000000000000000000000000000000000000000000001f1420ad1d40000000000000000000000000000000000000000000000014ad400879d159a38f8fc94e9c1281aae66801fa35ec404d5f2aea393ff6988f863a0d78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822a00000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488da00000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488db88000000000000000000000000000000000000000000000000000000005d415f3320000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e973b5a5d1078ef87a94c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2f842a07fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65a00000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488da000000000000000000000000000000000000000000000000003e973b5a5d1078e&quot;</span>).to_vec(),
+		);
+        <span class="macro">assert!</span>(header.check_receipt_proof(<span class="kw-2">&amp;</span>proof_receipt5).is_some());
+
+        <span class="comment">// Various invalid proofs
+        </span><span class="kw">let </span>proof_empty: Vec&lt;Vec&lt;u8&gt;&gt; = <span class="macro">vec!</span>[];
+        <span class="kw">let </span>proof_missing_full_node = <span class="macro">vec!</span>[proof_receipt5[<span class="number">0</span>].clone(), proof_receipt5[<span class="number">2</span>].clone()];
+        <span class="kw">let </span>proof_missing_short_node1 = <span class="macro">vec!</span>[proof_receipt5[<span class="number">0</span>].clone(), proof_receipt5[<span class="number">1</span>].clone()];
+        <span class="kw">let </span>proof_missing_short_node2 = <span class="macro">vec!</span>[proof_receipt5[<span class="number">0</span>].clone()];
+        <span class="kw">let </span>proof_invalid_encoding = <span class="macro">vec!</span>[proof_receipt5[<span class="number">2</span>][<span class="number">2</span>..].to_vec()];
+        <span class="kw">let </span>proof_no_full_node = <span class="macro">vec!</span>[proof_receipt5[<span class="number">2</span>].clone(), proof_receipt5[<span class="number">2</span>].clone()];
+        <span class="macro">assert!</span>(header.check_receipt_proof(<span class="kw-2">&amp;</span>proof_empty).is_none());
+        <span class="macro">assert!</span>(header
+            .check_receipt_proof(<span class="kw-2">&amp;</span>proof_missing_full_node)
+            .is_none());
+
+        <span class="macro">assert_eq!</span>(
+            header.check_receipt_proof(<span class="kw-2">&amp;</span>proof_missing_short_node1),
+            <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(rlp::DecoderError::Custom(<span class="string">&quot;Unsupported receipt type&quot;</span>)))
+        );
+
+        <span class="macro">assert_eq!</span>(
+            header.check_receipt_proof(<span class="kw-2">&amp;</span>proof_missing_short_node2),
+            <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(rlp::DecoderError::Custom(<span class="string">&quot;Unsupported receipt type&quot;</span>)))
+        );
+
+        <span class="macro">assert!</span>(header
+            .check_receipt_proof(<span class="kw-2">&amp;</span>proof_invalid_encoding)
+            .is_none());
+        <span class="macro">assert!</span>(header.check_receipt_proof(<span class="kw-2">&amp;</span>proof_no_full_node).is_none());
+    }
+
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>header_check_receipt_proof_with_intermediate_short_node() {
+        <span class="kw">let </span><span class="kw-2">mut </span>header: Header = Default::default();
+        header.receipts_root =
+            <span class="macro">hex!</span>(<span class="string">&quot;d128e3a57142d2bf15bc0cbcac7ad54f40750d571b5c3097e425882c10c9ba66&quot;</span>).into();
+
+        <span class="kw">let </span>proof_receipt263 = <span class="macro">vec!</span>[
+			<span class="macro">hex!</span>(<span class="string">&quot;f90131a00d3cb8d3f57ac1c0e12918a2ebe0cafed8c273577b9dd73e7ed1079b403ef494a0678b9835b834f8a287c0dd33a8fca9146e456ca688555ed4ec1361a2180b778da0fe42da181a46677a043b3d9d4b8bb05a6a17b7b5c010c17e7c1d31cfb7c4f911a0c89f0e2c53241cdb578e1f2b4caf6ba36e00500bdc57fecd66b84a6a58394c19a086c3c1fae5a0575940b5d38e111c469d07883106c26856f3ef608469a2081f13a06c5992ff00aab6226a70a032fd2f571ba22f797321f45e2daa73020d638d21b0a050861e9503ef68728f6c90a44f7fe1bceb2a9bdab6957bbe7136166bd849561ea006aa6eaca8a07e57176e9aa41e6a09edfb7678d1a112404e0ec779d7e567e82ea0bb0b430d303ba21b0af11c487b8a218bd75db54c98940b3f11bad8ff47cad3ef8080808080808080&quot;</span>).to_vec(),
+			<span class="macro">hex!</span>(<span class="string">&quot;f871a0246de222036ee6a03329b0105da0a6b3f916fc95a9ed5a403a581a0c4d74242ca0ac108a49a88b57a05ac34a108b39f1e45f6f167f2b9fbc8d52fb58e2e5a6af1ea0fcfe07ac2ccd3c28b6eab68d1bce112f6f6dbd9023e4ec3c05b96615aa803d798080808080808080808080808080&quot;</span>).to_vec(),
+			<span class="macro">hex!</span>(<span class="string">&quot;e4820001a04fff54398cad4d05ea6abfd8b0f3b4fe14c04d7ff5f5211c5b927d9cf72ac1d8&quot;</span>).to_vec(),
+			<span class="macro">hex!</span>(<span class="string">&quot;f851a096d010643ca2d47412ca66898286b5f2412963b9ec051b33e570d575914c9c5ca028cd24c652989542fe89479ec6388eac4592432242af5ba97563b3ac7c71c019808080808080808080808080808080&quot;</span>).to_vec(),
+			<span class="macro">hex!</span>(<span class="string">&quot;f90211a0bb35a84c5b1dcb78ec9d32614912c696e62df77bebf9ab326ee55b5d3acdde46a01084b30dac8df0accfcd0fd6330b7f6fc72a4651246d0694be9162151686a620a03eed50afdce7909d784c6157c445a444c806b5f23d31f3b63786f600c84a95b2a0af5232f1df6c6d41879804d081abe867002abe26ba3e5f8e0254a83a54769831a0607915fb13dd5da594256389a45007a67a7f7a86e95d38d8462792b6c98a722ea00e1260fda1730f2738c650ce2bfba83857bc10f8fb119ebc4fb39acba24e6fbaa0d11de17e417327457812675ca3b84ae8e1b64827abfe01420953697c8313d5b1a05fcaf2f7a88f76336a0c32ffc78acb87ae2005454bd25d658035331be3173b46a03f94f4952ab9e650f83cfd0e7f367b1bcc493aacf39a06f16c4a2e1b5605da48a0bdb4ec79785ca8ae22d60f1bbd42d707b4d7ec4aff231a3ebab755e315b35053a043a67c3f2bcef37c8f47a673adcb7061007a553696d1092408601c11b2e6846aa0c519d5af48cae87c7f4538845417c9735813bee892a6fe2dda79f5c414e8576aa0f7058256e09589501d7c231d739e61c84a850e139690989d24fda6058b432e98a081a52faab520978cb19ce14400dba0cd5bcdc4e5a3c0740678aa8f97ee0e5c56a0bcecc61cadeae52518e3b68a48af4b11603dfd9d99d99d7985efa6d2de44f904a02cba4accfc6f39bc5adb6d4440eb6358b4a5103ef93298e4e694f1f940f8b48280&quot;</span>).to_vec(),
+			<span class="macro">hex!</span>(<span class="string">&quot;f901ae20b901aaf901a70183bb444eb9010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000001000000000000000000000000000100000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000010000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000080000000000000000000000000000000000000000000000002000000000000000000081000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000f89df89b94dac17f958d2ee523a2206206994597c13d831ec7f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa00000000000000000000000002e514404ff6823f1b46a8318a709251db414e5e1a000000000000000000000000055021c55847c00d764357a352e5803237d328954a0000000000000000000000000000000000000000000000000000000000201c370&quot;</span>).to_vec(),
+		];
+        <span class="macro">assert!</span>(header.check_receipt_proof(<span class="kw-2">&amp;</span>proof_receipt263).is_some());
+    }
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="snowbridge_ethereum" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8b705839c 2022-09-26)" ></div></body></html>

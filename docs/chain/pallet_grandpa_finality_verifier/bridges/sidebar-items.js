@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["header_chain","Defines traits which represent a common interface for Substrate pallets which want to incorporate bridge functionality."],["runtime","Primitives that may be used at (bridges) runtime level."],["test_utils","Utilities for testing runtime code."]]};

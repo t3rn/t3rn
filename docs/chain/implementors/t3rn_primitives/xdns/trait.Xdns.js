@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"pallet_xdns":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_xdns/pallet/trait.Config.html\" title=\"trait pallet_xdns::pallet::Config\">Config</a>&gt; Xdns&lt;T&gt; for <a class=\"struct\" href=\"pallet_xdns/pallet/struct.Pallet.html\" title=\"struct pallet_xdns::pallet::Pallet\">Pallet</a>&lt;T&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
