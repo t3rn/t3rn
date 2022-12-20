@@ -197,7 +197,7 @@ class CircuitCLI {
         })
 
         const transactionArgs: any = onExtrinsicTrigger(this.circuit, data.sideEffects, data.sequential, this.signer.address, this.sdk)
-        const tx = this.circuit.tx.circuit.onExtrinsicTrigger(transactionArgs.sideEffects, 0, false)
+        const tx = this.circuit.tx.circuit.onExtrinsicTrigger(transactionArgs.sideEffects, false)
 
         const submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
             .then(height => {
