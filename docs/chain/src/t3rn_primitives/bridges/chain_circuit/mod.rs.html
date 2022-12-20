@@ -1,0 +1,554 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/src/bridges/chain_circuit/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../normalize.css"><link rel="stylesheet" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../dark.css" disabled><link rel="stylesheet" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../t3rn_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../t3rn_primitives/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../t3rn_primitives/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+</pre><pre class="rust"><code><span class="comment">// Copyright 2019-2021 Parity Technologies (UK) Ltd.
+// This file is part of Parity Bridges Common.
+
+// Parity Bridges Common is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Parity Bridges Common is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Parity Bridges Common.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+
+// RuntimeApi generated functions
+</span><span class="attribute">#![allow(clippy::too_many_arguments)]
+</span><span class="comment">// Runtime-generated DecodeLimit::decode_all_With_depth_limit
+</span><span class="attribute">#![allow(clippy::unnecessary_mut_passed)]
+</span><span class="kw">use </span><span class="kw">crate</span>::bridges::{messages <span class="kw">as </span>bp_messages, runtime <span class="kw">as </span>bp_runtime};
+
+<span class="kw">use </span>bp_messages::{LaneId, MessageNonce, UnrewardedRelayersState};
+<span class="kw">use </span>bp_runtime::Chain;
+<span class="kw">use </span>frame_support::{
+    weights::{constants::WEIGHT_PER_SECOND, DispatchClass, Weight},
+    Parameter, RuntimeDebug,
+};
+<span class="comment">//use frame_system::limits;
+</span><span class="kw">use </span>sp_core::Hasher <span class="kw">as </span>HasherT;
+<span class="kw">use </span>sp_runtime::{
+    traits::{BlakeTwo256, Convert, IdentifyAccount, Verify},
+    MultiSignature, MultiSigner, Perbill,
+};
+<span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
+
+<span class="doccomment">/// Number of extra bytes (excluding size of storage value itself) of storage proof, built at
+/// Circuit chain. This mostly depends on number of entries (and their density) in the storage trie.
+/// Some reserve is reserved to account future chain growth.
+</span><span class="kw">pub const </span>EXTRA_STORAGE_PROOF_SIZE: u32 = <span class="number">1024</span>;
+
+<span class="doccomment">/// Number of bytes, included in the signed Circuit transaction apart from the encoded call itself.
+///
+/// Can be computed by subtracting encoded call size from raw transaction size.
+</span><span class="kw">pub const </span>TX_EXTRA_BYTES: u32 = <span class="number">103</span>;
+
+<span class="doccomment">/// Maximal size (in bytes) of encoded (using `Encode::encode()`) account id.
+</span><span class="kw">pub const </span>MAXIMAL_ENCODED_ACCOUNT_ID_SIZE: u32 = <span class="number">32</span>;
+
+<span class="doccomment">/// Maximum weight of single Circuit block.
+///
+/// This represents 0.5 seconds of compute assuming a target block time of six seconds.
+</span><span class="kw">pub const </span>MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / <span class="number">2</span>;
+
+<span class="doccomment">/// Represents the average portion of a block&#39;s weight that will be used by an
+/// `on_initialize()` runtime call.
+</span><span class="kw">pub const </span>AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(<span class="number">10</span>);
+
+<span class="doccomment">/// Represents the portion of a block that will be used by Normal extrinsics.
+</span><span class="kw">pub const </span>NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(<span class="number">75</span>);
+
+<span class="doccomment">/// Maximal number of unrewarded relayer entries at inbound lane.
+</span><span class="kw">pub const </span>MAX_UNREWARDED_RELAYER_ENTRIES_AT_INBOUND_LANE: MessageNonce = <span class="number">1024</span>;
+
+<span class="doccomment">/// Maximal number of unconfirmed messages at inbound lane.
+</span><span class="kw">pub const </span>MAX_UNCONFIRMED_MESSAGES_AT_INBOUND_LANE: MessageNonce = <span class="number">1024</span>;
+
+<span class="doccomment">/// Weight of single regular message delivery transaction on Circuit chain.
+///
+/// This value is a result of `pallet_bridge_messages::Pallet::receive_messages_proof_weight()` call
+/// for the case when single message of `pallet_bridge_messages::EXPECTED_DEFAULT_MESSAGE_LENGTH` bytes is delivered.
+/// The message must have dispatch weight set to zero. The result then must be rounded up to account
+/// possible future runtime upgrades.
+</span><span class="kw">pub const </span>DEFAULT_MESSAGE_DELIVERY_TX_WEIGHT: Weight = <span class="number">1_000_000_000</span>;
+
+<span class="doccomment">/// Increase of delivery transaction weight on Circuit chain with every additional message byte.
+///
+/// This value is a result of `pallet_bridge_messages::WeightInfoExt::storage_proof_size_overhead(1)` call. The
+/// result then must be rounded up to account possible future runtime upgrades.
+</span><span class="kw">pub const </span>ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT: Weight = <span class="number">25_000</span>;
+
+<span class="doccomment">/// Maximal weight of single message delivery confirmation transaction on Circuit chain.
+///
+/// This value is a result of `pallet_bridge_messages::Pallet::receive_messages_delivery_proof` weight formula computation
+/// for the case when single message is confirmed. The result then must be rounded up to account possible future
+/// runtime upgrades.
+</span><span class="kw">pub const </span>MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT: Weight = <span class="number">2_000_000_000</span>;
+
+<span class="doccomment">/// The target length of a session (how often authorities change) on Circuit measured in of number of
+/// blocks.
+///
+/// Note that since this is a target sessions may change before/after this time depending on network
+/// conditions.
+</span><span class="kw">pub const </span>SESSION_LENGTH: BlockNumber = <span class="number">5 </span>* time_units::MINUTES;
+
+<span class="doccomment">/// Re-export `time_units` to make usage easier.
+</span><span class="kw">pub use </span>time_units::<span class="kw-2">*</span>;
+
+<span class="doccomment">/// Human readable time units defined in terms of number of blocks.
+</span><span class="kw">pub mod </span>time_units {
+    <span class="kw">use </span><span class="kw">super</span>::BlockNumber;
+
+    <span class="kw">pub const </span>MILLISECS_PER_BLOCK: u64 = <span class="number">12000</span>;
+    <span class="kw">pub const </span>SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+
+    <span class="kw">pub const </span>MINUTES: BlockNumber = <span class="number">60_000 </span>/ (MILLISECS_PER_BLOCK <span class="kw">as </span>BlockNumber);
+    <span class="kw">pub const </span>HOURS: BlockNumber = MINUTES * <span class="number">60</span>;
+    <span class="kw">pub const </span>DAYS: BlockNumber = HOURS * <span class="number">24</span>;
+}
+
+<span class="doccomment">/// Block number type used in Circuit.
+</span><span class="kw">pub type </span>BlockNumber = u32;
+
+<span class="doccomment">/// Hash type used in Circuit.
+</span><span class="kw">pub type </span>Hash = &lt;BlakeTwo256 <span class="kw">as </span>HasherT&gt;::Out;
+
+<span class="doccomment">/// The type of an object that can produce hashes on Circuit.
+</span><span class="kw">pub type </span>Hasher = BlakeTwo256;
+
+<span class="doccomment">/// The header type used by Circuit.
+</span><span class="kw">pub type </span>Header = sp_runtime::generic::Header&lt;BlockNumber, Hasher&gt;;
+
+<span class="doccomment">/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
+</span><span class="kw">pub type </span>Signature = MultiSignature;
+
+<span class="doccomment">/// Some way of identifying an account on the chain. We intentionally make it equivalent
+/// to the public key of our transaction signing scheme.
+</span><span class="kw">pub type </span>AccountId = &lt;&lt;Signature <span class="kw">as </span>Verify&gt;::Signer <span class="kw">as </span>IdentifyAccount&gt;::AccountId;
+
+<span class="doccomment">/// Public key of the chain account that may be used to verify signatures.
+</span><span class="kw">pub type </span>AccountSigner = MultiSigner;
+
+<span class="doccomment">/// Balance of an account.
+</span><span class="kw">pub type </span>Balance = u128;
+
+<span class="doccomment">/// Index of a transaction in the chain.
+</span><span class="kw">pub type </span>Index = u32;
+
+<span class="doccomment">/// Circuit chain.
+</span><span class="attribute">#[derive(RuntimeDebug)]
+</span><span class="kw">pub struct </span>Circuit;
+
+<span class="kw">impl </span>Chain <span class="kw">for </span>Circuit {
+    <span class="kw">type </span>BlockNumber = BlockNumber;
+    <span class="kw">type </span>Hash = Hash;
+    <span class="kw">type </span>Hasher = Hasher;
+    <span class="kw">type </span>Header = Header;
+}
+
+<span class="doccomment">/// Convert a 256-bit hash into an AccountId.
+</span><span class="kw">pub struct </span>AccountIdConverter;
+
+<span class="kw">impl </span>sp_runtime::traits::Convert&lt;sp_core::H256, AccountId&gt; <span class="kw">for </span>AccountIdConverter {
+    <span class="kw">fn </span>convert(hash: sp_core::H256) -&gt; AccountId {
+        hash.to_fixed_bytes().into()
+    }
+}
+
+<span class="doccomment">/// We use this to get the account on Circuit (target) which is derived from Gateway (source)
+/// account. We do this so we can fund the derived account on Circuit at Genesis to it can pay
+/// transaction fees.
+///
+/// The reason we can use the same `AccountId` type for both chains is because they share the same
+/// development seed phrase.
+///
+/// Note that this should only be used for testing.
+</span><span class="kw">pub fn </span>derive_account_from_gateway_id(id: bp_runtime::SourceAccount&lt;AccountId&gt;) -&gt; AccountId {
+    <span class="kw">let </span>encoded_id = bp_runtime::derive_account_id(bp_runtime::GATEWAY_CHAIN_ID, id);
+    AccountIdConverter::convert(encoded_id)
+}
+
+<span class="macro">frame_support::parameter_types! </span>{
+    <span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
+    </span><span class="kw">pub </span>BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
+        ::with_sensible_defaults(<span class="number">2 </span>* WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+    <span class="kw">pub </span>BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
+        ::max_with_normal_ratio(<span class="number">5 </span>* <span class="number">1024 </span>* <span class="number">1024</span>, NORMAL_DISPATCH_RATIO);
+}
+
+<span class="doccomment">/// Get the maximum weight (compute time) that a Normal extrinsic on the Circuit chain can use.
+</span><span class="kw">pub fn </span>max_extrinsic_weight() -&gt; Weight {
+    BlockWeights::get()
+        .get(DispatchClass::Normal)
+        .max_extrinsic
+        .unwrap_or(Weight::MAX)
+}
+
+<span class="doccomment">/// Get the maximum length in bytes that a Normal extrinsic on the Circuit chain requires.
+</span><span class="kw">pub fn </span>max_extrinsic_size() -&gt; u32 {
+    <span class="kw-2">*</span>BlockLength::get().max.get(DispatchClass::Normal)
+}
+
+<span class="doccomment">/// Name of the `CircuitFinalityApi::best_finalized` runtime method.
+</span><span class="kw">pub const </span>BEST_FINALIZED_CIRCUIT_HEADER_METHOD: <span class="kw-2">&amp;</span>str = <span class="string">&quot;CircuitFinalityApi_best_finalized&quot;</span>;
+
+<span class="doccomment">/// Name of the `ToCircuitOutboundLaneApi::estimate_message_delivery_and_dispatch_fee` runtime method.
+</span><span class="kw">pub const </span>TO_CIRCUIT_ESTIMATE_MESSAGE_FEE_METHOD: <span class="kw-2">&amp;</span>str =
+    <span class="string">&quot;ToCircuitOutboundLaneApi_estimate_message_delivery_and_dispatch_fee&quot;</span>;
+<span class="doccomment">/// Name of the `ToCircuitOutboundLaneApi::messages_dispatch_weight` runtime method.
+</span><span class="kw">pub const </span>TO_CIRCUIT_MESSAGES_DISPATCH_WEIGHT_METHOD: <span class="kw-2">&amp;</span>str =
+    <span class="string">&quot;ToCircuitOutboundLaneApi_messages_dispatch_weight&quot;</span>;
+<span class="doccomment">/// Name of the `ToCircuitOutboundLaneApi::latest_received_nonce` runtime method.
+</span><span class="kw">pub const </span>TO_CIRCUIT_LATEST_RECEIVED_NONCE_METHOD: <span class="kw-2">&amp;</span>str =
+    <span class="string">&quot;ToCircuitOutboundLaneApi_latest_received_nonce&quot;</span>;
+<span class="doccomment">/// Name of the `ToCircuitOutboundLaneApi::latest_generated_nonce` runtime method.
+</span><span class="kw">pub const </span>TO_CIRCUIT_LATEST_GENERATED_NONCE_METHOD: <span class="kw-2">&amp;</span>str =
+    <span class="string">&quot;ToCircuitOutboundLaneApi_latest_generated_nonce&quot;</span>;
+
+<span class="doccomment">/// Name of the `FromCircuitInboundLaneApi::latest_received_nonce` runtime method.
+</span><span class="kw">pub const </span>FROM_CIRCUIT_LATEST_RECEIVED_NONCE_METHOD: <span class="kw-2">&amp;</span>str =
+    <span class="string">&quot;FromCircuitInboundLaneApi_latest_received_nonce&quot;</span>;
+<span class="doccomment">/// Name of the `FromCircuitInboundLaneApi::latest_onfirmed_nonce` runtime method.
+</span><span class="kw">pub const </span>FROM_CIRCUIT_LATEST_CONFIRMED_NONCE_METHOD: <span class="kw-2">&amp;</span>str =
+    <span class="string">&quot;FromCircuitInboundLaneApi_latest_confirmed_nonce&quot;</span>;
+<span class="doccomment">/// Name of the `FromCircuitInboundLaneApi::unrewarded_relayers_state` runtime method.
+</span><span class="kw">pub const </span>FROM_CIRCUIT_UNREWARDED_RELAYERS_STATE: <span class="kw-2">&amp;</span>str =
+    <span class="string">&quot;FromCircuitInboundLaneApi_unrewarded_relayers_state&quot;</span>;
+
+<span class="macro">sp_api::decl_runtime_apis! </span>{
+    <span class="doccomment">/// API for querying information about the finalized Circuit headers.
+    ///
+    /// This API is implemented by runtimes that are bridging with the Circuit chain, not the
+    /// Circuit runtime itself.
+    </span><span class="kw">pub trait </span>CircuitFinalityApi {
+        <span class="doccomment">/// Returns number and hash of the best finalized header known to the bridge module.
+        </span><span class="kw">fn </span>best_finalized() -&gt; (BlockNumber, Hash);
+        <span class="doccomment">/// Returns true if the header is known to the runtime.
+        </span><span class="kw">fn </span>is_known_header(hash: Hash) -&gt; bool;
+    }
+
+    <span class="doccomment">/// Outbound message lane API for messages that are sent to Circuit chain.
+    ///
+    /// This API is implemented by runtimes that are sending messages to Circuit chain, not the
+    /// Circuit runtime itself.
+    </span><span class="kw">pub trait </span>ToCircuitOutboundLaneApi&lt;OutboundMessageFee: Parameter, OutboundPayload: Parameter&gt; {
+        <span class="doccomment">/// Estimate message delivery and dispatch fee that needs to be paid by the sender on
+        /// this chain.
+        ///
+        /// Returns `None` if message is too expensive to be sent to Circuit from this chain.
+        ///
+        /// Please keep in mind that this method returns lowest message fee required for message
+        /// to be accepted to the lane. It may be good idea to pay a bit over this price to account
+        /// future exchange rate changes and guarantee that relayer would deliver your message
+        /// to the target chain.
+        </span><span class="kw">fn </span>estimate_message_delivery_and_dispatch_fee(
+            lane_id: LaneId,
+            payload: OutboundPayload,
+        ) -&gt; <span class="prelude-ty">Option</span>&lt;OutboundMessageFee&gt;;
+        <span class="doccomment">/// Returns total dispatch weight and encoded payload size of all messages in given inclusive range.
+        ///
+        /// If some (or all) messages are missing from the storage, they&#39;ll also will
+        /// be missing from the resulting vector. The vector is ordered by the nonce.
+        </span><span class="kw">fn </span>messages_dispatch_weight(
+            lane: LaneId,
+            begin: MessageNonce,
+            end: MessageNonce,
+        ) -&gt; Vec&lt;(MessageNonce, Weight, u32)&gt;;
+        <span class="doccomment">/// Returns nonce of the latest message, received by bridged chain.
+        </span><span class="kw">fn </span>latest_received_nonce(lane: LaneId) -&gt; MessageNonce;
+        <span class="doccomment">/// Returns nonce of the latest message, generated by given lane.
+        </span><span class="kw">fn </span>latest_generated_nonce(lane: LaneId) -&gt; MessageNonce;
+    }
+
+    <span class="doccomment">/// Inbound message lane API for messages sent by Circuit chain.
+    ///
+    /// This API is implemented by runtimes that are receiving messages from Circuit chain, not the
+    /// Circuit runtime itself.
+    </span><span class="kw">pub trait </span>FromCircuitInboundLaneApi {
+        <span class="doccomment">/// Returns nonce of the latest message, received by given lane.
+        </span><span class="kw">fn </span>latest_received_nonce(lane: LaneId) -&gt; MessageNonce;
+        <span class="doccomment">/// Nonce of latest message that has been confirmed to the bridged chain.
+        </span><span class="kw">fn </span>latest_confirmed_nonce(lane: LaneId) -&gt; MessageNonce;
+        <span class="doccomment">/// State of the unrewarded relayers set at given lane.
+        </span><span class="kw">fn </span>unrewarded_relayers_state(lane: LaneId) -&gt; UnrewardedRelayersState;
+    }
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="t3rn_primitives" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8b705839c 2022-09-26)" ></div></body></html>

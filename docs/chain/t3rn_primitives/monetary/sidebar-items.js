@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["DECIMALS",""],["MILLIT3RN",""],["TRN",""]],"enum":[["BeneficiaryRole",""]],"struct":[["InflationAllocation",""]]};

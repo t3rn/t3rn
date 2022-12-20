@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["LocalState",""],["Xtx","A composable cross-chain (X) transaction that has already been verified to be valid and submittable"]],"trait":[["Volatile",""]],"type":[["XtxId",""]]};

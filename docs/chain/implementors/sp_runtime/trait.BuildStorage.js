@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"pallet_grandpa_finality_verifier":[["impl BuildStorage for <a class=\"struct\" href=\"pallet_grandpa_finality_verifier/mock/struct.GenesisConfig.html\" title=\"struct pallet_grandpa_finality_verifier::mock::GenesisConfig\">GenesisConfig</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

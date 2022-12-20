@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["percent_ratio",""]],"struct":[["ActiveSetClaimablePerRound",""]]};

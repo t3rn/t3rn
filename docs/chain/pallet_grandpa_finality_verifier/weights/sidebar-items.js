@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["GatewayWeight","Weights for pallet_bridge_grandpa using the Rialto node and recommended hardware."]],"trait":[["WeightInfo","Weight functions needed for pallet_bridge_grandpa."]]};

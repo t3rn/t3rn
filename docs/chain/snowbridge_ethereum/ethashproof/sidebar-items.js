@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Error",""]],"struct":[["DoubleNodeWithMerkleProof",""],["EthashCache","A wrapper around ethash::make_cache with LRU caching. Use this to retrieve DAG cache data for a given epoch."],["EthashProver",""]]};

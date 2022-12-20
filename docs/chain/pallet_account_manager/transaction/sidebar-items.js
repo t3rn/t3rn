@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["ImbalanceBeneficiary",""],["ImbalanceToBeneficiary",""]],"type":[["BalanceForCurrency",""],["NegativeImbalanceOf",""],["PositiveImbalanceOf",""]]};

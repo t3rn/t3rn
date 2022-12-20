@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["account_encode_to_h256",""],["commit_deferred_transfers",""],["escrow_transfer",""],["h256_to_account",""],["just_transfer",""]],"struct":[["TransferEntry",""]],"type":[["BalanceOf",""],["EscrowedBalanceOf",""],["EscrowedCurrencyOf",""]]};
