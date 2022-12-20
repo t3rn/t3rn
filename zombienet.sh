@@ -23,10 +23,13 @@ if [[ ! -x /usr/local/bin/zombienet ]]; then
 fi
 
 if [[ ! -x $root_dir/bin/polkadot ]]; then
-  tmp_dir=$(mktemp -d)
-  git clone --branch $pdot_branch --depth 1 https://github.com/paritytech/polkadot $tmp_dir
-  cargo build --manifest-path $tmp_dir/Cargo.toml --features fast-runtime --release --locked
-  mv -f $tmp_dir/target/release/polkadot $root_dir/bin/polkadot
+  tmp_dir=/tmp/pdot-$pdot_branch
+  if [[ ! -d $tmp_dir ]]; then
+    mkdir -p $tmp_dir
+    git clone --branch $pdot_branch --depth 1 https://github.com/paritytech/polkadot $tmp_dir
+    cargo build --manifest-path $tmp_dir/Cargo.toml --features fast-runtime --release --locked
+  fi
+  cp $tmp_dir/target/release/polkadot $root_dir/bin/polkadot
 fi
 
 cargo build --manifest-path $root_dir/node/$runtime/Cargo.toml --release --locked

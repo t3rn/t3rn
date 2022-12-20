@@ -3,7 +3,7 @@ name: Perform zombienet tests
 env:
   RUST_BACKTRACE: full
   RUSTC_WRAPPER: sccache
-  SCCACHE_CACHE_SIZE: 3G
+  SCCACHE_CACHE_SIZE: 5G
   SCCACHE_DIR: /home/sysi-epyc/.cache/sccache # Linux runner only, shouldnt affect this workflow
   # SCCACHE_RECACHE: 1 # Uncomment this to clear cache, then comment it back out
 on:
