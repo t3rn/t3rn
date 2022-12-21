@@ -26,7 +26,7 @@ jobs:
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-11-01
+          toolchain: nightly-2022-09-26
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: docs/executor
+        working-directory: client/packages
     timeout-minutes: 15
     if: "!contains(github.event.head_commit.message, 'skip cd')"
     steps:
@@ -98,10 +98,14 @@ jobs:
         with:
           repository: t3rn/t3rn
           fetch-depth: 1
+      - name: Build local dependencies
+        run: make
       - name: 📦 Install packages
         run: yarn
-      - name: 🏗 Build
-        run: yarn build
+        working-directory: client/packages/executor
+      - name: 🏗 Build Docs
+        run: yarn build-docs
+        working-directory: client/packages/executor
       - name: 👾 Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
