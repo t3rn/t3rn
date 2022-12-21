@@ -15,14 +15,13 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   rust:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
-#        run: git submodule deinit --all && git submodule init && git submodule update
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -46,7 +45,23 @@ jobs:
           RUSTDOCFLAGS: --enable-index-page -Zunstable-options
         with:
           command: doc
-          args: --no-deps --workspace --exclude pallet-xbi-portal --exclude t3rn-protocol --exclude pallet-xbi-portal-enter --exclude circuit-runtime-pallets --exclude circuit-mock-runtime --exclude circuit-standalone-runtime --exclude t0rn-parachain-runtime --exclude t3rn-parachain-runtime
+          args:
+            --no-deps
+            --workspace
+            --exclude pallet-xbi-portal
+            --exclude t3rn-protocol
+            --exclude pallet-xbi-portal-enter
+            --exclude circuit-runtime-pallets
+            --exclude circuit-mock-runtime
+            --exclude circuit-standalone-runtime
+            --exclude t0rn-parachain-runtime
+            --exclude t3rn-parachain-runtime
+            --exclude t0rn-parachain-collator
+            --exclude t3rn-parachain-collator
+            --exclude snowbridge-core
+            --exclude snowbridge-runtime-primitives
+            --exclude snowbridge-testutils
+            --exclude snowbridge-xcm-support
       - name: 👾 Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
@@ -54,7 +69,7 @@ jobs:
           vercel-args: '--force'
           vercel-org-id: ${{ secrets.VERCEL_TEAM_ID}}
           vercel-project-id: ${{ secrets.VERCEL_CHAIN_DOCS_PROJECT_ID}}
-          working-directory: ./target/doc
+          working-directory: target/doc
           scope: "t3rn"
           alias-domains: |
             docs.chain.t3rn.io
@@ -85,7 +100,7 @@ jobs:
           scope: "t3rn"
           alias-domains: |
             docs.t3rn.io
-  deploy_executor_typedoc:
+  executor:
     runs-on: ubuntu-latest
     defaults:
       run:
