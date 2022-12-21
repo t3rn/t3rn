@@ -9,6 +9,7 @@ import {
   // @ts-ignore
   u128,
 } from "@polkadot/types/lookup";
+import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 
 /**
  * The class for Transactions
@@ -30,7 +31,7 @@ export class Tx {
 
   /**
    * Safe send that queries the correct nonce and then submits the transaction.
-   * This should not be used when submitting transactions in fast succession as the nonce wont have time to update.
+   * This should not be used when submitting transactions in fast succession as the nonce won't have time to update.
    * In that case use the optimistic send or batch the transaction.
    * Returns the block height the transaction was included in.
    *
@@ -39,7 +40,7 @@ export class Tx {
    * @returns The block height the transaction was included in
    */
 
-  async signAndSendSafe(tx): Promise<string> {
+  async signAndSendSafe(tx: SubmittableExtrinsic): Promise<string> {
     let nonce = await this.api.rpc.system.accountNextIndex(this.signer.address);
 
     return new Promise((resolve, reject) =>
@@ -69,7 +70,7 @@ export class Tx {
    * @param tx - The transaction to sudo
    */
 
-  createSudo(tx: any) {
+  createSudo(tx: SubmittableExtrinsic) {
     return this.api.tx.sudo.sudo(tx);
   }
 
@@ -78,7 +79,7 @@ export class Tx {
    * @param txs - The transactions to batch
    */
 
-  createBatch(txs: any[]) {
+  createBatch(txs: SubmittableExtrinsic[]) {
     return this.api.tx.utility.batch(txs);
   }
 }

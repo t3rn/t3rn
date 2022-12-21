@@ -1,4 +1,4 @@
-import * as decoders from './decoder'
-import * as encoders from './encoder'
+import * as Decoders from './decoder'
+import * as Encoders from './encoder'
 
-export{decoders, encoders}
+export{Decoders, Encoders}

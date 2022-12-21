@@ -1,22 +1,26 @@
+/**
+ * Enum describing the different SFX types that are available.
+ */
 export enum SfxType {
+    /* Native Transfer on Target */
 	Transfer,
 }
 
 export enum SfxStatus {
-    Ready,
-    Bidding,
-    PendingExecution,
+    Requested,
+    InBidding,
+    Dropped,
+    ReadyToExecute,
     ExecutedOnTarget,
     Confirmed,
-    Dropped,
     Reverted
 }
 
 export enum XtxStatus {
     PendingBidding,
-    Ready,
-    FinishedAllSteps,
     DroppedAtBidding,
+    ReadyToExecute,
+    FinishedAllSteps,
     RevertTimedOut,
 }
 

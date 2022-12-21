@@ -17,14 +17,14 @@ export const pub2Addr = (pub: string, prefix: number): string | Error => {
 };
 
 /**
- * Convert address to public key
+ * Convert address to public key.
  * @param address - The address to convert
  */
 
 export const addrToPub = (address: string): string => {
   if (isValidAddressPolkadotAddress(address)) {
     if (isHex(address)) {
-      // if hex odds are a pub was passed
+      // if hex, a pub was passed
       return address;
     } else {
       return "0x" + Buffer.from(decodeAddress(address)).toString("hex");
