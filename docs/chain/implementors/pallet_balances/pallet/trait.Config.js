@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"pallet_grandpa_finality_verifier":[["impl Config&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"pallet_grandpa_finality_verifier/mock/struct.TestRuntime.html\" title=\"struct pallet_grandpa_finality_verifier::mock::TestRuntime\">TestRuntime</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"trait":[["PortalRuntimeApi","The API to interact with pallet XDNS"]],"type":[["ChainId",""]]};

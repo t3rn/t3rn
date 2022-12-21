@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":[["abi",""],["side_effect",""]],"type":[["Bytes",""]]};

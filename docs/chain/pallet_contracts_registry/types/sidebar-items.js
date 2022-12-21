@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["ContractAccessError","The possible errors that can happen querying the storage of a contract."]],"struct":[["ContractsRegistryResult",""],["RegistryContract","A preliminary representation of a contract in the onchain registry."]],"type":[["FetchContractsResult",""],["RegistryContractId",""]]};

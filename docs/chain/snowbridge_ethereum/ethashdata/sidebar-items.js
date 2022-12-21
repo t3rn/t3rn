@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":[["DAGS_MERKLE_ROOTS",""],["DAGS_START_EPOCH",""]]};

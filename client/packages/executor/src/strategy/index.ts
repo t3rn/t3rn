@@ -1,5 +1,5 @@
 // import config from "../../config/config"
-import { SideEffect } from "../executionManager/SideEffect"
+import { SideEffect } from "../executionManager/sideEffect"
 import { Execution } from "../executionManager/execution"
 import { config } from "../../config/config"
 

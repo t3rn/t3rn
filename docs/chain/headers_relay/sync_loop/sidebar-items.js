@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["metrics_prefix","Return prefix that will be used by default to expose Prometheus metrics of the finality proofs sync loop."],["run","Run headers synchronization."]],"trait":[["SourceClient","Source client trait."],["SyncMaintain","Synchronization maintain procedure."],["TargetClient","Target client trait."]]};

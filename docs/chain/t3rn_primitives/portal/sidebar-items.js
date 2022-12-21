@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["ErrorMsg",""],["RegistrationData",""]],"trait":[["Portal",""]],"type":[["RococoBridge",""]]};

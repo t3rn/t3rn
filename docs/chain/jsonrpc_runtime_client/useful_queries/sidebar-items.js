@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["get_first_header","Get first header of Substrate network"],["get_gtwy_init_data","Gets the current authority set id, the actual authority set, and header for the latest finalized block."],["get_metadata",""],["get_parachain_id",""]]};

@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"pallet_account_manager":[["impl&lt;T:&nbsp;Config, C:&nbsp;Currency&lt;T::AccountId&gt;&gt; TryDrop for <a class=\"struct\" href=\"pallet_account_manager/transaction/struct.ImbalanceBeneficiary.html\" title=\"struct pallet_account_manager::transaction::ImbalanceBeneficiary\">ImbalanceBeneficiary</a>&lt;T, C&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"pallet_grandpa_finality_verifier":[["impl PalletInfo for <a class=\"struct\" href=\"pallet_grandpa_finality_verifier/mock/struct.PalletInfo.html\" title=\"struct pallet_grandpa_finality_verifier::mock::PalletInfo\">PalletInfo</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
