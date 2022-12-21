@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["ERC721TokenData",""],["TokenInfo","Token info"]],"trait":[["Nft",""]]};

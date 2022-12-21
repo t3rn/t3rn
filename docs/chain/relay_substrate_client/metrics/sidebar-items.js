@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["FloatStorageValueMetric","Metric that represents fixed-point runtime storage value as float gauge."],["StorageProofOverheadMetric","Metric that represents extra size of storage proof as unsigned integer gauge."]]};

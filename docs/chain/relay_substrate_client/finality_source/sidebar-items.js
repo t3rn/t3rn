@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["FinalitySource","Substrate node as finality source."]],"type":[["RequiredHeaderNumberRef","Shared updatable reference to the maximal header number that we want to sync from the source."]]};

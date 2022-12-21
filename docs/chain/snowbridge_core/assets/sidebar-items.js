@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["RemoteParachain","Represents a remote parachain by id with a fee that will be used by `XcmReserveTransfer::reserve_transfer` to send an asset to a remote parachain."]],"trait":[["XcmReserveTransfer",""]]};

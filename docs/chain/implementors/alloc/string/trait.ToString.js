@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"relay_utils":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html\" title=\"trait alloc::string::ToString\">ToString</a> for <a class=\"enum\" href=\"relay_utils/enum.StringifiedMaybeConnectionError.html\" title=\"enum relay_utils::StringifiedMaybeConnectionError\">StringifiedMaybeConnectionError</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

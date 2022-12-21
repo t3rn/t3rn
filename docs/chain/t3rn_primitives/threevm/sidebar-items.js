@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["Characteristic",""],["PrecompileArgs",""],["PrecompileInvocation","The happy return type of an invocation"],["SignalOpcode",""]],"struct":[["GetState",""],["Remunerated",""]],"trait":[["CharacteristicValidator","Passthrough to validator"],["LocalStateAccess",""],["ModuleOperations",""],["Precompile",""],["Remuneration",""],["ThreeVm",""]]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["TargetTransactionMode","Target transaction mode."]],"struct":[["HeadersSync","Headers synchronization context."],["HeadersSyncParams","Common sync params."]]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":[["gen_client","The generated client module."]],"struct":[["Portal","A struct that implements the [`PortalApi`]."],["PortalApiClient","The Client."],["PortalClient","The Client."]],"trait":[["PortalApi",""],["PortalRuntimeApi","The API to interact with pallet XDNS"]]};

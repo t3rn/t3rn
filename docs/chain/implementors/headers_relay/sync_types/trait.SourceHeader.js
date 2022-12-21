@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"relay_substrate_client":[["impl&lt;Header:&nbsp;HeaderT&gt; SourceHeader&lt;&lt;Header as Header&gt;::Hash, &lt;Header as Header&gt;::Number&gt; for <a class=\"struct\" href=\"relay_substrate_client/struct.SyncHeader.html\" title=\"struct relay_substrate_client::SyncHeader\">SyncHeader</a>&lt;Header&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

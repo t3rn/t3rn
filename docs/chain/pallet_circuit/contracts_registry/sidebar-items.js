@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["AuthorInfo",""],["RegistryContract","A preliminary representation of a contract in the onchain registry."]],"trait":[["ContractsRegistry",""],["KindValidator",""]],"type":[["RegistryContractId",""]]};

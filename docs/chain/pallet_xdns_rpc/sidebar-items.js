@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["Xdns","A struct that implements the [`XdnsApiServer`]."]],"trait":[["XdnsApiClient","Client implementation for the `XdnsApi` RPC API."],["XdnsApiServer","Server trait implementation for the `XdnsApi` RPC API."],["XdnsRuntimeApi","The API to interact with pallet XDNS"]]};
