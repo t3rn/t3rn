@@ -75,6 +75,7 @@ use t3rn_protocol::side_effects::{
 };
 
 use crate::machine::{Machine, *};
+pub use state::XExecSignal;
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
@@ -425,10 +426,9 @@ pub mod pallet {
                         if deletion_counter > T::DeletionQueueLimit::get() {
                             return
                         }
-                        let _success: bool = Machine::<T>::kill(
+                        let _success: bool = Machine::<T>::revert(
                             xtx_id,
                             Cause::Timeout,
-                            &T::SelfAccountId::get(),
                             |status_change, local_ctx| {
                                 Self::square_up(local_ctx, status_change, None).expect(
                                     "Expect RevertTimedOut options to square up to be infallible",
@@ -640,6 +640,14 @@ pub mod pallet {
                 no_post_updates,
             )?;
 
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
+        pub fn revert(origin: OriginFor<T>, xtx_id: T::Hash) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            let _success =
+                Machine::<T>::revert(xtx_id, Cause::IntentionalKill, infallible_no_post_updates);
             Ok(().into())
         }
 
@@ -1000,7 +1008,7 @@ pub mod pallet {
         SetupFailedXtxWasDroppedAtBidding,
         SetupFailedXtxReverted,
         SetupFailedXtxRevertedTimeout,
-        SetupFailedUnknownXtx,
+        XtxDoesNotExist,
         InvalidFSXBidStateLocated,
         EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished,
         FatalXtxTimeoutXtxIdNotMatched,
@@ -1537,7 +1545,7 @@ impl<T: Config> Pallet<T> {
 
         while !queue.is_empty() && remaining_key_budget > 0 {
             // Cannot panic due to loop condition
-            let (requester, signal) = &mut queue[0];
+            let (_requester, signal) = &mut queue[0];
 
             // worst case 4 from setup
             if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as u64) {
@@ -1548,7 +1556,6 @@ impl<T: Config> Pallet<T> {
                     let _success: bool = Machine::<T>::kill(
                         local_ctx.xtx_id,
                         Cause::IntentionalKill,
-                        &requester.clone(),
                         |_status_change, _local_ctx| {
                             queue.swap_remove(0);
                             remaining_key_budget -= 1;

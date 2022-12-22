@@ -98,6 +98,7 @@ impl CircuitStatus {
                     (CircuitStatus::PendingBidding, CircuitStatus::InBidding) => Ok(new),
                     (CircuitStatus::InBidding, CircuitStatus::Ready) => Ok(new),
                     (CircuitStatus::Ready, CircuitStatus::PendingExecution) => Ok(new),
+                    (CircuitStatus::Ready, CircuitStatus::FinishedAllSteps) => Ok(new),
                     (CircuitStatus::PendingExecution, CircuitStatus::Finished) => Ok(new),
                     (CircuitStatus::PendingExecution, CircuitStatus::FinishedAllSteps) => Ok(new),
                     (CircuitStatus::PendingExecution, CircuitStatus::Committed) => Ok(new),
@@ -139,10 +140,13 @@ impl CircuitStatus {
                     CircuitStatus::Reverted(cause) =>
                         return match cause {
                             _ =>
-                                if new < CircuitStatus::FinishedAllSteps {
+                                if new < CircuitStatus::Ready {
+                                    Ok(CircuitStatus::Killed(cause))
+                                } else if new < CircuitStatus::FinishedAllSteps {
                                     Ok(forced.clone())
                                 } else {
-                                    Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
+                                    // Revert assumed infallible - fallback to new state which results in no op. in apply.
+                                    Ok(new.clone())
                                 },
                         },
                     CircuitStatus::InBidding =>
@@ -160,6 +164,12 @@ impl CircuitStatus {
                     CircuitStatus::Reserved =>
                         if new <= CircuitStatus::Reserved {
                             Ok(forced.clone())
+                        } else {
+                            Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
+                        },
+                    CircuitStatus::Committed =>
+                        if new == CircuitStatus::FinishedAllSteps {
+                            Ok(CircuitStatus::Committed)
                         } else {
                             Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                         },
@@ -244,6 +254,9 @@ impl CircuitStatus {
     pub fn determine_step_status<T: Config>(
         step: &[FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>],
     ) -> Result<CircuitStatus, Error<T>> {
+        if step.is_empty() {
+            return Ok(CircuitStatus::Finished)
+        }
         let determined_bidding_status = Self::determine_bidding_status::<T>(step)?;
         let determined_execution_status = Self::determine_execution_status::<T>(step)?;
         // still in bidding - don't check for confirmations yet
@@ -269,6 +282,7 @@ impl CircuitStatus {
             return Ok(CircuitStatus::Reserved)
         }
 
+        let mut dummy_debug_cnt = 0;
         for step in steps.iter() {
             let current_step_status = Self::determine_step_status::<T>(step)?;
             if current_step_status > lowest_determined_status {
@@ -279,6 +293,8 @@ impl CircuitStatus {
             if lowest_determined_status < CircuitStatus::Finished {
                 return Ok(current_step_status)
             }
+
+            dummy_debug_cnt += 1;
         }
 
         Ok(CircuitStatus::FinishedAllSteps)
