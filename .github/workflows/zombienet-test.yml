@@ -32,6 +32,15 @@ jobs:
           components: rustfmt, clippy
           override: true
 
+      - name: Print sccache stats
+        working-directory: tests/zombienet
+        run: sccache --show-stats
+
+      - name: 📼 Setup zombienet tests
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: make setup
+
       - name: 📼 Run zombienet tests
         continue-on-error: false
         working-directory: tests/zombienet
@@ -39,4 +48,4 @@ jobs:
 
       - name: Print sccache stats
         working-directory: tests/zombienet
-        run: make print-sccache
+        run: sccache --show-stats

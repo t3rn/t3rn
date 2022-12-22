@@ -8,8 +8,6 @@ root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 polkadot_tmp_dir := /tmp/polkadot
-SCCACHE_VERSION := v0.3.1
-SCCACHE_FILE := sccache-$(SCCACHE_VERSION)-x86_64-unknown-linux-musl
 
 export PATH := $(shell echo $$PATH):$(bin_dir)
 
@@ -27,22 +25,9 @@ clean:
 $(bin_dir): 
 	@mkdir -p $(bin_dir)
 
-${bin_dir}/sccache:
-	@if [ $(machine) = "macos" ]; then \
-        brew update; \
-		brew install -qf sccache | true; \
-		cp -n /opt/homebrew/bin/sccache $(bin_dir)/sccache; \
-	elif [ $(machine) = "linux" ]; then \
-		tmp_dir=$(shell mktemp -d); \
-		curl -fL https://github.com/mozilla/sccache/releases/download/$(SCCACHE_VERSION)/$(SCCACHE_FILE).tar.gz | tar xzvf - -C $(bin_dir)/; \
-		mv $(bin_dir)/$(SCCACHE_FILE)/sccache $(bin_dir)/; \
-		sudo chmod +x $(bin_dir)/sccache; \
-	fi
-	
 ${bin_dir}/zombienet:
 	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(zombienet_version)/zombienet-$(machine)
-	# echo "#### Need sudo access for zombienet executable, make will drop this sudo access after this cmd ####"
-	sudo chmod +x $(bin_dir)/zombienet
+	chmod +x $(bin_dir)/zombienet
 
 ${bin_dir}/polkadot:
 	@if [ ! -f $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot ]; then \
@@ -60,19 +45,8 @@ ${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(ro
 	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
 	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
 
-setup: $(bin_dir) ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
+setup: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
 
-# ====================== Caching ======================
-
-start-sccache: $(bin_dir) ${bin_dir}/sccache
-	sccache --start-server || true
-
-stop-sccache: ${bin_dir}/sccache
-	sccache --stop-server || true
-	
-print-sccache: ${bin_dir}/sccache
-	sccache --show-stats
-	
 # ====================== Testing ======================
 
 test-smoke: setup
@@ -108,7 +82,7 @@ test-upgrade: setup bump-versions
 # NOTE: this does not modify the versions as to provide a true representation of the runtime upgrade
 # NOTE: this probably will only work on linux since we only release linux binaries and they aren't musl, so strictly this works for CI.
 # TODO[Optimisation]: get last tag and build in a fake directory instead
-test-real-upgrade: $(bin_dir) ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/$(parachain)-collator 
+test-real-upgrade: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/$(parachain)-collator 
 	@echo "Testing real upgrade for parachain: $(parachain)"
 
 	@if [ $(machine) = "macos" ]; then \
