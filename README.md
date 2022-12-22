@@ -83,7 +83,7 @@ This concludes the process of generating weights for the pallet.
 ## License
 
 ---
-Copyright 2020 t3rn Ltd.
+Copyright 2020-2022 t3rn Ltd.
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
