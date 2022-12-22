@@ -15,7 +15,7 @@ env:
 
 jobs:
   format:
-    runs-on: [self-hosted, test]
+    runs-on: [self-hosted, rust]
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
@@ -36,7 +36,7 @@ jobs:
           args: --all -- --check
 
   lint:
-    runs-on: [self-hosted, test]
+    runs-on: [self-hosted, rust]
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
@@ -57,7 +57,7 @@ jobs:
           args: --all
 
   build-test:
-    runs-on: [self-hosted, test]
+    runs-on: [self-hosted, rust]
     needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
