@@ -49,7 +49,7 @@ setup: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-colla
 
 # ====================== Testing ======================
 
-test-smoke: setup
+test-smoke: 
 	# TODO[Optimisation]: loop through directory and test all
 	# TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
 	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
@@ -69,7 +69,7 @@ bump-versions:
 
 # This isnt quite the entire runtime-upgrade, only that we can bump the versions and upgrade
 # The real approach to runtime upgrades are below where we deploy with an old binary and use a new runtime
-test-upgrade: setup bump-versions
+test-upgrade: bump-versions
 	
 	# build new blobs
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
