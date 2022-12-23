@@ -3,9 +3,6 @@ name: Perform zombienet tests
 env:
   RUST_BACKTRACE: full
   RUSTC_WRAPPER: sccache
-  SCCACHE_CACHE_SIZE: 5G
-  SCCACHE_DIR: /home/sysi-epyc/.cache/sccache # Linux runner only, shouldnt affect this workflow
-  # SCCACHE_RECACHE: 1 # Uncomment this to clear cache, then comment it back out
 on:
   pull_request:
     paths:
@@ -19,7 +16,7 @@ on:
 
 jobs:
   smoke-test:
-    runs-on: ["self-hosted", "ep1c"]
+    runs-on: [self-hosted, rust]
     steps:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v2
@@ -35,33 +32,14 @@ jobs:
           components: rustfmt, clippy
           override: true
 
-      - name: 🕒 Cache Rust binaries and packages
-        uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: "true"
-
-      - name: 🕒 Cache binaries
-        uses: actions/cache@v2
-        id: cache-bin
-        with:
-          path: |
-            bin
-          key: ${{ runner.os }}-bin-${{ hashFiles('tests/zombienet/Makefile') }}
-          restore-keys: |
-            ${{ runner.os }}-bin-
-
-      - name: 🕒 Save sccache
-        uses: actions/cache@v2
-        continue-on-error: false
-        with:
-          path: ${{ env.SCCACHE_DIR }}
-          key: ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-sccache-
-
-      - name: Start sccache server
+      - name: Print sccache stats
         working-directory: tests/zombienet
-        run: make start-sccache
+        run: sccache --show-stats
+
+      - name: 📼 Setup zombienet tests
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: make setup
 
       - name: 📼 Run zombienet tests
         continue-on-error: false
@@ -70,8 +48,4 @@ jobs:
 
       - name: Print sccache stats
         working-directory: tests/zombienet
-        run: make print-sccache
-
-      - name: Stop sccache server
-        working-directory: tests/zombienet
-        run: make stop-sccache
+        run: sccache --show-stats
