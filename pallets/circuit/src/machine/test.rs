@@ -82,25 +82,6 @@ pub mod test {
                 );
 
                 check_all_state_clean(xtx_id);
-
-                let mut xtx_id = setup_empty_xtx_and_force_set_status(Some(CircuitStatus::Ready));
-
-                assert_eq!(
-                    Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
-
-                check_all_state_clean(xtx_id);
-
-                xtx_id =
-                    setup_empty_xtx_and_force_set_status(Some(CircuitStatus::PendingExecution));
-
-                assert_eq!(
-                    Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
-
-                check_all_state_clean(xtx_id);
             });
     }
 

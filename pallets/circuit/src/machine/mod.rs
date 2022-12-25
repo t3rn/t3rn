@@ -340,7 +340,7 @@ impl<T: Config> Machine<T> {
         }
 
         match (old_status, new_status) {
-            (CircuitStatus::Requested, _) => {
+            (CircuitStatus::Requested, CircuitStatus::Reserved | CircuitStatus::PendingBidding) => {
                 // Iterate over full side effects to detect ones to execute locally.
                 fn is_local<T: Config>(gateway_id: &[u8; 4]) -> bool {
                     if *gateway_id == T::SelfGatewayId::get() {
@@ -440,7 +440,10 @@ impl<T: Config> Machine<T> {
 
                 true
             },
-            (_, CircuitStatus::Killed(_cause)) => {
+            (
+                CircuitStatus::Reserved | CircuitStatus::PendingBidding | CircuitStatus::InBidding,
+                CircuitStatus::Killed(_cause),
+            ) => {
                 // Clean all associated Xtx entries
                 <pallet::Pallet<T> as Store>::XExecSignals::remove(local_ctx.xtx_id);
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
@@ -459,7 +462,10 @@ impl<T: Config> Machine<T> {
 
                 true
             },
-            (_, CircuitStatus::Reverted(_cause)) => {
+            (
+                CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished,
+                CircuitStatus::Reverted(_cause),
+            ) => {
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
@@ -468,14 +474,14 @@ impl<T: Config> Machine<T> {
 
                 true
             },
-            (_, CircuitStatus::Committed) => {
+            (CircuitStatus::FinishedAllSteps, CircuitStatus::Committed) => {
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
 
                 true
             },
-            (_, CircuitStatus::FinishedAllSteps) => {
+            (CircuitStatus::Finished | CircuitStatus::Ready, CircuitStatus::FinishedAllSteps) => {
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
