@@ -39,7 +39,7 @@ A crate that hosts common definitions that are relevant for the Circuit.
 ## License
 
 ---
-Copyright 2020-2022 Maciej Baj.
+Copyright 2020 Maciej Baj.
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,

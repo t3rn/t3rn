@@ -11,11 +11,10 @@ on:
 
 env:
   RUST_BACKTRACE: 1
-  RUSTC_WRAPPER: sccache
 
 jobs:
   format:
-    runs-on: [self-hosted, rust]
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
@@ -36,7 +35,7 @@ jobs:
           args: --all -- --check
 
   lint:
-    runs-on: [self-hosted, rust]
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
@@ -50,6 +49,14 @@ jobs:
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
+      - name: 🕒 Cache Rust binaries and packages
+        uses: Swatinem/rust-cache@v2
+        with:
+          # A cache key that is used instead of the automatic `job`-based key,
+          # and is stable over multiple jobs.
+          # default: empty
+          shared-key: cargo
+          cache-on-failure: "true"
       - name: 📑 Lint code (standalone+parachain)
         uses: actions-rs/cargo@v1
         with:
@@ -57,7 +64,7 @@ jobs:
           args: --all
 
   build-test:
-    runs-on: [self-hosted, rust]
+    runs-on: self-hosted
     needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
@@ -72,6 +79,14 @@ jobs:
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
+      - name: 🕒 Cache Rust binaries and packages
+        uses: Swatinem/rust-cache@v2
+        with:
+          # A cache key that is used instead of the automatic `job`-based key,
+          # and is stable over multiple jobs.
+          # default: empty
+          shared-key: cargo
+          cache-on-failure: "true"
       - name: 🏭 Build circuit (standalone+parachain)
         uses: actions-rs/cargo@v1
         continue-on-error: false
