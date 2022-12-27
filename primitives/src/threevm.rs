@@ -61,6 +61,24 @@ where
     ) -> Result<PrecompileInvocation<T, Balance>, DispatchError>;
 }
 
+impl<T, Balance> Precompile<T, Balance> for ()
+where
+    T: frame_system::Config,
+    Balance: Encode + Decode,
+{
+    fn lookup(_dest: &T::Hash) -> Option<u8> {
+        None
+    }
+
+    fn invoke_raw(_precompile: &u8, _args: &[u8], _output: &mut Vec<u8>) {}
+
+    fn invoke(
+        _args: PrecompileArgs<T, Balance>,
+    ) -> Result<PrecompileInvocation<T, Balance>, DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+}
+
 pub trait LocalStateAccess<T, Balance>
 where
     T: frame_system::Config,
@@ -69,6 +87,18 @@ where
         origin: &T::Origin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
+}
+
+impl<T, Balance> LocalStateAccess<T, Balance> for ()
+where
+    T: frame_system::Config,
+{
+    fn load_local_state(
+        _origin: &T::Origin,
+        _xtx_id: Option<&T::Hash>,
+    ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
 }
 
 pub struct Remunerated<Hash> {
@@ -107,6 +137,27 @@ pub trait Remuneration<T: frame_system::Config, Balance> {
 
     /// Try to finalize a ledger item with an reason
     fn try_finalize(ledger_id: T::Hash, outcome: Outcome) -> DispatchResult;
+}
+
+impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance> for () {
+    fn try_remunerate<Module: ModuleOperations<T, Balance>>(
+        _payee: &T::AccountId,
+        _module: &Module,
+    ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn try_remunerate_exact<Module: ModuleOperations<T, Balance>>(
+        _payee: &T::AccountId,
+        _amount: Balance,
+        _module: &Module,
+    ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn try_finalize(_ledger_id: T::Hash, _outcome: Outcome) -> DispatchResult {
+        Ok(())
+    }
 }
 
 pub enum Characteristic {
@@ -162,6 +213,63 @@ where
     ) -> Result<(), DispatchError>;
 
     fn try_remove_author(contract: &T::AccountId) -> Result<(), DispatchError>;
+}
+
+// Default impl
+impl<T: frame_system::Config, Balance: Encode + Decode> ThreeVm<T, Balance> for () {
+    fn peek_registry(
+        id: &<T as frame_system::Config>::Hash,
+    ) -> Result<
+        RegistryContract<
+            <T as frame_system::Config>::Hash,
+            <T as frame_system::Config>::AccountId,
+            Balance,
+            <T as frame_system::Config>::BlockNumber,
+        >,
+        DispatchError,
+    > {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn from_registry<Module, ModuleGen>(
+        id: &<T as frame_system::Config>::Hash,
+        module_generator: ModuleGen,
+    ) -> Result<Module, DispatchError>
+    where
+        Module: ModuleOperations<T, Balance>,
+        ModuleGen: Fn(Vec<u8>) -> Module,
+    {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn instantiate_check(kind: &ContractType) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn storage_check(kind: &ContractType) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn volatile_check(kind: &ContractType) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn remunerable_check(kind: &ContractType) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn try_persist_author(
+        contract: &<T as frame_system::Config>::AccountId,
+        author: Option<&AuthorInfo<<T as frame_system::Config>::AccountId, Balance>>,
+    ) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn try_remove_author(
+        contract: &<T as frame_system::Config>::AccountId,
+    ) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
 }
 
 pub trait ModuleOperations<T: frame_system::Config, Balance> {
