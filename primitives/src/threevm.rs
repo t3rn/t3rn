@@ -71,18 +71,6 @@ where
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
 }
 
-impl<T, Balance> LocalStateAccess<T, Balance> for ()
-where
-    T: frame_system::Config,
-{
-    fn load_local_state(
-        _origin: &T::Origin,
-        _xtx_id: Option<&T::Hash>,
-    ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
-    }
-}
-
 pub struct Remunerated<Hash> {
     pub remuneration_id: Option<Hash>,
 }
@@ -176,6 +164,18 @@ where
 }
 
 pub struct NoopThreeVm;
+
+impl<T, Balance> LocalStateAccess<T, Balance> for NoopThreeVm
+where
+    T: frame_system::Config,
+{
+    fn load_local_state(
+        _origin: &T::Origin,
+        _xtx_id: Option<&T::Hash>,
+    ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+}
 
 impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance> for NoopThreeVm {
     fn try_remunerate<Module: ModuleOperations<T, Balance>>(
