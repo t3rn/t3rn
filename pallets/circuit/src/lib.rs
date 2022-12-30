@@ -375,12 +375,17 @@ pub mod pallet {
                     bidding_timeouts_at <= &frame_system::Pallet::<T>::block_number()
                 })
                 .map(|(xtx_id, _bidding_timeouts_at)| {
-                    let mut local_ctx = Self::setup(
+                    let mut local_ctx = match Self::setup(
                         CircuitStatus::PendingBidding,
                         &Self::account_id(),
                         Some(xtx_id),
-                    )
-                        .unwrap();
+                    ) {
+                        Ok(value) => value,
+                        Err(error) => {
+                            log::error!("Could not setup local ctx: {:?}", error);
+                            return
+                        }
+                    };
 
                     // Ensure Circuit::PendingBidding status
                     if local_ctx.xtx.status != CircuitStatus::PendingBidding {
@@ -405,7 +410,13 @@ pub mod pallet {
                         }
                     }
 
-                    let status_change = Self::update(&mut local_ctx).unwrap();
+                    let status_change = match Self::update(&mut local_ctx) {
+                        Ok(value) => value,
+                        Err(error) => {
+                            log::error!("Could not update local ctx change: {:?}", error);
+                            return
+                        },
+                    };
 
                     Self::square_up(&mut local_ctx, None)
                         .expect("Expect Bonding Bids at square up to be infallible since funds of requester have been reserved at the SFX submission");
@@ -437,9 +448,17 @@ pub mod pallet {
                         if deletion_counter > T::DeletionQueueLimit::get() {
                             return
                         }
-                        let mut local_xtx_ctx =
-                            Self::setup(CircuitStatus::Ready, &Self::account_id(), Some(xtx_id))
-                                .unwrap();
+                        let mut local_xtx_ctx = match Self::setup(
+                            CircuitStatus::Ready,
+                            &Self::account_id(),
+                            Some(xtx_id),
+                        ) {
+                            Ok(value) => value,
+                            Err(error) => {
+                                log::error!("Could not setup local xtx ctx: {:?}", error);
+                                return
+                            },
+                        };
 
                         Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertTimedOut);
 
