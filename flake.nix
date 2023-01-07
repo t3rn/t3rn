@@ -1,5 +1,5 @@
 {
-  description = "A flake to support development on XBI via NixOS";
+  description = "A flake to support reproducible development of t3rn";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -17,17 +17,7 @@
           cargo = rustVersion;
           rustc = rustVersion;
         };
-        # rootBuild = rustPlatform.buildRustPackage {
-        #   pname =
-        #     "rust_nix_blog"; # make this what ever your cargo.toml package.name is
-        #   version = "0.1.0";
-        #   src = ./.; # the folder with the cargo.toml
-        #   cargoLock.lockFile = ./Cargo.lock;
-        #   # Add packages here, like openssl, clang, llvm etc
-        #   buildInputs = [];
-        # };
       in {
-        # defaultPackage = devShell;
         devShell = pkgs.mkShell {
           LIBCLANG_PATH = "${pkgs.llvmPackages_11.libclang.lib}/lib";
           nativeBuildInputs = with pkgs; [ bashInteractive cmake openssl pkg-config clang libclang ];
