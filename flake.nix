@@ -29,7 +29,8 @@
       in {
         # defaultPackage = devShell;
         devShell = pkgs.mkShell {
-          nativeBuildInputs = [ pkgs.bashInteractive ];
+          LIBCLANG_PATH = "${pkgs.llvmPackages_11.libclang.lib}/lib";
+          nativeBuildInputs = with pkgs; [ bashInteractive cmake openssl pkg-config clang libclang ];
           buildInputs =
             [ (rustVersion.override { extensions = [ "rust-src" ]; }) ];
         };
