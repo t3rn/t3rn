@@ -131,7 +131,7 @@ pub mod pallet {
             offered_reward: BalanceOf<T>,
             source: BenefitSource,
             role: CircuitRole,
-            maybe_recipient: Option<T::AccountId>,
+            recipient: T::AccountId,
             maybe_asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
         ) -> DispatchResult {
             ensure_root(origin)?;
@@ -144,13 +144,15 @@ pub mod pallet {
                 <T::Assets as Inspect<T::AccountId>>::AssetId,
             >>::deposit(
                 charge_id,
-                &payee,
-                charge_fee,
-                offered_reward,
-                source,
-                role,
-                maybe_recipient,
-                maybe_asset_id,
+                RequestCharge {
+                    payee,
+                    offered_reward,
+                    charge_fee,
+                    source,
+                    role,
+                    recipient,
+                    maybe_asset_id,
+                },
             )
             .map(|_| ())
         }
