@@ -20,3 +20,5 @@ client/cli/yarn-error.log
 **/.DS_Store
 
 bin
+
+.direnv
