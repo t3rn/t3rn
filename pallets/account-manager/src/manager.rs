@@ -217,10 +217,12 @@ impl<T: Config>
         }
 
         // Check if recipient has been updated
-        let recipient = if let Some(recipient) = maybe_recipient {
-            recipient
-        } else {
-            charge.recipient
+        let recipient = match maybe_recipient {
+            Some(new_recipient) => new_recipient,
+            None => match charge.recipient {
+                Some(recipient) => recipient,
+                None => T::EscrowAccount::get(),
+            },
         };
 
         let recipient_rewards = percent_ratio::<BalanceOf<T>>(total_reserved, recipient_split)?;
@@ -255,6 +257,11 @@ impl<T: Config>
     fn finalize_infallible(charge_id: T::Hash, outcome: Outcome) -> bool {
         if let Some(charge) = PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
         {
+            // Infallible recipient assignment to Escrow
+            let recipient = match charge.recipient {
+                Some(recipient) => recipient,
+                None => T::EscrowAccount::get(),
+            };
             if charge.offered_reward > Zero::zero() {
                 match outcome {
                     Outcome::Commit => {
@@ -263,7 +270,7 @@ impl<T: Config>
                             charge_id,
                             Settlement::<T::AccountId, BalanceOf<T>> {
                                 requester: charge.payee,
-                                recipient: charge.recipient,
+                                recipient,
                                 settlement_amount: charge.offered_reward,
                                 outcome,
                                 source: charge.source,
@@ -298,7 +305,12 @@ impl<T: Config>
 
     fn cancel_deposit(charge_id: T::Hash) -> bool {
         match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
-            Some(_charge) => {
+            Some(charge) => {
+                Self::deposit_immediately(
+                    &charge.payee,
+                    charge.offered_reward,
+                    charge.maybe_asset_id,
+                );
                 PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
                 true
             },
@@ -308,8 +320,9 @@ impl<T: Config>
 
     fn transfer_deposit(
         charge_id: T::Hash,
+        new_charge_id: T::Hash,
         new_reward: Option<BalanceOf<T>>,
-        new_payee: Option<T::AccountId>,
+        new_payee: Option<&T::AccountId>,
     ) -> DispatchResult {
         match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
             Some(charge) => {
@@ -319,14 +332,17 @@ impl<T: Config>
                     charge.offered_reward
                 };
 
-                let payee = if let Some(payee) = new_payee {
-                    payee
+                let payee = if let Some(payee) = new_payee.clone() {
+                    payee.clone()
                 } else {
                     charge.payee
                 };
 
                 // Release previous payee
-                Self::cancel_deposit(charge_id);
+                if !Self::cancel_deposit(charge_id) {
+                    return Err(Error::<T>::TransferDepositFailedToReleasePreviousCharge.into())
+                }
+
                 <Self as AccountManagerExt<
                     T::AccountId,
                     BalanceOf<T>,
@@ -334,7 +350,7 @@ impl<T: Config>
                     T::BlockNumber,
                     <T::Assets as Inspect<T::AccountId>>::AssetId,
                 >>::deposit(
-                    charge_id,
+                    new_charge_id,
                     RequestCharge {
                         payee,
                         offered_reward,
@@ -346,7 +362,7 @@ impl<T: Config>
                     },
                 )
             },
-            None => Ok(()),
+            None => Err(Error::<T>::TransferDepositFailedOldChargeNotFound.into()),
         }
     }
 

@@ -131,7 +131,7 @@ pub mod pallet {
             offered_reward: BalanceOf<T>,
             source: BenefitSource,
             role: CircuitRole,
-            recipient: T::AccountId,
+            recipient: Option<T::AccountId>,
             maybe_asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
         ) -> DispatchResult {
             ensure_root(origin)?;
@@ -221,7 +221,7 @@ pub mod pallet {
         DepositReceived {
             charge_id: T::Hash,
             payee: T::AccountId,
-            recipient: T::AccountId,
+            recipient: Option<T::AccountId>,
             amount: BalanceOf<T>,
         },
     }
@@ -238,6 +238,8 @@ pub mod pallet {
         ChargeOrSettlementCalculationOverflow,
         ChargeOrSettlementActualFeesOutgrowReserved,
         DecodingExecutionIDFailed,
+        TransferDepositFailedOldChargeNotFound,
+        TransferDepositFailedToReleasePreviousCharge,
     }
 
     #[pallet::genesis_config]
