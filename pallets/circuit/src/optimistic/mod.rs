@@ -1,6 +1,7 @@
 use crate::{pallet::Error, *};
 use sp_runtime::traits::Zero;
 
+use crate::square_up::SquareUp;
 use sp_std::marker::PhantomData;
 use t3rn_primitives::{side_effect::SFXBid, transfers::EscrowedBalanceOf};
 
@@ -13,7 +14,7 @@ impl<T: Config> Optimistic<T> {
         current_fsx: &Vec<
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         >,
-        executor: &T::AccountId,
+        bidder: &T::AccountId,
         requester: &T::AccountId,
         bid: EscrowedBalanceOf<T, T::Escrowed>,
         sfx_id: SideEffectId<T>,
@@ -30,99 +31,48 @@ impl<T: Config> Optimistic<T> {
         if bid > sfx_max_reward {
             return Err(Error::<T>::BiddingRejectedBidTooHigh)
         }
-        // Check if bid beats the previous ones
-        if let Some(current_best_bid) = &current_accepted_bid {
-            if current_best_bid.bid <= bid {
-                return Err(Error::<T>::BiddingRejectedBetterBidFound)
-            }
-        }
-        // Check if bid candidate has enough balance and withdraw
-        let checked_bid = if let Some(v) = bid.checked_add(&fsx.input.insurance) {
-            v
-        } else {
-            return Err(Error::<T>::ArithmeticErrorOverflow)
-        };
-        <T as Config>::AccountManager::withdraw_immediately(
-            executor,
-            checked_bid,
-            fsx.input.reward_asset_id,
-        )
-        .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
 
         let mut sfx_bid =
             SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>::new_none_optimistic(
                 bid,
                 fsx.input.insurance,
-                executor.clone(),
+                bidder.clone(),
                 requester.clone(),
                 fsx.input.reward_asset_id,
             );
         // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
         if sfx_security_lvl == SecurityLvl::Optimistic {
-            sfx_bid = Self::bond_4_sfx(executor, xtx_id, current_fsx, &mut sfx_bid, sfx_id)?;
+            let total_xtx_step_optimistic_rewards_of_others =
+                crate::Pallet::<T>::get_fsx_total_rewards(
+                    &crate::Pallet::<T>::filter_fsx_by_security_lvl(
+                        current_fsx,
+                        SecurityLvl::Optimistic,
+                    )
+                    .into_iter()
+                    .filter(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) != sfx_id)
+                    .collect::<Vec<
+                        FullSideEffect<
+                            <T as frame_system::Config>::AccountId,
+                            <T as frame_system::Config>::BlockNumber,
+                            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                        >,
+                    >>(),
+                );
+
+            if total_xtx_step_optimistic_rewards_of_others > Zero::zero() {
+                sfx_bid.reserved_bond = Some(total_xtx_step_optimistic_rewards_of_others);
+            }
         }
 
-        // Un-reserve the funds of discarded bidder.
-        // Warning: From this point on all of the next operations must be infallible.
-        if let Some(current_best_bid) = &current_accepted_bid {
-            let mut total_unreserve = if let Some(v) = current_best_bid
-                .insurance
-                .checked_add(&current_best_bid.bid)
-            {
-                v
-            } else {
-                return Err(Error::<T>::ArithmeticErrorOverflow)
-            };
-            if let Some(bond) = current_best_bid.reserved_bond {
-                if let Some(v) = total_unreserve.checked_add(&bond) {
-                    total_unreserve = v
-                } else {
-                    return Err(Error::<T>::ArithmeticErrorOverflow)
-                }
-            }
-            <T as Config>::AccountManager::deposit_immediately(
-                &current_best_bid.executor,
-                total_unreserve,
-                current_best_bid.reward_asset_id,
-            )
-        }
+        SquareUp::<T>::try_bid(sfx_id, requester, bidder, &sfx_bid, current_accepted_bid).map_err(
+            |e| {
+                log::error!("Error while trying to SquareUp::try_bid: {:?}", e);
+                println!("Error while trying to SquareUp::try_bid: {:?}", e);
+                Error::<T>::BiddingRejectedBetterBidFound
+            },
+        )?;
 
         Ok(sfx_bid)
-    }
-
-    pub(self) fn bond_4_sfx(
-        executor: &T::AccountId,
-        xtx_id: T::Hash,
-        current_fsx: &Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
-        sfx_bid: &mut SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>,
-        sfx_id: SideEffectId<T>,
-    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
-        let total_xtx_step_optimistic_rewards_of_others = crate::Pallet::<T>::get_fsx_total_rewards(
-            &crate::Pallet::<T>::filter_fsx_by_security_lvl(current_fsx, SecurityLvl::Optimistic)
-                .into_iter()
-                .filter(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) != sfx_id)
-                .collect::<Vec<
-                    FullSideEffect<
-                        <T as frame_system::Config>::AccountId,
-                        <T as frame_system::Config>::BlockNumber,
-                        EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-                    >,
-                >>(),
-        );
-
-        if total_xtx_step_optimistic_rewards_of_others > Zero::zero() {
-            <T as Config>::AccountManager::withdraw_immediately(
-                executor,
-                total_xtx_step_optimistic_rewards_of_others,
-                sfx_bid.reward_asset_id,
-            )
-            .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
-            sfx_bid.reserved_bond = Some(total_xtx_step_optimistic_rewards_of_others);
-        }
-
-        Ok(sfx_bid.clone())
     }
 
     pub fn try_unbond(local_ctx: &LocalXtxCtx<T>) -> Result<(), Error<T>> {
@@ -203,7 +153,7 @@ impl<T: Config> Optimistic<T> {
                 let checked_reward =
                     if let Some(insurance_plus_bond) = insurance.checked_add(&reserved_bond) {
                         if let Some(insurance_plus_bond_plus_bid) =
-                            insurance_plus_bond.checked_add(&sfx_bid.bid)
+                            insurance_plus_bond.checked_add(&sfx_bid.amount)
                         {
                             insurance_plus_bond_plus_bid
                         } else {
@@ -233,7 +183,7 @@ impl<T: Config> Optimistic<T> {
 
                     <T as Config>::AccountManager::deposit_immediately(
                         &sfx_bid.executor,
-                        insurance + reserved_bond + sfx_bid.bid,
+                        insurance + reserved_bond + sfx_bid.amount,
                         sfx_bid.reward_asset_id,
                     )
                 }

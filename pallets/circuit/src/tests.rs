@@ -33,10 +33,11 @@ use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 
 pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
+use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
 use sp_std::{convert::TryFrom, prelude::*};
-use std::{convert::TryInto, fs};
+use std::{convert::TryInto, fs, str::FromStr};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -58,6 +59,7 @@ use pallet_xbi_portal_enter::t3rn_sfx::xbi_2_sfx;
 use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
+pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
 pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
@@ -260,7 +262,9 @@ pub fn place_winning_bid_and_advance_3_blocks(
     ));
 
     assert_eq!(
-        Circuit::get_pending_sfx_bids(xtx_id, sfx_id).unwrap().bid,
+        Circuit::get_pending_sfx_bids(xtx_id, sfx_id)
+            .unwrap()
+            .amount,
         bid_amount
     );
 
@@ -978,8 +982,6 @@ fn circuit_handles_dropped_at_bidding() {
 
 #[test]
 fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
-    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-
     let transfer_protocol_box =
         Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
@@ -1015,6 +1017,9 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
     const BIDDING_BLOCK_NO: BlockNumber = 1;
     const BIDDING_TIMEOUT: BlockNumber = 3;
+
+    let origin = Origin::signed(REQUESTER); // Only sudo access to register new gateways for now
+
     ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
@@ -1075,18 +1080,30 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             let events = System::events();
 
             assert_eq!(
-                events[1],
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
-                        Runtime,
-                    >::SFXNewBidReceived(
-                        side_effect_a_id,
-                        BID_WINNER,
-                        BID_AMOUNT_C
-                    )),
-                    topics: vec![]
-                }
+                events,
+                vec![
+                    EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                        circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw {
+                            who: BID_WINNER, amount: 6
+                        }),
+                        topics: vec![]
+                    },
+                    EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
+                        circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
+                            charge_id: H256::from_str("0xd2170a1bae127064ba4c6cfc7b00108038de5429babc320498493567b5e2cd45").unwrap(),
+                            payee: BID_WINNER,
+                            recipient: Some(REQUESTER),
+                            amount: 6
+                        }),
+                        topics: vec![] },
+                    EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                        circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::SFXNewBidReceived(
+                            side_effect_a_id,
+                            BID_WINNER,
+                            BID_AMOUNT_C,
+                        )
+                    ),
+                        topics: vec![] }]
             );
 
             // Reserve insurance + bid amounts of the current winner
@@ -1130,7 +1147,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             assert_eq!(Balances::free_balance(&BID_LOOSER), INITIAL_BALANCE);
 
             let expected_bonded_sfx_bid = SFXBid {
-                bid: BID_AMOUNT_A,
+                amount: BID_AMOUNT_A,
                 requester: REQUESTER,
                 executor: BID_WINNER,
                 reserved_bond: None,
@@ -1516,7 +1533,7 @@ fn successfully_bond_optimistic(
 
     assert_eq!(created_sfx_bid.insurance, insurance as Balance);
     // assert_eq!(created_sfx_bid.reserved_bond, Some(insurance as Balance));
-    assert_eq!(created_sfx_bid.bid, reward as Balance);
+    assert_eq!(created_sfx_bid.amount, reward as Balance);
     assert_eq!(
         created_sfx_bid.requester,
         Decode::decode(&mut &submitter.encode()[..]).unwrap()

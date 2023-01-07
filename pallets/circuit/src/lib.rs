@@ -76,6 +76,7 @@ use t3rn_protocol::side_effects::{
 
 use crate::machine::{Machine, *};
 pub use state::XExecSignal;
+use t3rn_primitives::account_manager::RequestCharge;
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
@@ -88,6 +89,7 @@ mod benchmarking;
 pub mod escrow;
 pub mod machine;
 pub mod optimistic;
+pub mod square_up;
 pub mod state;
 pub mod weights;
 
@@ -979,6 +981,7 @@ pub mod pallet {
         UpdateXtxTriggeredWithUnexpectedStatus,
         ConfirmationFailed,
         ApplyTriggeredWithUnexpectedStatus,
+        BidderNotEnoughBalance,
         RequesterNotEnoughBalance,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
@@ -993,7 +996,6 @@ pub mod pallet {
         InsuranceBondNotRequired,
         BiddingInactive,
         BiddingRejectedBidBelowDust,
-        BiddingRejectedExecutorNotEnoughBalance,
         BiddingRejectedBidTooHigh,
         BiddingRejectedBetterBidFound,
         BiddingFailedExecutorsBalanceTooLowToReserve,
@@ -1176,16 +1178,18 @@ impl<T: Config> Pallet<T> {
                             return Err(Error::<T>::XtxChargeBondDepositFailedCantAccessBid)
                         };
 
-                    if bid_4_fsx.bid > Zero::zero() {
+                    if bid_4_fsx.amount > Zero::zero() {
                         <T as Config>::AccountManager::deposit(
                             charge_id,
-                            &requester,
-                            Zero::zero(),
-                            bid_4_fsx.bid,
-                            BenefitSource::TrafficRewards,
-                            CircuitRole::Requester,
-                            Some(bid_4_fsx.executor.clone()),
-                            fsx.input.reward_asset_id,
+                            RequestCharge {
+                                payee: requester.clone(),
+                                offered_reward: bid_4_fsx.amount,
+                                charge_fee: Zero::zero(),
+                                source: BenefitSource::TrafficRewards,
+                                role: CircuitRole::Requester,
+                                recipient: Some(bid_4_fsx.executor.clone()),
+                                maybe_asset_id: fsx.input.reward_asset_id,
+                            },
                         )
                         .map_err(|_e| Error::<T>::ChargingTransferFailed)?;
                     }
@@ -1197,13 +1201,15 @@ impl<T: Config> Pallet<T> {
 
                 <T as Config>::AccountManager::deposit(
                     charge_id,
-                    &executor_payee,
-                    charge_fee,
-                    Zero::zero(),
-                    BenefitSource::TrafficFees,
-                    CircuitRole::Executor,
-                    None,
-                    None,
+                    RequestCharge {
+                        payee: executor_payee.clone(),
+                        offered_reward: Zero::zero(),
+                        charge_fee,
+                        source: BenefitSource::TrafficFees,
+                        role: CircuitRole::Executor,
+                        recipient: None,
+                        maybe_asset_id: None,
+                    },
                 )
                 .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;
             },
@@ -1671,7 +1677,7 @@ impl<T: Config> Pallet<T> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
         for fsx in fsxs {
-            if let Some(v) = acc_rewards.checked_add(&fsx.expect_sfx_bid().bid) {
+            if let Some(v) = acc_rewards.checked_add(&fsx.expect_sfx_bid().amount) {
                 acc_rewards = v
             } // cannot return an error, signature is Weight
         }
