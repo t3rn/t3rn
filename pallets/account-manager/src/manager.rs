@@ -323,6 +323,7 @@ impl<T: Config>
         new_charge_id: T::Hash,
         new_reward: Option<BalanceOf<T>>,
         new_payee: Option<&T::AccountId>,
+        new_recipient: Option<&T::AccountId>,
     ) -> DispatchResult {
         match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
             Some(charge) => {
@@ -336,6 +337,12 @@ impl<T: Config>
                     payee.clone()
                 } else {
                     charge.payee
+                };
+
+                let recipient = if let Some(recipient) = new_recipient.clone() {
+                    Some(recipient.clone())
+                } else {
+                    charge.recipient
                 };
 
                 // Release previous payee
@@ -357,7 +364,7 @@ impl<T: Config>
                         charge_fee: charge.charge_fee,
                         role: charge.role,
                         source: charge.source,
-                        recipient: charge.recipient,
+                        recipient,
                         maybe_asset_id: charge.maybe_asset_id,
                     },
                 )
@@ -543,7 +550,7 @@ mod tests {
                     charge_fee: DEPOSIT_AMOUNT,
                     source: BenefitSource::TrafficRewards,
                     role: CircuitRole::ContractAuthor,
-                    recipient: BOB,
+                    recipient: Some(BOB),
                     maybe_asset_id: None
                 }
             ));
@@ -559,7 +566,7 @@ mod tests {
             >(Default::default(), execution_id)
             .unwrap();
             assert_eq!(charge_item.payee, ALICE);
-            assert_eq!(charge_item.recipient, BOB);
+            assert_eq!(charge_item.recipient, Some(BOB));
             assert_eq!(charge_item.charge_fee, DEPOSIT_AMOUNT);
         });
     }
@@ -588,7 +595,7 @@ mod tests {
                     charge_fee: 0,
                     source: BenefitSource::TrafficRewards,
                     role: CircuitRole::ContractAuthor,
-                    recipient: BOB,
+                    recipient: Some(BOB),
                     maybe_asset_id: None
                 }
             ));
@@ -608,7 +615,7 @@ mod tests {
                         charge_fee: 0,
                         source: BenefitSource::TrafficRewards,
                         role: CircuitRole::ContractAuthor,
-                        recipient: BOB,
+                        recipient: Some(BOB),
                         maybe_asset_id: None
                     }
                 ),
@@ -643,7 +650,7 @@ mod tests {
                     charge_fee: 0,
                     source: BenefitSource::TrafficRewards,
                     role: CircuitRole::ContractAuthor,
-                    recipient: BOB,
+                    recipient: Some(BOB),
                     maybe_asset_id: None
                 }
             ));
@@ -721,7 +728,7 @@ mod tests {
                     charge_fee: CHARGE,
                     source: BenefitSource::TrafficRewards,
                     role: CircuitRole::ContractAuthor,
-                    recipient: BOB,
+                    recipient: Some(BOB),
                     maybe_asset_id: None
                 }
             ));
@@ -777,7 +784,7 @@ mod tests {
                     charge_fee: 0,
                     source: BenefitSource::TrafficRewards,
                     role: CircuitRole::ContractAuthor,
-                    recipient: BOB,
+                    recipient: Some(BOB),
                     maybe_asset_id: None
                 }
             ));
@@ -852,7 +859,7 @@ mod tests {
                     charge_fee: 0,
                     source: BenefitSource::TrafficRewards,
                     role: CircuitRole::ContractAuthor,
-                    recipient: BOB,
+                    recipient: Some(BOB),
                     maybe_asset_id: None
                 }
             ));

@@ -90,6 +90,7 @@ impl<T: Config> SquareUp<T> {
                     bid.generate_id::<SystemHashing<T>, T>(sfx_id),
                     Some(total_bid_deposit),
                     Some(&bid.executor),
+                    None,
                 )
             },
             None => <T as Config>::AccountManager::deposit(
@@ -108,7 +109,14 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Infallible re-balance requesters locked rewards after possibly lower bids are posted.
-    pub fn bind_bidders(_local_ctx: &LocalXtxCtx<T>) {}
+    pub fn bind_bidders(local_ctx: &LocalXtxCtx<T>) {
+        let fsx_array = Machine::<T>::read_current_step_fsx(local_ctx);
+        let _requester = local_ctx.xtx.requester.clone();
+
+        for fsx in fsx_array.iter() {
+            let _sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+        }
+    }
 
     /// Drop Xtx and unlock requester and all executors that posted bids - without penalties.
     pub fn kill(_local_ctx: &LocalXtxCtx<T>) {}

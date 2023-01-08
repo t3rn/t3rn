@@ -67,7 +67,6 @@ impl<T: Config> Optimistic<T> {
         SquareUp::<T>::try_bid(sfx_id, requester, bidder, &sfx_bid, current_accepted_bid).map_err(
             |e| {
                 log::error!("Error while trying to SquareUp::try_bid: {:?}", e);
-                println!("Error while trying to SquareUp::try_bid: {:?}", e);
                 Error::<T>::BiddingRejectedBetterBidFound
             },
         )?;

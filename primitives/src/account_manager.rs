@@ -28,7 +28,7 @@ pub struct RequestCharge<Account, Balance, AssetId> {
     pub offered_reward: Balance,
     pub maybe_asset_id: Option<AssetId>,
     pub charge_fee: Balance,
-    pub recipient: Account,
+    pub recipient: Option<Account>,
     pub source: BenefitSource,
     pub role: CircuitRole,
 }
@@ -49,16 +49,19 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
     fn no_charge_or_fail(charge_id: Hash) -> Result<(), DispatchError>;
     /// Bump contracts registry nonce in Account Manager nonce state and return charge request Id
     fn bump_contracts_registry_nonce() -> Result<Hash, DispatchError>;
+    /// Validate deposit goes through
+    fn validate_deposit(
+        charge_id: Hash,
+        request_charge: RequestCharge<Account, Balance, AssetId>,
+    ) -> Result<Balance, DispatchError>;
+    /// Send batch deposits to a recipient via the escrow
+    fn deposit_batch(
+        batch: Vec<(Hash, RequestCharge<Account, Balance, AssetId>)>,
+    ) -> DispatchResult;
     /// Send funds to a recipient via the escrow
     fn deposit(
         charge_id: Hash,
-        payee: &Account,
-        charge_fee: Balance,
-        offered_reward: Balance,
-        source: BenefitSource,
-        role: CircuitRole,
-        recipient: Option<Account>,
-        maybe_asset_id: Option<AssetId>,
+        request_charge: RequestCharge<Account, Balance, AssetId>,
     ) -> DispatchResult;
     /// Finalize a transaction, with an optional reason for failures
     fn finalize(
@@ -74,8 +77,10 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
 
     fn transfer_deposit(
         charge_id: Hash,
+        new_charge_id: Hash,
         new_reward: Option<Balance>,
-        new_payee: Option<Account>,
+        new_payee: Option<&Account>,
+        new_recipient: Option<&Account>,
     ) -> DispatchResult;
 
     fn on_collect_claimable(

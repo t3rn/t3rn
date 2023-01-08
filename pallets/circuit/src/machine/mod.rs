@@ -2,6 +2,8 @@
 
 use crate::{pallet::Error, *};
 
+use crate::square_up::SquareUp;
+
 pub mod extra;
 pub use extra::*;
 
@@ -438,6 +440,8 @@ impl<T: Config> Machine<T> {
                 <pallet::Pallet<T> as Store>::PendingSFXBids::remove_prefix(local_ctx.xtx_id, None);
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
 
+                SquareUp::<T>::bind_bidders(local_ctx);
+
                 true
             },
             (
@@ -460,6 +464,8 @@ impl<T: Config> Machine<T> {
                 <pallet::Pallet<T> as Store>::PendingSFXBids::remove_prefix(local_ctx.xtx_id, None);
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
 
+                SquareUp::<T>::kill(local_ctx);
+
                 true
             },
             (
@@ -472,12 +478,16 @@ impl<T: Config> Machine<T> {
 
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
 
+                SquareUp::<T>::revert(local_ctx);
+
                 true
             },
             (CircuitStatus::FinishedAllSteps, CircuitStatus::Committed) => {
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
+
+                SquareUp::<T>::commit(local_ctx);
 
                 true
             },
@@ -494,6 +504,8 @@ impl<T: Config> Machine<T> {
                 <pallet::Pallet<T> as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.full_side_effects.clone())
                 });
+
+                SquareUp::<T>::finalize(local_ctx);
 
                 true
                 // <pallet::Pallet<T> as Store>::LocalXtxStates::remove::<XExecSignalId<T>>(
