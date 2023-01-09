@@ -7,11 +7,13 @@ import { Gateway, initGateways } from "./gateways";
 
 import * as Types from "./types";
 
+import { createSfx } from "./side-effects";
+
 // @ts-ignore
 import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
 import * as Encodings from "./encodings";
 import * as Converters from "./converters";
-import { Circuit } from "./circuit";
+import { Circuit, Tx } from "./circuit";
 
 /**
  * The main class for the SDK
@@ -57,4 +59,4 @@ export class Sdk {
   }
 }
 
-export { Encodings, Converters, Types, Gateway, Circuit };
+export { Encodings, Converters, Types, Gateway, Circuit, Tx };

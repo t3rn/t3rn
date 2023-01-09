@@ -4,7 +4,10 @@ The t3rn ts-sdk enables easy client side development with the t3rn blockchain. T
 
 This library is under still under development, so proceed with caution.
 
-## SDK
+## Classes
+The SDK package consists of 3 main classes, which will be introduced here. A more detailed explanation can be found in the typedoc sections. 
+
+### SDK
 The SDK class used when looking to initialize the entire class, instead of single components. The constructor accepts two parameters, the signer and the circuit RPC endpoint.
 
 ```typescript
@@ -18,10 +21,10 @@ this.sdk = new Sdk("ws://127.0.0.1:9944", this.signer)
 this.circuit = await this.sdk.init();
 ```
 
-## Circuit
+### Circuit
 The Circuit class is mainly used for dealing with amount conversions and batching and sending transaction objects to the circuit. It deals with error decoding, nonce incrementation and aims to provide a baseline implementation that deals with common situations.
 
-## Gateways
+### Gateways
 The gateways class is used for exposing functionality of the chains connected to t3rn. When the SDK is initialized, the t3rn blockchain is queried for all XDNS records that are stored on chain. These records contain chain specific constants like value types, address formats, hashing functions, etc. 
 
 For example, when creating a Side Effect to be executed on the Ethereum blockchain, the correct value types, decimals and address format must be ensured. Manually dealing with these validations and conversions is error-prone, potentially resulting in loss of funds.

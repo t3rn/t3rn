@@ -21,7 +21,7 @@ export enum GatewayType {
 }
 
 /**
- * A class that is used interact with a gateway
+ * A class used to make the connected gateways available, taking care of target specific conversions.
  */
 
 export class Gateway {
@@ -70,7 +70,7 @@ export class Gateway {
   }
 
   /**
-   * Create a side effect
+   * Create a transfer side effect, taking care of target specific encodings
    * @param args - The arguments to create the side effect
    * @param args.from - The address of the sender
    * @param args.to - The address of the receiver

@@ -7,7 +7,7 @@ const DECIMALS = 12;
 const VALUE_TYPE_SIZE = 16;
 
 /**
- * The class for Circuit
+ * The circuit class holds the signer object, exposes amount conversion and exposes the Tx class, which can then be used to submit.
  *
  */
 
@@ -50,7 +50,7 @@ export class Circuit {
 }
 
 /**
- * Converts a float to a BN with the correct decimal precision
+ * Converts a float to a BN with the circuits decimal precision
  * @param value - The value to convert
  * @returns The converted value
  */
@@ -65,7 +65,7 @@ export const toFloat = (value: BN | number): number => {
 }
 
 /**
- * Converts a BN to a float with the correct decimal precision
+ * Converts a BN to a float with the circuits decimal precision
  * @param value - The value to convert
  * @returns The converted value
  */
@@ -77,3 +77,5 @@ export const floatToBn = (value: number): BN => {
   }
   ).floatToBn(value)
 }
+
+export {Tx}
