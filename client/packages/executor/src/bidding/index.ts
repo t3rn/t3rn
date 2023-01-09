@@ -7,29 +7,26 @@ import { SideEffect } from "../executionManager/sideEffect"
  * @group Bidding
  */
 export class BiddingEngine {
-    // How close you are to the max profit
+    //** How close you are to the max profit */ 
     bidPercentile: number = 0.75
-
-    // At the beginning, it has never been outbid
+    //** At the beginning, it has never been outbid */ 
     timesBeenOutbid: number = 0
     // timesBeenOutbid: Map<SideEffect, number> = new Map<SideEffect, number>()
-
-    // Number of bids on each side effect
+    //** Number of bids on each side effect */ 
     numberOfBidsOnSfx: Map<string, number>
     // numberOfBidsOnSfx: Map<SideEffect, number> = new Map<SideEffect, number>()
-
-    // Logger
+    //** Logger */ 
     logger: any
-
-    // Being aggressive when bidding means to oubtbid everyone
+    //** Being aggressive when bidding means to oubtbid everyone to get the SFX */ 
     bidAggressive: boolean = false
-    // Being meek when bidding means to obtain the max profit, 
+    //** Being meek when bidding means to obtain the max profit */ 
     bidMeek: boolean = false
-
-    // TODO: do I need a constructor?
-    // constructor(logger: any) {
-    //     this.logger = logger
-    // }
+    //** When there's no competition yet, get the execution by getting the smallest profit */ 
+    overrideNoCompetition: boolean = false
+    //** If outbid, executor wants to make the same last bid */
+    equalMinBid: boolean = false
+    //** How close to be when been outbid, but still wants to be place a bid close to last one */ 
+    closerPercentageBid: number = 0.1
 
     /**
      * Computes the bidding amount for a given SFX for a certain scenario.
@@ -39,30 +36,24 @@ export class BiddingEngine {
      */
     computeBid(sfx: SideEffect): number {
         const scenario = this.checkScenario(sfx)
-
-        let bid = 0
+        let bid: number = 0
         switch (scenario) {
             case Scenario.noBidAndNoCompetition:
                 bid = this.computeNoBidAndNoCompetition(sfx)
-
             case Scenario.noBidButCompetition:
                 bid = this.computeNoBidButCompetition(sfx)
-
             case Scenario.bidAndStillTopBidder:
                 bid = this.computeBidAndStillTopBidder(sfx)
-
             case Scenario.beenOutbid:
                 bid = this.computeBeenOutbid(sfx)
-
             default:
                 this.logger.error("Cannot find the scenario for the bidding engine")
         }
-
         return bid
     }
 
     /**
-     * When there are no other bids, the executor maximizes the profit.
+     * When there are no other bids, the executor maximizes the profit or gets the execution.
      * 
      * @param sfx The side effect to bid on
      * @returns The bidding amount in USD
@@ -71,8 +62,12 @@ export class BiddingEngine {
         const maxProfit = sfx.maxProfitUsd.getValue()
         const minProfit = sfx.minProfitUsd
         const txOutputCost = sfx.txOutputCostUsd
-        const bidUsd = txOutputCost + minProfit + maxProfit
-
+        let bidUsd: number
+        if (this.overrideNoCompetition) {
+            bidUsd = txOutputCost + minProfit
+        } else {
+            bidUsd = txOutputCost + minProfit + maxProfit
+        }
         return bidUsd
     }
 
@@ -112,7 +107,30 @@ export class BiddingEngine {
      * @returns The bidding amount in USD
      */
     computeBeenOutbid(sfx: SideEffect): number {
-        return 0
+        const lastBid = sfx.lastBid
+        const minProfit = sfx.minProfitUsd
+        const txOutputCost = sfx.txOutputCostUsd
+        const minProfitBid = txOutputCost + minProfit
+        const maxProfit = sfx.maxProfitUsd.getValue()
+        const maxProfitBid = txOutputCost + minProfit + maxProfit
+
+        if (sfx.lastBid === minProfitBid) {
+            if (this.equalMinBid) {
+                return minProfitBid
+            } else {
+                // TODO: here something better can be returned
+                return maxProfitBid
+            }
+        } else {
+            // Otherwise, if not wanting to make the minProftBid, it's possible
+            // to get closer that minProfitBid by a certain percentage, but winning more.
+            //
+            // Note: this supposes that executors can drop out
+            // of the bidding stage and others with larger profit bids 
+            // can win the execution
+            const closerBid = lastBid * (1 + this.closerPercentageBid)
+            return closerBid
+        }
     }
 
     /**
@@ -122,6 +140,7 @@ export class BiddingEngine {
      * @returns The bidding amount in USD
      */
     computeBidAndStillTopBidder(_sfx: SideEffect): number {
+        // TODO: what to return to not modify anything else?
         return 0
     }
 
@@ -133,7 +152,6 @@ export class BiddingEngine {
      * @returns The situation to choose the action 
      */
     checkScenario(sfx: SideEffect): Scenario {
-        // TODO
         const executorPlacedBid: boolean = false
         // TODO: check that this is correct
         const executorIsTopBidder = sfx.isBidder

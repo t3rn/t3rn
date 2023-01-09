@@ -86,10 +86,13 @@ export class SideEffect extends EventEmitter {
     circuitSignerAddress: string
     /** Is currently the winning bidder of the SFX */
     isBidder: boolean = false
-    /** There has been a change in the leading bidder */
-    changedBidLeader: boolean = false
     /** The minimum profit in USD required for executing this SFX. Number is computed by strategy engine */
     minProfitUsd: number = 0
+
+    /** If the executor leading the bid changes, store the change */
+    changedBidLeader: boolean = false
+    /** Value of the last bid */
+    lastBid: number
 
     // SideEffect data
     id: string
@@ -329,6 +332,7 @@ export class SideEffect extends EventEmitter {
         this.txStatus = TxStatus.Pending // acts as mutex lock
         this.minProfitUsd = this.strategyEngine.getMinProfitUsd(this)
         const bidUsd = this.biddingEngine.computeBid(this)
+        this.lastBid = bidUsd
         const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue()
 
         return { trigger: true, bidAmount: floatToBn(bidRewardAsset) }
@@ -377,13 +381,12 @@ export class SideEffect extends EventEmitter {
         if (this.reward.getValue() >= this.gateway.toFloat(bidAmount)) {
             this.isBidder = true
             this.reward.next(this.gateway.toFloat(bidAmount)) // not sure if we want to do this tbh. Reacting to other bids should be sufficient
-
-            if (signer !== this.circuitSignerAddress) {
-                this.changedBidLeader = true
-            } else {
-                this.changedBidLeader = false
-            }
-
+            // TODO: change flag for the leading bidder
+            // if (signer !== this.circuitSignerAddress) {
+            //     this.changedBidLeader = true
+            // } else {
+            //     this.changedBidLeader = false
+            // }
             this.logger.info(`Bid accepted for SFX ${this.humanId} ✅`)
             this.addLog({ msg: "Bid accepted", bidAmount: bidAmount.toString() })
         } else {
