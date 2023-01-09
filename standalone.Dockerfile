@@ -1,4 +1,4 @@
-FROM docker.io/paritytech/ci-linux:production
+FROM docker.io/paritytech/ci-linux:production AS build
 
 ADD /3vm /3vm
 ADD /finality-verifiers /finality-verifiers
@@ -18,4 +18,12 @@ RUN rustup install nightly-2022-06-16
 RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2022-06-16
 RUN cargo +nightly-2022-06-16 build
 
-CMD ["cargo", "run", "--dev"]
+# Build clean circuit-standalone image
+FROM docker.io/paritytech/ci-linux:production
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY --from=build /node/standalone/target/debug/circuit-standalone /app/
+
+CMD ["/app/circuit-standalone", "--dev", "-lruntime=debug"]
