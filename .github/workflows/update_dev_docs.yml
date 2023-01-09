@@ -131,3 +131,34 @@ jobs:
           scope: "t3rn"
           alias-domains: |
             docs.executor.t3rn.io
+  ts-sdk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client/packages
+    timeout-minutes: 15
+    if: "!contains(github.event.head_commit.message, 'skip cd')"
+    steps:
+      - name: 🎞️ Checkout repo
+        uses: actions/checkout@v3
+        with:
+          repository: t3rn/t3rn
+          fetch-depth: 1
+      - name: Build local dependencies
+        run: make
+      - name: 📦 Install packages
+        run: yarn
+        working-directory: client/packages/sdk
+      - name: 🏗 Build Docs
+        run: yarn build-docs
+        working-directory: client/packages/sdk
+      - name: 👾 Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-args: '--force'
+          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID}}
+          vercel-project-id: ${{ secrets.VERCEL_TS_SDK_DOCS_PROJECT_ID}}
+          scope: "t3rn"
+          alias-domains: |
+            docs.ts-sdk.t3rn.io
