@@ -86,6 +86,8 @@ export class SideEffect extends EventEmitter {
     circuitSignerAddress: string
     /** Is currently the winning bidder of the SFX */
     isBidder: boolean = false
+    /** There has been a change in the leading bidder */
+    changedBidLeader: boolean = false
     /** The minimum profit in USD required for executing this SFX. Number is computed by strategy engine */
     minProfitUsd: number = 0
 
@@ -375,6 +377,13 @@ export class SideEffect extends EventEmitter {
         if (this.reward.getValue() >= this.gateway.toFloat(bidAmount)) {
             this.isBidder = true
             this.reward.next(this.gateway.toFloat(bidAmount)) // not sure if we want to do this tbh. Reacting to other bids should be sufficient
+
+            if (signer !== this.circuitSignerAddress) {
+                this.changedBidLeader = true
+            } else {
+                this.changedBidLeader = false
+            }
+
             this.logger.info(`Bid accepted for SFX ${this.humanId} ✅`)
             this.addLog({ msg: "Bid accepted", bidAmount: bidAmount.toString() })
         } else {
