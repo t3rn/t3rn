@@ -8,6 +8,8 @@ root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 polkadot_tmp_dir := /tmp/polkadot
+SCCACHE_VERSION := v0.3.1
+SCCACHE_FILE := sccache-$(SCCACHE_VERSION)-x86_64-unknown-linux-musl
 
 export PATH := $(shell echo $$PATH):$(bin_dir)
 
@@ -47,9 +49,35 @@ ${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(ro
 
 setup: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
 
+# ====================== Caching ======================
+#
+# sccache is already present on Github Action workers, no need to set it up
+#
+
+${bin_dir}/sccache:
+	@if [ $(machine) = "macos" ]; then \
+        brew update; \
+		brew install -qf sccache | true; \
+		cp -n /opt/homebrew/bin/sccache $(bin_dir)/sccache; \
+	elif [ $(machine) = "linux" ]; then \
+		tmp_dir=$(shell mktemp -d); \
+		curl -fL https://github.com/mozilla/sccache/releases/download/$(SCCACHE_VERSION)/$(SCCACHE_FILE).tar.gz | tar xzvf - -C $(bin_dir)/; \
+		mv $(bin_dir)/$(SCCACHE_FILE)/sccache $(bin_dir)/; \
+		sudo chmod +x $(bin_dir)/sccache; \
+	fi
+	
+start-sccache: $(bin_dir) ${bin_dir}/sccache
+	sccache --start-server || true
+
+stop-sccache: ${bin_dir}/sccache
+	sccache --stop-server || true
+	
+print-sccache: ${bin_dir}/sccache
+	sccache --show-stats
+	
 # ====================== Testing ======================
 
-test-smoke: 
+test-smoke: setup
 	# TODO[Optimisation]: loop through directory and test all
 	# TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
 	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
@@ -69,7 +97,7 @@ bump-versions:
 
 # This isnt quite the entire runtime-upgrade, only that we can bump the versions and upgrade
 # The real approach to runtime upgrades are below where we deploy with an old binary and use a new runtime
-test-upgrade: bump-versions
+test-upgrade: setup bump-versions
 	
 	# build new blobs
 	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
