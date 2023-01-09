@@ -36,11 +36,6 @@ jobs:
         working-directory: tests/zombienet
         run: sccache --show-stats
 
-      - name: 📼 Setup zombienet tests
-        continue-on-error: false
-        working-directory: tests/zombienet
-        run: make setup
-
       - name: 📼 Run zombienet tests
         continue-on-error: false
         working-directory: tests/zombienet
