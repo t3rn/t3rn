@@ -1,6 +1,6 @@
 use crate::*;
 use frame_support::{traits::NeverEnsureOrigin, PalletId};
-use frame_system::{EnsureRoot, EnsureSignedBy};
+use frame_system::EnsureRoot;
 use smallvec::smallvec;
 use sp_runtime::{impl_opaque_keys, Permill};
 use sp_std::prelude::*;
