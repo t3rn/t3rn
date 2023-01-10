@@ -7,30 +7,36 @@ import { Gateway, initGateways } from "./gateways";
 
 import * as Types from "./types";
 
+import { createSfx } from "./side-effects";
+
 // @ts-ignore
 import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
-import * as encodings from "./encodings";
-import * as converters from "./converters";
-import { Circuit } from "./circuit";
+import * as Encodings from "./encodings";
+import * as Converters from "./converters";
+import { Circuit, Tx } from "./circuit";
 
 /**
  * The main class for the SDK
  */
 
 export class Sdk {
+  /*RPC url of the circuit */
   rpcUrl: string;
+  /* ApiPromise instance of the circuit */
   client: ApiPromise;
+  /* Mapping for looking up Gateway instances via ID */
   gateways: {
     [id: string]: Gateway;
   };
+  /*Circuit Instance */
   circuit: Circuit;
+  /* Circuit signer */
   signer: any;
 
   /**
    * @param rpcUrl - The RPC URL of the node to connect to
    * @param circuitSigner - The signer to use for signing transactions
    */
-
   constructor(rpcUrl: string, circuitSigner: any) {
     this.rpcUrl = rpcUrl;
     this.signer = circuitSigner;
@@ -40,7 +46,6 @@ export class Sdk {
    * Initializes ApiPromise instance and loads available gateways via XDNS
    * @returns ApiPromise instance
    */
-
   async init(): Promise<ApiPromise> {
     this.client = await ApiPromise.create({
       provider: new WsProvider(this.rpcUrl),
@@ -54,23 +59,4 @@ export class Sdk {
   }
 }
 
-export { encodings, converters, Types };
-
-// (async () => {
-//
-// 	const t3rn = new Sdk('ws://localhost:9944')
-// 	await t3rn.init()
-//
-// 	const sfx: T3rnTypesSideEffect = t3rn.gateways.roco.createTransferSfx({
-// 		from: "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-// 		to: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-// 		value: t3rn.gateways.roco.floatToBn(0.0001),
-// 		maxReward: "1000000000",
-// 		insurance: "100000",
-// 		nonce: 1
-// 	});
-//
-// 	console.log(sfx)
-//
-// 	console.log(t3rn.client.createType("T3rnTypesSideEffect", sfx))
-// })()
+export { Encodings, Converters, Types, Gateway, Circuit, Tx };

@@ -9,9 +9,10 @@ import {
   // @ts-ignore
   u128,
 } from "@polkadot/types/lookup";
+import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 
 /**
- * The class for Transactions
+ * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
  */
 
 export class Tx {
@@ -29,9 +30,11 @@ export class Tx {
   }
 
   /**
-   * Safe send that queries the correct nonce and then submits the transaction.
-   * This should not be used when submitting transactions in fast succession as the nonce wont have time to update.
+   * Recommended when looking to send multiple TXs in a single block.
+   * signAndSafeSend queries the correct nonce and then submits the transaction.
+   * This should not be used when submitting transactions in fast succession as the nonce won't have time to update.
    * In that case use the optimistic send or batch the transaction.
+   * If an error occurs, it is decoded and returned in the promise.
    * Returns the block height the transaction was included in.
    *
    * @param tx - The transaction to send
@@ -39,7 +42,7 @@ export class Tx {
    * @returns The block height the transaction was included in
    */
 
-  async signAndSendSafe(tx): Promise<string> {
+  async signAndSendSafe(tx: SubmittableExtrinsic): Promise<string> {
     let nonce = await this.api.rpc.system.accountNextIndex(this.signer.address);
 
     return new Promise((resolve, reject) =>
@@ -65,20 +68,20 @@ export class Tx {
   }
 
   /**
-   * Create a sudo transaction
+   * Wraps a transaction object into sudo
    * @param tx - The transaction to sudo
    */
 
-  createSudo(tx: any) {
+  createSudo(tx: SubmittableExtrinsic) {
     return this.api.tx.sudo.sudo(tx);
   }
 
   /**
-   * Batch transactions
+   * Batches transactions into a single batch object.
    * @param txs - The transactions to batch
    */
 
-  createBatch(txs: any[]) {
+  createBatch(txs: SubmittableExtrinsic[]) {
     return this.api.tx.utility.batch(txs);
   }
 }

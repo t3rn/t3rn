@@ -1,7 +1,6 @@
 // @ts-ignore
 import {
   // @ts-ignore
-  // @ts-ignore
   T3rnPrimitivesXdnsXdnsRecord,
   // @ts-ignore
   T3rnTypesSideEffect,

@@ -1,4 +1,3 @@
-// @ts-ignore
 import {
   // @ts-ignore
   T3rnPrimitivesXdnsXdnsRecord,
@@ -7,7 +6,7 @@ import {
 } from "@polkadot/types/lookup";
 import * as BN from "bn.js";
 import { AmountConverter, optionalInsurance } from "../converters/amounts";
-import * as address from "../converters/address";
+import * as Address from "../converters/address";
 import { toU8aId } from "../converters/utils";
 import { createSfx } from "../side-effects";
 import { ExecutionLayerType } from "./types";
@@ -22,7 +21,7 @@ export enum GatewayType {
 }
 
 /**
- * A class that is used interact with a gateway
+ * A class used to make the connected gateways available, taking care of target specific conversions.
  */
 
 export class Gateway {
@@ -44,7 +43,6 @@ export class Gateway {
    */
 
   constructor(xdnsEntry: T3rnPrimitivesXdnsXdnsRecord) {
-    console.log("sys_props", xdnsEntry.toHuman().gateway_sys_props);
     this.id = xdnsEntry.toHuman().gateway_id;
     this.rpc = xdnsEntry.url.toHuman();
     // @ts-ignore
@@ -72,7 +70,7 @@ export class Gateway {
   }
 
   /**
-   * Create a side effect
+   * Create a transfer side effect, taking care of target specific encodings
    * @param args - The arguments to create the side effect
    * @param args.from - The address of the sender
    * @param args.to - The address of the receiver
@@ -159,7 +157,7 @@ export class Gateway {
   validateAddress(addr: string) {
     switch (this.executionLayerType) {
       case ExecutionLayerType.Substrate:
-        return address.substrate.addrToPub(addr);
+        return Address.Substrate.addrToPub(addr);
         break;
       default:
         return addr;
@@ -194,7 +192,7 @@ export class Gateway {
 
   /**
      * Parse integer to float, accounting for decimals
-     * @param value - The value to convert
+     * @param value - The integer value to be converted
      */
 
   toFloat(value: BN | number): number {

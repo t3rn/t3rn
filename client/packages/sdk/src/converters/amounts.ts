@@ -2,7 +2,13 @@ const { u8aToHex, isHex, isString, isNumber } = require("@polkadot/util");
 import * as BN from "bn.js";
 
 /**
- * A amount conversion class that can be used to convert amounts to the correct format based on the gateway
+ * This class is used for doing amount conversions of different types. When dealing with circuit, there are three main encodings are used for representing amounts:
+
+ * - `LittleEndian` - Used by Substrate as part of the SCALE encoding. The amount is LittleEndian encoded
+ * - `Float` - Floats are the human-readable format of amounts. This is very user facing.
+ * - `Integer` - In combination with decimals, used to represent amounts. These are represented as TS number or BN object
+ *
+ * This class enables the conversion between these different types. The gateway class heavily relies on this class, passing parameters like decimals and value types out of the box.
  */
 
 export class AmountConverter {
@@ -11,7 +17,7 @@ export class AmountConverter {
   valueTypeSize: number;
 
   /**
-   * Construct an AmountConverter
+   * Construct an AmountConverter, ensuring that only integers or LittleEndian values are passed.
    *
    * @param args - The arguments to convert
    * @param args.value - The arguments to convert. Two types are possible with different encodings:
@@ -20,6 +26,18 @@ export class AmountConverter {
    *
    * @param args.decimals - The decimals of the target. Default: 12
    * @param args.valueTypeSize - The value type size in bytes. Default: 16 (u128)
+   *
+   *
+   *
+   * ```typescript
+   * new AmountConverter({
+   *   100000,
+   *   decimals: 12,
+   *   valueTypeSize: 16
+   * })
+   * .toFloat()
+   *
+   * ```
    */
 
   constructor(args: {
