@@ -110,23 +110,105 @@ impl<T: Config> SquareUp<T> {
 
     /// Infallible re-balance requesters locked rewards after possibly lower bids are posted.
     pub fn bind_bidders(local_ctx: &LocalXtxCtx<T>) {
-        let fsx_array = Machine::<T>::read_current_step_fsx(local_ctx);
-        let _requester = local_ctx.xtx.requester.clone();
-
-        for fsx in fsx_array.iter() {
-            let _sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+        for fsx in Machine::<T>::read_current_step_fsx(local_ctx).iter() {
+            let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+            if let Some(bid) = &fsx.best_bid {
+                if !<T as Config>::AccountManager::assign_deposit(sfx_id, &bid.executor) {
+                    log::error!(
+                        "assign_deposit: expect assign_deposit to succeed for sfx_id: {:?}",
+                        sfx_id
+                    );
+                }
+            } else {
+                log::error!(
+                    "bind_bidders: expect best_bid to be Some for sfx_id: {:?}",
+                    sfx_id
+                );
+            }
         }
     }
 
     /// Drop Xtx and unlock requester and all executors that posted bids - without penalties.
-    pub fn kill(_local_ctx: &LocalXtxCtx<T>) {}
-
-    /// Revert Xtx - unlock requesters and honest executors, penalize dishonest executors.
-    pub fn revert(_local_ctx: &LocalXtxCtx<T>) {}
+    pub fn kill(local_ctx: &LocalXtxCtx<T>) {
+        for fsx in Machine::<T>::read_current_step_fsx(local_ctx).iter() {
+            let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+            if !<T as Config>::AccountManager::cancel_deposit(sfx_id) {
+                log::error!(
+                    "kill: expect cancel_deposit to succeed for sfx_id: {:?}",
+                    sfx_id
+                );
+            }
+            if let Some(bid) = &fsx.best_bid {
+                if !<T as Config>::AccountManager::cancel_deposit(
+                    bid.generate_id::<SystemHashing<T>, T>(sfx_id),
+                ) {
+                    log::error!(
+                        "kill: expect cancel_deposit to succeed for bid_id: {:?}",
+                        bid.generate_id::<SystemHashing<T>, T>(sfx_id)
+                    );
+                }
+            }
+        }
+    }
 
     /// Finalize Xtx after successful run.
-    pub fn finalize(_local_ctx: &LocalXtxCtx<T>) {}
+    pub fn finalize(local_ctx: &LocalXtxCtx<T>) {
+        let optimistic_fsx_in_step: Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+        > = Machine::<T>::read_current_step_fsx(local_ctx)
+            .iter()
+            .filter(|&fsx| fsx.security_lvl == SecurityLvl::Optimistic)
+            .cloned()
+            .collect();
 
-    /// Finalize Xtx after successful run.
+        for fsx in optimistic_fsx_in_step.iter() {
+            let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+
+            match &fsx.best_bid {
+                Some(bid) => {
+                    if !<T as Config>::AccountManager::finalize_infallible(
+                        bid.generate_id::<SystemHashing<T>, T>(sfx_id),
+                        match &fsx.confirmed {
+                            // Revert deposits for honest SFX resolution
+                            Some(_confirmed) => Outcome::Revert,
+                            // Slash dishonest SFX resolution to Escrow Account
+                            None => Outcome::Slash,
+                        },
+                    ) {
+                        log::error!(
+                            "revert: expect finalize_infallible to succeed for bid_id: {:?}",
+                            bid.generate_id::<SystemHashing<T>, T>(sfx_id)
+                        );
+                    }
+                    if !<T as Config>::AccountManager::finalize_infallible(
+                        sfx_id,
+                        match &fsx.confirmed {
+                            // Commit deposits from requesters to executors for honest SFX resolution
+                            Some(_confirmed) => Outcome::Commit,
+                            // Refund requester for dishonest SFX resolution
+                            None => Outcome::Revert,
+                        },
+                    ) {
+                        log::error!(
+                            "revert: expect finalize_infallible to succeed for sfx_id: {:?}",
+                            sfx_id
+                        );
+                    }
+                },
+                None => {
+                    log::error!(
+                        "revert: disallowed state: reverting without fsx.best_bid assigned {:?}",
+                        sfx_id
+                    );
+                },
+            }
+        }
+    }
+
+    /// Finalize Xtx after successful run - reward Escrow executors.
     pub fn commit(_local_ctx: &LocalXtxCtx<T>) {}
 }

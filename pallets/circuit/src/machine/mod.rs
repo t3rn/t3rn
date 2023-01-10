@@ -478,7 +478,7 @@ impl<T: Config> Machine<T> {
 
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
 
-                SquareUp::<T>::revert(local_ctx);
+                SquareUp::<T>::finalize(local_ctx);
 
                 true
             },

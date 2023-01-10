@@ -38,6 +38,7 @@ pub enum Outcome {
     UnexpectedFailure,
     Revert,
     Commit,
+    Slash,
 }
 
 pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
@@ -74,6 +75,8 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
     fn finalize_infallible(charge_id: Hash, outcome: Outcome) -> bool;
 
     fn cancel_deposit(charge_id: Hash) -> bool;
+
+    fn assign_deposit(charge_id: Hash, recipient: &Account) -> bool;
 
     fn transfer_deposit(
         charge_id: Hash,

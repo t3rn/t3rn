@@ -192,7 +192,7 @@ impl<T: Config>
         let (payee_split, recipient_split, recipient_bonus): (u8, u8, BalanceOf<T>) = match outcome
         {
             Outcome::Commit => (0, 99, Zero::zero()),
-            Outcome::Revert => (99, 0, Zero::zero()),
+            Outcome::Revert | Outcome::Slash => (99, 0, Zero::zero()),
             Outcome::UnexpectedFailure => (49, 50, Zero::zero()),
         };
 
@@ -242,6 +242,7 @@ impl<T: Config>
                 },
             );
         }
+
         PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
 
         // Take what's left to treasury
@@ -278,7 +279,14 @@ impl<T: Config>
                             },
                         );
                     },
-                    Outcome::Revert | Outcome::UnexpectedFailure => {
+                    Outcome::Slash => {
+                        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+                            &T::EscrowAccount::get(),
+                            charge.maybe_asset_id,
+                            charge.offered_reward,
+                        );
+                    },
+                    Outcome::UnexpectedFailure | Outcome::Revert => {
                         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
                             &charge.payee,
                             charge.maybe_asset_id,
@@ -301,6 +309,18 @@ impl<T: Config>
         } else {
             false
         }
+    }
+
+    fn assign_deposit(charge_id: T::Hash, recipient: &T::AccountId) -> bool {
+        PendingChargesPerRound::<T>::mutate(T::Clock::current_round(), charge_id, |maybe_charge| {
+            match maybe_charge {
+                Some(charge) => {
+                    charge.recipient = Some(recipient.clone());
+                    true
+                },
+                None => false,
+            }
+        })
     }
 
     fn cancel_deposit(charge_id: T::Hash) -> bool {
