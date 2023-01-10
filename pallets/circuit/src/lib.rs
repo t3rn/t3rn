@@ -26,7 +26,7 @@
 #![allow(clippy::too_many_arguments)]
 
 pub use crate::pallet::*;
-use crate::{optimistic::Optimistic, state::*};
+use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
@@ -76,7 +76,7 @@ use t3rn_protocol::side_effects::{
 
 use crate::machine::{Machine, *};
 pub use state::XExecSignal;
-use t3rn_primitives::account_manager::RequestCharge;
+
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
@@ -86,9 +86,9 @@ pub mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+pub mod bids;
 pub mod escrow;
 pub mod machine;
-pub mod optimistic;
 pub mod square_up;
 pub mod state;
 pub mod weights;
@@ -400,11 +400,11 @@ pub mod pallet {
                             }
                             PrecompileResult::UpdateFSX(current_fsx.clone())
                         },
-                        |status_change, local_ctx| {
+                        |_status_change, local_ctx| {
                             // Account fees and charges
-                            Self::square_up(local_ctx, status_change, None).expect(
-                                "Expect square up at DroppedAtBidding loop to be infallible",
-                            );
+                            // Self::square_up(local_ctx, status_change, None).expect(
+                            //     "Expect square up at DroppedAtBidding loop to be infallible",
+                            // );
                             Self::emit_status_update(
                                 local_ctx.xtx_id,
                                 Some(local_ctx.xtx.clone()),
@@ -431,10 +431,7 @@ pub mod pallet {
                         let _success: bool = Machine::<T>::revert(
                             xtx_id,
                             Cause::Timeout,
-                            |status_change, local_ctx| {
-                                Self::square_up(local_ctx, status_change, None).expect(
-                                    "Expect RevertTimedOut options to square up to be infallible",
-                                );
+                            |_status_change, _local_ctx| {
                                 Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(
                                     xtx_id,
                                 ));
@@ -574,10 +571,7 @@ pub mod pallet {
                         Ok(new_fsx) => Ok(PrecompileResult::UpdateFSX(new_fsx)),
                     }
                 },
-                |status_change, local_ctx| {
-                    // Account fees and charges
-                    Self::square_up(local_ctx, status_change, None)?;
-
+                |_status_change, _local_ctx| {
                     // Emit: From Circuit events
                     // ToDo: impl FSX convert to SFX
                     // Self::emit_sfx(local_ctx.xtx_id, &requester, &local_ctx.full_side_effects.into());
@@ -664,9 +658,10 @@ pub mod pallet {
             // Setup: new xtx context with SFX validation
             let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
             // Compile: apply the new state post squaring up and emit
-            Machine::<T>::compile(&mut fresh_xtx, no_mangle, |status_change, local_ctx| {
+            Machine::<T>::compile(&mut fresh_xtx, no_mangle, |_status_change, local_ctx| {
                 // Square Up: do internal accounting
-                Self::square_up(local_ctx, status_change, None)?;
+                SquareUp::<T>::try_request(local_ctx)
+                    .map_err(|_e| Error::<T>::RequesterNotEnoughBalance)?;
                 // Emit: circuit events
                 Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
                 Ok(())
@@ -702,7 +697,7 @@ pub mod pallet {
                     let current_accepted_bid =
                         crate::Pallet::<T>::get_pending_sfx_bids(xtx_id, sfx_id);
 
-                    let accepted_as_best_bid = Optimistic::<T>::try_bid_4_sfx(
+                    let accepted_as_best_bid = Bids::<T>::try_bid(
                         current_fsx,
                         &executor.clone(),
                         &requester.clone(),
@@ -786,13 +781,21 @@ pub mod pallet {
                         Ok(PrecompileResult::Continue)
                     }
                 },
-                |status_change, local_ctx| {
+                |_status_change, _local_ctx| {
                     // Account fees and charges
-                    Self::square_up(
-                        local_ctx,
-                        status_change,
-                        Some((charge_id, executor, total_max_rewards)),
-                    )?;
+                    <T as Config>::AccountManager::deposit(
+                        charge_id,
+                        RequestCharge {
+                            payee: executor.clone(),
+                            offered_reward: total_max_rewards,
+                            charge_fee: Zero::zero(),
+                            role: CircuitRole::Executor,
+                            source: BenefitSource::TrafficFees,
+                            recipient: None,
+                            maybe_asset_id: None,
+                        },
+                    )
+                    .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;
                     T::XBIPromise::then(
                         xbi,
                         pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
@@ -865,11 +868,14 @@ pub mod pallet {
         }
     }
 
-    use crate::machine::{no_mangle, Machine};
+    use crate::{
+        machine::{no_mangle, Machine},
+        square_up::SquareUp,
+    };
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
-    use t3rn_primitives::side_effect::SFXBid;
+    use t3rn_primitives::{account_manager::RequestCharge, side_effect::SFXBid};
 
     /// Events for the pallet.
     #[pallet::event]
@@ -1117,139 +1123,6 @@ impl<T: Config> Pallet<T> {
                 }
             }
         }
-    }
-
-    fn square_up(
-        local_ctx: &LocalXtxCtx<T>,
-        status_change: (CircuitStatus, CircuitStatus),
-        maybe_xbi_execution_charge: Option<(
-            T::Hash,
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        )>,
-    ) -> Result<(), Error<T>> {
-        let requester = local_ctx.xtx.requester.clone();
-        let unreserve_requester_xtx_max_rewards = |current_step_fsx: &Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            >,
-        >| {
-            for fsx in current_step_fsx.iter() {
-                <T as Config>::AccountManager::deposit_immediately(
-                    &requester,
-                    fsx.input.max_reward,
-                    fsx.input.reward_asset_id,
-                )
-            }
-        };
-
-        match status_change {
-            (CircuitStatus::Requested, _) => {
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    if !<T as Config>::AccountManager::can_withdraw(
-                        &requester,
-                        fsx.input.max_reward,
-                        fsx.input.reward_asset_id,
-                    ) {
-                        return Err(Error::<T>::XtxChargeFailedRequesterBalanceTooLow)
-                    }
-                }
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    <T as Config>::AccountManager::withdraw_immediately(
-                        &requester,
-                        fsx.input.max_reward,
-                        fsx.input.reward_asset_id,
-                    )
-                    .expect("Ensured can withdraw in can_withdraw loop over FSX")
-                }
-            },
-            (_, CircuitStatus::Ready) => {
-                let current_step_sfx = Self::get_current_step_fsx(local_ctx);
-                // Unreserve the max_rewards and replace with possibly lower bids of executor in following loop
-                unreserve_requester_xtx_max_rewards(current_step_sfx);
-                for fsx in current_step_sfx.iter() {
-                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    let bid_4_fsx: &SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32> =
-                        if let Some(bid) = &fsx.best_bid {
-                            bid
-                        } else {
-                            return Err(Error::<T>::XtxChargeBondDepositFailedCantAccessBid)
-                        };
-
-                    if bid_4_fsx.amount > Zero::zero() {
-                        <T as Config>::AccountManager::deposit(
-                            charge_id,
-                            RequestCharge {
-                                payee: requester.clone(),
-                                offered_reward: bid_4_fsx.amount,
-                                charge_fee: Zero::zero(),
-                                source: BenefitSource::TrafficRewards,
-                                role: CircuitRole::Requester,
-                                recipient: Some(bid_4_fsx.executor.clone()),
-                                maybe_asset_id: fsx.input.reward_asset_id,
-                            },
-                        )
-                        .map_err(|_e| Error::<T>::ChargingTransferFailed)?;
-                    }
-                }
-            },
-            (_, CircuitStatus::PendingExecution) => {
-                let (charge_id, executor_payee, charge_fee) =
-                    maybe_xbi_execution_charge.ok_or(Error::<T>::ChargingTransferFailed)?;
-
-                <T as Config>::AccountManager::deposit(
-                    charge_id,
-                    RequestCharge {
-                        payee: executor_payee.clone(),
-                        offered_reward: Zero::zero(),
-                        charge_fee,
-                        source: BenefitSource::TrafficFees,
-                        role: CircuitRole::Executor,
-                        recipient: None,
-                        maybe_asset_id: None,
-                    },
-                )
-                .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;
-            },
-            (_, CircuitStatus::Killed(_cause)) => {
-                // todo: can check for try_dropped_at_bidding_refund in cause == Timeout
-                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
-                unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
-            },
-            // todo: make sure callable once
-            // todo: distinct between RevertTimedOut to iterate over all steps vs single step for Revert
-            (_, CircuitStatus::Reverted(_cause)) => {
-                Optimistic::<T>::try_slash(local_ctx);
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    <T as Config>::AccountManager::finalize_infallible(charge_id, Outcome::Revert);
-                }
-            },
-            (_, CircuitStatus::Finished | CircuitStatus::FinishedAllSteps) => {
-                Optimistic::<T>::try_unbond(local_ctx)?;
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    let confirmed = if let Some(confirmed) = &fsx.confirmed {
-                        Ok(confirmed)
-                    } else {
-                        Err(Error::<T>::CriticalStateSquareUpCalledToFinishWithoutFsxConfirmed)
-                    }?;
-                    // todo: Verify that cost can be repatriated on this occation and whether XBI Exec resoliution is expected for particular FSX
-                    <T as Config>::AccountManager::finalize(
-                        charge_id,
-                        Outcome::Commit,
-                        Some(confirmed.executioner.clone()),
-                        confirmed.cost,
-                    )
-                    .map_err(|_e| Error::<T>::FinalizeSquareUpFailed)?;
-                }
-            },
-            _ => {},
-        }
-
-        Ok(())
     }
 
     fn authorize(
@@ -1589,56 +1462,6 @@ impl<T: Config> Pallet<T> {
         <SignalQueue<T>>::put(queue);
 
         processed_weight
-    }
-
-    pub(self) fn get_current_step_fsx(
-        local_ctx: &LocalXtxCtx<T>,
-    ) -> &Vec<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-        >,
-    > {
-        let current_step = local_ctx.xtx.steps_cnt.0;
-        &local_ctx.full_side_effects[current_step as usize]
-    }
-
-    pub(self) fn filter_fsx_by_security_lvl(
-        fsx_array: &Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
-        security_lvl: SecurityLvl,
-    ) -> Vec<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-        >,
-    > {
-        fsx_array
-            .iter()
-            .filter(|&fsx| fsx.security_lvl == security_lvl)
-            .cloned()
-            .collect()
-    }
-
-    pub(self) fn get_current_step_fsx_by_security_lvl(
-        local_ctx: &LocalXtxCtx<T>,
-        security_lvl: SecurityLvl,
-    ) -> Vec<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-        >,
-    > {
-        let current_step = local_ctx.xtx.steps_cnt.0;
-        local_ctx.full_side_effects[current_step as usize]
-            .iter()
-            .filter(|&fsx| fsx.security_lvl == security_lvl)
-            .cloned()
-            .collect()
     }
 
     pub(self) fn storage_write_new_sfx_accepted_bid(
