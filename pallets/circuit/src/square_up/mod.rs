@@ -129,7 +129,8 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Drop Xtx and unlock requester and all executors that posted bids - without penalties.
-    pub fn kill(local_ctx: &LocalXtxCtx<T>) {
+    pub fn kill(local_ctx: &LocalXtxCtx<T>) -> bool {
+        let mut killed = false;
         for fsx in Machine::<T>::read_current_step_fsx(local_ctx).iter() {
             let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             if !<T as Config>::AccountManager::cancel_deposit(sfx_id) {
@@ -137,6 +138,8 @@ impl<T: Config> SquareUp<T> {
                     "kill: expect cancel_deposit to succeed for sfx_id: {:?}",
                     sfx_id
                 );
+            } else {
+                killed = true;
             }
             if let Some(bid) = &fsx.best_bid {
                 if !<T as Config>::AccountManager::cancel_deposit(
@@ -149,6 +152,7 @@ impl<T: Config> SquareUp<T> {
                 }
             }
         }
+        killed
     }
 
     /// Finalize Xtx after successful run.

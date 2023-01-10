@@ -453,11 +453,18 @@ impl<T: Config> Machine<T> {
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
                 <pallet::Pallet<T> as Store>::LocalXtxStates::remove(local_ctx.xtx_id);
                 <pallet::Pallet<T> as Store>::FullSideEffects::remove(local_ctx.xtx_id);
-                for fsx_step in &local_ctx.full_side_effects {
-                    for fsx in fsx_step {
-                        <pallet::Pallet<T> as Store>::SFX2XTXLinksMap::remove(
-                            fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
-                        );
+
+                let mut fsx_mut_arr = local_ctx.full_side_effects.clone();
+                for fsx_step in fsx_mut_arr.iter_mut() {
+                    for mut fsx in fsx_step {
+                        let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+                        <pallet::Pallet<T> as Store>::SFX2XTXLinksMap::remove(sfx_id);
+                        if let Some(bid) = <pallet::Pallet<T> as Store>::PendingSFXBids::get(
+                            local_ctx.xtx_id,
+                            sfx_id,
+                        ) {
+                            fsx.best_bid = Some(bid);
+                        }
                     }
                 }
                 // Always clean temporary PendingSFXBids and TimeoutsMap after bidding

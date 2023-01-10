@@ -92,4 +92,42 @@ pub mod test {
                 assert_eq!(Balances::free_balance(&ALICE), 1);
             });
     }
+
+    #[test]
+    fn square_up_locks_up_kills_xtx_with_all_bids() {
+        ExtBuilder::default()
+            .with_standard_side_effects()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                System::set_block_number(1);
+
+                let _ = Balances::deposit_creating(&ALICE, 10);
+                let mut local_xtx =
+                    Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
+                        .unwrap();
+
+                let bid = SFXBid {
+                    amount: 2,
+                    insurance: 1,
+                    reserved_bond: None,
+                    reward_asset_id: None,
+                    executor: ALICE,
+                    requester: BOB,
+                };
+
+                assert_ok!(SquareUp::<Runtime>::try_request(&local_xtx));
+                assert_ok!(SquareUp::<Runtime>::try_bid(
+                    H256::repeat_byte(1),
+                    &BOB,
+                    &ALICE,
+                    &bid,
+                    None
+                ));
+
+                local_xtx.full_side_effects[0][0].best_bid = Some(bid);
+
+                assert_eq!(SquareUp::<Runtime>::kill(&local_xtx), true);
+            });
+    }
 }
