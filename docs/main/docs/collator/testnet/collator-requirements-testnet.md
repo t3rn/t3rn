@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Collator Requirements
 
-- Collator Bond: 10 T0RN Tokens ([1 drip from testnet faucet](https://dev.net.t3rn.io/faucet/))
+- Collator Bond: 10 T0RN Tokens ([1 drip from testnet faucet](https://faucet.t0rn.io))
 
 ## Hardware Requirements
 | Component | Requirement |
