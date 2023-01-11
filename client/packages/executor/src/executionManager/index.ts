@@ -245,7 +245,15 @@ export class ExecutionManager {
         const sfxId = bidData[0].toString()
         const bidder = bidData[1].toString()
         const amt = bidData[2].toNumber()
-        this.xtx[this.sfxToXtx[sfxId]].sideEffects.get(sfxId)?.processBid(bidder, amt)
+
+        const conversionId = this.sfxToXtx[sfxId]
+        const sfxFromXtx = this.xtx[conversionId].sideEffects
+        const actualSfx = sfxFromXtx.get(sfxId)
+        if (actualSfx !== undefined) {
+            actualSfx.processBid(bidder, amt)
+        } else {
+            throw new Error(`Could not find SFX with id ${sfxId}`)
+        }
     }
 
     /**
