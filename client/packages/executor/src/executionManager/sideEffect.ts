@@ -92,7 +92,10 @@ export class SideEffect extends EventEmitter {
     /** If the executor leading the bid changes, store the change */
     changedBidLeader: boolean = false
     /** Value of the last bid */
-    lastBid: number
+    lastBids: number[]
+    /** Collection of xtx (ids) that have bid on certain sfx (ids) */
+    // xtxsBiddingHere: [string, number[]][]
+    xtxBidHistory: Map<string, number[]>
 
     // SideEffect data
     id: string
@@ -332,7 +335,8 @@ export class SideEffect extends EventEmitter {
         this.txStatus = TxStatus.Pending // acts as mutex lock
         this.minProfitUsd = this.strategyEngine.getMinProfitUsd(this)
         const bidUsd = this.biddingEngine.computeBid(this)
-        this.lastBid = bidUsd
+        // TODO: should this be here or in "processBid"?
+        // this.lastBids.push(bidUsd)
         const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue()
 
         return { trigger: true, bidAmount: floatToBn(bidRewardAsset) }
@@ -381,12 +385,6 @@ export class SideEffect extends EventEmitter {
         if (this.reward.getValue() >= this.gateway.toFloat(bidAmount)) {
             this.isBidder = true
             this.reward.next(this.gateway.toFloat(bidAmount)) // not sure if we want to do this tbh. Reacting to other bids should be sufficient
-            // TODO: change flag for the leading bidder
-            // if (signer !== this.circuitSignerAddress) {
-            //     this.changedBidLeader = true
-            // } else {
-            //     this.changedBidLeader = false
-            // }
             this.logger.info(`Bid accepted for SFX ${this.humanId} ✅`)
             this.addLog({ msg: "Bid accepted", bidAmount: bidAmount.toString() })
         } else {
@@ -410,6 +408,26 @@ export class SideEffect extends EventEmitter {
     }
 
     /**
+     * Keep a record of how much a certain executor bid on the SFX.
+     * 
+     * @param xtxId ID of the executor
+     * @param bid The amount the executor bid
+     */
+    storeXtxBidHistory(xtxId: string, bid: number) {
+        if (this.xtxBidHistory !== undefined) {
+            let previousXtxBids = this.xtxBidHistory.get(xtxId)
+            if (previousXtxBids !== undefined) {
+                previousXtxBids.push(bid);
+                this.xtxBidHistory.set(xtxId, previousXtxBids);
+            } else {
+                this.xtxBidHistory.set(xtxId, [bid]);
+            }
+        } else {
+            this.xtxBidHistory = new Map([[xtxId, [bid]]]);
+        }
+    }
+
+    /**
      * Process an incoming bid event. The bid amount is now the new reward amount and the SFX is evaluated again, potentially triggering a
      * counter bid.
      *
@@ -417,6 +435,14 @@ export class SideEffect extends EventEmitter {
      * @param bidAmount Amount of the incoming bid
      */
     processBid(signer: string, bidAmount: number) {
+        // Add the executor bid to the list 
+        this.biddingEngine.storeWhoBidOnWhat(this.id, signer);
+        // TODO: should this be here or in "generateBid"?
+        // Add how much it bid
+        this.lastBids.push(bidAmount);
+        // Add the xtx's bid to its history
+        this.storeXtxBidHistory(signer, bidAmount);
+
         // if this is not own bid, update reward and isBidder
         if (signer !== this.circuitSignerAddress) {
             this.logger.info(`Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(bidAmount)} TRN 🎰`)

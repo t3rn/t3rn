@@ -143,6 +143,15 @@ export type Config = {
     strategies: {
         [targetId: string]: Strategy
     }
+    /** Parameters for tunning the behavior in the bidding stage */
+    bidding: {
+        bidPercentile: number,
+        closerPercentageBid: number
+        bidAggressive: boolean
+        bidMeek: boolean
+        overrideNoCompetition: boolean
+        equalMinBid: boolean
+    }
 }
 
 export const config: Config = {
@@ -204,5 +213,13 @@ export const config: Config = {
                 minInsuranceShare: 0.1,
             },
         },
+    },
+    bidding: {
+        bidPercentile: 0.75,
+        closerPercentageBid: 0.1,
+        bidAggressive: true,
+        bidMeek: false,
+        overrideNoCompetition: true,
+        equalMinBid: false,
     },
 }
