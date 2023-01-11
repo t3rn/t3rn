@@ -28,6 +28,7 @@
             clang 
             llvmPackages_11.libclang 
             taplo 
+            protobuf
           ];
           buildInputs =
             [ (rustVersion.override { extensions = [ "rust-src" ]; }) ];

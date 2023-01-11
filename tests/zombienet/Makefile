@@ -3,7 +3,7 @@
 provider := native
 zombienet_version := v1.3.17
 runtime := t3rn
-pdot_branch := release-v0.9.27
+pdot_branch := release-v0.9.30
 root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')

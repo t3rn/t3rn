@@ -23,9 +23,10 @@ use crate::bridges::{messages as bp_messages, runtime as bp_runtime};
 use bp_messages::{LaneId, MessageNonce, UnrewardedRelayersState};
 use bp_runtime::Chain;
 use frame_support::{
-    weights::{constants::WEIGHT_PER_SECOND, DispatchClass, Weight},
+    weights::{DispatchClass, Weight},
     Parameter, RuntimeDebug,
 };
+use sp_weights::constants::WEIGHT_REF_TIME_PER_SECOND;
 //use frame_system::limits;
 use sp_core::Hasher as HasherT;
 use sp_runtime::{
@@ -50,7 +51,7 @@ pub const MAXIMAL_ENCODED_ACCOUNT_ID_SIZE: u32 = 32;
 /// Maximum weight of single Circuit block.
 ///
 /// This represents 0.5 seconds of compute assuming a target block time of six seconds.
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND / 2);
 
 /// Represents the average portion of a block's weight that will be used by an
 /// `on_initialize()` runtime call.
@@ -71,20 +72,21 @@ pub const MAX_UNCONFIRMED_MESSAGES_AT_INBOUND_LANE: MessageNonce = 1024;
 /// for the case when single message of `pallet_bridge_messages::EXPECTED_DEFAULT_MESSAGE_LENGTH` bytes is delivered.
 /// The message must have dispatch weight set to zero. The result then must be rounded up to account
 /// possible future runtime upgrades.
-pub const DEFAULT_MESSAGE_DELIVERY_TX_WEIGHT: Weight = 1_000_000_000;
+pub const DEFAULT_MESSAGE_DELIVERY_TX_WEIGHT: Weight = Weight::from_ref_time(1_000_000_000);
 
 /// Increase of delivery transaction weight on Circuit chain with every additional message byte.
 ///
 /// This value is a result of `pallet_bridge_messages::WeightInfoExt::storage_proof_size_overhead(1)` call. The
 /// result then must be rounded up to account possible future runtime upgrades.
-pub const ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT: Weight = 25_000;
+pub const ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT: Weight = Weight::from_ref_time(25_000);
 
 /// Maximal weight of single message delivery confirmation transaction on Circuit chain.
 ///
 /// This value is a result of `pallet_bridge_messages::Pallet::receive_messages_delivery_proof` weight formula computation
 /// for the case when single message is confirmed. The result then must be rounded up to account possible future
 /// runtime upgrades.
-pub const MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT: Weight = 2_000_000_000;
+pub const MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT: Weight =
+    Weight::from_ref_time(2_000_000_000);
 
 /// The target length of a session (how often authorities change) on Circuit measured in of number of
 /// blocks.
@@ -172,7 +174,7 @@ pub fn derive_account_from_gateway_id(id: bp_runtime::SourceAccount<AccountId>) 
 frame_support::parameter_types! {
     /// We allow for 2 seconds of compute with a 6 second average block time.
     pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-        ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+        ::with_sensible_defaults(Weight::from_ref_time(2 * WEIGHT_REF_TIME_PER_SECOND).into(), NORMAL_DISPATCH_RATIO);
     pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 }

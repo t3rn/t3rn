@@ -31,7 +31,7 @@ pub use frame_support::{
         StorageInfo,
     },
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
         IdentityFee, Weight,
     },
     StorageValue,

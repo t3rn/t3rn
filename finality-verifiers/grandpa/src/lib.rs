@@ -684,7 +684,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     }
 
     pub fn initialize(
-        origin: T::Origin,
+        origin: T::RuntimeOrigin,
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
@@ -735,7 +735,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ///
     /// May only be called either by root, or by `PalletOwner`.
     pub fn set_owner(
-        origin: T::Origin,
+        origin: T::RuntimeOrigin,
         gateway_id: ChainId,
         encoded_new_owner: Vec<u8>,
     ) -> Result<(), &'static str> {
@@ -761,7 +761,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ///
     /// May only be called either by root, or by `PalletOwner`.
     pub fn set_operational(
-        origin: T::Origin,
+        origin: T::RuntimeOrigin,
         operational: bool,
         gateway_id: ChainId,
     ) -> Result<(), &'static str> {
@@ -866,7 +866,14 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
 ) -> Result<Vec<u8>, &'static str> {
     let root = get_header_roots::<T, I>(block_hash, gateway_id, trie_type)?;
     let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
-    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &root, key.as_ref()) {
+    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(
+        &db,
+        &root,
+        key.as_ref(),
+        // TODO: paul look at this
+        None,
+        None,
+    ) {
         Ok(Some(value)) => Ok(value),
         _ => Err(Error::<T, I>::InvalidStorageProof.into()),
     }
@@ -909,7 +916,7 @@ pub(crate) fn find_scheduled_change<H: HeaderT>(
 
 /// Ensure that the origin is either root, or `PalletOwner`.
 fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
-    origin: T::Origin,
+    origin: T::RuntimeOrigin,
     gateway_id: ChainId,
 ) -> Result<(), &'static str> {
     match origin.into() {

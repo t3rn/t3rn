@@ -229,7 +229,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
     // Add public immutables and private mutables.
     #[allow(dead_code)]
-    fn placeholder(origin: T::Origin) -> DispatchResult {
+    fn placeholder(origin: T::RuntimeOrigin) -> DispatchResult {
         let _sender = ensure_signed(origin)?;
 
         Ok(())

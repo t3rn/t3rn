@@ -23,9 +23,12 @@ where
     T: frame_system::Config,
     Balance: Encode + Decode,
 {
-    GetState(T::Origin, GetState<T>),
-    SubmitSideEffects(T::Origin, SideEffects<T::AccountId, Balance, T::Hash>),
-    Signal(T::Origin, ExecutionSignal<T::Hash>),
+    GetState(T::RuntimeOrigin, GetState<T>),
+    SubmitSideEffects(
+        T::RuntimeOrigin,
+        SideEffects<T::AccountId, Balance, T::Hash>,
+    ),
+    Signal(T::RuntimeOrigin, ExecutionSignal<T::Hash>),
 }
 
 /// The happy return type of an invocation
@@ -66,7 +69,7 @@ where
     T: frame_system::Config,
 {
     fn load_local_state(
-        origin: &T::Origin,
+        origin: &T::RuntimeOrigin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
 }

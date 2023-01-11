@@ -23,7 +23,7 @@ use codec::Compact;
 use frame_support::{
     parameter_types,
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
         DispatchClass, Weight,
     },
     Blake2_128Concat, RuntimeDebug, StorageHasher, Twox128,
@@ -74,7 +74,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// All Polkadot-like chains allow 2 seconds of compute with a 6 second average block time.
 ///
 /// This is a copy-paste from the Polkadot repo's `polkadot-runtime-common` crate.
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(2 * WEIGHT_REF_TIME_PER_SECOND);
 
 /// All Polkadot-like chains assume that an on-initialize consumes 1% of the weight on average,
 /// hence a single extrinsic will not be allowed to consume more than `AvailableBlockRatio - 1%`.
