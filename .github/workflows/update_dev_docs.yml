@@ -10,7 +10,6 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -150,7 +149,7 @@ jobs:
         run: yarn
         working-directory: client/packages/sdk
       - name: 🏗 Build Docs
-        run: yarn build-docs
+        run: yarn build:docs
         working-directory: client/packages/sdk
       - name: 👾 Deploy to Vercel
         uses: amondnet/vercel-action@v20

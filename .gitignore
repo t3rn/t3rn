@@ -21,4 +21,10 @@ client/cli/yarn-error.log
 
 bin
 
+# docs
+
+docs/executor
+docs/ts-sdk
+
+
 .direnv

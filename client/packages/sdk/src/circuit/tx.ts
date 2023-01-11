@@ -9,7 +9,6 @@ import {
   // @ts-ignore
   u128,
 } from "@polkadot/types/lookup";
-import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 
 /**
  * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
@@ -42,7 +41,7 @@ export class Tx {
    * @returns The block height the transaction was included in
    */
 
-  async signAndSendSafe(tx: SubmittableExtrinsic): Promise<string> {
+  async signAndSendSafe(tx: any): Promise<string> {
     let nonce = await this.api.rpc.system.accountNextIndex(this.signer.address);
 
     return new Promise((resolve, reject) =>
@@ -72,7 +71,7 @@ export class Tx {
    * @param tx - The transaction to sudo
    */
 
-  createSudo(tx: SubmittableExtrinsic) {
+  createSudo(tx: any) {
     return this.api.tx.sudo.sudo(tx);
   }
 
@@ -81,7 +80,7 @@ export class Tx {
    * @param txs - The transactions to batch
    */
 
-  createBatch(txs: SubmittableExtrinsic[]) {
+  createBatch(txs: any[]) {
     return this.api.tx.utility.batch(txs);
   }
 }

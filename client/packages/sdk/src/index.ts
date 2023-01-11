@@ -7,8 +7,6 @@ import { Gateway, initGateways } from "./gateways";
 
 import * as Types from "./types";
 
-import { createSfx } from "./side-effects";
-
 // @ts-ignore
 import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
 import * as Encodings from "./encodings";
