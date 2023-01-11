@@ -1,6 +1,6 @@
 import { BiddingEngine } from '../src/bidding/index';
 import { config } from "../config/config"
-import { SideEffect } from "../src/executionManager/sideEffect"
+// import { SideEffect } from "../src/executionManager/sideEffect"
 import { expect } from 'chai';
 
 describe('Configuration loading', () => {
@@ -28,10 +28,6 @@ describe('Storing xtx bids for certain sfxs', () => {
         // Create a bidding engine instance
         const be = new BiddingEngine();
 
-        // Create values
-        const myData = new Map<string, string[]>([
-            ["sfxId1", ["xtxId1"]],
-        ]);
         // Add one value to the storage
         be.storeWhoBidOnWhat("sfxId1", "xtxId1");
 
@@ -47,10 +43,6 @@ describe('Storing xtx bids for certain sfxs', () => {
         // Create a bidding engine instance
         const be = new BiddingEngine();
 
-        // Create values
-        const myData = new Map<string, string[]>([
-            ["sfxId1", ["xtxId1"]],
-        ]);
         // Add two value to the storage
         be.storeWhoBidOnWhat("sfxId1", "xtxId1");
         be.storeWhoBidOnWhat("sfxId1", "xtxId2");
@@ -67,10 +59,6 @@ describe('Storing xtx bids for certain sfxs', () => {
         // Create a bidding engine instance
         const be = new BiddingEngine();
 
-        // Create values
-        const myData = new Map<string, string[]>([
-            ["sfxId1", ["xtxId1"]],
-        ]);
         // Add two value to the storage
         be.storeWhoBidOnWhat("sfxId1", "xtxId1");
         be.storeWhoBidOnWhat("sfxId1", "xtxId2");
