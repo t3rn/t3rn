@@ -1,4 +1,6 @@
 import { SideEffect } from "../executionManager/sideEffect"
+import { config } from "../../config/config"
+
 /**
  * The bidding engine is used for determining the bidding amount for a given 
  * side effect. It expects SFXs that have already been evaluated by the 
@@ -7,26 +9,28 @@ import { SideEffect } from "../executionManager/sideEffect"
  * @group Bidding
  */
 export class BiddingEngine {
-    //** How close you are to the max profit */ 
-    bidPercentile: number = 0.75
-    //** At the beginning, it has never been outbid */ 
+    /** How close you are to the max profit */
+    bidPercentile: number = config.bidding.bidPercentile
+    /** At the beginning, it has never been outbid */
     timesBeenOutbid: number = 0
     // timesBeenOutbid: Map<SideEffect, number> = new Map<SideEffect, number>()
-    //** Number of bids on each side effect */ 
+    /** Number of bids on each side effect. KEYs: sfx id; VALUEs: # bids */
     numberOfBidsOnSfx: Map<string, number>
     // numberOfBidsOnSfx: Map<SideEffect, number> = new Map<SideEffect, number>()
-    //** Logger */ 
+    /** Logger */
     logger: any
-    //** Being aggressive when bidding means to oubtbid everyone to get the SFX */ 
-    bidAggressive: boolean = false
-    //** Being meek when bidding means to obtain the max profit */ 
-    bidMeek: boolean = false
-    //** When there's no competition yet, get the execution by getting the smallest profit */ 
-    overrideNoCompetition: boolean = false
-    //** If outbid, executor wants to make the same last bid */
-    equalMinBid: boolean = false
-    //** How close to be when been outbid, but still wants to be place a bid close to last one */ 
-    closerPercentageBid: number = 0.1
+    /** Being aggressive when bidding means to oubtbid everyone to get the SFX */
+    bidAggressive: boolean = config.bidding.bidAggressive
+    /** Being meek when bidding means to obtain the max profit */
+    bidMeek: boolean = config.bidding.bidMeek
+    /** When there's no competition yet, get the execution by getting the smallest profit */
+    overrideNoCompetition: boolean = config.bidding.overrideNoCompetition
+    /** If outbid, executor wants to make the same last bid */
+    equalMinBid: boolean = config.bidding.equalMinBid
+    /** How close to be when been outbid, but still wants to be place a bid close to last one */
+    closerPercentageBid: number = config.bidding.closerPercentageBid
+    /** Who's bidding on what. KEYs: sfx id; VALUEs: xtx ids array */
+    whoBidsOnWhat: Map<string, string[]>
 
     /**
      * Computes the bidding amount for a given SFX for a certain scenario.
@@ -107,23 +111,24 @@ export class BiddingEngine {
      * @returns The bidding amount in USD
      */
     computeBeenOutbid(sfx: SideEffect): number {
-        const lastBid = sfx.lastBid
+        const lastBid = sfx.lastBids.at(-1) || 0
         const minProfit = sfx.minProfitUsd
         const txOutputCost = sfx.txOutputCostUsd
         const minProfitBid = txOutputCost + minProfit
         const maxProfit = sfx.maxProfitUsd.getValue()
         const maxProfitBid = txOutputCost + minProfit + maxProfit
 
-        if (sfx.lastBid === minProfitBid) {
+        if (lastBid === minProfitBid) {
             if (this.equalMinBid) {
                 return minProfitBid
             } else {
-                // TODO: here something better can be returned
+                // TODO: here something better can be returned, bc the idea is that the bid is not accepted in this if-else branch
                 return maxProfitBid
             }
         } else {
-            // Otherwise, if not wanting to make the minProftBid, it's possible
-            // to get closer that minProfitBid by a certain percentage, but winning more.
+            // Otherwise, if not wanting to make the minProftBid, 
+            // it's possible to get closer that minProfitBid 
+            // by a certain percentage, but winning more.
             //
             // Note: this supposes that executors can drop out
             // of the bidding stage and others with larger profit bids 
@@ -155,7 +160,7 @@ export class BiddingEngine {
         const executorPlacedBid: boolean = false
         // TODO: check that this is correct
         const executorIsTopBidder = sfx.isBidder
-        const otherBidsOnSFX: boolean = this.numberOfBidsOnSfx[sfx.id] > 0 ? true : false
+        const otherBidsOnSFX: boolean = sfx.lastBids.length > 0 ? true : false
 
         if (executorPlacedBid) {
             if (executorIsTopBidder) {
@@ -193,6 +198,29 @@ export class BiddingEngine {
      */
     checkOutbid(sfx: SideEffect): boolean {
         return sfx.changedBidLeader
+    }
+
+    /**
+     * Store who (xtx id) bids on what (sfx id), to 
+     * keep a database to, maybe, implement exclusion rules
+     * for bidding (e.g., I don't want to bid if this ID 
+     * is in there; or bid to keep those people out).
+     * 
+     * @param sfxId The side effect ID
+     * @param xtxId The executor ID
+     */
+    storeWhoBidOnWhat(sfxId: string, xtxId: string) {
+        if (this.whoBidsOnWhat !== undefined) {
+            let previousXtxIds = this.whoBidsOnWhat.get(sfxId)
+            if (previousXtxIds !== undefined) {
+                previousXtxIds.push(xtxId);
+                this.whoBidsOnWhat.set(sfxId, previousXtxIds);
+            } else {
+                this.whoBidsOnWhat.set(sfxId, [xtxId]);
+            }
+        } else {
+            this.whoBidsOnWhat = new Map([[sfxId, [xtxId]]]);
+        }
     }
 }
 
