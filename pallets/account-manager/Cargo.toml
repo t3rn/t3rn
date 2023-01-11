@@ -29,7 +29,7 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
 circuit-runtime-types = { path = "../../runtime/common-types", default-features = false }
-pallet-xbi-portal     = { path = "../xbi-portal", default-features = false }
+pallet-xbi-portal     = { path = "../xbi-portal/pallets/portal", default-features = false }
 t3rn-primitives       = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
