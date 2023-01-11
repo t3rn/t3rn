@@ -21,6 +21,7 @@
         devShell = pkgs.mkShell {
           LIBCLANG_PATH = "${pkgs.llvmPackages_11.libclang.lib}/lib";
           nativeBuildInputs = with pkgs; [ bashInteractive cmake openssl pkg-config clang libclang ];
+          nativeBuildInputs = with pkgs; [ bashInteractive cmake openssl pkg-config clang libclang taplo ];
           buildInputs =
             [ (rustVersion.override { extensions = [ "rust-src" ]; }) ];
         };
