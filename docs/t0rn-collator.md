@@ -173,7 +173,7 @@ circuit-collator \
 
 Your Collator needs some funds to register on testnet.
 
-Go to the [t0rn testnet faucet](https://dev.net.t3rn.io/faucet/), insert your substrate address and get some T0RN to cover transaction costs.
+Go to the [t0rn testnet faucet](https://faucet.t0rn.io/), insert your substrate address and get some T0RN to cover transaction costs.
 
 ## Register as a candidate
 
