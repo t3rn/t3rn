@@ -131,8 +131,6 @@ std = [
   "cumulus-primitives-utility/std",
   "parachains-common/std",
   "frame-executive/std",
-  "frame-benchmarking/std",
-  "frame-system-benchmarking/std",
   "frame-try-runtime/std",
   "cumulus-pallet-session-benchmarking/std",
   "frame-support/std",

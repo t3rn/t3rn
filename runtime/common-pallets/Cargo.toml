@@ -125,8 +125,6 @@ std = [
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
   "frame-executive/std",
-  "frame-benchmarking/std",
-  "frame-system-benchmarking/std",
   "frame-try-runtime/std",
   "frame-support/std",
   "frame-system-rpc-runtime-api/std",

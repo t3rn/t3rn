@@ -114,7 +114,9 @@ pub mod pallet {
             // Perform necessary data/state clean up here.
 
             if n % T::RoundDuration::get() == T::BlockNumber::zero() {
-                Self::calculate_claimable_for_round(n);
+                if let Err(e) = Self::calculate_claimable_for_round(n) {
+                    log::error!(target: "clock", "Error whilst calculating claimable for round {:?}", e);
+                }
                 // After the rewards has been recalculate it's safe to shuffle the executors orded and stakes
                 <T as Config>::Executors::recalculate_executors_stakes();
             }

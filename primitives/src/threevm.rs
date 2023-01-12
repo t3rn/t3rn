@@ -6,7 +6,7 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use sp_runtime::{DispatchError, DispatchResult};
-use sp_std::{result::Result, vec::Vec};
+use sp_std::{fmt::Debug, result::Result, vec::Vec};
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
     state::SideEffects,
@@ -198,7 +198,7 @@ impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance>
     }
 }
 
-impl<Hash: Encode + Decode + crate::Debug + Clone> Signaller<Hash> for NoopThreeVm {
+impl<Hash: Encode + Decode + Debug + Clone> Signaller<Hash> for NoopThreeVm {
     type Result = Result<SignalOpcode, DispatchError>;
 
     fn signal(_signal: &ExecutionSignal<Hash>) -> Self::Result {

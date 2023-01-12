@@ -41,9 +41,9 @@ use frame_system::{
 };
 use pallet_xbi_portal::{
     primitives::xbi::XBIPortal,
-    xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
+    xbi_format::{XbiCheckIn, XbiCheckOut, XbiInstruction, XbiResult},
 };
-use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
+// use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
     KeyTypeId,
@@ -113,19 +113,23 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
-    use pallet_xbi_portal::xbi_codec::{XBICheckOutStatus, XBIMetadata, XBINotificationKind};
-    use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
-    use sp_runtime::traits::Hash;
-
     use pallet_xbi_portal::{
-        primitives::xbi::{XBIPromise, XBIStatus},
-        sabi::Sabi,
+        substrate_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm},
+        xbi_format::XbiCheckOutStatus,
     };
+    // use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
+    // use pallet_xbi_portal::{
+    //     primitives::xbi::{XBIPromise, XBIStatus},
+    //     substrate_abi::SubstrateAbi as Sabi,
+    //     xbi_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId},
+    //     xbi_codec::{XBICheckOutStatus, XBIMetadata, XBINotificationKind},
+    // };
+    use sp_runtime::traits::Hash;
     use sp_std::borrow::ToOwned;
-
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         portal::Portal,
+        side_effect::SFXBid,
         xdns::Xdns,
     };
 
@@ -304,7 +308,7 @@ pub mod pallet {
 
         type XBIPortal: XBIPortal<Self>;
 
-        type XBIPromise: XBIPromise<Self, <Self as Config>::Call>;
+        // type XBIPromise: XBIPromise<Self, <Self as Config>::Call>;
 
         type Executors: Executors<
             Self,
@@ -769,82 +773,82 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_with_xbi())]
-        pub fn execute_side_effects_with_xbi(
-            origin: OriginFor<T>, // Active relayer
-            xtx_id: XExecSignalId<T>,
-            side_effect: SideEffect<
-                <T as frame_system::Config>::AccountId,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            >,
-            max_exec_cost: u128,
-            max_notifications_cost: u128,
-        ) -> DispatchResultWithPostInfo {
-            let sfx_id = side_effect.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0u32);
+        // #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_with_xbi())]
+        // pub fn execute_side_effects_with_xbi(
+        //     origin: OriginFor<T>, // Active relayer
+        //     xtx_id: XExecSignalId<T>,
+        //     side_effect: SideEffect<
+        //         <T as frame_system::Config>::AccountId,
+        //         EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        //     >,
+        //     max_exec_cost: u128,
+        //     max_notifications_cost: u128,
+        // ) -> DispatchResultWithPostInfo {
+        //     let sfx_id = side_effect.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0u32);
 
-            if T::XBIPortal::get_status(sfx_id) != XBIStatus::UnknownId {
-                return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
-            }
-            // Authorize: Retrieve sender of the transaction.
-            let executor = Self::authorize(origin, CircuitRole::Executor)?;
+        //     if T::XBIPortal::get_status(sfx_id) != XBIStatus::UnknownId {
+        //         return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
+        //     }
+        //     // Authorize: Retrieve sender of the transaction.
+        //     let executor = Self::authorize(origin, CircuitRole::Executor)?;
 
-            // Setup: retrieve local xtx context
-            let mut local_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::PendingExecution, &executor, Some(xtx_id))?;
+        //     // Setup: retrieve local xtx context
+        //     let mut local_ctx: LocalXtxCtx<T> =
+        //         Self::setup(CircuitStatus::PendingExecution, &executor, Some(xtx_id))?;
 
-            let xbi =
-                sfx_2_xbi::<T, T::Escrowed>(
-                    &side_effect,
-                    XBIMetadata::new_with_default_timeouts(
-                        XbiId::<T>::local_hash_2_xbi_id(sfx_id)?,
-                        T::Xdns::get_gateway_para_id(&side_effect.target)?,
-                        T::SelfParaId::get(),
-                        max_exec_cost,
-                        max_notifications_cost,
-                        Some(Sabi::account_bytes_2_account_32(executor.encode()).map_err(
-                            |_| Error::<T>::FailedToCreateXBIMetadataDueToWrongAccountConversion,
-                        )?),
-                    ),
-                )
-                .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
+        //     let xbi =
+        //         sfx_2_xbi::<T, T::Escrowed>(
+        //             &side_effect,
+        //             XBIMetadata::new_with_default_timeouts(
+        //                 XbiId::<T>::local_hash_2_xbi_id(sfx_id)?,
+        //                 T::Xdns::get_gateway_para_id(&side_effect.target)?,
+        //                 T::SelfParaId::get(),
+        //                 max_exec_cost,
+        //                 max_notifications_cost,
+        //                 Some(Sabi::account_bytes_2_account_32(executor.encode()).map_err(
+        //                     |_| Error::<T>::FailedToCreateXBIMetadataDueToWrongAccountConversion,
+        //                 )?),
+        //             ),
+        //         )
+        //         .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
 
-            // Use encoded XBI hash as ID for the executor's charge
-            let charge_id = T::Hashing::hash(&xbi.encode()[..]);
-            let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
+        //     // Use encoded XBI hash as ID for the executor's charge
+        //     let charge_id = T::Hashing::hash(&xbi.encode()[..]);
+        //     let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
 
-            // fixme: must be solved with charging and update status order if XBI is the first SFX
-            if local_ctx.xtx.status == CircuitStatus::Ready {
-                local_ctx.xtx.status = CircuitStatus::PendingExecution;
-            }
+        //     // fixme: must be solved with charging and update status order if XBI is the first SFX
+        //     if local_ctx.xtx.status == CircuitStatus::Ready {
+        //         local_ctx.xtx.status = CircuitStatus::PendingExecution;
+        //     }
 
-            Self::square_up(
-                &mut local_ctx,
-                Some((charge_id, executor, total_max_rewards)),
-            )?;
+        //     Self::square_up(
+        //         &mut local_ctx,
+        //         Some((charge_id, executor, total_max_rewards)),
+        //     )?;
 
-            T::XBIPromise::then(
-                xbi,
-                pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
-            )?;
+        //     T::XBIPromise::then(
+        //         xbi,
+        //         pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
+        //     )?;
 
-            let status_change = Self::update(&mut local_ctx)?;
+        //     let status_change = Self::update(&mut local_ctx)?;
 
-            Self::apply(&mut local_ctx, status_change);
+        //     Self::apply(&mut local_ctx, status_change);
 
-            Ok(().into())
-        }
+        //     Ok(().into())
+        // }
 
-        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
-        pub fn on_xbi_sfx_resolved(
-            _origin: OriginFor<T>,
-            sfx_id: T::Hash,
-        ) -> DispatchResultWithPostInfo {
-            Self::do_xbi_exit(
-                T::XBIPortal::get_check_in(sfx_id)?,
-                T::XBIPortal::get_check_out(sfx_id)?,
-            )?;
-            Ok(().into())
-        }
+        // #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
+        // pub fn on_xbi_sfx_resolved(
+        //     _origin: OriginFor<T>,
+        //     sfx_id: T::Hash,
+        // ) -> DispatchResultWithPostInfo {
+        //     Self::do_xbi_exit(
+        //         T::XBIPortal::get_check_in(sfx_id)?,
+        //         T::XBIPortal::get_check_out(sfx_id)?,
+        //     )?;
+        //     Ok(().into())
+        // }
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
@@ -887,11 +891,6 @@ pub mod pallet {
         }
     }
 
-    use pallet_xbi_portal::xbi_abi::{
-        AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
-    };
-    use t3rn_primitives::side_effect::SFXBid;
-
     /// Events for the pallet.
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -925,8 +924,8 @@ pub mod pallet {
             Gas,
             Data,
         ),
-        Notification(T::AccountId, AccountId32, XBINotificationKind, Data, Data),
-        Result(T::AccountId, AccountId32, XBICheckOutStatus, Data, Data),
+        // Notification(T::AccountId, AccountId32, XBINotificationKind, Data, Data),
+        Result(T::AccountId, AccountId32, XbiCheckOutStatus, Data, Data),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
         // New best bid for SFX has been accepted. Account here is an executor.
@@ -2077,150 +2076,141 @@ impl<T: Config> Pallet<T> {
         // todo: ensure recovered via XBIPromise are Local (Type::Internal)
     }
 
-    pub fn do_xbi_exit(
-        xbi_checkin: XBICheckIn<T::BlockNumber>,
-        _xbi_checkout: XBICheckOut,
-    ) -> Result<(), Error<T>> {
-        // Recover SFX ID from XBI Metadata
-        let sfx_id: SideEffectId<T> =
-            Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
-                .expect("XBI metadata id conversion should always decode to Sfx ID");
+    // pub fn do_xbi_exit(
+    //     xbi_checkin: XbiCheckIn<T::BlockNumber>,
+    //     _xbi_checkout: XbiCheckOut,
+    // ) -> Result<(), Error<T>> {
+    //     // Recover SFX ID from XBI Metadata
+    //     let sfx_id: SideEffectId<T> =
+    //         Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
+    //             .expect("XBI metadata id conversion should always decode to Sfx ID");
 
-        let mut local_xtx_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
+    //     let mut local_xtx_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
 
-        let fsx = Self::recover_fsx_by_id(sfx_id, &local_xtx_ctx)?;
+    //     let fsx = Self::recover_fsx_by_id(sfx_id, &local_xtx_ctx)?;
 
-        // todo#2: local fail Xtx if xbi_checkout::result errored
+    //     // todo#2: local fail Xtx if xbi_checkout::result errored
 
-        let escrow_source = Self::account_id();
-        let executor = if let Some(ref known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
-            known_origin.clone()
-        } else {
-            return Err(Error::<T>::FailedToExitXBIPortal)
-        };
-        let executor_decoded = Decode::decode(&mut &executor.encode()[..])
-            .expect("XBI metadata executor conversion should always decode to local Account ID");
+    //     let escrow_source = Self::account_id();
+    //     let executor = if let Some(ref known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
+    //         known_origin.clone()
+    //     } else {
+    //         return Err(Error::<T>::FailedToExitXBIPortal)
+    //     };
+    //     let executor_decoded = Decode::decode(&mut &executor.encode()[..])
+    //         .expect("XBI metadata executor conversion should always decode to local Account ID");
 
-        let xbi_exit_event = match xbi_checkin.clone().xbi.instr {
-            XBIInstr::CallNative { payload } => Ok(Event::<T>::CallNative(escrow_source, payload)),
-            XBIInstr::CallEvm {
-                source,
-                target,
-                value,
-                input,
-                gas_limit,
-                max_fee_per_gas,
-                max_priority_fee_per_gas,
-                nonce,
-                access_list,
-            } => Ok(Event::<T>::CallEvm(
-                escrow_source,
-                source,
-                target,
-                value,
-                input,
-                gas_limit,
-                max_fee_per_gas,
-                max_priority_fee_per_gas,
-                nonce,
-                access_list,
-            )),
-            XBIInstr::CallWasm {
-                dest,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                data,
-            } => Ok(Event::<T>::CallWasm(
-                escrow_source,
-                dest,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                data,
-            )),
-            XBIInstr::CallCustom {
-                caller,
-                dest,
-                value,
-                input,
-                limit,
-                additional_params,
-            } => Ok(Event::<T>::CallCustom(
-                escrow_source,
-                caller,
-                dest,
-                value,
-                input,
-                limit,
-                additional_params,
-            )),
-            XBIInstr::Transfer { dest, value } =>
-                Ok(Event::<T>::Transfer(escrow_source, executor, dest, value)),
-            XBIInstr::TransferORML {
-                currency_id,
-                dest,
-                value,
-            } => Ok(Event::<T>::TransferORML(
-                escrow_source,
-                currency_id,
-                executor,
-                dest,
-                value,
-            )),
-            XBIInstr::TransferAssets {
-                currency_id,
-                dest,
-                value,
-            } => Ok(Event::<T>::TransferAssets(
-                escrow_source,
-                currency_id,
-                executor,
-                dest,
-                value,
-            )),
-            XBIInstr::Result {
-                outcome,
-                output,
-                witness,
-            } => Ok(Event::<T>::Result(
-                escrow_source,
-                executor,
-                outcome,
-                output,
-                witness,
-            )),
-            XBIInstr::Notification {
-                kind,
-                instruction_id,
-                extra,
-            } => Ok(Event::<T>::Notification(
-                escrow_source,
-                executor,
-                kind,
-                instruction_id,
-                extra,
-            )),
-            _ => Err(Error::<T>::FailedToExitXBIPortal),
-        }?;
+    //     let xbi_exit_event = match xbi_checkin.clone().xbi.instr {
+    //         XbiInstruction::CallNative { payload } =>
+    //             Ok(Event::<T>::CallNative(escrow_source, payload)),
+    //         XbiInstruction::CallEvm {
+    //             source,
+    //             target,
+    //             value,
+    //             input,
+    //             gas_limit,
+    //             max_fee_per_gas,
+    //             max_priority_fee_per_gas,
+    //             nonce,
+    //             access_list,
+    //         } => Ok(Event::<T>::CallEvm(
+    //             escrow_source,
+    //             source,
+    //             target,
+    //             value,
+    //             input,
+    //             gas_limit,
+    //             max_fee_per_gas,
+    //             max_priority_fee_per_gas,
+    //             nonce,
+    //             access_list,
+    //         )),
+    //         XbiInstruction::CallWasm {
+    //             dest,
+    //             value,
+    //             gas_limit,
+    //             storage_deposit_limit,
+    //             data,
+    //         } => Ok(Event::<T>::CallWasm(
+    //             escrow_source,
+    //             dest,
+    //             value,
+    //             gas_limit,
+    //             storage_deposit_limit,
+    //             data,
+    //         )),
+    //         XbiInstruction::CallCustom {
+    //             caller,
+    //             dest,
+    //             value,
+    //             input,
+    //             limit,
+    //             additional_params,
+    //         } => Ok(Event::<T>::CallCustom(
+    //             escrow_source,
+    //             caller,
+    //             dest,
+    //             value,
+    //             input,
+    //             limit,
+    //             additional_params,
+    //         )),
+    //         XbiInstruction::Transfer { dest, value } =>
+    //             Ok(Event::<T>::Transfer(escrow_source, executor, dest, value)),
+    //         XbiInstruction::TransferAssets {
+    //             currency_id,
+    //             dest,
+    //             value,
+    //         } => Ok(Event::<T>::TransferAssets(
+    //             escrow_source,
+    //             currency_id,
+    //             executor,
+    //             dest,
+    //             value,
+    //         )),
+    //         XbiInstruction::Result(XbiResult {
+    //             output,
+    //             witness,
+    //             id,
+    //             status,
+    //         }) => Ok(Event::<T>::Result(
+    //             escrow_source,
+    //             executor,
+    //             outcome,
+    //             output,
+    //             witness,
+    //         )),
+    //         XbiInstruction::Notification {
+    //             kind,
+    //             instruction_id,
+    //             extra,
+    //         } => Ok(Event::<T>::Notification(
+    //             escrow_source,
+    //             executor,
+    //             kind,
+    //             instruction_id,
+    //             extra,
+    //         )),
+    //         _ => Err(Error::<T>::FailedToExitXBIPortal),
+    //     }?;
 
-        Self::deposit_event(xbi_exit_event.clone());
+    //     Self::deposit_event(xbi_exit_event.clone());
 
-        let confirmation = xbi_result_2_sfx_confirmation::<T, T::Escrowed>(
-            xbi_checkin.xbi,
-            xbi_exit_event.encode(),
-            executor_decoded,
-        )
-        .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
+    //     let confirmation = xbi_result_2_sfx_confirmation::<T, T::Escrowed>(
+    //         xbi_checkin.xbi,
+    //         xbi_exit_event.encode(),
+    //         executor_decoded,
+    //     )
+    //     .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
 
-        let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_xtx_ctx.xtx_id);
-        Self::confirm(
-            &mut local_xtx_ctx,
-            &Self::account_id(),
-            sfx_id,
-            &confirmation,
-        )
-        .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
-        Ok(())
-    }
+    //     let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_xtx_ctx.xtx_id);
+    //     Self::confirm(
+    //         &mut local_xtx_ctx,
+    //         &Self::account_id(),
+    //         sfx_id,
+    //         &confirmation,
+    //     )
+    //     .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
+    //     Ok(())
+    // }
 }

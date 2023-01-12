@@ -4246,7 +4246,7 @@ checksum = "334e04b4d781f436dc315cb1e7515bd96826426345d498149e4bde36b67f8ee9"
 dependencies = [
  "async-channel",
  "castaway",
- "crossbeam-utils 0.8.14",
+ "crossbeam-utils 0.7.2",
  "curl",
  "curl-sys",
  "encoding_rs",
@@ -6345,7 +6345,6 @@ dependencies = [
 name = "pallet-3vm"
 version = "0.1.0"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -6371,7 +6370,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-xbi-portal",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6381,6 +6379,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
+ "substrate-abi",
  "t3rn-primitives 1.0.0-alpha.0",
 ]
 
@@ -6708,7 +6707,6 @@ name = "pallet-contracts"
 version = "1.0.0-alpha.0"
 dependencies = [
  "bitflags",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
@@ -6908,7 +6906,6 @@ version = "0.1.0"
 dependencies = [
  "evm",
  "fp-evm 3.0.0-dev",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
@@ -7072,7 +7069,6 @@ dependencies = [
 name = "pallet-executors"
 version = "1.0.0-rc.0"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -7726,14 +7722,11 @@ name = "pallet-xbi-portal"
 version = "0.9.27"
 dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
  "log",
- "pallet-balances",
  "pallet-contracts-primitives 5.0.0 (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
- "pallet-xcm",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -12901,12 +12894,11 @@ dependencies = [
 [[package]]
 name = "substrate-abi"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi.git#e58bd5faa84c5f4fbc81a2a703e5139929696588"
+source = "git+https://github.com/t3rn/xbi.git#2d9e884e261c2defaccee7fc8f50c2363f77f51c"
 dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -12949,12 +12941,11 @@ dependencies = [
 [[package]]
 name = "substrate-contracts-abi"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi.git#e58bd5faa84c5f4fbc81a2a703e5139929696588"
+source = "git+https://github.com/t3rn/xbi.git#2d9e884e261c2defaccee7fc8f50c2363f77f51c"
 dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -13378,10 +13369,16 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal 0.3.4",
  "log",
+ "pallet-account-manager",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-clock",
  "pallet-collator-selection",
+ "pallet-contracts-registry",
+ "pallet-grandpa-finality-verifier",
+ "pallet-portal",
+ "pallet-portal-rpc-runtime-api",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
@@ -13392,7 +13389,10 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
+ "pallet-xbi-portal",
  "pallet-xcm",
+ "pallet-xdns",
+ "pallet-xdns-rpc-runtime-api",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -13585,10 +13585,10 @@ dependencies = [
 [[package]]
 name = "t3rn-xcm-primitives"
 version = "0.2.0"
-source = "git+https://github.com/t3rn/xbi.git#e58bd5faa84c5f4fbc81a2a703e5139929696588"
+source = "git+https://github.com/t3rn/xbi.git#2d9e884e261c2defaccee7fc8f50c2363f77f51c"
 dependencies = [
  "parity-scale-codec",
- "sp-runtime",
+ "sp-std",
  "xcm",
  "xcm-executor",
 ]
@@ -14142,7 +14142,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.11.2",
+ "parking_lot 0.10.2",
  "regex",
  "serde",
  "serde_json",
@@ -15188,14 +15188,12 @@ dependencies = [
 [[package]]
 name = "xbi-format"
 version = "0.2.0"
-source = "git+https://github.com/t3rn/xbi.git#e58bd5faa84c5f4fbc81a2a703e5139929696588"
+source = "git+https://github.com/t3rn/xbi.git#2d9e884e261c2defaccee7fc8f50c2363f77f51c"
 dependencies = [
- "frame-support",
  "frame-system",
  "log",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
  "sp-runtime",
  "sp-std",
