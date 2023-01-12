@@ -1,4 +1,4 @@
-use crate::*;
+use super::*;
 
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;

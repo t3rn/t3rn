@@ -112,43 +112,9 @@ impl pallet_authorship::Config for Runtime {
     type UncleGenerations = UncleGenerations;
 }
 
-parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-}
-
-impl cumulus_pallet_parachain_system::Config for Runtime {
-    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
-    type DmpMessageHandler = DmpQueue;
-    type Event = Event;
-    type OnSystemEvent = ();
-    type OutboundXcmpMessageSource = XcmpQueue;
-    type ReservedDmpWeight = ReservedDmpWeight;
-    type ReservedXcmpWeight = ReservedXcmpWeight;
-    type SelfParaId = parachain_info::Pallet<Runtime>;
-    type XcmpMessageHandler = XcmpQueue;
-}
-
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
-
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-    type ChannelInfo = ParachainSystem;
-    type ControllerOrigin = EnsureRoot<AccountId>;
-    type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-    type VersionWrapper = ();
-    type WeightInfo = ();
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
 
 parameter_types! {
     pub const Period: u32 = 6 * HOURS;

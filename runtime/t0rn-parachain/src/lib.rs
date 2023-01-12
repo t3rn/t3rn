@@ -178,7 +178,8 @@ construct_runtime!(
         AccountManager: pallet_account_manager = 125,
 
         // XBI
-        XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>} = 111,
+        XBIPortal: pallet_xbi_portal = 111,
+        AssetRegistry: pallet_asset_registry = 112,
 
          // Portal
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,

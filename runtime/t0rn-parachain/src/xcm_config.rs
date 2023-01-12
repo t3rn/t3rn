@@ -22,7 +22,11 @@ use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
+    // Our representation of the relay asset id
+    pub const RelayAssetId: u32 = 1;
     pub const RelayNetwork: NetworkId = NetworkId::Any;
+    pub const SelfLocation: MultiLocation = MultiLocation::here();
+
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
@@ -42,34 +46,30 @@ pub type LocationToAccountId = (
     AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// Means for transacting assets on this chain.
+pub type SovereignAccountOf = (
+    SiblingParachainConvertsVia<ParaId, AccountId>,
+    AccountId32Aliases<RelayNetwork, AccountId>,
+);
+
 pub type LocalAssetTransactor = CurrencyAdapter<
     // Use this currency:
     Balances,
     // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<RelayLocation>,
-    // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-    LocationToAccountId,
+    IsConcrete<SelfLocation>,
+    // We can convert the MultiLocations with our converter above:
+    SovereignAccountOf,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
-    // We don't track any teleports.
-    (),
+    // It's a native asset so we keep track of the teleports to maintain total issuance.
+    CheckingAccount,
 >;
 
-// The non-reserve fungible transactor type
-// It will use pallet-assets, and the Id will be matched against AsAssetType
-// This is intended to match FOREIGN ASSETS
-pub type ForeignFungiblesTransactor = FungiblesAdapter<
-    // Use this fungibles implementation:
+/// Means for transacting assets besides the native currency on this chain.
+pub type FungiblesTransactor = FungiblesAdapter<
     Assets,
-    // Use this currency when it is a fungible asset matching the given location or name:
-    ConvertedConcreteAssetId<
-        parachains_common::AssetId,
-        Balance,
-        AsPrefixedGeneralIndex<AssetsPalletLocation, parachains_common::AssetId, JustTry>,
-        JustTry,
-    >,
-    // Do a simple punn to convert an AccountId20 MultiLocation into a native chain account ID:
+    // Use the asset registry for lookups
+    ConvertedConcreteAssetId<parachains_common::AssetId, Balance, AssetRegistry, JustTry>,
+    // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
@@ -80,7 +80,7 @@ pub type ForeignFungiblesTransactor = FungiblesAdapter<
     CheckingAccount,
 >;
 
-pub type AssetTransactors = (LocalAssetTransactor, ForeignFungiblesTransactor);
+pub type AssetTransactors = (LocalAssetTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -116,11 +116,34 @@ match_types! {
     };
 }
 
+// FIXME: should be using asset_registry
 pub type Barrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,
     AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
     // ^^^ Parent and its exec plurality get free execution
+);
+
+parameter_types! {
+    pub const Roc: MultiAssetFilter = Wild(AllOf { fun: WildFungible, id: Concrete(RelayLocation::get()) });
+    pub const AllAssets: MultiAssetFilter = Wild(All);
+    pub const RocForRococo: (MultiAssetFilter, MultiLocation) = (Roc::get(), RelayLocation::get());
+    pub const RococoForSlim: (MultiAssetFilter, MultiLocation) = (AllAssets::get(), Parachain(1).into());
+    pub const RococoForSlender: (MultiAssetFilter, MultiLocation) = (AllAssets::get(), Parachain(2).into());
+    pub const RococoForLarge: (MultiAssetFilter, MultiLocation) = (AllAssets::get(), Parachain(3).into());
+    pub const RococoForStatemine: (MultiAssetFilter, MultiLocation) = (Roc::get(), Parachain(4).into());
+    pub const RococoForCanvas: (MultiAssetFilter, MultiLocation) = (Roc::get(), Parachain(5).into());
+    pub const RococoForEncointer: (MultiAssetFilter, MultiLocation) = (Roc::get(), Parachain(6).into());
+}
+
+pub type TrustedTeleporters = (
+    xcm_builder::Case<RocForRococo>,
+    xcm_builder::Case<RococoForSlim>,
+    xcm_builder::Case<RococoForSlender>,
+    xcm_builder::Case<RococoForLarge>,
+    // xcm_builder::Case<RococoForStatemine>,
+    // xcm_builder::Case<RococoForCanvas>,
+    // xcm_builder::Case<RococoForEncointer>,
 );
 
 pub struct XcmConfig;
@@ -132,20 +155,60 @@ impl xcm_executor::Config for XcmConfig {
     type Barrier = Barrier;
     type Call = Call;
     type IsReserve = NativeAsset;
-    type IsTeleporter = ();
-    // Teleporting is disabled.
+    type IsTeleporter = TrustedTeleporters;
     type LocationInverter = LocationInverter<Ancestry>;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type ResponseHandler = PolkadotXcm;
     type SubscriptionService = PolkadotXcm;
+    // FIXME: should be using asset_registry
     type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type XcmSender = XcmRouter;
 }
 
+parameter_types! {
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+}
+
+impl cumulus_pallet_parachain_system::Config for Runtime {
+    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
+    type DmpMessageHandler = DmpQueue;
+    type Event = Event;
+    type OnSystemEvent = ();
+    type OutboundXcmpMessageSource = XcmpQueue;
+    type ReservedDmpWeight = ReservedDmpWeight;
+    type ReservedXcmpWeight = ReservedXcmpWeight;
+    type SelfParaId = parachain_info::Pallet<Runtime>;
+    type XcmpMessageHandler = XcmpQueue;
+}
+
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+    type ChannelInfo = ParachainSystem;
+    type ControllerOrigin = EnsureRoot<AccountId>;
+    type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+    type Event = Event;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type VersionWrapper = ();
+    type WeightInfo = ();
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+impl cumulus_pallet_dmp_queue::Config for Runtime {
+    type Event = Event;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+impl cumulus_pallet_xcm::Config for Runtime {
+    type Event = Event;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
 pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
 
+/// TODO: this would probably be configured much like the asset registry, e.g basilisk might not allow XCMP but we do.
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
 pub type XcmRouter = (
@@ -165,18 +228,14 @@ impl pallet_xcm::Config for Runtime {
     type Origin = Origin;
     type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    // TODO: make sure this is configured for production
     type XcmExecuteFilter = Everything;
     // ^ Disable dispatchable execute on the XCM pallet.
     // Needs to be `Everything` for local testing.
     type XcmExecutor = XcmExecutor<XcmConfig>;
-    type XcmReserveTransferFilter = Nothing;
+    type XcmReserveTransferFilter = Everything;
     type XcmRouter = XcmRouter;
     type XcmTeleportFilter = Everything;
 
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-}
-
-impl cumulus_pallet_xcm::Config for Runtime {
-    type Event = Event;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
 }
