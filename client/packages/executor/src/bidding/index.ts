@@ -17,6 +17,8 @@ export class BiddingEngine {
     /** Number of bids on each side effect. KEYs: sfx id; VALUEs: number of bids */
     numberOfBidsOnSfx: Map<string, number>
     // numberOfBidsOnSfx: Map<SideEffect, number> = new Map<SideEffect, number>()
+    /** Number of bid by executor */
+    numberOfBidsByExecutor: Map<string, number>
     /** Logger */
     logger: any
     /** Being aggressive when bidding means to oubtbid everyone to get the SFX */
@@ -184,7 +186,8 @@ export class BiddingEngine {
      * Store who (bidder id) bids on what (sfx id), to 
      * keep a "database" to, maybe, implement exclusion rules
      * for bidding (e.g., I don't want to bid if this ID 
-     * is in there; or bid to keep those people out).
+     * is in there; or bid to keep those people out); and also
+     * store how many bids an executor have made in total.
      * 
      * @param sfxId The side effect ID
      * @param bidderId The executor ID
@@ -201,6 +204,11 @@ export class BiddingEngine {
         } else {
             this.whoBidsOnWhat = new Map([[sfxId, [bidderId]]]);
         }
+
+        // Shorter way of doing the same as above
+        if (this.numberOfBidsByExecutor !== undefined) {
+            this.numberOfBidsByExecutor.set(bidderId, (this.numberOfBidsByExecutor.get(bidderId) || 0 + 1))
+        }
     }
 
     /**
@@ -213,6 +221,7 @@ export class BiddingEngine {
         this.numberOfBidsOnSfx.delete(sfxId)
         this.whoBidsOnWhat.delete(sfxId)
         this.timesBeenOutbid.delete(sfxId)
+        // TODO: add the cleaning for `numberOfBidsByExecutor`
     }
 }
 
