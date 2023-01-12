@@ -51,5 +51,6 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "sp-std/std",
+  "sp-io/std",
 ]
 testing = [ "pallet-grandpa-finality-verifier/testing" ]
