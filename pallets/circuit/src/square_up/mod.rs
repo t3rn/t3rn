@@ -109,7 +109,8 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Infallible re-balance requesters locked rewards after possibly lower bids are posted.
-    pub fn bind_bidders(local_ctx: &LocalXtxCtx<T>) {
+    pub fn bind_bidders(local_ctx: &LocalXtxCtx<T>) -> bool {
+        let mut res: bool = false;
         for fsx in Machine::<T>::read_current_step_fsx(local_ctx).iter() {
             let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             if let Some(bid) = &fsx.best_bid {
@@ -118,6 +119,8 @@ impl<T: Config> SquareUp<T> {
                         "assign_deposit: expect assign_deposit to succeed for sfx_id: {:?}",
                         sfx_id
                     );
+                } else {
+                    res = true;
                 }
             } else {
                 log::error!(
@@ -126,6 +129,7 @@ impl<T: Config> SquareUp<T> {
                 );
             }
         }
+        res
     }
 
     /// Drop Xtx and unlock requester and all executors that posted bids - without penalties.
@@ -156,7 +160,7 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Finalize Xtx after successful run.
-    pub fn finalize(local_ctx: &LocalXtxCtx<T>) {
+    pub fn finalize(local_ctx: &LocalXtxCtx<T>) -> bool {
         let optimistic_fsx_in_step: Vec<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -170,8 +174,8 @@ impl<T: Config> SquareUp<T> {
             .collect();
 
         for fsx in optimistic_fsx_in_step.iter() {
+            log::error!("finalize: optimistic_fsx_in_step");
             let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-
             match &fsx.best_bid {
                 Some(bid) => {
                     if !<T as Config>::AccountManager::finalize_infallible(
@@ -211,6 +215,7 @@ impl<T: Config> SquareUp<T> {
                 },
             }
         }
+        true
     }
 
     /// Finalize Xtx after successful run - reward Escrow executors.
