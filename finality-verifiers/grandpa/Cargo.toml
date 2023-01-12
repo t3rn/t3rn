@@ -44,6 +44,10 @@ default = [ "std" ]
 runtime-benchmarks = [  ]
 std = [
   "codec/std",
+  "hash-db/std",
+  "num-traits/std",
+  "ed25519-dalek/std",
+  "hex/std",
   "finality-grandpa/std",
   "scale-info/std",
 
@@ -51,9 +55,16 @@ std = [
   "frame-system/std",
 
   "sp-runtime/std",
+  "sp-core/std",
+  "sp-state-machine/std",
+  "sp-trie/std",
   "sp-std/std",
   "sp-io/std",
   "sp-finality-grandpa/std",
+
+  "pallet-balances/std",
+  "pallet-sudo/std",
+  "pallet-timestamp/std",
 
   "log/std",
   "serde/std",

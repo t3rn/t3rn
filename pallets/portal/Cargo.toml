@@ -42,6 +42,7 @@ circuit-runtime-types   = { path = "../../runtime/common-types" }
 [features]
 default = [ "std" ]
 std = [
+  "log/std",
   "codec/std",
   "scale-info/std",
   "hash-db/std",

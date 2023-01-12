@@ -88,16 +88,14 @@ t3rn-protocol   = { default-features = false, path = "../../protocol" }
 # t3rn pallets
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
+pallet-clock                     = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                    = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
+pallet-xbi-portal                = { path = "../../pallets/xbi-portal/pallets/portal", default-features = false }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-
-pallet-clock            = { path = "../../pallets/clock", default-features = false }
-pallet-xbi-portal       = { path = "../../pallets/xbi-portal", default-features = false }
-pallet-xbi-portal-enter = { path = "../../pallets/xbi-portal/enter", default-features = false }
 
 # Smart contracts VMs
 pallet-3vm                           = { path = "../../3vm/pallets/3vm", default-features = false }
@@ -160,7 +158,6 @@ std = [
   "pallet-membership/std",
   "pallet-clock/std",
   "pallet-xbi-portal/std",
-  "pallet-xbi-portal-enter/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",

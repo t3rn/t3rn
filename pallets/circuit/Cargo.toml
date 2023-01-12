@@ -28,11 +28,10 @@ sp-runtime         = { default-features = false, git = "https://github.com/parit
 sp-std             = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-trie            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-pallet-xbi-portal       = { path = "../xbi-portal", default-features = false }
-pallet-xbi-portal-enter = { path = "../xbi-portal/enter", default-features = false }
-t3rn-primitives         = { path = "../../primitives", default-features = false }
-t3rn-protocol           = { path = "../../protocol", default-features = false }
-t3rn-sdk-primitives     = { version = "=0.1.1-rc.4", default-features = false }
+pallet-xbi-portal   = { path = "../xbi-portal/pallets/portal", default-features = false }
+t3rn-primitives     = { path = "../../primitives", default-features = false }
+t3rn-protocol       = { path = "../../protocol", default-features = false }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 
 [dev-dependencies]
 frame-election-provider-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
@@ -73,12 +72,12 @@ std = [
   "serde/std",
   "sp-core/std",
   "sp-io/std",
+  "sp-trie/std",
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
   "t3rn-sdk-primitives/std",
   "t3rn-protocol/std",
-  "pallet-xbi-portal-enter/std",
   "pallet-xbi-portal/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]
