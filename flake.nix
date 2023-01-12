@@ -20,7 +20,16 @@
       in {
         devShell = pkgs.mkShell {
           LIBCLANG_PATH = "${pkgs.llvmPackages_11.libclang.lib}/lib";
-          nativeBuildInputs = with pkgs; [ bashInteractive cmake openssl pkg-config clang libclang taplo protobuf ];
+          nativeBuildInputs = with pkgs; [ 
+            bashInteractive 
+            cmake 
+            openssl 
+            pkg-config 
+            clang 
+            llvmPackages_11.libclang 
+            taplo 
+            protobuf
+          ];
           buildInputs =
             [ (rustVersion.override { extensions = [ "rust-src" ]; }) ];
         };
