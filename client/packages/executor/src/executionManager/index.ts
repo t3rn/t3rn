@@ -478,6 +478,7 @@ export class ExecutionManager {
         if (index > -1) {
             this.queue[gatewayId][queue].splice(index, 1)
         }
+        this.biddingEngine.cleanUp(id)
     }
 
     private addLog(msg: object, debug: boolean = true) {
