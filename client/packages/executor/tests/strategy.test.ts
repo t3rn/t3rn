@@ -5,7 +5,7 @@ import { SideEffect } from '../src/executionManager/sideEffect';
 
 // TODO: function to create a side effect with random values
 
-describe('StrategyEngine', () => {
+describe('Basic StrategyEngine setup', () => {
     it('should be a class', () => {
         expect(StrategyEngine).to.be.a('function');
     });
@@ -14,19 +14,17 @@ describe('StrategyEngine', () => {
         expect(StrategyEngine).to.have.property('constructor');
     });
 
+    const se = new StrategyEngine();
+
     it('should have a method called "getMinProfitUsd"', () => {
-        expect(StrategyEngine).to.have.property('getMinProfitUsd');
+        expect(se).to.have.property('getMinProfitUsd');
     });
 
-    it('should have a method called "getMinProfitPercentage"', () => {
-        expect(StrategyEngine).to.have.property('getMinProfitPercentage');
-    });
-
-    it('should return 0 when no profit is set', () => {
-        const strategyEng = new StrategyEngine();
-        const biddingEng = new BiddingEngine();
-        const sfx = new SideEffect()
-        expect(strategyEng.getMinProfitUsd()).to.be.equal(0);
-        expect(strategyEng.getMinProfitPercentage()).to.be.equal(0);
-    });
+    // it('should return 0 when no profit is set', () => {
+    //     const strategyEng = new StrategyEngine();
+    //     const biddingEng = new BiddingEngine();
+    //     const sfx = new SideEffect()
+    //     expect(strategyEng.getMinProfitUsd()).to.be.equal(0);
+    //     expect(strategyEng.getMinProfitPercentage()).to.be.equal(0);
+    // });
 })

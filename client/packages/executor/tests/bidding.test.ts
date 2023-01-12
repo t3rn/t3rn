@@ -3,7 +3,7 @@ import { config } from "../config/config"
 // import { SideEffect } from "../src/executionManager/sideEffect"
 import { expect } from 'chai';
 
-describe('Configuration loading', () => {
+describe('Bidding: Configuration loading', () => {
     it('Correct config values are loaded', () => {
         const be = new BiddingEngine();
 
@@ -14,16 +14,12 @@ describe('Configuration loading', () => {
         expect(be.bidPercentile).to.be.equal(config.bidding.bidPercentile);
         expect(be.bidMeek).to.be.equal(config.bidding.bidMeek);
         expect(be.overrideNoCompetition).to.be.equal(config.bidding.overrideNoCompetition);
-        expect(be.equalMinBid).to.be.equal(config.bidding.equalMinBid);
+        expect(be.equalMinProfitBid).to.be.equal(config.bidding.equalMinBid);
         expect(be.closerPercentageBid).to.be.equal(config.bidding.closerPercentageBid);
-
-        // Other values can be checked too
-        expect(be.timesBeenOutbid).to.be.equal(0);
-
     })
 })
 
-describe('Storing xtx bids for certain sfxs', () => {
+describe('Bidding: Storing executor bids for certain sfxs', () => {
     it("Correct storage on new key", () => {
         // Create a bidding engine instance
         const be = new BiddingEngine();

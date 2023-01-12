@@ -12,9 +12,9 @@ export class BiddingEngine {
     /** How close you are to the max profit */
     bidPercentile: number = config.bidding.bidPercentile
     /** At the beginning, it has never been outbid */
-    timesBeenOutbid: number = 0
+    timesBeenOutbid: Map<string, number>
     // timesBeenOutbid: Map<SideEffect, number> = new Map<SideEffect, number>()
-    /** Number of bids on each side effect. KEYs: sfx id; VALUEs: # bids */
+    /** Number of bids on each side effect. KEYs: sfx id; VALUEs: number of bids */
     numberOfBidsOnSfx: Map<string, number>
     // numberOfBidsOnSfx: Map<SideEffect, number> = new Map<SideEffect, number>()
     /** Logger */
@@ -25,11 +25,11 @@ export class BiddingEngine {
     bidMeek: boolean = config.bidding.bidMeek
     /** When there's no competition yet, get the execution by getting the smallest profit */
     overrideNoCompetition: boolean = config.bidding.overrideNoCompetition
-    /** If outbid, executor wants to make the same last bid */
-    equalMinBid: boolean = config.bidding.equalMinBid
+    /** If outbid, executor makes the same last bid */
+    equalMinProfitBid: boolean = config.bidding.equalMinBid
     /** How close to be when been outbid, but still wants to be place a bid close to last one */
     closerPercentageBid: number = config.bidding.closerPercentageBid
-    /** Who's bidding on what. KEYs: sfx id; VALUEs: xtx ids array */
+    /** Which executor is bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
     whoBidsOnWhat: Map<string, string[]>
 
     /**
@@ -46,8 +46,6 @@ export class BiddingEngine {
                 bid = this.computeNoBidAndNoCompetition(sfx)
             case Scenario.noBidButCompetition:
                 bid = this.computeNoBidButCompetition(sfx)
-            case Scenario.bidAndStillTopBidder:
-                bid = this.computeBidAndStillTopBidder(sfx)
             case Scenario.beenOutbid:
                 bid = this.computeBeenOutbid(sfx)
             default:
@@ -119,34 +117,18 @@ export class BiddingEngine {
         const maxProfitBid = txOutputCost + minProfit + maxProfit
 
         if (lastBid === minProfitBid) {
-            if (this.equalMinBid) {
-                return minProfitBid
-            } else {
-                // TODO: here something better can be returned, bc the idea is that the bid is not accepted in this if-else branch
-                return maxProfitBid
-            }
+            // If the last bid was the minProfitBid,
+            // return the same value (in case others dropout)
+            return minProfitBid
         } else {
-            // Otherwise, if not wanting to make the minProftBid, 
-            // it's possible to get closer that minProfitBid 
-            // by a certain percentage, but winning more.
-            //
-            // Note: this supposes that executors can drop out
-            // of the bidding stage and others with larger profit bids 
-            // can win the execution
+            // Otherwise, get closer that minProfitBid from above
             const closerBid = lastBid * (1 + this.closerPercentageBid)
-            return closerBid
+            if (closerBid >= maxProfitBid) {
+                return maxProfitBid
+            } else {
+                return closerBid
+            }
         }
-    }
-
-    /**
-     * If the executor is still the top bidder, nothing has to be done.
-     * 
-     * @param _sfx 
-     * @returns The bidding amount in USD
-     */
-    computeBidAndStillTopBidder(_sfx: SideEffect): number {
-        // TODO: what to return to not modify anything else?
-        return 0
     }
 
     /**
@@ -157,17 +139,11 @@ export class BiddingEngine {
      * @returns The situation to choose the action 
      */
     checkScenario(sfx: SideEffect): Scenario {
-        const executorPlacedBid: boolean = false
-        // TODO: check that this is correct
         const executorIsTopBidder = sfx.isBidder
         const otherBidsOnSFX: boolean = sfx.lastBids.length > 0 ? true : false
 
-        if (executorPlacedBid) {
-            if (executorIsTopBidder) {
-                return Scenario.bidAndStillTopBidder
-            } else {
-                return Scenario.beenOutbid
-            }
+        if (!executorIsTopBidder) {
+            return Scenario.beenOutbid
         } else {
             if (otherBidsOnSFX) {
                 return Scenario.noBidButCompetition
@@ -183,7 +159,7 @@ export class BiddingEngine {
      * @param sfx The side effect bidding on
      */
     addBidToSfx(sfx: SideEffect) {
-        if (this.numberOfBidsOnSfx[sfx.id] != undefined) {
+        if (this.numberOfBidsOnSfx[sfx.id] !== undefined) {
             this.numberOfBidsOnSfx[sfx.id] = (this.numberOfBidsOnSfx[sfx.id] + 1) || 1
         } else {
             throw new Error("Incorrect SFX id")
@@ -191,36 +167,52 @@ export class BiddingEngine {
     }
 
     /**
-     * Check if the executor has been outbid in the SFX.
+     * Check if the executor has been outbid in the SFX, and if so, updates the map.
      * 
      * @param sfx The side effect in question
      * @returns true if the top bidder changed
      */
     checkOutbid(sfx: SideEffect): boolean {
-        return sfx.changedBidLeader
+        const changedBidLeader = sfx.changedBidLeader
+        if (changedBidLeader) {
+            this.timesBeenOutbid[sfx.id] = (this.timesBeenOutbid[sfx.id] + 1) || 1
+        }
+        return changedBidLeader
     }
 
     /**
-     * Store who (xtx id) bids on what (sfx id), to 
-     * keep a database to, maybe, implement exclusion rules
+     * Store who (bidder id) bids on what (sfx id), to 
+     * keep a "database" to, maybe, implement exclusion rules
      * for bidding (e.g., I don't want to bid if this ID 
      * is in there; or bid to keep those people out).
      * 
      * @param sfxId The side effect ID
-     * @param xtxId The executor ID
+     * @param bidderId The executor ID
      */
-    storeWhoBidOnWhat(sfxId: string, xtxId: string) {
+    storeWhoBidOnWhat(sfxId: string, bidderId: string) {
         if (this.whoBidsOnWhat !== undefined) {
-            let previousXtxIds = this.whoBidsOnWhat.get(sfxId)
-            if (previousXtxIds !== undefined) {
-                previousXtxIds.push(xtxId);
-                this.whoBidsOnWhat.set(sfxId, previousXtxIds);
+            let previousBidderIds = this.whoBidsOnWhat.get(sfxId)
+            if (previousBidderIds !== undefined) {
+                previousBidderIds.push(bidderId);
+                this.whoBidsOnWhat.set(sfxId, previousBidderIds);
             } else {
-                this.whoBidsOnWhat.set(sfxId, [xtxId]);
+                this.whoBidsOnWhat.set(sfxId, [bidderId]);
             }
         } else {
-            this.whoBidsOnWhat = new Map([[sfxId, [xtxId]]]);
+            this.whoBidsOnWhat = new Map([[sfxId, [bidderId]]]);
         }
+    }
+
+    /**
+     * Clean the data structures after the bidding phase is over.
+     * Called in `removeFromQueue` in executionManager
+     * 
+     * @param sfxId The side effect ID
+     */
+    cleanUp(sfxId: string) {
+        this.numberOfBidsOnSfx.delete(sfxId)
+        this.whoBidsOnWhat.delete(sfxId)
+        this.timesBeenOutbid.delete(sfxId)
     }
 }
 
@@ -240,7 +232,6 @@ export class BiddingEngine {
  */
 enum Scenario {
     noBidAndNoCompetition,
-    noBidButCompetition,
-    bidAndStillTopBidder,
-    beenOutbid,
+    noBidButCompetition,   // <- might not be useful
+    beenOutbid,            // <- 
 }

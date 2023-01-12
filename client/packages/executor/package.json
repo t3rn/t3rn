@@ -9,7 +9,8 @@
     "export": "LOG_LEVEL=debug yarn start >> logger.log",
     "fmt": "npx prettier --no-semi --tab-width 4 --print-width 140 --write config/*.ts src/*.ts src/**/*.ts src/**/**/*.ts",
     "build-docs": "yarn fmt && npx typedoc && cp -R docs ../../../docs/executor",
-    "test": "mocha -r ts-node/register 'tests/**/*.ts'"
+    "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "test-single": "mocha -r ts-node/register"
   },
   "exclude": [
     "./tests/"

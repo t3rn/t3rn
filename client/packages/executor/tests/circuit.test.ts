@@ -5,7 +5,7 @@ import { BN } from "@polkadot/util"
 
 
 // Include basic testing and the check for the methods in the next block
-describe('CircuitRelayer basic configuration', () => {
+describe('Basic CircuitRelayer setup', () => {
     it('should be a class', () => {
         expect(CircuitRelayer).to.be.a('function');
     });
@@ -14,16 +14,21 @@ describe('CircuitRelayer basic configuration', () => {
         expect(CircuitRelayer).to.have.property('constructor');
     });
 
+    // TODO: Incorrect values, check.
+    const sdk = new Sdk("test", "0000");
+    const cr = new CircuitRelayer(sdk);
+
     it('should have a method called "bidSfx"', () => {
-        expect(CircuitRelayer).to.have.property('bidSfx');
+        expect(cr).to.have.property('bidSfx');
     });
 });
 
 
-describe('Circuit relayer funcitonality', () => {
+describe('Circuit relayer functionality', () => {
+    // TODO: properly finish this
     it('should be able to build and submit an sfxBid to the circuit', () => {
-        const sdk = new Sdk();
-        const cRelayer = new CircuitRelayer(sdk);
-        cRelayer.bidSfx("0x123", new BN(100));
+        const sdk = new Sdk("test", "0000");
+        const cr = new CircuitRelayer(sdk);
+        cr.bidSfx("0x123", new BN(100));
     })
 });
