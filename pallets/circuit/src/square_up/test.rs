@@ -23,8 +23,44 @@ pub mod test {
     use frame_support::{assert_err, assert_ok, traits::Currency};
     use sp_core::H256;
 
+    use crate::tests::ESCROW_ACCOUNT;
     use sp_runtime::DispatchResult;
     use t3rn_primitives::side_effect::ConfirmedSideEffect;
+
+    const REQUESTER: AccountId = ALICE;
+    const EXECUTOR: AccountId = BOB;
+    const INITIAL_BALANCE: Balance = 10;
+
+    fn stage_single_sfx_xtx() -> (
+        LocalXtxCtx<Runtime>,
+        Hash,
+        SFXBid<AccountId, Balance, AssetId>,
+        Hash,
+    ) {
+        System::set_block_number(1);
+
+        let _ = Balances::deposit_creating(&REQUESTER, INITIAL_BALANCE);
+        let _ = Balances::deposit_creating(&EXECUTOR, INITIAL_BALANCE);
+
+        let local_ctx =
+            Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None)).unwrap();
+        let bid = SFXBid {
+            amount: 2,
+            insurance: 1,
+            reserved_bond: None,
+            reward_asset_id: None,
+            executor: EXECUTOR,
+            requester: REQUESTER,
+        };
+        let sfx_id = local_ctx.full_side_effects[0][0]
+            .input
+            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &local_ctx.xtx_id.0,
+            0,
+        );
+        let bid_id = bid.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>, Runtime>(sfx_id);
+        (local_ctx, sfx_id, bid.clone(), bid_id)
+    }
 
     fn request_and_bid_single_sfx_xtx(
         local_ctx: &mut LocalXtxCtx<Runtime>,
@@ -120,14 +156,13 @@ pub mod test {
             .execute_with(|| {
                 System::set_block_number(1);
 
-                let _ = Balances::deposit_creating(&ALICE, 3);
+                let _ = Balances::deposit_creating(&REQUESTER, 3);
                 let local_ctx =
                     Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
                         .unwrap();
 
                 assert_ok!(SquareUp::<Runtime>::try_request(&local_ctx));
-
-                assert_eq!(Balances::free_balance(&ALICE), 1);
+                assert_eq!(Balances::free_balance(&REQUESTER), 1);
             });
     }
 
@@ -140,7 +175,7 @@ pub mod test {
             .execute_with(|| {
                 System::set_block_number(1);
 
-                let _ = Balances::deposit_creating(&ALICE, 1);
+                let _ = Balances::deposit_creating(&REQUESTER, 1);
                 let local_ctx =
                     Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
                         .unwrap();
@@ -155,7 +190,7 @@ pub mod test {
                 );
 
                 // Balance stays unchanged
-                assert_eq!(Balances::free_balance(&ALICE), 1);
+                assert_eq!(Balances::free_balance(&REQUESTER), 1);
             });
     }
 
@@ -168,27 +203,27 @@ pub mod test {
             .execute_with(|| {
                 System::set_block_number(1);
 
-                let _ = Balances::deposit_creating(&ALICE, 4);
+                let _ = Balances::deposit_creating(&REQUESTER, 4);
                 let _local_ctx =
                     Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
                         .unwrap();
 
                 assert_ok!(SquareUp::<Runtime>::try_bid(
                     H256::repeat_byte(1),
-                    &BOB,
-                    &ALICE,
+                    &EXECUTOR,
+                    &REQUESTER,
                     &SFXBid {
                         amount: 2,
                         insurance: 1,
                         reserved_bond: None,
                         reward_asset_id: None,
-                        executor: ALICE,
-                        requester: BOB,
+                        executor: REQUESTER,
+                        requester: EXECUTOR,
                     },
                     None
                 ));
 
-                assert_eq!(Balances::free_balance(&ALICE), 1);
+                assert_eq!(Balances::free_balance(&REQUESTER), 1);
             });
     }
 
@@ -199,36 +234,36 @@ pub mod test {
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
-                System::set_block_number(1);
-
-                let _ = Balances::deposit_creating(&ALICE, 10);
-                let mut local_ctx =
-                    Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
-                        .unwrap();
-
-                let bid = SFXBid {
-                    amount: 2,
-                    insurance: 1,
-                    reserved_bond: None,
-                    reward_asset_id: None,
-                    executor: ALICE,
-                    requester: BOB,
-                };
-
-                let sfx_id = local_ctx.full_side_effects[0][0]
-                    .input
-                    .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-                    &local_ctx.xtx_id.0,
-                    0,
-                );
-
-                let bid_id = bid.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>, Runtime>(sfx_id);
+                let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
 
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
 
                 assert_eq!(SquareUp::<Runtime>::kill(&local_ctx), true);
 
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
+
+                assert_eq!(Balances::free_balance(&REQUESTER), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR), INITIAL_BALANCE);
+            });
+    }
+
+    #[test]
+    fn square_up_kills_xtx_with_its_all_bids_even_when_executor_assigned_to_request_charge() {
+        ExtBuilder::default()
+            .with_standard_side_effects()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
+
+                assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
+                assert_eq!(SquareUp::<Runtime>::bind_bidders(&local_ctx), true);
+                assert_eq!(SquareUp::<Runtime>::kill(&local_ctx), true);
+
+                assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
+
+                assert_eq!(Balances::free_balance(&REQUESTER), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR), INITIAL_BALANCE);
             });
     }
 
@@ -239,45 +274,19 @@ pub mod test {
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
-                System::set_block_number(1);
+                let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
 
-                let _ = Balances::deposit_creating(&ALICE, 10);
-                let _ = Balances::deposit_creating(&BOB, 10);
-
-                const REQUESTER: AccountId = ALICE;
-                const EXECUTOR: AccountId = BOB;
-
-                let mut local_ctx =
-                    Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
-                        .unwrap();
-
-                let bid = SFXBid {
-                    amount: 2,
-                    insurance: 1,
-                    reserved_bond: None,
-                    reward_asset_id: None,
-                    executor: EXECUTOR,
-                    requester: REQUESTER,
-                };
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
-                let fsx = local_ctx.full_side_effects[0][0].clone();
-                let sfx_id = fsx
-                    .input
-                    .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-                        &local_ctx.xtx_id.0,
-                        0,
-                    );
-
-                let bid_id = bid.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>, Runtime>(sfx_id);
 
                 local_ctx.full_side_effects[0][0].confirmed = Some(ConfirmedSideEffect {
                     err: None,
                     output: None,
                     inclusion_data: vec![0, 1, 2, 3],
-                    executioner: BOB,
+                    executioner: EXECUTOR,
                     received_at: 1 as BlockNumber,
                     cost: None,
                 });
+
                 assert_eq!(SquareUp::<Runtime>::bind_bidders(&local_ctx), true);
                 assert_eq!(SquareUp::<Runtime>::finalize(&local_ctx), true);
 
@@ -290,19 +299,24 @@ pub mod test {
                         AssetId,
                     >>::get_settlement(sfx_id),
                     Some(Settlement {
-                        requester: ALICE,
-                        recipient: BOB,
-                        settlement_amount: 2,
+                        requester: REQUESTER,
+                        recipient: EXECUTOR,
+                        settlement_amount: bid.amount,
                         outcome: Outcome::Commit,
                         source: BenefitSource::TrafficRewards,
                         role: CircuitRole::Executor
                     })
                 );
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
+
+                assert_eq!(
+                    Balances::free_balance(&REQUESTER),
+                    INITIAL_BALANCE - bid.amount
+                );
+                assert_eq!(Balances::free_balance(&EXECUTOR), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 0);
             });
     }
-
-    const INITIAL_BALANCE: Balance = 10;
 
     #[test]
     fn square_up_finalize_reverts_xtx_if_some_fsx_are_unconfirmed() {
@@ -311,40 +325,10 @@ pub mod test {
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
-                System::set_block_number(1);
-
-                let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE);
-                let _ = Balances::deposit_creating(&BOB, INITIAL_BALANCE);
-
-                const REQUESTER: AccountId = ALICE;
-                const EXECUTOR: AccountId = BOB;
-
-                let mut local_ctx =
-                    Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
-                        .unwrap();
-
-                let bid = SFXBid {
-                    amount: 2,
-                    insurance: 1,
-                    reserved_bond: None,
-                    reward_asset_id: None,
-                    executor: EXECUTOR,
-                    requester: REQUESTER,
-                };
-
+                let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
 
-                let fsx = local_ctx.full_side_effects[0][0].clone();
-                let sfx_id = fsx
-                    .input
-                    .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-                        &local_ctx.xtx_id.0,
-                        0,
-                    );
-
-                let bid_id = bid.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>, Runtime>(sfx_id);
-
-                // assert_eq!(SquareUp::<Runtime>::bind_bidders(&local_ctx), true);
+                assert_eq!(SquareUp::<Runtime>::bind_bidders(&local_ctx), true);
                 assert_eq!(SquareUp::<Runtime>::finalize(&local_ctx), true);
 
                 assert_eq!(
@@ -359,8 +343,55 @@ pub mod test {
                 );
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
 
+                // Requester has its balance restored
                 assert_eq!(Balances::free_balance(&REQUESTER), INITIAL_BALANCE);
-                assert_eq!(Balances::free_balance(&EXECUTOR), INITIAL_BALANCE - bid.insurance - bid.amount);
+                // Executor is slashed
+                assert_eq!(
+                    Balances::free_balance(&EXECUTOR),
+                    INITIAL_BALANCE - bid.insurance - bid.amount
+                );
+                assert_eq!(
+                    Balances::free_balance(&ESCROW_ACCOUNT),
+                    bid.insurance + bid.amount
+                );
+            });
+    }
+
+    #[test]
+    fn square_up_finalize_slashes_bidder_even_if_unassigned_to_request_charge() {
+        ExtBuilder::default()
+            .with_standard_side_effects()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
+                assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
+
+                assert_eq!(SquareUp::<Runtime>::finalize(&local_ctx), true);
+
+                assert_eq!(
+                    <AccountManager as AccountManagerInterface<
+                        AccountId,
+                        Balance,
+                        Hash,
+                        BlockNumber,
+                        AssetId,
+                    >>::get_settlement(sfx_id),
+                    None,
+                );
+                assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
+
+                // Requester has its balance restored
+                assert_eq!(Balances::free_balance(&REQUESTER), INITIAL_BALANCE);
+                // Executor is slashed
+                assert_eq!(
+                    Balances::free_balance(&EXECUTOR),
+                    INITIAL_BALANCE - bid.insurance - bid.amount
+                );
+                assert_eq!(
+                    Balances::free_balance(&ESCROW_ACCOUNT),
+                    bid.insurance + bid.amount
+                );
             });
     }
 }

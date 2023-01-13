@@ -21,7 +21,12 @@ impl<T: Config> Bids<T> {
         xtx_id: T::Hash,
         current_accepted_bid: Option<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>>,
     ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
-        let fsx = crate::Pallet::<T>::find_fsx_by_id(current_fsx, sfx_id, xtx_id)?;
+        let fsx = current_fsx
+            .iter()
+            .filter(|&fsx| fsx.confirmed.is_none())
+            .find(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
+            .ok_or(Error::<T>::FSXNotFoundById)?;
+
         let (sfx_max_reward, sfx_security_lvl) = (fsx.input.max_reward, fsx.security_lvl.clone());
         // Check if bid doesn't go below dust
         if bid < <T::Escrowed as EscrowTrait<T>>::Currency::minimum_balance() {
@@ -31,7 +36,6 @@ impl<T: Config> Bids<T> {
         if bid > sfx_max_reward {
             return Err(Error::<T>::BiddingRejectedBidTooHigh)
         }
-
         let mut sfx_bid =
             SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>::new_none_optimistic(
                 bid,
@@ -42,26 +46,27 @@ impl<T: Config> Bids<T> {
             );
         // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
         if sfx_security_lvl == SecurityLvl::Optimistic {
-            let total_xtx_step_optimistic_rewards_of_others =
-                crate::Pallet::<T>::get_fsx_total_rewards(
-                    &current_fsx
-                        .iter()
-                        .filter(|&fsx| fsx.security_lvl == SecurityLvl::Optimistic)
-                        // All FSX but the current one
-                        .filter(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) != sfx_id)
-                        .cloned()
-                        .collect::<Vec<
-                            FullSideEffect<
-                                <T as frame_system::Config>::AccountId,
-                                <T as frame_system::Config>::BlockNumber,
-                                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-                            >,
-                        >>(),
-                );
+            let total_xtx_step_optimistic_rewards_of_others = &current_fsx
+                .iter()
+                .filter(|&fsx| fsx.security_lvl == SecurityLvl::Optimistic)
+                // All FSX but the current one
+                .filter(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) != sfx_id)
+                .map(|fsx| fsx.get_bond_value(Zero::zero()))
+                .reduce(|total_reserved, next_amount| {
+                    total_reserved
+                        .checked_add(&next_amount)
+                        .unwrap_or_else(|| total_reserved)
+                });
 
-            if total_xtx_step_optimistic_rewards_of_others > Zero::zero() {
-                sfx_bid.reserved_bond = Some(total_xtx_step_optimistic_rewards_of_others);
-            }
+            sfx_bid.reserved_bond = match total_xtx_step_optimistic_rewards_of_others {
+                Some(x) =>
+                    if x > &Zero::zero() {
+                        Some(x.clone())
+                    } else {
+                        None
+                    },
+                None => None,
+            };
         }
 
         SquareUp::<T>::try_bid(sfx_id, requester, bidder, &sfx_bid, current_accepted_bid).map_err(

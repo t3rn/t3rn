@@ -401,10 +401,7 @@ pub mod pallet {
                             PrecompileResult::UpdateFSX(current_fsx.clone())
                         },
                         |_status_change, local_ctx| {
-                            // Account fees and charges
-                            // Self::square_up(local_ctx, status_change, None).expect(
-                            //     "Expect square up at DroppedAtBidding loop to be infallible",
-                            // );
+                            // Account fees and charges happens internally in Machine::apply
                             Self::emit_status_update(
                                 local_ctx.xtx_id,
                                 Some(local_ctx.xtx.clone()),
@@ -1488,54 +1485,6 @@ impl<T: Config> Pallet<T> {
     > {
         // fixme: This accesses storage and therefor breaks the rule of a single-storage access at setup.
         <PendingSFXBids<T>>::get(xtx_id, sfx_id)
-    }
-
-    pub(self) fn get_fsx_total_rewards(
-        fsxs: &[FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-        >],
-    ) -> EscrowedBalanceOf<T, <T as Config>::Escrowed> {
-        let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
-
-        for fsx in fsxs {
-            if let Some(v) = acc_rewards.checked_add(&fsx.expect_sfx_bid().amount) {
-                acc_rewards = v
-            } // cannot return an error, signature is Weight
-        }
-
-        acc_rewards
-    }
-
-    pub(self) fn find_fsx_by_id(
-        fsx_array: &Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            >,
-        >,
-        sfx_id: T::Hash,
-        xtx_id: T::Hash,
-    ) -> Result<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-        >,
-        Error<T>,
-    > {
-        let maybe_fsx = fsx_array
-            .iter()
-            .filter(|&fsx| fsx.confirmed.is_none())
-            .find(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id);
-
-        if let Some(fsx) = maybe_fsx {
-            Ok(fsx.clone())
-        } else {
-            Err(Error::<T>::FSXNotFoundById)
-        }
     }
 
     pub(self) fn recover_fsx_by_id(

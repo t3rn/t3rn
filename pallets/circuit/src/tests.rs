@@ -63,7 +63,7 @@ pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
 pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
-pub const ESCROW_ACCOUNT: AccountId32 = AccountId32::new([33u8; 32]);
+pub const ESCROW_ACCOUNT: AccountId32 = AccountId32::new([51_u8; 32]);
 
 pub const FIRST_REQUESTER_NONCE: u32 = 0;
 pub const SECOND_REQUESTER_NONCE: u32 = 1;

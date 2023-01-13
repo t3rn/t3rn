@@ -174,7 +174,6 @@ impl<T: Config> SquareUp<T> {
             .collect();
 
         for fsx in optimistic_fsx_in_step.iter() {
-            log::error!("finalize: optimistic_fsx_in_step");
             let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             match &fsx.best_bid {
                 Some(bid) => {
