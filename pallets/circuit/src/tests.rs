@@ -4616,23 +4616,93 @@ fn no_duplicate_xtx_and_sfx_ids() {
                 sequential,
             ));
 
-            let _next_events = System::events();
 
-            // assert_eq!(
-            //     next_events.iter().any(|record| {
-            //         if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::NewSideEffectsAvailable(req, xtx_id, sfx_arr, sfx_id_arr)) = &record.event {
-            //             assert_eq!(req, &AccountId32::new(hex!(
-            //                 "0101010101010101010101010101010101010101010101010101010101010101"
-            //             )));
-            //             assert_eq!(xtx_id, &expected_xtx_id_1);
-            //             assert_eq!(sfx_arr, &side_effects);
-            //             assert_eq!(sfx_id_arr, &vec![expected_sfx_id_2]);
-            //             true
-            //         } else {
-            //             false
-            //         } }),
-            //     true
-            // );
+            let next_events = System::events();
+
+            assert_eq!(next_events, vec![
+                EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Deposit { who: ALICE, amount: 6 }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::System(
+                    circuit_runtime_pallets::frame_system::Event::<Runtime>::NewAccount { account: ALICE }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: 6 }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: 3 }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
+                    circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
+                        charge_id: expected_sfx_id_1,
+                        payee: ALICE, recipient: None, amount: 3
+                    }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                    circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::NewSideEffectsAvailable(
+                        ALICE,
+                        expected_xtx_id_1,
+                        vec![
+                            SideEffect {
+                                target: [0, 0, 0, 0],
+                                max_reward: 3,
+                                insurance: 3,
+                                encoded_action: vec![116, 114, 97, 110],
+                                encoded_args: vec![
+                                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+                                    vec![6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+                                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                    vec![3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                                ],
+                                signature: vec![],
+                                enforce_executor: None,
+                                reward_asset_id: None
+                            }
+                        ],
+                        vec![expected_sfx_id_1]
+                    )
+                ), topics: vec![] },
+                EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                    circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionReceivedForExec(
+                        expected_xtx_id_1)),
+                    topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: 3 }), topics: vec![] },
+                EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
+                    circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
+                        charge_id: expected_sfx_id_2,
+                        payee: ALICE, recipient: None, amount: 3 }), topics: vec![] },
+                EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                    circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::NewSideEffectsAvailable(
+                        ALICE,
+                        expected_xtx_id_2,
+                        vec![
+                            SideEffect {
+                                target: [0, 0, 0, 0],
+                                max_reward: 3,
+                                insurance: 3,
+                                encoded_action: vec![116, 114, 97, 110],
+                                encoded_args: vec![
+                                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+                                    vec![6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+                                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                    vec![3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                                ],
+                                signature: vec![],
+                                enforce_executor: None,
+                                reward_asset_id: None
+                            }
+                        ],
+                        vec![
+                            expected_sfx_id_2
+                        ])), topics: vec![] },
+                EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                    circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionReceivedForExec(
+                        expected_xtx_id_2
+                    )
+                ), topics: vec![] }
+            ]);
 
             assert_ne!(expected_xtx_id_1, expected_xtx_id_2);
             assert_ne!(expected_sfx_id_1, expected_sfx_id_2);
