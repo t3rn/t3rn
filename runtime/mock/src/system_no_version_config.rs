@@ -4,7 +4,8 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU128, ConstU32, ConstU8, FindAuthor, NeverEnsureOrigin, OnUnbalanced, Currency, Imbalance
+        ConstU128, ConstU32, ConstU8, Currency, FindAuthor, Imbalance, NeverEnsureOrigin,
+        OnUnbalanced,
     },
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
     ConsensusEngineId, PalletId,

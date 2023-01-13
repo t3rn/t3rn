@@ -1,10 +1,14 @@
-use crate::{Hash as HashPrimitive, *};
+use crate::{accounts_config::AccountManagerCurrencyAdapter, Hash as HashPrimitive, *};
 use frame_support::{
     parameter_types,
-    traits::{ConstU128, ConstU32, ConstU8},
+    traits::{
+        fungibles::{Balanced, CreditOf},
+        ConstU128, ConstU32, ConstU8,
+    },
     weights::IdentityFee,
 };
-use sp_runtime::traits::BlakeTwo256;
+use pallet_asset_tx_payment::HandleCredit;
+use sp_runtime::traits::{BlakeTwo256, ConvertInto};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -95,9 +99,29 @@ impl pallet_transaction_payment::Config for Runtime {
     type Event = Event;
     type FeeMultiplierUpdate = ();
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-    type OnChargeTransaction = CurrencyAdapter;
+    type OnChargeTransaction = AccountManagerCurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = ConstU8<5>;
     type WeightToFee = IdentityFee<Balance>;
+}
+
+/// A `HandleCredit` implementation that naively transfers the fees to the block author.
+/// Will drop and burn the assets in case the transfer fails.
+pub struct CreditToBlockAuthor;
+impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
+    fn handle_credit(credit: CreditOf<AccountId, Assets>) {
+        if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
+            // Drop the result which will trigger the `OnDrop` of the imbalance in case of error.
+            let _ = Assets::resolve(&author, credit);
+        }
+    }
+}
+
+impl pallet_asset_tx_payment::Config for Runtime {
+    type Fungibles = Assets;
+    type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
+        pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+        CreditToBlockAuthor,
+    >;
 }
 
 impl pallet_sudo::Config for Runtime {

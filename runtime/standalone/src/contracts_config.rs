@@ -1,8 +1,7 @@
-use super::Runtime;
 use crate::{
     accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-    BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, ThreeVm,
-    Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
+    BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, Runtime,
+    ThreeVm, Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
 use circuit_runtime_types::AssetId;
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
