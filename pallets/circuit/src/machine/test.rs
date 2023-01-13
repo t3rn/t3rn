@@ -7,7 +7,7 @@ pub mod test {
         state::{Cause, CircuitStatus},
     };
 
-    use crate::machine::test_extra::*;
+    use crate::{machine::test_extra::*, test_extra_stress::stage, tests::ALICE};
 
     #[test]
     fn machine_kills_from_allowed_states() {
@@ -213,6 +213,34 @@ pub mod test {
                     xtx_id,
                     CircuitStatus::Committed,
                     vec![get_mocked_transfer_sfx()],
+                );
+            });
+    }
+
+    #[test]
+    #[ignore]
+    fn machine_confirms_xtx_with_10_sfx() {
+        ExtBuilder::default()
+            .with_standard_side_effects()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                crate::test_extra_stress::stage();
+
+                let (mut local_ctx, sfx_arr_of_10, sfx_id_arr_of_10) =
+                    crate::test_extra_stress::setup_xtx_with_10_sfx([0u8; 4], &ALICE);
+
+                crate::test_extra_stress::bid_for_n_out_of_10_sfx_in_xtx(9, &mut local_ctx, ALICE);
+
+                crate::test_extra_stress::confirm_n_out_of_10_sfx_in_xtx_after_bidding(
+                    9,
+                    &mut local_ctx,
+                );
+
+                check_all_single_xtx_state_correct(
+                    local_ctx.xtx_id,
+                    CircuitStatus::Committed,
+                    sfx_arr_of_10,
                 );
             });
     }

@@ -11,6 +11,8 @@ pub use extra::*;
 pub mod test;
 #[cfg(test)]
 pub mod test_extra;
+#[cfg(test)]
+pub mod test_extra_stress;
 
 use sp_std::marker::PhantomData;
 use t3rn_primitives::transfers::EscrowedBalanceOf;
