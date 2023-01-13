@@ -37,7 +37,7 @@ sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polka
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 
 circuit-mock-runtime    = { path = "../../runtime/mock" }
-circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
+circuit-runtime-pallets = { path = "../../runtime/common-pallets", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -57,5 +57,6 @@ std = [
   "sp-std/std",
   "t3rn-primitives/std",
   "circuit-runtime-types/std",
+  "circuit-runtime-pallets/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]

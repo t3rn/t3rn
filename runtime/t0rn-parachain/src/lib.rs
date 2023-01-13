@@ -152,6 +152,7 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
         Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 13,
         AccountManager: pallet_account_manager = 14,
+        AssetTxPayment: pallet_asset_tx_payment = 15,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
