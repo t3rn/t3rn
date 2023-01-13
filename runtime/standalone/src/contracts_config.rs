@@ -1,8 +1,7 @@
-use super::Runtime;
 use crate::{
     accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-    BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, ThreeVm,
-    Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
+    BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, Runtime,
+    ThreeVm, Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 use pallet_3vm_contracts::weights::WeightInfo;

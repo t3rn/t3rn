@@ -1,5 +1,5 @@
-use crate::tests::pallet_asset_tx_payment::ChargeAssetTxPayment;
 use circuit_mock_runtime::{ExtBuilder, *};
+use circuit_runtime_pallets::pallet_asset_tx_payment::ChargeAssetTxPayment;
 use codec::{self, Encode};
 use frame_support::{
     assert_ok,
@@ -8,7 +8,6 @@ use frame_support::{
     weights::Weight,
 };
 use pallet_balances::Call as BalancesCall;
-// use pallet_transaction_payment::CurrencyAdapter;
 use sp_runtime::{traits::SignedExtension, AccountId32};
 
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
