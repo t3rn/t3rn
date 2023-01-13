@@ -38,8 +38,8 @@ circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
 circuit-runtime-types   = { path = "../../runtime/common-types" }
 pallet-balances         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 pallet-sudo             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-core                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-keystore             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-core                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+sp-keystore             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
 [features]
 default = [ "std" ]

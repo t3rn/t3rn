@@ -74,5 +74,6 @@ std = [
   "sp-finality-grandpa/std",
   "t3rn-sdk-primitives/std",
   "t3rn-types/std",
+  "t3rn-types/runtime-std",
   "finality-grandpa/std",
 ]
