@@ -85,7 +85,7 @@ fn successfully_dispatches_signed_call_outbound_message_with_protocol_from_circu
         secure: false,
     };
     let _devnet_params: ConnectionParams = ConnectionParams {
-        host: "dev.net.t3rn.io".to_string(),
+        host: "rpc.t0rn.io".to_string(),
         port: 443,
         secure: true,
     };

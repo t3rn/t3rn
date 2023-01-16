@@ -188,7 +188,7 @@ Go to the [t0rn testnet faucet](https://faucet.t0rn.io), insert your substrate a
 
 ## Register as a candidate
 
-1. Go to the [polkadot.js app](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fdev.net.t3rn.io#/accounts) and connect your collator account by clicking "Add account", then inserting your previously generated secret phrase aka mnemonic.
+1. Go to the [polkadot.js app](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws.t0rn.io#/accounts) and connect your collator account by clicking "Add account", then inserting your previously generated secret phrase aka mnemonic.
 
 2. Generate a new session key pair and obtain the corresponding public key:
 
@@ -216,4 +216,4 @@ Developer --> Extrinsics --> collatorSelection -> registerAsCandidate()
 ```
 
 After some time your collator should be included and producing blocks!
-You can check [here](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fdev.net.t3rn.io#/collators) if your collator has registered successfully.
+You can check [here](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws.t0rn.io#/collators) if your collator has registered successfully.
