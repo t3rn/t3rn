@@ -25,13 +25,14 @@ frame-system       = { git = "https://github.com/paritytech/substrate.git", bran
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 
-t3rn-primitives = { path = "../../primitives", default-features = false }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
 
 [dev-dependencies]
-pallet-3vm                                 = { path = "../../3vm/pallets/3vm" }
-pallet-3vm-contracts                       = { path = "../../3vm/pallets/contracts", package = "pallet-contracts" }
-pallet-3vm-contracts-primitives            = { path = "../../3vm/primitives/contracts", package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api       = { path = "../../3vm/rpc/contracts/runtime-api", package = "pallet-contracts-rpc-runtime-api" }
+pallet-3vm                           = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions" }
+pallet-3vm-contracts                 = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts" }
+pallet-3vm-contracts-primitives      = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc-runtime-api" }
+
 pallet-account-manager                     = { path = "../account-manager" }
 pallet-balances                            = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
 pallet-clock                               = { path = "../clock" }

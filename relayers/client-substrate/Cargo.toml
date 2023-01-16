@@ -14,14 +14,14 @@ jsonrpsee-ws-client   = "0.2.0"
 log                   = "0.4.11"
 num-traits            = "0.2"
 rand                  = "0.7"
+tokio                 = "1.8"
 
 # Bridge dependencies
+finality-relay = { path = "../../primitives/src/bridges/finality" }
+headers-relay  = { path = "../../primitives/src/bridges/headers" }
+relay-utils    = { path = "../../primitives/src/bridges/utils" }
 
-finality-relay  = { path = "../../primitives/src/bridges/finality" }
-headers-relay   = { path = "../../primitives/src/bridges/headers" }
-relay-utils     = { path = "../../primitives/src/bridges/utils" }
-t3rn-primitives = { path = "../../primitives" }
-tokio           = "1.8"
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
 
 # Substrate Dependencies
 

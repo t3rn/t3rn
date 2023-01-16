@@ -5,7 +5,7 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-use codec::Decode;
+
 use t3rn_primitives::monetary::MILLIT3RN;
 
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -15,7 +15,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
     generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdLookup, BlakeTwo256},
 };
 use sp_std::{
     convert::{TryFrom, TryInto},
@@ -49,7 +49,6 @@ pub mod contracts_config;
 pub mod impl_versioned_runtime_with_api;
 pub mod signed_extrinsics_config;
 pub mod system_config;
-pub mod xbi_config;
 
 pub use crate::{consensus_aura_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
@@ -110,8 +109,6 @@ construct_runtime!(
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
-
-        XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>} = 111,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,

@@ -7,10 +7,7 @@ use scale_info::TypeInfo;
 use sp_core::Hasher;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::{default::Default, fmt::Debug};
-use t3rn_primitives::{
-    circuit::{XExecSignalId, XExecStepSideEffectId},
-    transfers::EscrowedBalanceOf,
-};
+use t3rn_primitives::circuit::{XExecSignalId, XExecStepSideEffectId};
 
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
@@ -62,7 +59,7 @@ pub enum InsuranceEnact {
 
 impl CircuitStatus {
     fn determine_fsx_bidding_status<T: Config>(
-        fsx: FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        fsx: FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
     ) -> Result<CircuitStatus, Error<T>> {
         if let Some(_bid) = fsx.best_bid {
             Ok(CircuitStatus::Ready)
@@ -76,11 +73,7 @@ impl CircuitStatus {
     /// if SFX::Optimistic check if the optional insurance and bonded_deposit fields are present
     /// if SFX::Escrow check if the optional insurance and bonded_deposit are set to None
     pub fn determine_bidding_status<T: Config>(
-        fsx_step: &[FullSideEffect<
-            T::AccountId,
-            T::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >],
+        fsx_step: &[FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>],
     ) -> Result<CircuitStatus, Error<T>> {
         for fsx in fsx_step.iter() {
             if Self::determine_fsx_bidding_status::<T>(fsx.clone())?
@@ -95,7 +88,7 @@ impl CircuitStatus {
     /// Based solely on full steps + insurance deposits determine the execution status.
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config>(
-        step: &[FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>],
+        step: &[FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>],
     ) -> Result<CircuitStatus, Error<T>> {
         // Those are determined post - ready
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
@@ -141,9 +134,7 @@ impl CircuitStatus {
     }
 
     pub fn determine_xtx_status<T: Config>(
-        steps: &[Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >],
+        steps: &[Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>],
     ) -> Result<CircuitStatus, Error<T>> {
         let mut lowest_determined_status = CircuitStatus::Requested;
 
@@ -171,8 +162,7 @@ pub struct LocalXtxCtx<T: Config> {
     pub use_protocol: UniversalSideEffectsProtocol,
     pub xtx_id: XExecSignalId<T>,
     pub xtx: XExecSignal<T::AccountId, T::BlockNumber>,
-    pub full_side_effects:
-        Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>>,
+    pub full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
 }
 
 impl Default for CircuitStatus {

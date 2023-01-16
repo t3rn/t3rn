@@ -13,7 +13,6 @@ pub mod parachain_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod xbi_config;
-pub mod xcm_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
@@ -145,12 +144,14 @@ construct_runtime!(
         Scheduler: pallet_scheduler = 5,
         Utility: pallet_utility = 6,
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
         Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
         Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 13,
+        AccountManager: pallet_account_manager = 14,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -164,6 +165,8 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+        XBIPortal: pallet_xbi_portal = 34,
+        AssetRegistry: pallet_asset_registry = 35,
 
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
@@ -175,20 +178,12 @@ construct_runtime!(
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
-        AccountManager: pallet_account_manager = 125,
-
-        // XBI
-        XBIPortal: pallet_xbi_portal = 111,
-        AssetRegistry: pallet_asset_registry = 112,
 
          // Portal
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
         RococoBridge: pallet_grandpa_finality_verifier::{
             Pallet, Storage
         } = 129,
-
-        // Util - this should be system support
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

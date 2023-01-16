@@ -23,5 +23,4 @@ pub use pallet_contracts_registry;
 pub use pallet_grandpa_finality_verifier;
 pub use pallet_portal;
 pub use pallet_xbi_portal;
-pub use pallet_xbi_portal_enter;
 pub use pallet_xdns;

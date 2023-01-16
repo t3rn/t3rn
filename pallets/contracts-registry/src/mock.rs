@@ -126,7 +126,7 @@ impl pallet_sudo::Config for Test {
 
 impl pallet_contracts_registry::Config for Test {
     type Balances = Balances;
-    type Escrowed = Self;
+    type Currency = Balances;
     type Event = Event;
     type WeightInfo = ();
 }

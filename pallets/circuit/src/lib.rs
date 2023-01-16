@@ -39,10 +39,6 @@ use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     pallet_prelude::OriginFor,
 };
-use pallet_xbi_portal::{
-    primitives::xbi::XBIPortal,
-    xbi_format::{XbiCheckIn, XbiCheckOut, XbiInstruction, XbiResult},
-};
 // use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
@@ -62,7 +58,6 @@ pub use t3rn_primitives::{
         ConfirmedSideEffect, FullSideEffect, HardenedSideEffect, SFXBid, SecurityLvl, SideEffect,
         SideEffectId,
     },
-    transfers::EscrowedBalanceOf,
     volatile::LocalState,
     xdns::Xdns,
     xtx::{Xtx, XtxId},
@@ -97,9 +92,8 @@ pub mod weights;
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
-pub type EscrowCurrencyOf<T> = <<T as pallet::Config>::Escrowed as EscrowTrait<T>>::Currency;
 
-type BalanceOf<T> = EscrowBalance<T>;
+reexport_currency_types!();
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -124,7 +118,6 @@ pub mod pallet {
     //     xbi_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId},
     //     xbi_codec::{XBICheckOutStatus, XBIMetadata, XBINotificationKind},
     // };
-    use sp_runtime::traits::Hash;
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -135,7 +128,7 @@ pub mod pallet {
 
     pub use crate::weights::WeightInfo;
 
-    pub type EscrowBalance<T> = EscrowedBalanceOf<T, <T as Config>::Escrowed>;
+    pub type EscrowBalance<T> = BalanceOf<T>;
 
     /// Temporary bids for SFX executions. Cleaned out each Config::BidsInterval, where are moved from
     ///     PendingSFXBids to FSX::accepted_bids
@@ -148,11 +141,7 @@ pub mod pallet {
         XExecSignalId<T>,
         Identity,
         SideEffectId<T>,
-        SFXBid<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            u32,
-        >,
+        SFXBid<<T as frame_system::Config>::AccountId, BalanceOf<T>, u32>,
         OptionQuery,
     >;
 
@@ -237,7 +226,7 @@ pub mod pallet {
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                    BalanceOf<T>,
                 >,
             >,
         >,
@@ -303,35 +292,25 @@ pub mod pallet {
         /// A type that provides inspection and mutation to some fungible assets
         type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
 
+        type Currency: Currency<Self::AccountId>;
+
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self>;
 
-        type XBIPortal: XBIPortal<Self>;
+        // type XBIPortal: XBIPortal<Self>;
 
         // type XBIPromise: XBIPromise<Self, <Self as Config>::Call>;
 
-        type Executors: Executors<
-            Self,
-            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
-                Self::AccountId,
-            >>::Balance,
-        >;
+        type Executors: Executors<Self, BalanceOf<Self>>;
 
         /// A type that provides access to AccountManager
         type AccountManager: AccountManager<
             Self::AccountId,
-            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
-                Self::AccountId,
-            >>::Balance,
+            BalanceOf<Self>,
             Self::Hash,
             Self::BlockNumber,
             u32,
         >;
-
-        // type FreeVM: FreeVM<Self>;
-
-        /// A type that manages escrow, and therefore balances
-        type Escrowed: EscrowTrait<Self>;
 
         /// A type that gives access to the new portal functionality
         type Portal: Portal<Self>;
@@ -696,7 +675,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
-            side_effects: Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
@@ -732,7 +711,7 @@ pub mod pallet {
         pub fn bid_sfx(
             origin: OriginFor<T>, // Active relayer
             sfx_id: SideEffectId<T>,
-            bid_amount: EscrowedBalanceOf<T, T::Escrowed>,
+            bid_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let executor = Self::authorize(origin, CircuitRole::Executor)?;
@@ -779,7 +758,7 @@ pub mod pallet {
         //     xtx_id: XExecSignalId<T>,
         //     side_effect: SideEffect<
         //         <T as frame_system::Config>::AccountId,
-        //         EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        //         BalanceOf<T>,
         //     >,
         //     max_exec_cost: u128,
         //     max_notifications_cost: u128,
@@ -858,7 +837,7 @@ pub mod pallet {
             confirmation: ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
@@ -932,7 +911,7 @@ pub mod pallet {
         SFXNewBidReceived(
             SideEffectId<T>,
             <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, T::Escrowed>,
+            BalanceOf<T>,
         ),
         // An executions SideEffect was confirmed.
         SideEffectConfirmed(XExecSignalId<T>),
@@ -951,12 +930,7 @@ pub mod pallet {
         NewSideEffectsAvailable(
             <T as frame_system::Config>::AccountId,
             XExecSignalId<T>,
-            Vec<
-                SideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    EscrowedBalanceOf<T, T::Escrowed>,
-                >,
-            >,
+            Vec<SideEffect<<T as frame_system::Config>::AccountId, BalanceOf<T>>>,
             Vec<SideEffectId<T>>,
         ),
         // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
@@ -964,12 +938,7 @@ pub mod pallet {
         CancelledSideEffects(
             <T as frame_system::Config>::AccountId,
             XtxId<T>,
-            Vec<
-                SideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    EscrowedBalanceOf<T, T::Escrowed>,
-                >,
-            >,
+            Vec<SideEffect<<T as frame_system::Config>::AccountId, BalanceOf<T>>>,
         ),
         // Listeners - executioners/relayers to know whether they won the confirmation challenge
         SideEffectsConfirmed(
@@ -979,16 +948,16 @@ pub mod pallet {
                     FullSideEffect<
                         <T as frame_system::Config>::AccountId,
                         <T as frame_system::Config>::BlockNumber,
-                        EscrowedBalanceOf<T, T::Escrowed>,
+                        BalanceOf<T>,
                     >,
                 >,
             >,
         ),
         EscrowTransfer(
             // ToDo: Inspect if Xtx needs to be here and how to process from protocol
-            T::AccountId,                                  // from
-            T::AccountId,                                  // to
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>, // value
+            T::AccountId, // from
+            T::AccountId, // to
+            BalanceOf<T>, // value
         ),
     }
 
@@ -1205,13 +1174,7 @@ impl<T: Config> Pallet<T> {
         status_change: (CircuitStatus, CircuitStatus),
     ) -> (
         Option<XExecSignal<T::AccountId, T::BlockNumber>>,
-        Option<
-            Vec<
-                Vec<
-                    FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-                >,
-            >,
-        >,
+        Option<Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>>,
     ) {
         // let current_status = local_ctx.xtx.status.clone();
         let (old_status, new_status) = (status_change.0, status_change.1);
@@ -1258,15 +1221,7 @@ impl<T: Config> Pallet<T> {
 
                 <FullSideEffects<T>>::insert::<
                     XExecSignalId<T>,
-                    Vec<
-                        Vec<
-                            FullSideEffect<
-                                T::AccountId,
-                                T::BlockNumber,
-                                EscrowedBalanceOf<T, T::Escrowed>,
-                            >,
-                        >,
-                    >,
+                    Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
                 >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
 
                 for (_step_cnt, side_effect_id, _step_side_effect_id) in steps_side_effects_ids {
@@ -1406,7 +1361,7 @@ impl<T: Config> Pallet<T> {
     fn emit_sfx(
         xtx_id: XExecSignalId<T>,
         subjected_account: &T::AccountId,
-        side_effects: &Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
+        side_effects: &Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
     ) {
         if !side_effects.is_empty() {
             Self::deposit_event(Event::NewSideEffectsAvailable(
@@ -1431,11 +1386,7 @@ impl<T: Config> Pallet<T> {
         xtx_id: XExecSignalId<T>,
         maybe_xtx: Option<XExecSignal<T::AccountId, T::BlockNumber>>,
         maybe_full_side_effects: Option<
-            Vec<
-                Vec<
-                    FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-                >,
-            >,
+            Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
         >,
     ) {
         if let Some(xtx) = maybe_xtx {
@@ -1488,7 +1439,7 @@ impl<T: Config> Pallet<T> {
         maybe_xbi_execution_charge: Option<(
             T::Hash,
             <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, T::Escrowed>,
+            BalanceOf<T>,
         )>,
     ) -> Result<(), Error<T>> {
         let requester = local_ctx.xtx.requester.clone();
@@ -1497,7 +1448,7 @@ impl<T: Config> Pallet<T> {
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                BalanceOf<T>,
             >,
         >| {
             for fsx in current_step_fsx.iter() {
@@ -1537,7 +1488,7 @@ impl<T: Config> Pallet<T> {
                 unreserve_requester_xtx_max_rewards(current_step_sfx);
                 for fsx in current_step_sfx.iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    let bid_4_fsx: &SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32> =
+                    let bid_4_fsx: &SFXBid<T::AccountId, BalanceOf<T>, u32> =
                         if let Some(bid) = &fsx.best_bid {
                             bid
                         } else {
@@ -1580,7 +1531,9 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::RevertTimedOut
             | CircuitStatus::Reverted
             | CircuitStatus::RevertMisbehaviour => {
-                Optimistic::<T>::try_slash(local_ctx);
+                if let Err(e) = Optimistic::<T>::try_slash(local_ctx) {
+                    log::error!(target: "circuit", "Failed to slash XTX: {:?}, {:?}", local_ctx.xtx_id, e);
+                }
                 for fsx in Self::get_current_step_fsx(local_ctx).iter() {
                     let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                     <T as Config>::AccountManager::finalize_infallible(
@@ -1632,14 +1585,13 @@ impl<T: Config> Pallet<T> {
     }
 
     fn validate(
-        side_effects: &[SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>],
+        side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T>,
         _requester: &T::AccountId,
         _sequential: bool,
     ) -> Result<(), &'static str> {
-        let mut full_side_effects: Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        > = vec![];
+        let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
+            vec![];
 
         pub fn determine_security_lvl(gateway_type: GatewayType) -> SecurityLvl {
             if gateway_type == GatewayType::ProgrammableInternal(0)
@@ -1669,7 +1621,7 @@ impl<T: Config> Pallet<T> {
 
             local_ctx
                 .use_protocol
-                .validate_args::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>, SystemHashing<T>>(
+                .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
                     sfx.clone(),
                     gateway_abi,
                     &mut local_ctx.local_state,
@@ -1692,7 +1644,7 @@ impl<T: Config> Pallet<T> {
                 UniversalSideEffectsProtocol::ensure_required_insurance::<
                     T::AccountId,
                     T::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
+                    BalanceOf<T>,
                     SystemHashing<T>,
                 >(
                     sfx.clone(),
@@ -1727,11 +1679,10 @@ impl<T: Config> Pallet<T> {
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
         full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
 
-        let mut escrow_sfx_step: Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        > = vec![];
+        let mut escrow_sfx_step: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
+            vec![];
         let mut optimistic_sfx_step: Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+            FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
         > = vec![];
 
         // Split for 2 following steps of Escrow and Optimistic and
@@ -1763,7 +1714,7 @@ impl<T: Config> Pallet<T> {
         confirmation: &ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            BalanceOf<T>,
         >,
     ) -> Result<(), &'static str> {
         fn confirm_order<T: Config>(
@@ -1772,20 +1723,20 @@ impl<T: Config> Pallet<T> {
             confirmation: &ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
             step_side_effects: &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
+                    BalanceOf<T>,
                 >,
             >,
         ) -> Result<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
             &'static str,
         > {
@@ -1862,12 +1813,9 @@ impl<T: Config> Pallet<T> {
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
         _local_state: LocalState,
-        _full_side_effects: Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        >,
+        _full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
         _steps_cnt: (u32, u32),
-    ) -> Result<Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>, &'static str>
-    {
+    ) -> Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, &'static str> {
         Ok(vec![])
     }
 
@@ -1878,13 +1826,11 @@ impl<T: Config> Pallet<T> {
 
     pub fn convert_side_effects(
         side_effects: Vec<Vec<u8>>,
-    ) -> Result<Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>, &'static str>
-    {
-        let side_effects: Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>> =
-            side_effects
-                .into_iter()
-                .filter_map(|se| se.try_into().ok()) // TODO: maybe not
-                .collect();
+    ) -> Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, &'static str> {
+        let side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>> = side_effects
+            .into_iter()
+            .filter_map(|se| se.try_into().ok()) // TODO: maybe not
+            .collect();
         if side_effects.is_empty() {
             Err("No side effects provided")
         } else {
@@ -1970,7 +1916,7 @@ impl<T: Config> Pallet<T> {
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            BalanceOf<T>,
         >,
     > {
         let current_step = local_ctx.xtx.steps_cnt.0;
@@ -1984,7 +1930,7 @@ impl<T: Config> Pallet<T> {
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            BalanceOf<T>,
         >,
     > {
         let current_step = local_ctx.xtx.steps_cnt.0;
@@ -1998,11 +1944,7 @@ impl<T: Config> Pallet<T> {
     pub(self) fn storage_write_new_sfx_accepted_bid(
         local_ctx: &mut LocalXtxCtx<T>,
         sfx_id: SideEffectId<T>,
-        sfx_bid: SFXBid<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            u32,
-        >,
+        sfx_bid: SFXBid<<T as frame_system::Config>::AccountId, BalanceOf<T>, u32>,
     ) {
         <PendingSFXBids<T>>::insert(local_ctx.xtx_id, sfx_id, sfx_bid)
     }
@@ -2010,13 +1952,7 @@ impl<T: Config> Pallet<T> {
     pub(self) fn storage_read_sfx_accepted_bid(
         local_ctx: &mut LocalXtxCtx<T>,
         sfx_id: SideEffectId<T>,
-    ) -> Option<
-        SFXBid<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            u32,
-        >,
-    > {
+    ) -> Option<SFXBid<<T as frame_system::Config>::AccountId, BalanceOf<T>, u32>> {
         // fixme: This accesses storage and therefor breaks the rule of a single-storage access at setup.
         <PendingSFXBids<T>>::get(local_ctx.xtx_id, sfx_id)
     }
@@ -2025,10 +1961,10 @@ impl<T: Config> Pallet<T> {
         fsxs: &[FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            BalanceOf<T>,
         >],
-    ) -> EscrowedBalanceOf<T, <T as Config>::Escrowed> {
-        let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
+    ) -> BalanceOf<T> {
+        let mut acc_rewards: BalanceOf<T> = Zero::zero();
 
         for fsx in fsxs {
             if let Some(v) = acc_rewards.checked_add(&fsx.get_bond_value(fsx.input.max_reward)) {
@@ -2046,7 +1982,7 @@ impl<T: Config> Pallet<T> {
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            BalanceOf<T>,
         >,
         Error<T>,
     > {

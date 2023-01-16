@@ -1,5 +1,4 @@
 use crate::*;
-use codec::Decode;
 use frame_support::parameter_types;
 pub use frame_support::traits::{Imbalance, OnUnbalanced};
 use frame_system::EnsureRoot;
@@ -52,4 +51,8 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const RegCost: u128 = 100_000_000_000;
 }

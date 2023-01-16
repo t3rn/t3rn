@@ -19,7 +19,6 @@ pub use t3rn_primitives::{
     common::RoundInfo,
     executors::Executors,
     protocol::SideEffectProtocol,
-    transfers::EscrowedBalanceOf,
     ChainId, EscrowTrait, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 
