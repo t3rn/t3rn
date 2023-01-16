@@ -2681,7 +2681,7 @@ dependencies = [
 [[package]]
 name = "ethabi-decode"
 version = "1.3.2"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
 dependencies = [
  "ethereum-types",
  "tiny-keccak 1.5.0",
@@ -2701,7 +2701,7 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "0.5.0"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
 dependencies = [
  "byteorder",
  "ethereum-types",
@@ -11858,7 +11858,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-core"
 version = "0.1.1"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
 dependencies = [
  "enum-iterator",
  "ethereum-types",
@@ -11904,7 +11904,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-ethereum"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
 dependencies = [
  "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
  "ethash 0.5.0 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
@@ -13456,7 +13456,7 @@ dependencies = [
 [[package]]
 name = "t3rn-primitives"
 version = "1.0.0-alpha.1"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
 dependencies = [
  "ed25519-dalek",
  "finality-grandpa",
@@ -13570,7 +13570,7 @@ dependencies = [
 [[package]]
 name = "t3rn-types"
 version = "0.0.1-rc.3"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
 dependencies = [
  "bytes 1.3.0",
  "num",
