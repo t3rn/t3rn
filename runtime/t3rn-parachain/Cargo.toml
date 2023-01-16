@@ -84,29 +84,29 @@ parachain-info                      = { git = 'https://github.com/paritytech/cum
 t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
 t3rn-protocol   = { default-features = false, path = "../../protocol" }
 
-# t3rn pallets
-pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
-pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
-pallet-clock                     = { path = "../../pallets/clock", default-features = false }
-pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
-pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
-pallet-portal                    = { path = "../../pallets/portal", default-features = false }
-pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
-pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
-pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
+# # t3rn pallets
+# pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
+# pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
+# pallet-clock                     = { path = "../../pallets/clock", default-features = false }
+# pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
+# pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
+# pallet-portal                    = { path = "../../pallets/portal", default-features = false }
+# pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
+# pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
+# pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
-pallet-asset-registry = { git = "https://github.com/t3rn/xbi-portal.git", branch = "refactor/removing-balanceof", default-features = false }
-pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi-portal.git", branch = "refactor/removing-balanceof", default-features = false }
+# pallet-asset-registry = { git = "https://github.com/t3rn/xbi-portal.git", branch = "refactor/removing-balanceof", default-features = false }
+# pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi-portal.git", branch = "refactor/removing-balanceof", default-features = false }
 
-# Smart contracts VMs
-evm-precompile-util                  = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "precompile-util" }
-pallet-3vm                           = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions" }
-pallet-3vm-contracts                 = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts" }
-pallet-3vm-contracts-primitives      = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc-runtime-api" }
-pallet-3vm-evm                       = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "pallet-evm" }
-pallet-3vm-evm-primitives            = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "fp-evm" }
-pallet-evm-rpc-runtime-api           = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false }
+# # Smart contracts VMs
+# evm-precompile-util                  = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "precompile-util" }
+# pallet-3vm                           = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions" }
+# pallet-3vm-contracts                 = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts" }
+# pallet-3vm-contracts-primitives      = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-primitives" }
+# pallet-3vm-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc-runtime-api" }
+# pallet-3vm-evm                       = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "pallet-evm" }
+# pallet-3vm-evm-primitives            = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "fp-evm" }
+# pallet-evm-rpc-runtime-api           = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false }
 
 # Commons
 circuit-runtime-types = { path = "../common-types", default-features = false }
@@ -168,28 +168,28 @@ std = [
   "xcm/std",
   "circuit-runtime-types/std",
 
-  "pallet-account-manager/std",
-  "pallet-asset-registry/std",
-  "pallet-circuit/std",
-  "pallet-clock/std",
-  "pallet-contracts-registry/std",
-  "pallet-grandpa-finality-verifier/std",
-  "pallet-portal/std",
-  "pallet-portal-rpc-runtime-api/std",
-  "pallet-xbi-portal/std",
-  "pallet-xdns/std",
-  "pallet-xdns-rpc-runtime-api/std",
+  # "pallet-account-manager/std",
+  # "pallet-asset-registry/std",
+  # "pallet-circuit/std",
+  # "pallet-clock/std",
+  # "pallet-contracts-registry/std",
+  # "pallet-grandpa-finality-verifier/std",
+  # "pallet-portal/std",
+  # "pallet-portal-rpc-runtime-api/std",
+  # "pallet-xbi-portal/std",
+  # "pallet-xdns/std",
+  # "pallet-xdns-rpc-runtime-api/std",
 
-  "evm-precompile-util/std",
-  "pallet-3vm/std",
-  "pallet-3vm-contracts/std",
-  "pallet-3vm-contracts-primitives/std",
-  "pallet-3vm-contracts-rpc-runtime-api/std",
-  "pallet-3vm-evm/std",
-  "pallet-3vm-evm-primitives/std",
-  "pallet-evm-rpc-runtime-api/std",
-  "t3rn-primitives/std",
-  "t3rn-protocol/std",
+  # "evm-precompile-util/std",
+  # "pallet-3vm/std",
+  # "pallet-3vm-contracts/std",
+  # "pallet-3vm-contracts-primitives/std",
+  # "pallet-3vm-contracts-rpc-runtime-api/std",
+  # "pallet-3vm-evm/std",
+  # "pallet-3vm-evm-primitives/std",
+  # "pallet-evm-rpc-runtime-api/std",
+  # "t3rn-primitives/std",
+  # "t3rn-protocol/std",
 ]
 
 runtime-benchmarks = [

@@ -2,7 +2,7 @@
 panic = 'unwind'
 
 [workspace]
-exclude = [ '3vm', '3vm/sdk', 'pallets/executors', "pallets/xbi-portal" ]
+exclude = [ '3vm', '3vm/sdk', 'pallets/executors' ]
 members = [
   'node/standalone',
   'node/t0rn-parachain',

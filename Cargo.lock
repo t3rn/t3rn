@@ -2681,7 +2681,7 @@ dependencies = [
 [[package]]
 name = "ethabi-decode"
 version = "1.3.2"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#d6985f1e878a8cd902a7856970da897d42cfaf3c"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
 dependencies = [
  "ethereum-types",
  "tiny-keccak 1.5.0",
@@ -2701,7 +2701,7 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "0.5.0"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#d6985f1e878a8cd902a7856970da897d42cfaf3c"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
 dependencies = [
  "byteorder",
  "ethereum-types",
@@ -4233,7 +4233,7 @@ checksum = "334e04b4d781f436dc315cb1e7515bd96826426345d498149e4bde36b67f8ee9"
 dependencies = [
  "async-channel",
  "castaway",
- "crossbeam-utils 0.7.2",
+ "crossbeam-utils 0.8.14",
  "curl",
  "curl-sys",
  "encoding_rs",
@@ -11858,7 +11858,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-core"
 version = "0.1.1"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#d6985f1e878a8cd902a7856970da897d42cfaf3c"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
 dependencies = [
  "enum-iterator",
  "ethereum-types",
@@ -11904,7 +11904,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-ethereum"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#d6985f1e878a8cd902a7856970da897d42cfaf3c"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
 dependencies = [
  "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
  "ethash 0.5.0 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
@@ -13368,7 +13368,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13378,24 +13377,10 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal 0.3.4",
  "log",
- "pallet-3vm",
- "pallet-account-manager",
- "pallet-asset-registry",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-circuit",
- "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts",
- "pallet-contracts-primitives",
- "pallet-contracts-registry",
- "pallet-contracts-rpc-runtime-api",
- "pallet-evm 0.1.0",
- "pallet-evm-rpc-runtime-api",
- "pallet-grandpa-finality-verifier",
- "pallet-portal",
- "pallet-portal-rpc-runtime-api",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
@@ -13406,16 +13391,12 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
- "pallet-xbi-portal",
  "pallet-xcm",
- "pallet-xdns",
- "pallet-xdns-rpc-runtime-api",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-runtime-common",
  "polkadot-runtime-constants",
- "precompile-util",
  "scale-info",
  "serde",
  "smallvec 1.10.0",
@@ -13475,7 +13456,7 @@ dependencies = [
 [[package]]
 name = "t3rn-primitives"
 version = "1.0.0-alpha.1"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#d6985f1e878a8cd902a7856970da897d42cfaf3c"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
 dependencies = [
  "ed25519-dalek",
  "finality-grandpa",
@@ -13589,7 +13570,7 @@ dependencies = [
 [[package]]
 name = "t3rn-types"
 version = "0.0.1-rc.3"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#d6985f1e878a8cd902a7856970da897d42cfaf3c"
+source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#7c898677f9642d10f46c35991111b495dd6ca04a"
 dependencies = [
  "bytes 1.3.0",
  "num",
@@ -14162,7 +14143,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.10.2",
+ "parking_lot 0.11.2",
  "regex",
  "serde",
  "serde_json",
