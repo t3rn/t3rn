@@ -10,6 +10,7 @@ use frame_support::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::{traits::*, Permill};
+use t3rn_primitives::monetary::EXISTENTIAL_DEPOSIT;
 
 use crate::impl_versioned_runtime_with_api::Version;
 
@@ -80,6 +81,10 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT as u128;
+}
+
 impl pallet_balances::Config for Runtime {
     type AccountStore = System;
     /// The type for recording an account's balance.
@@ -87,7 +92,7 @@ impl pallet_balances::Config for Runtime {
     type DustRemoval = ();
     /// The ubiquitous event type.
     type Event = Event;
-    type ExistentialDeposit = ConstU128<500>;
+    type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];

@@ -41,6 +41,7 @@ use std::{convert::TryInto, fs, str::FromStr};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
+    monetary::EXISTENTIAL_DEPOSIT,
     side_effect::*,
     volatile::LocalState,
     xdns::AllowedSideEffect,
@@ -68,6 +69,8 @@ pub const SECOND_SFX_INDEX: u32 = 1;
 pub const THIRD_SFX_INDEX: u32 = 2;
 pub const FOURTH_SFX_INDEX: u32 = 3;
 pub const FIFTH_SFX_INDEX: u32 = 4;
+
+pub const ED: Balance = EXISTENTIAL_DEPOSIT as u128;
 
 fn set_ids(
     sfx: SideEffect<AccountId32, Balance>,
@@ -783,9 +786,11 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ =
-                Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
+            let _ = Balances::deposit_creating(
+                &BOB_RELAYER,
+                REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT + ED,
+            ); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -1204,8 +1209,8 @@ fn circuit_handles_swap_with_insurance() {
         .with_standard_side_effects()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1 + ED); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -1372,8 +1377,8 @@ fn circuit_handles_add_liquidity_with_insurance() {
         .with_standard_side_effects()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1 + ED); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -4593,7 +4598,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 6); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, 6 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
