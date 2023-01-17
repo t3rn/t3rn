@@ -241,6 +241,6 @@ export class BiddingEngine {
  */
 export enum Scenario {
     noBidAndNoCompetition,
-    noBidButCompetition,   // <- might not be useful
-    beenOutbid,            // <- 
+    noBidButCompetition,
+    beenOutbid,
 }
