@@ -66,6 +66,23 @@ git submodule update
 cargo build --release --features with-standalone-runtime
 cargo run --bin circuit-collator --features with-standalone-runtime
 ```
+
+### Deletion of submodules
+
+We have now deleted submodules, we have a way of utilizing the build system(cargo) to reason about dependencies. However, this requires some changes to your configs. Ensure you have your SSH key added to github.
+
+`~/.gitconfig`
+```
+[url "git@github.com:"]
+  insteadOf = https://github.com/
+```
+
+`~/.cargo/config`
+```
+[net]
+git-fetch-with-cli = true
+```
+
 #### Running benchmarks
 
 1. Build the circuit node with ```runtime-benchmarks``` feature:
