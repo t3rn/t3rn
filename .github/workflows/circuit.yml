@@ -8,6 +8,8 @@ on:
       - "**/Cargo.lock"
       - ".github/workflows/circuit.yml"
       - ".git/modules/*/HEAD"
+  schedule:
+    - cron: '0,1 5 * * MON-FRI'
 
 env:
   RUST_BACKTRACE: 1
