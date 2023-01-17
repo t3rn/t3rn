@@ -78,7 +78,7 @@ export class AmountConverter {
    * Convert the initialzed value into a float
    */
 
-  toFloat(): number {
+  toFloat(): BN {
     return bnToFloat(this.toBn(), this.decimals);
   }
 
@@ -157,8 +157,9 @@ export const floatToBn = (number: number, decimals: number): BN => {
  * @param decimals - The decimals of the number
  */
 
-export const bnToFloat = (number: BN, decimals: number): number => {
-  return number.toNumber() / Math.pow(10, decimals);
+export const bnToFloat = (number: BN, decimals: number): BN => {
+  // return number.toNumber() / Math.pow(10, decimals);
+  return number.div(new BN.BN(Math.pow(10, decimals)));
 };
 
 /**

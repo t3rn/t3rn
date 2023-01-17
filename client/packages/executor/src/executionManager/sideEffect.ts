@@ -13,6 +13,8 @@ import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
 import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
 import { InclusionData } from "../gateways/types"
 
+import BN from "bn.js"
+
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"]
 
@@ -71,7 +73,7 @@ export class SideEffect extends EventEmitter {
     /** The phase in which the SFX is part of. First Escrow, then Optimistic */
     phase: number
     /** SFX status, always starting with Bidding on creation */
-    status: SfxStatus = SfxStatus.InBidding
+    status: SfxStatus = SfxStatus.Bidding
     /** SFX action, e.g. tran, swap, etc */
     action: SfxType
     /** Acts as mutex lock to prevent parallel txs on the same SFX */
@@ -117,15 +119,15 @@ export class SideEffect extends EventEmitter {
 
     // Risk/Reward Parameters:
     /** Tx cost in the native currency of the target */
-    txCostNative: BehaviorSubject<number>
+    txCostNative: BehaviorSubject<BN>
     /** Cost of targets native asset in USD. Used for tx cost calculation */
-    nativeAssetPrice: BehaviorSubject<number>
+    nativeAssetPrice: BehaviorSubject<BN>
     /** Current price of the assets that are used for the sfx execution */
-    txOutputAssetPrice: BehaviorSubject<number>
+    txOutputAssetPrice: BehaviorSubject<BN>
     /** Current max profit in USD that can be made when executing */
-    maxProfitUsd: BehaviorSubject<number> = new BehaviorSubject<number>(0)
+    maxProfitUsd = new BehaviorSubject<BN>(new BN.BN(0))
     /** Price for reward assert in USD */
-    rewardAssetPrice: BehaviorSubject<number> = new BehaviorSubject<number>(0)
+    rewardAssetPrice = new BehaviorSubject<BN>(new BN.BN(0))
 
     subscriptions: any[] = []
     /** Tx cost in USD */
@@ -216,10 +218,10 @@ export class SideEffect extends EventEmitter {
      * @param rewardAssetPrice Price for reward assert in USD
      */
     setRiskRewardParameters(
-        txCostNative: BehaviorSubject<number>,
-        nativeAssetPrice: BehaviorSubject<number>,
-        txOutputAssetPrice: BehaviorSubject<number>,
-        rewardAssetPrice: BehaviorSubject<number>
+        txCostNative: BehaviorSubject<BN>,
+        nativeAssetPrice: BehaviorSubject<BN>,
+        txOutputAssetPrice: BehaviorSubject<BN>,
+        rewardAssetPrice: BehaviorSubject<BN>
     ) {
         this.txCostNative = txCostNative
         this.nativeAssetPrice = nativeAssetPrice
@@ -275,10 +277,13 @@ export class SideEffect extends EventEmitter {
     recomputeMaxProfit() {
         const txCostUsd = this.gateway.toFloat(this.txCostNative.getValue()) * this.nativeAssetPrice.getValue()
         this.txCostUsd = txCostUsd
+
         const txOutputCostUsd = this.txOutputAssetPrice.getValue() * this.getTxOutputs().amountHuman
         this.txOutputCostUsd = txOutputCostUsd
+
         const rewardValueUsd = this.rewardAssetPrice.getValue() * this.reward.getValue()
         this.rewardUsd = rewardValueUsd
+
         const maxProfitUsd = rewardValueUsd - txCostUsd - txOutputCostUsd
         if (maxProfitUsd !== this.maxProfitUsd.getValue()) {
             this.maxProfitUsd.next(maxProfitUsd)
@@ -319,7 +324,7 @@ export class SideEffect extends EventEmitter {
     private generateBid(): any {
         if (this.isBidder) return { trigger: false, reason: "Already a bidder" }
         if (this.txStatus !== TxStatus.Ready) return { trigger: false, reason: "Tx not ready" }
-        if (this.status !== SfxStatus.InBidding) return { trigger: false, reason: "Not in bidding phase" }
+        if (this.status !== SfxStatus.Bidding) return { trigger: false, reason: "Not in bidding phase" }
 
         try {
             this.strategyEngine.evaluateSfx(this)
@@ -428,7 +433,7 @@ export class SideEffect extends EventEmitter {
 
     /** Update the SFX status */
     readyToExecute() {
-        this.status = SfxStatus.ReadyToExecute
+        this.status = SfxStatus.Ready
     }
 
     // sfx was successfully executed on target and has the inclusion proof data
