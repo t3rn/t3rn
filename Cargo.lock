@@ -6355,6 +6355,7 @@ version = "1.0.0-alpha.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
+ "circuit-runtime-types",
  "frame-benchmarking",
  "frame-metadata",
  "frame-support",
