@@ -43,7 +43,8 @@ pub mod test {
         let _ = Balances::deposit_creating(&EXECUTOR, INITIAL_BALANCE);
 
         let local_ctx =
-            Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None)).unwrap();
+            Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &REQUESTER).unwrap();
+
         let bid = SFXBid {
             amount: 2,
             insurance: 1,
@@ -157,9 +158,9 @@ pub mod test {
                 System::set_block_number(1);
 
                 let _ = Balances::deposit_creating(&REQUESTER, 3);
+
                 let local_ctx =
-                    Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
-                        .unwrap();
+                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE).unwrap();
 
                 assert_ok!(SquareUp::<Runtime>::try_request(&local_ctx));
                 assert_eq!(Balances::free_balance(&REQUESTER), 1);
@@ -177,8 +178,7 @@ pub mod test {
 
                 let _ = Balances::deposit_creating(&REQUESTER, 1);
                 let local_ctx =
-                    Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
-                        .unwrap();
+                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE).unwrap();
 
                 assert_err!(
                     SquareUp::<Runtime>::try_request(&local_ctx),
@@ -203,27 +203,29 @@ pub mod test {
             .execute_with(|| {
                 System::set_block_number(1);
 
-                let _ = Balances::deposit_creating(&REQUESTER, 4);
-                let _local_ctx =
-                    Machine::<Runtime>::load_xtx(setup_single_sfx_xtx_and_force_set_status(None))
-                        .unwrap();
+                let _ = Balances::deposit_creating(&REQUESTER, 10);
+                let _ = Balances::deposit_creating(&EXECUTOR, 10);
+                let local_ctx =
+                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &REQUESTER).unwrap();
+                assert_ok!(SquareUp::<Runtime>::try_request(&local_ctx));
 
                 assert_ok!(SquareUp::<Runtime>::try_bid(
-                    H256::repeat_byte(1),
-                    &EXECUTOR,
+                    get_mocked_transfer_sfx_id(local_ctx.xtx_id),
                     &REQUESTER,
+                    &EXECUTOR,
                     &SFXBid {
                         amount: 2,
                         insurance: 1,
                         reserved_bond: None,
                         reward_asset_id: None,
-                        executor: REQUESTER,
-                        requester: EXECUTOR,
+                        executor: EXECUTOR,
+                        requester: REQUESTER,
                     },
                     None
                 ));
 
-                assert_eq!(Balances::free_balance(&REQUESTER), 1);
+                assert_eq!(Balances::free_balance(&REQUESTER), 8);
+                assert_eq!(Balances::free_balance(&EXECUTOR), 7);
             });
     }
 
@@ -257,7 +259,7 @@ pub mod test {
                 let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
 
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
-                assert_eq!(SquareUp::<Runtime>::bind_bidders(&local_ctx), true);
+                assert_eq!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx), true);
                 assert_eq!(SquareUp::<Runtime>::kill(&local_ctx), true);
 
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
@@ -287,7 +289,7 @@ pub mod test {
                     cost: None,
                 });
 
-                assert_eq!(SquareUp::<Runtime>::bind_bidders(&local_ctx), true);
+                assert_eq!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx), true);
                 assert_eq!(SquareUp::<Runtime>::finalize(&local_ctx), true);
 
                 assert_eq!(
@@ -328,7 +330,7 @@ pub mod test {
                 let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
 
-                assert_eq!(SquareUp::<Runtime>::bind_bidders(&local_ctx), true);
+                assert_eq!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx), true);
                 assert_eq!(SquareUp::<Runtime>::finalize(&local_ctx), true);
 
                 assert_eq!(

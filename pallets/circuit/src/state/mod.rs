@@ -95,10 +95,14 @@ impl CircuitStatus {
 
                     // success flow
                     (CircuitStatus::Requested, CircuitStatus::PendingBidding) => Ok(new),
+                    (CircuitStatus::Requested, CircuitStatus::InBidding) => Ok(new),
                     (CircuitStatus::PendingBidding, CircuitStatus::InBidding) => Ok(new),
+                    (CircuitStatus::InBidding, CircuitStatus::InBidding) => Ok(new),
                     (CircuitStatus::InBidding, CircuitStatus::Ready) => Ok(new),
+                    (CircuitStatus::PendingBidding, CircuitStatus::Ready) => Ok(new),
                     (CircuitStatus::Ready, CircuitStatus::PendingExecution) => Ok(new),
                     (CircuitStatus::Ready, CircuitStatus::FinishedAllSteps) => Ok(new),
+                    (CircuitStatus::PendingExecution, CircuitStatus::PendingExecution) => Ok(new),
                     (CircuitStatus::PendingExecution, CircuitStatus::Finished) => Ok(new),
                     (CircuitStatus::PendingExecution, CircuitStatus::FinishedAllSteps) => Ok(new),
                     (CircuitStatus::PendingExecution, CircuitStatus::Committed) => Ok(new),
@@ -108,7 +112,14 @@ impl CircuitStatus {
                     (CircuitStatus::Finished, CircuitStatus::FinishedAllSteps) => Ok(new),
 
                     (CircuitStatus::FinishedAllSteps, CircuitStatus::Committed) => Ok(new),
-                    (_, _) => Err(Error::<T>::UpdateStateTransitionDisallowed),
+                    (_, _) => {
+                        log::error!(
+                            "check_transition::UpdateStateTransitionDisallowedInvalid {:?} -> {:?}",
+                            previous,
+                            new
+                        );
+                        Err(Error::<T>::UpdateStateTransitionDisallowed)
+                    },
                 }
             },
             Some(forced) => {
@@ -149,8 +160,14 @@ impl CircuitStatus {
                                     Ok(new.clone())
                                 },
                         },
+                    CircuitStatus::Ready =>
+                        if previous == CircuitStatus::InBidding {
+                            Ok(forced.clone())
+                        } else {
+                            Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
+                        },
                     CircuitStatus::InBidding =>
-                        if new == CircuitStatus::PendingBidding {
+                        if new == CircuitStatus::PendingBidding || new == CircuitStatus::InBidding {
                             Ok(forced.clone())
                         } else {
                             Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
@@ -181,11 +198,11 @@ impl CircuitStatus {
 
     fn determine_fsx_bidding_status<T: Config>(
         fsx: FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-    ) -> Result<CircuitStatus, Error<T>> {
+    ) -> CircuitStatus {
         if let Some(_bid) = fsx.best_bid {
-            Ok(CircuitStatus::InBidding)
+            CircuitStatus::InBidding
         } else {
-            Ok(CircuitStatus::PendingBidding)
+            CircuitStatus::PendingBidding
         }
     }
 
@@ -199,26 +216,32 @@ impl CircuitStatus {
             T::BlockNumber,
             EscrowedBalanceOf<T, T::Escrowed>,
         >],
-    ) -> Result<CircuitStatus, Error<T>> {
-        let mut lowest_bidding_status = CircuitStatus::PendingBidding;
-        let mut highest_bidding_status = CircuitStatus::InBidding;
+    ) -> CircuitStatus {
+        let mut lowest_bidding_status = CircuitStatus::InBidding;
+        let mut highest_bidding_status = CircuitStatus::PendingBidding;
 
         for fsx in fsx_step.iter() {
-            let current_bidding_status = Self::determine_fsx_bidding_status::<T>(fsx.clone())?;
-            if current_bidding_status > lowest_bidding_status {
-                lowest_bidding_status = current_bidding_status.clone();
-            }
-            if current_bidding_status < highest_bidding_status {
-                highest_bidding_status = current_bidding_status;
+            let current_bidding_status = Self::determine_fsx_bidding_status::<T>(fsx.clone());
+            if current_bidding_status == CircuitStatus::PendingBidding {
+                lowest_bidding_status = CircuitStatus::PendingBidding;
+            } else {
+                highest_bidding_status = CircuitStatus::InBidding;
             }
         }
-
         if lowest_bidding_status == CircuitStatus::InBidding {
-            Ok(CircuitStatus::Ready)
+            // Check if all FSX have already executors assigned to them as a precondition for the CircuitStatus to be ready.
+            if fsx_step
+                .iter()
+                .all(|fsx| fsx.input.enforce_executor.is_some())
+            {
+                CircuitStatus::Ready
+            } else {
+                CircuitStatus::InBidding
+            }
         } else if highest_bidding_status == CircuitStatus::PendingBidding {
-            Ok(CircuitStatus::PendingBidding)
+            CircuitStatus::PendingBidding
         } else {
-            Ok(CircuitStatus::InBidding)
+            CircuitStatus::InBidding
         }
     }
 
@@ -228,24 +251,23 @@ impl CircuitStatus {
             T::BlockNumber,
             EscrowedBalanceOf<T, T::Escrowed>,
         >],
-    ) -> Result<CircuitStatus, Error<T>> {
-        let mut lowest_execution_status = CircuitStatus::Ready;
-        let mut highest_execution_status = CircuitStatus::PendingExecution;
+    ) -> CircuitStatus {
+        let mut lowest_execution_status = CircuitStatus::Finished;
+        let mut highest_execution_status = CircuitStatus::Ready;
 
         for fsx in fsx_step.iter() {
             if fsx.confirmed.is_some() {
-                lowest_execution_status = CircuitStatus::PendingExecution;
+                highest_execution_status = CircuitStatus::Finished;
             } else {
-                highest_execution_status = CircuitStatus::Ready;
+                lowest_execution_status = CircuitStatus::Ready;
             }
         }
-
-        if lowest_execution_status == CircuitStatus::PendingExecution {
-            Ok(CircuitStatus::Finished)
+        if lowest_execution_status == CircuitStatus::Finished {
+            CircuitStatus::Finished
         } else if highest_execution_status == CircuitStatus::Ready {
-            Ok(CircuitStatus::Ready)
+            CircuitStatus::Ready
         } else {
-            Ok(CircuitStatus::PendingExecution)
+            CircuitStatus::PendingExecution
         }
     }
 
@@ -253,51 +275,40 @@ impl CircuitStatus {
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config>(
         step: &[FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>],
-    ) -> Result<CircuitStatus, Error<T>> {
+    ) -> CircuitStatus {
         if step.is_empty() {
-            return Ok(CircuitStatus::Finished)
+            return CircuitStatus::Finished
         }
-        let determined_bidding_status = Self::determine_bidding_status::<T>(step)?;
-        let determined_execution_status = Self::determine_execution_status::<T>(step)?;
-        // still in bidding - don't check for confirmations yet
+        let determined_bidding_status = Self::determine_bidding_status::<T>(step);
         if determined_bidding_status < CircuitStatus::Ready {
-            if determined_execution_status > CircuitStatus::Ready {
-                return Err(Error::<T>::DeterminedForbiddenXtxStatus)
-            }
-            return Ok(determined_bidding_status)
+            return determined_bidding_status
         }
-
-        Ok(determined_execution_status)
+        Self::determine_execution_status::<T>(step)
     }
 
     pub fn determine_xtx_status<T: Config>(
         steps: &[Vec<
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         >],
-    ) -> Result<CircuitStatus, Error<T>> {
+    ) -> CircuitStatus {
         let mut lowest_determined_status = CircuitStatus::Requested;
 
         // If all of the steps are empty assume CircuitStatus::Reserved status
         if steps.iter().all(|step| step.is_empty()) {
-            return Ok(CircuitStatus::Reserved)
+            return CircuitStatus::Reserved
         }
-
-        let mut dummy_debug_cnt = 0;
         for step in steps.iter() {
-            let current_step_status = Self::determine_step_status::<T>(step)?;
+            let current_step_status = Self::determine_step_status::<T>(step);
             if current_step_status > lowest_determined_status {
                 lowest_determined_status = current_step_status.clone();
             }
             // Xtx status is reflected with the lowest status of unresolved Step -
             //  break the loop on the first unresolved step
             if lowest_determined_status < CircuitStatus::Finished {
-                return Ok(current_step_status)
+                return current_step_status
             }
-
-            dummy_debug_cnt += 1;
         }
-
-        Ok(CircuitStatus::FinishedAllSteps)
+        CircuitStatus::FinishedAllSteps
     }
 }
 

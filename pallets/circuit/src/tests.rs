@@ -265,12 +265,14 @@ pub fn place_winning_bid_and_advance_3_blocks(
     assert_eq!(
         Circuit::get_pending_sfx_bids(xtx_id, sfx_id)
             .unwrap()
+            .unwrap()
             .amount,
         bid_amount
     );
 
     assert_eq!(
         Circuit::get_pending_sfx_bids(xtx_id, sfx_id)
+            .unwrap()
             .unwrap()
             .executor,
         executor
@@ -565,7 +567,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
             );
 
             assert_eq!(
-                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
                 None
             );
 
@@ -1131,7 +1133,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Unreserve insurance + bid amounts of the previous bidder
             assert_eq!(Balances::free_balance(&BID_LOOSER), INITIAL_BALANCE);
 
-            let expected_bonded_sfx_bid = SFXBid {
+            let expected_bonded_sfx_bid = SFXBid::<AccountId32, Balance, AssetId> {
                 amount: BID_AMOUNT_A,
                 requester: REQUESTER,
                 executor: BID_WINNER,
@@ -1142,7 +1144,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
             assert_eq!(
                 Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_sfx_bid
+                Some(expected_bonded_sfx_bid)
             );
 
             assert_eq!(
@@ -1335,7 +1337,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
             );
 
             assert_eq!(
-                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
                 None
             );
         });
@@ -1514,6 +1516,7 @@ fn successfully_bond_optimistic(
             &xtx_id.0, sfx_index,
         ),
     )
+    .unwrap()
     .unwrap();
 
     assert_eq!(created_sfx_bid.insurance, insurance as Balance);

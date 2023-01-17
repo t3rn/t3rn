@@ -7,30 +7,30 @@ use circuit_runtime_pallets::pallet_circuit::{
     state::{CircuitStatus, LocalXtxCtx},
 };
 use codec::Encode;
-use frame_support::traits::Currency;
+use frame_support::{assert_ok, traits::Currency};
 use sp_runtime::AccountId32;
 use t3rn_primitives::{
-    side_effect::{ConfirmedSideEffect, FullSideEffect, SFXBid},
+    side_effect::{ConfirmedSideEffect, FullSideEffect},
     xtx::LocalState,
 };
 
-const REQUESTER_1: AccountId = AccountId32::new([1u8; 32]);
-const REQUESTER_2: AccountId = AccountId32::new([2u8; 32]);
-const FROM_ACCOUNT: AccountId = AccountId32::new([111u8; 32]);
-const TO_ACCOUNT: AccountId = AccountId32::new([222u8; 32]);
+pub const REQUESTER_1: AccountId = AccountId32::new([1u8; 32]);
+pub const REQUESTER_2: AccountId = AccountId32::new([2u8; 32]);
+pub const FROM_ACCOUNT: AccountId = AccountId32::new([111u8; 32]);
+pub const TO_ACCOUNT: AccountId = AccountId32::new([222u8; 32]);
 
-const EXECUTOR_1: AccountId = AccountId32::new([10u8; 32]);
-const EXECUTOR_2: AccountId = AccountId32::new([11u8; 32]);
-const EXECUTOR_3: AccountId = AccountId32::new([12u8; 32]);
-const EXECUTOR_4: AccountId = AccountId32::new([13u8; 32]);
-const EXECUTOR_5: AccountId = AccountId32::new([14u8; 32]);
-const EXECUTOR_6: AccountId = AccountId32::new([15u8; 32]);
-const EXECUTOR_7: AccountId = AccountId32::new([16u8; 32]);
-const EXECUTOR_8: AccountId = AccountId32::new([17u8; 32]);
-const EXECUTOR_9: AccountId = AccountId32::new([18u8; 32]);
-const EXECUTOR_10: AccountId = AccountId32::new([19u8; 32]);
+pub const EXECUTOR_1: AccountId = AccountId32::new([10u8; 32]);
+pub const EXECUTOR_2: AccountId = AccountId32::new([11u8; 32]);
+pub const EXECUTOR_3: AccountId = AccountId32::new([12u8; 32]);
+pub const EXECUTOR_4: AccountId = AccountId32::new([13u8; 32]);
+pub const EXECUTOR_5: AccountId = AccountId32::new([14u8; 32]);
+pub const EXECUTOR_6: AccountId = AccountId32::new([15u8; 32]);
+pub const EXECUTOR_7: AccountId = AccountId32::new([16u8; 32]);
+pub const EXECUTOR_8: AccountId = AccountId32::new([17u8; 32]);
+pub const EXECUTOR_9: AccountId = AccountId32::new([18u8; 32]);
+pub const EXECUTOR_10: AccountId = AccountId32::new([19u8; 32]);
 
-const INITIAL_BALANCE: Balance = 100_000;
+pub const INITIAL_BALANCE: Balance = 100_000;
 
 pub fn stage() {
     System::set_block_number(1);
@@ -78,6 +78,23 @@ pub fn stage_transfer_sfx(
     sfx
 }
 
+pub fn setup_n_xtx_with_10_sfx_each(
+    n: u32,
+    target: [u8; 4],
+    requester: &AccountId,
+) -> Vec<(
+    LocalXtxCtx<Runtime>,
+    Vec<SideEffect<AccountId, Balance>>,
+    Vec<H256>,
+)> {
+    let mut n_xtx_array = vec![];
+    for _i in 0..n {
+        n_xtx_array.push(setup_xtx_with_10_sfx(target, requester));
+        frame_system::Pallet::<Runtime>::inc_account_nonce(requester);
+    }
+    n_xtx_array
+}
+
 pub fn setup_xtx_with_10_sfx(
     target: [u8; 4],
     requester: &AccountId,
@@ -89,7 +106,7 @@ pub fn setup_xtx_with_10_sfx(
     let mut sfx_arr_of_10 = vec![];
     let mut sfx_id_arr_of_10 = vec![];
 
-    for sfx_index in 0u32..9u32 {
+    for sfx_index in 0u32..10u32 {
         sfx_arr_of_10.push(stage_transfer_sfx(
             target,
             (sfx_index + 1) as Balance,
@@ -97,11 +114,26 @@ pub fn setup_xtx_with_10_sfx(
         ));
     }
 
-    let local_ctx = Machine::<Runtime>::setup(&sfx_arr_of_10, requester).unwrap();
+    let mut local_ctx = Machine::<Runtime>::setup(&sfx_arr_of_10, requester).unwrap();
+    assert_eq!(
+        true,
+        Machine::<Runtime>::compile(
+            &mut local_ctx,
+            |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
+            no_post_updates
+        )
+        .unwrap()
+    );
+    // Double check that Xtx is stored under the same ID as the one returned by setup
+    assert_eq!(
+        local_ctx.xtx_id,
+        Machine::<Runtime>::load_xtx(local_ctx.xtx_id)
+            .unwrap()
+            .xtx_id
+    );
+    assert_eq!(local_ctx.xtx.status, CircuitStatus::PendingBidding);
 
-    assert_eq!(local_ctx.xtx.status, CircuitStatus::Requested);
-
-    for sfx_index in 0u32..9u32 {
+    for sfx_index in 0u32..10u32 {
         sfx_id_arr_of_10.push(
             sfx_arr_of_10[sfx_index as usize]
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
@@ -117,11 +149,24 @@ pub fn setup_xtx_with_10_sfx(
 pub fn bid_for_n_out_of_10_sfx_in_xtx(
     n: u32,
     local_ctx: &mut LocalXtxCtx<Runtime>,
-    requester: AccountId,
+    _requester: AccountId,
 ) {
     if n > 10 {
         panic!("Can't bid for more than 10 SFXs");
     }
+
+    assert_eq!(local_ctx.xtx.status, CircuitStatus::PendingBidding);
+    assert_eq!(
+        local_ctx.xtx_id,
+        Machine::<Runtime>::load_xtx(local_ctx.xtx_id)
+            .unwrap()
+            .xtx_id
+    );
+    const STEP_INDEX: usize = 0 as usize;
+    let fsx_step = local_ctx.full_side_effects[STEP_INDEX].clone();
+
+    assert_eq!(fsx_step.len(), 10);
+
     for sfx_index in 0u32..n {
         let next_bidder = match sfx_index {
             0 => EXECUTOR_1,
@@ -137,27 +182,26 @@ pub fn bid_for_n_out_of_10_sfx_in_xtx(
             _ => panic!("Invalid sfx index"),
         };
 
-        let bid = SFXBid::<AccountId, Balance, u32>::new_none_optimistic(
-            (sfx_index + 1) as Balance,
-            (sfx_index + 1) as Balance,
-            next_bidder,
-            requester.clone(),
-            None,
+        let bid_amount = (sfx_index + 1) as Balance;
+
+        let sfx_id = fsx_step[sfx_index as usize]
+            .input
+            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+            &local_ctx.xtx_id.0,
+            sfx_index as u32,
         );
 
-        Machine::<Runtime>::compile(
+        assert_ok!(Machine::<Runtime>::compile(
             local_ctx,
-            |current_fsx: &mut Vec<FullSideEffect<AccountId, BlockNumber, Balance>>,
+            |_current_fsx: &mut Vec<FullSideEffect<AccountId, BlockNumber, Balance>>,
              _local_state: LocalState,
              _steps_cnt: (u32, u32),
              _status: CircuitStatus,
              _requester: AccountId| {
-                current_fsx[0].best_bid = Some(bid.clone());
-                Ok(PrecompileResult::UpdateFSX(current_fsx.clone()))
+                Ok(PrecompileResult::TryBid((sfx_id, bid_amount, next_bidder)))
             },
             no_post_updates,
-        )
-        .unwrap();
+        ));
     }
 }
 
@@ -189,18 +233,17 @@ pub fn confirm_n_out_of_10_sfx_in_xtx_after_bidding(n: u32, local_ctx: &mut Loca
             cost: None,
         };
 
-        Machine::<Runtime>::compile(
+        assert_ok!(Machine::<Runtime>::compile(
             local_ctx,
             |current_fsx: &mut Vec<FullSideEffect<AccountId, BlockNumber, Balance>>,
              _local_state: LocalState,
              _steps_cnt: (u32, u32),
              _status: CircuitStatus,
              _requester: AccountId| {
-                current_fsx[0].confirmed = Some(sfx_confirmation);
-                Ok(PrecompileResult::UpdateFSX(current_fsx.clone()))
+                current_fsx[sfx_index as usize].confirmed = Some(sfx_confirmation);
+                Ok(PrecompileResult::TryUpdateFSX(current_fsx.clone()))
             },
             no_post_updates,
-        )
-        .unwrap();
+        ));
     }
 }

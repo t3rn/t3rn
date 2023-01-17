@@ -138,25 +138,6 @@ pub mod pallet {
 
     pub type EscrowBalance<T> = EscrowedBalanceOf<T, <T as Config>::Escrowed>;
 
-    /// Temporary bids for SFX executions. Cleaned out each Config::BidsInterval, where are moved from
-    ///     PendingSFXBids to FSX::accepted_bids
-    ///
-    #[pallet::storage]
-    #[pallet::getter(fn get_pending_sfx_bids)]
-    pub type PendingSFXBids<T> = StorageDoubleMap<
-        _,
-        Identity,
-        XExecSignalId<T>,
-        Identity,
-        SideEffectId<T>,
-        SFXBid<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            u32,
-        >,
-        OptionQuery,
-    >;
-
     /// Links mapping SFX 2 XTX
     ///
     #[pallet::storage]
@@ -177,9 +158,8 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// Temporary bids for SFX executions. Cleaned out each Config::BidsInterval, where are moved from
-    ///     PendingSFXBids to FSX::accepted_bids
-    ///
+    /// Temporary bidding timeouts map for SFX executions. Cleaned out each Config::BidsInterval,
+    ///     where for each FSX::best_bid bidders are assigned for SFX::enforce_executor or Xtx is dropped.
     #[pallet::storage]
     #[pallet::getter(fn get_pending_xtx_bids_timeouts)]
     pub type PendingXtxBidsTimeoutsMap<T> = StorageMap<
@@ -387,18 +367,10 @@ pub mod pallet {
                                 CircuitStatus::PendingBidding | CircuitStatus::InBidding => {},
                                 _ => return PrecompileResult::TryKill(Cause::Timeout)
                             }
-                            for mut fsx in current_fsx.iter_mut() {
-                                let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(xtx_id);
-                                // Either assign best bid to FSX or Kill entire Xtx with DroppedAtBidding cause.
-                                if let Some(best_sfx_bid) = <PendingSFXBids<T>>::get(xtx_id, sfx_id)
-                                {
-                                    fsx.best_bid = Some(best_sfx_bid);
-                                } else {
-                                    // Error - at least one FSX has no bid
-                                    return PrecompileResult::TryKill(Cause::Timeout)
-                                }
+                            match current_fsx.iter().all(|fsx| fsx.best_bid.is_some()) {
+                                true => PrecompileResult::ForceUpdateStatus(CircuitStatus::Ready),
+                                false => PrecompileResult::TryKill(Cause::Timeout)
                             }
-                            PrecompileResult::UpdateFSX(current_fsx.clone())
                         },
                         |_status_change, local_ctx| {
                             // Account fees and charges happens internally in Machine::apply
@@ -565,7 +537,7 @@ pub mod pallet {
                             }
                             return Err(err)
                         },
-                        Ok(new_fsx) => Ok(PrecompileResult::UpdateFSX(new_fsx)),
+                        Ok(new_fsx) => Ok(PrecompileResult::TryUpdateFSX(new_fsx)),
                     }
                 },
                 |_status_change, _local_ctx| {
@@ -655,14 +627,15 @@ pub mod pallet {
             // Setup: new xtx context with SFX validation
             let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
             // Compile: apply the new state post squaring up and emit
-            Machine::<T>::compile(&mut fresh_xtx, no_mangle, |_status_change, local_ctx| {
-                // Square Up: do internal accounting
-                SquareUp::<T>::try_request(local_ctx)
-                    .map_err(|_e| Error::<T>::RequesterNotEnoughBalance)?;
-                // Emit: circuit events
-                Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
-                Ok(())
-            })?;
+            Machine::<T>::compile(
+                &mut fresh_xtx,
+                |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
+                |_status_change, local_ctx| {
+                    // Emit: circuit events
+                    Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
+                    Ok(())
+                },
+            )?;
 
             Ok(().into())
         }
@@ -674,50 +647,25 @@ pub mod pallet {
             bid_amount: EscrowedBalanceOf<T, T::Escrowed>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let executor = Self::authorize(origin, CircuitRole::Executor)?;
-
+            let bidder = Self::authorize(origin, CircuitRole::Executor)?;
             // retrieve xtx_id
             let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             Machine::<T>::compile(
                 &mut Machine::<T>::load_xtx(xtx_id)?,
-                |current_fsx, _local_state, _steps_cnt, status, requester| {
+                |_current_fsx, _local_state, _steps_cnt, _status, _requester| {
                     // Check if Xtx is in the bidding state
-                    match status {
-                        CircuitStatus::PendingBidding | CircuitStatus::InBidding => {},
-                        _ => return Err(Error::<T>::BiddingInactive),
-                    }
-
-                    // Check for the previous bids for SFX.
-                    // ToDo: Consider moving to setup to keep the rule of single storage access at setup.
-                    let current_accepted_bid =
-                        crate::Pallet::<T>::get_pending_sfx_bids(xtx_id, sfx_id);
-
-                    let accepted_as_best_bid = Bids::<T>::try_bid(
-                        current_fsx,
-                        &executor.clone(),
-                        &requester.clone(),
+                    Ok(PrecompileResult::TryBid((
+                        sfx_id,
                         bid_amount,
-                        sfx_id,
-                        xtx_id,
-                        current_accepted_bid,
-                    )?;
-
-                    crate::Pallet::<T>::storage_write_new_sfx_accepted_bid(
-                        xtx_id,
-                        sfx_id,
-                        accepted_as_best_bid,
-                    );
-
-                    Ok(PrecompileResult::ForceUpdateStatus(
-                        CircuitStatus::InBidding,
-                    ))
+                        bidder.clone(),
+                    )))
                 },
                 |_status_change, _local_ctx| {
                     Self::deposit_event(Event::SFXNewBidReceived(
                         sfx_id,
-                        executor.clone(),
+                        bidder.clone(),
                         bid_amount,
                     ));
                     Ok(())
@@ -847,7 +795,7 @@ pub mod pallet {
                         log::error!("Self::confirm hit an error -- {:?}", e);
                         Error::<T>::ConfirmationFailed
                     })?;
-                    Ok(PrecompileResult::UpdateFSX(current_fsx.clone()))
+                    Ok(PrecompileResult::TryUpdateFSX(current_fsx.clone()))
                 },
                 |_status_change, local_ctx| {
                     Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
@@ -865,14 +813,11 @@ pub mod pallet {
         }
     }
 
-    use crate::{
-        machine::{no_mangle, Machine},
-        square_up::SquareUp,
-    };
+    use crate::machine::{no_mangle, Machine};
     use pallet_xbi_portal::xbi_abi::{
         AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
     };
-    use t3rn_primitives::{account_manager::RequestCharge, side_effect::SFXBid};
+    use t3rn_primitives::account_manager::RequestCharge;
 
     /// Events for the pallet.
     #[pallet::event]
@@ -1000,9 +945,15 @@ pub mod pallet {
         BiddingInactive,
         BiddingRejectedBidBelowDust,
         BiddingRejectedBidTooHigh,
+        BiddingRejectedInsuranceTooLow,
         BiddingRejectedBetterBidFound,
+        BiddingRejectedFailedToDepositBidderBond,
         BiddingFailedExecutorsBalanceTooLowToReserve,
         InsuranceBondAlreadyDeposited,
+        InvalidFTXStateEmptyBidForReadyXtx,
+        InvalidFTXStateEmptyConfirmationForFinishedXtx,
+        InvalidFTXStateUnassignedExecutorForReadySFX,
+        InvalidFTXStateIncorrectExecutorForReadySFX,
         SetupFailed,
         SetupFailedXtxNotFound,
         SetupFailedXtxStorageArtifactsNotFound,
@@ -1384,6 +1335,31 @@ impl<T: Config> Pallet<T> {
         <T as Config>::SelfAccountId::get()
     }
 
+    /// Get pending Bids for SFX - Pending meaning that the SFX is still In Bidding
+    pub fn get_pending_sfx_bids(
+        xtx_id: XExecSignalId<T>,
+        sfx_id: SideEffectId<T>,
+    ) -> Result<Option<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>>, Error<T>>
+    {
+        let local_ctx = Machine::<T>::load_xtx(xtx_id)?;
+        let current_step_fsx = Machine::<T>::read_current_step_fsx(&local_ctx);
+        let fsx = current_step_fsx
+            .iter()
+            .find(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
+            .ok_or(Error::<T>::FSXNotFoundById)?;
+
+        match &fsx.best_bid {
+            Some(bid) => match &fsx.input.enforce_executor {
+                // Bid posted for this SFX has already been accepted, therefore Bid isn't pending.
+                Some(_executor) => Ok(None),
+                // Bid has been posted for this SFX but not yet accepted, therefore pending.
+                None => Ok(Some(bid.clone())),
+            },
+            // No bids posted for this SFX
+            None => Ok(None),
+        }
+    }
+
     pub fn convert_side_effects(
         side_effects: Vec<Vec<u8>>,
     ) -> Result<Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>, &'static str>
@@ -1459,32 +1435,6 @@ impl<T: Config> Pallet<T> {
         <SignalQueue<T>>::put(queue);
 
         processed_weight
-    }
-
-    pub(self) fn storage_write_new_sfx_accepted_bid(
-        xtx_id: T::Hash,
-        sfx_id: SideEffectId<T>,
-        sfx_bid: SFXBid<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            u32,
-        >,
-    ) {
-        <PendingSFXBids<T>>::insert(xtx_id, sfx_id, sfx_bid)
-    }
-
-    pub(self) fn storage_read_sfx_accepted_bid(
-        xtx_id: XExecSignalId<T>,
-        sfx_id: SideEffectId<T>,
-    ) -> Option<
-        SFXBid<
-            <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            u32,
-        >,
-    > {
-        // fixme: This accesses storage and therefor breaks the rule of a single-storage access at setup.
-        <PendingSFXBids<T>>::get(xtx_id, sfx_id)
     }
 
     pub(self) fn recover_fsx_by_id(

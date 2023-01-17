@@ -22,7 +22,7 @@ pub struct Machine<T: Config> {
 }
 
 pub enum PrecompileResult<T: Config> {
-    UpdateFSX(
+    TryUpdateFSX(
         Vec<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -31,12 +31,19 @@ pub enum PrecompileResult<T: Config> {
             >,
         >,
     ),
+    TryBid(
+        (
+            SideEffectId<T>,
+            EscrowedBalanceOf<T, T::Escrowed>,
+            <T as frame_system::Config>::AccountId,
+        ),
+    ),
+    TryRequest,
     Continue,
     ForceUpdateStatus(CircuitStatus),
     TryKill(Cause),
     Revert(Cause),
 }
-
 // Further Refactors:
 // - move all square_up actions to monetary module that always interacts with AccounManager and doesn't lock up balances directly
 // - separate executors bidding to a separate pallet with individual storage entries for each bid?
@@ -198,25 +205,56 @@ impl<T: Config> Machine<T> {
             &mut current_fsx.clone(),
             local_state,
             steps_cnt,
-            status,
-            requester,
+            status.clone(),
+            requester.clone(),
         )? {
-            PrecompileResult::UpdateFSX(updated_fsx) => {
+            PrecompileResult::TryRequest => {
+                // Try deposit from requester
+                SquareUp::<T>::try_request(local_ctx)
+                    .map_err(|_e| Error::<T>::RequesterNotEnoughBalance)?;
+                None
+            },
+            PrecompileResult::TryUpdateFSX(updated_fsx) => {
                 Self::update_current_step_fsx(local_ctx, &updated_fsx);
                 None
+            },
+            PrecompileResult::TryBid((sfx_id, bid_amount, bidder)) => {
+                match status {
+                    CircuitStatus::PendingBidding | CircuitStatus::InBidding => {
+                        // Try to replace the current bid with the new one if the amount is lower.
+                        // This will also replace a deposit in AccountManager from with required insurance from the new bidder.
+                        let updated_fsx = Bids::<T>::try_bid(
+                            &mut current_fsx.clone(),
+                            bid_amount,
+                            &bidder,
+                            &requester,
+                            sfx_id,
+                            local_ctx.xtx_id,
+                        )?;
+
+                        Self::update_current_step_fsx(local_ctx, &updated_fsx);
+
+                        Some(CircuitStatus::InBidding)
+                    },
+                    _ => return Err(Error::<T>::BiddingInactive),
+                }
             },
             PrecompileResult::Continue => None,
             // Assume kill attempt with fallible post_update to be intended as infallible cleanup to kill op
             //  in case fallible post_update passes, proceed with kill op
             // ToDo: check between allowed status enforcements - kill status / allowed enforced status
             PrecompileResult::TryKill(cause) => Some(CircuitStatus::Killed(cause)),
-            PrecompileResult::ForceUpdateStatus(status) => Some(status),
+            PrecompileResult::ForceUpdateStatus(force_status) => {
+                if CircuitStatus::InBidding == status && force_status == CircuitStatus::Ready {
+                    SquareUp::<T>::bind_bidders(local_ctx);
+                }
+                Some(force_status)
+            },
             PrecompileResult::Revert(cause) => Some(CircuitStatus::Reverted(cause)),
         };
         let status_change = Self::update_status(local_ctx, enforced_new_status)?;
         post_update(status_change.clone(), &local_ctx)?;
-        let ret = Self::apply(local_ctx, status_change);
-        Ok(ret)
+        Ok(Self::apply(local_ctx, status_change))
     }
 
     pub fn load_xtx(xtx_id: XtxId<T>) -> Result<LocalXtxCtx<T>, Error<T>> {
@@ -284,6 +322,46 @@ impl<T: Config> Machine<T> {
     }
 
     // Following methods aren't exposed to Pallet - internal use by compile only
+    fn check_bump_steps(
+        local_ctx: &LocalXtxCtx<T>,
+        status_change: (CircuitStatus, CircuitStatus),
+    ) -> (u32, u32) {
+        let (prev_status, new_status) = status_change;
+        match (prev_status, new_status.clone()) {
+            (
+                CircuitStatus::Requested,
+                CircuitStatus::Requested
+                | CircuitStatus::Reserved
+                | CircuitStatus::PendingBidding
+                | CircuitStatus::InBidding,
+            ) => (0, local_ctx.full_side_effects.len() as u32),
+            (CircuitStatus::Ready | CircuitStatus::PendingExecution, CircuitStatus::Finished) => {
+                let (current_step, steps_cnt) = local_ctx.xtx.steps_cnt;
+                (current_step + 1, steps_cnt)
+            },
+            (
+                CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished,
+                CircuitStatus::FinishedAllSteps,
+            ) => {
+                let (_, steps_cnt) = local_ctx.xtx.steps_cnt;
+                (steps_cnt, steps_cnt)
+            },
+            (_, _) => local_ctx.xtx.steps_cnt,
+        }
+    }
+
+    //     fn apply(local_ctx: &LocalcdXtxCtx<T>, status_change: (CircuitStatus, CircuitStatus)) -> bool {
+    fn try_create_deposits() {
+        // (CircuitStatus::PendingBidding, CircuitStatus::InBidding) => {
+        //     <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+        //         *x = Some(local_ctx.xtx.clone())
+        //     });
+        //
+        //     true
+        // },
+        // (CircuitStatus::InBidding, CircuitStatus::Ready)
+        // (CircuitStatus::InBidding, CircuitStatus::Ready)
+    }
 
     // Update should have all of the info accessible in LocalXtxCtx to transition between next states.
     fn update_status(
@@ -293,44 +371,23 @@ impl<T: Config> Machine<T> {
         let current_status = local_ctx.xtx.status.clone();
         // Apply will try to move the status of Xtx from the current to the closest valid one.
         match current_status {
-            CircuitStatus::Requested => {
-                local_ctx.xtx.steps_cnt = (0, local_ctx.full_side_effects.len() as u32);
-            },
             CircuitStatus::Reverted(_cause) => return Err(Error::<T>::UpdateAttemptDoubleRevert),
             CircuitStatus::Killed(_cause) => return Err(Error::<T>::UpdateAttemptDoubleKill),
-            CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
-                // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
-                let current_step_fsx = Self::read_current_step_fsx(local_ctx);
-
-                if !current_step_fsx.is_empty()
-                    && !current_step_fsx.iter().any(|fsx| fsx.confirmed.is_none())
-                {
-                    local_ctx.xtx.steps_cnt =
-                        (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
-
-                    local_ctx.xtx.status = CircuitStatus::Finished;
-
-                    // All of the steps are completed - the xtx has been finalized
-                    if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
-                        local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
-                        // return Ok((current_status, CircuitStatus::FinishedAllSteps))
-                    }
-                }
-            },
             _ => {},
         }
 
-        let mut new_status = CircuitStatus::determine_xtx_status(&local_ctx.full_side_effects)?;
+        let mut new_status = CircuitStatus::determine_xtx_status::<T>(&local_ctx.full_side_effects);
 
         new_status = CircuitStatus::check_transition(
             current_status.clone(),
             new_status,
             enforce_new_status,
         )?;
-
+        local_ctx.xtx.steps_cnt =
+            Self::check_bump_steps(&local_ctx, (current_status.clone(), new_status.clone()));
         local_ctx.xtx.status = new_status.clone();
 
-        Ok((current_status, new_status))
+        Ok((current_status.clone(), new_status.clone()))
     }
 
     fn apply(local_ctx: &LocalXtxCtx<T>, status_change: (CircuitStatus, CircuitStatus)) -> bool {
@@ -339,7 +396,11 @@ impl<T: Config> Machine<T> {
         // Assume no op. for equal statuses - although this should be caught before apply by disallowed state transitions.
         //  only use case might be for delays of timeout cleaning the storage PendingXtxTimeouts.
         // Also, disallow any downgrade status from Committed.
-        if old_status == new_status || old_status == CircuitStatus::Committed {
+        if old_status == new_status
+            && new_status != CircuitStatus::PendingExecution
+            && new_status != CircuitStatus::InBidding
+            || old_status == CircuitStatus::Committed
+        {
             return false
         }
 
@@ -429,6 +490,17 @@ impl<T: Config> Machine<T> {
                     *x = Some(local_ctx.xtx.clone())
                 });
 
+                <pallet::Pallet<T> as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.full_side_effects.clone())
+                });
+
+                true
+            },
+            (CircuitStatus::InBidding, CircuitStatus::InBidding) => {
+                <pallet::Pallet<T> as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.full_side_effects.clone())
+                });
+
                 true
             },
             (CircuitStatus::InBidding, CircuitStatus::Ready) => {
@@ -439,10 +511,7 @@ impl<T: Config> Machine<T> {
                     *x = Some(local_ctx.xtx.clone())
                 });
                 // Always clean temporary PendingSFXBids and TimeoutsMap after bidding
-                <pallet::Pallet<T> as Store>::PendingSFXBids::remove_prefix(local_ctx.xtx_id, None);
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
-
-                SquareUp::<T>::bind_bidders(local_ctx);
 
                 true
             },
@@ -458,19 +527,12 @@ impl<T: Config> Machine<T> {
 
                 let mut fsx_mut_arr = local_ctx.full_side_effects.clone();
                 for fsx_step in fsx_mut_arr.iter_mut() {
-                    for mut fsx in fsx_step {
+                    for fsx in fsx_step {
                         let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                         <pallet::Pallet<T> as Store>::SFX2XTXLinksMap::remove(sfx_id);
-                        if let Some(bid) = <pallet::Pallet<T> as Store>::PendingSFXBids::get(
-                            local_ctx.xtx_id,
-                            sfx_id,
-                        ) {
-                            fsx.best_bid = Some(bid);
-                        }
                     }
                 }
-                // Always clean temporary PendingSFXBids and TimeoutsMap after bidding
-                <pallet::Pallet<T> as Store>::PendingSFXBids::remove_prefix(local_ctx.xtx_id, None);
+                // Always clean temporary PendingXtxBidsTimeoutsMap after bidding
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
 
                 SquareUp::<T>::kill(local_ctx);
@@ -500,7 +562,10 @@ impl<T: Config> Machine<T> {
 
                 true
             },
-            (CircuitStatus::Finished | CircuitStatus::Ready, CircuitStatus::FinishedAllSteps) => {
+            (
+                CircuitStatus::Finished | CircuitStatus::Ready | CircuitStatus::PendingExecution,
+                CircuitStatus::FinishedAllSteps,
+            ) => {
                 <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });

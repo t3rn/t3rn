@@ -109,9 +109,19 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Infallible re-balance requesters locked rewards after possibly lower bids are posted.
-    pub fn bind_bidders(local_ctx: &LocalXtxCtx<T>) -> bool {
+    pub fn bind_bidders(local_ctx: &mut LocalXtxCtx<T>) -> bool {
         let mut res: bool = false;
-        for fsx in Machine::<T>::read_current_step_fsx(local_ctx).iter() {
+
+        let (current_step, _) = local_ctx.xtx.steps_cnt;
+
+        let step_fsx = match local_ctx.full_side_effects.get_mut(current_step as usize) {
+            Some(step_fsx) => step_fsx,
+            None => local_ctx
+                .full_side_effects
+                .last_mut()
+                .expect("read_current_step_fsx to have at least one step in FSX steps"),
+        };
+        for mut fsx in step_fsx.iter_mut() {
             let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             if let Some(bid) = &fsx.best_bid {
                 if !<T as Config>::AccountManager::assign_deposit(sfx_id, &bid.executor) {
@@ -120,6 +130,7 @@ impl<T: Config> SquareUp<T> {
                         sfx_id
                     );
                 } else {
+                    fsx.input.enforce_executor = Some(bid.executor.clone());
                     res = true;
                 }
             } else {
@@ -129,6 +140,7 @@ impl<T: Config> SquareUp<T> {
                 );
             }
         }
+
         res
     }
 
@@ -173,37 +185,33 @@ impl<T: Config> SquareUp<T> {
             .cloned()
             .collect();
 
+        let mut finalized = true;
+
+        let mut step_outcome = Outcome::Commit;
+
         for fsx in optimistic_fsx_in_step.iter() {
             let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             match &fsx.best_bid {
                 Some(bid) => {
+                    let outcome = match &fsx.confirmed {
+                        // Revert deposits for honest SFX resolution
+                        Some(_confirmed) => Outcome::Revert,
+                        // Slash dishonest SFX resolution to Escrow Account
+                        None => Outcome::Slash,
+                    };
+                    // If at least one SFX is not confirmed, then the whole XTX is reverted for requester
+                    if outcome == Outcome::Slash {
+                        step_outcome = Outcome::Revert;
+                    }
                     if !<T as Config>::AccountManager::finalize_infallible(
                         bid.generate_id::<SystemHashing<T>, T>(sfx_id),
-                        match &fsx.confirmed {
-                            // Revert deposits for honest SFX resolution
-                            Some(_confirmed) => Outcome::Revert,
-                            // Slash dishonest SFX resolution to Escrow Account
-                            None => Outcome::Slash,
-                        },
+                        outcome,
                     ) {
                         log::error!(
                             "revert: expect finalize_infallible to succeed for bid_id: {:?}",
                             bid.generate_id::<SystemHashing<T>, T>(sfx_id)
                         );
-                    }
-                    if !<T as Config>::AccountManager::finalize_infallible(
-                        sfx_id,
-                        match &fsx.confirmed {
-                            // Commit deposits from requesters to executors for honest SFX resolution
-                            Some(_confirmed) => Outcome::Commit,
-                            // Refund requester for dishonest SFX resolution
-                            None => Outcome::Revert,
-                        },
-                    ) {
-                        log::error!(
-                            "revert: expect finalize_infallible to succeed for sfx_id: {:?}",
-                            sfx_id
-                        );
+                        finalized = false;
                     }
                 },
                 None => {
@@ -211,10 +219,24 @@ impl<T: Config> SquareUp<T> {
                         "revert: disallowed state: reverting without fsx.best_bid assigned {:?}",
                         sfx_id
                     );
+                    finalized = false;
                 },
             }
         }
-        true
+        Machine::<T>::read_current_step_fsx(local_ctx)
+            .iter()
+            .for_each(|fsx| {
+                let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+                if !<T as Config>::AccountManager::finalize_infallible(sfx_id, step_outcome.clone())
+                {
+                    log::error!(
+                        "revert: expect finalize_infallible to succeed for sfx_id: {:?}",
+                        sfx_id
+                    );
+                    finalized = false;
+                }
+            });
+        finalized
     }
 
     /// Finalize Xtx after successful run - reward Escrow executors.
