@@ -12,13 +12,13 @@ export class BiddingEngine {
     /** How close you are to the max profit */
     bidPercentile: number = config.bidding.bidPercentile
     /** At the beginning, it has never been outbid */
-    timesBeenOutbid: Map<string, number>
+    timesBeenOutbid = new Map<string, number>();
     // timesBeenOutbid: Map<SideEffect, number> = new Map<SideEffect, number>()
     /** Number of bids on each side effect. KEYs: sfx id; VALUEs: number of bids */
-    numberOfBidsOnSfx: Map<string, number>
+    numberOfBidsOnSfx = new Map<string, number>();
     // numberOfBidsOnSfx: Map<SideEffect, number> = new Map<SideEffect, number>()
     /** Number of bid by executor */
-    numberOfBidsByExecutor: Map<string, number>
+    numberOfBidsByExecutor = new Map<string, number>();
     /** Logger */
     logger: any
     /** Being aggressive when bidding means to oubtbid everyone to get the SFX */
@@ -32,7 +32,7 @@ export class BiddingEngine {
     /** How close to be when been outbid, but still wants to be place a bid close to last one */
     closerPercentageBid: number = config.bidding.closerPercentageBid
     /** Which executor is bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
-    whoBidsOnWhat: Map<string, string[]>
+    whoBidsOnWhat = new Map<string, string[]>();
 
     /**
      * Computes the bidding amount for a given SFX for a certain scenario.
@@ -161,11 +161,12 @@ export class BiddingEngine {
      * @param sfx The side effect bidding on
      */
     addBidToSfx(sfx: SideEffect) {
-        if (this.numberOfBidsOnSfx[sfx.id] !== undefined) {
-            this.numberOfBidsOnSfx[sfx.id] = (this.numberOfBidsOnSfx[sfx.id] + 1) || 1
-        } else {
-            throw new Error("Incorrect SFX id")
-        }
+        // if (this.numberOfBidsOnSfx[sfx.id] !== undefined) {
+        // this.numberOfBidsOnSfx[sfx.id] = (this.numberOfBidsOnSfx[sfx.id] + 1) || 1
+        // } else {
+        // throw new Error("Incorrect SFX id")
+        // }
+        this.numberOfBidsOnSfx.set(sfx.id, ((this.numberOfBidsOnSfx.get(sfx.id) || 0) + 1))
     }
 
     /**
@@ -177,7 +178,7 @@ export class BiddingEngine {
     checkOutbid(sfx: SideEffect): boolean {
         const changedBidLeader = sfx.changedBidLeader
         if (changedBidLeader) {
-            this.timesBeenOutbid[sfx.id] = (this.timesBeenOutbid[sfx.id] + 1) || 1
+            this.timesBeenOutbid.set(sfx.id, this.timesBeenOutbid.get(sfx.id) || 0 + 1)
         }
         return changedBidLeader
     }
@@ -205,10 +206,8 @@ export class BiddingEngine {
             this.whoBidsOnWhat = new Map([[sfxId, [bidderId]]]);
         }
 
-        // Shorter way of doing the same as above
-        if (this.numberOfBidsByExecutor !== undefined) {
-            this.numberOfBidsByExecutor.set(bidderId, (this.numberOfBidsByExecutor.get(bidderId) || 0 + 1))
-        }
+        // Shorter way of doing the same as above, without arrays
+        this.numberOfBidsByExecutor.set(bidderId, ((this.numberOfBidsByExecutor.get(bidderId) || 0) + 1))
     }
 
     /**

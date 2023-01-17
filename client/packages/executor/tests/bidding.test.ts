@@ -3,6 +3,7 @@ import { SideEffect } from '../src/executionManager/sideEffect';
 import { config } from "../config/config"
 import { expect } from 'chai';
 import { mock, instance, when } from 'ts-mockito';
+import { BehaviorSubject } from 'rxjs';
 
 describe('Bidding: Configuration loading', () => {
     it('Correct config values are loaded', () => {
@@ -59,7 +60,7 @@ describe('Bidding: Storing executor bids for certain sfxs', () => {
         be.storeWhoBidOnWhat("sfxId1", "xtxId2");
         be.storeWhoBidOnWhat("sfxId2", "xtxId3");
 
-        // CHECKS
+        // ASSERTS
         // Can correctly call first key values
         expect(be.whoBidsOnWhat.get("sfxId1")).to.deep.equal(["xtxId1", "xtxId2"]);
         // Can correctly call second key
@@ -73,11 +74,10 @@ describe("Bidding: Scenario selection", () => {
         const be = new BiddingEngine();
         // Create a mock
         const mockedSideEffect: SideEffect = mock(SideEffect);
-        // with some values
+        const se: SideEffect = instance(mockedSideEffect);
         when(mockedSideEffect.isBidder).thenReturn(false);
         when(mockedSideEffect.lastBids).thenReturn([]);
-        // get an instance from mock
-        const se: SideEffect = instance(mockedSideEffect);
+
         // ACT
         const scenario = be.checkScenario(se);
         // ASSERT
@@ -89,11 +89,10 @@ describe("Bidding: Scenario selection", () => {
         const be = new BiddingEngine();
         // Create a mock
         const mockedSideEffect: SideEffect = mock(SideEffect);
-        // with some values
+        const se: SideEffect = instance(mockedSideEffect);
         when(mockedSideEffect.isBidder).thenReturn(true);
         when(mockedSideEffect.lastBids).thenReturn([0]);
-        // get an instance from mock
-        const se: SideEffect = instance(mockedSideEffect);
+
         // ACT
         const scenario = be.checkScenario(se);
         // ASSERT
@@ -105,11 +104,10 @@ describe("Bidding: Scenario selection", () => {
         const be = new BiddingEngine();
         // Create a mock
         const mockedSideEffect: SideEffect = mock(SideEffect);
-        // with some values
+        const se: SideEffect = instance(mockedSideEffect);
         when(mockedSideEffect.isBidder).thenReturn(true);
         when(mockedSideEffect.lastBids).thenReturn([]);
-        // get an instance from mock
-        const se: SideEffect = instance(mockedSideEffect);
+
         // ACT
         const scenario = be.checkScenario(se);
         // ASSERT
@@ -123,20 +121,18 @@ describe("Bidding: computation at scenarios", () => {
         const be = new BiddingEngine();
         // Create a mocked side effect
         const mockedSideEffect: SideEffect = mock(SideEffect);
-        // with some values
-        when(mockedSideEffect.maxProfitUsd.getValue()).thenReturn(100);
+        const se: SideEffect = instance(mockedSideEffect);
+        when(mockedSideEffect.maxProfitUsd).thenReturn(new BehaviorSubject(100));
         when(mockedSideEffect.minProfitUsd).thenReturn(10);
         when(mockedSideEffect.txOutputCostUsd).thenReturn(5);
-        // get an instance from mock
-        const se: SideEffect = instance(mockedSideEffect);
 
         // ACT + ASSERT
-        let bid = be.computeNoBidAndNoCompetition(se);
         be.overrideNoCompetition = true;
+        let bid = be.computeNoBidAndNoCompetition(se);
         expect(bid).to.be.equal(15);
 
-        bid = be.computeNoBidAndNoCompetition(se);
         be.overrideNoCompetition = false;
+        bid = be.computeNoBidAndNoCompetition(se);
         expect(bid).to.be.equal(115);
     })
 
@@ -145,26 +141,24 @@ describe("Bidding: computation at scenarios", () => {
         const be = new BiddingEngine();
         // Create a mocked side effect
         const mockedSideEffect: SideEffect = mock(SideEffect);
-        // with some values
-        when(mockedSideEffect.maxProfitUsd.getValue()).thenCall(() => { return 100; });
+        const se: SideEffect = instance(mockedSideEffect);
+        when(mockedSideEffect.maxProfitUsd).thenCall(() => { return new BehaviorSubject(100); });
         when(mockedSideEffect.minProfitUsd).thenReturn(10);
         when(mockedSideEffect.txOutputCostUsd).thenReturn(5);
-        // get an instance from mock
-        const se: SideEffect = instance(mockedSideEffect);
 
         // ACT + ASSERT
         be.bidAggressive = true;
-        let bid = be.computeNoBidAndNoCompetition(se);
+        let bid = be.computeNoBidButCompetition(se);
         expect(bid).to.be.equal(5 + 10);
 
         be.bidAggressive = false;
         be.bidMeek = true;
-        bid = be.computeNoBidAndNoCompetition(se);
+        bid = be.computeNoBidButCompetition(se);
         expect(bid).to.be.equal(5 + 10 + 100);
 
         be.bidAggressive = false;
         be.bidMeek = false;
-        bid = be.computeNoBidAndNoCompetition(se);
+        bid = be.computeNoBidButCompetition(se);
         expect(bid).to.be.equal(5 + 10 + (100 - 10) * 0.75);
     })
 })
@@ -175,21 +169,19 @@ describe("Bidding: check helper functions", () => {
         const be = new BiddingEngine();
         const mockedSideEffect: SideEffect = mock(SideEffect);
         when(mockedSideEffect.changedBidLeader).thenReturn(true);
-        when(mockedSideEffect.id).thenReturn('0');
-        // get an instance from mock
+        when(mockedSideEffect.id).thenReturn("0");
         const se: SideEffect = instance(mockedSideEffect);
 
         // ACT + ASSERT
         expect(be.checkOutbid(se)).to.be.true;
     })
 
-    it("should compute been outbid", () => {
+    it("should compute not been outbid", () => {
         // ARANGE
         const be = new BiddingEngine();
         const mockedSideEffect: SideEffect = mock(SideEffect);
-        when(mockedSideEffect.changedBidLeader).thenReturn(false);
-        when(mockedSideEffect.id).thenReturn('0');
         const se: SideEffect = instance(mockedSideEffect);
+        when(mockedSideEffect.changedBidLeader).thenReturn(false);
 
         // ACT + ASSERT
         expect(be.checkOutbid(se)).to.be.false;
