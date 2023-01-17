@@ -239,7 +239,7 @@ export class BiddingEngine {
  *      - You placed a bid (that was the top one), but other
  *        executor outbid it (beenOutbid).
  */
-enum Scenario {
+export enum Scenario {
     noBidAndNoCompetition,
     noBidButCompetition,   // <- might not be useful
     beenOutbid,            // <- 
