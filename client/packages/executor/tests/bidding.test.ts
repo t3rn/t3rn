@@ -1,9 +1,8 @@
 import { BiddingEngine, Scenario } from '../src/bidding/index';
+import { SideEffect } from '../src/executionManager/sideEffect';
 import { config } from "../config/config"
-// import { SideEffect } from "../src/executionManager/sideEffect"
 import { expect } from 'chai';
 import { mock, instance, when } from 'ts-mockito';
-import { SideEffect } from '../src/executionManager/sideEffect';
 
 describe('Bidding: Configuration loading', () => {
     it('Correct config values are loaded', () => {
@@ -174,9 +173,7 @@ describe("Bidding: check helper functions", () => {
     it("should compute been outbid", () => {
         // ARANGE
         const be = new BiddingEngine();
-        // Create a mocked side effect
         const mockedSideEffect: SideEffect = mock(SideEffect);
-        // with some values
         when(mockedSideEffect.changedBidLeader).thenReturn(true);
         when(mockedSideEffect.id).thenReturn('0');
         // get an instance from mock
@@ -189,15 +186,30 @@ describe("Bidding: check helper functions", () => {
     it("should compute been outbid", () => {
         // ARANGE
         const be = new BiddingEngine();
-        // Create a mocked side effect
         const mockedSideEffect: SideEffect = mock(SideEffect);
-        // with some values
         when(mockedSideEffect.changedBidLeader).thenReturn(false);
         when(mockedSideEffect.id).thenReturn('0');
-        // get an instance from mock
         const se: SideEffect = instance(mockedSideEffect);
 
         // ACT + ASSERT
         expect(be.checkOutbid(se)).to.be.false;
+    })
+
+    it("should clean up stored values sfx and bidder ids", () => {
+        // ARANGE
+        const sfxId: string = "sfxId1";
+        const be = new BiddingEngine();
+        const mockedSideEffect: SideEffect = mock(SideEffect);
+        when(mockedSideEffect.changedBidLeader).thenReturn(true);
+        when(mockedSideEffect.id).thenReturn('0');
+
+        // ACT
+        be.storeWhoBidOnWhat(sfxId, "xtxId1");
+        be.cleanUp(sfxId);
+
+        // ASSERT
+        expect(be.numberOfBidsOnSfx[sfxId]).to.equal(undefined);
+        expect(be.whoBidsOnWhat[sfxId]).to.equal(undefined);
+        expect(be.timesBeenOutbid[sfxId]).to.equal(undefined);
     })
 })
