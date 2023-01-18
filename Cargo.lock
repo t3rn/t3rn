@@ -983,7 +983,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
 ]
 
@@ -1068,7 +1068,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
  "xcm 0.9.27 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.27)",
  "xcm-builder",
@@ -1130,7 +1130,7 @@ dependencies = [
  "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
 ]
 
@@ -1196,7 +1196,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
 ]
 
@@ -2660,12 +2660,52 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethabi-decode"
+version = "1.3.2"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "ethereum-types",
+ "tiny-keccak 1.5.0",
+]
+
+[[package]]
+name = "ethabi-decode"
+version = "1.3.2"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#569cdc51c4ce136e39d045e6e5c1422229e0fcee"
+dependencies = [
+ "ethereum-types",
+ "tiny-keccak 1.5.0",
+]
+
+[[package]]
 name = "ethash"
 version = "0.5.0"
 dependencies = [
  "byteorder",
  "ethereum-types",
  "hex-literal 0.2.2",
+ "rlp",
+ "sha3 0.8.2",
+]
+
+[[package]]
+name = "ethash"
+version = "0.5.0"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "byteorder",
+ "ethereum-types",
+ "rlp",
+ "sha3 0.8.2",
+]
+
+[[package]]
+name = "ethash"
+version = "0.5.0"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#569cdc51c4ce136e39d045e6e5c1422229e0fcee"
+dependencies = [
+ "byteorder",
+ "ethereum-types",
  "rlp",
  "sha3 0.8.2",
 ]
@@ -2954,7 +2994,7 @@ dependencies = [
  "parking_lot 0.11.2",
  "relay-utils",
  "stacktrace",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
 ]
 
 [[package]]
@@ -4381,7 +4421,7 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-tracing",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "tokio 1.21.2",
 ]
 
@@ -6246,7 +6286,6 @@ dependencies = [
 name = "pallet-3vm"
 version = "0.1.0"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -6256,7 +6295,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-sdk-primitives",
 ]
 
@@ -6282,7 +6321,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
 ]
 
 [[package]]
@@ -6537,7 +6576,7 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-trie",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
  "t3rn-sdk-primitives",
 ]
@@ -6565,7 +6604,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
 ]
 
 [[package]]
@@ -6610,7 +6649,6 @@ name = "pallet-contracts"
 version = "1.0.0-alpha.0"
 dependencies = [
  "bitflags",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
@@ -6627,7 +6665,7 @@ dependencies = [
  "sp-runtime",
  "sp-sandbox",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-sdk-primitives",
  "wasm-instrument",
  "wasmi-validation",
@@ -6674,7 +6712,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
 ]
 
 [[package]]
@@ -6795,7 +6833,6 @@ version = "0.1.0"
 dependencies = [
  "evm",
  "fp-evm 3.0.0-dev",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
@@ -6811,7 +6848,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-sdk-primitives",
 ]
 
@@ -6846,7 +6883,7 @@ dependencies = [
  "fp-evm 3.0.0-dev",
  "frame-support",
  "pallet-evm 0.1.0",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.1",
 ]
 
 [[package]]
@@ -6968,7 +7005,7 @@ dependencies = [
  "serde",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
 ]
 
 [[package]]
@@ -7267,7 +7304,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
 ]
 
 [[package]]
@@ -7294,7 +7331,7 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
 ]
 
 [[package]]
@@ -7651,7 +7688,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "xcm 0.9.27 (git+https://github.com/paritytech/polkadot?tag=v0.9.27)",
 ]
 
@@ -7732,7 +7769,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
 ]
 
@@ -7758,7 +7795,7 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
 ]
 
 [[package]]
@@ -9890,7 +9927,7 @@ dependencies = [
  "sp-storage",
  "sp-trie",
  "sp-version",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "tokio 1.21.2",
 ]
 
@@ -11842,7 +11879,42 @@ dependencies = [
  "rustc-hex",
  "scale-info 2.2.0",
  "serde",
- "snowbridge-ethereum",
+ "snowbridge-ethereum 0.1.0",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-core"
+version = "0.1.1"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "enum-iterator",
+ "ethereum-types",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec 3.2.1",
+ "scale-info 2.2.0",
+ "serde",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-core"
+version = "0.1.1"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#569cdc51c4ce136e39d045e6e5c1422229e0fcee"
+dependencies = [
+ "enum-iterator",
+ "ethereum-types",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec 3.2.1",
+ "scale-info 2.2.0",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -11852,8 +11924,8 @@ dependencies = [
 name = "snowbridge-ethereum"
 version = "0.1.0"
 dependencies = [
- "ethabi-decode",
- "ethash",
+ "ethabi-decode 1.3.2",
+ "ethash 0.5.0",
  "ethbloom",
  "ethereum-types",
  "getrandom 0.2.7",
@@ -11874,6 +11946,54 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "wasm-bindgen-test",
+]
+
+[[package]]
+name = "snowbridge-ethereum"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "ethash 0.5.0 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "ethbloom",
+ "ethereum-types",
+ "getrandom 0.2.7",
+ "hex-literal 0.3.4",
+ "libsecp256k1 0.3.5",
+ "parity-bytes",
+ "parity-scale-codec 3.2.1",
+ "rlp",
+ "rustc-hex",
+ "scale-info 2.2.0",
+ "serde",
+ "serde-big-array",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-ethereum"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#569cdc51c4ce136e39d045e6e5c1422229e0fcee"
+dependencies = [
+ "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
+ "ethash 0.5.0 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
+ "ethbloom",
+ "ethereum-types",
+ "getrandom 0.2.7",
+ "hex-literal 0.3.4",
+ "libsecp256k1 0.3.5",
+ "parity-bytes",
+ "parity-scale-codec 3.2.1",
+ "rlp",
+ "rustc-hex",
+ "scale-info 2.2.0",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -11908,7 +12028,7 @@ dependencies = [
  "frame-system",
  "pallet-xcm 0.9.27 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.27)",
  "parity-scale-codec 3.2.1",
- "snowbridge-core",
+ "snowbridge-core 0.1.1",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -13105,7 +13225,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t0rn-parachain-runtime",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
  "try-runtime-cli",
  "xcm 0.9.27 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.27)",
@@ -13193,7 +13313,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
  "xcm 0.9.27 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.27)",
  "xcm-builder",
@@ -13270,7 +13390,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t3rn-parachain-runtime",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
  "try-runtime-cli",
  "xcm 0.9.27 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.27)",
@@ -13358,7 +13478,7 @@ dependencies = [
  "scale-info 2.2.0",
  "serde",
  "serde_json",
- "snowbridge-core",
+ "snowbridge-core 0.1.1",
  "sp-api",
  "sp-application-crypto",
  "sp-core",
@@ -13374,13 +13494,75 @@ dependencies = [
 ]
 
 [[package]]
+name = "t3rn-primitives"
+version = "1.0.0-alpha.0"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#569cdc51c4ce136e39d045e6e5c1422229e0fcee"
+dependencies = [
+ "ed25519-dalek",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "log",
+ "num-traits",
+ "pallet-sudo",
+ "parity-scale-codec 3.2.1",
+ "scale-info 2.2.0",
+ "serde",
+ "snowbridge-core 0.1.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "sp-version",
+ "t3rn-sdk-primitives",
+ "t3rn-types 0.0.1-rc.3 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
+]
+
+[[package]]
+name = "t3rn-primitives"
+version = "1.0.0-alpha.1"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "ed25519-dalek",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "log",
+ "num-traits",
+ "pallet-sudo",
+ "parity-scale-codec 3.2.1",
+ "scale-info 2.2.0",
+ "serde",
+ "snowbridge-core 0.1.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "sp-version",
+ "t3rn-sdk-primitives",
+ "t3rn-types 0.0.1-rc.3 (git+https://github.com/t3rn/t3rn?branch=development)",
+]
+
+[[package]]
 name = "t3rn-protocol"
 version = "1.0.0-alpha.1"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
  "circuit-runtime-types",
- "ethabi-decode",
+ "ethabi-decode 1.3.2",
  "frame-metadata 15.0.0",
  "frame-support",
  "frame-system",
@@ -13396,8 +13578,8 @@ dependencies = [
  "scale-info 2.2.0",
  "serde",
  "serde_json",
- "snowbridge-core",
- "snowbridge-ethereum",
+ "snowbridge-core 0.1.1",
+ "snowbridge-ethereum 0.1.0",
  "sp-application-crypto",
  "sp-core",
  "sp-io",
@@ -13405,7 +13587,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-types 0.0.1-rc.3",
  "tiny-keccak 2.0.2",
  "triehash",
@@ -13454,6 +13636,38 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "t3rn-sdk-primitives",
+]
+
+[[package]]
+name = "t3rn-types"
+version = "0.0.1-rc.3"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "bytes 1.2.1",
+ "num",
+ "parity-scale-codec 3.2.1",
+ "primitive-types",
+ "scale-info 2.2.0",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
+name = "t3rn-types"
+version = "0.0.1-rc.3"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#569cdc51c4ce136e39d045e6e5c1422229e0fcee"
+dependencies = [
+ "bytes 1.2.1",
+ "num",
+ "parity-scale-codec 3.2.1",
+ "primitive-types",
+ "scale-info 2.2.0",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
 ]
 
 [[package]]
