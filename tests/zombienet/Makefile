@@ -134,6 +134,9 @@ test-real-upgrade: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir
 	# deploy with test (ensuring old binary, new blob)
 	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/9999-real_runtime_upgrade.feature
 
+test-asset-tx-payment:
+	$(bin_dir)/zombienet --provider=$(provider) test ./integration/0001-asset-tx-payment.feature
+
 spawn: setup
 	$(bin_dir)/zombienet --help
 	$(bin_dir)/zombienet --provider=$(provider) spawn ./zombienet.toml
