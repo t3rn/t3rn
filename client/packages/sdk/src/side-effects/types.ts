@@ -1,22 +1,41 @@
+/**
+ * Describes the different SFX types that are available.
+ */
 export enum SfxType {
+    /* Native Transfer on Target */
 	Transfer,
 }
 
+/**
+ * Describes the status of an SFX
+ */
 export enum SfxStatus {
-    Ready,
-    Bidding,
-    PendingExecution,
-    ExecutedOnTarget,
-    Confirmed,
+    /* Created, but unprocessed */
+    Requested,
+    /* SFX is in bidding stage */
+    InBidding,
+    /* SFX was dropped at bidding, refunding all participants */
     Dropped,
+    /* SFX is ready to be executed */
+    ReadyToExecute,
+    /* SFX was executed on target successfully */
+    ExecutedOnTarget,
+    /* SFX was confirmed on circuit */
+    Confirmed,
+    /* SFX was reverted */
     Reverted
 }
 
 export enum XtxStatus {
+    /* Bidding phase in progress */
     PendingBidding,
-    Ready,
-    FinishedAllSteps,
+    /* XTX was dropped at the bidding. refunding all participants */
     DroppedAtBidding,
+    /* XTX is ready containing SFXs can be executed */
+    ReadyToExecute,
+    /* All XTX phases are confirmed, completing the lifecycle */
+    FinishedAllSteps,
+    /* The XTX has reverted */
     RevertTimedOut,
 }
 

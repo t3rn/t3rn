@@ -39,7 +39,7 @@ pub mod pallet {
         pallet_prelude::*,
         traits::{
             fungible::{Inspect, Mutate},
-            Time,
+            Currency, Time,
         },
     };
     use frame_system::pallet_prelude::*;
@@ -47,7 +47,7 @@ pub mod pallet {
     use t3rn_primitives::{
         side_effect::interface::SideEffectInterface,
         xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
-        Bytes, ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
+        Bytes, ChainId, GatewaySysProps, GatewayType, GatewayVendor,
     };
 
     #[pallet::config]
@@ -61,8 +61,9 @@ pub mod pallet {
         /// A type that provides inspection and mutation to some fungible assets
         type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
 
-        /// A type that manages escrow, and therefore balances
-        type Escrowed: EscrowTrait<Self>;
+        type Currency: Currency<Self::AccountId>;
+
+        type Time: Time;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -292,9 +293,8 @@ pub mod pallet {
 
             // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
             // xdns_record.assign_registrant(registrant.clone());
-            let now =
-                TryInto::<u64>::try_into(<<T as Config>::Escrowed as EscrowTrait<T>>::Time::now())
-                    .map_err(|_| "Unable to compute current timestamp")?;
+            let now = TryInto::<u64>::try_into(<T as Config>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
 
             xdns_record.set_last_finalized(now);
             <XDNSRegistry<T>>::insert(gateway_id, xdns_record);

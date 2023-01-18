@@ -7,10 +7,7 @@ use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use t3rn_primitives::contract_metadata::ContractMetadata;
 const USER_SEED: u32 = 999666;
-use t3rn_primitives::{
-    contracts_registry::{AuthorInfo, ContractsRegistry as ContractsRegistryExt},
-    transfers::BalanceOf,
-};
+use t3rn_primitives::contracts_registry::{AuthorInfo, ContractsRegistry as ContractsRegistryExt};
 
 const CODE_CALL: &str = r#"
 (module

@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t3rn-primitives"
 repository  = "https://github.com/t3rn/t3rn/"
-version     = "1.0.0-alpha.0"
+version     = "1.0.0-alpha.1"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -51,7 +51,10 @@ serde_json  = "1.0.41"
 default = [ "std" ]
 std = [
   "ed25519-dalek/std",
+  "log/std",
+  "scale-info/std",
   "serde/std",
+  "snowbridge-core/std",
   "codec/std",
   "sp-api/std",
   "sp-application-crypto/std",
@@ -71,5 +74,6 @@ std = [
   "sp-finality-grandpa/std",
   "t3rn-sdk-primitives/std",
   "t3rn-types/std",
+  "t3rn-types/runtime-std",
   "finality-grandpa/std",
 ]

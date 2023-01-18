@@ -4,6 +4,7 @@ use crate::{
     BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, ThreeVm,
     Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
+use circuit_runtime_types::AssetId;
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
@@ -59,10 +60,11 @@ parameter_types! {
 
 impl pallet_3vm::Config for Runtime {
     type AccountManager = AccountManager;
+    type AssetId = AssetId;
     type CircuitTargetId = CircuitTargetId;
     type ContractsRegistry = ContractsRegistry;
+    type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Escrowed = AccountManager;
     type Event = Event;
     type OnLocalTrigger = Circuit;
     type SignalBounceThreshold = ConstU32<2>;
@@ -85,7 +87,6 @@ impl pallet_3vm_contracts::Config for Runtime {
     type DeletionWeightLimit = DeletionWeightLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
-    type Escrowed = AccountManager;
     type Event = Event;
     type Randomness = RandomnessCollectiveFlip;
     type Schedule = Schedule;
@@ -152,7 +153,6 @@ impl pallet_3vm_evm::Config for Runtime {
     type CallOrigin = EnsureAddressTruncated;
     type ChainId = ChainId;
     type Currency = Balances;
-    type Escrowed = AccountManager;
     type Event = Event;
     type FeeCalculator = FixedGasPrice;
     // BaseFee pallet may be better from frontier TODO

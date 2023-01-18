@@ -37,5 +37,6 @@ To execute transactions on other blockchains, a custom relayer class is needed. 
 ## Getting Started:
 The first thing to setup is the config file.
 
-- run `yarn` (currently still need to manually build & add sdk)
+- in packages directory, run `make` to build the local dependencies (types & sdk)
+- run `yarn`
 - run `yarn start`

@@ -1,5 +1,4 @@
 use crate::*;
-use codec::Decode;
 use frame_support::parameter_types;
 pub use frame_support::traits::{Imbalance, OnUnbalanced};
 use frame_system::EnsureRoot;

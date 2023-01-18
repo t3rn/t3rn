@@ -112,6 +112,7 @@ macro_rules! setup_currency_adapter {
         use sp_runtime::traits::Saturating;
         use frame_support::traits::IsSubType;
         use pallet_transaction_payment::CurrencyAdapter;
+        use codec::Decode;
 
         pub struct AccountManagerCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
         type AccountImbalanceLiquidityInfo<T, C> = (

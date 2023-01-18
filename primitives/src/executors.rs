@@ -7,6 +7,7 @@ use sp_runtime::{traits::Zero, Percent, RuntimeDebug};
 use sp_std::{
     cmp::{Ordering, PartialOrd},
     prelude::*,
+    vec,
 };
 
 pub const EXECUTOR_LOCK_ID: LockIdentifier = *b"execstkl";

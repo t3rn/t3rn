@@ -5,8 +5,6 @@ use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
 use sp_runtime::traits::Convert;
 
-use crate::xbi_config::XBIPortalRuntimeEntry;
-
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
@@ -21,14 +19,15 @@ impl pallet_clock::Config for Runtime {
 
 impl pallet_xdns::Config for Runtime {
     type Balances = Balances;
-    type Escrowed = Self;
+    type Currency = Balances;
     type Event = Event;
+    type Time = Timestamp;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_contracts_registry::Config for Runtime {
     type Balances = Balances;
-    type Escrowed = AccountManager;
+    type Currency = Balances;
     type Event = Event;
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
@@ -58,8 +57,8 @@ impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
     type Balances = Balances;
     type Call = Call;
+    type Currency = Balances;
     type DeletionQueueLimit = ConstU32<100u32>;
-    type Escrowed = Self;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
@@ -69,8 +68,6 @@ impl pallet_circuit::Config for Runtime {
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
     type WeightInfo = ();
-    type XBIPortal = XBIPortalRuntimeEntry;
-    type XBIPromise = XBIPortal;
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10u32>;
     type XtxTimeoutDefault = ConstU32<400u32>;

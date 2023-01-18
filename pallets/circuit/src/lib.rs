@@ -39,11 +39,7 @@ use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     pallet_prelude::OriginFor,
 };
-use pallet_xbi_portal::{
-    primitives::xbi::XBIPortal,
-    xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
-};
-use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
+// use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
     KeyTypeId,
@@ -62,7 +58,6 @@ pub use t3rn_primitives::{
         ConfirmedSideEffect, FullSideEffect, HardenedSideEffect, SFXBid, SecurityLvl, SideEffect,
         SideEffectId,
     },
-    transfers::EscrowedBalanceOf,
     volatile::LocalState,
     xdns::Xdns,
     xtx::{Xtx, XtxId},
@@ -102,9 +97,8 @@ pub mod weights;
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
-pub type EscrowCurrencyOf<T> = <<T as pallet::Config>::Escrowed as EscrowTrait<T>>::Currency;
 
-type BalanceOf<T> = EscrowBalance<T>;
+reexport_currency_types!();
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -118,25 +112,21 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
-    use pallet_xbi_portal::xbi_codec::{XBICheckOutStatus, XBIMetadata, XBINotificationKind};
-    use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
-    use sp_runtime::traits::Hash;
-
     use pallet_xbi_portal::{
-        primitives::xbi::{XBIPromise, XBIStatus},
-        sabi::Sabi,
+        substrate_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm},
+        xbi_format::XbiCheckOutStatus,
     };
     use sp_std::borrow::ToOwned;
-
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         portal::Portal,
+        side_effect::SFXBid,
         xdns::Xdns,
     };
 
     pub use crate::weights::WeightInfo;
 
-    pub type EscrowBalance<T> = EscrowedBalanceOf<T, <T as Config>::Escrowed>;
+    pub type EscrowBalance<T> = BalanceOf<T>;
 
     /// Links mapping SFX 2 XTX
     ///
@@ -218,7 +208,7 @@ pub mod pallet {
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                    BalanceOf<T>,
                 >,
             >,
         >,
@@ -284,35 +274,21 @@ pub mod pallet {
         /// A type that provides inspection and mutation to some fungible assets
         type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
 
+        type Currency: Currency<Self::AccountId>;
+
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self>;
 
-        type XBIPortal: XBIPortal<Self>;
-
-        type XBIPromise: XBIPromise<Self, <Self as Config>::Call>;
-
-        type Executors: Executors<
-            Self,
-            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
-                Self::AccountId,
-            >>::Balance,
-        >;
+        type Executors: Executors<Self, BalanceOf<Self>>;
 
         /// A type that provides access to AccountManager
         type AccountManager: AccountManager<
             Self::AccountId,
-            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
-                Self::AccountId,
-            >>::Balance,
+            BalanceOf<Self>,
             Self::Hash,
             Self::BlockNumber,
             u32,
         >;
-
-        // type FreeVM: FreeVM<Self>;
-
-        /// A type that manages escrow, and therefore balances
-        type Escrowed: EscrowTrait<Self>;
 
         /// A type that gives access to the new portal functionality
         type Portal: Portal<Self>;
@@ -619,7 +595,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
-            side_effects: Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             _sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
@@ -644,7 +620,7 @@ pub mod pallet {
         pub fn bid_sfx(
             origin: OriginFor<T>, // Active relayer
             sfx_id: SideEffectId<T>,
-            bid_amount: EscrowedBalanceOf<T, T::Escrowed>,
+            bid_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let bidder = Self::authorize(origin, CircuitRole::Executor)?;
@@ -675,96 +651,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_with_xbi())]
-        pub fn execute_side_effects_with_xbi(
-            origin: OriginFor<T>, // Active relayer
-            xtx_id: XExecSignalId<T>,
-            side_effect: SideEffect<
-                <T as frame_system::Config>::AccountId,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            >,
-            max_exec_cost: u128,
-            max_notifications_cost: u128,
-        ) -> DispatchResultWithPostInfo {
-            let sfx_id = side_effect.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0u32);
-
-            if T::XBIPortal::get_status(sfx_id) != XBIStatus::UnknownId {
-                return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
-            }
-            // Authorize: Retrieve sender of the transaction.
-            let executor = Self::authorize(origin, CircuitRole::Executor)?;
-
-            let xbi =
-                sfx_2_xbi::<T, T::Escrowed>(
-                    &side_effect,
-                    XBIMetadata::new_with_default_timeouts(
-                        XbiId::<T>::local_hash_2_xbi_id(sfx_id)?,
-                        T::Xdns::get_gateway_para_id(&side_effect.target)?,
-                        T::SelfParaId::get(),
-                        max_exec_cost,
-                        max_notifications_cost,
-                        Some(Sabi::account_bytes_2_account_32(executor.encode()).map_err(
-                            |_| Error::<T>::FailedToCreateXBIMetadataDueToWrongAccountConversion,
-                        )?),
-                    ),
-                )
-                .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
-
-            // Use encoded XBI hash as ID for the executor's charge
-            let charge_id = T::Hashing::hash(&xbi.encode()[..]);
-            let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
-
-            Machine::<T>::compile(
-                &mut Machine::<T>::load_xtx(xtx_id)?,
-                |_current_fsx, _local_state, _steps_cnt, status, _requester| {
-                    // fixme: must be solved with charging and update status order if XBI is the first SFX
-                    return if status == CircuitStatus::Ready {
-                        Ok(PrecompileResult::ForceUpdateStatus(
-                            CircuitStatus::PendingExecution,
-                        ))
-                    } else {
-                        Ok(PrecompileResult::Continue)
-                    }
-                },
-                |_status_change, _local_ctx| {
-                    // Account fees and charges
-                    <T as Config>::AccountManager::deposit(
-                        charge_id,
-                        RequestCharge {
-                            payee: executor.clone(),
-                            offered_reward: total_max_rewards,
-                            charge_fee: Zero::zero(),
-                            role: CircuitRole::Executor,
-                            source: BenefitSource::TrafficFees,
-                            recipient: None,
-                            maybe_asset_id: None,
-                        },
-                    )
-                    .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;
-                    T::XBIPromise::then(
-                        xbi,
-                        pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
-                    )
-                    .map_err(|_e| Error::<T>::FailedToEnterXBIPortal)?;
-                    Ok(())
-                },
-            )?;
-
-            Ok(().into())
-        }
-
-        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
-        pub fn on_xbi_sfx_resolved(
-            _origin: OriginFor<T>,
-            sfx_id: T::Hash,
-        ) -> DispatchResultWithPostInfo {
-            Self::do_xbi_exit(
-                T::XBIPortal::get_check_in(sfx_id)?,
-                T::XBIPortal::get_check_out(sfx_id)?,
-            )?;
-            Ok(().into())
-        }
-
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
@@ -773,7 +659,7 @@ pub mod pallet {
             confirmation: ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
@@ -814,9 +700,6 @@ pub mod pallet {
     }
 
     use crate::machine::{no_mangle, Machine};
-    use pallet_xbi_portal::xbi_abi::{
-        AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId,
-    };
     use t3rn_primitives::account_manager::RequestCharge;
 
     /// Events for the pallet.
@@ -852,15 +735,15 @@ pub mod pallet {
             Gas,
             Data,
         ),
-        Notification(T::AccountId, AccountId32, XBINotificationKind, Data, Data),
-        Result(T::AccountId, AccountId32, XBICheckOutStatus, Data, Data),
+        // Notification(T::AccountId, AccountId32, XBINotificationKind, Data, Data),
+        Result(T::AccountId, AccountId32, XbiCheckOutStatus, Data, Data),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
         // New best bid for SFX has been accepted. Account here is an executor.
         SFXNewBidReceived(
             SideEffectId<T>,
             <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, T::Escrowed>,
+            BalanceOf<T>,
         ),
         // An executions SideEffect was confirmed.
         SideEffectConfirmed(XExecSignalId<T>),
@@ -879,12 +762,7 @@ pub mod pallet {
         NewSideEffectsAvailable(
             <T as frame_system::Config>::AccountId,
             XExecSignalId<T>,
-            Vec<
-                SideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    EscrowedBalanceOf<T, T::Escrowed>,
-                >,
-            >,
+            Vec<SideEffect<<T as frame_system::Config>::AccountId, BalanceOf<T>>>,
             Vec<SideEffectId<T>>,
         ),
         // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
@@ -892,12 +770,7 @@ pub mod pallet {
         CancelledSideEffects(
             <T as frame_system::Config>::AccountId,
             XtxId<T>,
-            Vec<
-                SideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    EscrowedBalanceOf<T, T::Escrowed>,
-                >,
-            >,
+            Vec<SideEffect<<T as frame_system::Config>::AccountId, BalanceOf<T>>>,
         ),
         // Listeners - executioners/relayers to know whether they won the confirmation challenge
         SideEffectsConfirmed(
@@ -907,16 +780,16 @@ pub mod pallet {
                     FullSideEffect<
                         <T as frame_system::Config>::AccountId,
                         <T as frame_system::Config>::BlockNumber,
-                        EscrowedBalanceOf<T, T::Escrowed>,
+                        BalanceOf<T>,
                     >,
                 >,
             >,
         ),
         EscrowTransfer(
             // ToDo: Inspect if Xtx needs to be here and how to process from protocol
-            T::AccountId,                                  // from
-            T::AccountId,                                  // to
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>, // value
+            T::AccountId, // from
+            T::AccountId, // to
+            BalanceOf<T>, // value
         ),
     }
 
@@ -1017,7 +890,7 @@ impl<T: Config> Pallet<T> {
     fn emit_sfx(
         xtx_id: XExecSignalId<T>,
         subjected_account: &T::AccountId,
-        side_effects: &Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>,
+        side_effects: &Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
     ) {
         if !side_effects.is_empty() {
             Self::deposit_event(Event::NewSideEffectsAvailable(
@@ -1042,11 +915,7 @@ impl<T: Config> Pallet<T> {
         xtx_id: XExecSignalId<T>,
         maybe_xtx: Option<XExecSignal<T::AccountId, T::BlockNumber>>,
         maybe_full_side_effects: Option<
-            Vec<
-                Vec<
-                    FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-                >,
-            >,
+            Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
         >,
     ) {
         if let Some(xtx) = maybe_xtx {
@@ -1089,12 +958,11 @@ impl<T: Config> Pallet<T> {
     }
 
     fn validate(
-        side_effects: &[SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>],
+        side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T>,
     ) -> Result<(), &'static str> {
-        let mut full_side_effects: Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        > = vec![];
+        let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
+            vec![];
 
         pub fn determine_security_lvl(gateway_type: GatewayType) -> SecurityLvl {
             if gateway_type == GatewayType::ProgrammableInternal(0)
@@ -1124,7 +992,7 @@ impl<T: Config> Pallet<T> {
 
             local_ctx
                 .use_protocol
-                .validate_args::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>, SystemHashing<T>>(
+                .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
                     sfx.clone(),
                     gateway_abi,
                     &mut local_ctx.local_state,
@@ -1147,7 +1015,7 @@ impl<T: Config> Pallet<T> {
                 UniversalSideEffectsProtocol::ensure_required_insurance::<
                     T::AccountId,
                     T::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
+                    BalanceOf<T>,
                     SystemHashing<T>,
                 >(
                     sfx.clone(),
@@ -1182,11 +1050,10 @@ impl<T: Config> Pallet<T> {
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
         full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
 
-        let mut escrow_sfx_step: Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        > = vec![];
+        let mut escrow_sfx_step: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
+            vec![];
         let mut optimistic_sfx_step: Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+            FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
         > = vec![];
 
         // Split for 2 following steps of Escrow and Optimistic and
@@ -1217,7 +1084,7 @@ impl<T: Config> Pallet<T> {
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
         >,
         local_state: &LocalState,
@@ -1225,7 +1092,7 @@ impl<T: Config> Pallet<T> {
         confirmation: &ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            BalanceOf<T>,
         >,
     ) -> Result<(), &'static str> {
         fn confirm_order<T: Config>(
@@ -1234,20 +1101,20 @@ impl<T: Config> Pallet<T> {
             confirmation: &ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
             step_side_effects: &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
+                    BalanceOf<T>,
                 >,
             >,
         ) -> Result<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
             &'static str,
         > {
@@ -1319,14 +1186,9 @@ impl<T: Config> Pallet<T> {
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
         _local_state: LocalState,
-        _full_side_effects: &mut Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
+        _full_side_effects: &mut Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         _steps_cnt: (u32, u32),
-    ) -> Result<
-        Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        Error<T>,
-    > {
+    ) -> Result<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>, Error<T>> {
         Ok(vec![])
     }
 
@@ -1339,8 +1201,7 @@ impl<T: Config> Pallet<T> {
     pub fn get_pending_sfx_bids(
         xtx_id: XExecSignalId<T>,
         sfx_id: SideEffectId<T>,
-    ) -> Result<Option<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>>, Error<T>>
-    {
+    ) -> Result<Option<SFXBid<T::AccountId, BalanceOf<T>, u32>>, Error<T>> {
         let local_ctx = Machine::<T>::load_xtx(xtx_id)?;
         let current_step_fsx = Machine::<T>::read_current_step_fsx(&local_ctx);
         let fsx = current_step_fsx
@@ -1362,13 +1223,11 @@ impl<T: Config> Pallet<T> {
 
     pub fn convert_side_effects(
         side_effects: Vec<Vec<u8>>,
-    ) -> Result<Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>>, &'static str>
-    {
-        let side_effects: Vec<SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>> =
-            side_effects
-                .into_iter()
-                .filter_map(|se| se.try_into().ok()) // TODO: maybe not
-                .collect();
+    ) -> Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, &'static str> {
+        let side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>> = side_effects
+            .into_iter()
+            .filter_map(|se| se.try_into().ok()) // TODO: maybe not
+            .collect();
         if side_effects.is_empty() {
             Err("No side effects provided")
         } else {
@@ -1444,7 +1303,7 @@ impl<T: Config> Pallet<T> {
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            BalanceOf<T>,
         >,
         Error<T>,
     > {
@@ -1467,155 +1326,5 @@ impl<T: Config> Pallet<T> {
         let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
             .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
         Machine::<T>::load_xtx(xtx_id)
-    }
-
-    pub fn do_xbi_exit(
-        xbi_checkin: XBICheckIn<T::BlockNumber>,
-        _xbi_checkout: XBICheckOut,
-    ) -> Result<(), Error<T>> {
-        // Recover SFX ID from XBI Metadata
-        let sfx_id: SideEffectId<T> =
-            Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
-                .expect("XBI metadata id conversion should always decode to Sfx ID");
-
-        let local_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
-
-        let fsx = Self::recover_fsx_by_id(sfx_id, &local_ctx)?;
-
-        // todo#2: local fail Xtx if xbi_checkout::result errored
-
-        let escrow_source = Self::account_id();
-        let executor = if let Some(ref known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
-            known_origin.clone()
-        } else {
-            return Err(Error::<T>::FailedToExitXBIPortal)
-        };
-        let executor_decoded = Decode::decode(&mut &executor.encode()[..])
-            .expect("XBI metadata executor conversion should always decode to local Account ID");
-
-        let xbi_exit_event = match xbi_checkin.clone().xbi.instr {
-            XBIInstr::CallNative { payload } => Ok(Event::<T>::CallNative(escrow_source, payload)),
-            XBIInstr::CallEvm {
-                source,
-                target,
-                value,
-                input,
-                gas_limit,
-                max_fee_per_gas,
-                max_priority_fee_per_gas,
-                nonce,
-                access_list,
-            } => Ok(Event::<T>::CallEvm(
-                escrow_source,
-                source,
-                target,
-                value,
-                input,
-                gas_limit,
-                max_fee_per_gas,
-                max_priority_fee_per_gas,
-                nonce,
-                access_list,
-            )),
-            XBIInstr::CallWasm {
-                dest,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                data,
-            } => Ok(Event::<T>::CallWasm(
-                escrow_source,
-                dest,
-                value,
-                gas_limit,
-                storage_deposit_limit,
-                data,
-            )),
-            XBIInstr::CallCustom {
-                caller,
-                dest,
-                value,
-                input,
-                limit,
-                additional_params,
-            } => Ok(Event::<T>::CallCustom(
-                escrow_source,
-                caller,
-                dest,
-                value,
-                input,
-                limit,
-                additional_params,
-            )),
-            XBIInstr::Transfer { dest, value } =>
-                Ok(Event::<T>::Transfer(escrow_source, executor, dest, value)),
-            XBIInstr::TransferORML {
-                currency_id,
-                dest,
-                value,
-            } => Ok(Event::<T>::TransferORML(
-                escrow_source,
-                currency_id,
-                executor,
-                dest,
-                value,
-            )),
-            XBIInstr::TransferAssets {
-                currency_id,
-                dest,
-                value,
-            } => Ok(Event::<T>::TransferAssets(
-                escrow_source,
-                currency_id,
-                executor,
-                dest,
-                value,
-            )),
-            XBIInstr::Result {
-                outcome,
-                output,
-                witness,
-            } => Ok(Event::<T>::Result(
-                escrow_source,
-                executor,
-                outcome,
-                output,
-                witness,
-            )),
-            XBIInstr::Notification {
-                kind,
-                instruction_id,
-                extra,
-            } => Ok(Event::<T>::Notification(
-                escrow_source,
-                executor,
-                kind,
-                instruction_id,
-                extra,
-            )),
-            _ => Err(Error::<T>::FailedToExitXBIPortal),
-        }?;
-
-        Self::deposit_event(xbi_exit_event.clone());
-
-        let confirmation = xbi_result_2_sfx_confirmation::<T, T::Escrowed>(
-            xbi_checkin.xbi,
-            xbi_exit_event.encode(),
-            executor_decoded,
-        )
-        .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
-
-        let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-
-        let fsx = Machine::<T>::read_current_step_fsx(&local_ctx);
-        Self::confirm(
-            local_ctx.xtx_id,
-            &mut fsx.clone(),
-            &local_ctx.local_state,
-            sfx_id,
-            &confirmation,
-        )
-        .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
-        Ok(())
     }
 }

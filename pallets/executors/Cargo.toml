@@ -13,31 +13,35 @@ version     = "1.0.0-rc.0"
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-codec              = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", "max-encoded-len" ] }
-frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
+codec      = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", "max-encoded-len" ] }
+log        = { version = "0.4", default-features = false }
+scale-info = { version = "2.1.1", default-features = false, features = [ "derive" ] }
+serde      = { version = "1.0", default-features = false, features = [ "derive" ] }
+
+frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false, optional = true }
 frame-support      = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 frame-system       = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
-log                = { version = "0.4", default-features = false }
-scale-info         = { version = "2.1.1", default-features = false, features = [ "derive" ] }
-serde              = { version = "1.0", default-features = false, features = [ "derive" ] }
-sp-runtime         = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
-sp-std             = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
-t3rn-primitives    = { path = "../../primitives", default-features = false }
+
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
+sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
+
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
 
 [dev-dependencies]
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
-pallet-clock = { path = "../clock", default-features = false }
-pallet-account-manager = { path = "../account-manager", default-features = false }
-pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-pallet-3vm                           = { path = "../../3vm/pallets/3vm", default-features = false }
-pallet-3vm-contracts                 = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }
-pallet-3vm-contracts-primitives      = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
-pallet-timestamp                           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-similar-asserts = "1.1.0"
-sp-core         = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
-sp-io           = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+pallet-3vm                           = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions" }
+pallet-3vm-contracts                 = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts" }
+pallet-3vm-contracts-primitives      = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc-runtime-api" }
+
+pallet-account-manager                     = { path = "../account-manager" }
+pallet-balances                            = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+pallet-clock                               = { path = "../clock" }
+pallet-timestamp                           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+similar-asserts                            = "1.1.0"
+sp-core                                    = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+sp-io                                      = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
 
 [features]
 default = [ "std" ]
@@ -61,7 +65,6 @@ std = [
   "t3rn-primitives/std",
   "frame-support/std",
   "frame-system/std",
-  "frame-benchmarking/std",
 ]
 
 runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks" ]

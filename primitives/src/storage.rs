@@ -1,6 +1,5 @@
 use sp_runtime::RuntimeDebug as Debug;
 
-use crate::transfers::BalanceOf;
 use codec::{Decode, Encode};
 use frame_support::storage::child::ChildInfo;
 use scale_info::TypeInfo;
@@ -8,9 +7,6 @@ use sp_std::vec::Vec;
 
 pub type CodeHash<T> = <T as frame_system::Config>::Hash;
 pub type TrieId = Vec<u8>;
-
-pub type AliveContractInfo<T> =
-    RawAliveContractInfo<CodeHash<T>, BalanceOf<T>, <T as frame_system::Config>::BlockNumber>;
 
 // TODO: this needs to be tied in with 3VM and how it utilises storage. At the moment it just makes its
 // own copy of the contract, but since we hold it in the registry, this need to be smarter.

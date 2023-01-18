@@ -6,7 +6,7 @@ use frame_support::{
     traits::{ConstU32, NeverEnsureOrigin},
     PalletId,
 };
-use sp_runtime::{traits::*, Permill};
+use sp_runtime::Permill;
 
 use crate::impl_versioned_runtime_with_api::Version;
 

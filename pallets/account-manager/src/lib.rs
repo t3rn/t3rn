@@ -20,8 +20,7 @@ use t3rn_primitives::{
     clock::Clock,
     common::RoundInfo,
     executors::Executors,
-    transfers::EscrowedBalanceOf,
-    EscrowTrait,
+    reexport_currency_types,
 };
 
 #[cfg(test)]
@@ -35,8 +34,7 @@ pub mod monetary;
 pub mod transaction;
 pub mod weights;
 
-pub type BalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+reexport_currency_types!();
 
 pub type AssetsBalanceOf<T> =
     <<T as Config>::Assets as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
@@ -264,17 +262,12 @@ pub mod pallet {
     }
 }
 
-impl<T: Config> EscrowTrait<T> for Pallet<T> {
-    type Currency = T::Currency;
-    type Time = T::Time;
-}
-
 impl<T: Config> Convert<Weight, BalanceOf<T>> for Pallet<T>
 where
     <<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance:
         From<u64>,
 {
-    fn convert(w: Weight) -> EscrowedBalanceOf<T, Self> {
-        EscrowedBalanceOf::<T, Self>::from(w)
+    fn convert(w: Weight) -> BalanceOf<T> {
+        BalanceOf::<T>::from(w)
     }
 }

@@ -25,7 +25,6 @@ mod circuit_config;
 mod consensus_aura_config;
 mod contracts_config;
 mod system_no_version_config;
-mod xbi_config;
 
 frame_support::construct_runtime!(
     pub enum Runtime where
@@ -55,9 +54,6 @@ frame_support::construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Treasury: pallet_treasury = 109,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
-
-        XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>} = 111,
-        XBIPortalEnter: pallet_xbi_portal_enter::{Pallet, Call, Event<T>} = 112,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,

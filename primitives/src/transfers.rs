@@ -1,4 +1,3 @@
-use crate::EscrowTrait;
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
@@ -6,8 +5,30 @@ use frame_support::{
 };
 use sp_core::H256;
 
-use frame_system as system;
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
+
+// The reason we used escrowtrait was for an easy BalanceOf, all it was was to route to currency.
+// Instead we just route to currency via the pallet and call this to export the types
+#[macro_export]
+macro_rules! reexport_currency_types {
+    () => {
+        pub type CurrencyOf<T> = <T as pallet::Config>::Currency;
+        pub type BalanceOf<T> = <<T as Config>::Currency as frame_support::traits::Currency<
+            <T as frame_system::Config>::AccountId,
+        >>::Balance;
+    };
+}
+pub type CurrencyBalanceOf<T, C> = <C as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+#[macro_export]
+macro_rules! reexport_asset_types {
+    () => {
+        pub type AssetIdOf<T> =
+            <<T as Config>::Assets as frame_support::traits::tokens::fungibles::Inspect<
+                <T as frame_system::Config>::AccountId,
+            >>::AssetId;
+    };
+}
 
 #[derive(Debug, Default, PartialEq, Eq, Encode, Decode, Clone)]
 // #[codec(compact)] ToDo: Check if events can still be encoded/decoded from ext clients
@@ -17,47 +38,39 @@ pub struct TransferEntry {
     pub data: Vec<u8>,
 }
 
-pub type EscrowedBalanceOf<T, E> =
-    <<E as EscrowTrait<T>>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
-
-pub type EscrowedCurrencyOf<T, E> = <E as EscrowTrait<T>>::Currency;
-
-pub type BalanceOf<T> =
-    <<T as EscrowTrait<T>>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
-
-pub fn just_transfer<T: frame_system::Config, E: EscrowTrait<T>>(
+pub fn just_transfer<T: frame_system::Config, C: Currency<T::AccountId>>(
     transactor: &T::AccountId,
     dest: &T::AccountId,
-    value: EscrowedBalanceOf<T, E>,
+    value: CurrencyBalanceOf<T, C>,
 ) -> DispatchResult {
-    EscrowedCurrencyOf::<T, E>::transfer(transactor, dest, value, ExistenceRequirement::KeepAlive)
+    C::transfer(transactor, dest, value, ExistenceRequirement::KeepAlive)
 }
 
-pub fn commit_deferred_transfers<T: frame_system::Config, E: EscrowTrait<T>>(
+pub fn commit_deferred_transfers<T: frame_system::Config, C: Currency<T::AccountId>>(
     escrow_account: T::AccountId,
     transfers: &mut [TransferEntry],
 ) -> DispatchResult {
     // Give the money back to the requester from the transfers that succeeded.s
     for transfer in transfers.iter() {
-        just_transfer::<T, E>(
+        just_transfer::<T, C>(
             &escrow_account,
             &h256_to_account(transfer.to),
-            EscrowedBalanceOf::<T, E>::from(transfer.value),
+            <CurrencyBalanceOf<T, C>>::from(transfer.value),
         )?;
     }
     Ok(())
 }
 
-pub fn escrow_transfer<T: frame_system::Config, E: EscrowTrait<T>>(
+pub fn escrow_transfer<T: frame_system::Config, C: Currency<T::AccountId>>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     target_to: &T::AccountId,
-    value: EscrowedBalanceOf<T, E>,
+    value: CurrencyBalanceOf<T, C>,
     transfers: &mut Vec<TransferEntry>,
 ) -> Result<(), DispatchError> {
     // Verify that requester has enough money to make the transfers from within the contract.
-    let balance = <E as EscrowTrait<T>>::Currency::total_balance(&requester.clone());
-    let min = <E as EscrowTrait<T>>::Currency::minimum_balance();
+    let balance = C::total_balance(&requester.clone());
+    let min = C::minimum_balance();
 
     if balance < min + value {
         return Err(DispatchError::Other(
@@ -65,7 +78,7 @@ pub fn escrow_transfer<T: frame_system::Config, E: EscrowTrait<T>>(
         ))
     }
     // Just transfer here the value of internal for contract transfer to escrow account.
-    return match just_transfer::<T, E>(requester, escrow_account, value) {
+    return match just_transfer::<T, C>(requester, escrow_account, value) {
         Ok(_) => {
             transfers.push(TransferEntry {
                 to: account_encode_to_h256(target_to.encode().as_slice()),

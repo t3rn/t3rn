@@ -1,5 +1,5 @@
-import * as utils from './utils'
-import * as amounts from './amounts'
-import * as address from './address'
+import * as Utils from './utils'
+import * as Amounts from './amounts'
+import * as Address from './address'
 
-export{amounts, address, utils}
+export{Amounts, Address, Utils}

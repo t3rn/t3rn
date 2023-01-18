@@ -7,7 +7,7 @@ pdot_branch := release-v0.9.27
 root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
-polkadot_tmp_dir := $(shell mktemp -d)
+polkadot_tmp_dir := /tmp/polkadot
 SCCACHE_VERSION := v0.3.1
 SCCACHE_FILE := sccache-$(SCCACHE_VERSION)-x86_64-unknown-linux-musl
 
@@ -27,6 +27,33 @@ clean:
 $(bin_dir): 
 	@mkdir -p $(bin_dir)
 
+${bin_dir}/zombienet:
+	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(zombienet_version)/zombienet-$(machine)
+	chmod +x $(bin_dir)/zombienet
+
+${bin_dir}/polkadot:
+	@if [ ! -f $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot ]; then \
+		mkdir -p $(polkadot_tmp_dir); \
+		git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch); \
+		cargo build --manifest-path $(polkadot_tmp_dir)/$(pdot_branch)/Cargo.toml --features fast-runtime --release --locked; \
+	fi
+	cp $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot $(bin_dir)/polkadot
+
+${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml Makefile
+	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
+	cp -f $(root_dir)/target/release/t0rn-collator $(bin_dir)/
+
+${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(root_dir)/*/t3rn-parachain/Cargo.toml Makefile
+	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
+	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
+
+setup: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
+
+# ====================== Caching ======================
+#
+# sccache is already present on Github Action workers, no need to set it up
+#
+
 ${bin_dir}/sccache:
 	@if [ $(machine) = "macos" ]; then \
         brew update; \
@@ -39,28 +66,6 @@ ${bin_dir}/sccache:
 		sudo chmod +x $(bin_dir)/sccache; \
 	fi
 	
-${bin_dir}/zombienet:
-	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(zombienet_version)/zombienet-$(machine)
-	# echo "#### Need sudo access for zombienet executable, make will drop this sudo access after this cmd ####"
-	sudo chmod +x $(bin_dir)/zombienet
-
-${bin_dir}/polkadot:
-	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/polkadot
-	cargo build --manifest-path $(polkadot_tmp_dir)/polkadot/Cargo.toml --features fast-runtime --release --locked
-	mv -f $(polkadot_tmp_dir)/polkadot/target/release/polkadot $(bin_dir)/polkadot
-
-${bin_dir}/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(root_dir)/*/t0rn-parachain/Cargo.toml Makefile
-	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --release --locked
-	cp -f $(root_dir)/target/release/t0rn-collator $(bin_dir)/
-
-${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(root_dir)/*/t3rn-parachain/Cargo.toml Makefile
-	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
-	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
-
-setup: $(bin_dir) ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t0rn-collator ${bin_dir}/t3rn-collator
-
-# ====================== Caching ======================
-
 start-sccache: $(bin_dir) ${bin_dir}/sccache
 	sccache --start-server || true
 
@@ -105,7 +110,7 @@ test-upgrade: setup bump-versions
 # NOTE: this does not modify the versions as to provide a true representation of the runtime upgrade
 # NOTE: this probably will only work on linux since we only release linux binaries and they aren't musl, so strictly this works for CI.
 # TODO[Optimisation]: get last tag and build in a fake directory instead
-test-real-upgrade: $(bin_dir) ${bin_dir}/sccache ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/$(parachain)-collator 
+test-real-upgrade: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/$(parachain)-collator 
 	@echo "Testing real upgrade for parachain: $(parachain)"
 
 	@if [ $(machine) = "macos" ]; then \

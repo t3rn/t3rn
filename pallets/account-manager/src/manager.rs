@@ -9,7 +9,7 @@ use frame_support::{
     traits::{fungibles::Inspect, Get},
 };
 use sp_runtime::{
-    traits::{CheckedAdd, CheckedDiv, CheckedMul, Zero},
+    traits::{CheckedAdd, CheckedDiv, CheckedMul, Convert, Zero},
     ArithmeticError, DispatchError,
 };
 use sp_std::{prelude::*, vec};
@@ -23,7 +23,7 @@ use t3rn_primitives::{
 };
 
 use crate::monetary::Monetary;
-use pallet_xbi_portal::sabi::Sabi;
+use substrate_abi::{SubstrateAbiConverter as Sabi, Value256};
 
 pub struct ActiveSetClaimablePerRound<Account, Balance> {
     pub executor: Account,
@@ -82,7 +82,8 @@ impl<T: Config>
         let execution_id = ContractsRegistryExecutionNonce::<T>::get();
         ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
 
-        let charge_id = Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
+        let xtx_id: Value256 = Sabi::convert(execution_id);
+        let charge_id = Decode::decode(&mut &xtx_id.encode()[..])
             .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
 
         Self::no_charge_or_fail(charge_id)?;

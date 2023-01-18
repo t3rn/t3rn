@@ -6,7 +6,7 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use sp_runtime::{DispatchError, DispatchResult};
-use sp_std::{result::Result, vec::Vec};
+use sp_std::{fmt::Debug, result::Result, vec::Vec};
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
     state::SideEffects,
@@ -108,7 +108,6 @@ pub trait Remuneration<T: frame_system::Config, Balance> {
     /// Try to finalize a ledger item with an reason
     fn try_finalize(ledger_id: T::Hash, outcome: Outcome) -> DispatchResult;
 }
-
 pub enum Characteristic {
     Storage,
     Instantiate,
@@ -162,6 +161,124 @@ where
     ) -> Result<(), DispatchError>;
 
     fn try_remove_author(contract: &T::AccountId) -> Result<(), DispatchError>;
+}
+
+pub struct NoopThreeVm;
+
+impl<T, Balance> LocalStateAccess<T, Balance> for NoopThreeVm
+where
+    T: frame_system::Config,
+{
+    fn load_local_state(
+        _origin: &T::Origin,
+        _xtx_id: Option<&T::Hash>,
+    ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+}
+
+impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance> for NoopThreeVm {
+    fn try_remunerate<Module: ModuleOperations<T, Balance>>(
+        _payee: &T::AccountId,
+        _module: &Module,
+    ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn try_remunerate_exact<Module: ModuleOperations<T, Balance>>(
+        _payee: &T::AccountId,
+        _amount: Balance,
+        _module: &Module,
+    ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn try_finalize(_ledger_id: T::Hash, _outcome: Outcome) -> DispatchResult {
+        Ok(())
+    }
+}
+
+impl<Hash: Encode + Decode + Debug + Clone> Signaller<Hash> for NoopThreeVm {
+    type Result = Result<SignalOpcode, DispatchError>;
+
+    fn signal(_signal: &ExecutionSignal<Hash>) -> Self::Result {
+        Err("Signalling is not enabled".into())
+    }
+}
+
+impl<T, Balance> Precompile<T, Balance> for NoopThreeVm
+where
+    T: frame_system::Config,
+    Balance: Encode + Decode,
+{
+    fn lookup(_dest: &T::Hash) -> Option<u8> {
+        None
+    }
+
+    fn invoke_raw(_precompile: &u8, _args: &[u8], _output: &mut Vec<u8>) {}
+
+    fn invoke(
+        _args: PrecompileArgs<T, Balance>,
+    ) -> Result<PrecompileInvocation<T, Balance>, DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+}
+
+// Default impl
+impl<T: frame_system::Config, Balance: Encode + Decode> ThreeVm<T, Balance> for NoopThreeVm {
+    fn peek_registry(
+        _id: &<T as frame_system::Config>::Hash,
+    ) -> Result<
+        RegistryContract<
+            <T as frame_system::Config>::Hash,
+            <T as frame_system::Config>::AccountId,
+            Balance,
+            <T as frame_system::Config>::BlockNumber,
+        >,
+        DispatchError,
+    > {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn from_registry<Module, ModuleGen>(
+        _id: &<T as frame_system::Config>::Hash,
+        _module_generator: ModuleGen,
+    ) -> Result<Module, DispatchError>
+    where
+        Module: ModuleOperations<T, Balance>,
+        ModuleGen: Fn(Vec<u8>) -> Module,
+    {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn instantiate_check(_kind: &ContractType) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn storage_check(_kind: &ContractType) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn volatile_check(_kind: &ContractType) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn remunerable_check(_kind: &ContractType) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn try_persist_author(
+        _contract: &<T as frame_system::Config>::AccountId,
+        _author: Option<&AuthorInfo<<T as frame_system::Config>::AccountId, Balance>>,
+    ) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
+
+    fn try_remove_author(
+        _conztract: &<T as frame_system::Config>::AccountId,
+    ) -> Result<(), DispatchError> {
+        Err("Not implemented").map_err(|e| e.into())
+    }
 }
 
 pub trait ModuleOperations<T: frame_system::Config, Balance> {
