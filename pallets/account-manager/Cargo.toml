@@ -30,7 +30,7 @@ sp-version = { default-features = false, git = "https://github.com/paritytech/su
 
 circuit-runtime-types = { path = "../../runtime/common-types", default-features = false }
 substrate-abi         = { git = "https://github.com/t3rn/xbi.git", default-features = false }
-t3rn-primitives       = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives       = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "development" }
 
 [dev-dependencies]
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }

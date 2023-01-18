@@ -15,5 +15,5 @@ sp-core    = { default-features = false, git = "https://github.com/paritytech/su
 sp-std     = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "development" }
 t3rn-protocol   = { path = "../protocol", version = "1.0.0-alpha.1", default-features = false }

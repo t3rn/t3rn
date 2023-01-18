@@ -81,7 +81,7 @@ pallet-collator-selection           = { git = 'https://github.com/paritytech/cum
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 
 # t3rn Deps
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "development" }
 t3rn-protocol   = { default-features = false, path = "../../protocol" }
 
 # # t3rn pallets
@@ -95,18 +95,18 @@ t3rn-protocol   = { default-features = false, path = "../../protocol" }
 # pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 # pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
-# pallet-asset-registry = { git = "https://github.com/t3rn/xbi-portal.git", branch = "refactor/removing-balanceof", default-features = false }
-# pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi-portal.git", branch = "refactor/removing-balanceof", default-features = false }
+# pallet-asset-registry = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
+# pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
 
 # # Smart contracts VMs
-# evm-precompile-util                  = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "precompile-util" }
-# pallet-3vm                           = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions" }
-# pallet-3vm-contracts                 = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts" }
-# pallet-3vm-contracts-primitives      = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-primitives" }
-# pallet-3vm-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc-runtime-api" }
-# pallet-3vm-evm                       = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "pallet-evm" }
-# pallet-3vm-evm-primitives            = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false, package = "fp-evm" }
-# pallet-evm-rpc-runtime-api           = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", default-features = false }
+# evm-precompile-util                  = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "precompile-util" }
+# pallet-3vm                           = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development" }
+# pallet-3vm-contracts                 = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts" }
+# pallet-3vm-contracts-primitives      = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-primitives" }
+# pallet-3vm-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-rpc-runtime-api" }
+# pallet-3vm-evm                       = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "pallet-evm" }
+# pallet-3vm-evm-primitives            = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "fp-evm" }
+# pallet-evm-rpc-runtime-api           = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false }
 
 # Commons
 circuit-runtime-types = { path = "../common-types", default-features = false }

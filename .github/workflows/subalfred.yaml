@@ -1,0 +1,52 @@
+# https://github.com/hack-ink/subalfred
+# https://github.com/hack-ink/subalfred-check-features-action
+name: Subalfred Checks
+
+on: [pull_request]
+
+jobs:
+  check:
+    name: Task check features
+    runs-on: [self-hosted, rust]
+
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+
+      - name: ⚙️ Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-06-17
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+
+      - name: Install Subalfred
+        run: |
+          curl -L https://github.com/hack-ink/subalfred/releases/download/v0.9.0-rc20/subalfred-x86_64-unknown-linux-gnu.zst | zstd -o subalfred -d
+          chmod u+x subalfred
+          cp subalfred ~/.cargo/bin
+        shell: bash
+
+      - name: Check
+        run: |
+          unset RUSTC_WRAPPER
+          ./scripts/subalfred-check.sh > result.out
+        shell: bash
+
+      - name: Print results
+        if: always()
+        run: |
+          cat result.out
+        shell: bash
+
+      - name: Comment on results
+        if: always()
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: result.out
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}

@@ -27,8 +27,8 @@ pallet-xdns-rpc           = { path = "../../pallets/xdns/rpc" }
 t3rn-primitives           = { path = "../../primitives" }
 t3rn-protocol             = { path = "../../protocol" }
 
-pallet-3vm-contracts-rpc = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc" }
-pallet-3vm-evm-rpc       = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-evm-rpc" }
+pallet-3vm-contracts-rpc = { git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-rpc" }
+pallet-3vm-evm-rpc       = { git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-evm-rpc" }
 
 # Extras
 async-std              = { version = "1.10.0" }
