@@ -13,10 +13,10 @@ export class BiddingEngine {
     bidPercentile: number = config.bidding.bidPercentile
     /** At the beginning, it has never been outbid */
     timesBeenOutbid = new Map<string, number>();
-    // timesBeenOutbid: Map<SideEffect, number> = new Map<SideEffect, number>()
+    // timesBeenOutbid = new Map<SideEffect, number>()
     /** Number of bids on each side effect. KEYs: sfx id; VALUEs: number of bids */
     numberOfBidsOnSfx = new Map<string, number>();
-    // numberOfBidsOnSfx: Map<SideEffect, number> = new Map<SideEffect, number>()
+    // numberOfBidsOnSfx = new Map<SideEffect, number>()
     /** Number of bid by executor */
     numberOfBidsByExecutor = new Map<string, number>();
     /** Logger */
@@ -31,7 +31,7 @@ export class BiddingEngine {
     equalMinProfitBid: boolean = config.bidding.equalMinBid
     /** How close to be when been outbid, but still wants to be place a bid close to last one */
     closerPercentageBid: number = config.bidding.closerPercentageBid
-    /** Which executor is bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
+    /** Which executors are bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
     whoBidsOnWhat = new Map<string, string[]>();
 
     /**
@@ -119,8 +119,7 @@ export class BiddingEngine {
         const maxProfitBid = txOutputCost + minProfit + maxProfit
 
         if (lastBid === minProfitBid) {
-            // If the last bid was the minProfitBid,
-            // return the same value (in case others dropout)
+            // If the last bid was the minProfitBid, return the same value (in case others dropout)
             return minProfitBid
         } else {
             // Otherwise, get closer that minProfitBid from above
@@ -161,11 +160,6 @@ export class BiddingEngine {
      * @param sfx The side effect bidding on
      */
     addBidToSfx(sfx: SideEffect) {
-        // if (this.numberOfBidsOnSfx[sfx.id] !== undefined) {
-        // this.numberOfBidsOnSfx[sfx.id] = (this.numberOfBidsOnSfx[sfx.id] + 1) || 1
-        // } else {
-        // throw new Error("Incorrect SFX id")
-        // }
         this.numberOfBidsOnSfx.set(sfx.id, ((this.numberOfBidsOnSfx.get(sfx.id) || 0) + 1))
     }
 
@@ -212,15 +206,29 @@ export class BiddingEngine {
 
     /**
      * Clean the data structures after the bidding phase is over.
-     * Called in `removeFromQueue` in executionManager
+     * Called in `removeFromQueue` in `executionManager`.
      * 
      * @param sfxId The side effect ID
      */
     cleanUp(sfxId: string) {
+        this.cleanUpBidsByExecutor(sfxId)
         this.numberOfBidsOnSfx.delete(sfxId)
         this.whoBidsOnWhat.delete(sfxId)
         this.timesBeenOutbid.delete(sfxId)
-        // TODO: add the cleaning for `numberOfBidsByExecutor`
+    }
+
+    /**
+     * Helper function to remove reduce the count of bids by executor
+     * 
+     * @param sfxId The side effect ID
+     */
+    cleanUpBidsByExecutor(sfxId: string) {
+        const bidders = this.whoBidsOnWhat.get(sfxId)
+        if (bidders !== undefined) {
+            bidders.forEach(bidderId => {
+                this.numberOfBidsByExecutor.set(bidderId, ((this.numberOfBidsByExecutor.get(bidderId) || 1) - 1))
+            })
+        }
     }
 }
 
