@@ -190,16 +190,20 @@ describe("Bidding: check helper functions", () => {
     it("should clean up stored values sfx and bidder ids", () => {
         // ARANGE
         const sfxId: string = "sfxId1";
+        const bidderId: string = "bidderId1";
+
         const be = new BiddingEngine();
         const mockedSideEffect: SideEffect = mock(SideEffect);
         when(mockedSideEffect.changedBidLeader).thenReturn(true);
         when(mockedSideEffect.id).thenReturn('0');
 
-        // ACT
-        be.storeWhoBidOnWhat(sfxId, "xtxId1");
-        be.cleanUp(sfxId);
+        // ACT + ASSERT
+        be.storeWhoBidOnWhat(sfxId, bidderId);
+        expect(be.whoBidsOnWhat).to.have.keys(sfxId);
+        expect(be.whoBidsOnWhat).to.deep.include([bidderId]);
 
-        // ASSERT
+
+        be.cleanUp(sfxId);
         expect(be.numberOfBidsOnSfx[sfxId]).to.equal(undefined);
         expect(be.whoBidsOnWhat[sfxId]).to.equal(undefined);
         expect(be.timesBeenOutbid[sfxId]).to.equal(undefined);
