@@ -1,6 +1,8 @@
-use super::*;
+use crate::{
+    AccountId, AssetId, Assets, Balance, Balances, Call, Clock, EnsureRoot, Event, Imbalance,
+    OnUnbalanced, Runtime, ThreeVm, Timestamp,
+};
 use frame_support::parameter_types;
-use frame_system::EnsureRoot;
 use sp_core::crypto::AccountId32;
 use sp_runtime::traits::ConvertInto;
 
@@ -8,6 +10,8 @@ parameter_types! {
     // TODO: update me to be better
     pub EscrowAccount: AccountId32 = AccountId32::new([55_u8; 32]);
 }
+
+pallet_account_manager::setup_currency_adapter!();
 
 impl pallet_account_manager::Config for Runtime {
     type AssetBalanceOf = ConvertInto;
@@ -21,8 +25,6 @@ impl pallet_account_manager::Config for Runtime {
     type Time = Timestamp;
     type WeightInfo = ();
 }
-
-pallet_account_manager::setup_currency_adapter!();
 
 parameter_types! {
     pub const AssetDeposit: Balance = 0; // 1 UNIT deposit to create asset
@@ -50,4 +52,16 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const RegCost: u128 = 100_000_000_000;
+}
+
+impl pallet_asset_registry::Config for Runtime {
+    type Assets = Assets;
+    type Call = Call;
+    type Currency = Balances;
+    type Event = Event;
+    type RegistrationCost = RegCost;
 }

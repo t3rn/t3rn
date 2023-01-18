@@ -4,7 +4,7 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         tokens::{fungibles::Unbalanced, WithdrawConsequence},
-        Currency, ExistenceRequirement, ReservableCurrency, WithdrawReasons,
+        ExistenceRequirement, ReservableCurrency, WithdrawReasons,
     },
 };
 use sp_runtime::traits::Convert;

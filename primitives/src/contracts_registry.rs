@@ -2,10 +2,11 @@ use crate::{
     abi::ContractActionDesc,
     contract_metadata::{ContractMetadata, ContractType},
     storage::RawAliveContractInfo,
-    transfers::EscrowedBalanceOf,
-    ChainId, Compose, EscrowTrait,
+    transfers::CurrencyBalanceOf,
+    ChainId, Compose,
 };
 use codec::{Decode, Encode};
+use frame_support::traits::Currency;
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Hash, RuntimeDebug};
 
@@ -13,16 +14,16 @@ use crate::Vec;
 
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 
-pub trait ContractsRegistry<T: frame_system::Config, Escrowed>
+pub trait ContractsRegistry<T: frame_system::Config, C>
 where
-    Escrowed: EscrowTrait<T>,
+    C: Currency<T::AccountId>,
 {
     type Error;
 
     fn fetch_contract_by_id(
         contract_id: T::Hash,
     ) -> Result<
-        RegistryContract<T::Hash, T::AccountId, EscrowedBalanceOf<T, Escrowed>, T::BlockNumber>,
+        RegistryContract<T::Hash, T::AccountId, CurrencyBalanceOf<T, C>, T::BlockNumber>,
         Self::Error,
     >;
 
@@ -30,9 +31,7 @@ where
         author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
     ) -> Result<
-        Vec<
-            RegistryContract<T::Hash, T::AccountId, EscrowedBalanceOf<T, Escrowed>, T::BlockNumber>,
-        >,
+        Vec<RegistryContract<T::Hash, T::AccountId, CurrencyBalanceOf<T, C>, T::BlockNumber>>,
         Self::Error,
     >;
 }

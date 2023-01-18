@@ -1,9 +1,8 @@
 use crate::{pallet::Error, *};
-use frame_support::traits::fungible::Inspect;
 use sp_runtime::traits::Zero;
 
 use sp_std::marker::PhantomData;
-use t3rn_primitives::{side_effect::SFXBid, transfers::EscrowedBalanceOf};
+use t3rn_primitives::side_effect::SFXBid;
 
 pub struct Optimistic<T: Config> {
     _phantom: PhantomData<T>,
@@ -13,10 +12,10 @@ impl<T: Config> Optimistic<T> {
     pub fn try_bid_4_sfx(
         local_ctx: &mut LocalXtxCtx<T>,
         executor: &T::AccountId,
-        bid: EscrowedBalanceOf<T, T::Escrowed>,
+        bid: BalanceOf<T>,
         sfx_id: SideEffectId<T>,
-        current_accepted_bid: Option<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>>,
-    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
+        current_accepted_bid: Option<SFXBid<T::AccountId, BalanceOf<T>, u32>>,
+    ) -> Result<SFXBid<T::AccountId, BalanceOf<T>, u32>, Error<T>> {
         // Check if Xtx is in the bidding state
         if local_ctx.xtx.status != CircuitStatus::PendingBidding {
             return Err(Error::<T>::BiddingInactive)
@@ -24,7 +23,7 @@ impl<T: Config> Optimistic<T> {
         let fsx = crate::Pallet::<T>::recover_fsx_by_id(sfx_id, local_ctx)?;
         let (sfx_max_reward, sfx_security_lvl) = (fsx.input.max_reward, fsx.security_lvl.clone());
         // Check if bid doesn't go below dust
-        if bid < <T::Escrowed as EscrowTrait<T>>::Currency::minimum_balance() {
+        if bid < T::Currency::minimum_balance() {
             return Err(Error::<T>::BiddingRejectedBidBelowDust)
         }
         // Check if bid is attractive enough for requester
@@ -50,14 +49,13 @@ impl<T: Config> Optimistic<T> {
         )
         .map_err(|_e| Error::<T>::BiddingRejectedExecutorNotEnoughBalance)?;
 
-        let mut sfx_bid =
-            SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>::new_none_optimistic(
-                bid,
-                fsx.input.insurance,
-                executor.clone(),
-                local_ctx.xtx.requester.clone(),
-                fsx.input.reward_asset_id,
-            );
+        let mut sfx_bid = SFXBid::<T::AccountId, BalanceOf<T>, u32>::new_none_optimistic(
+            bid,
+            fsx.input.insurance,
+            executor.clone(),
+            local_ctx.xtx.requester.clone(),
+            fsx.input.reward_asset_id,
+        );
         // Is the current bid for type SFX::Optimistic? If yes reserve the bond lock requirements
         if sfx_security_lvl == SecurityLvl::Optimistic {
             sfx_bid = Self::bond_4_sfx(executor, local_ctx, &mut sfx_bid, sfx_id)?;
@@ -94,9 +92,9 @@ impl<T: Config> Optimistic<T> {
     pub(self) fn bond_4_sfx(
         executor: &T::AccountId,
         local_ctx: &mut LocalXtxCtx<T>,
-        sfx_bid: &mut SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>,
+        sfx_bid: &mut SFXBid<T::AccountId, BalanceOf<T>, u32>,
         sfx_id: SideEffectId<T>,
-    ) -> Result<SFXBid<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>, Error<T>> {
+    ) -> Result<SFXBid<T::AccountId, BalanceOf<T>, u32>, Error<T>> {
         let total_xtx_step_optimistic_rewards_of_others = crate::Pallet::<T>::get_fsx_total_rewards(
             &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
                 local_ctx,
@@ -108,7 +106,7 @@ impl<T: Config> Optimistic<T> {
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                    BalanceOf<T>,
                 >,
             >>(),
         );
@@ -173,7 +171,7 @@ impl<T: Config> Optimistic<T> {
 
                 // ToDo: Introduce more sophisticated slashed rewards split between
                 //  treasury, users, honest executors
-                let slashed_reserve: EscrowedBalanceOf<T, T::Escrowed> =
+                let slashed_reserve: BalanceOf<T> =
                     if let Some(v) = insurance.checked_add(&reserved_bond) {
                         v
                     } else {

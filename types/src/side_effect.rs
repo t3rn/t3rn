@@ -391,13 +391,8 @@ mod tests {
 
     use sp_core::crypto::AccountId32;
 
-    type BlockNumber = u64;
     type BalanceOf = u128;
     type AccountId = AccountId32;
-    type Hash = [u8; 32];
-
-    const ALICE: AccountId = AccountId::new([1_u8; 32]);
-    const BOB: AccountId = AccountId::new([2_u8; 32]);
 
     #[test]
     fn successfully_creates_empty_side_effect() {

@@ -27,11 +27,10 @@ use codec::Encode;
 use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
 use sp_std::{convert::TryInto, prelude::*};
-use t3rn_primitives::transfers::EscrowedBalanceOf;
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
-use t3rn_primitives::contracts_registry::RegistryContractId;
+use t3rn_primitives::{contracts_registry::RegistryContractId, reexport_currency_types};
 
 #[cfg(test)]
 mod tests;
@@ -46,6 +45,8 @@ use weights::WeightInfo;
 
 pub use types::*;
 
+reexport_currency_types!();
+
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
 #[frame_support::pallet]
@@ -55,10 +56,12 @@ pub mod pallet {
     use crate::WeightInfo;
     use frame_support::{
         pallet_prelude::*,
-        traits::fungible::{Inspect, Mutate},
+        traits::{
+            fungible::{Inspect, Mutate},
+            Currency,
+        },
     };
     use frame_system::pallet_prelude::*;
-    use t3rn_primitives::EscrowTrait;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -68,8 +71,7 @@ pub mod pallet {
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
 
-        /// A type that manages escrow, and therefore balances
-        type Escrowed: EscrowTrait<Self>;
+        type Currency: Currency<Self::AccountId>;
 
         /// A type that provides inspection and mutation to some fungible assets
         type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
@@ -119,12 +121,7 @@ pub mod pallet {
         pub fn add_new_contract(
             origin: OriginFor<T>,
             requester: T::AccountId,
-            contract: RegistryContract<
-                T::Hash,
-                T::AccountId,
-                EscrowedBalanceOf<T, T::Escrowed>,
-                T::BlockNumber,
-            >,
+            contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
@@ -192,7 +189,7 @@ pub mod pallet {
         RegistryContract<
             <T as frame_system::Config>::Hash,
             <T as frame_system::Config>::AccountId,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            BalanceOf<T>,
             <T as frame_system::Config>::BlockNumber,
         >,
         OptionQuery,
@@ -236,7 +233,7 @@ impl<T: Config> Pallet<T> {
     }
 }
 
-impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Escrowed>
+impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Currency>
     for Pallet<T>
 {
     type Error = Error<T>;
@@ -244,10 +241,8 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Esc
     /// Internal function that queries the RegistryContract storage for a contract by its ID
     fn fetch_contract_by_id(
         contract_id: RegistryContractId<T>,
-    ) -> Result<
-        RegistryContract<T::Hash, T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, T::BlockNumber>,
-        Error<T>,
-    > {
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>
+    {
         //TODO[Optimisation, Cleanliness]: isn't this just contracts_registry(contract_id)?
         if !pallet::ContractsRegistry::<T>::contains_key(contract_id) {
             return Err(pallet::Error::<T>::UnknownContract)
@@ -260,17 +255,8 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Esc
     fn fetch_contracts(
         author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
-    ) -> Result<
-        Vec<
-            RegistryContract<
-                T::Hash,
-                T::AccountId,
-                EscrowedBalanceOf<T, T::Escrowed>,
-                T::BlockNumber,
-            >,
-        >,
-        Error<T>,
-    > {
+    ) -> Result<Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>, Error<T>>
+    {
         // helper function to find a number of byte slice inside a larger slice
         fn find_subsequence(haystack: Vec<u8>, needle: &[u8]) -> Option<usize> {
             haystack
@@ -279,34 +265,28 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Esc
         }
 
         // try to find contracts by author or metadata
-        let contracts: Vec<
-            RegistryContract<
-                T::Hash,
-                T::AccountId,
-                EscrowedBalanceOf<T, T::Escrowed>,
-                T::BlockNumber,
-            >,
-        > = pallet::ContractsRegistry::<T>::iter_values()
-            .filter(
-                |contract: &RegistryContract<
-                    T::Hash,
-                    T::AccountId,
-                    EscrowedBalanceOf<T, T::Escrowed>,
-                    T::BlockNumber,
-                >| {
-                    match (author.clone(), metadata.clone()) {
-                        (Some(author), Some(text)) =>
-                            contract.author.account == author
-                                && find_subsequence(contract.meta.encode(), text.as_slice())
-                                    .is_some(),
-                        (Some(author), None) => contract.author.account == author,
-                        (None, Some(text)) =>
-                            find_subsequence(contract.meta.encode(), text.as_slice()).is_some(),
-                        (None, None) => false,
-                    }
-                },
-            )
-            .collect();
+        let contracts: Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>> =
+            pallet::ContractsRegistry::<T>::iter_values()
+                .filter(
+                    |contract: &RegistryContract<
+                        T::Hash,
+                        T::AccountId,
+                        BalanceOf<T>,
+                        T::BlockNumber,
+                    >| {
+                        match (author.clone(), metadata.clone()) {
+                            (Some(author), Some(text)) =>
+                                contract.author.account == author
+                                    && find_subsequence(contract.meta.encode(), text.as_slice())
+                                        .is_some(),
+                            (Some(author), None) => contract.author.account == author,
+                            (None, Some(text)) =>
+                                find_subsequence(contract.meta.encode(), text.as_slice()).is_some(),
+                            (None, None) => false,
+                        }
+                    },
+                )
+                .collect();
 
         if contracts.is_empty() {
             return Err(pallet::Error::<T>::UnknownContract)

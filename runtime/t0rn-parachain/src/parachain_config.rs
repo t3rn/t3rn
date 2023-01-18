@@ -1,6 +1,6 @@
 use crate::*;
 use frame_support::{traits::NeverEnsureOrigin, PalletId};
-use frame_system::{EnsureRoot, EnsureSignedBy};
+use frame_system::EnsureRoot;
 use smallvec::smallvec;
 use sp_runtime::{impl_opaque_keys, Permill};
 use sp_std::prelude::*;
@@ -8,11 +8,8 @@ use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
-
 // XCM Imports
 use xcm::latest::prelude::BodyId;
-use xcm_executor::XcmExecutor;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -112,43 +109,9 @@ impl pallet_authorship::Config for Runtime {
     type UncleGenerations = UncleGenerations;
 }
 
-parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-}
-
-impl cumulus_pallet_parachain_system::Config for Runtime {
-    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
-    type DmpMessageHandler = DmpQueue;
-    type Event = Event;
-    type OnSystemEvent = ();
-    type OutboundXcmpMessageSource = XcmpQueue;
-    type ReservedDmpWeight = ReservedDmpWeight;
-    type ReservedXcmpWeight = ReservedXcmpWeight;
-    type SelfParaId = parachain_info::Pallet<Runtime>;
-    type XcmpMessageHandler = XcmpQueue;
-}
-
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
-
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-    type ChannelInfo = ParachainSystem;
-    type ControllerOrigin = EnsureRoot<AccountId>;
-    type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-    type VersionWrapper = ();
-    type WeightInfo = ();
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
 
 parameter_types! {
     pub const Period: u32 = 6 * HOURS;

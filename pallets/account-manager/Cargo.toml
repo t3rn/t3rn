@@ -28,11 +28,9 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/su
 sp-std     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-t3rn-primitives = { path = "../../primitives", default-features = false }
-
-pallet-xbi-portal = { path = "../xbi-portal", default-features = false }
-
-circuit-runtime-types   = { path = "../../runtime/common-types", default-features = false  }
+circuit-runtime-types = { path = "../../runtime/common-types", default-features = false }
+substrate-abi         = { git = "https://github.com/t3rn/xbi.git", default-features = false }
+t3rn-primitives       = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
 
 [dev-dependencies]
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
@@ -46,19 +44,18 @@ default = [ "std" ]
 runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks" ]
 std = [
   "codec/std",
-  "frame-benchmarking/std",
   "frame-support/std",
   "frame-metadata/std",
   "frame-system/std",
   "log/std",
   "scale-info/std",
+  "substrate-abi/std",
   "serde/std",
   "sp-io/std",
   "sp-version/std",
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
-  "pallet-xbi-portal/std",
   "circuit-runtime-types/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]
