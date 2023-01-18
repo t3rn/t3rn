@@ -18,7 +18,7 @@ num-traits    = "0.2"
 relay-utils   = { path = "../utils" }
 stacktrace    = "0.2"
 
-t3rn-primitives = { git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives = { git = "https://github.com/t3rn/t3rn", branch = "development" }
 
 [dev-dependencies]
 parking_lot = "0.11.0"

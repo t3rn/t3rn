@@ -64,7 +64,7 @@ circuit-standalone-runtime = { path = "../../runtime/standalone" }
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
-t3rn-primitives            = { git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives            = { git = "https://github.com/t3rn/t3rn", branch = "development" }
 t3rn-protocol              = { path = "../../protocol" }
 
 pallet-3vm-contracts-rpc = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc" }

@@ -84,7 +84,7 @@ pallet-collator-selection           = { git = 'https://github.com/paritytech/cum
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 
 # t3rn Deps
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "development" }
 t3rn-protocol   = { default-features = false, path = "../../protocol" }
 
 # t3rn pallets

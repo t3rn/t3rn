@@ -25,7 +25,7 @@ frame-system       = { git = "https://github.com/paritytech/substrate.git", bran
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "development" }
 
 [dev-dependencies]
 pallet-3vm                           = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions" }

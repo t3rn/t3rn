@@ -24,7 +24,7 @@ sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkad
 
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "development" }
 
 [dev-dependencies]
 hex              = "0.4.2"
