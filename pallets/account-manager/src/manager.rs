@@ -65,13 +65,7 @@ impl<T: Config>
     }
 
     fn get_settlement(settlement_id: T::Hash) -> Option<Settlement<T::AccountId, BalanceOf<T>>> {
-        if let Some(settlement) =
-            SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
-        {
-            Some(settlement)
-        } else {
-            None
-        }
+        SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
     }
 
     fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
