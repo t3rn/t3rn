@@ -7,7 +7,7 @@ on: [pull_request]
 jobs:
   check:
     name: Task check features
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, rust]
 
     steps:
       - name: ☁️ Checkout git repo
@@ -28,7 +28,7 @@ jobs:
         run: |
           curl -L https://github.com/hack-ink/subalfred/releases/download/v0.9.0-rc20/subalfred-x86_64-unknown-linux-gnu.zst | zstd -o subalfred -d
           chmod u+x subalfred
-          sudo mv subalfred /usr/bin/subalfred
+          cp subalfred ~/.cargo/bin
         shell: bash
 
       - name: Check
