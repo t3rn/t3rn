@@ -350,19 +350,6 @@ impl<T: Config> Machine<T> {
         }
     }
 
-    //     fn apply(local_ctx: &LocalcdXtxCtx<T>, status_change: (CircuitStatus, CircuitStatus)) -> bool {
-    fn try_create_deposits() {
-        // (CircuitStatus::PendingBidding, CircuitStatus::InBidding) => {
-        //     <pallet::Pallet<T> as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-        //         *x = Some(local_ctx.xtx.clone())
-        //     });
-        //
-        //     true
-        // },
-        // (CircuitStatus::InBidding, CircuitStatus::Ready)
-        // (CircuitStatus::InBidding, CircuitStatus::Ready)
-    }
-
     // Update should have all of the info accessible in LocalXtxCtx to transition between next states.
     fn update_status(
         local_ctx: &mut LocalXtxCtx<T>,
