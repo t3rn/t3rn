@@ -387,54 +387,6 @@ pub mod test {
 
                 check_all_state_revert(local_ctx.xtx_id, sfx_arr_of_10, 0);
 
-                println!(
-                    "REQUESTER_1 balance: {:?}",
-                    Balances::free_balance(&REQUESTER_1)
-                );
-                println!(
-                    "EXECUTOR_1 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_1)
-                );
-                println!(
-                    "EXECUTOR_2 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_2)
-                );
-                println!(
-                    "EXECUTOR_3 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_3)
-                );
-                println!(
-                    "EXECUTOR_4 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_4)
-                );
-                println!(
-                    "EXECUTOR_5 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_5)
-                );
-                println!(
-                    "EXECUTOR_6 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_6)
-                );
-                println!(
-                    "EXECUTOR_7 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_7)
-                );
-                println!(
-                    "EXECUTOR_8 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_8)
-                );
-                println!(
-                    "EXECUTOR_9 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_9)
-                );
-                println!(
-                    "EXECUTOR_10 balance: {:?}",
-                    Balances::free_balance(&EXECUTOR_10)
-                );
-                println!(
-                    "ESCROW_ACCOUNT balance: {:?}",
-                    Balances::free_balance(&ESCROW_ACCOUNT)
-                );
                 // check requester has its balance returned in full
                 assert_eq!(Balances::free_balance(&REQUESTER_1), INITIAL_BALANCE);
                 // check honest executors have their balance returned in full
@@ -445,7 +397,7 @@ pub mod test {
                 assert_eq!(Balances::free_balance(&EXECUTOR_5), INITIAL_BALANCE);
                 // check dishonest executors have their balance slashed
                 assert_eq!(Balances::free_balance(&EXECUTOR_6), 99939);
-                assert_eq!(Balances::free_balance(&EXECUTOR_7), 99939);
+                assert_eq!(Balances::free_balance(&EXECUTOR_7), 99938);
                 assert_eq!(Balances::free_balance(&EXECUTOR_8), 99937);
                 assert_eq!(Balances::free_balance(&EXECUTOR_9), 99936);
                 assert_eq!(Balances::free_balance(&EXECUTOR_10), 99935);

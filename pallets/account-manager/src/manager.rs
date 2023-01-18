@@ -64,10 +64,6 @@ impl<T: Config>
         }
     }
 
-    fn get_settlement(settlement_id: T::Hash) -> Option<Settlement<T::AccountId, BalanceOf<T>>> {
-        SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
-    }
-
     fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
         if let Some(_pending_charge) =
             PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
@@ -76,6 +72,10 @@ impl<T: Config>
         } else {
             Ok(())
         }
+    }
+
+    fn get_settlement(settlement_id: T::Hash) -> Option<Settlement<T::AccountId, BalanceOf<T>>> {
+        SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
     }
 
     fn bump_contracts_registry_nonce() -> Result<T::Hash, DispatchError> {
@@ -87,6 +87,33 @@ impl<T: Config>
 
         Self::no_charge_or_fail(charge_id)?;
         Ok(charge_id)
+    }
+
+    fn validate_deposit(
+        charge_id: T::Hash,
+        request_charge: RequestCharge<
+            T::AccountId,
+            BalanceOf<T>,
+            <T::Assets as Inspect<T::AccountId>>::AssetId,
+        >,
+    ) -> Result<BalanceOf<T>, DispatchError> {
+        Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
+
+        let total_reserve_deposit = if let Some(checked_reserve) = request_charge
+            .charge_fee
+            .checked_add(&request_charge.offered_reward)
+        {
+            checked_reserve
+        } else {
+            log::error!("Could nor compute collateral bond power, arithmetic overflow");
+            return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+        };
+
+        if total_reserve_deposit == Zero::zero() {
+            return Err(Error::<T>::SkippingEmptyCharges.into())
+        }
+
+        Ok(total_reserve_deposit)
     }
 
     fn deposit_batch(
@@ -137,33 +164,6 @@ impl<T: Config>
         }
 
         Ok(())
-    }
-
-    fn validate_deposit(
-        charge_id: T::Hash,
-        request_charge: RequestCharge<
-            T::AccountId,
-            BalanceOf<T>,
-            <T::Assets as Inspect<T::AccountId>>::AssetId,
-        >,
-    ) -> Result<BalanceOf<T>, DispatchError> {
-        Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
-
-        let total_reserve_deposit = if let Some(checked_reserve) = request_charge
-            .charge_fee
-            .checked_add(&request_charge.offered_reward)
-        {
-            checked_reserve
-        } else {
-            log::error!("Could nor compute collateral bond power, arithmetic overflow");
-            return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
-        };
-
-        if total_reserve_deposit == Zero::zero() {
-            return Err(Error::<T>::SkippingEmptyCharges.into())
-        }
-
-        Ok(total_reserve_deposit)
     }
 
     /// If Called by 3VM as a execution deposit, expect:
@@ -315,18 +315,6 @@ impl<T: Config>
         }
     }
 
-    fn assign_deposit(charge_id: T::Hash, recipient: &T::AccountId) -> bool {
-        PendingChargesPerRound::<T>::mutate(T::Clock::current_round(), charge_id, |maybe_charge| {
-            match maybe_charge {
-                Some(charge) => {
-                    charge.recipient = Some(recipient.clone());
-                    true
-                },
-                None => false,
-            }
-        })
-    }
-
     fn cancel_deposit(charge_id: T::Hash) -> bool {
         match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
             Some(charge) => {
@@ -340,6 +328,18 @@ impl<T: Config>
             },
             None => false,
         }
+    }
+
+    fn assign_deposit(charge_id: T::Hash, recipient: &T::AccountId) -> bool {
+        PendingChargesPerRound::<T>::mutate(T::Clock::current_round(), charge_id, |maybe_charge| {
+            match maybe_charge {
+                Some(charge) => {
+                    charge.recipient = Some(recipient.clone());
+                    true
+                },
+                None => false,
+            }
+        })
     }
 
     fn transfer_deposit(
