@@ -387,6 +387,54 @@ pub mod test {
 
                 check_all_state_revert(local_ctx.xtx_id, sfx_arr_of_10, 0);
 
+                println!(
+                    "REQUESTER_1 balance: {:?}",
+                    Balances::free_balance(&REQUESTER_1)
+                );
+                println!(
+                    "EXECUTOR_1 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_1)
+                );
+                println!(
+                    "EXECUTOR_2 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_2)
+                );
+                println!(
+                    "EXECUTOR_3 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_3)
+                );
+                println!(
+                    "EXECUTOR_4 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_4)
+                );
+                println!(
+                    "EXECUTOR_5 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_5)
+                );
+                println!(
+                    "EXECUTOR_6 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_6)
+                );
+                println!(
+                    "EXECUTOR_7 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_7)
+                );
+                println!(
+                    "EXECUTOR_8 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_8)
+                );
+                println!(
+                    "EXECUTOR_9 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_9)
+                );
+                println!(
+                    "EXECUTOR_10 balance: {:?}",
+                    Balances::free_balance(&EXECUTOR_10)
+                );
+                println!(
+                    "ESCROW_ACCOUNT balance: {:?}",
+                    Balances::free_balance(&ESCROW_ACCOUNT)
+                );
                 // check requester has its balance returned in full
                 assert_eq!(Balances::free_balance(&REQUESTER_1), INITIAL_BALANCE);
                 // check honest executors have their balance returned in full
@@ -396,10 +444,10 @@ pub mod test {
                 assert_eq!(Balances::free_balance(&EXECUTOR_4), INITIAL_BALANCE);
                 assert_eq!(Balances::free_balance(&EXECUTOR_5), INITIAL_BALANCE);
                 // check dishonest executors have their balance slashed
-                assert_eq!(Balances::free_balance(&EXECUTOR_6), 99973);
-                assert_eq!(Balances::free_balance(&EXECUTOR_7), 99965);
-                assert_eq!(Balances::free_balance(&EXECUTOR_8), 99956);
-                assert_eq!(Balances::free_balance(&EXECUTOR_9), 99946);
+                assert_eq!(Balances::free_balance(&EXECUTOR_6), 99939);
+                assert_eq!(Balances::free_balance(&EXECUTOR_7), 99939);
+                assert_eq!(Balances::free_balance(&EXECUTOR_8), 99937);
+                assert_eq!(Balances::free_balance(&EXECUTOR_9), 99936);
                 assert_eq!(Balances::free_balance(&EXECUTOR_10), 99935);
                 // check escrow account collected slashed funds from dishonest executors
                 assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 225);
@@ -407,7 +455,6 @@ pub mod test {
     }
 
     #[test]
-    #[ignore]
     fn machine_confirms_10_xtx_with_10_sfx_each() {
         ExtBuilder::default()
             .with_standard_side_effects()
@@ -425,12 +472,24 @@ pub mod test {
                     );
 
                 for i in 0..TEN as usize {
-                    let _local_ctx = &local_context_array_of_10_xtx[i].0;
                     crate::test_extra_stress::bid_for_n_out_of_10_sfx_in_xtx(
                         TEN,
                         &mut local_context_array_of_10_xtx[i].0,
                         REQUESTER_1,
                     );
+                }
+
+                for i in 0..TEN as usize {
+                    let mut local_ctx = &mut local_context_array_of_10_xtx[i].0;
+                    assert_eq!(local_ctx.xtx.status, CircuitStatus::InBidding);
+                    assert_ok!(Machine::<Runtime>::compile(
+                        &mut local_ctx,
+                        |_, _, _, _, _| Ok(PrecompileResult::ForceUpdateStatus(
+                            CircuitStatus::Ready
+                        )),
+                        no_post_updates,
+                    ));
+                    assert_eq!(local_ctx.xtx.status, CircuitStatus::Ready);
                 }
 
                 for i in 0..TEN as usize {
@@ -451,6 +510,21 @@ pub mod test {
                         i as u32,
                     );
                 }
+                // check requester has its balance subtracted by total amount of max_rewards for all 10 x 10 x SFX
+                assert_eq!(Balances::free_balance(&REQUESTER_1), 99450);
+                // check honest executors' insurance deposits are returned
+                assert_eq!(Balances::free_balance(&EXECUTOR_1), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_2), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_3), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_4), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_5), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_6), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_7), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_8), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_9), INITIAL_BALANCE);
+                assert_eq!(Balances::free_balance(&EXECUTOR_10), INITIAL_BALANCE);
+                // check escrow account hasn't collected any extra funds from slashing
+                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 0);
             });
     }
 }

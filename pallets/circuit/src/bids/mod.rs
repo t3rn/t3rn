@@ -73,7 +73,8 @@ impl<T: Config> Bids<T> {
                 .filter(|&fsx| fsx.security_lvl == SecurityLvl::Optimistic)
                 // All FSX but the current one
                 .filter(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) != sfx_id)
-                .map(|fsx| fsx.get_bond_value(Zero::zero()))
+                // Since we don't know the final bid amounts, sum up the max reward for each SFX
+                .map(|fsx| fsx.input.max_reward)
                 .reduce(|total_reserved, next_amount| {
                     total_reserved
                         .checked_add(&next_amount)
