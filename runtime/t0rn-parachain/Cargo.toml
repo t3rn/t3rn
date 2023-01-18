@@ -100,8 +100,8 @@ pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-ap
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
-pallet-asset-registry = { git = "https://github.com/t3rn/xbi-portal.git", branch = "refactor/removing-balanceof", default-features = false }
-pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi-portal.git", branch = "refactor/removing-balanceof", default-features = false }
+pallet-asset-registry = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
+pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
 
 # Smart contracts VMs
 evm-precompile-util                  = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "precompile-util" }
