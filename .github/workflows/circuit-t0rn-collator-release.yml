@@ -191,6 +191,6 @@
 #         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 #       - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
 #         run: |
-#           UPGRADE_AT_HEIGHT=$(($(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getHeader", "params": [ ] }' https://dev.net.t3rn.io/http-rpc | jq -r .result.number) + 0x64))
+#           UPGRADE_AT_HEIGHT=$(($(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getHeader", "params": [ ] }' https://rpc.t0rn.io | jq -r .result.number) + 0x64))
 #           echo "UPGRADE RUNTIME AT:" ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
-#           ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://dev.net.t3rn.io https://dev.net.t3rn.io/http-rpc ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
+#           ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://ws.t0rn.io https://rpc.t0rn.io ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
