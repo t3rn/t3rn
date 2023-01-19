@@ -4,6 +4,9 @@ name: Subalfred Checks
 
 on: [pull_request]
 
+env:
+  IGNORE_FALSE_POSITIVES_REGEX_PATTERN: "benchmarking|frame-try-runtime|frame-std"
+
 jobs:
   check:
     name: Task check features
@@ -34,7 +37,7 @@ jobs:
       - name: Check
         run: |
           unset RUSTC_WRAPPER
-          ./scripts/subalfred-check.sh > result.out
+          ./scripts/subalfred-check.sh "$IGNORE_FALSE_POSITIVES_REGEX_PATTERN" > result.out
         shell: bash
 
       - name: Print results
