@@ -10,7 +10,6 @@ use frame_support::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::{traits::*, Permill};
-use t3rn_primitives::monetary::EXISTENTIAL_DEPOSIT;
 
 use crate::impl_versioned_runtime_with_api::Version;
 
@@ -82,7 +81,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT as u128;
+    pub const ExistentialDeposit: u128 = 1_u128;
 }
 
 impl pallet_balances::Config for Runtime {

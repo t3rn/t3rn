@@ -116,7 +116,6 @@ pallet-evm-rpc-runtime-api           = { git = "https://github.com/t3rn/3vm.git"
 
 # Commons
 circuit-runtime-types = { path = "../common-types", default-features = false }
-# circuit-runtime-pallets = { path = "../common-pallets", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -140,6 +139,7 @@ std = [
   "frame-system-rpc-runtime-api/std",
   "frame-system/std",
   "pallet-aura/std",
+  "pallet-authorship/std",
   "pallet-assets/std",
   "pallet-asset-registry/std",
   "pallet-asset-tx-payment/std",
@@ -202,7 +202,6 @@ std = [
   "pallet-contracts-registry/std",
   "pallet-circuit/std",
   "circuit-runtime-types/std",
-  # "circuit-runtime-pallets/std",
 ]
 
 runtime-benchmarks = [
