@@ -94,7 +94,7 @@ rococo_boot_node=/ip4/34.90.151.124/tcp/30333/p2p/12D3KooWF7BUbG5ErMZ47ZdarRwtpZ
 The `t0rn` boot node reads:
 
 ```sh
-t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWEXwTktuERRvV3NCqmBuco7bYBaU7zRnwQCp4GEDYpS1v
+t0rn_boot_node=/dns/bootnode.t0rn.io/tcp/33333/p2p/12D3KooWEepV69XCJB4Zi193cZcm5W22ZR62DEP84iLFTUKVPtwp
 ```
 
 ## Option 1: Start the Collator (Binary)

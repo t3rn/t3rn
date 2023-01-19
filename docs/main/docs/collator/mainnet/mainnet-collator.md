@@ -87,8 +87,12 @@ polkadot_boot_node=/ip4/34.90.151.124/tcp/30333/p2p/12D3KooWF7BUbG5ErMZ47ZdarRwt
 
 The `t3rn` boot node reads:
 
+:::warning
+The mainnet bootnode is not running yet.
+:::
+
 ```sh
-t3rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqYPFTWxSo1keuvenBdDKzdTCf
+t3rn_boot_node=/dns/bootnode.t3rn.io/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqYPFTWxSo1keuvenBdDKzdTCf
 ```
 
 ## Option 1: Start the Collator (Binary)
