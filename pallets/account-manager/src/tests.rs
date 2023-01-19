@@ -105,7 +105,6 @@ fn transaction_payment_in_asset_fails_if_insufficient_balance() {
         assert_eq!(Assets::balance(asset_id, caller.clone()), 0);
         assert!(ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
             .pre_dispatch(&caller, CALL, &info_from_weight(Weight::from(5_u64)), 10)
-            // sp_runtime::transaction_validity::TransactionValidityError::Invalid(sp_runtime::transaction_validity::InvalidTransaction::Payment)
             .is_err());
     });
 }

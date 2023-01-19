@@ -98,6 +98,7 @@ std = [
   "log/std",
   "scale-info/std",
   "pallet-aura/std",
+  "pallet-authorship/std",
   "pallet-assets/std",
   "pallet-asset-tx-payment/std",
   "t3rn-primitives/std",
@@ -111,6 +112,7 @@ std = [
   "pallet-grandpa-finality-verifier/std",
   "pallet-3vm/std",
   "pallet-3vm-contracts/std",
+  # "circuit-runtime-pallets/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
   "pallet-3vm-evm/std",
@@ -146,7 +148,6 @@ std = [
   "pallet-identity/std",
   "pallet-clock/std",
   "circuit-runtime-types/std",
-  # "circuit-runtime-pallets/std",
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration

@@ -9,7 +9,6 @@ use frame_support::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::{BlakeTwo256, ConvertInto};
-use t3rn_primitives::monetary::EXISTENTIAL_DEPOSIT;
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -79,7 +78,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT as u128;
+    pub const ExistentialDeposit: u128 = 1_u128;
 }
 
 impl pallet_balances::Config for Runtime {
