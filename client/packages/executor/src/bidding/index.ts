@@ -188,9 +188,9 @@ export class BiddingEngine {
      * @param bidderId The executor ID
      */
     storeWhoBidOnWhat(sfxId: string, bidderId: string) {
-        if (this.whoBidsOnWhat !== undefined) {
+        if (this.whoBidsOnWhat) {
             let previousBidderIds = this.whoBidsOnWhat.get(sfxId)
-            if (previousBidderIds !== undefined) {
+            if (previousBidderIds) {
                 previousBidderIds.push(bidderId);
                 this.whoBidsOnWhat.set(sfxId, previousBidderIds);
             } else {
@@ -250,4 +250,24 @@ export enum Scenario {
     noBidAndNoCompetition,
     noBidButCompetition,
     beenOutbid,
+}
+
+
+/**
+ * Type used for describing bidding strategies. 
+ * Determine how the bidding engine should act: more aggressive bids, try to get the profit, etc.
+ *
+ * @group Bidding
+ */
+export type BiddingStrategy = {
+    /** Bid aggresively to oubtbid everyone to get the sfx */
+    bidAggressive?: boolean
+    /** Obtain the max profit, even if it means to not win the sfx */
+    bidMeek?: boolean
+    /** Try to obtain the execution of the sfx by bidding for the smallest profit */
+    overrideNoCompetition?: boolean
+    /** If outbid, executor makes a bid that's equal to the last bid done to the sfx */
+    equalMinProfitBid?: boolean
+    /** How close the bid should be when resubmited after being outbid */
+    closerPercentageBid?: number
 }

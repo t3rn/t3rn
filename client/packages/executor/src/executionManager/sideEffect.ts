@@ -71,7 +71,7 @@ export class SideEffect extends EventEmitter {
     /** The phase in which the SFX is part of. First Escrow, then Optimistic */
     phase: number
     /** SFX status, always starting with Bidding on creation */
-    status: SfxStatus = SfxStatus.InBidding
+    status: SfxStatus = SfxStatus.Bidding
     /** SFX action, e.g. tran, swap, etc */
     action: SfxType
     /** Acts as mutex lock to prevent parallel txs on the same SFX */
@@ -93,9 +93,6 @@ export class SideEffect extends EventEmitter {
     changedBidLeader: boolean = false
     /** Value of the last bid */
     lastBids: number[]
-    /** Collection of xtx (ids) that have bid on certain sfx (ids) */
-    // xtxsBiddingHere: [string, number[]][]
-    xtxBidHistory: Map<string, number[]>
 
     // SideEffect data
     id: string
@@ -322,7 +319,7 @@ export class SideEffect extends EventEmitter {
     private generateBid(): any {
         if (this.isBidder) return { trigger: false, reason: "Already a bidder" }
         if (this.txStatus !== TxStatus.Ready) return { trigger: false, reason: "Tx not ready" }
-        if (this.status !== SfxStatus.InBidding) return { trigger: false, reason: "Not in bidding phase" }
+        if (this.status !== SfxStatus.Bidding) return { trigger: false, reason: "Not in bidding phase" }
 
         try {
             this.strategyEngine.evaluateSfx(this)
@@ -335,8 +332,6 @@ export class SideEffect extends EventEmitter {
         this.txStatus = TxStatus.Pending // acts as mutex lock
         this.minProfitUsd = this.strategyEngine.getMinProfitUsd(this)
         const bidUsd = this.biddingEngine.computeBid(this)
-        // TODO: should this be here or in "processBid"?
-        // this.lastBids.push(bidUsd)
         const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue()
 
         return { trigger: true, bidAmount: floatToBn(bidRewardAsset) }
@@ -408,26 +403,6 @@ export class SideEffect extends EventEmitter {
     }
 
     /**
-     * Keep a record of how much a certain executor bid on the SFX.
-     * 
-     * @param xtxId ID of the executor
-     * @param bid The amount the executor bid
-     */
-    storeXtxBidHistory(xtxId: string, bid: number) {
-        if (this.xtxBidHistory !== undefined) {
-            let previousXtxBids = this.xtxBidHistory.get(xtxId)
-            if (previousXtxBids !== undefined) {
-                previousXtxBids.push(bid);
-                this.xtxBidHistory.set(xtxId, previousXtxBids);
-            } else {
-                this.xtxBidHistory.set(xtxId, [bid]);
-            }
-        } else {
-            this.xtxBidHistory = new Map([[xtxId, [bid]]]);
-        }
-    }
-
-    /**
      * Process an incoming bid event. The bid amount is now the new reward amount and the SFX is evaluated again, potentially triggering a
      * counter bid.
      *
@@ -437,11 +412,8 @@ export class SideEffect extends EventEmitter {
     processBid(signer: string, bidAmount: number) {
         // Add the executor bid to the list 
         this.biddingEngine.storeWhoBidOnWhat(this.id, signer);
-        // TODO: should this be here or in "generateBid"?
         // Add how much it bid
         this.lastBids.push(bidAmount);
-        // Add the xtx's bid to its history
-        this.storeXtxBidHistory(signer, bidAmount);
 
         // if this is not own bid, update reward and isBidder
         if (signer !== this.circuitSignerAddress) {
@@ -456,7 +428,7 @@ export class SideEffect extends EventEmitter {
 
     /** Update the SFX status */
     readyToExecute() {
-        this.status = SfxStatus.ReadyToExecute
+        this.status = SfxStatus.PendingExecution
     }
 
     // sfx was successfully executed on target and has the inclusion proof data
