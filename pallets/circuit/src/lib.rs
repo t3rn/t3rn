@@ -120,7 +120,6 @@ pub mod pallet {
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         portal::Portal,
-        side_effect::SFXBid,
         xdns::Xdns,
     };
 
@@ -700,7 +699,6 @@ pub mod pallet {
     }
 
     use crate::machine::{no_mangle, Machine};
-    use t3rn_primitives::account_manager::RequestCharge;
 
     /// Events for the pallet.
     #[pallet::event]

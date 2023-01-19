@@ -3,14 +3,12 @@
 use crate::{pallet::Error, *};
 use frame_support::ensure;
 
-use t3rn_primitives::transfers::EscrowedBalanceOf;
-
 pub fn no_mangle<T: Config>(
     _current_fsx: &mut Vec<
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
+            BalanceOf<T>,
         >,
     >,
     _local_state: LocalState,

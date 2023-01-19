@@ -177,7 +177,7 @@ impl<T: Config> SquareUp<T> {
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
         > = Machine::<T>::read_current_step_fsx(local_ctx)
             .iter()

@@ -15,7 +15,6 @@ pub mod test_extra;
 pub mod test_extra_stress;
 
 use sp_std::marker::PhantomData;
-use t3rn_primitives::transfers::EscrowedBalanceOf;
 
 pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,
@@ -27,14 +26,14 @@ pub enum PrecompileResult<T: Config> {
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
         >,
     ),
     TryBid(
         (
             SideEffectId<T>,
-            EscrowedBalanceOf<T, T::Escrowed>,
+            BalanceOf<T>,
             <T as frame_system::Config>::AccountId,
         ),
     ),
@@ -55,7 +54,7 @@ impl<T: Config> Machine<T> {
     // - on_local_trigger - 3vm smart contract
     // Returns fresh LocalXtxContext
     pub fn setup(
-        side_effects: &[SideEffect<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>>],
+        side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
     ) -> Result<LocalXtxCtx<T>, Error<T>> {
         // ToDo: Introduce default delay
@@ -134,7 +133,7 @@ impl<T: Config> Machine<T> {
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
+                    BalanceOf<T>,
                 >,
             >,
             LocalState,
@@ -153,7 +152,7 @@ impl<T: Config> Machine<T> {
                     FullSideEffect<
                         <T as frame_system::Config>::AccountId,
                         <T as frame_system::Config>::BlockNumber,
-                        EscrowedBalanceOf<T, T::Escrowed>,
+                        BalanceOf<T>,
                     >,
                 >,
                 local_state: LocalState,
@@ -181,7 +180,7 @@ impl<T: Config> Machine<T> {
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
+                    BalanceOf<T>,
                 >,
             >,
             LocalState,
@@ -280,7 +279,7 @@ impl<T: Config> Machine<T> {
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
+                BalanceOf<T>,
             >,
         >,
     ) {
@@ -306,7 +305,7 @@ impl<T: Config> Machine<T> {
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
+            BalanceOf<T>,
         >,
     > {
         let (current_step, _) = local_ctx.xtx.steps_cnt;
@@ -432,15 +431,7 @@ impl<T: Config> Machine<T> {
                     .collect();
                 <pallet::Pallet<T> as Store>::FullSideEffects::insert::<
                     XExecSignalId<T>,
-                    Vec<
-                        Vec<
-                            FullSideEffect<
-                                T::AccountId,
-                                T::BlockNumber,
-                                EscrowedBalanceOf<T, T::Escrowed>,
-                            >,
-                        >,
-                    >,
+                    Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
                 >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
 
                 for (_step_cnt, side_effect_id, _step_side_effect_id) in steps_side_effects_ids {

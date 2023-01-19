@@ -223,7 +223,7 @@ dependencies = [
  "blocking",
  "futures-lite",
  "once_cell",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -403,7 +403,7 @@ dependencies = [
  "instant",
  "pin-project-lite 0.2.9",
  "rand 0.8.5",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -758,9 +758,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.11.1"
+version = "3.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "572f695136211188308f16ad2ca5c851a712c464060ae6974944458eb83880ba"
+checksum = "0d261e256854913907f67ed06efbc3338dfe6179796deefc1ff763fc1aee5535"
 
 [[package]]
 name = "byte-slice-cast"
@@ -985,7 +985,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
 ]
 
@@ -1002,7 +1002,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1069,7 +1069,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
  "xcm",
  "xcm-builder",
@@ -1131,7 +1131,7 @@ dependencies = [
  "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
 ]
 
@@ -1140,7 +1140,7 @@ name = "circuit-standalone-runtime"
 version = "1.0.0-alpha.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1196,7 +1196,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
 ]
 
@@ -2124,7 +2124,7 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-storage",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tracing",
  "url 2.3.1",
 ]
@@ -2681,7 +2681,16 @@ dependencies = [
 [[package]]
 name = "ethabi-decode"
 version = "1.3.2"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
+source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "ethereum-types",
+ "tiny-keccak 1.5.0",
+]
+
+[[package]]
+name = "ethabi-decode"
+version = "1.3.2"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#976970aafa8c37d0ce56c79074f9174056ca080e"
 dependencies = [
  "ethereum-types",
  "tiny-keccak 1.5.0",
@@ -2701,7 +2710,18 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "0.5.0"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
+source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "byteorder",
+ "ethereum-types",
+ "rlp",
+ "sha3 0.8.2",
+]
+
+[[package]]
+name = "ethash"
+version = "0.5.0"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#976970aafa8c37d0ce56c79074f9174056ca080e"
 dependencies = [
  "byteorder",
  "ethereum-types",
@@ -2993,7 +3013,7 @@ dependencies = [
  "parking_lot 0.11.2",
  "relay-utils",
  "stacktrace",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -3051,10 +3071,10 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "frame-support",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -3064,10 +3084,10 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27#32f9c7eaf5aa550191c90e14476b145e5d7833d7"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
  "evm",
- "frame-support",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -3678,7 +3698,7 @@ dependencies = [
  "http 0.2.8",
  "indexmap",
  "slab",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tokio-util 0.7.4",
  "tracing",
 ]
@@ -3971,7 +3991,7 @@ dependencies = [
  "itoa 1.0.5",
  "pin-project-lite 0.2.9",
  "socket2",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tower-service",
  "tracing",
  "want 0.3.0",
@@ -3988,7 +4008,7 @@ dependencies = [
  "log",
  "rustls 0.20.8",
  "rustls-native-certs 0.6.2",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tokio-rustls 0.23.4",
 ]
 
@@ -4221,7 +4241,7 @@ checksum = "28dfb6c8100ccc63462345b67d1bbc3679177c75ee4bf59bf29c8b1d110b8189"
 dependencies = [
  "hermit-abi 0.2.6",
  "io-lifetimes 1.0.4",
- "rustix 0.36.6",
+ "rustix 0.36.7",
  "windows-sys",
 ]
 
@@ -4449,8 +4469,8 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-tracing",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
- "tokio 1.24.1",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -4488,7 +4508,7 @@ dependencies = [
  "rustls-native-certs 0.6.2",
  "soketto 0.7.1",
  "thiserror",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tokio-rustls 0.23.4",
  "tokio-util 0.7.4",
  "tracing",
@@ -4520,7 +4540,7 @@ dependencies = [
  "serde_json",
  "soketto 0.7.1",
  "thiserror",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tracing",
  "unicase",
 ]
@@ -4538,7 +4558,7 @@ dependencies = [
  "jsonrpsee-types 0.14.0",
  "serde",
  "serde_json",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tracing",
 ]
 
@@ -4617,7 +4637,7 @@ dependencies = [
  "serde_json",
  "soketto 0.5.0",
  "thiserror",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tokio-rustls 0.22.0",
  "tokio-util 0.6.10",
  "url 2.3.1",
@@ -4646,7 +4666,7 @@ dependencies = [
  "jsonrpsee-types 0.14.0",
  "serde_json",
  "soketto 0.7.1",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tokio-stream",
  "tokio-util 0.7.4",
  "tracing",
@@ -6025,7 +6045,7 @@ dependencies = [
  "netlink-packet-core",
  "netlink-sys",
  "thiserror",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -6331,7 +6351,7 @@ dependencies = [
 [[package]]
 name = "pallet-3vm"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6342,7 +6362,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-sdk-primitives",
 ]
 
@@ -6368,13 +6388,13 @@ dependencies = [
  "sp-std",
  "sp-version",
  "substrate-abi",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
 name = "pallet-asset-registry"
 version = "4.0.0-dev"
-source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/removing-balanceof#f9d3a60f1e19330604aea5d23ae913ea99ee6afc"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/infallible-square-up#5845bea237acfe999762d8ed8a3bc7548b5b26e1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6383,7 +6403,7 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn.git?branch=development)",
  "t3rn-xcm-primitives",
  "xbi-channel-primitives",
  "xcm",
@@ -6642,7 +6662,7 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-trie",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
  "t3rn-sdk-primitives",
 ]
@@ -6670,7 +6690,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -6713,7 +6733,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
  "bitflags",
  "frame-support",
@@ -6732,7 +6752,7 @@ dependencies = [
  "sp-runtime",
  "sp-sandbox",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-sdk-primitives",
  "wasm-instrument",
  "wasmi-validation",
@@ -6741,7 +6761,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "5.0.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
@@ -6780,7 +6800,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -6797,7 +6817,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-core-client 18.0.0",
@@ -6817,7 +6837,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
  "pallet-contracts-primitives",
  "parity-scale-codec",
@@ -6900,10 +6920,10 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "frame-support",
  "frame-system",
  "hex",
@@ -6919,7 +6939,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-sdk-primitives",
 ]
 
@@ -6950,12 +6970,12 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
 version = "0.0.1"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "frame-support",
  "pallet-evm 0.1.0",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -7035,9 +7055,9 @@ dependencies = [
 [[package]]
 name = "pallet-evm-rpc"
 version = "0.0.1"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "jsonrpsee 0.14.0",
  "pallet-evm-rpc-runtime-api",
  "parity-scale-codec",
@@ -7052,11 +7072,11 @@ dependencies = [
 [[package]]
 name = "pallet-evm-rpc-runtime-api"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -7078,7 +7098,7 @@ dependencies = [
  "serde",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -7377,7 +7397,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -7404,7 +7424,7 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -7721,9 +7741,9 @@ dependencies = [
 [[package]]
 name = "pallet-xbi-portal"
 version = "0.9.27"
-source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/removing-balanceof#f9d3a60f1e19330604aea5d23ae913ea99ee6afc"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/infallible-square-up#5845bea237acfe999762d8ed8a3bc7548b5b26e1"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
@@ -7740,7 +7760,7 @@ dependencies = [
  "sp-std",
  "substrate-abi",
  "substrate-contracts-abi",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn.git?branch=development)",
  "t3rn-xcm-primitives",
  "xbi-channel-primitives",
  "xbi-format",
@@ -7808,7 +7828,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
 ]
 
@@ -7834,7 +7854,7 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -7905,9 +7925,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec"
-version = "3.2.1"
+version = "3.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "366e44391a8af4cfd6002ef6ba072bae071a96aafca98d7d448a34c5dca38b6a"
+checksum = "e7ab01d0f889e957861bc65888d5ccbe82c158d0270136ba46820d43837cdf72"
 dependencies = [
  "arrayvec 0.7.2",
  "bitvec",
@@ -7919,9 +7939,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec-derive"
-version = "3.1.3"
+version = "3.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9299338969a3d2f491d65f140b00ddec470858402f888af98e8642fb5e8965cd"
+checksum = "86b26a931f824dd4eca30b3e43bb4f31cd5f0d3a403c5f5ff27106b805bfde7b"
 dependencies = [
  "proc-macro-crate 1.2.1",
  "proc-macro2",
@@ -9419,9 +9439,9 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-util"
 version = "1.0.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions#6c710c81056768f9941fea83006230fe4254045f"
+source = "git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up#78999c6d22297d93bd3a1f66cea51f7446d919a4"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -9516,9 +9536,9 @@ checksum = "dc375e1527247fe1a97d8b7156678dfe7c1af2fc075c9a4db3690ecd2a148068"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.49"
+version = "1.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57a8eca9f9c4ffde41714334dee777596264c7825420f521abc92b5b5deb63a5"
+checksum = "6ef7d57beacfaf2d8aee5937dab7b7f28de3cb8b1828479bb5de2a7106f2bae2"
 dependencies = [
  "unicode-ident",
 ]
@@ -9933,8 +9953,8 @@ dependencies = [
  "sp-storage",
  "sp-trie",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
- "tokio 1.24.1",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -10237,9 +10257,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.36.6"
+version = "0.36.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4feacf7db682c6c329c4ede12649cd36ecab0f3be5b7d74e6a20304725db4549"
+checksum = "d4fdebc4b395b7fbb9ab11e462e20ed9051e7b16e42d24042c776eca0ac81b03"
 dependencies = [
  "bitflags",
  "errno",
@@ -10498,7 +10518,7 @@ dependencies = [
  "sp-version",
  "thiserror",
  "tiny-bip39",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -11138,7 +11158,7 @@ dependencies = [
  "log",
  "serde_json",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -11203,7 +11223,7 @@ dependencies = [
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "tempfile",
  "thiserror",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tracing",
  "tracing-futures",
 ]
@@ -11505,9 +11525,9 @@ dependencies = [
 
 [[package]]
 name = "security-framework"
-version = "2.7.0"
+version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bc1bb97804af6631813c55739f771071e0f2ed33ee20b68c86ec505d906356c"
+checksum = "645926f31b250a2dca3c232496c2d898d91036e45ca0e97e0e2390c54e11be36"
 dependencies = [
  "bitflags",
  "core-foundation",
@@ -11518,9 +11538,9 @@ dependencies = [
 
 [[package]]
 name = "security-framework-sys"
-version = "2.6.1"
+version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0160a13a177a45bfb43ce71c01580998474f556ad854dcbca936dd2841a5c556"
+checksum = "31c9bb296072e961fcbd8853511dd39c2d8be2deb1e17c6860b1d30732b323b4"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -11858,7 +11878,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-core"
 version = "0.1.1"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
+source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
  "enum-iterator",
  "ethereum-types",
@@ -11867,7 +11887,25 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-core"
+version = "0.1.1"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#976970aafa8c37d0ce56c79074f9174056ca080e"
+dependencies = [
+ "enum-iterator",
+ "ethereum-types",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -11904,10 +11942,35 @@ dependencies = [
 [[package]]
 name = "snowbridge-ethereum"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
+source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
- "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
- "ethash 0.5.0 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "ethash 0.5.0 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "ethbloom",
+ "ethereum-types",
+ "getrandom 0.2.8",
+ "hex-literal 0.3.4",
+ "libsecp256k1 0.3.5",
+ "parity-bytes",
+ "parity-scale-codec",
+ "rlp",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "serde-big-array",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-ethereum"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#976970aafa8c37d0ce56c79074f9174056ca080e"
+dependencies = [
+ "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
+ "ethash 0.5.0 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "ethbloom",
  "ethereum-types",
  "getrandom 0.2.8",
@@ -12991,7 +13054,7 @@ dependencies = [
  "hyper 0.14.23",
  "log",
  "prometheus",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -13004,7 +13067,7 @@ dependencies = [
  "log",
  "prometheus",
  "thiserror",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -13182,7 +13245,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t0rn-parachain-runtime",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
  "try-runtime-cli",
  "xcm",
@@ -13202,7 +13265,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=feature/xcm-instructions)",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=refactor/infallible-square-up)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13271,7 +13334,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
  "xcm",
  "xcm-builder",
@@ -13348,7 +13411,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t3rn-parachain-runtime",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
  "try-runtime-cli",
  "xcm",
@@ -13413,7 +13476,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-protocol",
  "xcm",
  "xcm-builder",
@@ -13456,7 +13519,7 @@ dependencies = [
 [[package]]
 name = "t3rn-primitives"
 version = "1.0.0-alpha.1"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
+source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
  "ed25519-dalek",
  "finality-grandpa",
@@ -13469,7 +13532,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "snowbridge-core 0.1.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "snowbridge-core 0.1.1 (git+https://github.com/t3rn/t3rn.git?branch=development)",
  "sp-api",
  "sp-application-crypto",
  "sp-core",
@@ -13481,7 +13544,38 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-sdk-primitives",
- "t3rn-types 0.0.1-rc.3 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-types 0.0.1-rc.3 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+]
+
+[[package]]
+name = "t3rn-primitives"
+version = "1.0.0-alpha.1"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#976970aafa8c37d0ce56c79074f9174056ca080e"
+dependencies = [
+ "ed25519-dalek",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "log",
+ "num-traits",
+ "pallet-sudo",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "snowbridge-core 0.1.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "sp-version",
+ "t3rn-sdk-primitives",
+ "t3rn-types 0.0.1-rc.3 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
 ]
 
 [[package]]
@@ -13516,7 +13610,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
  "t3rn-types 0.0.1-rc.3",
  "tiny-keccak 2.0.2",
  "triehash",
@@ -13570,7 +13664,23 @@ dependencies = [
 [[package]]
 name = "t3rn-types"
 version = "0.0.1-rc.3"
-source = "git+https://github.com/t3rn/t3rn?branch=feature/xbi-instructions#07cd855df4f1d7512cc80c364d039a906b113b54"
+source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+dependencies = [
+ "bytes 1.3.0",
+ "num",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
+name = "t3rn-types"
+version = "0.0.1-rc.3"
+source = "git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up#976970aafa8c37d0ce56c79074f9174056ca080e"
 dependencies = [
  "bytes 1.3.0",
  "num",
@@ -13824,9 +13934,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.24.1"
+version = "1.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d9f76183f91ecfb55e1d7d5602bd1d979e38a3a522fe900241cf195624d67ae"
+checksum = "597a12a59981d9e3c38d216785b0c37399f6e415e8d0712047620f189371b0bb"
 dependencies = [
  "autocfg",
  "bytes 1.3.0",
@@ -13921,7 +14031,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc6844de72e57df1980054b38be3a9f4702aba4858be64dd700181a8a6d0e1b6"
 dependencies = [
  "rustls 0.19.1",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "webpki 0.21.4",
 ]
 
@@ -13932,7 +14042,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c43ee83903113e03984cb9e5cebe6c04a5116269e900e3ddba8f068a62adda59"
 dependencies = [
  "rustls 0.20.8",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "webpki 0.22.0",
 ]
 
@@ -13944,7 +14054,7 @@ checksum = "d660770404473ccd7bc9f8b28494a811bc18542b915c0855c51e8f419d5223ce"
 dependencies = [
  "futures-core",
  "pin-project-lite 0.2.9",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -14012,7 +14122,7 @@ dependencies = [
  "futures-sink",
  "log",
  "pin-project-lite 0.2.9",
- "tokio 1.24.1",
+ "tokio 1.24.2",
 ]
 
 [[package]]
@@ -14026,7 +14136,7 @@ dependencies = [
  "futures-io",
  "futures-sink",
  "pin-project-lite 0.2.9",
- "tokio 1.24.1",
+ "tokio 1.24.2",
  "tracing",
 ]
 
@@ -14327,9 +14437,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-bidi"
-version = "0.3.8"
+version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "099b7128301d285f79ddd55b9a83d5e6b9e97c92e0ea0daebee7263e932de992"
+checksum = "0046be40136ef78dc325e0edefccf84ccddacd0afcc1ca54103fa3c61bbdab1d"
 
 [[package]]
 name = "unicode-ident"
@@ -15176,7 +15286,7 @@ dependencies = [
 [[package]]
 name = "xbi-channel-primitives"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/removing-balanceof#f9d3a60f1e19330604aea5d23ae913ea99ee6afc"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/infallible-square-up#5845bea237acfe999762d8ed8a3bc7548b5b26e1"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -15206,7 +15316,7 @@ dependencies = [
 [[package]]
 name = "xbi-receiver"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/removing-balanceof#f9d3a60f1e19330604aea5d23ae913ea99ee6afc"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/infallible-square-up#5845bea237acfe999762d8ed8a3bc7548b5b26e1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -15225,7 +15335,7 @@ dependencies = [
 [[package]]
 name = "xbi-sender"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/removing-balanceof#f9d3a60f1e19330604aea5d23ae913ea99ee6afc"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=refactor/infallible-square-up#5845bea237acfe999762d8ed8a3bc7548b5b26e1"
 dependencies = [
  "frame-support",
  "frame-system",

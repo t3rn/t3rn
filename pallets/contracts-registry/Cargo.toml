@@ -28,7 +28,7 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'refactor/infallible-square-up' }
 
 [dev-dependencies]
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }

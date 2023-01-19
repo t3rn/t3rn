@@ -25,13 +25,13 @@ frame-system       = { git = "https://github.com/paritytech/substrate.git", bran
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'refactor/infallible-square-up' }
 
 [dev-dependencies]
-pallet-3vm                           = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions" }
-pallet-3vm-contracts                 = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts" }
-pallet-3vm-contracts-primitives      = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc-runtime-api" }
+pallet-3vm                           = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up" }
+pallet-3vm-contracts                 = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-contracts" }
+pallet-3vm-contracts-primitives      = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-contracts-rpc-runtime-api" }
 
 pallet-account-manager                     = { path = "../account-manager" }
 pallet-balances                            = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }

@@ -3,7 +3,7 @@ use sp_runtime::traits::Zero;
 
 use crate::square_up::SquareUp;
 use sp_std::marker::PhantomData;
-use t3rn_primitives::{side_effect::SFXBid, transfers::EscrowedBalanceOf};
+use t3rn_primitives::side_effect::SFXBid;
 
 pub struct Bids<T: Config> {
     _phantom: PhantomData<T>,
@@ -11,18 +11,13 @@ pub struct Bids<T: Config> {
 
 impl<T: Config> Bids<T> {
     pub fn try_bid(
-        step_fsx: &mut Vec<
-            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
-        bid_amount: EscrowedBalanceOf<T, T::Escrowed>,
+        step_fsx: &mut Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        bid_amount: BalanceOf<T>,
         bidder: &T::AccountId,
         requester: &T::AccountId,
         sfx_id: SideEffectId<T>,
         xtx_id: XExecSignalId<T>,
-    ) -> Result<
-        Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        Error<T>,
-    > {
+    ) -> Result<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>, Error<T>> {
         // Check for the previous bids for SFX.
         let fsx = step_fsx
             .iter()
@@ -30,14 +25,13 @@ impl<T: Config> Bids<T> {
             .find(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
             .ok_or(Error::<T>::FSXNotFoundById)?;
 
-        let mut bid =
-            SFXBid::<T::AccountId, EscrowedBalanceOf<T, T::Escrowed>, u32>::new_none_optimistic(
-                bid_amount,
-                fsx.input.insurance,
-                bidder.clone(),
-                requester.clone(),
-                fsx.input.reward_asset_id,
-            );
+        let mut bid = SFXBid::<T::AccountId, BalanceOf<T>, u32>::new_none_optimistic(
+            bid_amount,
+            fsx.input.insurance,
+            bidder.clone(),
+            requester.clone(),
+            fsx.input.reward_asset_id,
+        );
 
         let current_accepted_bid = fsx.best_bid.clone();
 
@@ -47,7 +41,7 @@ impl<T: Config> Bids<T> {
             fsx.input.insurance,
         );
         // Check if bid doesn't go below dust
-        if bid.amount < <T::Escrowed as EscrowTrait<T>>::Currency::minimum_balance() {
+        if bid.amount < T::Currency::minimum_balance() {
             return Err(Error::<T>::BiddingRejectedBidBelowDust)
         }
         // Check if bid is attractive enough for requester

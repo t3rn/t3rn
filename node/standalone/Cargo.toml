@@ -64,11 +64,11 @@ circuit-standalone-runtime = { path = "../../runtime/standalone" }
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
-t3rn-primitives            = { git = "https://github.com/t3rn/t3rn", branch = "feature/xbi-instructions" }
+t3rn-primitives            = { git = "https://github.com/t3rn/t3rn", branch = "refactor/infallible-square-up" }
 t3rn-protocol              = { path = "../../protocol" }
 
-pallet-3vm-contracts-rpc = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-contracts-rpc" }
-pallet-3vm-evm-rpc       = { git = "https://github.com/t3rn/3vm.git", branch = "feature/xcm-instructions", package = "pallet-evm-rpc" }
+pallet-3vm-contracts-rpc = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-contracts-rpc" }
+pallet-3vm-evm-rpc       = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-evm-rpc" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }

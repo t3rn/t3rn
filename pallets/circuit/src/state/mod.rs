@@ -7,10 +7,7 @@ use scale_info::TypeInfo;
 use sp_core::Hasher;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::{default::Default, fmt::Debug};
-use t3rn_primitives::{
-    circuit::{XExecSignalId, XExecStepSideEffectId},
-    transfers::EscrowedBalanceOf,
-};
+use t3rn_primitives::circuit::{XExecSignalId, XExecStepSideEffectId};
 
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;

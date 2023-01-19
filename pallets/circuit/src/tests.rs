@@ -50,12 +50,6 @@ use t3rn_primitives::{
 
 use t3rn_protocol::side_effects::test_utils::*;
 
-use pallet_xbi_portal::{
-    sabi::AccountId20,
-    xbi_codec::{ActionNotificationTimeouts, XBIFormat, XBIInstr, XBIMetadata},
-};
-use pallet_xbi_portal_enter::t3rn_sfx::xbi_2_sfx;
-
 use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);

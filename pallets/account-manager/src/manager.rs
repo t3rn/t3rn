@@ -358,13 +358,13 @@ impl<T: Config>
                     charge.offered_reward
                 };
 
-                let payee = if let Some(payee) = new_payee.clone() {
+                let payee = if let Some(payee) = new_payee {
                     payee.clone()
                 } else {
                     charge.payee
                 };
 
-                let recipient = if let Some(recipient) = new_recipient.clone() {
+                let recipient = if let Some(recipient) = new_recipient {
                     Some(recipient.clone())
                 } else {
                     charge.recipient
