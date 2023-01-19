@@ -202,7 +202,6 @@ describe("Bidding: check helper functions", () => {
         expect(be.whoBidsOnWhat).to.have.keys(sfxId);
         expect(be.whoBidsOnWhat).to.deep.include([bidderId]);
 
-
         be.cleanUp(sfxId);
         expect(be.numberOfBidsOnSfx[sfxId]).to.equal(undefined);
         expect(be.whoBidsOnWhat[sfxId]).to.equal(undefined);
