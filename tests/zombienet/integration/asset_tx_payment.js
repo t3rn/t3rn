@@ -13,8 +13,17 @@ async function run(nodeName, networkInfo, args) {
   const api = await zombie.connect(wsUri, userDefinedTypes)
 
   console.log("ALICE", alice.address)
-
+  console.log("DSGFSFFGFDGFG", api.tx.assets)
   // force_create and set_metadata an asset
+  let name = "Asset"
+  let symbol = "ASS"
+  let decimals = 12
+  let id = 1
+  let owner = alice.address
+  let isSufficient = true
+  let minBalance = 1
+  await api.tx.assets.forceCreate(id, owner, isSufficient, minBalance).signAndSend(alice)
+  // await api.tx.assets.setMetadata(id, name, symbol, decimals).signAndSend(alice)
 
   // mint some asset balance to bob
 
