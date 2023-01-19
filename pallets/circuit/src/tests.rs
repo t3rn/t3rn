@@ -37,7 +37,6 @@ use std::{convert::TryInto, fs};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
-    monetary::EXISTENTIAL_DEPOSIT,
     side_effect::*,
     volatile::LocalState,
     xdns::AllowedSideEffect,
@@ -66,7 +65,7 @@ pub const THIRD_SFX_INDEX: u32 = 2;
 pub const FOURTH_SFX_INDEX: u32 = 3;
 pub const FIFTH_SFX_INDEX: u32 = 4;
 
-pub const ED: Balance = EXISTENTIAL_DEPOSIT as u128;
+pub const ED: Balance = 1_u128;
 
 fn set_ids(
     sfx: SideEffect<AccountId32, Balance>,
