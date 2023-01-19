@@ -13476,8 +13476,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=refactor/infallible-square-up)",
- "t3rn-protocol",
  "xcm",
  "xcm-builder",
  "xcm-executor",
