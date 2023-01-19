@@ -194,14 +194,14 @@ impl<T: Config> Machine<T> {
             &LocalXtxCtx<T>,
         ) -> Result<(), Error<T>>,
     ) -> Result<bool, Error<T>> {
-        let current_fsx = Self::read_current_step_fsx(&local_ctx).clone();
+        let mut current_fsx = Self::read_current_step_fsx(local_ctx).clone();
         let local_state = local_ctx.local_state.clone();
-        let steps_cnt = local_ctx.xtx.steps_cnt.clone();
+        let steps_cnt = local_ctx.xtx.steps_cnt;
         let status = local_ctx.xtx.status.clone();
         let requester = local_ctx.xtx.requester.clone();
 
         let enforced_new_status: Option<CircuitStatus> = match precompile(
-            &mut current_fsx.clone(),
+            &mut current_fsx,
             local_state,
             steps_cnt,
             status.clone(),
@@ -223,7 +223,7 @@ impl<T: Config> Machine<T> {
                         // Try to replace the current bid with the new one if the amount is lower.
                         // This will also replace a deposit in AccountManager from with required insurance from the new bidder.
                         let updated_fsx = Bids::<T>::try_bid(
-                            &mut current_fsx.clone(),
+                            &mut current_fsx,
                             bid_amount,
                             &bidder,
                             &requester,
@@ -252,7 +252,7 @@ impl<T: Config> Machine<T> {
             PrecompileResult::Revert(cause) => Some(CircuitStatus::Reverted(cause)),
         };
         let status_change = Self::update_status(local_ctx, enforced_new_status)?;
-        post_update(status_change.clone(), &local_ctx)?;
+        post_update(status_change.clone(), local_ctx)?;
         Ok(Self::apply(local_ctx, status_change))
     }
 
@@ -287,14 +287,14 @@ impl<T: Config> Machine<T> {
 
         match local_ctx.full_side_effects.get_mut(current_step as usize) {
             Some(current_step) => {
-                *current_step = updated_fsx.clone();
+                *current_step = updated_fsx.to_vec();
             },
             None => {
                 *local_ctx
                     .full_side_effects
                     .last_mut()
                     .expect("read_current_step_fsx to have at least one step in FSX steps") =
-                    updated_fsx.clone();
+                    updated_fsx.to_vec();
             },
         };
     }
@@ -309,15 +309,15 @@ impl<T: Config> Machine<T> {
         >,
     > {
         let (current_step, _) = local_ctx.xtx.steps_cnt;
-        &local_ctx
+        local_ctx
             .full_side_effects
             .get(current_step as usize)
-            .unwrap_or(
-                &local_ctx
+            .unwrap_or_else(|| {
+                local_ctx
                     .full_side_effects
                     .last()
-                    .expect("read_current_step_fsx to have at least one step in FSX steps"),
-            )
+                    .expect("read_current_step_fsx to have at least one step in FSX steps")
+            })
     }
 
     // Following methods aren't exposed to Pallet - internal use by compile only
@@ -326,7 +326,7 @@ impl<T: Config> Machine<T> {
         status_change: (CircuitStatus, CircuitStatus),
     ) -> (u32, u32) {
         let (prev_status, new_status) = status_change;
-        match (prev_status, new_status.clone()) {
+        match (prev_status, new_status) {
             (
                 CircuitStatus::Requested,
                 CircuitStatus::Requested
@@ -370,10 +370,10 @@ impl<T: Config> Machine<T> {
             enforce_new_status,
         )?;
         local_ctx.xtx.steps_cnt =
-            Self::check_bump_steps(&local_ctx, (current_status.clone(), new_status.clone()));
+            Self::check_bump_steps(local_ctx, (current_status.clone(), new_status.clone()));
         local_ctx.xtx.status = new_status.clone();
 
-        Ok((current_status.clone(), new_status.clone()))
+        Ok((current_status, new_status))
     }
 
     fn apply(local_ctx: &LocalXtxCtx<T>, status_change: (CircuitStatus, CircuitStatus)) -> bool {
@@ -392,15 +392,6 @@ impl<T: Config> Machine<T> {
 
         match (old_status, new_status) {
             (CircuitStatus::Requested, CircuitStatus::Reserved | CircuitStatus::PendingBidding) => {
-                // Iterate over full side effects to detect ones to execute locally.
-                fn is_local<T: Config>(gateway_id: &[u8; 4]) -> bool {
-                    if *gateway_id == T::SelfGatewayId::get() {
-                        return true
-                    }
-                    let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(gateway_id);
-                    gateway_type == GatewayType::ProgrammableInternal(0)
-                }
-
                 let steps_side_effects_ids: Vec<(
                     usize,
                     SideEffectId<T>,

@@ -75,7 +75,7 @@ impl<T: Config> SquareUp<T> {
     ) -> DispatchResult {
         let total_bid_deposit = bid
             .amount
-            .checked_add(&bid.reserved_bond.unwrap_or(Zero::zero()))
+            .checked_add(&bid.reserved_bond.unwrap_or_else(Zero::zero))
             .ok_or(Error::<T>::ArithmeticErrorOverflow)?
             .checked_add(&bid.insurance)
             .ok_or(Error::<T>::ArithmeticErrorOverflow)?;

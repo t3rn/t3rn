@@ -40,7 +40,7 @@ impl<T: Config> Bids<T> {
             fsx.security_lvl.clone(),
             fsx.input.insurance,
         );
-        // Check if bid doesn't go below dust
+        // Check if bid doesn't go below dust limit.
         if bid.amount < T::Currency::minimum_balance() {
             return Err(Error::<T>::BiddingRejectedBidBelowDust)
         }
@@ -72,7 +72,7 @@ impl<T: Config> Bids<T> {
                 .reduce(|total_reserved, next_amount| {
                     total_reserved
                         .checked_add(&next_amount)
-                        .unwrap_or_else(|| total_reserved)
+                        .unwrap_or(total_reserved)
                 });
 
             bid.reserved_bond = match total_xtx_step_optimistic_rewards_of_others {
@@ -94,12 +94,12 @@ impl<T: Config> Bids<T> {
         )?;
 
         // Replace the best bid for the FSX
-        step_fsx
+        if let Some(mut fsx) = step_fsx
             .iter_mut()
             .find(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
-            .map(|mut fsx| {
-                fsx.best_bid = Some(bid.clone());
-            });
+        {
+            fsx.best_bid = Some(bid);
+        }
 
         Ok(step_fsx.clone())
     }

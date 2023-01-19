@@ -57,8 +57,7 @@ pub fn stage_transfer_sfx(
     let mut insurance_and_reward = vec![];
     insurance_and_reward.extend_from_slice(&max_reward.encode());
     insurance_and_reward.append(&mut insurance.encode());
-
-    let sfx = SideEffect {
+    SideEffect {
         target,
         max_reward,
         // Encoded Transfer SFX
@@ -73,9 +72,7 @@ pub fn stage_transfer_sfx(
         enforce_executor: None,
         insurance,
         reward_asset_id: None,
-    };
-
-    sfx
+    }
 }
 
 pub fn setup_n_xtx_with_10_sfx_each(
@@ -115,15 +112,12 @@ pub fn setup_xtx_with_10_sfx(
     }
 
     let mut local_ctx = Machine::<Runtime>::setup(&sfx_arr_of_10, requester).unwrap();
-    assert_eq!(
-        true,
-        Machine::<Runtime>::compile(
-            &mut local_ctx,
-            |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
-            no_post_updates
-        )
-        .unwrap()
-    );
+    assert!(Machine::<Runtime>::compile(
+        &mut local_ctx,
+        |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
+        no_post_updates
+    )
+    .unwrap());
     // Double check that Xtx is stored under the same ID as the one returned by setup
     assert_eq!(
         local_ctx.xtx_id,
@@ -162,7 +156,7 @@ pub fn bid_for_n_out_of_10_sfx_in_xtx(
             .unwrap()
             .xtx_id
     );
-    const STEP_INDEX: usize = 0 as usize;
+    const STEP_INDEX: usize = 0_usize;
     let fsx_step = local_ctx.full_side_effects[STEP_INDEX].clone();
 
     assert_eq!(fsx_step.len(), 10);

@@ -69,7 +69,7 @@ pub fn setup_empty_xtx_and_force_set_status(maybe_status: Option<CircuitStatus>)
             *x = Some(local_ctx.xtx.clone());
         });
     }
-    return local_ctx.xtx_id
+    local_ctx.xtx_id
 }
 
 pub fn setup_single_sfx_xtx_and_force_set_status(maybe_status: Option<CircuitStatus>) -> H256 {
@@ -91,7 +91,7 @@ pub fn setup_single_sfx_xtx_and_force_set_status(maybe_status: Option<CircuitSta
             *x = Some(local_ctx.xtx.clone());
         });
     }
-    return local_ctx.xtx_id
+    local_ctx.xtx_id
 }
 
 pub fn setup_single_sfx_xtx_and_post_bid_and_set_to_ready(
@@ -150,7 +150,7 @@ pub fn setup_single_sfx_xtx_and_post_bid_and_set_to_ready(
         .unwrap();
     }
 
-    return local_ctx.xtx_id
+    local_ctx.xtx_id
 }
 
 pub fn setup_single_sfx_xtx_and_confirm() -> H256 {
@@ -220,7 +220,7 @@ pub fn setup_single_sfx_xtx_and_confirm() -> H256 {
 
     assert_eq!(local_ctx.xtx.status, CircuitStatus::FinishedAllSteps);
 
-    return local_ctx.xtx_id
+    local_ctx.xtx_id
 }
 
 pub fn check_all_state_clean(xtx_id: H256) {
@@ -246,7 +246,7 @@ pub fn check_all_single_xtx_state_correct(
     assert_eq!(
         XExecSignals::<Runtime>::get(xtx_id),
         Some(XExecSignal {
-            status: success_state.clone(),
+            status: success_state,
             requester: ALICE,
             timeouts_at: 401u32,
             delay_steps_at: None,

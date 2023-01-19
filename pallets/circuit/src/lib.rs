@@ -327,14 +327,14 @@ pub mod pallet {
             // what happens if the weight for the block is consumed, do these timeouts need to wait
             // for the next check interval to handle them? maybe we need an immediate queue
             //
+            let deletion_counter: u32 = 0;
 
             // Check for expiring bids each block
-            <PendingXtxBidsTimeoutsMap<T>>::iter()
-                .find(|(_xtx_id, bidding_timeouts_at)| {
-                    // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
-                    bidding_timeouts_at <= &frame_system::Pallet::<T>::block_number()
-                })
-                .map(|(xtx_id, _bidding_timeouts_at)| {
+            <PendingXtxBidsTimeoutsMap<T>>::iter().filter(|(_xtx_id, bidding_timeouts_at)| {
+                // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
+                bidding_timeouts_at <= &frame_system::Pallet::<T>::block_number()
+            }).map(|(xtx_id, _bidding_timeouts_at)| {
+                if deletion_counter <= T::DeletionQueueLimit::get() {
                     Machine::<T>::compile_infallible(
                         &mut Machine::<T>::load_xtx(xtx_id).expect("xtx_id corresponds to a valid Xtx when reading from PendingXtxBidsTimeoutsMap storage"),
                         |current_fsx, _local_state, _steps_cnt, status, _requester| {
@@ -356,37 +356,37 @@ pub mod pallet {
                             );
                         },
                     );
-                });
+                    deletion_counter.checked_add(1).unwrap_or_else(|| {
+                        log::error!("XtxBiddingInterval::DeletionQueueLimit is too low, causing overflow");
+                        u32::MAX
+                    });
+                }
+            }).count();
 
             // Scenario 1: all the timeout s can be handled in the block space
             // Scenario 2: all but 5 timeouts can be handled
             //     - add the 5 timeouts to an immediate queue for the next block
             if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
-                let mut deletion_counter: u32 = 0;
                 // Go over all unfinished Xtx to find those that timed out
-                <PendingXtxTimeoutsMap<T>>::iter()
-                    .find(|(_xtx_id, timeout_at)| {
-                        timeout_at <= &frame_system::Pallet::<T>::block_number()
-                    })
-                    .map(|(xtx_id, _timeout_at)| {
-                        if deletion_counter > T::DeletionQueueLimit::get() {
-                            return
-                        }
+                <PendingXtxTimeoutsMap<T>>::iter().filter(|(_xtx_id, timeout_at)| {
+                    timeout_at <= &frame_system::Pallet::<T>::block_number()
+                }).map(|(xtx_id, _timeout_at)| {
+                    if deletion_counter <= T::DeletionQueueLimit::get() {
                         let _success: bool = Machine::<T>::revert(
                             xtx_id,
                             Cause::Timeout,
                             |_status_change, _local_ctx| {
-                                Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(
-                                    xtx_id,
-                                ));
+                                Self::deposit_event(
+                                    Event::XTransactionXtxRevertedAfterTimeOut(xtx_id),
+                                );
                             },
                         );
-                        if let Some(v) = deletion_counter.checked_add(1) {
-                            deletion_counter = v;
-                        } else {
-                            return
-                        }
-                    });
+                        deletion_counter.checked_add(1).unwrap_or_else(|| {
+                            log::error!("XtxTimeoutCheckInterval::DeletionQueueLimit is too low, causing overflow");
+                            u32::MAX
+                        });
+                    }
+                }).count();
             }
 
             // Anything that needs to be done at the start of the block.
@@ -495,7 +495,7 @@ pub mod pallet {
                 },
             };
 
-            let xtx_id = local_ctx.xtx_id.clone();
+            let xtx_id = local_ctx.xtx_id;
             log::debug!(
                 target: "runtime::circuit",
                 "submit_side_effects xtx state with status: {:?}",
@@ -504,13 +504,13 @@ pub mod pallet {
 
             Machine::<T>::compile(
                 &mut local_ctx,
-                |mut current_fsx, local_state, steps_cnt, status, _requester| {
-                    match Self::exec_in_xtx_ctx(xtx_id, local_state, &mut current_fsx, steps_cnt) {
+                |current_fsx, local_state, steps_cnt, status, _requester| {
+                    match Self::exec_in_xtx_ctx(xtx_id, local_state, current_fsx, steps_cnt) {
                         Err(err) => {
                             if status == CircuitStatus::Ready {
                                 return Ok(PrecompileResult::TryKill(Cause::IntentionalKill))
                             }
-                            return Err(err)
+                            Err(err)
                         },
                         Ok(new_fsx) => Ok(PrecompileResult::TryUpdateFSX(new_fsx)),
                     }
@@ -569,11 +569,11 @@ pub mod pallet {
                 &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, status, requester| {
                     if attempting_requester != requester || status > CircuitStatus::PendingBidding {
-                        return Err(Error::<T>::UnauthorizedCancellation.into())
+                        return Err(Error::<T>::UnauthorizedCancellation)
                     }
                     // Drop cancellation in case some bids have already been posted
                     if current_fsx.iter().any(|fsx| fsx.best_bid.is_some()) {
-                        return Err(Error::<T>::UnauthorizedCancellation.into())
+                        return Err(Error::<T>::UnauthorizedCancellation)
                     }
                     Ok(PrecompileResult::TryKill(Cause::IntentionalKill))
                 },
@@ -668,18 +668,12 @@ pub mod pallet {
 
             Machine::<T>::compile(
                 &mut Machine::<T>::load_xtx(xtx_id)?,
-                |mut current_fsx, local_state, _steps_cnt, __status, _requester| {
-                    Self::confirm(
-                        xtx_id,
-                        &mut current_fsx,
-                        &local_state,
-                        &sfx_id,
-                        &confirmation,
-                    )
-                    .map_err(|e| {
-                        log::error!("Self::confirm hit an error -- {:?}", e);
-                        Error::<T>::ConfirmationFailed
-                    })?;
+                |current_fsx, local_state, _steps_cnt, __status, _requester| {
+                    Self::confirm(xtx_id, current_fsx, &local_state, &sfx_id, &confirmation)
+                        .map_err(|e| {
+                            log::error!("Self::confirm hit an error -- {:?}", e);
+                            Error::<T>::ConfirmationFailed
+                        })?;
                     Ok(PrecompileResult::TryUpdateFSX(current_fsx.clone()))
                 },
                 |_status_change, local_ctx| {
@@ -932,7 +926,7 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionXtxDroppedAtBidding(xtx_id)),
                 _ => {},
             }
-            if xtx.status.clone() >= CircuitStatus::PendingExecution {
+            if xtx.status >= CircuitStatus::PendingExecution {
                 if let Some(full_side_effects) = maybe_full_side_effects {
                     Self::deposit_event(Event::SideEffectsConfirmed(xtx_id, full_side_effects));
                 }
@@ -1250,14 +1244,14 @@ impl<T: Config> Pallet<T> {
             log::error!("Division error on signal queue depth (`SignalQueueDepth::get()`).");
             T::SignalQueueDepth::get()
         };
-        let mut processed_weight = 0_u64;
+        let mut processed_weight = 0 as Weight;
 
         while !queue.is_empty() && remaining_key_budget > 0 {
             // Cannot panic due to loop condition
             let (_requester, signal) = &mut queue[0];
 
             // worst case 4 from setup
-            if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as u64) {
+            if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as Weight) {
                 processed_weight = v
             }
             match Machine::<T>::load_xtx(signal.execution_id) {
@@ -1294,31 +1288,7 @@ impl<T: Config> Pallet<T> {
         processed_weight
     }
 
-    pub(self) fn recover_fsx_by_id(
-        sfx_id: SideEffectId<T>,
-        local_ctx: &LocalXtxCtx<T>,
-    ) -> Result<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-        Error<T>,
-    > {
-        let current_step = local_ctx.xtx.steps_cnt.0;
-        let maybe_fsx = local_ctx.full_side_effects[current_step as usize]
-            .iter()
-            .filter(|&fsx| fsx.confirmed.is_none())
-            .find(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id) == sfx_id);
-
-        if let Some(fsx) = maybe_fsx {
-            Ok(fsx.clone())
-        } else {
-            Err(Error::<T>::LocalSideEffectExecutionNotApplicable)
-        }
-    }
-
-    pub(self) fn recover_local_ctx_by_sfx_id(
+    pub fn recover_local_ctx_by_sfx_id(
         sfx_id: SideEffectId<T>,
     ) -> Result<LocalXtxCtx<T>, Error<T>> {
         let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)

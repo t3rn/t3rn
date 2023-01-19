@@ -27,28 +27,31 @@ pub mod test {
 
                 let mut xtx_id = setup_empty_xtx_and_force_set_status(None);
 
-                assert_eq!(
-                    Machine::<Runtime>::kill(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::kill(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ),);
 
                 check_all_state_clean(xtx_id);
 
                 xtx_id = setup_empty_xtx_and_force_set_status(Some(CircuitStatus::InBidding));
 
-                assert_eq!(
-                    Machine::<Runtime>::kill(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::kill(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
 
                 check_all_state_clean(xtx_id);
 
                 xtx_id = setup_empty_xtx_and_force_set_status(Some(CircuitStatus::PendingBidding));
 
-                assert_eq!(
-                    Machine::<Runtime>::kill(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::kill(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
 
                 check_all_state_clean(xtx_id);
             });
@@ -65,28 +68,31 @@ pub mod test {
 
                 let mut xtx_id = setup_empty_xtx_and_force_set_status(None);
 
-                assert_eq!(
-                    Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::revert(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
 
                 check_all_state_clean(xtx_id);
 
                 xtx_id = setup_empty_xtx_and_force_set_status(Some(CircuitStatus::InBidding));
 
-                assert_eq!(
-                    Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::revert(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
 
                 check_all_state_clean(xtx_id);
 
                 xtx_id = setup_empty_xtx_and_force_set_status(Some(CircuitStatus::PendingBidding));
 
-                assert_eq!(
-                    Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::revert(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
 
                 check_all_state_clean(xtx_id);
             });
@@ -101,10 +107,11 @@ pub mod test {
             .execute_with(|| {
                 stage_single();
                 let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
-                assert_eq!(
-                    Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::revert(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ),);
                 check_all_state_revert(xtx_id, vec![get_mocked_transfer_sfx()], 0);
             });
     }
@@ -120,10 +127,11 @@ pub mod test {
                 let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(Some(
                     CircuitStatus::PendingExecution,
                 ));
-                assert_eq!(
-                    Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::revert(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
                 check_all_state_revert(xtx_id, vec![get_mocked_transfer_sfx()], 0);
             });
     }
@@ -139,11 +147,11 @@ pub mod test {
                 let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(Some(
                     CircuitStatus::PendingExecution,
                 ));
-
-                assert_eq!(
-                    Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
-                    true
-                );
+                assert!(Machine::<Runtime>::revert(
+                    xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
                 check_all_state_revert(xtx_id, vec![get_mocked_transfer_sfx()], 0);
             });
     }
@@ -179,7 +187,8 @@ pub mod test {
             .execute_with(|| {
                 stage_single();
                 let xtx_id = setup_single_sfx_xtx_and_confirm();
-                Machine::<Runtime>::compile(
+
+                assert_ok!(Machine::<Runtime>::compile(
                     &mut Machine::<Runtime>::load_xtx(xtx_id).unwrap(),
                     |_, _, _, _, _| {
                         Ok(PrecompileResult::ForceUpdateStatus(
@@ -187,8 +196,7 @@ pub mod test {
                         ))
                     },
                     no_post_updates,
-                )
-                .unwrap();
+                ));
 
                 assert_eq!(
                     Machine::<Runtime>::revert(xtx_id, Cause::Timeout, infallible_no_post_updates,),
@@ -214,7 +222,7 @@ pub mod test {
 
                 let xtx_id = setup_single_sfx_xtx_and_confirm();
 
-                Machine::<Runtime>::compile(
+                assert_ok!(Machine::<Runtime>::compile(
                     &mut Machine::<Runtime>::load_xtx(xtx_id).unwrap(),
                     |_, _, _, _, _| {
                         Ok(PrecompileResult::ForceUpdateStatus(
@@ -222,8 +230,7 @@ pub mod test {
                         ))
                     },
                     no_post_updates,
-                )
-                .unwrap();
+                ));
                 check_all_single_xtx_state_correct(
                     xtx_id,
                     CircuitStatus::Committed,
@@ -298,7 +305,6 @@ pub mod test {
             .build()
             .execute_with(|| {
                 crate::test_extra_stress::stage();
-                const TEN: u32 = 10;
                 const FIVE: u32 = 5;
 
                 let (mut local_ctx, _sfx_arr_of_10, _sfx_id_arr_of_10) =
@@ -312,14 +318,11 @@ pub mod test {
 
                 assert_eq!(local_ctx.xtx.status, CircuitStatus::InBidding);
 
-                assert_eq!(
-                    Machine::<Runtime>::kill(
-                        local_ctx.xtx_id,
-                        Cause::Timeout,
-                        infallible_no_post_updates,
-                    ),
-                    true
-                );
+                assert!(Machine::<Runtime>::kill(
+                    local_ctx.xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
 
                 check_all_state_clean(local_ctx.xtx_id);
 
@@ -376,14 +379,11 @@ pub mod test {
 
                 assert_eq!(local_ctx.xtx.status, CircuitStatus::PendingExecution);
 
-                assert_eq!(
-                    Machine::<Runtime>::revert(
-                        local_ctx.xtx_id,
-                        Cause::Timeout,
-                        infallible_no_post_updates,
-                    ),
-                    true
-                );
+                assert!(Machine::<Runtime>::revert(
+                    local_ctx.xtx_id,
+                    Cause::Timeout,
+                    infallible_no_post_updates,
+                ));
 
                 check_all_state_revert(local_ctx.xtx_id, sfx_arr_of_10, 0);
 
@@ -402,7 +402,7 @@ pub mod test {
                 assert_eq!(Balances::free_balance(&EXECUTOR_9), 99936);
                 assert_eq!(Balances::free_balance(&EXECUTOR_10), 99935);
                 // check escrow account collected slashed funds from dishonest executors
-                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 225);
+                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 315);
             });
     }
 

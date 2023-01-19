@@ -44,7 +44,6 @@ use t3rn_primitives::{
     side_effect::*,
     volatile::LocalState,
     xdns::AllowedSideEffect,
-    xtx::XtxId,
     Balance, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 
@@ -363,12 +362,12 @@ fn runs_mock_tests() {
         });
 }
 
-fn as_u32_le(array: &[u8; 4]) -> u32 {
-    (array[0] as u32)
-        + ((array[1] as u32) << 8)
-        + ((array[2] as u32) << 16)
-        + ((array[3] as u32) << 24)
-}
+// fn as_u32_le(array: &[u8; 4]) -> u32 {
+//     (array[0] as u32)
+//         + ((array[1] as u32) << 8)
+//         + ((array[2] as u32) << 16)
+//         + ((array[3] as u32) << 24)
+// }
 
 #[test]
 fn on_extrinsic_trigger_works_with_empty_side_effects() {
@@ -947,15 +946,14 @@ fn circuit_handles_dropped_at_bidding() {
 
             assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE);
 
-            assert_eq!(
+            assert!(
                 events.iter().any(|record| {
                 if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxDroppedAtBidding(xtx_id)) = record.event {
                     assert_eq!(xtx_id, xtx_id);
                     true
                 } else {
                     false
-                } }),
-                true
+                } })
             );
             assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
         })
@@ -1479,49 +1477,49 @@ fn circuit_handles_add_liquidity_with_insurance() {
 //     ));
 //
 // }
-
-fn successfully_bond_optimistic(
-    side_effect: SideEffect<AccountId32, Balance>,
-    sfx_index: u32,
-    xtx_id: XtxId<Runtime>,
-    relayer: AccountId32,
-    submitter: AccountId32,
-) {
-    let optional_insurance = side_effect.encoded_args[3].clone();
-
-    assert!(
-        optional_insurance.len() == 32,
-        "Wrong test value - optimistic transfer assumes optimistic arguments"
-    );
-
-    assert_ok!(Circuit::bid_sfx(
-        Origin::signed(relayer.clone()),
-        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            &xtx_id.0, sfx_index
-        ),
-        2 as Balance,
-    ));
-
-    let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
-
-    let created_sfx_bid = Circuit::get_pending_sfx_bids(
-        xtx_id,
-        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            &xtx_id.0, sfx_index,
-        ),
-    )
-    .unwrap()
-    .unwrap();
-
-    assert_eq!(created_sfx_bid.insurance, insurance as Balance);
-    // assert_eq!(created_sfx_bid.reserved_bond, Some(insurance as Balance));
-    assert_eq!(created_sfx_bid.amount, reward as Balance);
-    assert_eq!(
-        created_sfx_bid.requester,
-        Decode::decode(&mut &submitter.encode()[..]).unwrap()
-    );
-    assert_eq!(created_sfx_bid.executor, relayer);
-}
+//
+// fn successfully_bond_optimistic(
+//     side_effect: SideEffect<AccountId32, Balance>,
+//     sfx_index: u32,
+//     xtx_id: XtxId<Runtime>,
+//     relayer: AccountId32,
+//     submitter: AccountId32,
+// ) {
+//     let optional_insurance = side_effect.encoded_args[3].clone();
+//
+//     assert!(
+//         optional_insurance.len() == 32,
+//         "Wrong test value - optimistic transfer assumes optimistic arguments"
+//     );
+//
+//     assert_ok!(Circuit::bid_sfx(
+//         Origin::signed(relayer.clone()),
+//         side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+//             &xtx_id.0, sfx_index
+//         ),
+//         2 as Balance,
+//     ));
+//
+//     let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
+//
+//     let created_sfx_bid = Circuit::get_pending_sfx_bids(
+//         xtx_id,
+//         side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+//             &xtx_id.0, sfx_index,
+//         ),
+//     )
+//     .unwrap()
+//     .unwrap();
+//
+//     assert_eq!(created_sfx_bid.insurance, insurance as Balance);
+//     // assert_eq!(created_sfx_bid.reserved_bond, Some(insurance as Balance));
+//     assert_eq!(created_sfx_bid.amount, reward as Balance);
+//     assert_eq!(
+//         created_sfx_bid.requester,
+//         Decode::decode(&mut &submitter.encode()[..]).unwrap()
+//     );
+//     assert_eq!(created_sfx_bid.executor, relayer);
+// }
 
 #[test]
 fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
@@ -1957,7 +1955,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
             // Emits event notifying about cancellation
             let events = System::events();
 
-            assert_eq!(
+            assert!(
                 events.iter().any(|record| {
                     if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxRevertedAfterTimeOut(xtx_id_emit)) = record.event {
                         assert_eq!(xtx_id_emit, hex!(
@@ -1967,7 +1965,6 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
                     } else {
                         false
                     } }),
-                true
             );
             // Voids all associated side effects with Xtx by setting their confirmation to Err
         });

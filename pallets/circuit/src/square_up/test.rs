@@ -60,14 +60,14 @@ pub mod test {
             0,
         );
         let bid_id = bid.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>, Runtime>(sfx_id);
-        (local_ctx, sfx_id, bid.clone(), bid_id)
+        (local_ctx, sfx_id, bid, bid_id)
     }
 
     fn request_and_bid_single_sfx_xtx(
         local_ctx: &mut LocalXtxCtx<Runtime>,
         bid: &SFXBid<AccountId, Balance, AssetId>,
     ) -> DispatchResult {
-        assert_ok!(SquareUp::<Runtime>::try_request(&local_ctx));
+        assert_ok!(SquareUp::<Runtime>::try_request(local_ctx));
         let requester = local_ctx.xtx.requester.clone();
         let fsx = local_ctx.full_side_effects[0][0].clone();
         let sfx_id = fsx
@@ -83,7 +83,7 @@ pub mod test {
             sfx_id,
             &bid.requester.clone(),
             &bid.executor.clone(),
-            &bid,
+            bid,
             None
         ));
 
@@ -118,7 +118,7 @@ pub mod test {
             Ok(RequestCharge {
                 payee: bid.executor.clone(),
                 offered_reward: bid.amount + bid.insurance + bid.reserved_bond.unwrap_or(0),
-                maybe_asset_id: bid.reward_asset_id.clone(),
+                maybe_asset_id: bid.reward_asset_id,
                 charge_fee: 0,
                 recipient: Some(bid.requester.clone()),
                 source: BenefitSource::TrafficRewards,
@@ -240,7 +240,7 @@ pub mod test {
 
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
 
-                assert_eq!(SquareUp::<Runtime>::kill(&local_ctx), true);
+                assert!(SquareUp::<Runtime>::kill(&local_ctx));
 
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
 
@@ -259,8 +259,8 @@ pub mod test {
                 let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
 
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
-                assert_eq!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx), true);
-                assert_eq!(SquareUp::<Runtime>::kill(&local_ctx), true);
+                assert!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx));
+                assert!(SquareUp::<Runtime>::kill(&local_ctx));
 
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
 
@@ -289,8 +289,8 @@ pub mod test {
                     cost: None,
                 });
 
-                assert_eq!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx), true);
-                assert_eq!(SquareUp::<Runtime>::finalize(&local_ctx), true);
+                assert!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx));
+                assert!(SquareUp::<Runtime>::finalize(&local_ctx));
 
                 assert_eq!(
                     <AccountManager as AccountManagerInterface<
@@ -330,8 +330,8 @@ pub mod test {
                 let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
 
-                assert_eq!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx), true);
-                assert_eq!(SquareUp::<Runtime>::finalize(&local_ctx), true);
+                assert!(SquareUp::<Runtime>::bind_bidders(&mut local_ctx));
+                assert!(SquareUp::<Runtime>::finalize(&local_ctx));
 
                 assert_eq!(
                     <AccountManager as AccountManagerInterface<
@@ -369,7 +369,7 @@ pub mod test {
                 let (mut local_ctx, sfx_id, bid, bid_id) = stage_single_sfx_xtx();
                 assert_ok!(request_and_bid_single_sfx_xtx(&mut local_ctx, &bid));
 
-                assert_eq!(SquareUp::<Runtime>::finalize(&local_ctx), true);
+                assert!(SquareUp::<Runtime>::finalize(&local_ctx));
 
                 assert_eq!(
                     <AccountManager as AccountManagerInterface<

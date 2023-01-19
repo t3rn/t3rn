@@ -130,54 +130,50 @@ impl CircuitStatus {
                 // from pending bidding to in bidding for posted bid
                 // from reserved to pending execution
                 match forced.clone() {
-                    CircuitStatus::Killed(cause) =>
-                        return match cause {
-                            Cause::IntentionalKill =>
-                                if new <= CircuitStatus::PendingBidding {
-                                    Ok(forced.clone())
-                                } else {
-                                    Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
-                                },
-                            Cause::Timeout =>
-                                if new <= CircuitStatus::InBidding {
-                                    Ok(forced.clone())
-                                } else {
-                                    Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
-                                },
-                        },
+                    CircuitStatus::Killed(cause) => match cause {
+                        Cause::IntentionalKill =>
+                            if new <= CircuitStatus::PendingBidding {
+                                Ok(forced)
+                            } else {
+                                Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
+                            },
+                        Cause::Timeout =>
+                            if new <= CircuitStatus::InBidding {
+                                Ok(forced)
+                            } else {
+                                Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
+                            },
+                    },
                     CircuitStatus::Reverted(cause) =>
-                        return match cause {
-                            _ =>
-                                if new < CircuitStatus::Ready {
-                                    Ok(CircuitStatus::Killed(cause))
-                                } else if new < CircuitStatus::FinishedAllSteps {
-                                    Ok(forced.clone())
-                                } else {
-                                    // Revert assumed infallible - fallback to new state which results in no op. in apply.
-                                    Ok(new.clone())
-                                },
+                        if new < CircuitStatus::Ready {
+                            Ok(CircuitStatus::Killed(cause))
+                        } else if new < CircuitStatus::FinishedAllSteps {
+                            Ok(forced)
+                        } else {
+                            // Revert assumed infallible - fallback to new state which results in no op. in apply.
+                            Ok(new)
                         },
                     CircuitStatus::Ready =>
                         if previous == CircuitStatus::InBidding {
-                            Ok(forced.clone())
+                            Ok(forced)
                         } else {
                             Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                         },
                     CircuitStatus::InBidding =>
                         if new == CircuitStatus::PendingBidding || new == CircuitStatus::InBidding {
-                            Ok(forced.clone())
+                            Ok(forced)
                         } else {
                             Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                         },
                     CircuitStatus::PendingExecution =>
                         if new == CircuitStatus::Ready {
-                            Ok(forced.clone())
+                            Ok(forced)
                         } else {
                             Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                         },
                     CircuitStatus::Reserved =>
                         if new <= CircuitStatus::Reserved {
-                            Ok(forced.clone())
+                            Ok(forced)
                         } else {
                             Err(Error::<T>::UpdateForcedStateTransitionDisallowed)
                         },
