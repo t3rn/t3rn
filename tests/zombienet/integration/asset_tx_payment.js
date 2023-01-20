@@ -1,6 +1,7 @@
 let { Keyring } = require("@polkadot/api")
+// let { WsProvider, ApiPromise } = require("@polkadot/api")
 let { cryptoWaitReady } = require("@polkadot/util-crypto")
-const assert = require("assert")
+let assert = require("assert")
 
 async function run(nodeName, networkInfo, args) {
   await cryptoWaitReady()
@@ -9,11 +10,10 @@ async function run(nodeName, networkInfo, args) {
   let alice = keyring.addFromUri("//Alice")
   let bob = keyring.addFromUri("//Bob")
 
-  const { wsUri, userDefinedTypes } = networkInfo.nodesByName[nodeName]
-  const api = await zombie.connect(wsUri, userDefinedTypes)
+  let { wsUri, userDefinedTypes } = networkInfo.nodesByName[nodeName]
+  let api = await zombie.connect(wsUri, userDefinedTypes)
+  // let api = await ApiPromise.create({ provider: new WsProvider("ws://localhost:9930") })
 
-  console.log("ALICE", alice.address)
-  console.log("DSGFSFFGFDGFG", api.tx.assets)
   // force_create and set_metadata an asset
   let name = "Asset"
   let symbol = "ASS"
