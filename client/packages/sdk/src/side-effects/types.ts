@@ -3,7 +3,7 @@
  */
 export enum SfxType {
     /* Native Transfer on Target */
-	Transfer,
+    Transfer,
 }
 
 /**
@@ -13,7 +13,7 @@ export enum SfxStatus {
     /* Created, but unprocessed */
     Requested,
     /* SFX is in bidding stage */
-    InBidding,
+    Bidding,
     /* SFX was dropped at bidding, refunding all participants */
     Dropped,
     /* SFX is ready to be executed */
