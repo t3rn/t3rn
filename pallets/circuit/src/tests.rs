@@ -1170,6 +1170,38 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             );
         });
 }
+const SINGLE_XTX_DEL_WEIGHT: u64 = 125000000;
+
+#[test]
+fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            crate::machine::test_extra::stage_single();
+            let xtx_id = crate::machine::test_extra::setup_empty_xtx_and_force_set_status(None);
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                Some(XExecSignal {
+                    requester: ALICE,
+                    timeouts_at: 401u32,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Reserved,
+                    requester_nonce: FIRST_REQUESTER_NONCE,
+                    steps_cnt: (0, 1),
+                })
+            );
+
+            let weight =
+                <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(1 + 4);
+
+            assert_eq!(weight, SINGLE_XTX_DEL_WEIGHT);
+
+            assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
+        });
+}
 
 #[test]
 fn circuit_handles_swap_with_insurance() {

@@ -321,31 +321,31 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            let weight = Self::process_signal_queue();
+            let mut weight = Self::process_signal_queue();
             // Check every XtxTimeoutCheckInterval blocks
 
             // what happens if the weight for the block is consumed, do these timeouts need to wait
             // for the next check interval to handle them? maybe we need an immediate queue
             //
-            let deletion_counter: u32 = 0;
+            let mut deletion_counter: u32 = 0;
 
             // Check for expiring bids each block
             let processed_xtx_bids_count = <PendingXtxBidsTimeoutsMap<T>>::iter().filter(|(_xtx_id, bidding_timeouts_at)| {
                 // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
-                bidding_timeouts_at <= &frame_system::Pallet::<T>::block_number()
+                bidding_timeouts_at <= &n
             }).map(|(xtx_id, _bidding_timeouts_at)| {
                 if deletion_counter <= T::DeletionQueueLimit::get() {
                     Machine::<T>::compile_infallible(
                         &mut Machine::<T>::load_xtx(xtx_id).expect("xtx_id corresponds to a valid Xtx when reading from PendingXtxBidsTimeoutsMap storage"),
                         |current_fsx, _local_state, _steps_cnt, status, _requester| {
                             match status {
-                                CircuitStatus::PendingBidding | CircuitStatus::InBidding => {},
+                                CircuitStatus::InBidding => match current_fsx.iter().all(|fsx| fsx.best_bid.is_some()) {
+                                    true => PrecompileResult::ForceUpdateStatus(CircuitStatus::Ready),
+                                    false => PrecompileResult::TryKill(Cause::Timeout)
+                                },
                                 _ => return PrecompileResult::TryKill(Cause::Timeout)
                             }
-                            match current_fsx.iter().all(|fsx| fsx.best_bid.is_some()) {
-                                true => PrecompileResult::ForceUpdateStatus(CircuitStatus::Ready),
-                                false => PrecompileResult::TryKill(Cause::Timeout)
-                            }
+
                         },
                         |_status_change, local_ctx| {
                             // Account fees and charges happens internally in Machine::apply
@@ -356,63 +356,45 @@ pub mod pallet {
                             );
                         },
                     );
-                    deletion_counter.checked_add(1).unwrap_or_else(|| {
-                        log::error!("XtxBiddingInterval::DeletionQueueLimit is too low, causing overflow");
-                        u32::MAX
-                    });
+
+                    deletion_counter = deletion_counter.saturating_add(1);
                 }
             }).count();
 
-            weight.checked_add(
-                T::DbWeight::get().reads_writes(
-                    processed_xtx_bids_count * 4,
-                    processed_xtx_bids_count * 2,
-                )
-            ).unwrap_or_else(|| {
-                log::error!("XtxBiddingInterval::DeletionQueueLimit is too low, causing overflow");
-                u32::MAX
-            });
+            weight = weight.saturating_add(T::DbWeight::get().reads_writes(
+                processed_xtx_bids_count as Weight,
+                processed_xtx_bids_count as Weight,
+            ));
 
             // Scenario 1: all the timeout s can be handled in the block space
             // Scenario 2: all but 5 timeouts can be handled
             //     - add the 5 timeouts to an immediate queue for the next block
             if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
                 // Go over all unfinished Xtx to find those that timed out
-                let processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter().filter(|(_xtx_id, timeout_at)| {
-                    timeout_at <= &frame_system::Pallet::<T>::block_number()
-                }).map(|(xtx_id, _timeout_at)| {
-                    if deletion_counter <= T::DeletionQueueLimit::get() {
-                        let _success: bool = Machine::<T>::revert(
-                            xtx_id,
-                            Cause::Timeout,
-                            |_status_change, _local_ctx| {
-                                Self::deposit_event(
-                                    Event::XTransactionXtxRevertedAfterTimeOut(xtx_id),
-                                );
-                            },
-                        );
-                        deletion_counter.checked_add(1).unwrap_or_else(|| {
-                            log::error!("XtxTimeoutCheckInterval::DeletionQueueLimit is too low, causing overflow");
-                            u32::MAX
-                        });
-                    }
-                }).count();
+                let processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
+                    .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
+                    .map(|(xtx_id, _timeout_at)| {
+                        if deletion_counter <= T::DeletionQueueLimit::get() {
+                            let _success: bool = Machine::<T>::revert(
+                                xtx_id,
+                                Cause::Timeout,
+                                |_status_change, _local_ctx| {
+                                    Self::deposit_event(
+                                        Event::XTransactionXtxRevertedAfterTimeOut(xtx_id),
+                                    );
+                                },
+                            );
+                            deletion_counter = deletion_counter.saturating_add(1);
+                        }
+                    })
+                    .count();
 
-                weight.checked_add(
-                    T::DbWeight::get().reads_writes(
-                        processed_xtx_revert_count * 4,
-                        processed_xtx_revert_count * 8,
-                    )
-                ).unwrap_or_else(|| {
-                    log::error!("XtxBiddingInterval::DeletionQueueLimit is too low, causing overflow");
-                    u32::MAX
-                });
-
+                weight = weight.saturating_add(T::DbWeight::get().reads_writes(
+                    processed_xtx_revert_count as Weight,
+                    processed_xtx_revert_count as Weight,
+                ));
             }
 
-            // Anything that needs to be done at the start of the block.
-            // We don't do anything here.
-            // ToDo: Do active xtx signals overview and Cancel if time elapsed
             weight
         }
 
