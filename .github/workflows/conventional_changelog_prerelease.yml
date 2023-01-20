@@ -1,8 +1,9 @@
 name: Create Changelog of Conventional Commits
+
 on:
- push:
-    tags:
-      - 'v*'
+  push:
+    branches: [ "development" ]
+
 jobs:
   commitlint:
     runs-on: ubuntu-latest
@@ -10,5 +11,10 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       - name: Conventional Changelog Action
-        uses: TriPSs/conventional-changelog-action@v3.14.0
+        uses: TriPSs/conventional-changelog-action@v3.18.0
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          pre-release: true
+
