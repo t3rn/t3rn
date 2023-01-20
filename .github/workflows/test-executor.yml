@@ -22,5 +22,5 @@ jobs:
 
       - run: make
       - run: cd executor
-      - run: npm ci
+      - run: yarn
       - run: npm test
