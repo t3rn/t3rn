@@ -428,7 +428,7 @@ export class SideEffect extends EventEmitter {
 
     /** Update the SFX status */
     readyToExecute() {
-        this.status = SfxStatus.PendingExecution
+        this.status = SfxStatus.ReadyToExecute
     }
 
     // sfx was successfully executed on target and has the inclusion proof data
