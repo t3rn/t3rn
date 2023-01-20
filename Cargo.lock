@@ -13413,8 +13413,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
- "t3rn-protocol",
  "xcm",
  "xcm-builder",
  "xcm-executor",
