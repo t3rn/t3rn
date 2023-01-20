@@ -71,7 +71,7 @@ export class SideEffect extends EventEmitter {
     /** The phase in which the SFX is part of. First Escrow, then Optimistic */
     phase: number
     /** SFX status, always starting with Bidding on creation */
-    status: SfxStatus = SfxStatus.Bidding
+    status: SfxStatus = SfxStatus.InBidding
     /** SFX action, e.g. tran, swap, etc */
     action: SfxType
     /** Acts as mutex lock to prevent parallel txs on the same SFX */
@@ -319,7 +319,7 @@ export class SideEffect extends EventEmitter {
     private generateBid(): any {
         if (this.isBidder) return { trigger: false, reason: "Already a bidder" }
         if (this.txStatus !== TxStatus.Ready) return { trigger: false, reason: "Tx not ready" }
-        if (this.status !== SfxStatus.Bidding) return { trigger: false, reason: "Not in bidding phase" }
+        if (this.status !== SfxStatus.InBidding) return { trigger: false, reason: "Not in bidding phase" }
 
         try {
             this.strategyEngine.evaluateSfx(this)
