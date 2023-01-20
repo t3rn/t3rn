@@ -13,7 +13,7 @@ export enum SfxStatus {
     /* Created, but unprocessed */
     Requested,
     /* SFX is in bidding stage */
-    Bidding,
+    InBidding,
     /* SFX was dropped at bidding, refunding all participants */
     Dropped,
     /* SFX is ready to be executed */

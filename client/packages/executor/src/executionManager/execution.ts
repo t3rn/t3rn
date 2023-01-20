@@ -119,7 +119,7 @@ export class Execution extends EventEmitter {
 
     /** Update XTX and all its SFX status to ready. */
     readyToExecute() {
-        this.status = XtxStatus.Ready
+        this.status = XtxStatus.ReadyToExecute
 
         //Updates each Sfx
         for (let [_sfxId, sfx] of this.sideEffects) {
@@ -166,7 +166,7 @@ export class Execution extends EventEmitter {
     getReadyToExecute(): SideEffect[] {
         let result: SideEffect[] = []
         for (let [_sfxId, sfx] of this.sideEffects) {
-            if (sfx.status === SfxStatus.Ready && sfx.isBidder && sfx.phase === this.currentPhase) {
+            if (sfx.status === SfxStatus.ReadyToExecute && sfx.isBidder && sfx.phase === this.currentPhase) {
                 result.push(sfx)
             }
         }
