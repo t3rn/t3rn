@@ -10,7 +10,7 @@ jobs:
   test-executor:
     defaults:
       run:
-        working-directory: client/packages
+        working-directory: client/packages/executor
 
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 18
 
-      - run: make
-      - run: cd executor
+      - run: cd .. && make
       - run: yarn
+      - run: npm i
       - run: npm test
