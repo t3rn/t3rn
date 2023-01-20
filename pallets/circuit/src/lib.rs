@@ -330,7 +330,7 @@ pub mod pallet {
             let deletion_counter: u32 = 0;
 
             // Check for expiring bids each block
-            <PendingXtxBidsTimeoutsMap<T>>::iter().filter(|(_xtx_id, bidding_timeouts_at)| {
+            let processed_xtx_bids_count = <PendingXtxBidsTimeoutsMap<T>>::iter().filter(|(_xtx_id, bidding_timeouts_at)| {
                 // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
                 bidding_timeouts_at <= &frame_system::Pallet::<T>::block_number()
             }).map(|(xtx_id, _bidding_timeouts_at)| {
@@ -363,12 +363,22 @@ pub mod pallet {
                 }
             }).count();
 
+            weight.checked_add(
+                T::DbWeight::get().reads_writes(
+                    processed_xtx_bids_count * 4,
+                    processed_xtx_bids_count * 2,
+                )
+            ).unwrap_or_else(|| {
+                log::error!("XtxBiddingInterval::DeletionQueueLimit is too low, causing overflow");
+                u32::MAX
+            });
+
             // Scenario 1: all the timeout s can be handled in the block space
             // Scenario 2: all but 5 timeouts can be handled
             //     - add the 5 timeouts to an immediate queue for the next block
             if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
                 // Go over all unfinished Xtx to find those that timed out
-                <PendingXtxTimeoutsMap<T>>::iter().filter(|(_xtx_id, timeout_at)| {
+                let processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter().filter(|(_xtx_id, timeout_at)| {
                     timeout_at <= &frame_system::Pallet::<T>::block_number()
                 }).map(|(xtx_id, _timeout_at)| {
                     if deletion_counter <= T::DeletionQueueLimit::get() {
@@ -387,6 +397,17 @@ pub mod pallet {
                         });
                     }
                 }).count();
+
+                weight.checked_add(
+                    T::DbWeight::get().reads_writes(
+                        processed_xtx_revert_count * 4,
+                        processed_xtx_revert_count * 8,
+                    )
+                ).unwrap_or_else(|| {
+                    log::error!("XtxBiddingInterval::DeletionQueueLimit is too low, causing overflow");
+                    u32::MAX
+                });
+
             }
 
             // Anything that needs to be done at the start of the block.
