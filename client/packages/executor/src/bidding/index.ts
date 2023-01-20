@@ -28,7 +28,7 @@ export class BiddingEngine {
     /** When there's no competition yet, get the execution by getting the smallest profit */
     overrideNoCompetition: boolean = config.bidding.overrideNoCompetition
     /** If outbid, executor makes the same last bid */
-    equalMinProfitBid: boolean = config.bidding.equalMinBid
+    equalMinProfitBid: boolean = config.bidding.equalMinProfitBid
     /** How close to be when been outbid, but still wants to be place a bid close to last one */
     closerPercentageBid: number = config.bidding.closerPercentageBid
     /** Which executors are bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
@@ -261,13 +261,15 @@ export enum Scenario {
  */
 export type BiddingStrategy = {
     /** Bid aggresively to oubtbid everyone to get the sfx */
-    bidAggressive?: boolean
+    bidAggressive: boolean
     /** Obtain the max profit, even if it means to not win the sfx */
-    bidMeek?: boolean
+    bidMeek: boolean
     /** Try to obtain the execution of the sfx by bidding for the smallest profit */
-    overrideNoCompetition?: boolean
+    overrideNoCompetition: boolean
     /** If outbid, executor makes a bid that's equal to the last bid done to the sfx */
-    equalMinProfitBid?: boolean
+    equalMinProfitBid: boolean
     /** How close the bid should be when resubmited after being outbid */
-    closerPercentageBid?: number
+    closerPercentageBid: number
+    /** The percentile in the range [minProfit, maxProfit] when bidding */
+    bidPercentile: number
 }

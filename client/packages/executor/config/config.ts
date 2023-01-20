@@ -1,3 +1,4 @@
+import { BiddingStrategy } from "src/bidding";
 import { SfxStrategy, XtxStrategy } from "../src"
 
 const WS_CIRCUIT_ENDPOINT = process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944";
@@ -144,14 +145,7 @@ export type Config = {
         [targetId: string]: Strategy
     }
     /** Parameters for tunning the behavior in the bidding stage */
-    bidding: {
-        bidPercentile: number,
-        closerPercentageBid: number
-        bidAggressive: boolean
-        bidMeek: boolean
-        overrideNoCompetition: boolean
-        equalMinBid: boolean
-    }
+    bidding: BiddingStrategy
 }
 
 export const config: Config = {
@@ -220,6 +214,6 @@ export const config: Config = {
         bidAggressive: true,
         bidMeek: false,
         overrideNoCompetition: true,
-        equalMinBid: false,
+        equalMinProfitBid: false,
     },
 }
