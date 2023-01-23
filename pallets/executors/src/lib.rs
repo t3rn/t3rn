@@ -130,6 +130,13 @@ pub mod pallet {
         type Treasury: Clock<Self>;
 
         type WeightInfo: weights::WeightInfo;
+
+        /// Allow executors to execute side effects on circuit
+        type InstructionHandler: xbi_channel_primitives::traits::XbiInstructionHandler<Self::Origin>;
+
+        // TODO: We might not need this here, maybe we will just inject this into the pallets that need it, although here is a decent entrypoint for it.
+        /// Allow other pallets in circuit to send messages over xbi
+        type Xbi: xbi_sender::Sender<xbi_channel_primitives::Message>;
     }
 
     #[pallet::pallet]
@@ -1610,6 +1617,17 @@ pub mod pallet {
                     bond
                 })
                 .collect()
+        }
+
+        /// Execute a side effect via XBI
+        /// `xbi` could change to side effects and do the conversions into Xbi messages
+        ///
+        /// @maciejbaj look here TODO
+        fn execute_xbi(
+            origin: &T::Origin,
+            xbi: &xbi_format::XbiFormat,
+        ) -> DispatchResultWithPostInfo {
+            T::InstructionHandler::handle(origin, xbi)
         }
     }
 }

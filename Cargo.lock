@@ -6380,7 +6380,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "substrate-abi",
+ "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
  "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
 ]
 
@@ -7092,6 +7092,9 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "xbi-channel-primitives",
+ "xbi-format 0.1.0",
+ "xbi-sender",
 ]
 
 [[package]]
@@ -7751,12 +7754,12 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "substrate-abi",
- "substrate-contracts-abi",
+ "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
+ "substrate-contracts-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
  "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
  "t3rn-xcm-primitives",
  "xbi-channel-primitives",
- "xbi-format",
+ "xbi-format 0.2.0",
  "xbi-receiver",
  "xbi-sender",
  "xcm",
@@ -12913,6 +12916,20 @@ dependencies = [
 [[package]]
 name = "substrate-abi"
 version = "0.1.0"
+source = "git+https://github.com/t3rn/xbi.git?branch=development#6dfdca26ac8405171ea3e8b406e1bb99b948e3ac"
+dependencies = [
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "substrate-abi"
+version = "0.1.0"
 source = "git+https://github.com/t3rn/xbi.git#8aa803b309f00c80501018689e5f848181c203bf"
 dependencies = [
  "log",
@@ -12960,6 +12977,21 @@ dependencies = [
 [[package]]
 name = "substrate-contracts-abi"
 version = "0.1.0"
+source = "git+https://github.com/t3rn/xbi.git?branch=development#6dfdca26ac8405171ea3e8b406e1bb99b948e3ac"
+dependencies = [
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git?branch=development)",
+]
+
+[[package]]
+name = "substrate-contracts-abi"
+version = "0.1.0"
 source = "git+https://github.com/t3rn/xbi.git#8aa803b309f00c80501018689e5f848181c203bf"
 dependencies = [
  "log",
@@ -12968,7 +13000,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
- "substrate-abi",
+ "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
 ]
 
 [[package]]
@@ -13521,7 +13553,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-types 0.0.1-rc.3",
  "tiny-keccak 2.0.2",
  "triehash",
@@ -15205,8 +15237,25 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
- "xbi-format",
+ "xbi-format 0.2.0",
  "xcm",
+]
+
+[[package]]
+name = "xbi-format"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/xbi.git?branch=development#6dfdca26ac8405171ea3e8b406e1bb99b948e3ac"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git?branch=development)",
+ "substrate-contracts-abi 0.1.0 (git+https://github.com/t3rn/xbi.git?branch=development)",
 ]
 
 [[package]]
@@ -15221,8 +15270,8 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
- "substrate-abi",
- "substrate-contracts-abi",
+ "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
+ "substrate-contracts-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
 ]
 
 [[package]]
@@ -15240,7 +15289,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "xbi-channel-primitives",
- "xbi-format",
+ "xbi-format 0.2.0",
  "xbi-sender",
 ]
 
