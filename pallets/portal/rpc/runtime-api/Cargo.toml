@@ -17,7 +17,7 @@ codec           = { package = "parity-scale-codec", version = "3", default-featu
 pallet-portal   = { path = "../..", default-features = false }
 sp-api          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 sp-runtime      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "development" }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'refactor/infallible-square-up' }
 
 [features]
 default = [ "std" ]

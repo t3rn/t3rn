@@ -8,7 +8,7 @@ use sp_runtime::traits::ConvertInto;
 
 parameter_types! {
     // TODO: update me to be better
-    pub EscrowAccount: AccountId32 = AccountId32::new([55_u8; 32]);
+    pub EscrowAccount: AccountId32 = AccountId32::new([51_u8; 32]);
 }
 
 pallet_account_manager::setup_currency_adapter!();

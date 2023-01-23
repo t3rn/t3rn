@@ -111,7 +111,7 @@ parameter_types! {
     pub const MaxApprovals: u32 = 10;
     pub const ProposalBond: Permill = Permill::from_percent(1);
     pub const SpendPeriod: u32 = 60 / 12;
-    pub const ProposalBondMinimum: u128 = 1_u128 * 1_000_000_000_000_u128;
+    pub const ProposalBondMinimum: u128 = 1_000_000_000_000_u128;
 }
 
 impl pallet_treasury::Config for Runtime {

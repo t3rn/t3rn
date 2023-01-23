@@ -4,7 +4,6 @@ use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, Convert};
-use t3rn_primitives::common::DEFAULT_ROUND_TERM;
 
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;

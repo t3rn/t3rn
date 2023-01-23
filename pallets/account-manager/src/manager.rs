@@ -74,6 +74,10 @@ impl<T: Config>
         }
     }
 
+    fn get_settlement(settlement_id: T::Hash) -> Option<Settlement<T::AccountId, BalanceOf<T>>> {
+        SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
+    }
+
     fn bump_contracts_registry_nonce() -> Result<T::Hash, DispatchError> {
         let execution_id = ContractsRegistryExecutionNonce::<T>::get();
         ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
@@ -86,6 +90,83 @@ impl<T: Config>
         Ok(charge_id)
     }
 
+    fn validate_deposit(
+        charge_id: T::Hash,
+        request_charge: RequestCharge<
+            T::AccountId,
+            BalanceOf<T>,
+            <T::Assets as Inspect<T::AccountId>>::AssetId,
+        >,
+    ) -> Result<BalanceOf<T>, DispatchError> {
+        Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
+
+        let total_reserve_deposit = if let Some(checked_reserve) = request_charge
+            .charge_fee
+            .checked_add(&request_charge.offered_reward)
+        {
+            checked_reserve
+        } else {
+            log::error!("Could nor compute collateral bond power, arithmetic overflow");
+            return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
+        };
+
+        if total_reserve_deposit == Zero::zero() {
+            return Err(Error::<T>::SkippingEmptyCharges.into())
+        }
+
+        Ok(total_reserve_deposit)
+    }
+
+    fn deposit_batch(
+        batch: Vec<(
+            T::Hash,
+            RequestCharge<
+                T::AccountId,
+                BalanceOf<T>,
+                <T::Assets as Inspect<T::AccountId>>::AssetId,
+            >,
+        )>,
+    ) -> DispatchResult {
+        let mut validated_requests: Vec<(
+            T::Hash,
+            RequestCharge<
+                T::AccountId,
+                BalanceOf<T>,
+                <T::Assets as Inspect<T::AccountId>>::AssetId,
+            >,
+            BalanceOf<T>,
+        )> = vec![];
+
+        for (charge_id, request_charge) in batch {
+            validated_requests.push((
+                charge_id,
+                request_charge.clone(),
+                Self::validate_deposit(charge_id, request_charge)?,
+            ));
+        }
+
+        for (charge_id, request_charge, total_deposit) in validated_requests {
+            Self::withdraw_immediately(
+                &request_charge.payee,
+                total_deposit,
+                request_charge.maybe_asset_id,
+            )?;
+            PendingChargesPerRound::<T>::insert(
+                T::Clock::current_round(),
+                charge_id,
+                request_charge.clone(),
+            );
+            Self::deposit_event(crate::Event::DepositReceived {
+                charge_id,
+                payee: request_charge.payee.clone(),
+                recipient: request_charge.recipient.clone(),
+                amount: total_deposit,
+            });
+        }
+
+        Ok(())
+    }
+
     /// If Called by 3VM as a execution deposit, expect:
     ///     - charge = gas_fees
     ///     - reward = 0
@@ -94,63 +175,13 @@ impl<T: Config>
     ///     - reward = Open Market based offered by requester
     fn deposit(
         charge_id: T::Hash,
-        payee: &T::AccountId,
-        charge_fee: BalanceOf<T>,
-        offered_reward: BalanceOf<T>,
-        source: BenefitSource,
-        role: CircuitRole,
-        maybe_recipient: Option<T::AccountId>,
-        maybe_asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
+        request_charge: RequestCharge<
+            T::AccountId,
+            BalanceOf<T>,
+            <T::Assets as Inspect<T::AccountId>>::AssetId,
+        >,
     ) -> DispatchResult {
-        Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
-
-        let total_reserve_deposit =
-            if let Some(checked_reserve) = charge_fee.checked_add(&offered_reward) {
-                checked_reserve
-            } else {
-                log::error!("Could nor compute collateral bond power, arithmetic overflow");
-                return Err(DispatchError::Arithmetic(ArithmeticError::Overflow))
-            };
-
-        if total_reserve_deposit == Zero::zero() {
-            return Err(Error::<T>::SkippingEmptyCharges.into())
-        }
-
-        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::withdraw(
-            payee,
-            total_reserve_deposit,
-            maybe_asset_id,
-        )?;
-
-        let recipient = if let Some(recipient) = maybe_recipient {
-            recipient
-        } else {
-            // todo: Inspect if that's a good idea
-            T::EscrowAccount::get()
-        };
-
-        PendingChargesPerRound::<T>::insert(
-            T::Clock::current_round(),
-            charge_id,
-            RequestCharge {
-                payee: payee.clone(),
-                offered_reward,
-                charge_fee,
-                recipient: recipient.clone(),
-                source,
-                role,
-                maybe_asset_id,
-            },
-        );
-
-        Self::deposit_event(crate::Event::DepositReceived {
-            charge_id,
-            payee: payee.clone(),
-            recipient,
-            amount: total_reserve_deposit,
-        });
-
-        Ok(())
+        Self::deposit_batch(vec![(charge_id, request_charge)])
     }
 
     fn finalize(
@@ -166,7 +197,7 @@ impl<T: Config>
         let (payee_split, recipient_split, recipient_bonus): (u8, u8, BalanceOf<T>) = match outcome
         {
             Outcome::Commit => (0, 99, Zero::zero()),
-            Outcome::Revert => (99, 0, Zero::zero()),
+            Outcome::Revert | Outcome::Slash => (99, 0, Zero::zero()),
             Outcome::UnexpectedFailure => (49, 50, Zero::zero()),
         };
 
@@ -191,10 +222,12 @@ impl<T: Config>
         }
 
         // Check if recipient has been updated
-        let recipient = if let Some(recipient) = maybe_recipient {
-            recipient
-        } else {
-            charge.recipient
+        let recipient = match maybe_recipient {
+            Some(new_recipient) => new_recipient,
+            None => match charge.recipient {
+                Some(recipient) => recipient,
+                None => T::EscrowAccount::get(),
+            },
         };
 
         let recipient_rewards = percent_ratio::<BalanceOf<T>>(total_reserved, recipient_split)?;
@@ -214,6 +247,7 @@ impl<T: Config>
                 },
             );
         }
+
         PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
 
         // Take what's left to treasury
@@ -226,21 +260,141 @@ impl<T: Config>
         Ok(())
     }
 
-    fn finalize_infallible(
+    fn finalize_infallible(charge_id: T::Hash, outcome: Outcome) -> bool {
+        if let Some(charge) = PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+        {
+            // Infallible recipient assignment to Escrow
+            let recipient = match charge.recipient {
+                Some(recipient) => recipient,
+                None => T::EscrowAccount::get(),
+            };
+            if charge.offered_reward > Zero::zero() {
+                match outcome {
+                    Outcome::Commit => {
+                        SettlementsPerRound::<T>::insert(
+                            T::Clock::current_round(),
+                            charge_id,
+                            Settlement::<T::AccountId, BalanceOf<T>> {
+                                requester: charge.payee,
+                                recipient,
+                                settlement_amount: charge.offered_reward,
+                                outcome,
+                                source: charge.source,
+                                role: charge.role,
+                            },
+                        );
+                    },
+                    Outcome::Slash => {
+                        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+                            &T::EscrowAccount::get(),
+                            charge.maybe_asset_id,
+                            charge.offered_reward,
+                        );
+                    },
+                    Outcome::UnexpectedFailure | Outcome::Revert => {
+                        Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+                            &charge.payee,
+                            charge.maybe_asset_id,
+                            charge.offered_reward,
+                        );
+                    },
+                };
+            }
+
+            // Take charge fee to treasury
+            if charge.charge_fee > Zero::zero() {
+                Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
+                    &T::EscrowAccount::get(),
+                    charge.maybe_asset_id,
+                    charge.charge_fee,
+                );
+            }
+            PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
+            true
+        } else {
+            false
+        }
+    }
+
+    fn cancel_deposit(charge_id: T::Hash) -> bool {
+        match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
+            Some(charge) => {
+                Self::deposit_immediately(
+                    &charge.payee,
+                    charge.offered_reward,
+                    charge.maybe_asset_id,
+                );
+                PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
+                true
+            },
+            None => false,
+        }
+    }
+
+    fn assign_deposit(charge_id: T::Hash, recipient: &T::AccountId) -> bool {
+        PendingChargesPerRound::<T>::mutate(T::Clock::current_round(), charge_id, |maybe_charge| {
+            match maybe_charge {
+                Some(charge) => {
+                    charge.recipient = Some(recipient.clone());
+                    true
+                },
+                None => false,
+            }
+        })
+    }
+
+    fn transfer_deposit(
         charge_id: T::Hash,
-        outcome: Outcome,
-        maybe_recipient: Option<T::AccountId>,
-        maybe_actual_fees: Option<BalanceOf<T>>,
-    ) {
-        if PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id).is_some() {
-            <Self as AccountManagerExt<
-                T::AccountId,
-                BalanceOf<T>,
-                T::Hash,
-                T::BlockNumber,
-                <T::Assets as Inspect<T::AccountId>>::AssetId,
-            >>::finalize(charge_id, outcome, maybe_recipient, maybe_actual_fees)
-            .expect("Expect try finalize to be infallible");
+        new_charge_id: T::Hash,
+        new_reward: Option<BalanceOf<T>>,
+        new_payee: Option<&T::AccountId>,
+        new_recipient: Option<&T::AccountId>,
+    ) -> DispatchResult {
+        match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
+            Some(charge) => {
+                let offered_reward = if let Some(reward) = new_reward {
+                    reward
+                } else {
+                    charge.offered_reward
+                };
+
+                let payee = if let Some(payee) = new_payee {
+                    payee.clone()
+                } else {
+                    charge.payee
+                };
+
+                let recipient = if let Some(recipient) = new_recipient {
+                    Some(recipient.clone())
+                } else {
+                    charge.recipient
+                };
+
+                // Release previous payee
+                if !Self::cancel_deposit(charge_id) {
+                    return Err(Error::<T>::TransferDepositFailedToReleasePreviousCharge.into())
+                }
+
+                <Self as AccountManagerExt<
+                    T::AccountId,
+                    BalanceOf<T>,
+                    T::Hash,
+                    T::BlockNumber,
+                    <T::Assets as Inspect<T::AccountId>>::AssetId,
+                >>::deposit(
+                    new_charge_id,
+                    RequestCharge {
+                        payee,
+                        offered_reward,
+                        charge_fee: charge.charge_fee,
+                        role: charge.role,
+                        source: charge.source,
+                        recipient,
+                        maybe_asset_id: charge.maybe_asset_id,
+                    },
+                )
+            },
+            None => Err(Error::<T>::TransferDepositFailedOldChargeNotFound.into()),
         }
     }
 
@@ -415,13 +569,15 @@ mod tests {
                 AssetId,
             >>::deposit(
                 execution_id,
-                &ALICE,
-                DEPOSIT_AMOUNT,
-                0,
-                BenefitSource::TrafficRewards,
-                CircuitRole::ContractAuthor,
-                Some(BOB),
-                None,
+                RequestCharge {
+                    payee: ALICE,
+                    offered_reward: 0,
+                    charge_fee: DEPOSIT_AMOUNT,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
             ));
 
             assert_eq!(
@@ -435,7 +591,7 @@ mod tests {
             >(Default::default(), execution_id)
             .unwrap();
             assert_eq!(charge_item.payee, ALICE);
-            assert_eq!(charge_item.recipient, BOB);
+            assert_eq!(charge_item.recipient, Some(BOB));
             assert_eq!(charge_item.charge_fee, DEPOSIT_AMOUNT);
         });
     }
@@ -458,13 +614,15 @@ mod tests {
                 AssetId,
             >>::deposit(
                 execution_id,
-                &ALICE,
-                DEPOSIT_AMOUNT,
-                0,
-                BenefitSource::TrafficRewards,
-                CircuitRole::ContractAuthor,
-                Some(BOB),
-                None,
+                RequestCharge {
+                    payee: ALICE,
+                    offered_reward: DEPOSIT_AMOUNT,
+                    charge_fee: 0,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
             ));
 
             assert_err!(
@@ -476,13 +634,15 @@ mod tests {
                     AssetId,
                 >>::deposit(
                     execution_id,
-                    &ALICE,
-                    DEPOSIT_AMOUNT,
-                    0,
-                    BenefitSource::TrafficRewards,
-                    CircuitRole::ContractAuthor,
-                    Some(BOB),
-                    None,
+                    RequestCharge {
+                        payee: ALICE,
+                        offered_reward: DEPOSIT_AMOUNT,
+                        charge_fee: 0,
+                        source: BenefitSource::TrafficRewards,
+                        role: CircuitRole::ContractAuthor,
+                        recipient: Some(BOB),
+                        maybe_asset_id: None
+                    }
                 ),
                 pallet_account_manager::Error::<Runtime>::ExecutionAlreadyRegistered
             );
@@ -509,13 +669,15 @@ mod tests {
                 AssetId,
             >>::deposit(
                 execution_id,
-                &ALICE,
-                charge_amt,
-                0,
-                BenefitSource::TrafficRewards,
-                CircuitRole::ContractAuthor,
-                Some(BOB),
-                None,
+                RequestCharge {
+                    payee: ALICE,
+                    offered_reward: charge_amt,
+                    charge_fee: 0,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
             ));
 
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
@@ -585,12 +747,15 @@ mod tests {
                 BlockNumber, AssetId,
             >>::deposit(
                 execution_id,
-                &ALICE,
-                CHARGE,
-                INSURANCE,
-                BenefitSource::TrafficRewards,
-                CircuitRole::ContractAuthor,
-                Some(BOB), None,
+                RequestCharge {
+                    payee: ALICE,
+                    offered_reward: INSURANCE,
+                    charge_fee: CHARGE,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
             ));
 
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - (CHARGE + INSURANCE));
@@ -638,13 +803,15 @@ mod tests {
                 AssetId,
             >>::deposit(
                 execution_id,
-                &ALICE,
-                charge_amt,
-                0,
-                BenefitSource::TrafficRewards,
-                CircuitRole::ContractAuthor,
-                Some(BOB),
-                None,
+                RequestCharge {
+                    payee: ALICE,
+                    offered_reward: charge_amt,
+                    charge_fee: 0,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
             ));
 
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
@@ -711,13 +878,15 @@ mod tests {
                 AssetId,
             >>::deposit(
                 execution_id,
-                &ALICE,
-                charge_amt,
-                0,
-                BenefitSource::TrafficRewards,
-                CircuitRole::ContractAuthor,
-                Some(BOB),
-                None,
+                RequestCharge {
+                    payee: ALICE,
+                    offered_reward: charge_amt,
+                    charge_fee: 0,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
             ));
 
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);

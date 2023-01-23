@@ -26,7 +26,7 @@
 #![allow(clippy::too_many_arguments)]
 
 pub use crate::pallet::*;
-use crate::{optimistic::Optimistic, state::*};
+use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
@@ -69,6 +69,9 @@ use t3rn_protocol::side_effects::{
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };
 
+use crate::machine::{Machine, *};
+pub use state::XExecSignal;
+
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
@@ -78,8 +81,10 @@ pub mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+pub mod bids;
 pub mod escrow;
-pub mod optimistic;
+pub mod machine;
+pub mod square_up;
 pub mod state;
 pub mod weights;
 
@@ -111,39 +116,16 @@ pub mod pallet {
         substrate_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm},
         xbi_format::XbiCheckOutStatus,
     };
-    // use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
-    // use pallet_xbi_portal::{
-    //     primitives::xbi::{XBIPromise, XBIStatus},
-    //     substrate_abi::SubstrateAbi as Sabi,
-    //     xbi_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm, XbiId},
-    //     xbi_codec::{XBICheckOutStatus, XBIMetadata, XBINotificationKind},
-    // };
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         portal::Portal,
-        side_effect::SFXBid,
         xdns::Xdns,
     };
 
     pub use crate::weights::WeightInfo;
 
     pub type EscrowBalance<T> = BalanceOf<T>;
-
-    /// Temporary bids for SFX executions. Cleaned out each Config::BidsInterval, where are moved from
-    ///     PendingSFXBids to FSX::accepted_bids
-    ///
-    #[pallet::storage]
-    #[pallet::getter(fn get_pending_sfx_bids)]
-    pub type PendingSFXBids<T> = StorageDoubleMap<
-        _,
-        Identity,
-        XExecSignalId<T>,
-        Identity,
-        SideEffectId<T>,
-        SFXBid<<T as frame_system::Config>::AccountId, BalanceOf<T>, u32>,
-        OptionQuery,
-    >;
 
     /// Links mapping SFX 2 XTX
     ///
@@ -165,9 +147,8 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// Temporary bids for SFX executions. Cleaned out each Config::BidsInterval, where are moved from
-    ///     PendingSFXBids to FSX::accepted_bids
-    ///
+    /// Temporary bidding timeouts map for SFX executions. Cleaned out each Config::BidsInterval,
+    ///     where for each FSX::best_bid bidders are assigned for SFX::enforce_executor or Xtx is dropped.
     #[pallet::storage]
     #[pallet::getter(fn get_pending_xtx_bids_timeouts)]
     pub type PendingXtxBidsTimeoutsMap<T> = StorageMap<
@@ -297,10 +278,6 @@ pub mod pallet {
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self>;
 
-        // type XBIPortal: XBIPortal<Self>;
-
-        // type XBIPromise: XBIPromise<Self, <Self as Config>::Call>;
-
         type Executors: Executors<Self, BalanceOf<Self>>;
 
         /// A type that provides access to AccountManager
@@ -350,112 +327,66 @@ pub mod pallet {
             // what happens if the weight for the block is consumed, do these timeouts need to wait
             // for the next check interval to handle them? maybe we need an immediate queue
             //
+            let deletion_counter: u32 = 0;
 
             // Check for expiring bids each block
-            <PendingXtxBidsTimeoutsMap<T>>::iter()
-                .find(|(_xtx_id, bidding_timeouts_at)| {
-                    // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
-                    bidding_timeouts_at <= &frame_system::Pallet::<T>::block_number()
-                })
-                .map(|(xtx_id, _bidding_timeouts_at)| {
-                    let mut local_ctx = match Self::setup(
-                        CircuitStatus::PendingBidding,
-                        &Self::account_id(),
-                        Some(xtx_id),
-                    ) {
-                        Ok(value) => value,
-                        Err(error) => {
-                            log::error!("Could not setup local ctx: {:?}", error);
-                            return
-                        }
-                    };
-
-                    // Ensure Circuit::PendingBidding status
-                    if local_ctx.xtx.status != CircuitStatus::PendingBidding {
-                        Self::kill(&mut local_ctx, CircuitStatus::DroppedAtBidding);
-                        return
-                    }
-
-                    let current_step = local_ctx.xtx.steps_cnt.0;
-                    for mut fsx in local_ctx.full_side_effects[current_step as usize].iter_mut() {
-                        let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                        if let Some(best_sfx_bid) = <PendingSFXBids<T>>::get(xtx_id, sfx_id) {
-                            fsx.best_bid = Some(best_sfx_bid);
-                        } else {
-                            // error - some FSX don't have bids
-                            Self::kill(&mut local_ctx, CircuitStatus::DroppedAtBidding);
+            <PendingXtxBidsTimeoutsMap<T>>::iter().filter(|(_xtx_id, bidding_timeouts_at)| {
+                // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
+                bidding_timeouts_at <= &frame_system::Pallet::<T>::block_number()
+            }).map(|(xtx_id, _bidding_timeouts_at)| {
+                if deletion_counter <= T::DeletionQueueLimit::get() {
+                    Machine::<T>::compile_infallible(
+                        &mut Machine::<T>::load_xtx(xtx_id).expect("xtx_id corresponds to a valid Xtx when reading from PendingXtxBidsTimeoutsMap storage"),
+                        |current_fsx, _local_state, _steps_cnt, status, _requester| {
+                            match status {
+                                CircuitStatus::PendingBidding | CircuitStatus::InBidding => {},
+                                _ => return PrecompileResult::TryKill(Cause::Timeout)
+                            }
+                            match current_fsx.iter().all(|fsx| fsx.best_bid.is_some()) {
+                                true => PrecompileResult::ForceUpdateStatus(CircuitStatus::Ready),
+                                false => PrecompileResult::TryKill(Cause::Timeout)
+                            }
+                        },
+                        |_status_change, local_ctx| {
+                            // Account fees and charges happens internally in Machine::apply
                             Self::emit_status_update(
                                 local_ctx.xtx_id,
-                                Some(local_ctx.xtx),
+                                Some(local_ctx.xtx.clone()),
                                 None,
                             );
-                            return
-                        }
-                    }
-
-                    let status_change = match Self::update(&mut local_ctx) {
-                        Ok(value) => value,
-                        Err(error) => {
-                            log::error!("Could not update local ctx change: {:?}", error);
-                            return
                         },
-                    };
-
-                    Self::square_up(&mut local_ctx, None)
-                        .expect("Expect Bonding Bids at square up to be infallible since funds of requester have been reserved at the SFX submission");
-
-                    Self::apply(
-                        &mut local_ctx,
-                        status_change,
                     );
-
-                    Self::emit_status_update(
-                        local_ctx.xtx_id,
-                        Some(local_ctx.xtx),
-                        None,
-                    );
-                });
-            // Go over pending Bids to discover whether
+                    deletion_counter.checked_add(1).unwrap_or_else(|| {
+                        log::error!("XtxBiddingInterval::DeletionQueueLimit is too low, causing overflow");
+                        u32::MAX
+                    });
+                }
+            }).count();
 
             // Scenario 1: all the timeout s can be handled in the block space
             // Scenario 2: all but 5 timeouts can be handled
             //     - add the 5 timeouts to an immediate queue for the next block
             if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
-                let mut deletion_counter: u32 = 0;
                 // Go over all unfinished Xtx to find those that timed out
-                <PendingXtxTimeoutsMap<T>>::iter()
-                    .find(|(_xtx_id, timeout_at)| {
-                        timeout_at <= &frame_system::Pallet::<T>::block_number()
-                    })
-                    .map(|(xtx_id, _timeout_at)| {
-                        if deletion_counter > T::DeletionQueueLimit::get() {
-                            return
-                        }
-                        let mut local_xtx_ctx = match Self::setup(
-                            CircuitStatus::Ready,
-                            &Self::account_id(),
-                            Some(xtx_id),
-                        ) {
-                            Ok(value) => value,
-                            Err(error) => {
-                                log::error!("Could not setup local xtx ctx: {:?}", error);
-                                return
+                <PendingXtxTimeoutsMap<T>>::iter().filter(|(_xtx_id, timeout_at)| {
+                    timeout_at <= &frame_system::Pallet::<T>::block_number()
+                }).map(|(xtx_id, _timeout_at)| {
+                    if deletion_counter <= T::DeletionQueueLimit::get() {
+                        let _success: bool = Machine::<T>::revert(
+                            xtx_id,
+                            Cause::Timeout,
+                            |_status_change, _local_ctx| {
+                                Self::deposit_event(
+                                    Event::XTransactionXtxRevertedAfterTimeOut(xtx_id),
+                                );
                             },
-                        };
-
-                        Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertTimedOut);
-
-                        Self::emit_status_update(
-                            local_xtx_ctx.xtx_id,
-                            Some(local_xtx_ctx.xtx),
-                            None,
                         );
-                        if let Some(v) = deletion_counter.checked_add(1) {
-                            deletion_counter = v;
-                        } else {
-                            return
-                        }
-                    });
+                        deletion_counter.checked_add(1).unwrap_or_else(|| {
+                            log::error!("XtxTimeoutCheckInterval::DeletionQueueLimit is too low, causing overflow");
+                            u32::MAX
+                        });
+                    }
+                }).count();
             }
 
             // Anything that needs to be done at the start of the block.
@@ -488,21 +419,17 @@ pub mod pallet {
         ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
-            let fresh_or_revoked_exec = match maybe_xtx_id {
-                Some(_xtx_id) => CircuitStatus::Ready,
-                None => CircuitStatus::Requested,
+            // We must apply the state only if its generated and fresh
+            let local_ctx = match maybe_xtx_id {
+                Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
+                None => {
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
+                    local_ctx
+                },
             };
 
-            let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(fresh_or_revoked_exec, &requester, maybe_xtx_id)?;
-            log::debug!(
-                target: "runtime::circuit",
-                "load_local_state with status: {:?}",
-                local_xtx_ctx.xtx.status
-            );
-
-            // There should be no apply step since no change could have happen during the state access
-            let hardened_side_effects = local_xtx_ctx
+            let hardened_side_effects = local_ctx
                 .full_side_effects
                 .iter()
                 .map(|step| {
@@ -532,21 +459,20 @@ pub mod pallet {
                     Error<T>,
                 >>()?;
 
-            // We must apply the state only if its generated and fresh
-            if maybe_xtx_id.is_none() {
-                // Update local context
-                let status_change = Self::update(&mut local_xtx_ctx)?;
-
-                let _ = Self::apply(&mut local_xtx_ctx, status_change);
-            }
-
-            // There should be no apply step since no change could have happen during the state access
-            Ok(LocalStateExecutionView::<T, BalanceOf<T>>::new(
-                local_xtx_ctx.xtx_id,
-                local_xtx_ctx.local_state.clone(),
+            let local_state_execution_view = LocalStateExecutionView::<T, BalanceOf<T>>::new(
+                local_ctx.xtx_id,
+                local_ctx.local_state.clone(),
                 hardened_side_effects,
-                local_xtx_ctx.xtx.steps_cnt,
-            ))
+                local_ctx.xtx.steps_cnt,
+            );
+
+            log::debug!(
+                target: "runtime::circuit",
+                "load_local_state with status: {:?}",
+                local_ctx.xtx.status
+            );
+
+            Ok(local_state_execution_view)
         }
 
         fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
@@ -560,53 +486,42 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
-            let fresh_or_revoked_exec = match trigger.maybe_xtx_id {
-                Some(_xtx_id) => CircuitStatus::Ready,
-                None => CircuitStatus::Requested,
+            let mut local_ctx = match trigger.maybe_xtx_id {
+                Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
+                None => {
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
+                    local_ctx
+                },
             };
-            // Setup: new xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
-                fresh_or_revoked_exec.clone(),
-                &requester,
-                trigger.maybe_xtx_id,
-            )?;
 
+            let xtx_id = local_ctx.xtx_id;
             log::debug!(
                 target: "runtime::circuit",
                 "submit_side_effects xtx state with status: {:?}",
-                local_xtx_ctx.xtx.status
+                local_ctx.xtx.status.clone()
             );
 
-            // ToDo: This should be converting the side effect from local trigger to FSE
-            let side_effects = Self::exec_in_xtx_ctx(
-                local_xtx_ctx.xtx_id,
-                local_xtx_ctx.local_state.clone(),
-                local_xtx_ctx.full_side_effects.clone(),
-                local_xtx_ctx.xtx.steps_cnt,
-            )
-            .map_err(|_e| {
-                if fresh_or_revoked_exec == CircuitStatus::Ready {
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
-                }
-                Error::<T>::ContractXtxKilledRunOutOfFunds
-            })?;
-
-            // ToDo: Align whether 3vm wants enfore side effects sequence into steps
-            let sequential = false;
-            // Validate: Side Effects
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
-
-            // Account fees and charges
-            Self::square_up(&mut local_xtx_ctx, None)?;
-
-            // Update local context
-            let status_change = Self::update(&mut local_xtx_ctx)?;
-
-            // Apply: all necessary changes to state in 1 go
-            let (_, _added_full_side_effects) = Self::apply(&mut local_xtx_ctx, status_change);
-
-            // Emit: From Circuit events
-            Self::emit_sfx(local_xtx_ctx.xtx_id, &requester, &side_effects);
+            Machine::<T>::compile(
+                &mut local_ctx,
+                |current_fsx, local_state, steps_cnt, status, _requester| {
+                    match Self::exec_in_xtx_ctx(xtx_id, local_state, current_fsx, steps_cnt) {
+                        Err(err) => {
+                            if status == CircuitStatus::Ready {
+                                return Ok(PrecompileResult::TryKill(Cause::IntentionalKill))
+                            }
+                            Err(err)
+                        },
+                        Ok(new_fsx) => Ok(PrecompileResult::TryUpdateFSX(new_fsx)),
+                    }
+                },
+                |_status_change, _local_ctx| {
+                    // Emit: From Circuit events
+                    // ToDo: impl FSX convert to SFX
+                    // Self::emit_sfx(local_ctx.xtx_id, &requester, &local_ctx.full_side_effects.into());
+                    Ok(())
+                },
+            )?;
 
             Ok(())
         }
@@ -648,27 +563,31 @@ pub mod pallet {
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
         pub fn cancel_xtx(origin: OriginFor<T>, xtx_id: T::Hash) -> DispatchResultWithPostInfo {
-            let requester = Self::authorize(origin, CircuitRole::Requester)?;
-            // Setup: new xtx context
-            let mut local_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::PendingBidding, &requester, Some(xtx_id))?;
+            let attempting_requester = Self::authorize(origin, CircuitRole::Requester)?;
 
-            if requester != local_ctx.xtx.requester
-                || local_ctx.xtx.status > CircuitStatus::PendingBidding
-            {
-                return Err(Error::<T>::UnauthorizedCancellation.into())
-            }
+            Machine::<T>::compile(
+                &mut Machine::<T>::load_xtx(xtx_id)?,
+                |current_fsx, _local_state, _steps_cnt, status, requester| {
+                    if attempting_requester != requester || status > CircuitStatus::PendingBidding {
+                        return Err(Error::<T>::UnauthorizedCancellation)
+                    }
+                    // Drop cancellation in case some bids have already been posted
+                    if current_fsx.iter().any(|fsx| fsx.best_bid.is_some()) {
+                        return Err(Error::<T>::UnauthorizedCancellation)
+                    }
+                    Ok(PrecompileResult::TryKill(Cause::IntentionalKill))
+                },
+                no_post_updates,
+            )?;
 
-            // Drop cancellation in case some bids have already been posted
-            if Self::get_current_step_fsx(&local_ctx)
-                .iter()
-                .any(|fsx| fsx.best_bid.is_some())
-            {
-                return Err(Error::<T>::UnauthorizedCancellation.into())
-            }
+            Ok(().into())
+        }
 
-            Self::kill(&mut local_ctx, CircuitStatus::DroppedAtBidding);
-
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
+        pub fn revert(origin: OriginFor<T>, xtx_id: T::Hash) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            let _success =
+                Machine::<T>::revert(xtx_id, Cause::IntentionalKill, infallible_no_post_updates);
             Ok(().into())
         }
 
@@ -676,33 +595,22 @@ pub mod pallet {
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
-            sequential: bool,
+            _sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
-            // Setup: new xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::Requested, &requester, None)?;
-
-            // Validate: Side Effects
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
-                |e| {
-                    log::error!("Self::validate hit an error -- {:?}", e);
-                    Error::<T>::SideEffectsValidationFailed
+            // Setup: new xtx context with SFX validation
+            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+            // Compile: apply the new state post squaring up and emit
+            Machine::<T>::compile(
+                &mut fresh_xtx,
+                |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
+                |_status_change, local_ctx| {
+                    // Emit: circuit events
+                    Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
+                    Ok(())
                 },
             )?;
-
-            // Account fees and charges
-            Self::square_up(&mut local_xtx_ctx, None)?;
-
-            // Update local context
-            let status_change = Self::update(&mut local_xtx_ctx)?;
-
-            // Apply: all necessary changes to state in 1 go
-            let (_, _added_full_side_effects) = Self::apply(&mut local_xtx_ctx, status_change);
-
-            // Emit: From Circuit events
-            Self::emit_sfx(local_xtx_ctx.xtx_id, &requester, &side_effects);
 
             Ok(().into())
         }
@@ -714,120 +622,33 @@ pub mod pallet {
             bid_amount: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let executor = Self::authorize(origin, CircuitRole::Executor)?;
-
+            let bidder = Self::authorize(origin, CircuitRole::Executor)?;
             // retrieve xtx_id
             let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
-            // Setup: retrieve local xtx context
-            let mut local_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::PendingBidding, &executor, Some(xtx_id))?;
-
-            // Check for the previous bids for SFX.
-            // ToDo: Consider moving to setup to keep the rule of single storage access at setup.
-            let current_accepted_bid =
-                crate::Pallet::<T>::storage_read_sfx_accepted_bid(&mut local_ctx, sfx_id);
-
-            let accepted_as_best_bid = Optimistic::<T>::try_bid_4_sfx(
-                &mut local_ctx,
-                &executor,
-                bid_amount,
-                sfx_id,
-                current_accepted_bid,
+            Machine::<T>::compile(
+                &mut Machine::<T>::load_xtx(xtx_id)?,
+                |_current_fsx, _local_state, _steps_cnt, _status, _requester| {
+                    // Check if Xtx is in the bidding state
+                    Ok(PrecompileResult::TryBid((
+                        sfx_id,
+                        bid_amount,
+                        bidder.clone(),
+                    )))
+                },
+                |_status_change, _local_ctx| {
+                    Self::deposit_event(Event::SFXNewBidReceived(
+                        sfx_id,
+                        bidder.clone(),
+                        bid_amount,
+                    ));
+                    Ok(())
+                },
             )?;
-
-            crate::Pallet::<T>::storage_write_new_sfx_accepted_bid(
-                &mut local_ctx,
-                sfx_id,
-                accepted_as_best_bid,
-            );
-
-            Self::deposit_event(Event::SFXNewBidReceived(
-                sfx_id,
-                executor.clone(),
-                bid_amount,
-            ));
 
             Ok(().into())
         }
-
-        // #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_with_xbi())]
-        // pub fn execute_side_effects_with_xbi(
-        //     origin: OriginFor<T>, // Active relayer
-        //     xtx_id: XExecSignalId<T>,
-        //     side_effect: SideEffect<
-        //         <T as frame_system::Config>::AccountId,
-        //         BalanceOf<T>,
-        //     >,
-        //     max_exec_cost: u128,
-        //     max_notifications_cost: u128,
-        // ) -> DispatchResultWithPostInfo {
-        //     let sfx_id = side_effect.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0u32);
-
-        //     if T::XBIPortal::get_status(sfx_id) != XBIStatus::UnknownId {
-        //         return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
-        //     }
-        //     // Authorize: Retrieve sender of the transaction.
-        //     let executor = Self::authorize(origin, CircuitRole::Executor)?;
-
-        //     // Setup: retrieve local xtx context
-        //     let mut local_ctx: LocalXtxCtx<T> =
-        //         Self::setup(CircuitStatus::PendingExecution, &executor, Some(xtx_id))?;
-
-        //     let xbi =
-        //         sfx_2_xbi::<T, T::Escrowed>(
-        //             &side_effect,
-        //             XBIMetadata::new_with_default_timeouts(
-        //                 XbiId::<T>::local_hash_2_xbi_id(sfx_id)?,
-        //                 T::Xdns::get_gateway_para_id(&side_effect.target)?,
-        //                 T::SelfParaId::get(),
-        //                 max_exec_cost,
-        //                 max_notifications_cost,
-        //                 Some(Sabi::account_bytes_2_account_32(executor.encode()).map_err(
-        //                     |_| Error::<T>::FailedToCreateXBIMetadataDueToWrongAccountConversion,
-        //                 )?),
-        //             ),
-        //         )
-        //         .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
-
-        //     // Use encoded XBI hash as ID for the executor's charge
-        //     let charge_id = T::Hashing::hash(&xbi.encode()[..]);
-        //     let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
-
-        //     // fixme: must be solved with charging and update status order if XBI is the first SFX
-        //     if local_ctx.xtx.status == CircuitStatus::Ready {
-        //         local_ctx.xtx.status = CircuitStatus::PendingExecution;
-        //     }
-
-        //     Self::square_up(
-        //         &mut local_ctx,
-        //         Some((charge_id, executor, total_max_rewards)),
-        //     )?;
-
-        //     T::XBIPromise::then(
-        //         xbi,
-        //         pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
-        //     )?;
-
-        //     let status_change = Self::update(&mut local_ctx)?;
-
-        //     Self::apply(&mut local_ctx, status_change);
-
-        //     Ok(().into())
-        // }
-
-        // #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
-        // pub fn on_xbi_sfx_resolved(
-        //     _origin: OriginFor<T>,
-        //     sfx_id: T::Hash,
-        // ) -> DispatchResultWithPostInfo {
-        //     Self::do_xbi_exit(
-        //         T::XBIPortal::get_check_in(sfx_id)?,
-        //         T::XBIPortal::get_check_out(sfx_id)?,
-        //     )?;
-        //     Ok(().into())
-        // }
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
@@ -841,34 +662,37 @@ pub mod pallet {
             >,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let executor = Self::authorize(origin, CircuitRole::Executor)?;
+            let _executor = Self::authorize(origin, CircuitRole::Executor)?;
             let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
-            // Setup: retrieve local xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::PendingExecution, &executor, Some(xtx_id))?;
-
-            Self::confirm(&mut local_xtx_ctx, &executor, &sfx_id, &confirmation)?;
-
-            let status_change = Self::update(&mut local_xtx_ctx)?;
-
-            // Apply: all necessary changes to state in 1 go
-            let (maybe_xtx_changed, assert_full_side_effects_changed) =
-                Self::apply(&mut local_xtx_ctx, status_change);
-
-            Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
-
-            // Emit: From Circuit events
-            Self::emit_status_update(
-                local_xtx_ctx.xtx_id,
-                maybe_xtx_changed,
-                assert_full_side_effects_changed,
-            );
+            Machine::<T>::compile(
+                &mut Machine::<T>::load_xtx(xtx_id)?,
+                |current_fsx, local_state, _steps_cnt, __status, _requester| {
+                    Self::confirm(xtx_id, current_fsx, &local_state, &sfx_id, &confirmation)
+                        .map_err(|e| {
+                            log::error!("Self::confirm hit an error -- {:?}", e);
+                            Error::<T>::ConfirmationFailed
+                        })?;
+                    Ok(PrecompileResult::TryUpdateFSX(current_fsx.clone()))
+                },
+                |_status_change, local_ctx| {
+                    Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
+                    // Emit: From Circuit events
+                    Self::emit_status_update(
+                        local_ctx.xtx_id,
+                        Some(local_ctx.xtx.clone()),
+                        Some(local_ctx.full_side_effects.clone()),
+                    );
+                    Ok(())
+                },
+            )?;
 
             Ok(().into())
         }
     }
+
+    use crate::machine::{no_mangle, Machine};
 
     /// Events for the pallet.
     #[pallet::event]
@@ -963,8 +787,14 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        UpdateAttemptDoubleRevert,
+        UpdateAttemptDoubleKill,
+        UpdateStateTransitionDisallowed,
+        UpdateForcedStateTransitionDisallowed,
         UpdateXtxTriggeredWithUnexpectedStatus,
+        ConfirmationFailed,
         ApplyTriggeredWithUnexpectedStatus,
+        BidderNotEnoughBalance,
         RequesterNotEnoughBalance,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
@@ -979,11 +809,16 @@ pub mod pallet {
         InsuranceBondNotRequired,
         BiddingInactive,
         BiddingRejectedBidBelowDust,
-        BiddingRejectedExecutorNotEnoughBalance,
         BiddingRejectedBidTooHigh,
+        BiddingRejectedInsuranceTooLow,
         BiddingRejectedBetterBidFound,
+        BiddingRejectedFailedToDepositBidderBond,
         BiddingFailedExecutorsBalanceTooLowToReserve,
         InsuranceBondAlreadyDeposited,
+        InvalidFTXStateEmptyBidForReadyXtx,
+        InvalidFTXStateEmptyConfirmationForFinishedXtx,
+        InvalidFTXStateUnassignedExecutorForReadySFX,
+        InvalidFTXStateIncorrectExecutorForReadySFX,
         SetupFailed,
         SetupFailedXtxNotFound,
         SetupFailedXtxStorageArtifactsNotFound,
@@ -994,7 +829,7 @@ pub mod pallet {
         SetupFailedXtxWasDroppedAtBidding,
         SetupFailedXtxReverted,
         SetupFailedXtxRevertedTimeout,
-        SetupFailedUnknownXtx,
+        XtxDoesNotExist,
         InvalidFSXBidStateLocated,
         EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished,
         FatalXtxTimeoutXtxIdNotMatched,
@@ -1006,8 +841,10 @@ pub mod pallet {
         ApplyFailed,
         DeterminedForbiddenXtxStatus,
         SideEffectIsAlreadyScheduledToExecuteOverXBI,
+        FSXNotFoundById,
         LocalSideEffectExecutionNotApplicable,
         LocalExecutionUnauthorized,
+        OnLocalTriggerFailedToSetupXtx,
         UnauthorizedCancellation,
         FailedToConvertSFX2XBI,
         FailedToCheckInOverXBI,
@@ -1042,322 +879,6 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
-    fn setup(
-        current_status: CircuitStatus,
-        requester: &T::AccountId,
-        xtx_id: Option<XExecSignalId<T>>,
-    ) -> Result<LocalXtxCtx<T>, Error<T>> {
-        match current_status {
-            CircuitStatus::Requested => {
-                if let Some(id) = xtx_id {
-                    if <Self as Store>::XExecSignals::contains_key(id) {
-                        return Err(Error::<T>::SetupFailedDuplicatedXtx)
-                    }
-                }
-                // ToDo: Introduce default delay
-                let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) =
-                    if let Some(v) = T::XtxTimeoutDefault::get()
-                        .checked_add(&frame_system::Pallet::<T>::block_number())
-                    {
-                        (v, None)
-                    } else {
-                        return Err(Error::<T>::ArithmeticErrorOverflow)
-                    };
-
-                let (x_exec_signal_id, x_exec_signal) =
-                    XExecSignal::<T::AccountId, T::BlockNumber>::setup_fresh::<T>(
-                        requester,
-                        timeouts_at,
-                        delay_steps_at,
-                    );
-
-                Ok(LocalXtxCtx {
-                    local_state: LocalState::new(),
-                    use_protocol: UniversalSideEffectsProtocol::new(),
-                    xtx_id: x_exec_signal_id,
-                    xtx: x_exec_signal,
-                    full_side_effects: vec![],
-                })
-            },
-            CircuitStatus::Ready
-            | CircuitStatus::PendingExecution
-            | CircuitStatus::PendingBidding
-            | CircuitStatus::Finished => {
-                if let Some(id) = xtx_id {
-                    let xtx = <Self as Store>::XExecSignals::get(id)
-                        .ok_or(Error::<T>::SetupFailedUnknownXtx)?;
-                    // Make sure in case of commit_relay to only check finished Xtx
-                    if current_status == CircuitStatus::Finished
-                        && xtx.status < CircuitStatus::Finished
-                    {
-                        log::debug!(
-                            "Incorrect status current_status: {:?} xtx_status {:?}",
-                            current_status,
-                            xtx.status
-                        );
-                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
-                    }
-
-                    let full_side_effects = <Self as Store>::FullSideEffects::get(id)
-                        .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
-                    let local_state = <Self as Store>::LocalXtxStates::get(id)
-                        .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
-
-                    Ok(LocalXtxCtx {
-                        local_state,
-                        use_protocol: UniversalSideEffectsProtocol::new(),
-                        xtx_id: id,
-                        xtx,
-                        full_side_effects,
-                    })
-                } else {
-                    Err(Error::<T>::SetupFailedEmptyXtx)
-                }
-            },
-            CircuitStatus::FinishedAllSteps => Err(Error::<T>::SetupFailedXtxAlreadyFinished),
-            CircuitStatus::RevertKill => Err(Error::<T>::SetupFailedXtxRevertedTimeout),
-            CircuitStatus::RevertMisbehaviour => Err(Error::<T>::SetupFailedXtxReverted),
-            CircuitStatus::Committed => Err(Error::<T>::SetupFailedXtxAlreadyFinished),
-            CircuitStatus::Reverted => Err(Error::<T>::SetupFailedXtxReverted),
-            CircuitStatus::RevertTimedOut => Err(Error::<T>::SetupFailedXtxRevertedTimeout),
-            CircuitStatus::DroppedAtBidding => Err(Error::<T>::SetupFailedXtxWasDroppedAtBidding),
-        }
-    }
-
-    // Updates local xtx context without touching the storage.
-    fn update(
-        mut local_ctx: &mut LocalXtxCtx<T>,
-    ) -> Result<(CircuitStatus, CircuitStatus), Error<T>> {
-        let current_status = local_ctx.xtx.status.clone();
-
-        // Apply will try to move the status of Xtx from the current to the closest valid one.
-        match current_status {
-            CircuitStatus::Requested => {
-                local_ctx.xtx.steps_cnt = (0, local_ctx.full_side_effects.len() as u32);
-            },
-            CircuitStatus::RevertTimedOut => {},
-            CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
-                // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
-                if !Self::get_current_step_fsx(local_ctx)
-                    .iter()
-                    .any(|fsx| fsx.confirmed.is_none())
-                {
-                    local_ctx.xtx.steps_cnt =
-                        if let Some(v) = local_ctx.xtx.steps_cnt.0.checked_add(1) {
-                            (v, local_ctx.xtx.steps_cnt.1)
-                        } else {
-                            return Err(Error::<T>::ArithmeticErrorOverflow)
-                        };
-
-                    local_ctx.xtx.status = CircuitStatus::Finished;
-
-                    // All of the steps are completed - the xtx has been finalized
-                    if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
-                        local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
-                        return Ok((current_status, CircuitStatus::FinishedAllSteps))
-                    }
-                }
-            },
-            _ => {},
-        }
-
-        let new_status = CircuitStatus::determine_xtx_status(&local_ctx.full_side_effects)?;
-        local_ctx.xtx.status = new_status.clone();
-
-        Ok((current_status, new_status))
-    }
-
-    /// Returns: Returns changes written to the state if there are any.
-    ///     For now only returns Xtx and FullSideEffects that changed.
-    fn apply(
-        local_ctx: &mut LocalXtxCtx<T>,
-        status_change: (CircuitStatus, CircuitStatus),
-    ) -> (
-        Option<XExecSignal<T::AccountId, T::BlockNumber>>,
-        Option<Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>>,
-    ) {
-        // let current_status = local_ctx.xtx.status.clone();
-        let (old_status, new_status) = (status_change.0, status_change.1);
-
-        match old_status {
-            CircuitStatus::Requested => {
-                // Iterate over full side effects to detect ones to execute locally.
-                fn is_local<T: Config>(gateway_id: &[u8; 4]) -> bool {
-                    if *gateway_id == T::SelfGatewayId::get() {
-                        return true
-                    }
-                    let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(gateway_id);
-                    gateway_type == GatewayType::ProgrammableInternal(0)
-                }
-
-                let steps_side_effects_ids: Vec<(
-                    usize,
-                    SideEffectId<T>,
-                    XExecStepSideEffectId<T>,
-                )> = local_ctx
-                    .full_side_effects
-                    .clone()
-                    .iter()
-                    .enumerate()
-                    .flat_map(|(cnt, fsx_step)| {
-                        fsx_step
-                            .iter()
-                            .map(|full_side_effect| {
-                                full_side_effect
-                                    .generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
-                            })
-                            .map(|side_effect_hash| {
-                                (
-                                    cnt,
-                                    side_effect_hash,
-                                    XExecSignal::<T::AccountId, T::BlockNumber>::generate_step_id::<
-                                        T,
-                                    >(local_ctx.xtx_id, cnt),
-                                )
-                            })
-                            .collect::<Vec<(usize, SideEffectId<T>, XExecStepSideEffectId<T>)>>()
-                    })
-                    .collect();
-
-                <FullSideEffects<T>>::insert::<
-                    XExecSignalId<T>,
-                    Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
-                >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
-
-                for (_step_cnt, side_effect_id, _step_side_effect_id) in steps_side_effects_ids {
-                    <SFX2XTXLinksMap<T>>::insert::<SideEffectId<T>, XExecSignalId<T>>(
-                        side_effect_id,
-                        local_ctx.xtx_id,
-                    );
-                }
-
-                <LocalXtxStates<T>>::insert::<XExecSignalId<T>, LocalState>(
-                    local_ctx.xtx_id,
-                    local_ctx.local_state.clone(),
-                );
-                <PendingXtxTimeoutsMap<T>>::insert::<XExecSignalId<T>, T::BlockNumber>(
-                    local_ctx.xtx_id,
-                    local_ctx.xtx.timeouts_at,
-                );
-                // TODO: return an error if checked_add fails
-                if let Some(v) = T::SFXBiddingPeriod::get()
-                    .checked_add(&frame_system::Pallet::<T>::block_number())
-                {
-                    <PendingXtxBidsTimeoutsMap<T>>::insert::<XExecSignalId<T>, T::BlockNumber>(
-                        local_ctx.xtx_id,
-                        v,
-                    )
-                } else {
-                    log::error!("Could not get `SFX bidding period` plus `block number`.");
-                };
-                <XExecSignals<T>>::insert::<
-                    XExecSignalId<T>,
-                    XExecSignal<T::AccountId, T::BlockNumber>,
-                >(local_ctx.xtx_id, local_ctx.xtx.clone());
-
-                (
-                    Some(local_ctx.xtx.clone()),
-                    Some(local_ctx.full_side_effects.to_vec()),
-                )
-            },
-            CircuitStatus::PendingBidding => {
-                match new_status {
-                    CircuitStatus::Ready => {
-                        <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.full_side_effects.clone())
-                        });
-                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.xtx.clone())
-                        });
-                    },
-                    CircuitStatus::DroppedAtBidding => {
-                        // Clean all associated Xtx entries
-                        <Self as Store>::XExecSignals::remove(local_ctx.xtx_id);
-                        <Self as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
-                        <Self as Store>::LocalXtxStates::remove(local_ctx.xtx_id);
-                        <Self as Store>::FullSideEffects::remove(local_ctx.xtx_id);
-                        for fsx_step in &local_ctx.full_side_effects {
-                            for fsx in fsx_step {
-                                <Self as Store>::SFX2XTXLinksMap::remove(
-                                    fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
-                                );
-                            }
-                        }
-                    },
-                    _ => {},
-                }
-                // Always clean temporary PendingSFXBids and TimeoutsMap after bidding
-                <Self as Store>::PendingSFXBids::remove_prefix(local_ctx.xtx_id, None);
-                <Self as Store>::PendingXtxBidsTimeoutsMap::remove(local_ctx.xtx_id);
-                (
-                    Some(local_ctx.xtx.clone()),
-                    Some(local_ctx.full_side_effects.to_vec()),
-                )
-            },
-            CircuitStatus::RevertTimedOut => {
-                <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.xtx.clone())
-                });
-
-                <Self as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
-                (
-                    Some(local_ctx.xtx.clone()),
-                    Some(local_ctx.full_side_effects.clone()),
-                )
-            },
-            // fixme: Separate for Bonded
-            CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
-                match new_status {
-                    CircuitStatus::FinishedAllSteps => {
-                        // todo: cleanup all of the local storage
-                        // TODO cleanup sfx2xtx map
-                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.xtx.clone())
-                        });
-
-                        <Self as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
-                        (
-                            Some(local_ctx.xtx.clone()),
-                            Some(local_ctx.full_side_effects.clone()),
-                        )
-                    },
-                    _ => {
-                        // Update set of full side effects assuming the new confirmed has appeared
-                        <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.full_side_effects.clone())
-                        });
-
-                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.xtx.clone())
-                        });
-                        if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
-                            (
-                                Some(local_ctx.xtx.clone()),
-                                Some(local_ctx.full_side_effects.clone()),
-                            )
-                        } else {
-                            (None, Some(local_ctx.full_side_effects.to_vec()))
-                        }
-                    },
-                }
-            },
-            CircuitStatus::FinishedAllSteps => {
-                // todo: cleanup all of the local storage
-                // TODO cleanup sfx2xtx map
-                <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                    *x = Some(local_ctx.xtx.clone())
-                });
-
-                <Self as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
-                (
-                    Some(local_ctx.xtx.clone()),
-                    Some(local_ctx.full_side_effects.clone()),
-                )
-            },
-            _ => (None, None),
-        }
-    }
-
     fn emit_sfx(
         xtx_id: XExecSignalId<T>,
         subjected_account: &T::AccountId,
@@ -1399,9 +920,9 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionStepFinishedExec(xtx_id)),
                 CircuitStatus::FinishedAllSteps =>
                     Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
-                CircuitStatus::RevertTimedOut =>
+                CircuitStatus::Reverted(ref _cause) =>
                     Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id)),
-                CircuitStatus::DroppedAtBidding =>
+                CircuitStatus::Killed(ref _cause) =>
                     Self::deposit_event(Event::XTransactionXtxDroppedAtBidding(xtx_id)),
                 _ => {},
             }
@@ -1411,162 +932,6 @@ impl<T: Config> Pallet<T> {
                 }
             }
         }
-    }
-
-    fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
-        local_ctx.xtx.status = cause.clone();
-
-        match cause {
-            CircuitStatus::RevertTimedOut => {
-                if let Err(err) = Optimistic::<T>::try_slash(local_ctx) {
-                    log::error!(target: "circuit", "Failed to slash {:?} for xtx {:?}", err, local_ctx.xtx_id);
-                }
-            },
-            CircuitStatus::DroppedAtBidding => {
-                Optimistic::<T>::try_dropped_at_bidding_refund(local_ctx);
-            },
-            _ => {},
-        }
-
-        Self::square_up(local_ctx, None)
-            .expect("Expect Revert and RevertKill options to square up to be infallible");
-
-        Self::apply(local_ctx, (cause.clone(), cause));
-    }
-
-    fn square_up(
-        local_ctx: &mut LocalXtxCtx<T>,
-        maybe_xbi_execution_charge: Option<(
-            T::Hash,
-            <T as frame_system::Config>::AccountId,
-            BalanceOf<T>,
-        )>,
-    ) -> Result<(), Error<T>> {
-        let requester = local_ctx.xtx.requester.clone();
-
-        let unreserve_requester_xtx_max_rewards = |current_step_fsx: &Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-        >| {
-            for fsx in current_step_fsx.iter() {
-                <T as Config>::AccountManager::deposit_immediately(
-                    &requester,
-                    fsx.input.max_reward,
-                    fsx.input.reward_asset_id,
-                )
-            }
-        };
-        match local_ctx.xtx.status {
-            CircuitStatus::Requested => {
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    if !<T as Config>::AccountManager::can_withdraw(
-                        &requester,
-                        fsx.input.max_reward,
-                        fsx.input.reward_asset_id,
-                    ) {
-                        return Err(Error::<T>::XtxChargeFailedRequesterBalanceTooLow)
-                    }
-                }
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    <T as Config>::AccountManager::withdraw_immediately(
-                        &requester,
-                        fsx.input.max_reward,
-                        fsx.input.reward_asset_id,
-                    )
-                    .expect("Ensured can withdraw in can_withdraw loop over FSX")
-                }
-            },
-            CircuitStatus::DroppedAtBidding => {
-                unreserve_requester_xtx_max_rewards(Self::get_current_step_fsx(local_ctx));
-            },
-            CircuitStatus::Ready => {
-                let current_step_sfx = Self::get_current_step_fsx(local_ctx);
-                // Unreserve the max_rewards and replace with possibly lower bids of executor in following loop
-                unreserve_requester_xtx_max_rewards(current_step_sfx);
-                for fsx in current_step_sfx.iter() {
-                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    let bid_4_fsx: &SFXBid<T::AccountId, BalanceOf<T>, u32> =
-                        if let Some(bid) = &fsx.best_bid {
-                            bid
-                        } else {
-                            return Err(Error::<T>::XtxChargeBondDepositFailedCantAccessBid)
-                        };
-
-                    if bid_4_fsx.bid > Zero::zero() {
-                        <T as Config>::AccountManager::deposit(
-                            charge_id,
-                            &requester,
-                            Zero::zero(),
-                            bid_4_fsx.bid,
-                            BenefitSource::TrafficRewards,
-                            CircuitRole::Requester,
-                            Some(bid_4_fsx.executor.clone()),
-                            fsx.input.reward_asset_id,
-                        )
-                        .map_err(|_e| Error::<T>::ChargingTransferFailed)?;
-                    }
-                }
-            },
-            CircuitStatus::PendingExecution => {
-                let (charge_id, executor_payee, charge_fee) =
-                    maybe_xbi_execution_charge.ok_or(Error::<T>::ChargingTransferFailed)?;
-
-                <T as Config>::AccountManager::deposit(
-                    charge_id,
-                    &executor_payee,
-                    charge_fee,
-                    Zero::zero(),
-                    BenefitSource::TrafficFees,
-                    CircuitRole::Executor,
-                    None,
-                    None,
-                )
-                .map_err(|_e| Error::<T>::ChargingTransferFailedAtPendingExecution)?;
-            },
-            // todo: make sure callable once
-            // todo: distinct between RevertTimedOut to iterate over all steps vs single step for Revert
-            CircuitStatus::RevertTimedOut
-            | CircuitStatus::Reverted
-            | CircuitStatus::RevertMisbehaviour => {
-                if let Err(e) = Optimistic::<T>::try_slash(local_ctx) {
-                    log::error!(target: "circuit", "Failed to slash XTX: {:?}, {:?}", local_ctx.xtx_id, e);
-                }
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    <T as Config>::AccountManager::finalize_infallible(
-                        charge_id,
-                        Outcome::Revert,
-                        None,
-                        None,
-                    );
-                }
-            },
-            CircuitStatus::Finished | CircuitStatus::FinishedAllSteps => {
-                Optimistic::<T>::try_unbond(local_ctx)?;
-                for fsx in Self::get_current_step_fsx(local_ctx).iter() {
-                    let charge_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
-                    let confirmed = if let Some(confirmed) = &fsx.confirmed {
-                        Ok(confirmed)
-                    } else {
-                        Err(Error::<T>::CriticalStateSquareUpCalledToFinishWithoutFsxConfirmed)
-                    }?;
-                    // todo: Verify that cost can be repatriated on this occation and whether XBI Exec resoliution is expected for particular FSX
-                    <T as Config>::AccountManager::finalize(
-                        charge_id,
-                        Outcome::Commit,
-                        Some(confirmed.executioner.clone()),
-                        confirmed.cost,
-                    )
-                    .map_err(|_e| Error::<T>::FinalizeSquareUpFailed)?;
-                }
-            },
-            _ => {},
-        }
-
-        Ok(())
     }
 
     fn authorize(
@@ -1587,8 +952,6 @@ impl<T: Config> Pallet<T> {
     fn validate(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T>,
-        _requester: &T::AccountId,
-        _sequential: bool,
     ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
             vec![];
@@ -1708,8 +1071,15 @@ impl<T: Config> Pallet<T> {
     }
 
     fn confirm(
-        local_ctx: &mut LocalXtxCtx<T>,
-        _relayer: &T::AccountId,
+        xtx_id: XExecSignalId<T>,
+        step_side_effects: &mut Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
+        >,
+        local_state: &LocalState,
         sfx_id: &SideEffectId<T>,
         confirmation: &ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -1765,12 +1135,7 @@ impl<T: Config> Pallet<T> {
         }
 
         // confirm order of current season, by passing the side_effects of it to confirm order.
-        let fsx = confirm_order::<T>(
-            local_ctx.xtx_id,
-            *sfx_id,
-            confirmation,
-            &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
-        )?;
+        let fsx = confirm_order::<T>(xtx_id, *sfx_id, confirmation, step_side_effects)?;
 
         log::debug!("Order confirmed!");
 
@@ -1798,7 +1163,7 @@ impl<T: Config> Pallet<T> {
             &Box::new(side_effect_interface.unwrap()),
             params,
             source,
-            &local_ctx.local_state,
+            local_state,
             Some(sfx_id.as_ref().to_vec()),
             fsx.security_lvl,
             <T as Config>::Xdns::get_gateway_security_coordinates(&fsx.input.target)?,
@@ -1813,15 +1178,39 @@ impl<T: Config> Pallet<T> {
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
         _local_state: LocalState,
-        _full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+        _full_side_effects: &mut Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         _steps_cnt: (u32, u32),
-    ) -> Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, &'static str> {
+    ) -> Result<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>, Error<T>> {
         Ok(vec![])
     }
 
     /// The account ID of the Circuit Vault.
     pub fn account_id() -> T::AccountId {
         <T as Config>::SelfAccountId::get()
+    }
+
+    /// Get pending Bids for SFX - Pending meaning that the SFX is still In Bidding
+    pub fn get_pending_sfx_bids(
+        xtx_id: XExecSignalId<T>,
+        sfx_id: SideEffectId<T>,
+    ) -> Result<Option<SFXBid<T::AccountId, BalanceOf<T>, u32>>, Error<T>> {
+        let local_ctx = Machine::<T>::load_xtx(xtx_id)?;
+        let current_step_fsx = Machine::<T>::read_current_step_fsx(&local_ctx);
+        let fsx = current_step_fsx
+            .iter()
+            .find(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
+            .ok_or(Error::<T>::FSXNotFoundById)?;
+
+        match &fsx.best_bid {
+            Some(bid) => match &fsx.input.enforce_executor {
+                // Bid posted for this SFX has already been accepted, therefore Bid isn't pending.
+                Some(_executor) => Ok(None),
+                // Bid has been posted for this SFX but not yet accepted, therefore pending.
+                None => Ok(Some(bid.clone())),
+            },
+            // No bids posted for this SFX
+            None => Ok(None),
+        }
     }
 
     pub fn convert_side_effects(
@@ -1855,39 +1244,28 @@ impl<T: Config> Pallet<T> {
             log::error!("Division error on signal queue depth (`SignalQueueDepth::get()`).");
             T::SignalQueueDepth::get()
         };
-        let mut processed_weight = 0_u64;
+        let mut processed_weight = 0 as Weight;
 
         while !queue.is_empty() && remaining_key_budget > 0 {
             // Cannot panic due to loop condition
-            let (requester, signal) = &mut queue[0];
-
-            let intended_status = match signal.kind {
-                SignalKind::Complete => CircuitStatus::Finished, // Fails bc no executor tried to execute, maybe a new enum?
-                SignalKind::Kill(_) => CircuitStatus::RevertKill,
-            };
+            let (_requester, signal) = &mut queue[0];
 
             // worst case 4 from setup
-            if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as u64) {
+            if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as Weight) {
                 processed_weight = v
             }
-            match Self::setup(CircuitStatus::Ready, requester, Some(signal.execution_id)) {
-                Ok(mut local_xtx_ctx) => {
-                    Self::kill(&mut local_xtx_ctx, intended_status);
-
-                    queue.swap_remove(0);
-
-                    if let Some(v) = remaining_key_budget.checked_sub(1) {
-                        remaining_key_budget = v
-                    } else {
-                        log::error!("Could not compute remaining key budget")
-                    }
-                    if let Some(v) = processed_weight
-                        .checked_add(db_weight.reads_writes(2 as Weight, 1 as Weight))
-                    {
-                        processed_weight = v
-                    } else {
-                        log::error!("Could not compute processed weight")
-                    }
+            match Machine::<T>::load_xtx(signal.execution_id) {
+                Ok(local_ctx) => {
+                    let _success: bool = Machine::<T>::kill(
+                        local_ctx.xtx_id,
+                        Cause::IntentionalKill,
+                        |_status_change, _local_ctx| {
+                            queue.swap_remove(0);
+                            remaining_key_budget -= 1;
+                            // apply has 2
+                            processed_weight += db_weight.reads_writes(2 as Weight, 1 as Weight);
+                        },
+                    );
                 },
                 Err(_err) => {
                     log::error!("Could not handle signal");
@@ -1910,243 +1288,11 @@ impl<T: Config> Pallet<T> {
         processed_weight
     }
 
-    pub(self) fn get_current_step_fsx(
-        local_ctx: &LocalXtxCtx<T>,
-    ) -> &Vec<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-    > {
-        let current_step = local_ctx.xtx.steps_cnt.0;
-        &local_ctx.full_side_effects[current_step as usize]
-    }
-
-    pub(self) fn get_current_step_fsx_by_security_lvl(
-        local_ctx: &mut LocalXtxCtx<T>,
-        security_lvl: SecurityLvl,
-    ) -> Vec<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-    > {
-        let current_step = local_ctx.xtx.steps_cnt.0;
-        local_ctx.full_side_effects[current_step as usize]
-            .iter()
-            .filter(|&fsx| fsx.security_lvl == security_lvl)
-            .cloned()
-            .collect()
-    }
-
-    pub(self) fn storage_write_new_sfx_accepted_bid(
-        local_ctx: &mut LocalXtxCtx<T>,
-        sfx_id: SideEffectId<T>,
-        sfx_bid: SFXBid<<T as frame_system::Config>::AccountId, BalanceOf<T>, u32>,
-    ) {
-        <PendingSFXBids<T>>::insert(local_ctx.xtx_id, sfx_id, sfx_bid)
-    }
-
-    pub(self) fn storage_read_sfx_accepted_bid(
-        local_ctx: &mut LocalXtxCtx<T>,
-        sfx_id: SideEffectId<T>,
-    ) -> Option<SFXBid<<T as frame_system::Config>::AccountId, BalanceOf<T>, u32>> {
-        // fixme: This accesses storage and therefor breaks the rule of a single-storage access at setup.
-        <PendingSFXBids<T>>::get(local_ctx.xtx_id, sfx_id)
-    }
-
-    pub(self) fn get_fsx_total_rewards(
-        fsxs: &[FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >],
-    ) -> BalanceOf<T> {
-        let mut acc_rewards: BalanceOf<T> = Zero::zero();
-
-        for fsx in fsxs {
-            if let Some(v) = acc_rewards.checked_add(&fsx.get_bond_value(fsx.input.max_reward)) {
-                acc_rewards = v
-            } // cannot return an error, signature is Weight
-        }
-
-        acc_rewards
-    }
-
-    pub(self) fn recover_fsx_by_id(
-        sfx_id: SideEffectId<T>,
-        local_ctx: &LocalXtxCtx<T>,
-    ) -> Result<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-        Error<T>,
-    > {
-        let current_step = local_ctx.xtx.steps_cnt.0;
-        let maybe_fsx = local_ctx.full_side_effects[current_step as usize]
-            .iter()
-            .filter(|&fsx| fsx.confirmed.is_none())
-            .find(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id) == sfx_id);
-
-        if let Some(fsx) = maybe_fsx {
-            Ok(fsx.clone())
-        } else {
-            Err(Error::<T>::LocalSideEffectExecutionNotApplicable)
-        }
-    }
-
-    pub(self) fn recover_local_ctx_by_sfx_id(
+    pub fn recover_local_ctx_by_sfx_id(
         sfx_id: SideEffectId<T>,
     ) -> Result<LocalXtxCtx<T>, Error<T>> {
         let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
             .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
-        Self::setup(
-            CircuitStatus::PendingExecution,
-            &Self::account_id(),
-            Some(xtx_id),
-        )
-        // todo: ensure recovered via XBIPromise are Local (Type::Internal)
+        Machine::<T>::load_xtx(xtx_id)
     }
-
-    // pub fn do_xbi_exit(
-    //     xbi_checkin: XbiCheckIn<T::BlockNumber>,
-    //     _xbi_checkout: XbiCheckOut,
-    // ) -> Result<(), Error<T>> {
-    //     // Recover SFX ID from XBI Metadata
-    //     let sfx_id: SideEffectId<T> =
-    //         Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
-    //             .expect("XBI metadata id conversion should always decode to Sfx ID");
-
-    //     let mut local_xtx_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
-
-    //     let fsx = Self::recover_fsx_by_id(sfx_id, &local_xtx_ctx)?;
-
-    //     // todo#2: local fail Xtx if xbi_checkout::result errored
-
-    //     let escrow_source = Self::account_id();
-    //     let executor = if let Some(ref known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
-    //         known_origin.clone()
-    //     } else {
-    //         return Err(Error::<T>::FailedToExitXBIPortal)
-    //     };
-    //     let executor_decoded = Decode::decode(&mut &executor.encode()[..])
-    //         .expect("XBI metadata executor conversion should always decode to local Account ID");
-
-    //     let xbi_exit_event = match xbi_checkin.clone().xbi.instr {
-    //         XbiInstruction::CallNative { payload } =>
-    //             Ok(Event::<T>::CallNative(escrow_source, payload)),
-    //         XbiInstruction::CallEvm {
-    //             source,
-    //             target,
-    //             value,
-    //             input,
-    //             gas_limit,
-    //             max_fee_per_gas,
-    //             max_priority_fee_per_gas,
-    //             nonce,
-    //             access_list,
-    //         } => Ok(Event::<T>::CallEvm(
-    //             escrow_source,
-    //             source,
-    //             target,
-    //             value,
-    //             input,
-    //             gas_limit,
-    //             max_fee_per_gas,
-    //             max_priority_fee_per_gas,
-    //             nonce,
-    //             access_list,
-    //         )),
-    //         XbiInstruction::CallWasm {
-    //             dest,
-    //             value,
-    //             gas_limit,
-    //             storage_deposit_limit,
-    //             data,
-    //         } => Ok(Event::<T>::CallWasm(
-    //             escrow_source,
-    //             dest,
-    //             value,
-    //             gas_limit,
-    //             storage_deposit_limit,
-    //             data,
-    //         )),
-    //         XbiInstruction::CallCustom {
-    //             caller,
-    //             dest,
-    //             value,
-    //             input,
-    //             limit,
-    //             additional_params,
-    //         } => Ok(Event::<T>::CallCustom(
-    //             escrow_source,
-    //             caller,
-    //             dest,
-    //             value,
-    //             input,
-    //             limit,
-    //             additional_params,
-    //         )),
-    //         XbiInstruction::Transfer { dest, value } =>
-    //             Ok(Event::<T>::Transfer(escrow_source, executor, dest, value)),
-    //         XbiInstruction::TransferAssets {
-    //             currency_id,
-    //             dest,
-    //             value,
-    //         } => Ok(Event::<T>::TransferAssets(
-    //             escrow_source,
-    //             currency_id,
-    //             executor,
-    //             dest,
-    //             value,
-    //         )),
-    //         XbiInstruction::Result(XbiResult {
-    //             output,
-    //             witness,
-    //             id,
-    //             status,
-    //         }) => Ok(Event::<T>::Result(
-    //             escrow_source,
-    //             executor,
-    //             outcome,
-    //             output,
-    //             witness,
-    //         )),
-    //         XbiInstruction::Notification {
-    //             kind,
-    //             instruction_id,
-    //             extra,
-    //         } => Ok(Event::<T>::Notification(
-    //             escrow_source,
-    //             executor,
-    //             kind,
-    //             instruction_id,
-    //             extra,
-    //         )),
-    //         _ => Err(Error::<T>::FailedToExitXBIPortal),
-    //     }?;
-
-    //     Self::deposit_event(xbi_exit_event.clone());
-
-    //     let confirmation = xbi_result_2_sfx_confirmation::<T, T::Escrowed>(
-    //         xbi_checkin.xbi,
-    //         xbi_exit_event.encode(),
-    //         executor_decoded,
-    //     )
-    //     .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
-
-    //     let sfx_id = &fsx.generate_id::<SystemHashing<T>, T>(local_xtx_ctx.xtx_id);
-    //     Self::confirm(
-    //         &mut local_xtx_ctx,
-    //         &Self::account_id(),
-    //         sfx_id,
-    //         &confirmation,
-    //     )
-    //     .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
-    //     Ok(())
-    // }
 }

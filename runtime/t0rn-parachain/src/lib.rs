@@ -17,7 +17,6 @@ pub mod xbi_config;
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
 
-use codec::Decode;
 use frame_system::EnsureRoot;
 use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
@@ -44,7 +43,6 @@ use frame_support::{
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
-    PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;

@@ -244,7 +244,7 @@ parameter_types! {
     pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
     pub const MaxApprovals: u32 = 100;
     pub const ProposalBond: Permill = Permill::from_percent(3);
-    pub const SpendPeriod: u32 = ((60 * 60 * 24) / 12) * 1;
+    pub const SpendPeriod: u32 = (60 * 60 * 24) / 12;
     pub const ProposalBondMinimum: u128 = 10_u128 * 1_000_000_000_000_u128;
 }
 

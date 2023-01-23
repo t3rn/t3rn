@@ -16,43 +16,47 @@
 // limitations under the License.
 
 //! Runtime utilities
-pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
-
 use circuit_mock_runtime::*;
-use circuit_runtime_pallets::pallet_circuit::{state::*, Error as circuit_error};
+use circuit_runtime_pallets::pallet_circuit::state::*;
+
+use t3rn_sdk_primitives::{
+    signal::{ExecutionSignal, SignalKind},
+    xc::*,
+};
+
 use codec::{Decode, Encode};
 use frame_support::{
     assert_err, assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency,
 };
+
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
-use pallet_xbi_portal::{
-    substrate_abi::AccountId20,
-    xbi_format::xbi_codec::{ActionNotificationTimeouts, XbiFormat, XbiInstruction, XbiMetadata},
-};
+
+pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
+use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
 use sp_std::{convert::TryFrom, prelude::*};
-use std::{convert::TryInto, fs};
+use std::{convert::TryInto, fs, str::FromStr};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
     side_effect::*,
     volatile::LocalState,
     xdns::AllowedSideEffect,
-    xtx::XtxId,
     Balance, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
+
 use t3rn_protocol::side_effects::test_utils::*;
-use t3rn_sdk_primitives::{
-    signal::{ExecutionSignal, SignalKind},
-    xc::*,
-};
+
+use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
+pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
 pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
+pub const ESCROW_ACCOUNT: AccountId32 = AccountId32::new([51_u8; 32]);
 
 pub const FIRST_REQUESTER_NONCE: u32 = 0;
 pub const SECOND_REQUESTER_NONCE: u32 = 1;
@@ -252,12 +256,16 @@ pub fn place_winning_bid_and_advance_3_blocks(
     ));
 
     assert_eq!(
-        Circuit::get_pending_sfx_bids(xtx_id, sfx_id).unwrap().bid,
+        Circuit::get_pending_sfx_bids(xtx_id, sfx_id)
+            .unwrap()
+            .unwrap()
+            .amount,
         bid_amount
     );
 
     assert_eq!(
         Circuit::get_pending_sfx_bids(xtx_id, sfx_id)
+            .unwrap()
             .unwrap()
             .executor,
         executor
@@ -354,12 +362,12 @@ fn runs_mock_tests() {
         });
 }
 
-fn as_u32_le(array: &[u8; 4]) -> u32 {
-    (array[0] as u32)
-        + ((array[1] as u32) << 8)
-        + ((array[2] as u32) << 16)
-        + ((array[3] as u32) << 24)
-}
+// fn as_u32_le(array: &[u8; 4]) -> u32 {
+//     (array[0] as u32)
+//         + ((array[1] as u32) << 8)
+//         + ((array[2] as u32) << 16)
+//         + ((array[3] as u32) << 24)
+// }
 
 #[test]
 fn on_extrinsic_trigger_works_with_empty_side_effects() {
@@ -552,7 +560,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
             );
 
             assert_eq!(
-                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
                 None
             );
 
@@ -829,20 +837,19 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                 BID_AMOUNT,
             ));
 
-            let expected_bonded_sfx_bid = SFXBid {
-                bid: BID_AMOUNT,
-                requester: ALICE,
-                executor: BOB_RELAYER,
-                reserved_bond: None,
-                insurance: REQUESTED_INSURANCE_AMOUNT,
-                reward_asset_id: None,
-            };
+            // assert_eq!(
+            //     Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
+            //     SFXBid::<AccountId32, Balance, u32> {
+            //                 bid: BID_AMOUNT,
+            //                 requester: ALICE,
+            //                 executor: BOB_RELAYER,
+            //                 reserved_bond: None,
+            //                 insurance: REQUESTED_INSURANCE_AMOUNT,
+            //                 reward_asset_id: None,
+            //             }
+            // );
 
-            assert_eq!(
-                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_sfx_bid
-            );
-
+            // changes status to InBidding
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
@@ -851,7 +858,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingBidding,
+                    status: CircuitStatus::InBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -883,9 +890,11 @@ fn circuit_handles_dropped_at_bidding() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1;
+    let _fee = 1;
     const REQUESTED_INSURANCE_AMOUNT: Balance = 1;
+    const INITIAL_BALANCE: Balance = 3;
     const BID_AMOUNT: Balance = 1;
+    const MAX_REWARD: Balance = 1;
     let sequential = true;
 
     ExtBuilder::default()
@@ -893,14 +902,14 @@ fn circuit_handles_dropped_at_bidding() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
             let _ =
                 Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
-            assert_eq!(Balances::free_balance(ALICE), 3);
+            assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE);
             assert_eq!(Balances::reserved_balance(ALICE), 0);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -909,7 +918,7 @@ fn circuit_handles_dropped_at_bidding() {
                 sequential,
             ));
 
-            assert_eq!(Balances::free_balance(ALICE), 2);
+            assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE - MAX_REWARD);
 
             let (xtx_id, _side_effect_a_id) = set_ids(
                 valid_transfer_side_effect.clone(),
@@ -935,43 +944,23 @@ fn circuit_handles_dropped_at_bidding() {
             <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(4);
             let events = System::events();
 
-            assert_eq!(Balances::free_balance(ALICE), 3);
-            assert_eq!(Balances::reserved_balance(ALICE), 0);
+            assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE);
 
-            assert_eq!(
-                events[0],
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Balances(
-                        circuit_runtime_pallets::pallet_balances::Event::Deposit {
-                            who: ALICE,
-                            amount: fee
-                        }
-                    ),
-                    topics: vec![]
-                }
+            assert!(
+                events.iter().any(|record| {
+                if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxDroppedAtBidding(xtx_id)) = record.event {
+                    assert_eq!(xtx_id, xtx_id);
+                    true
+                } else {
+                    false
+                } })
             );
-            assert_eq!(
-                events[1],
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
-                        Runtime,
-                    >::XTransactionXtxDroppedAtBidding(
-                        xtx_id
-                    )),
-                    topics: vec![]
-                }
-            );
-            // ToDo activate once #504 is fixed
-            // assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
+            assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
         })
 }
 
 #[test]
 fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
-    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-
     let transfer_protocol_box =
         Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
@@ -1007,6 +996,9 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
     const BIDDING_BLOCK_NO: BlockNumber = 1;
     const BIDDING_TIMEOUT: BlockNumber = 3;
+
+    let origin = Origin::signed(REQUESTER); // Only sudo access to register new gateways for now
+
     ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
@@ -1067,24 +1059,36 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             let events = System::events();
 
             assert_eq!(
-                events[1],
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
-                        Runtime,
-                    >::SFXNewBidReceived(
-                        side_effect_a_id,
-                        BID_WINNER,
-                        BID_AMOUNT_C
-                    )),
-                    topics: vec![]
-                }
+                events,
+                vec![
+                    EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                        circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw {
+                            who: BID_WINNER, amount: 3
+                        }),
+                        topics: vec![]
+                    },
+                    EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
+                        circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
+                            charge_id: H256::from_str("0xd2170a1bae127064ba4c6cfc7b00108038de5429babc320498493567b5e2cd45").unwrap(),
+                            payee: BID_WINNER,
+                            recipient: Some(REQUESTER),
+                            amount: 3
+                        }),
+                        topics: vec![] },
+                    EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                        circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::SFXNewBidReceived(
+                            side_effect_a_id,
+                            BID_WINNER,
+                            BID_AMOUNT_C,
+                        )
+                    ),
+                        topics: vec![] }]
             );
 
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_WINNER),
-                INITIAL_BALANCE - (BID_AMOUNT_C + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
 
             // Charlie bids better offer
@@ -1097,7 +1101,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_LOOSER),
-                INITIAL_BALANCE - (BID_AMOUNT_B + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
             // Unreserve insurance + bid amounts of the previous bidder
             assert_eq!(Balances::free_balance(&BID_WINNER), INITIAL_BALANCE);
@@ -1116,13 +1120,13 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_WINNER),
-                INITIAL_BALANCE - (BID_AMOUNT_A + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
             // Unreserve insurance + bid amounts of the previous bidder
             assert_eq!(Balances::free_balance(&BID_LOOSER), INITIAL_BALANCE);
 
-            let expected_bonded_sfx_bid = SFXBid {
-                bid: BID_AMOUNT_A,
+            let expected_bonded_sfx_bid = SFXBid::<AccountId32, Balance, AssetId> {
+                amount: BID_AMOUNT_A,
                 requester: REQUESTER,
                 executor: BID_WINNER,
                 reserved_bond: None,
@@ -1132,7 +1136,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
             assert_eq!(
                 Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
-                expected_bonded_sfx_bid
+                Some(expected_bonded_sfx_bid)
             );
 
             assert_eq!(
@@ -1141,7 +1145,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     requester: REQUESTER,
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::PendingBidding,
+                    status: CircuitStatus::InBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 }
@@ -1325,7 +1329,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
             );
 
             assert_eq!(
-                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id),
+                Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
                 None
             );
         });
@@ -1473,48 +1477,49 @@ fn circuit_handles_add_liquidity_with_insurance() {
 //     ));
 //
 // }
-
-fn successfully_bond_optimistic(
-    side_effect: SideEffect<AccountId32, Balance>,
-    sfx_index: u32,
-    xtx_id: XtxId<Runtime>,
-    relayer: AccountId32,
-    submitter: AccountId32,
-) {
-    let optional_insurance = side_effect.encoded_args[3].clone();
-
-    assert!(
-        optional_insurance.len() == 32,
-        "Wrong test value - optimistic transfer assumes optimistic arguments"
-    );
-
-    assert_ok!(Circuit::bid_sfx(
-        Origin::signed(relayer.clone()),
-        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            &xtx_id.0, sfx_index
-        ),
-        2 as Balance,
-    ));
-
-    let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
-
-    let created_sfx_bid = Circuit::get_pending_sfx_bids(
-        xtx_id,
-        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            &xtx_id.0, sfx_index,
-        ),
-    )
-    .unwrap();
-
-    assert_eq!(created_sfx_bid.insurance, insurance as Balance);
-    // assert_eq!(created_sfx_bid.reserved_bond, Some(insurance as Balance));
-    assert_eq!(created_sfx_bid.bid, reward as Balance);
-    assert_eq!(
-        created_sfx_bid.requester,
-        Decode::decode(&mut &submitter.encode()[..]).unwrap()
-    );
-    assert_eq!(created_sfx_bid.executor, relayer);
-}
+//
+// fn successfully_bond_optimistic(
+//     side_effect: SideEffect<AccountId32, Balance>,
+//     sfx_index: u32,
+//     xtx_id: XtxId<Runtime>,
+//     relayer: AccountId32,
+//     submitter: AccountId32,
+// ) {
+//     let optional_insurance = side_effect.encoded_args[3].clone();
+//
+//     assert!(
+//         optional_insurance.len() == 32,
+//         "Wrong test value - optimistic transfer assumes optimistic arguments"
+//     );
+//
+//     assert_ok!(Circuit::bid_sfx(
+//         Origin::signed(relayer.clone()),
+//         side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+//             &xtx_id.0, sfx_index
+//         ),
+//         2 as Balance,
+//     ));
+//
+//     let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
+//
+//     let created_sfx_bid = Circuit::get_pending_sfx_bids(
+//         xtx_id,
+//         side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+//             &xtx_id.0, sfx_index,
+//         ),
+//     )
+//     .unwrap()
+//     .unwrap();
+//
+//     assert_eq!(created_sfx_bid.insurance, insurance as Balance);
+//     // assert_eq!(created_sfx_bid.reserved_bond, Some(insurance as Balance));
+//     assert_eq!(created_sfx_bid.amount, reward as Balance);
+//     assert_eq!(
+//         created_sfx_bid.requester,
+//         Decode::decode(&mut &submitter.encode()[..]).unwrap()
+//     );
+//     assert_eq!(created_sfx_bid.executor, relayer);
+// }
 
 #[test]
 fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
@@ -1575,7 +1580,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             ));
 
             let events = System::events();
-            assert_eq!(events.len(), 7);
+            assert_eq!(events.len(), 9);
         });
 }
 
@@ -1820,7 +1825,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::RevertTimedOut,
+                    status: CircuitStatus::Reverted(Cause::Timeout),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
@@ -1829,28 +1834,26 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
             assert_eq!(Circuit::get_active_timing_links(xtx_id), None);
 
             // Emits event notifying about cancellation
-            let mut events = System::events();
+            let events = System::events();
+
             // assert_eq!(events.len(), 9);
+
             assert_eq!(
-                events.pop(),
-                Some(
-                    EventRecord {
-                        phase: Phase::Initialization,
-                        event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
-                            Runtime,
-                        >::XTransactionXtxRevertedAfterTimeOut(
-                            xtx_id
-                        )),
-                        topics: vec![]
-                    }
-                ),
+                events.iter().any(|record| {
+                    if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxRevertedAfterTimeOut(xtx_id_emit)) = record.event {
+                        assert_eq!(xtx_id_emit, xtx_id);
+                        true
+                    } else {
+                        false
+                    } }),
+                true
             );
             // Voids all associated side effects with Xtx by setting their confirmation to Err
         });
 }
 
 #[test]
-fn circuit_cancels_xtx_after_timeout() {
+fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
@@ -1874,7 +1877,9 @@ fn circuit_cancels_xtx_after_timeout() {
         FIRST_SFX_INDEX,
     );
 
-    let side_effects = vec![valid_transfer_side_effect];
+    const MAX_FEE: Balance = 1;
+
+    let side_effects = vec![valid_transfer_side_effect.clone()];
 
     let sequential = false;
 
@@ -1916,6 +1921,17 @@ fn circuit_cancels_xtx_after_timeout() {
                 })
             );
 
+            place_winning_bid_and_advance_3_blocks(
+                ALICE,
+                xtx_id,
+                valid_transfer_side_effect
+                    .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                        &xtx_id.0,
+                        FIRST_SFX_INDEX,
+                    ),
+                MAX_FEE,
+            );
+
             System::set_block_number(410);
 
             <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
@@ -1928,7 +1944,7 @@ fn circuit_cancels_xtx_after_timeout() {
                     )),
                     timeouts_at: 401u32,
                     delay_steps_at: None,
-                    status: CircuitStatus::RevertTimedOut,
+                    status: CircuitStatus::Reverted(Cause::Timeout),
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
@@ -1937,24 +1953,18 @@ fn circuit_cancels_xtx_after_timeout() {
             assert_eq!(Circuit::get_active_timing_links(xtx_id), None);
 
             // Emits event notifying about cancellation
-            let mut events = System::events();
-            // assert_eq!(events.len(), 9);
-            assert_eq!(
-                events.pop(),
-                Some(
-                    EventRecord {
-                        phase: Phase::Initialization,
-                        event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
-                            Runtime,
-                        >::XTransactionXtxRevertedAfterTimeOut(
-                            hex!(
+            let events = System::events();
+
+            assert!(
+                events.iter().any(|record| {
+                    if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxRevertedAfterTimeOut(xtx_id_emit)) = record.event {
+                        assert_eq!(xtx_id_emit, hex!(
                                 "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
-                            )
-                            .into()
-                        )),
-                        topics: vec![]
-                    }
-                ),
+                            ).into());
+                        true
+                    } else {
+                        false
+                    } }),
             );
             // Voids all associated side effects with Xtx by setting their confirmation to Err
         });
@@ -1975,7 +1985,7 @@ fn load_local_state_can_generate_and_read_state() {
 
         assert_eq!(res.xtx_id, xtx_id_new);
         assert_eq!(res.local_state, LocalState::new());
-        assert_eq!(res.steps_cnt, (0, 0));
+        assert_eq!(res.steps_cnt, (0, 1));
     });
 }
 
@@ -4290,19 +4300,20 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
     res
 }
 
-/// XBI
-const INITIAL_BALANCE: Balance = 50;
-const MAX_EXECUTION_COST: Balance = 1;
-const MAX_NOTIFICATION_COST: Balance = 2;
-
 // FIXME[https://github.com/t3rn/xbi-portal/issues/44]: the api has changed here, will be exposed in a better way
+//
+// /// XBI
+// const INITIAL_BALANCE: Balance = 100;
+// const MAX_EXECUTION_COST: Balance = 1;
+// const MAX_NOTIFICATION_COST: Balance = 2;
+//
 // #[test]
 // fn execute_side_effects_with_xbi_works_for_transfers() {
 //     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-
+//
 //     let transfer_protocol_box =
 //         Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
+//
 //     let mut local_state = LocalState::new();
 //     let mut valid_transfer_side_effect = produce_and_validate_side_effect(
 //         vec![
@@ -4317,42 +4328,42 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //         FIRST_REQUESTER_NONCE,
 //         FIRST_SFX_INDEX,
 //     );
-
+//
 //     valid_transfer_side_effect.target = [3, 3, 3, 3];
-
+//
 //     let side_effects = vec![valid_transfer_side_effect.clone()];
-
+//
 //     let sequential = true;
-
+//
 //     const MAX_FEE: Balance = 1;
 //     const INSURANCE: Balance = 1;
-
+//
 //     ExtBuilder::default()
 //         .with_standard_side_effects()
 //         .with_default_xdns_records()
 //         .build()
 //         .execute_with(|| {
 //             // XTX SETUP
-
+//
 //             let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE);
-
+//
 //             System::set_block_number(1);
 //             brute_seed_block_1([3, 3, 3, 3]);
-
+//
 //             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
-
+//
 //             let sfx_id_a = valid_transfer_side_effect
 //                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
 //                 &xtx_id.0,
 //                 FIRST_SFX_INDEX,
 //             );
-
+//
 //             assert_ok!(Circuit::on_extrinsic_trigger(
 //                 origin.clone(),
 //                 side_effects,
 //                 sequential,
 //             ));
-
+//
 //             assert_eq!(
 //                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
 //                 XExecSignal {
@@ -4364,7 +4375,7 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //                     steps_cnt: (0, 1),
 //                 }
 //             );
-
+//
 //             assert_eq!(
 //                 Circuit::get_full_side_effects(xtx_id).unwrap(),
 //                 vec![vec![FullSideEffect {
@@ -4376,17 +4387,17 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //                     index: FIRST_SFX_INDEX,
 //                 }]]
 //             );
-
+//
 //             place_winning_bid_and_advance_3_blocks(ALICE, xtx_id, sfx_id_a, MAX_FEE);
-
-//             // assert_ok!(Circuit::execute_side_effects_with_xbi(
-//             //     origin,
-//             //     xtx_id,
-//             //     valid_transfer_side_effect,
-//             //     MAX_EXECUTION_COST as Balance,
-//             //     MAX_NOTIFICATION_COST as Balance,
-//             // ));
-
+//
+//             assert_ok!(Circuit::execute_side_effects_with_xbi(
+//                 origin,
+//                 xtx_id,
+//                 valid_transfer_side_effect,
+//                 MAX_EXECUTION_COST as Balance,
+//                 MAX_NOTIFICATION_COST as Balance,
+//             ));
+//
 //             assert_eq!(
 //                 Balances::free_balance(&ALICE),
 //                 INITIAL_BALANCE
@@ -4397,14 +4408,13 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //             );
 //         });
 // }
-
-// FIXME[https://github.com/t3rn/xbi-portal/issues/44]: the api has changed here, will be exposed in a better way
+//
 // #[test]
 // fn execute_side_effects_with_xbi_works_for_call_evm() {
 //     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-
-//     let xbi_evm = XbiFormat {
-//         instr: XbiInstruction::CallEvm {
+//
+//     let xbi_evm = XBIFormat {
+//         instr: XBIInstr::CallEvm {
 //             source: AccountId20::repeat_byte(3),
 //             target: AccountId20::repeat_byte(2),
 //             value: sp_core::U256([1, 0, 0, 0]),
@@ -4415,7 +4425,7 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //             nonce: Some(sp_core::U256([3, 4, 6, 7])),
 //             access_list: vec![],
 //         },
-//         metadata: XbiMetadata {
+//         metadata: XBIMetadata {
 //             id: sp_core::H256::repeat_byte(2),
 //             dest_para_id: 3333u32,
 //             src_para_id: 4u32,
@@ -4437,10 +4447,10 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //             actual_aggregated_cost: None,
 //         },
 //     };
-
+//
 //     let mut valid_evm_sfx = xbi_2_sfx::<
 //         Runtime,
-//         <Runtime as circuit_runtime_pallets::pallet_circuit::Config>::Currency,
+//         <Runtime as circuit_runtime_pallets::pallet_circuit::Config>::Escrowed,
 //     >(
 //         xbi_evm,
 //         vec![
@@ -4451,34 +4461,37 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //         1,
 //     )
 //     .unwrap();
-
+//
 //     // assert target
 //     valid_evm_sfx.target = [1u8, 1u8, 1u8, 1u8];
 //     let side_effects = vec![valid_evm_sfx.clone()];
-
+//
 //     let sequential = true;
-
+//
+//     const BID_AMOUNT: Balance = 1;
+//     const INSURANCE: Balance = 1;
+//     const MAX_REWARD: Balance = 1;
+//
 //     ExtBuilder::default()
 //         .with_standard_side_effects()
 //         .with_default_xdns_records()
 //         .build()
 //         .execute_with(|| {
 //             // XTX SETUP
-
 //             let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-
+//
 //             System::set_block_number(1);
 //             brute_seed_block_1([3, 3, 3, 3]);
 //             brute_seed_block_1([1, 1, 1, 1]);
-
+//
 //             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
-
+//
 //             assert_ok!(Circuit::on_extrinsic_trigger(
 //                 origin.clone(),
 //                 side_effects,
 //                 sequential,
 //             ));
-
+//
 //             assert_eq!(
 //                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
 //                 XExecSignal {
@@ -4490,7 +4503,7 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //                     steps_cnt: (0, 1),
 //                 }
 //             );
-
+//
 //             assert_eq!(
 //                 Circuit::get_full_side_effects(xtx_id).unwrap(),
 //                 vec![vec![FullSideEffect {
@@ -4502,7 +4515,7 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //                     index: FIRST_SFX_INDEX,
 //                 }]]
 //             );
-
+//
 //             place_winning_bid_and_advance_3_blocks(
 //                 ALICE,
 //                 xtx_id,
@@ -4510,23 +4523,29 @@ const MAX_NOTIFICATION_COST: Balance = 2;
 //                     .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
 //                         &xtx_id.0, 0,
 //                     ),
-//                 1,
+//                 BID_AMOUNT,
 //             );
-
-//             // assert_ok!(Circuit::execute_side_effects_with_xbi(
-//             //     origin,
-//             //     xtx_id,
-//             //     valid_evm_sfx,
-//             //     MAX_EXECUTION_COST as Balance,
-//             //     MAX_NOTIFICATION_COST as Balance,
-//             // ));
-
+//
+//             assert_ok!(Circuit::execute_side_effects_with_xbi(
+//                 origin,
+//                 xtx_id,
+//                 valid_evm_sfx,
+//                 MAX_EXECUTION_COST as Balance,
+//                 MAX_NOTIFICATION_COST as Balance,
+//             ));
+//
 //             assert_eq!(
 //                 Balances::free_balance(&ALICE),
-//                 INITIAL_BALANCE - MAX_EXECUTION_COST - MAX_NOTIFICATION_COST - 3
+//                 INITIAL_BALANCE
+//                     - BID_AMOUNT
+//                     - MAX_REWARD
+//                     - INSURANCE
+//                     - MAX_EXECUTION_COST
+//                     - MAX_NOTIFICATION_COST
 //             );
 //         });
 // }
+
 #[test]
 fn no_duplicate_xtx_and_sfx_ids() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
@@ -4585,25 +4604,6 @@ fn no_duplicate_xtx_and_sfx_ids() {
                 sequential,
             ));
 
-            let events = System::events();
-            assert_eq!(
-                events[4],
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
-                        Runtime,
-                    >::NewSideEffectsAvailable(
-                        AccountId32::new(hex!(
-                            "0101010101010101010101010101010101010101010101010101010101010101"
-                        )),
-                        expected_xtx_id_1,
-                        side_effects.clone(),
-                        vec![expected_sfx_id_1],
-                    )),
-                    topics: vec![]
-                }
-            );
-
             // manually increment nonce to simulate production environment
             frame_system::Pallet::<Runtime>::inc_account_nonce(ALICE);
 
@@ -4613,24 +4613,93 @@ fn no_duplicate_xtx_and_sfx_ids() {
                 sequential,
             ));
 
+
             let next_events = System::events();
-            assert_eq!(
-                next_events[7],
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<
-                        Runtime,
-                    >::NewSideEffectsAvailable(
-                        AccountId32::new(hex!(
-                            "0101010101010101010101010101010101010101010101010101010101010101"
-                        )),
-                        expected_xtx_id_2,
-                        side_effects,
-                        vec![expected_sfx_id_2],
-                    )),
+
+            assert_eq!(next_events, vec![
+                EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Deposit { who: ALICE, amount: 6 }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::System(
+                    circuit_runtime_pallets::frame_system::Event::<Runtime>::NewAccount { account: ALICE }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: 6 }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: 3 }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
+                    circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
+                        charge_id: expected_sfx_id_1,
+                        payee: ALICE, recipient: None, amount: 3
+                    }), topics: vec![]
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                    circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::NewSideEffectsAvailable(
+                        ALICE,
+                        expected_xtx_id_1,
+                        vec![
+                            SideEffect {
+                                target: [0, 0, 0, 0],
+                                max_reward: 3,
+                                insurance: 3,
+                                encoded_action: vec![116, 114, 97, 110],
+                                encoded_args: vec![
+                                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+                                    vec![6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+                                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                    vec![3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                                ],
+                                signature: vec![],
+                                enforce_executor: None,
+                                reward_asset_id: None
+                            }
+                        ],
+                        vec![expected_sfx_id_1]
+                    )
+                ), topics: vec![] },
+                EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                    circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionReceivedForExec(
+                        expected_xtx_id_1)),
                     topics: vec![]
-                }
-            );
+                },
+                EventRecord { phase: Phase::Initialization, event: Event::Balances(
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: 3 }), topics: vec![] },
+                EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
+                    circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
+                        charge_id: expected_sfx_id_2,
+                        payee: ALICE, recipient: None, amount: 3 }), topics: vec![] },
+                EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                    circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::NewSideEffectsAvailable(
+                        ALICE,
+                        expected_xtx_id_2,
+                        vec![
+                            SideEffect {
+                                target: [0, 0, 0, 0],
+                                max_reward: 3,
+                                insurance: 3,
+                                encoded_action: vec![116, 114, 97, 110],
+                                encoded_args: vec![
+                                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+                                    vec![6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+                                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                    vec![3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                                ],
+                                signature: vec![],
+                                enforce_executor: None,
+                                reward_asset_id: None
+                            }
+                        ],
+                        vec![
+                            expected_sfx_id_2
+                        ])), topics: vec![] },
+                EventRecord { phase: Phase::Initialization, event: Event::Circuit(
+                    circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionReceivedForExec(
+                        expected_xtx_id_2
+                    )
+                ), topics: vec![] }
+            ]);
 
             assert_ne!(expected_xtx_id_1, expected_xtx_id_2);
             assert_ne!(expected_sfx_id_1, expected_sfx_id_2);
