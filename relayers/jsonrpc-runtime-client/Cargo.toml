@@ -34,5 +34,5 @@ codec       = { package = "parity-scale-codec", version = "3" }
 num-traits  = "0.2"
 
 relay-substrate-client = { path = "../client-substrate" }
-t3rn-primitives        = { git = "https://github.com/t3rn/t3rn", branch = "refactor/infallible-square-up" }
+t3rn-primitives        = { git = "https://github.com/t3rn/t3rn", branch = "development" }
 tokio                  = "1.8.0"

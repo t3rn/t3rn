@@ -29,7 +29,7 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-t3rn-primitives  = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'refactor/infallible-square-up' }
+t3rn-primitives  = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'development' }
 t3rn-protocol    = { path = "../../protocol", default-features = false }
 
 [dev-dependencies]
