@@ -13295,7 +13295,6 @@ dependencies = [
 name = "t3rn-parachain-collator"
 version = "1.0.0"
 dependencies = [
- "async-std",
  "clap",
  "cumulus-client-cli",
  "cumulus-client-collator",
@@ -13317,11 +13316,7 @@ dependencies = [
  "jsonrpc-runtime-client",
  "jsonrpsee 0.14.0",
  "log",
- "pallet-contracts-rpc",
- "pallet-evm-rpc",
  "pallet-transaction-payment-rpc",
- "pallet-xdns",
- "pallet-xdns-rpc",
  "parity-scale-codec",
  "polkadot-cli",
  "polkadot-parachain",
@@ -13361,8 +13356,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t3rn-parachain-runtime",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
- "t3rn-protocol",
+ "t3rn-primitives 1.0.0-alpha.1",
  "try-runtime-cli",
  "xcm",
 ]
