@@ -12,6 +12,9 @@ use std::str::FromStr;
 use t3rn_primitives::monetary::TRN;
 
 const PARACHAIN_ID: u32 = 2100;
+const SUPPLY: u128 = (TRN as u128) * 100_000_000; // 100 million TRN
+const CANDIDACY_BOND: u128 = (TRN as u128) * 10_000; // 10K TRN
+const DESIRED_CANDIDATES: u32 = 32;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -166,6 +169,7 @@ pub fn polkadot_config() -> ChainSpec {
         "t3rn_polkadot",
         ChainType::Live,
         move || {
+            // TODO: needs updating
             polkadot_genesis(
                 // Invulnerable collators
                 vec![
@@ -218,12 +222,6 @@ pub fn polkadot_config() -> ChainSpec {
     )
 }
 
-// This is the simplest bytecode to revert without returning any data.
-// We will pre-deploy it under all of our precompiles to ensure they can be called from
-// within contracts.
-// (PUSH1 0x00 PUSH1 0x00 REVERT)
-const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
-
 fn polkadot_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<AccountId>,
@@ -240,15 +238,15 @@ fn polkadot_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 100_000_000_000_000_000_000)) // 100 million TRN
+                .map(|k| (k, SUPPLY))
                 .collect(),
         },
         treasury: Default::default(),
         parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
         collator_selection: circuit_parachain_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: (TRN as u128) * 10_000_u128,
-            desired_candidates: 32_u32,
+            candidacy_bond: CANDIDACY_BOND,
+            desired_candidates: DESIRED_CANDIDATES,
             ..Default::default()
         },
         session: circuit_parachain_runtime::SessionConfig {
@@ -275,5 +273,15 @@ fn polkadot_genesis(
             // Assign network admin rights.
             key: Some(root_key),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn supply_is_right() {
+        assert_eq!(SUPPLY, 100_000_000_000_000_000_000);
     }
 }
