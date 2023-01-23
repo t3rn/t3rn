@@ -11,7 +11,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 use t3rn_primitives::monetary::TRN;
 
-const PARACHAIN_ID: u32 = 3000_u32;
+const PARACHAIN_ID: u32 = 2100;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
