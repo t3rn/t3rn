@@ -124,10 +124,16 @@ mod benches {
     define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
+        [pallet_collator_selection, CollatorSelection]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_timestamp, Timestamp]
-        [pallet_collator_selection, CollatorSelection]
-        [pallet_account_manager, AccountManager]
+        [pallet_treaury, Treasury]
+        [pallet_utility, Utility]
+        [pallet_scheduler, Scheduler]
+        [pallet_preimage, Preimage]
+        [pallet_xcm, PolkadotXcm]
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [cumulus_pallet_parachain_system, ParachainSystem]
     );
 }
 
