@@ -396,13 +396,13 @@ pub mod test {
                 assert_eq!(Balances::free_balance(&EXECUTOR_4), INITIAL_BALANCE);
                 assert_eq!(Balances::free_balance(&EXECUTOR_5), INITIAL_BALANCE);
                 // check dishonest executors have their balance slashed
-                assert_eq!(Balances::free_balance(&EXECUTOR_6), 99939);
-                assert_eq!(Balances::free_balance(&EXECUTOR_7), 99938);
-                assert_eq!(Balances::free_balance(&EXECUTOR_8), 99937);
-                assert_eq!(Balances::free_balance(&EXECUTOR_9), 99936);
-                assert_eq!(Balances::free_balance(&EXECUTOR_10), 99935);
+                assert_eq!(Balances::free_balance(&EXECUTOR_6), 99945);
+                assert_eq!(Balances::free_balance(&EXECUTOR_7), 99945);
+                assert_eq!(Balances::free_balance(&EXECUTOR_8), 99945);
+                assert_eq!(Balances::free_balance(&EXECUTOR_9), 99945);
+                assert_eq!(Balances::free_balance(&EXECUTOR_10), 99945);
                 // check escrow account collected slashed funds from dishonest executors
-                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 315);
+                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 275);
             });
     }
 

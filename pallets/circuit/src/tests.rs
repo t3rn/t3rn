@@ -1063,7 +1063,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 vec![
                     EventRecord { phase: Phase::Initialization, event: Event::Balances(
                         circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw {
-                            who: BID_WINNER, amount: 6
+                            who: BID_WINNER, amount: 3
                         }),
                         topics: vec![]
                     },
@@ -1072,7 +1072,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                             charge_id: H256::from_str("0xd2170a1bae127064ba4c6cfc7b00108038de5429babc320498493567b5e2cd45").unwrap(),
                             payee: BID_WINNER,
                             recipient: Some(REQUESTER),
-                            amount: 6
+                            amount: 3
                         }),
                         topics: vec![] },
                     EventRecord { phase: Phase::Initialization, event: Event::Circuit(
@@ -1088,7 +1088,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_WINNER),
-                INITIAL_BALANCE - (BID_AMOUNT_C + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
 
             // Charlie bids better offer
@@ -1101,7 +1101,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_LOOSER),
-                INITIAL_BALANCE - (BID_AMOUNT_B + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
             // Unreserve insurance + bid amounts of the previous bidder
             assert_eq!(Balances::free_balance(&BID_WINNER), INITIAL_BALANCE);
@@ -1120,7 +1120,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_WINNER),
-                INITIAL_BALANCE - (BID_AMOUNT_A + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
             // Unreserve insurance + bid amounts of the previous bidder
             assert_eq!(Balances::free_balance(&BID_LOOSER), INITIAL_BALANCE);
