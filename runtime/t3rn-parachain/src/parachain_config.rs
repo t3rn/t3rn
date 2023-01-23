@@ -190,7 +190,7 @@ impl pallet_collator_selection::Config for Runtime {
 parameter_types! {
     pub const PreimageMaxSize: u32 = 4096 * 1024;
     pub const PreImageBaseDeposit: Balance = deposit(2, 64);
-    pub const PreImageByteDeposit: Balance = deposit(0, 1);
+    pub const PreImageByteDeposit: Balance = deposit(0, 1); // FIXME: this is 0 no?
 }
 
 impl pallet_preimage::Config for Runtime {
