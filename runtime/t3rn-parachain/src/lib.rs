@@ -70,7 +70,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
-    state_version: 1, // 0 = old, 1 = new; see above 4 details
+    state_version: 1, // 0 = old, 1 = new; see above for details
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -120,7 +120,7 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-        // admin
+        // Admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
     }
 );
