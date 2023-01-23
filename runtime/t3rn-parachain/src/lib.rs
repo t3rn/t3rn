@@ -72,7 +72,14 @@ pub fn native_version() -> NativeVersion {
     }
 }
 
-pub type CurrencyAdapter = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+/// Executive: handles dispatch to the various modules.
+pub type Executive = frame_executive::Executive<
+    Runtime,
+    Block,
+    frame_system::ChainContext<Runtime>,
+    Runtime,
+    AllPalletsWithSystem,
+>;
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(

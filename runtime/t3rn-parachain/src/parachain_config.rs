@@ -8,9 +8,6 @@ use frame_system::EnsureRoot;
 use smallvec::smallvec;
 use sp_runtime::{impl_opaque_keys, Permill};
 use sp_std::prelude::*;
-use xcm::latest::prelude::BodyId;
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
-use xcm_executor::XcmExecutor;
 
 // TODO: remove when we import t3rn_primitives
 pub(crate) const TRN: u64 = 1_000_000_000_000;
@@ -137,23 +134,6 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-    type ChannelInfo = ParachainSystem;
-    type ControllerOrigin = EnsureRoot<AccountId>;
-    type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-    type VersionWrapper = ();
-    type WeightInfo = ();
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
 parameter_types! {
     pub const Period: u32 = 6 * HOURS;
     pub const Offset: u32 = 0;
@@ -186,7 +166,6 @@ parameter_types! {
     pub const MinCandidates: u32 = 5;
     pub const SessionLength: BlockNumber = 6 * HOURS;
     pub const MaxInvulnerables: u32 = 100;
-    pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
 // We allow root only to execute privileged collator selection operations.
