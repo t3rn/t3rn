@@ -135,6 +135,7 @@ test-real-upgrade: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir
 	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/9999-real_runtime_upgrade.feature
 
 test-asset-tx-payment:
+	npm --prefix $(root_dir)/tests/zombienet/integration install
 	$(bin_dir)/zombienet --provider=$(provider) test ./integration/0001-asset-tx-payment.feature
 
 spawn: setup
