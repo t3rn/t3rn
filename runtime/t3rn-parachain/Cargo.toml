@@ -15,19 +15,21 @@ targets = [ "x86_64-unknown-linux-gnu" ]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 [dependencies]
-codec       = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
-hex-literal = { version = "0.3.4", optional = true }
-log         = { version = "0.4.14", default-features = false }
-scale-info  = { version = "2.1.1", default-features = false, features = [ "derive" ] }
-serde       = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
-smallvec    = { version = "1.6.1", default-features = false }
+codec      = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
+log        = { version = "0.4.14", default-features = false }
+scale-info = { version = "2.1.1", default-features = false, features = [ "derive" ] }
+serde      = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
+smallvec   = { version = "1.6.1", default-features = false }
+
+# Enabled by benchmarks
+frame-benchmarking        = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.27" }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.27" }
+hex-literal               = { version = "0.3.4", optional = true }
 
 # Substrate
-frame-benchmarking           = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.27" }
 frame-executive              = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 frame-support                = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 frame-system                 = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-frame-system-benchmarking    = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.27" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 frame-try-runtime            = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.27" }
 
@@ -202,10 +204,37 @@ runtime-benchmarks = [
   "pallet-collator-selection/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "pallet-treasury/runtime-benchmarks",
+  "pallet-utility/runtime-benchmarks",
+  "pallet-scheduler/runtime-benchmarks",
+  "pallet-preimage/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",
+  "xcm-executor/runtime-benchmarks",
+  "polkadot-runtime-common/runtime-benchmarks",
+  "polkadot-parachain/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
+  "cumulus-pallet-xcmp-queue/runtime-benchmarks",
+  "cumulus-pallet-parachain-system/runtime-benchmarks",
 ]
 
-try-runtime = [ "frame-executive/try-runtime", "frame-try-runtime" ]
+try-runtime = [
+  "frame-executive/try-runtime",
+  "frame-try-runtime",
+  "polkadot-runtime-common/try-runtime",
+  "pallet-utility/try-runtime",
+  "pallet-treasury/try-runtime",
+  "pallet-timestamp/try-runtime",
+  "pallet-transaction-payment/try-runtime",
+  "pallet-sudo/try-runtime",
+  "pallet-session/try-runtime",
+  "pallet-scheduler/try-runtime",
+  "pallet-randomness-collective-flip/try-runtime",
+  "pallet-preimage/try-runtime",
+  "pallet-collator-selection/try-runtime",
+  "pallet-balances/try-runtime",
+  "pallet-authorship/try-runtime",
+  "pallet-aura/try-runtime",
+  "frame-system/try-runtime",
+  "frame-support/try-runtime",
+]
