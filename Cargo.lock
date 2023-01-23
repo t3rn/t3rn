@@ -1969,6 +1969,7 @@ version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.27#b86cd207fc77af888f223c10363ae4d18a4b63b4"
 dependencies = [
  "cumulus-primitives-core",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
