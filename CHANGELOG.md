@@ -1,3 +1,12 @@
+# [1.2.0-rc.6](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.5...v1.2.0-rc.6) (2023-01-23)
+
+
+### Bug Fixes
+
+* rm primitives import ([99f0596](https://github.com/t3rn/t3rn/commit/99f0596c1c91325cbb8a3eedbda8b23d1199c486))
+
+
+
 # [1.2.0-rc.5](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.4...v1.2.0-rc.5) (2023-01-20)
 
 
@@ -81,15 +90,6 @@
 ### Bug Fixes
 
 * add bad_blocks extension to t0rn chain specs ([fb427e3](https://github.com/t3rn/t3rn/commit/fb427e3eb801449a4027951b3bd0a2469b8a16ac))
-
-
-
-# [1.2.0-rc.1](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.0...v1.2.0-rc.1) (2022-11-12)
-
-
-### Reverts
-
-* back to 12s block time ([1bb0db1](https://github.com/t3rn/t3rn/commit/1bb0db16221a7cdedd872679969b816beebb2797))
 
 
 
