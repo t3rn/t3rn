@@ -13,7 +13,28 @@ pub mod xcm_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
+pub use frame_support::traits::EqualPrivilegeOnly;
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
+
+use frame_support::{
+    construct_runtime, parameter_types,
+    weights::{
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
+        ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        WeightToFeePolynomial,
+    },
+};
+use frame_system::limits::{BlockLength, BlockWeights};
+use polkadot_runtime_common::BlockHashCount;
+use polkadot_runtime_constants::weights::RocksDbWeight;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -24,38 +45,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryInto, prelude::*};
 
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
-pub use frame_support::traits::EqualPrivilegeOnly;
-use frame_support::{
-    construct_runtime, parameter_types,
-    weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
-        ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
-    },
-};
-use frame_system::limits::{BlockLength, BlockWeights};
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
-
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
-// Polkadot Imports
-use polkadot_runtime_common::BlockHashCount;
-use polkadot_runtime_constants::weights::RocksDbWeight;
-
-/// Executive: handles dispatch to the various modules.
-pub type Executive = frame_executive::Executive<
-    Runtime,
-    Block,
-    frame_system::ChainContext<Runtime>,
-    Runtime,
-    AllPalletsWithSystem,
->;
+pub const EXISTENTIAL_DEPOSIT: u128 = 500;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
