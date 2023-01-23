@@ -1170,7 +1170,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             );
         });
 }
-const SINGLE_XTX_DEL_WEIGHT: u64 = 125000000;
+const SINGLE_XTX_DEL_WEIGHT: u64 = 425000000;
 
 #[test]
 fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {

@@ -110,6 +110,7 @@ pub mod pallet {
             fungible::{Inspect, Mutate},
             Get,
         },
+        weights::constants::BlockExecutionWeight,
     };
     use frame_system::pallet_prelude::*;
     use pallet_xbi_portal::{
@@ -324,47 +325,25 @@ pub mod pallet {
             let mut weight = Self::process_signal_queue();
             // Check every XtxTimeoutCheckInterval blocks
 
+            println!("on_initialize: {:?}", BlockExecutionWeight::get());
             // what happens if the weight for the block is consumed, do these timeouts need to wait
             // for the next check interval to handle them? maybe we need an immediate queue
             //
             let mut deletion_counter: u32 = 0;
 
             // Check for expiring bids each block
-            let processed_xtx_bids_count = <PendingXtxBidsTimeoutsMap<T>>::iter().filter(|(_xtx_id, bidding_timeouts_at)| {
-                // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
-                bidding_timeouts_at <= &n
-            }).map(|(xtx_id, _bidding_timeouts_at)| {
-                if deletion_counter <= T::DeletionQueueLimit::get() {
-                    Machine::<T>::compile_infallible(
-                        &mut Machine::<T>::load_xtx(xtx_id).expect("xtx_id corresponds to a valid Xtx when reading from PendingXtxBidsTimeoutsMap storage"),
-                        |current_fsx, _local_state, _steps_cnt, status, _requester| {
-                            match status {
-                                CircuitStatus::InBidding => match current_fsx.iter().all(|fsx| fsx.best_bid.is_some()) {
-                                    true => PrecompileResult::ForceUpdateStatus(CircuitStatus::Ready),
-                                    false => PrecompileResult::TryKill(Cause::Timeout)
-                                },
-                                _ => return PrecompileResult::TryKill(Cause::Timeout)
-                            }
-
-                        },
-                        |_status_change, local_ctx| {
-                            // Account fees and charges happens internally in Machine::apply
-                            Self::emit_status_update(
-                                local_ctx.xtx_id,
-                                Some(local_ctx.xtx.clone()),
-                                None,
-                            );
-                        },
-                    );
-
-                    deletion_counter = deletion_counter.saturating_add(1);
-                }
-            }).count();
-
-            weight = weight.saturating_add(T::DbWeight::get().reads_writes(
-                processed_xtx_bids_count as Weight,
-                processed_xtx_bids_count as Weight,
-            ));
+            let _processed_xtx_bids_count = <PendingXtxBidsTimeoutsMap<T>>::iter()
+                .filter(|(_xtx_id, bidding_timeouts_at)| {
+                    // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
+                    bidding_timeouts_at <= &n
+                })
+                .map(|(xtx_id, _bidding_timeouts_at)| {
+                    if deletion_counter <= T::DeletionQueueLimit::get() {
+                        weight = weight.saturating_add(Self::process_kill(xtx_id));
+                        deletion_counter = deletion_counter.saturating_add(1);
+                    }
+                })
+                .count();
 
             // Scenario 1: all the timeout s can be handled in the block space
             // Scenario 2: all but 5 timeouts can be handled
@@ -375,15 +354,7 @@ pub mod pallet {
                     .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
                     .map(|(xtx_id, _timeout_at)| {
                         if deletion_counter <= T::DeletionQueueLimit::get() {
-                            let _success: bool = Machine::<T>::revert(
-                                xtx_id,
-                                Cause::Timeout,
-                                |_status_change, _local_ctx| {
-                                    Self::deposit_event(
-                                        Event::XTransactionXtxRevertedAfterTimeOut(xtx_id),
-                                    );
-                                },
-                            );
+                            weight = weight.saturating_add(Self::process_revert(xtx_id));
                             deletion_counter = deletion_counter.saturating_add(1);
                         }
                     })
@@ -1230,8 +1201,49 @@ impl<T: Config> Pallet<T> {
         }
     }
 
+    pub fn process_revert(xtx_id: XExecSignalId<T>) -> Weight {
+        const REVERT_WRITES: Weight = 2;
+        const REVERT_READS: Weight = 1;
+
+        let _success: bool =
+            Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, _local_ctx| {
+                Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id));
+            });
+
+        T::DbWeight::get().reads_writes(REVERT_READS, REVERT_WRITES)
+    }
+
+    pub fn process_kill(xtx_id: XExecSignalId<T>) -> Weight {
+        const KILL_WRITES: Weight = 4;
+        const KILL_READS: Weight = 1;
+
+        Machine::<T>::compile_infallible(
+            &mut Machine::<T>::load_xtx(xtx_id).expect("xtx_id corresponds to a valid Xtx when reading from PendingXtxBidsTimeoutsMap storage"),
+            |current_fsx, _local_state, _steps_cnt, status, _requester| {
+                match status {
+                    CircuitStatus::InBidding => match current_fsx.iter().all(|fsx| fsx.best_bid.is_some()) {
+                        true => PrecompileResult::ForceUpdateStatus(CircuitStatus::Ready),
+                        false => PrecompileResult::TryKill(Cause::Timeout)
+                    },
+                    _ => PrecompileResult::TryKill(Cause::Timeout)
+                }
+
+            },
+            |_status_change, local_ctx| {
+                // Account fees and charges happens internally in Machine::apply
+                Self::emit_status_update(
+                    local_ctx.xtx_id,
+                    Some(local_ctx.xtx.clone()),
+                    None,
+                );
+            },
+        );
+
+        T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
+    }
+
     // TODO: we also want to save some space for timeouts, split the weight distribution 50-50
-    pub(crate) fn process_signal_queue() -> Weight {
+    pub fn process_signal_queue() -> Weight {
         let queue_len = <SignalQueue<T>>::decode_len().unwrap_or(0);
         if queue_len == 0 {
             return 0
