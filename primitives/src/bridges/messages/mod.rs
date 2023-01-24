@@ -34,8 +34,10 @@ use scale_info::TypeInfo;
 /// Messages pallet operating mode.
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Default)]
 pub enum OperatingMode {
     /// Normal mode, when all operations are allowed.
+    #[default]
     Normal,
     /// The pallet is not accepting outbound messages. Inbound messages and receival proofs
     /// are still accepted.
@@ -49,11 +51,7 @@ pub enum OperatingMode {
     Halted,
 }
 
-impl Default for OperatingMode {
-    fn default() -> Self {
-        OperatingMode::Normal
-    }
-}
+
 
 /// Messages pallet parameter.
 pub trait Parameter: frame_support::Parameter {

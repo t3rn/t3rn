@@ -193,8 +193,7 @@ impl<Id: std::fmt::Debug, Error> std::fmt::Display for SubmittedHeaders<Id, Erro
 
         write!(
             f,
-            "Submitted: {}, Incomplete: {}, Rejected: {}",
-            submitted, incomplete, rejected
+            "Submitted: {submitted}, Incomplete: {incomplete}, Rejected: {rejected}"
         )
     }
 }

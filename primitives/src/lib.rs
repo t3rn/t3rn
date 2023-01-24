@@ -27,7 +27,7 @@ use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
-pub use t3rn_types::{abi, Bytes};
+pub use t3rn_types::{abi, types::Bytes};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -99,18 +99,16 @@ impl GatewayType {
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub enum GatewayVendor {
     Polkadot,
     Kusama,
+    #[default]
     Rococo,
     Ethereum,
 }
 
-impl Default for GatewayVendor {
-    fn default() -> Self {
-        GatewayVendor::Rococo
-    }
-}
+
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
