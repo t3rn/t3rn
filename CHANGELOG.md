@@ -1,3 +1,12 @@
+# [1.2.0-rc.8](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.7...v1.2.0-rc.8) (2023-01-24)
+
+
+### Bug Fixes
+
+* correct tests expectations after existential deposit=1 added ([0d66472](https://github.com/t3rn/t3rn/commit/0d6647286d750438d63f09772f31d3c2c414844a))
+
+
+
 # [1.2.0-rc.7](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.6...v1.2.0-rc.7) (2023-01-24)
 
 
@@ -74,22 +83,6 @@
 ### Features
 
 * remove badblocks from chainspec ([b361f80](https://github.com/t3rn/t3rn/commit/b361f80b293124223233fd38313863bc3901cf60))
-
-
-
-# [1.2.0-rc.3](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.2...v1.2.0-rc.3) (2022-11-19)
-
-
-### Bug Fixes
-
-* align millis per block constant to 12000 across codebaseC ([48068df](https://github.com/t3rn/t3rn/commit/48068df610c2376dc4b053e43e4d3001a63d1e74))
-* align millis per block constant to 12000 across codebaseC ([40d3898](https://github.com/t3rn/t3rn/commit/40d38986ed562c527114eb0891c7918dc1268c14))
-* bump t0rn patchfix version and merge remedy chainspecs ([b47d699](https://github.com/t3rn/t3rn/commit/b47d6992661c273e5edfdf03f4b2183667a72512))
-* ensureroot needs account type ([3f4f0f8](https://github.com/t3rn/t3rn/commit/3f4f0f83fae4a99352ddc55cc2495b31590b8973))
-* ensureroot needs account type ([2d33ec9](https://github.com/t3rn/t3rn/commit/2d33ec9abd61b553cc2f3262d2f99116573a0bc6))
-* imports were bad from find and replace ([a394a35](https://github.com/t3rn/t3rn/commit/a394a3507577a592b492c976184cbbca8195c8fc))
-* imports were bad from find and replace ([7d81dfd](https://github.com/t3rn/t3rn/commit/7d81dfdeeda1af88e2c86e8f3efdf0ab37cbcaa6))
-* remove bad_blocks from t0rn chain specs ([72c2062](https://github.com/t3rn/t3rn/commit/72c206295e2d5cf52630cce67f764ee49b175568))
 
 
 
