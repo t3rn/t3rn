@@ -1,20 +1,20 @@
-use crate::abi::Type as AbiType;
+use crate::abi::{decode_buf2val, GatewayABIConfig, Type as AbiType, Type};
 use bytes::Buf;
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::{
     prelude::{fmt::Debug, vec, vec::Vec},
     TypeInfo,
 };
+use sp_std::prelude::*;
 
+use crate::interface::SideEffectInterface;
 #[cfg(feature = "runtime")]
 use num::Zero;
 #[cfg(feature = "runtime")]
 use scale_info::prelude::collections::VecDeque;
+use sp_runtime::{DispatchError};
 
-pub type TargetId = [u8; 4];
-pub type EventSignature = Vec<u8>;
-pub type SideEffectName = Vec<u8>;
-type Bytes = Vec<u8>;
+pub use crate::types::*;
 
 pub const COMPOSABLE_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"comp";
 pub const WASM_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"wasm";
@@ -25,6 +25,7 @@ pub const ASSETS_TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"tass";
 pub const MULTI_TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"mult";
 pub const TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"tran";
 pub const ADD_LIQUIDITY_SIDE_EFFECT_ID: &[u8; 4] = b"aliq";
+pub const REMOVE_LIQUIDITY_SIDE_EFFECT_ID: &[u8; 4] = b"rliq";
 pub const SWAP_SIDE_EFFECT_ID: &[u8; 4] = b"swap";
 pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 
@@ -95,6 +96,52 @@ where
         Hasher::hash(xtx_id_and_index.as_slice())
     }
 
+    pub fn validate(&self, abi: GatewayABIConfig) -> Result<TargetId, DispatchError> {
+        // Validate optional insurance as the required last encoded argument for each SFX
+        let last_arg = self
+            .encoded_args
+            .last()
+            .ok_or("SFX::validate - Empty encoded args")?;
+
+        let arg_insurance_and_reward: [u128; 2] = decode_buf2val(last_arg.to_owned())?;
+
+        if arg_insurance_and_reward[0].encode() != self.insurance.encode() {
+            return Err("SFX::validate - Invalid insurance".into())
+        }
+        if arg_insurance_and_reward[1].encode() != self.max_reward.encode() {
+            return Err("SFX::validate - Invalid reward".into())
+        }
+
+        let decoded_action: [u8; 4] = decode_buf2val(self.encoded_action.to_owned())?;
+
+        let sfx_interface: SideEffectInterface = match &decoded_action {
+            DATA_SIDE_EFFECT_ID => crate::standard::get_data_interface(),
+            TRANSFER_SIDE_EFFECT_ID => crate::standard::get_transfer_interface(),
+            ORML_TRANSFER_SIDE_EFFECT_ID
+            | ASSETS_TRANSFER_SIDE_EFFECT_ID
+            | MULTI_TRANSFER_SIDE_EFFECT_ID => crate::standard::get_transfer_assets_interface(),
+            SWAP_SIDE_EFFECT_ID => crate::standard::get_swap_interface(),
+            // todo: add remove liquidity interface
+            ADD_LIQUIDITY_SIDE_EFFECT_ID => crate::standard::get_add_liquidity_interface(),
+            EVM_CALL_SIDE_EFFECT_ID => crate::standard::get_call_evm_interface(),
+            WASM_CALL_SIDE_EFFECT_ID => crate::standard::get_call_wasm_interface(),
+            COMPOSABLE_CALL_SIDE_EFFECT_ID | CALL_SIDE_EFFECT_ID =>
+                crate::standard::get_call_composable_interface(),
+            &_ => return Err("SFX::validate - type not recognized".into()),
+        };
+
+        // Validate the encoded args against the ABI
+        for (index, arg) in self.encoded_args.iter().enumerate() {
+            let abi_type: &Type = sfx_interface
+                .argument_abi
+                .get(index)
+                .ok_or("SFX::validate - Invalid number of encoded args")?;
+            abi_type.eval_abi(arg.to_owned(), &abi)?;
+        }
+
+        Ok(decoded_action)
+    }
+
     pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
         id.as_ref().to_vec()
     }
@@ -157,6 +204,7 @@ enum Action {
     Transfer,
     TransferMulti,
     AddLiquidity,
+    RemoveLiquidity,
     Swap,
     Call,
     CallEvm,
@@ -173,19 +221,24 @@ impl TryFrom<u8> for Action {
             0 => Ok(Action::Transfer),
             1 => Ok(Action::TransferMulti),
             2 => Ok(Action::AddLiquidity),
-            3 => Ok(Action::Swap),
-            4 => Ok(Action::Call), // This needs to be structured nicer
-            5 => Ok(Action::Data),
+            3 => Ok(Action::RemoveLiquidity),
+            4 => Ok(Action::Swap),
+            5 => Ok(Action::Call), // This needs to be structured nicer
+            6 => Ok(Action::CallComposable), // This needs to be structured nicer
+            7 => Ok(Action::CallEvm), // This needs to be structured nicer
+            8 => Ok(Action::CallWasm), // This needs to be structured nicer
+            9 => Ok(Action::Data),
             _ => Err("Invalid action id"),
         }
     }
 }
 
-impl Into<[u8; 4]> for Action {
-    fn into(self) -> [u8; 4] {
-        match self {
+impl From<Action> for [u8; 4] {
+    fn from(val: Action) -> Self {
+        match val {
             Action::Transfer => *TRANSFER_SIDE_EFFECT_ID,
             Action::AddLiquidity => *ADD_LIQUIDITY_SIDE_EFFECT_ID,
+            Action::RemoveLiquidity => *REMOVE_LIQUIDITY_SIDE_EFFECT_ID,
             Action::Swap => *SWAP_SIDE_EFFECT_ID,
             Action::Call => *CALL_SIDE_EFFECT_ID,
             Action::CallEvm => *EVM_CALL_SIDE_EFFECT_ID,
@@ -226,6 +279,19 @@ fn extract_args<
             Ok(args)
         },
         Action::AddLiquidity => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_right
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // liquidity_token
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_left
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_liquidity_token
+            take_insurance::<BalanceOf>(bytes, &mut args);
+
+            Ok(args)
+        },
+        Action::RemoveLiquidity => {
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
@@ -340,7 +406,9 @@ fn take_insurance<Balance: MaxEncodedLen>(bytes: &mut bytes::Bytes, args: &mut V
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[derive(Default)]
 pub enum ConfirmationOutcome {
+    #[default]
     Success,
     MisbehaviourMalformedValues {
         key: Bytes,
@@ -350,11 +418,7 @@ pub enum ConfirmationOutcome {
     TimedOut,
 }
 
-impl Default for ConfirmationOutcome {
-    fn default() -> Self {
-        ConfirmationOutcome::Success
-    }
-}
+
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
@@ -367,16 +431,14 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
+#[derive(Default)]
 pub enum SecurityLvl {
+    #[default]
     Optimistic,
     Escrow,
 }
 
-impl Default for SecurityLvl {
-    fn default() -> Self {
-        SecurityLvl::Optimistic
-    }
-}
+
 
 // Side effects conversion error.
 #[derive(Debug, PartialEq, Eq)]

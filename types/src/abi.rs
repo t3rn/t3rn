@@ -11,7 +11,7 @@ use scale_info::prelude::any::Any;
 use primitive_types::U256;
 
 #[cfg(feature = "runtime")]
-use crate::Bytes;
+use crate::types::Bytes;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
