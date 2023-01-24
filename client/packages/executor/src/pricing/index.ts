@@ -1,3 +1,4 @@
+import BN from "bn.js"
 import { CoingeckoPricing } from "./coingecko"
 import { BehaviorSubject } from "rxjs"
 
@@ -20,7 +21,7 @@ export class PriceEngine {
      * @param assetId Ticker of the asset we want the price of. These are set in the config file.
      * @returns The price of the asset in USD as a subject
      */
-    getAssetPrice(assetId: string): BehaviorSubject<number> {
+    getAssetPrice(assetId: string): BehaviorSubject<BN> {
         return this.coingecko.prices[assetId]
     }
 }

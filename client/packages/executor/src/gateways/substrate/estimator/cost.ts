@@ -1,6 +1,7 @@
-import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
-import {SubstrateRelayer} from "../relayer";
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
+import { SubstrateRelayer } from "../relayer";
 import { BehaviorSubject } from 'rxjs';
+import BN from "bn.js";
 
 /** Type used for storing an TX cost estimate
  * @group Gateways
@@ -8,7 +9,7 @@ import { BehaviorSubject } from 'rxjs';
  */
 export type Estimate = {
 	tx: SubmittableExtrinsic,
-	costSubject: BehaviorSubject<number>
+	costSubject: BehaviorSubject<BN>
 }
 
 /** Class used for estimating the TX cost on the target chain.
@@ -34,7 +35,7 @@ export class CostEstimator {
 	 * @param tx of the SFX on target
 	 * @returns the cost of the SFX in native asset
 	 */
-	async currentTransactionCost(tx: SubmittableExtrinsic): Promise<number> {
+	async currentTransactionCost(tx: SubmittableExtrinsic): Promise<BN> {
 		const paymentInfo = await tx.paymentInfo(this.relayer.signer);
 		return paymentInfo.partialFee.toJSON()
 	}
@@ -44,10 +45,10 @@ export class CostEstimator {
 	 * @param sfxId
 	 * @param tx of the SFX on target
 	 */
-	async getTxCostSubject(sfxId: string, tx: SubmittableExtrinsic): Promise<BehaviorSubject<number>> {
+	async getTxCostSubject(sfxId: string, tx: SubmittableExtrinsic): Promise<BehaviorSubject<BN>> {
 		const txCost = await this.currentTransactionCost(tx); // get cost of tx
-		const costSubject = new BehaviorSubject<number>(txCost); // create a new subject
-		this.trackingMap.set(sfxId, {tx, costSubject}) // add to tracking map
+		const costSubject = new BehaviorSubject<BN>(txCost); // create a new subject
+		this.trackingMap.set(sfxId, { tx, costSubject }) // add to tracking map
 		return costSubject
 	}
 
@@ -57,7 +58,7 @@ export class CostEstimator {
 	async update() {
 		for (const [_sfxId, estimate] of this.trackingMap.entries()) {
 			const txCost = await this.currentTransactionCost(estimate.tx);
-			if(txCost !== estimate.costSubject.getValue()) {
+			if (txCost !== estimate.costSubject.getValue()) {
 				estimate.costSubject.next(txCost)
 			}
 		}

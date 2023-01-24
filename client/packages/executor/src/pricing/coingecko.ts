@@ -1,3 +1,4 @@
+import BN from "bn.js"
 import { config } from "../../config/config"
 import { BehaviorSubject } from "rxjs"
 const axios = require("axios")
@@ -16,7 +17,7 @@ export class CoingeckoPricing {
 
     /** Stores price in USD as a subject */
     prices: {
-        [assetTicker: string]: BehaviorSubject<number>
+        [assetTicker: string]: BehaviorSubject<BN>
     } = {}
 
     constructor() {
@@ -33,7 +34,7 @@ export class CoingeckoPricing {
             config.assets[keys[i]].forEach((asset) => {
                 if (asset.priceSource === "coingecko") {
                     this.assets[keys[i]] = asset.id
-                    this.prices[keys[i]] = new BehaviorSubject<number>(0)
+                    this.prices[keys[i]] = new BehaviorSubject<BN>(new BN.BN(0))
                 }
             })
         }
@@ -50,7 +51,7 @@ export class CoingeckoPricing {
                     "?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false"
                 )
                 .then((res) => {
-                    const price = parseFloat(res.data.market_data.current_price["usd"])
+                    const price = new BN.BN(parseFloat(res.data.market_data.current_price["usd"]))
                     if (price !== this.prices[ids[i]].getValue()) {
                         this.prices[ids[i]].next(price)
                     }

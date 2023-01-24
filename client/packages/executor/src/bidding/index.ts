@@ -1,3 +1,4 @@
+import BN from "bn.js"
 import { SideEffect } from "../executionManager/sideEffect"
 import { config } from "../../config/config"
 
@@ -66,13 +67,13 @@ export class BiddingEngine {
         const maxProfit = sfx.maxProfitUsd.getValue()
         const minProfit = sfx.minProfitUsd
         const txOutputCost = sfx.txOutputCostUsd
-        let bidUsd: number
+        let bidUsd: BN
         if (this.overrideNoCompetition) {
-            bidUsd = txOutputCost + minProfit
+            bidUsd = txOutputCost.add(minProfit)
         } else {
-            bidUsd = txOutputCost + minProfit + maxProfit
+            bidUsd = txOutputCost.add(minProfit).add(maxProfit)
         }
-        return bidUsd
+        return bidUsd.toNumber()
     }
 
     /**
@@ -90,15 +91,16 @@ export class BiddingEngine {
         const maxProfit = sfx.maxProfitUsd.getValue()
         const minProfit = sfx.minProfitUsd
         const txOutputCost = sfx.txOutputCostUsd
-        let bidUsd: number
+        let bidUsd: BN
         if (this.bidAggressive) {
-            bidUsd = txOutputCost + minProfit
+            bidUsd = txOutputCost.add(minProfit)
         } else if (this.bidMeek) {
-            bidUsd = txOutputCost + minProfit + maxProfit
+            bidUsd = txOutputCost.add(minProfit).add(maxProfit)
         } else {
-            bidUsd = txOutputCost + minProfit + (maxProfit - minProfit) * this.bidPercentile
+            const bidPercentileAsBn = new BN.BN(this.bidPercentile)
+            bidUsd = txOutputCost.add(minProfit).add((maxProfit.sub(minProfit)).mul(bidPercentileAsBn))
         }
-        return bidUsd
+        return bidUsd.toNumber()
     }
 
     /**
@@ -111,23 +113,25 @@ export class BiddingEngine {
      * @returns The bidding amount in USD
      */
     computeBeenOutbid(sfx: SideEffect): number {
-        const lastBid = sfx.lastBids.at(-1) || 0
+        const lastBid = new BN.BN(sfx.lastBids.at(-1) || 0)
         const minProfit = sfx.minProfitUsd
         const txOutputCost = sfx.txOutputCostUsd
-        const minProfitBid = txOutputCost + minProfit
+        const minProfitBid = txOutputCost.add(minProfit)
         const maxProfit = sfx.maxProfitUsd.getValue()
-        const maxProfitBid = txOutputCost + minProfit + maxProfit
+        const maxProfitBid = txOutputCost.add(minProfit).add(maxProfit)
 
         if (lastBid === minProfitBid) {
             // If the last bid was the minProfitBid, return the same value (in case others dropout)
-            return minProfitBid
+            return minProfitBid.toNumber()
         } else {
             // Otherwise, get closer that minProfitBid from above
-            const closerBid = lastBid * (1 + this.closerPercentageBid)
+            const closerPercentageBidAsBn = new BN.BN(this.closerPercentageBid)
+            const simpleUnit = new BN.BN(1)
+            const closerBid = lastBid.mul((simpleUnit.add(closerPercentageBidAsBn)))
             if (closerBid >= maxProfitBid) {
-                return maxProfitBid
+                return maxProfitBid.toNumber()
             } else {
-                return closerBid
+                return closerBid.toNumber()
             }
         }
     }

@@ -2,6 +2,7 @@
 import { SideEffect } from "../executionManager/sideEffect"
 import { Execution } from "../executionManager/execution"
 import { config } from "../../config/config"
+import BN from "bn.js"
 
 /**
  * Type used for describing XTX strategies When an XTX is created, the XTX strategy will be evaluated. If the XTX fails the evaluation, the
@@ -136,12 +137,12 @@ export class StrategyEngine {
      * @param sfx Object of SFX to be evaluated
      * @returns MinProfitUsd constraint from the SFX strategy for a given target
      */
-    getMinProfitUsd(sfx: SideEffect): number {
+    getMinProfitUsd(sfx: SideEffect): BN {
         const strategy = this.sfxStrategies[sfx.target]
         if (strategy.minProfitUsd) {
-            return strategy.minProfitUsd
+            return new BN.BN(strategy.minProfitUsd)
         }
-        return 0
+        return new BN.BN(0)
     }
 
     /**
@@ -153,8 +154,11 @@ export class StrategyEngine {
      */
     minProfitRejected(sfx: SideEffect, strategy: SfxStrategy): void | Error {
         if (strategy.minProfitUsd) {
-            if (sfx.maxProfitUsd.getValue() <= strategy.minProfitUsd) {
-                throw new Error("Min Profit condition not met!")
+            const minProfitUsd: BN = new BN.BN(strategy.minProfitUsd)
+            if (minProfitUsd) {
+                if (sfx.maxProfitUsd.getValue() <= minProfitUsd) {
+                    throw new Error("Min Profit condition not met!")
+                }
             }
         }
     }
