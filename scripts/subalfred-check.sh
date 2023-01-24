@@ -31,6 +31,16 @@ for dir in $(cat list); do
     RESULT=$(subalfred check features $dir)
     CHECK_RESULT=$? # 0 if it's good, anything else is bad 
 
+    # If subalfred fails with 130||1, then we dont want to proceed with the check
+    # Its probably cargo error
+    if [[ $CHECK_RESULT == 130 || $CHECK_RESULT == 1 ]]; then
+        echo "❌ Subalfred failed to run check features in $dir"
+        echo "$RESULT"
+        ERRORS=true 
+
+        continue
+    fi
+
     # Filter out false positives
     RESULT_OUTPUT=$(echo "$RESULT" | grep -vE "($1)")
 
