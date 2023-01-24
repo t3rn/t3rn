@@ -21,7 +21,7 @@ finality-relay = { path = "../../primitives/src/bridges/finality" }
 headers-relay  = { path = "../../primitives/src/bridges/headers" }
 relay-utils    = { path = "../../primitives/src/bridges/utils" }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'refactor/infallible-square-up' }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'development' }
 
 # Substrate Dependencies
 
