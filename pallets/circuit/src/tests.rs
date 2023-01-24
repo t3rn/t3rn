@@ -4622,13 +4622,13 @@ fn no_duplicate_xtx_and_sfx_ids() {
 
             assert_eq!(next_events, vec![
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
-                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Deposit { who: ALICE, amount: 6 }), topics: vec![]
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Deposit { who: ALICE, amount: 6 + ED }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::System(
                     circuit_runtime_pallets::frame_system::Event::<Runtime>::NewAccount { account: ALICE }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
-                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: 6 }), topics: vec![]
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: 6  + ED }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
                     circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: 3 }), topics: vec![]

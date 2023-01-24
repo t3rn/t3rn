@@ -183,9 +183,9 @@ pub mod test {
                 assert_err!(
                     SquareUp::<Runtime>::try_request(&local_ctx),
                     DispatchError::Module(ModuleError {
-                        index: 108,
-                        error: [8, 0, 0, 0],
-                        message: Some("RequesterNotEnoughBalance")
+                        index: 10,
+                        error: [2, 0, 0, 0],
+                        message: Some("InsufficientBalance")
                     })
                 );
 
