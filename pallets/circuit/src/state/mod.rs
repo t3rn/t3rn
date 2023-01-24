@@ -26,8 +26,10 @@ type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 ///     Ready -> Committed: All of the side effects have been successfully confirmed
 ///     Ready -> Reverted: Some of the side effects failed and the Xtx was reverted
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Default)]
 pub enum CircuitStatus {
     /// unvalidated xtx requested
+    #[default]
     Requested,
     /// validated xtx with empty side effects - reserved for 3vm following execution
     Reserved,
@@ -303,11 +305,7 @@ pub struct LocalXtxCtx<T: Config> {
     pub full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
 }
 
-impl Default for CircuitStatus {
-    fn default() -> Self {
-        CircuitStatus::Requested
-    }
-}
+
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]

@@ -66,7 +66,7 @@ pub use t3rn_primitives::{
 
 use t3rn_protocol::side_effects::{
     confirm::protocol::*,
-    loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
+    loader::{UniversalSideEffectsProtocol},
 };
 
 use crate::machine::{Machine, *};
@@ -978,22 +978,11 @@ impl<T: Config> Pallet<T> {
 
             let allowed_side_effects = <T as Config>::Xdns::allowed_side_effects(&sfx.target);
 
-            local_ctx
-                .use_protocol
-                .notice_gateway(sfx.target, allowed_side_effects);
-
-            local_ctx
-                .use_protocol
-                .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
-                    sfx.clone(),
-                    gateway_abi,
-                    &mut local_ctx.local_state,
-                    local_ctx.xtx_id.as_ref(),
-                    index as u32
-                ).map_err(|e| {
-                log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
-                e
-            })?;
+            let decoded_sfx_type = sfx.validate(gateway_abi)?;
+            allowed_side_effects
+                .iter()
+                .find(|(&x, _)| x == decoded_sfx_type)
+                .ok_or("SFX not allowed on that target")?;
 
             if let Some(next) = side_effects.get(index + 1) {
                 if sfx.reward_asset_id != next.reward_asset_id {
@@ -1003,30 +992,6 @@ impl<T: Config> Pallet<T> {
                 }
             }
 
-            let (insurance, reward) = if let Some(insurance_and_reward) =
-                UniversalSideEffectsProtocol::ensure_required_insurance::<
-                    T::AccountId,
-                    T::BlockNumber,
-                    BalanceOf<T>,
-                    SystemHashing<T>,
-                >(
-                    sfx.clone(),
-                    &mut local_ctx.local_state,
-                    local_ctx.xtx_id.as_ref(),
-                    index as u32,
-                )? {
-                (insurance_and_reward[0], insurance_and_reward[1])
-            } else {
-                return Err(
-                    "SFX must have its insurance and reward linked into the last arguments list",
-                )
-            };
-            if sfx.max_reward != reward {
-                return Err("Side_effect max_reward must be equal to reward of Optional Insurance")
-            }
-            if sfx.insurance != insurance {
-                return Err("Side_effect insurance must be equal to reward of Optional Insurance")
-            }
             let submission_target_height = T::Portal::get_latest_finalized_height(sfx.target)?
                 .ok_or("target height not found")?;
 
