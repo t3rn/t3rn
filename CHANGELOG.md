@@ -1,3 +1,12 @@
+# [1.2.0-rc.7](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.6...v1.2.0-rc.7) (2023-01-24)
+
+
+### Bug Fixes
+
+* subalfred errors out correctly ([#596](https://github.com/t3rn/t3rn/issues/596)) ([eaa03a4](https://github.com/t3rn/t3rn/commit/eaa03a425ecaa6c3322389be595af34391cf12e3))
+
+
+
 # [1.2.0-rc.6](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.5...v1.2.0-rc.6) (2023-01-23)
 
 
@@ -81,15 +90,6 @@
 * imports were bad from find and replace ([a394a35](https://github.com/t3rn/t3rn/commit/a394a3507577a592b492c976184cbbca8195c8fc))
 * imports were bad from find and replace ([7d81dfd](https://github.com/t3rn/t3rn/commit/7d81dfdeeda1af88e2c86e8f3efdf0ab37cbcaa6))
 * remove bad_blocks from t0rn chain specs ([72c2062](https://github.com/t3rn/t3rn/commit/72c206295e2d5cf52630cce67f764ee49b175568))
-
-
-
-# [1.2.0-rc.2](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.1...v1.2.0-rc.2) (2022-11-15)
-
-
-### Bug Fixes
-
-* add bad_blocks extension to t0rn chain specs ([fb427e3](https://github.com/t3rn/t3rn/commit/fb427e3eb801449a4027951b3bd0a2469b8a16ac))
 
 
 
