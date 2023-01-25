@@ -3,7 +3,7 @@ use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::vec::Vec;
 use t3rn_types::{
     fsx::FullSideEffect,
-    sfx::{ConfirmedSideEffect, HardenedSideEffect, SideEffect},
+    sfx::{ConfirmedSideEffect, SideEffect},
 };
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 pub use crate::volatile::{LocalState, Volatile};

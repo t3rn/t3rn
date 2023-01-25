@@ -172,16 +172,14 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bridges::chain_circuit::{
-        Balance as CircuitBalance, BlockNumber as CircuitBlockNumber,
-    };
+    use crate::sfx::ConfirmationOutcome;
     use hex_literal::hex;
     use sp_core::crypto::AccountId32;
     use sp_runtime::testing::H256;
     use std::convert::TryInto;
 
-    type BlockNumber = CircuitBlockNumber;
-    type BalanceOf = CircuitBalance;
+    type BlockNumber = u32;
+    type BalanceOf = u128;
     type AccountId = AccountId32;
     type Hashing = sp_runtime::traits::BlakeTwo256;
 

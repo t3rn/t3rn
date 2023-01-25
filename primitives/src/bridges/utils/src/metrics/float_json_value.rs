@@ -88,16 +88,12 @@ impl StandaloneMetrics for FloatJsonValueMetric {
 /// Parse HTTP service response.
 fn parse_service_response(json_path: &str, response: &str) -> Result<f64, String> {
     let json = serde_json::from_str(response).map_err(|err| {
-        format!(
-            "Failed to parse HTTP service response: {err:?}. Response: {response:?}",
-        )
+        format!("Failed to parse HTTP service response: {err:?}. Response: {response:?}",)
     })?;
 
     let mut selector = jsonpath_lib::selector(&json);
     let maybe_selected_value = selector(json_path).map_err(|err| {
-        format!(
-            "Failed to select value from response: {err:?}. Response: {response:?}",
-        )
+        format!("Failed to select value from response: {err:?}. Response: {response:?}",)
     })?;
     let selected_value = maybe_selected_value
         .first()

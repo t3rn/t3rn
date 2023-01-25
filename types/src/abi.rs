@@ -4,19 +4,19 @@ use scale_info::{
     TypeInfo,
 };
 
-#[cfg(feature = "runtime")]
+// #[cfg(feature = "runtime")]
 use scale_info::prelude::any::Any;
 
-#[cfg(feature = "runtime")]
+// #[cfg(feature = "runtime")]
 use primitive_types::U256;
 
-#[cfg(feature = "runtime")]
+// #[cfg(feature = "runtime")]
 use crate::types::Bytes;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "runtime")]
+// #[cfg(feature = "runtime")]
 use sp_runtime::RuntimeString;
 
 /// ToDo: Introduce Compact Encoding for u8 + u16 + u32
@@ -251,7 +251,7 @@ impl Type {
     }
 
     /// Checks that the encoded argument has the same length as the gateway definition.
-    #[cfg(feature = "runtime")]
+    // #[cfg(feature = "runtime")]
     pub fn check_length(
         &self,
         encoded_len: usize,
@@ -283,7 +283,7 @@ impl Type {
     }
 
     /// eval assumes encoded_val is bytes Vector encoded with SCALE
-    #[cfg(feature = "runtime")]
+    // #[cfg(feature = "runtime")]
     pub fn eval_abi(
         &self,
         encoded_val: Vec<u8>,
@@ -406,7 +406,7 @@ impl Type {
     }
 
     /// eval assumes encoded_val is bytes Vector encoded with SCALE
-    #[cfg(feature = "runtime")]
+    // #[cfg(feature = "runtime")]
     pub fn eval(
         &self,
         encoded_val: Vec<u8>,
@@ -488,17 +488,7 @@ impl Type {
                 let res: RuntimeString = decode_buf2val(encoded_val)?;
                 Ok(Box::new(res))
             },
-            Type::Hasher(hasher_alg, hash_size) => match hasher_alg {
-                HasherAlgo::Blake2 => match hash_size {
-                    128 => Ok(Box::new(sp_io::hashing::blake2_128)),
-                    256 => Ok(Box::new(sp_io::hashing::blake2_256)),
-                    _ => unimplemented!(),
-                },
-                HasherAlgo::Keccak256 => match hash_size {
-                    256 => Ok(Box::new(sp_io::hashing::keccak_256)),
-                    _ => unimplemented!(),
-                },
-            },
+            Type::Hasher(hasher_alg, _hash_size) => unimplemented!(),
             _ => unimplemented!(),
         }
     }
@@ -550,7 +540,7 @@ pub fn eval_to_encoded(t: Type, raw_val: Vec<u8>) -> Result<Vec<u8>, &'static st
     }
 }
 
-#[cfg(feature = "runtime")]
+// #[cfg(feature = "runtime")]
 pub fn eval_trait_dynamically(t: Type) -> Result<Box<dyn Any>, &'static str> {
     match t {
         Type::Hasher(hasher_alg, hash_size) => match hasher_alg {
