@@ -1,3 +1,12 @@
+# [1.2.0-rc.9](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.8...v1.2.0-rc.9) (2023-01-25)
+
+
+### Features
+
+* github action stale issues ([c20fbbe](https://github.com/t3rn/t3rn/commit/c20fbbec5ecdfb2820788b70a34124e062816bd3))
+
+
+
 # [1.2.0-rc.8](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.7...v1.2.0-rc.8) (2023-01-24)
 
 
@@ -74,15 +83,6 @@
 * chore: pr comments
 
 * chore: remove frontier
-
-
-
-# [1.2.0-rc.4](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.3...v1.2.0-rc.4) (2022-11-23)
-
-
-### Features
-
-* remove badblocks from chainspec ([b361f80](https://github.com/t3rn/t3rn/commit/b361f80b293124223233fd38313863bc3901cf60))
 
 
 
