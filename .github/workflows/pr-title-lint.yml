@@ -15,8 +15,6 @@ on:
       - reopened
       - edited
       - synchronize
-  issues:
-  issue_comment:
 
 jobs:
   lint:
