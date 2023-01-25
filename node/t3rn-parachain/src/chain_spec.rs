@@ -10,11 +10,12 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 use t3rn_primitives::monetary::TRN;
 
-const PARACHAIN_ID: u32 = 2100;
+const PARACHAIN_ID: u32 = 3000;
 const SUPPLY: u128 = (TRN as u128) * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = (TRN as u128) * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 const SUDO: &str = "1t3rnvVous5FTJdqrxR5AQh7UGycPHk98rU63METkgPxbFE";
+pub(crate) const SS58_FORMAT: u16 = 9935;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -98,7 +99,7 @@ pub fn local_testnet_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 9935.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -196,7 +197,7 @@ pub fn polkadot_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 9935.into());
+    properties.insert("ss58Format".into(), SS58_FORMAT.into());
 
     ChainSpec::from_genesis(
         // Name

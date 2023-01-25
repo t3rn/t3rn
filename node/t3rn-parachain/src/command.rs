@@ -128,7 +128,7 @@ macro_rules! construct_async_run {
 pub fn run() -> Result<()> {
     let cli = Cli::from_args();
 
-    sp_core::crypto::set_default_ss58_version(9935u16.into());
+    sp_core::crypto::set_default_ss58_version(crate::chain_spec::SS58_FORMAT.into());
 
     match &cli.subcommand {
         Some(Subcommand::BuildSpec(cmd)) => {
