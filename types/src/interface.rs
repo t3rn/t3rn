@@ -1,10 +1,10 @@
 #![feature(box_syntax)]
 #![cfg_attr(not(feature = "std"), no_std)]
 use crate::{
-    abi::{Type},
-    side_effect::{EventSignature, SideEffectName},
+    abi::Type,
+    sfx::{EventSignature, SideEffectName},
 };
-use scale_info::prelude::{vec::Vec};
+use scale_info::prelude::vec::Vec;
 
 use codec::{Decode, Encode};
 

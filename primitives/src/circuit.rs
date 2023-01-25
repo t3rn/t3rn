@@ -4,7 +4,7 @@ use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
 use sp_std::{fmt::Debug, vec::Vec};
 use t3rn_sdk_primitives::signal::ExecutionSignal;
-use t3rn_types::side_effect::FullSideEffect;
+use t3rn_types::sfx::HardenedSideEffect;
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalTrigger<T: Config> {
@@ -32,7 +32,8 @@ impl<T: Config> LocalTrigger<T> {
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalStateExecutionView<T: Config, BalanceOf> {
     pub local_state: LocalState,
-    pub hardened_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf>>>,
+    pub hardened_side_effects:
+        Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf>>>,
     pub steps_cnt: (u32, u32),
     pub xtx_id: <T as Config>::Hash,
 }
@@ -41,7 +42,7 @@ impl<T: Config, Balance> LocalStateExecutionView<T, Balance> {
     pub fn new(
         xtx_id: <T as Config>::Hash,
         local_state: LocalState,
-        hardened_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, Balance>>>,
+        hardened_side_effects: Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, Balance>>>,
         steps_cnt: (u32, u32),
     ) -> Self {
         LocalStateExecutionView {

@@ -1,8 +1,10 @@
-use crate::{
+use crate::{ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
+
+use t3rn_types::{
     abi::{GatewayABIConfig, Type},
-    protocol::SideEffectProtocol,
-    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+    interface::SideEffectInterface,
 };
+
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
 use frame_system::pallet_prelude::OriginFor;
@@ -169,12 +171,9 @@ pub trait Xdns<T: frame_system::Config> {
         allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> DispatchResult;
 
-    fn allowed_side_effects(gateway_id: &ChainId)
-        -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>>;
+    fn allowed_side_effects(gateway_id: &ChainId) -> Vec<[u8; 4]>;
 
-    fn fetch_side_effect_interface(
-        id: [u8; 4],
-    ) -> Result<Box<dyn SideEffectProtocol>, DispatchError>;
+    fn fetch_side_effect_interface(id: [u8; 4]) -> Result<SideEffectInterface, DispatchError>;
 
     fn update_gateway_ttl(gateway_id: ChainId, last_finalized: u64) -> DispatchResultWithPostInfo;
 

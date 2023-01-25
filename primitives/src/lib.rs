@@ -39,7 +39,8 @@ use sp_runtime::{
 };
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
-// pub use orml_traits;
+
+pub use t3rn_types::sfx as side_effects;
 
 use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
@@ -59,8 +60,6 @@ pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod monetary;
 pub mod portal;
-pub mod protocol;
-pub mod side_effect;
 pub mod signature_caster;
 pub mod storage;
 pub mod threevm;
@@ -107,8 +106,6 @@ pub enum GatewayVendor {
     Rococo,
     Ethereum,
 }
-
-
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

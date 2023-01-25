@@ -41,7 +41,7 @@ pub struct SideEffect<AccountId, BalanceOf> {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
-pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
+pub struct HardenedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
     pub encoded_action: [u8; 4],
@@ -56,14 +56,14 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
 }
 
 impl<AccountId, BlockNumber, BalanceOf> Default
-    for FullSideEffect<AccountId, BlockNumber, BalanceOf>
+    for HardenedSideEffect<AccountId, BlockNumber, BalanceOf>
 where
     AccountId: From<[u8; 32]>,
     BlockNumber: Default,
     BalanceOf: Default,
 {
     fn default() -> Self {
-        FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
+        HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
             prize: BalanceOf::default(),
             encoded_action: [0, 0, 0, 0],
@@ -435,7 +435,7 @@ pub enum SecurityLvl {
 
 // Side effects conversion error.
 #[derive(Debug, PartialEq, Eq)]
-pub enum Error {
+pub enum HDXError {
     /// Expected confirmation to FSX wasn't there while hardening.
     HardeningMissingConfirmationError,
 }
