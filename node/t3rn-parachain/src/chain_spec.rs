@@ -1,12 +1,11 @@
 use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig};
 use cumulus_primitives_core::ParaId;
-
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 use t3rn_primitives::monetary::TRN;
@@ -15,6 +14,7 @@ const PARACHAIN_ID: u32 = 2100;
 const SUPPLY: u128 = (TRN as u128) * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = (TRN as u128) * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
+const SUDO: &str = "1t3rnvVous5FTJdqrxR5AQh7UGycPHk98rU63METkgPxbFE";
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -226,16 +226,12 @@ pub fn polkadot_config() -> ChainSpec {
                 ],
                 // Prefunded accounts
                 vec![
-                    // Genesis Account: t3UH41t54cqKW72s9KSepTr1xW1r9F91aPfJvDfDgQf1CAgRC
-                    (
-                        hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d")
-                            .into(),
-                        SUPPLY,
-                    ),
+                    // Genesis Account: SUDO
+                    (get_account_id_from_adrs(SUDO), SUPPLY),
                 ],
                 PARACHAIN_ID.into(),
                 // Sudo
-                hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d").into(),
+                get_account_id_from_adrs(SUDO),
             )
         },
         // Bootnodes
