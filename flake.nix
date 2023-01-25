@@ -20,6 +20,7 @@
       in {
         devShell = pkgs.mkShell {
           LIBCLANG_PATH = "${pkgs.llvmPackages_11.libclang.lib}/lib";
+          LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib/:$LD_LIBRARY_PATH";
           nativeBuildInputs = with pkgs; [ 
             bashInteractive 
             cmake 
@@ -27,8 +28,11 @@
             pkg-config 
             clang 
             llvmPackages_11.libclang 
+            stdenv.cc.cc.lib
             taplo 
             protobuf
+            sccache
+            nodejs-slim
           ];
           buildInputs =
             [ (rustVersion.override { extensions = [ "rust-src" ]; }) ];

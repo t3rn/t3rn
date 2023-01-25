@@ -6,7 +6,7 @@ use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 use t3rn_primitives::monetary::TRN;
@@ -120,18 +120,54 @@ pub fn local_testnet_config() -> ChainSpec {
                     ),
                 ],
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Alice"),
+                        (TRN as u128) * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Bob"),
+                        (TRN as u128) * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                        (TRN as u128) * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Dave"),
+                        (TRN as u128) * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Eve"),
+                        (TRN as u128) * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                        (TRN as u128) * 100,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+                        (TRN as u128) * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                        (TRN as u128) * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+                        (TRN as u128) * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+                        (TRN as u128) * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+                        (TRN as u128) * 100000,
+                    ),
+                    (
+                        get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+                        (TRN as u128) * 100000,
+                    ),
                 ],
                 PARACHAIN_ID.into(),
                 // Sudo account
@@ -171,7 +207,7 @@ pub fn polkadot_config() -> ChainSpec {
         move || {
             // TODO: needs updating
             polkadot_genesis(
-                // Invulnerable collators
+                // Invulnerable collators FIXME: these are NOT the right collators
                 vec![
                     (
                         // Collator 1: t3W7yG2pkGdLogoX6KJm5KtPMMWBQygvcZArcjtjo5AsJPad2
@@ -191,7 +227,11 @@ pub fn polkadot_config() -> ChainSpec {
                 // Prefunded accounts
                 vec![
                     // Genesis Account: t3UH41t54cqKW72s9KSepTr1xW1r9F91aPfJvDfDgQf1CAgRC
-                    hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d").into(),
+                    (
+                        hex!("00a796547c96dcb02d365e3c0965ac0604575fa8cb0c0d98bd0e04e5e786db4d")
+                            .into(),
+                        SUPPLY,
+                    ),
                 ],
                 PARACHAIN_ID.into(),
                 // Sudo
@@ -224,7 +264,7 @@ pub fn polkadot_config() -> ChainSpec {
 
 fn polkadot_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
-    endowed_accounts: Vec<AccountId>,
+    endowed_accounts: Vec<(AccountId, u128)>,
     id: ParaId,
     root_key: AccountId,
 ) -> circuit_parachain_runtime::GenesisConfig {
@@ -238,7 +278,7 @@ fn polkadot_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, SUPPLY))
+                .map(|(acc, amt)| (acc, amt))
                 .collect(),
         },
         treasury: Default::default(),
