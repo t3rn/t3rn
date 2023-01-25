@@ -1622,7 +1622,7 @@ pub mod pallet {
         /// Execute a side effect via XBI
         /// `xbi` could change to side effects and do the conversions into Xbi messages
         ///
-        /// @maciejbaj look here TODO
+        /// @maciejbaj look here TODO: you'll need to do some conversions from side effect into local instruction
         fn execute_xbi(
             origin: &T::Origin,
             xbi: &xbi_format::XbiFormat,

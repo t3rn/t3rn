@@ -182,7 +182,9 @@ impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance>
         _payee: &T::AccountId,
         _module: &Module,
     ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(Remunerated {
+            remuneration_id: None,
+        })
     }
 
     fn try_remunerate_exact<Module: ModuleOperations<T, Balance>>(
@@ -190,7 +192,9 @@ impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance>
         _amount: Balance,
         _module: &Module,
     ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(Remunerated {
+            remuneration_id: None,
+        })
     }
 
     fn try_finalize(_ledger_id: T::Hash, _outcome: Outcome) -> DispatchResult {
