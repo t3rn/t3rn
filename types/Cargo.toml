@@ -18,11 +18,9 @@ scale-info = { version = "2.1.1", default-features = false, features = [ "derive
 serde      = { default-features = false, version = "1.0", optional = true, features = [ "derive" ] }
 
 primitive-types = { version = "0.11.1", default-features = false, features = [ "scale-info" ] }
-sp-std          = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
 sp-core         = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
 sp-io           = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
 sp-runtime      = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-xbi-format             = { git = "https://github.com/t3rn/xbi.git", branch = 'main', default-features = false, optional = true }
 
 [dev-dependencies]
 hex         = "0.4"
@@ -36,6 +34,6 @@ t3rn-sdk-primitives = { version = "=0.1.1-rc.4" }
 
 [features]
 default     = [ "std" ]
-runtime     = [ "sp-runtime", "sp-core", "xbi-format", "sp-std", "sp-io" ]
-runtime-std = [ "sp-runtime/std", "sp-core/std", "xbi-format/std", "sp-std/std", "sp-io/std" ]
-std         = [ "codec/std", "sp-runtime/std", "sp-core/std", "scale-info/std", "sp-std/std", "serde/std", "xbi-format/std", "bytes/std" ]
+runtime     = [ "sp-runtime", "sp-core", "sp-io" ]
+runtime-std = [ "sp-runtime/std", "sp-core/std", "sp-io/std" ]
+std         = [ "codec/std", "scale-info/std", "serde/std",  "bytes/std", "sp-core/std", "sp-runtime/std" ]

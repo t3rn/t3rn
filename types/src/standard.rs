@@ -13,7 +13,7 @@ use crate::{
 };
 use scale_info::prelude::{vec, vec::Vec};
 
-use sp_std::boxed::Box;
+use scale_info::prelude::boxed::Box;
 
 pub fn standard_side_effects() -> Vec<SideEffectInterface> {
     vec![

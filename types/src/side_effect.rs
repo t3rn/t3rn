@@ -5,14 +5,13 @@ use scale_info::{
     prelude::{fmt::Debug, vec, vec::Vec},
     TypeInfo,
 };
-use sp_std::prelude::*;
 
 use crate::interface::SideEffectInterface;
 #[cfg(feature = "runtime")]
 use num::Zero;
 #[cfg(feature = "runtime")]
 use scale_info::prelude::collections::VecDeque;
-use sp_runtime::{DispatchError};
+use sp_runtime::DispatchError;
 
 pub use crate::types::*;
 
@@ -405,8 +404,7 @@ fn take_insurance<Balance: MaxEncodedLen>(bytes: &mut bytes::Bytes, args: &mut V
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
-#[derive(Default)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo, Default)]
 pub enum ConfirmationOutcome {
     #[default]
     Success,
@@ -418,8 +416,6 @@ pub enum ConfirmationOutcome {
     TimedOut,
 }
 
-
-
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<ConfirmationOutcome>,
@@ -430,15 +426,12 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub cost: Option<BalanceOf>,
 }
 
-#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
-#[derive(Default)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo, Default)]
 pub enum SecurityLvl {
     #[default]
     Optimistic,
     Escrow,
 }
-
-
 
 // Side effects conversion error.
 #[derive(Debug, PartialEq, Eq)]
