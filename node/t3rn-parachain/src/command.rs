@@ -10,17 +10,14 @@ use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_service::{
-    config::{BasePath, PrometheusConfig},
-    TaskManager,
-};
+use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 
 use crate::{
     chain_spec,
     cli::{Cli, RelayChainCli, Subcommand},
-    service::{new_partial, TemplateRuntimeExecutor},
+    service::{new_partial, ParachainNativeExecutor},
 };
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
@@ -115,7 +112,7 @@ macro_rules! construct_async_run {
 		runner.async_run(|$config| {
 			let $components = new_partial::<
 				RuntimeApi,
-				TemplateRuntimeExecutor,
+				ParachainNativeExecutor,
 				_
 			>(
 				&$config,
@@ -205,21 +202,21 @@ pub fn run() -> Result<()> {
             match cmd {
                 BenchmarkCmd::Pallet(cmd) =>
                     if cfg!(feature = "runtime-benchmarks") {
-                        runner.sync_run(|config| cmd.run::<Block, TemplateRuntimeExecutor>(config))
+                        runner.sync_run(|config| cmd.run::<Block, ParachainNativeExecutor>(config))
                     } else {
                         Err("Benchmarking wasn't enabled when building the node. \
 					You can enable it with `--features runtime-benchmarks`."
                             .into())
                     },
                 BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-                    let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
+                    let partials = new_partial::<RuntimeApi, ParachainNativeExecutor, _>(
                         &config,
                         crate::service::parachain_build_import_queue,
                     )?;
                     cmd.run(partials.client)
                 }),
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-                    let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
+                    let partials = new_partial::<RuntimeApi, ParachainNativeExecutor, _>(
                         &config,
                         crate::service::parachain_build_import_queue,
                     )?;
@@ -236,30 +233,26 @@ pub fn run() -> Result<()> {
                 _ => Err("Benchmarking sub-command unsupported".into()),
             }
         },
+        #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
-            if cfg!(feature = "try-runtime") {
-                let runner = cli.create_runner(cmd)?;
-
-                // grab the task manager.
-                let registry = &runner
-                    .config()
-                    .prometheus_config
-                    .as_ref()
-                    .map(|cfg| &cfg.registry);
+            let runner = cli.create_runner(cmd)?;
+            runner.async_run(|config| {
+                // only need a runtime or a task manager to do `async_run`.
+                let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
                 let task_manager =
-                    TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-                        .map_err(|e| format!("Error: {:?}", e))?;
+                    sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+                        .map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
 
-                runner.async_run(|config| {
-                    Ok((
-                        cmd.run::<Block, TemplateRuntimeExecutor>(config),
-                        task_manager,
-                    ))
-                })
-            } else {
-                Err("Try-runtime must be enabled by `--features try-runtime`.".into())
-            }
+                Ok((
+                    cmd.run::<Block, ParachainNativeExecutor>(config),
+                    task_manager,
+                ))
+            })
         },
+        #[cfg(not(feature = "try-runtime"))]
+        Some(Subcommand::TryRuntime) => Err("TryRuntime wasn't enabled when building the node. \
+            You can enable it with `--features try-runtime`."
+            .into()),
         Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
