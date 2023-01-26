@@ -1,3 +1,6 @@
 [submodule "protocol"]
 	path = protocol
 	url = https://github.com/t3rn/protocol
+[submodule "finality-verifiers/eth2/vendor/snowbridge"]
+	path = finality-verifiers/eth2/vendor/snowbridge
+	url = https://github.com/petscheit/snowbridge

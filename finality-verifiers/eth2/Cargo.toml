@@ -1,0 +1,76 @@
+
+[package]
+authors    = [ "t3rn ltd. <team@t3rn.io>" ]
+edition    = "2018"
+homepage   = "https://t3rn.io"
+license    = "Apache 2.0"
+name       = "pallet-eth2-finality-verifier"
+repository = "https://github.com/t3rn/t3rn/"
+version    = "1.0.0-alpha.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+codec            = { package = "parity-scale-codec", version = "3", default-features = false }
+finality-grandpa = { version = "0.16", default-features = false, features = [ "derive-codec" ] }
+hash-db          = { version = "0.15.2", default-features = false }
+log              = { version = "0.4.14", default-features = false }
+num-traits       = { version = "0.2", default-features = false }
+scale-info       = { version = "2", default-features = false, features = [ "derive" ] }
+serde            = { version = "1.0", default-features = false, optional = true }
+
+# Substrate Dependencies
+frame-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+frame-system  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+
+sp-core             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-io               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-runtime          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-std              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+
+# These are the testing dependencies that we are now selecting via future flag
+ed25519-dalek    = { version = "1.0", features = [ "u64_backend" ], optional = true }
+hex              = { package = "rustc-hex", version = "2.1.0", optional = true }
+hex-literal      = { version = "0.3.1", optional = true }
+pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', optional = true }
+pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', optional = true }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', optional = true }
+
+light-client-commons = { path = "../commons", default-features = false }
+
+[features]
+default = [ "std" ]
+runtime-benchmarks = [  ]
+std = [
+  "codec/std",
+  "hash-db/std",
+  "num-traits/std",
+  "ed25519-dalek/std",
+  "hex/std",
+  "finality-grandpa/std",
+  "scale-info/std",
+
+  "frame-support/std",
+  "frame-system/std",
+
+  "sp-runtime/std",
+  "sp-core/std",
+  "sp-state-machine/std",
+  "sp-trie/std",
+  "sp-std/std",
+  "sp-io/std",
+  "sp-finality-grandpa/std",
+
+  "pallet-balances/std",
+  "pallet-sudo/std",
+  "pallet-timestamp/std",
+
+  "light-client-commons/std",
+
+  "log/std",
+  "serde/std",
+]
+testing = [ "ed25519-dalek", "pallet-balances", "pallet-sudo", "pallet-timestamp", "hex", "hex-literal" ]
