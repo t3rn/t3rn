@@ -3,18 +3,14 @@ use circuit_runtime_pallets::pallet_asset_tx_payment::HandleCredit;
 use frame_support::{
     parameter_types,
     traits::{
-        fungibles::{Balanced, CreditOf},
-        ConstU128, ConstU32, ConstU8, Currency, FindAuthor, Imbalance, NeverEnsureOrigin,
-        OnUnbalanced,
+        fungibles::{Balanced, CreditOf}, ConstU32, ConstU8, NeverEnsureOrigin,
     },
-    weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
-    ConsensusEngineId, PalletId,
+    weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee}, PalletId,
 };
 use frame_system::EnsureRoot;
 use sp_runtime::{
     generic,
-    traits::{AccountIdLookup, BlakeTwo256, ConvertInto},
-    AccountId32, Permill,
+    traits::{AccountIdLookup, BlakeTwo256, ConvertInto}, Permill,
 };
 
 // Configure FRAME pallets to include in runtime.

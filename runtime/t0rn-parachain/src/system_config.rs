@@ -2,8 +2,7 @@ use crate::{accounts_config::AccountManagerCurrencyAdapter, Hash as HashPrimitiv
 use frame_support::{
     parameter_types,
     traits::{
-        fungibles::{Balanced, CreditOf},
-        ConstU128, ConstU32, ConstU8,
+        fungibles::{Balanced, CreditOf}, ConstU32, ConstU8,
     },
     weights::IdentityFee,
 };

@@ -164,7 +164,7 @@ where
 					let justification = match decoded_justification {
 						Ok(j) => j,
 						Err(err) => {
-							log_error(format!("decode failed with error {:?}", err));
+							log_error(format!("decode failed with error {err:?}"));
 							continue;
 						}
 					};

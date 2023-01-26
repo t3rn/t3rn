@@ -99,18 +99,16 @@ impl GatewayType {
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub enum GatewayVendor {
     Polkadot,
     Kusama,
+    #[default]
     Rococo,
     Ethereum,
 }
 
-impl Default for GatewayVendor {
-    fn default() -> Self {
-        GatewayVendor::Rococo
-    }
-}
+
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

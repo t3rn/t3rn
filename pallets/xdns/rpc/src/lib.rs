@@ -81,6 +81,6 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> JsonRpseeError {
     JsonRpseeError::Call(CallError::Custom(jsonrpsee::types::ErrorObject::owned(
         RUNTIME_ERROR as i32,
         "Runtime Error - XDNS RPC",
-        Some(format!("{:?}", err)),
+        Some(format!("{err:?}")),
     )))
 }

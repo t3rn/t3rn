@@ -4,7 +4,7 @@ description = "Light Clients commons, primitives and traits to be implemented by
 edition     = "2018"
 homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
-name        = "light-client-common"
+name        = "light-client-commons"
 repository  = 'https://github.com/t3rn/t3rn'
 version     = "1.0.0-alpha.0"
 

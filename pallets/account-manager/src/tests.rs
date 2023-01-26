@@ -4,7 +4,7 @@ use circuit_runtime_pallets::{
 };
 use codec::{self, Encode};
 use frame_support::{
-    assert_err, assert_ok,
+    assert_ok,
     dispatch::{DispatchInfo, PostDispatchInfo},
     traits::fungibles::Mutate,
     weights::Weight,
@@ -37,7 +37,7 @@ fn setup_asset() -> u32 {
 
     assert_ok!(Assets::force_create(
         Origin::root(),
-        asset_id.into(),
+        asset_id,
         sp_runtime::MultiAddress::Id(ALICE),
         true, /* is_sufficient */
         min_balance
@@ -45,7 +45,7 @@ fn setup_asset() -> u32 {
 
     assert_ok!(Assets::set_metadata(
         Origin::signed(ALICE),
-        asset_id.into(),
+        asset_id,
         name.encode(),
         symbol.encode(),
         decimals,
@@ -65,12 +65,12 @@ fn transaction_payment_in_asset_possible() {
         let native_balance = Balances::free_balance(caller.clone());
 
         // mint into the caller account
-        assert_ok!(Assets::mint_into(asset_id.into(), &caller, initial_balance));
+        assert_ok!(Assets::mint_into(asset_id, &caller, initial_balance));
         assert_eq!(Assets::balance(asset_id, caller.clone()), initial_balance);
 
         // charge a bogus transfer call
         let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-            .pre_dispatch(&caller, CALL, &info_from_weight(Weight::from(weight)), len)
+            .pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
             .expect("asset transaction payment");
 
         // assert that native balance is not used
@@ -82,7 +82,7 @@ fn transaction_payment_in_asset_possible() {
 
         assert_ok!(ChargeAssetTxPayment::<Runtime>::post_dispatch(
             Some(pre),
-            &info_from_weight(Weight::from(weight)),
+            &info_from_weight(weight),
             &PostDispatchInfo {
                 actual_weight: None,
                 pays_fee: Default::default(),
@@ -104,7 +104,7 @@ fn transaction_payment_in_asset_fails_if_insufficient_balance() {
         // try charge transaction fee in asset with no prior mint
         assert_eq!(Assets::balance(asset_id, caller.clone()), 0);
         assert!(ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-            .pre_dispatch(&caller, CALL, &info_from_weight(Weight::from(5_u64)), 10)
+            .pre_dispatch(&caller, CALL, &info_from_weight(5_u64), 10)
             .is_err());
     });
 }

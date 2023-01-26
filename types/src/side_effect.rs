@@ -181,9 +181,9 @@ impl TryFrom<u8> for Action {
     }
 }
 
-impl Into<[u8; 4]> for Action {
-    fn into(self) -> [u8; 4] {
-        match self {
+impl From<Action> for [u8; 4] {
+    fn from(val: Action) -> Self {
+        match val {
             Action::Transfer => *TRANSFER_SIDE_EFFECT_ID,
             Action::AddLiquidity => *ADD_LIQUIDITY_SIDE_EFFECT_ID,
             Action::Swap => *SWAP_SIDE_EFFECT_ID,
@@ -340,7 +340,9 @@ fn take_insurance<Balance: MaxEncodedLen>(bytes: &mut bytes::Bytes, args: &mut V
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[derive(Default)]
 pub enum ConfirmationOutcome {
+    #[default]
     Success,
     MisbehaviourMalformedValues {
         key: Bytes,
@@ -350,11 +352,7 @@ pub enum ConfirmationOutcome {
     TimedOut,
 }
 
-impl Default for ConfirmationOutcome {
-    fn default() -> Self {
-        ConfirmationOutcome::Success
-    }
-}
+
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
@@ -367,16 +365,14 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
+#[derive(Default)]
 pub enum SecurityLvl {
+    #[default]
     Optimistic,
     Escrow,
 }
 
-impl Default for SecurityLvl {
-    fn default() -> Self {
-        SecurityLvl::Optimistic
-    }
-}
+
 
 // Side effects conversion error.
 #[derive(Debug, PartialEq, Eq)]

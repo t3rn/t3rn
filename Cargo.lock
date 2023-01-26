@@ -5501,6 +5501,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "light-client-commons"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "link-cplusplus"
 version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6907,6 +6919,35 @@ dependencies = [
  "sp-npos-elections",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-eth2-finality-verifier"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "ed25519-dalek",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "hex-literal 0.3.4",
+ "light-client-commons",
+ "log",
+ "num-traits",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
 ]
 
 [[package]]

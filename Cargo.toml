@@ -15,5 +15,7 @@ members = [
   'primitives/src/bridges/snowfork/*',
   'runtime/*',
   'types',
+  'finality-verifiers/commons',
   'finality-verifiers/grandpa',
+  'finality-verifiers/eth2',
 ]

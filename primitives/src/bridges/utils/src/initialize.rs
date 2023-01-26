@@ -91,7 +91,7 @@ fn loop_name_prefix() -> String {
             if loop_name.is_empty() {
                 String::new()
             } else {
-                format!("[{}] ", loop_name)
+                format!("[{loop_name}] ")
             }
         })
         .unwrap_or_else(|_| String::new())
@@ -104,8 +104,8 @@ enum Either<A, B> {
 impl<A: Display, B: Display> Display for Either<A, B> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::Left(a) => write!(fmt, "{}", a),
-            Self::Right(b) => write!(fmt, "{}", b),
+            Self::Left(a) => write!(fmt, "{a}"),
+            Self::Right(b) => write!(fmt, "{b}"),
         }
     }
 }

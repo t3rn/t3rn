@@ -54,7 +54,7 @@ impl FloatJsonValueMetric {
         use isahc::{AsyncReadResponseExt, HttpClient, Request};
 
         fn map_isahc_err(err: impl std::fmt::Display) -> String {
-            format!("Failed to fetch token price from remote server: {}", err)
+            format!("Failed to fetch token price from remote server: {err}")
         }
 
         let request = Request::get(&self.url)
@@ -89,22 +89,20 @@ impl StandaloneMetrics for FloatJsonValueMetric {
 fn parse_service_response(json_path: &str, response: &str) -> Result<f64, String> {
     let json = serde_json::from_str(response).map_err(|err| {
         format!(
-            "Failed to parse HTTP service response: {:?}. Response: {:?}",
-            err, response,
+            "Failed to parse HTTP service response: {err:?}. Response: {response:?}",
         )
     })?;
 
     let mut selector = jsonpath_lib::selector(&json);
     let maybe_selected_value = selector(json_path).map_err(|err| {
         format!(
-            "Failed to select value from response: {:?}. Response: {:?}",
-            err, response,
+            "Failed to select value from response: {err:?}. Response: {response:?}",
         )
     })?;
     let selected_value = maybe_selected_value
         .first()
         .and_then(|v| v.as_f64())
-        .ok_or_else(|| format!("Missing required value from response: {:?}", response,))?;
+        .ok_or_else(|| format!("Missing required value from response: {response:?}",))?;
 
     Ok(selected_value)
 }
