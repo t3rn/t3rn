@@ -10,11 +10,11 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 use t3rn_primitives::monetary::TRN;
 
-const PARACHAIN_ID: u32 = 3000;
+const PARACHAIN_ID: u32 = 3333;
 const SUPPLY: u128 = (TRN as u128) * 100_000_000; // 100 million TRN
 const CANDIDACY_BOND: u128 = (TRN as u128) * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
-const SUDO: &str = "1t3rnvVous5FTJdqrxR5AQh7UGycPHk98rU63METkgPxbFE";
+const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 pub(crate) const SS58_FORMAT: u16 = 9935;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -227,7 +227,7 @@ pub fn polkadot_config() -> ChainSpec {
                 ],
                 // Prefunded accounts
                 vec![
-                    // Genesis Account: SUDO
+                    // Genesis Account: SUDO (t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX = hex!("0x00a6769855d6df941f09e0743f8879f66bad2dde6534a268dfe478449a16312b").into()
                     (get_account_id_from_adrs(SUDO), SUPPLY),
                 ],
                 PARACHAIN_ID.into(),
