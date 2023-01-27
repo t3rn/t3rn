@@ -211,17 +211,17 @@ pub fn polkadot_config() -> ChainSpec {
                 // Invulnerable collators FIXME: these are NOT the right collators
                 vec![
                     (
-                        // Collator 1: t3W7yG2pkGdLogoX6KJm5KtPMMWBQygvcZArcjtjo5AsJPad2
-                        hex!("5232d5d6b3904523020c08addf5b648f5ecb1e3481c04fe46d2d82efb193b674")
+                        // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
                             .into(),
-                        hex!("5232d5d6b3904523020c08addf5b648f5ecb1e3481c04fe46d2d82efb193b674")
+                        hex!("9064ecbcc5f6358d1cce830a0d1db923b9a7f2493c533eadea14ce6c623d1122")
                             .unchecked_into(),
                     ),
                     (
-                        // Collator 2: t3X7yGXEmCwTwwS6aFwwNeXDrGT2EU9Cy13G4qUPNpVh4Phjm
-                        hex!("7e6f18e1b19513672c6a11d1e09880ba05015c84022ebe84c781f5bc71fc4d79")
+                        // Collator 2: t3VVV3XoajCLGHp7kRWjeV37x43eDPb2XPxXJM92jmwCa1Y5h
+                        hex!("365f04d23363f74c2239cb0071d7e6c97ce9b8e9372240887570e290ac78f85f")
                             .into(),
-                        hex!("7e6f18e1b19513672c6a11d1e09880ba05015c84022ebe84c781f5bc71fc4d79")
+                        hex!("365f04d23363f74c2239cb0071d7e6c97ce9b8e9372240887570e290ac78f85f")
                             .unchecked_into(),
                     ),
                 ],
