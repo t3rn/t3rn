@@ -45,7 +45,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryInto, prelude::*};
 
-pub const EXISTENTIAL_DEPOSIT: u128 = 500;
+pub const EXISTENTIAL_DEPOSIT: u128 = 1;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
