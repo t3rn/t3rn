@@ -13,11 +13,18 @@ version    = "1.0.0-alpha.0"
 [dependencies]
 codec            = { package = "parity-scale-codec", version = "3", default-features = false }
 finality-grandpa = { version = "0.16", default-features = false, features = [ "derive-codec" ] }
+typenum          = { version = "1.16.0", default-features = false }
 hash-db          = { version = "0.15.2", default-features = false }
 log              = { version = "0.4.14", default-features = false }
 num-traits       = { version = "0.2", default-features = false }
 scale-info       = { version = "2", default-features = false, features = [ "derive" ] }
 serde            = { version = "1.0", default-features = false, optional = true }
+
+# SSZ + BLS
+milagro_bls = { git = "https://github.com/Snowfork/milagro_bls", default-features = false }
+ssz-rs = { git = "https://github.com/ralexstokes/ssz-rs", default-features = false, rev="d18af912abacbf84219be37ab3b42a9abcf10d2a" }
+ssz-rs-derive = { git = "https://github.com/ralexstokes/ssz-rs", default-features = false, rev="d18af912abacbf84219be37ab3b42a9abcf10d2a" }
+ethereum-types = { version = "0.11.0", default-features = false }
 
 # Substrate Dependencies
 frame-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
@@ -72,5 +79,9 @@ std = [
 
   "log/std",
   "serde/std",
+
+  "ssz-rs/std",
+  "milagro_bls/std",
+  "ethereum-types/std",
 ]
 testing = [ "ed25519-dalek", "pallet-balances", "pallet-sudo", "pallet-timestamp", "hex", "hex-literal" ]

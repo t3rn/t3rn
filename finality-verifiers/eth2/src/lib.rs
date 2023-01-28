@@ -54,6 +54,11 @@ pub use light_client_commons::{
 #[cfg(feature = "testing")]
 pub mod mock;
 
+pub mod constants;
+pub mod minimal_light_client;
+pub mod types;
+use types::{BeaconBlockHeader, Slot, SyncCommittee};
+
 /// Pallet containing weights for this pallet.
 pub mod weights;
 
@@ -92,6 +97,18 @@ pub mod pallet {
     pub(super) type PalletOwnerMap<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ShardId, T::AccountId>;
 
+    #[pallet::storage]
+    pub(super) type LatestBeaconBlockHeader<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, BeaconBlockHeader, ValueQuery>;
+
+    #[pallet::storage]
+    pub(super) type BeaconBlockHeaderUpdates<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Identity, Slot, BeaconBlockHeader>;
+
+    // #[pallet::storage]
+    // pub(super) type SyncCommittees<T: Config<I>, I: 'static = ()> =
+    //     StorageMap<_, Identity, u64, SyncCommittee, OptionQuery>;
+
     /// If true, all pallet transactions are failed immediately.
     #[pallet::storage]
     pub(super) type IsHalted<T: Config<I>, I: 'static = ()> = StorageValue<_, bool, ValueQuery>;
@@ -103,55 +120,22 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
+        InvalidSlot,
+
+        InvalidSignature,
+
+        InvalidFinalityBranch,
+
+        InvalidPeriod,
+
+        SyncCommitteeParticipantsNotSupermajority,
         /// The submitted range is empty
-        EmptyRangeSubmitted,
-        /// The submitted range is larger the HeadersToStore, which is not permitted
-        RangeToLarge,
-        /// No finalized header was found in storage
-        NoFinalizedHeader,
-        /// The authority set in invalid
-        InvalidAuthoritySet,
-        /// The submitted GrandpaJustification is not valid
-        InvalidGrandpaJustification,
-        /// The header range linkage is not valid
-        InvalidRangeLinkage,
-        /// The linkage with the justified header is not valid
-        InvalidJustificationLinkage,
-        /// The parachain entry was not found in storage
-        ParachainEntryNotFound,
-        /// The relaychains storge root was not found. This implies the header is not available
-        StorageRootNotFound,
-        /// The inclusion data couldn't be decoded
-        InclusionDataDecodeError,
-        /// The submitted storage proof is invalid
-        InvalidStorageProof,
-        /// The event was not found in the specified block
-        EventNotIncluded,
-        /// The given bytes couldn't be decoded as a header
-        HeaderDecodingError,
-        /// The given bytes couldn't be decoded as header data
-        HeaderDataDecodingError,
-        /// The headers storage root doesn't map the supplied once
-        StorageRootMismatch,
-        /// The header couldn't be found in storage
-        UnknownHeader,
-        /// The events paramaters couldn't be decoded
-        EventDecodingFailed,
-        /// The side effect is not known for this vendor
-        UnkownSideEffect,
-        /// A forced change was detected, which is not supported
-        UnsupportedScheduledChange,
-        /// The pallet is currently halted
-        Halted,
-        /// The block height couldn't be converted
-        BlockHeightConversionError,
+        NothingToVerify,
+
+        BLSSignatureVerificationFailed,
+
+        InvalidLightClientUpdate,
     }
-    // #[pallet::event]
-    // #[pallet::generate_deposit(pub (super) fn deposit_event)]
-    // pub enum Event<T: Config> {
-    //     /// \[owner\]
-    //     Eth2LightClientInitializedBy(T::AccountId),
-    // }
 
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
@@ -163,6 +147,74 @@ pub mod pallet {
             let _who = ensure_signed(origin)?;
 
             Ok(().into())
+        }
+    }
+
+    impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
+        fn get_latest_finalized_header() -> Result<Bytes, DispatchError> {
+            Ok(Bytes::new())
+        }
+
+        fn get_latest_exec_header() -> Result<Bytes, DispatchError> {
+            Ok(Bytes::new())
+        }
+
+        fn initialize(
+            origin: T::Origin,
+            _chain_id: ShardId,
+            _encoded_registration_data: Bytes,
+        ) -> Result<(), DispatchError> {
+            let _who = ensure_signed(origin)?;
+
+            Ok(())
+        }
+
+        fn set_operational(
+            origin: T::Origin,
+            _chain_id: ShardId,
+            _operational: bool,
+        ) -> Result<(), DispatchError> {
+            let _who = ensure_signed(origin)?;
+
+            Ok(())
+        }
+
+        fn submit_headers(
+            origin: OriginFor<T>,
+            _chain_id: ShardId,
+            _encoded_header_data: Bytes,
+        ) -> Result<bool, DispatchError> {
+            let _who = ensure_signed(origin)?;
+
+            Ok(true)
+        }
+
+        fn submit_finality_header(
+            origin: OriginFor<T>,
+            _chain_id: ShardId,
+            _encoded_header_data: Bytes,
+        ) -> Result<bool, DispatchError> {
+            let _who = ensure_signed(origin)?;
+
+            Ok(true)
+        }
+
+        fn verify_state_included(
+            _chain_id: ShardId,
+            _message: Bytes,
+        ) -> Result<bool, DispatchError> {
+            Ok(true)
+        }
+
+        fn verify_event_included(
+            _chain_id: ShardId,
+            _message: Bytes,
+        ) -> Result<bool, DispatchError> {
+            Ok(true)
+        }
+
+        fn verify_tx_included(_chain_id: ShardId, _message: Bytes) -> Result<bool, DispatchError> {
+            Ok(true)
         }
     }
 }
