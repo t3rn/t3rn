@@ -44,8 +44,6 @@ use sp_std::convert::TryInto;
 use frame_support::pallet_prelude::*;
 use frame_system::ensure_signed;
 
-use sp_runtime::traits::Header as HeaderT;
-
 pub use light_client_commons::{
     traits::LightClient,
     types::{Bytes, ShardId},
@@ -54,10 +52,13 @@ pub use light_client_commons::{
 #[cfg(feature = "testing")]
 pub mod mock;
 
+pub mod bls;
 pub mod constants;
 pub mod minimal_light_client;
 pub mod types;
-use types::{BeaconBlockHeader, Slot, SyncCommittee};
+pub mod types_to_ssz;
+
+use types::{BeaconBlockHeader, Eth2LightClientInitData, Slot};
 
 /// Pallet containing weights for this pallet.
 pub mod weights;
@@ -73,6 +74,8 @@ use frame_system::pallet_prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+
+    use sp_core::H256;
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -105,9 +108,9 @@ pub mod pallet {
     pub(super) type BeaconBlockHeaderUpdates<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Identity, Slot, BeaconBlockHeader>;
 
-    // #[pallet::storage]
-    // pub(super) type SyncCommittees<T: Config<I>, I: 'static = ()> =
-    //     StorageMap<_, Identity, u64, SyncCommittee, OptionQuery>;
+    #[pallet::storage]
+    pub(super) type GenesisValidatorsRoot<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, H256, ValueQuery>;
 
     /// If true, all pallet transactions are failed immediately.
     #[pallet::storage]
@@ -122,17 +125,27 @@ pub mod pallet {
     pub enum Error<T, I = ()> {
         InvalidSlot,
 
-        InvalidSignature,
+        InvalidBLSSignature,
+
+        InvalidBLSPublicKeyUsedForVerification,
 
         InvalidFinalityBranch,
 
         InvalidPeriod,
 
         SyncCommitteeParticipantsNotSupermajority,
-        /// The submitted range is empty
+
         NothingToVerify,
 
+        GenesisValidatorsRootNotInitialized,
+
         BLSSignatureVerificationFailed,
+
+        ForkDataHashTreeRootFailed,
+
+        SigningDataHashTreeRootFailed,
+
+        BeaconHeaderHashTreeRootFailed,
 
         InvalidLightClientUpdate,
     }
@@ -143,8 +156,15 @@ pub mod pallet {
         ///
         /// This function can only be called by the pallet owner.
         #[pallet::weight(<T as Config<I>>::WeightInfo::initialize())]
-        pub fn initialize(origin: OriginFor<T>, _data: Bytes) -> DispatchResultWithPostInfo {
+        pub fn initialize(
+            origin: OriginFor<T>,
+            data: Eth2LightClientInitData,
+        ) -> DispatchResultWithPostInfo {
             let _who = ensure_signed(origin)?;
+
+            GenesisValidatorsRoot::<T, I>::put(H256::from_slice(&data.genesis_validators_root));
+
+            LatestBeaconBlockHeader::<T, I>::put(data.trusted_snapshot_header);
 
             Ok(().into())
         }
@@ -232,17 +252,9 @@ pub mod tests {
 #[cfg(all(feature = "testing", test))]
 mod tests {
     use super::*;
-    use crate::mock::{
-        run_test, test_header, test_header_range, test_header_with_correct_parent, AccountId,
-        Origin, TestHeader, TestNumber, TestRuntime,
-    };
+    use crate::mock::{run_test, TestRuntime};
 
-    use codec::Encode;
-    use frame_support::{assert_err, assert_noop, assert_ok};
-    use sp_finality_grandpa::AuthorityId;
-    use sp_runtime::{Digest, DigestItem, DispatchError};
-
-    const MAIN_SHARD_ID: ShardId = 0;
+    const MAIN_SHARD_ID: ShardId = [0, 0, 0, 0];
 
     #[test]
     fn init_root_or_owner_origin_can_initialize_pallet() {

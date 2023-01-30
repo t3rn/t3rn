@@ -1,17 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-use crate::{pallet::Config, BeaconBlockHeaderUpdates, Error, LatestBeaconBlockHeader};
+use crate::{pallet::Config, Error, GenesisValidatorsRoot, LatestBeaconBlockHeader};
 use frame_support::pallet_prelude::{PhantomData, *};
+use sp_core::hashing::sha2_256;
 
 use crate::types::{
-    BLSPubkey, Bytes32, Domain, ForkVersion, LightClientSnapshot, LightClientUpdate, Root,
+    BLSPubkey, BeaconBlockHeader, Bytes32, Domain, DomainType, ForkData, ForkVersion,
+    LightClientSnapshot, LightClientUpdate, Root, SigningData,
 };
 
-// use ssz_rs::prelude::is_valid_merkle_branch;
-
-use sp_io::hashing::sha2_256;
+use crate::constants::*;
+use sp_std::convert::TryInto;
 use ssz_rs::Merkleized;
 
-use std::convert::TryInto;
 /// Minimal Light Client for Eth2 Beacon Chain as per https:///github.com/ethereum/annotated-spec/blob/master/altair/sync-protocol.md#minimal-light-client
 ///     def validate_light_client_update(snapshot: LightClientSnapshot,
 ///                                  update: LightClientUpdate,
@@ -63,7 +63,6 @@ use std::convert::TryInto;
 ///
 ///
 ///
-use crate::constants::*;
 
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct Fork {
@@ -104,12 +103,34 @@ impl<T: Config> MinimalLightClient<T> {
         if epoch >= FORK_VERSIONS.altair.epoch {
             return FORK_VERSIONS.altair.version
         }
-
-        return FORK_VERSIONS.genesis.version
+        FORK_VERSIONS.genesis.version
     }
 
     pub fn sync_committee_count_bits(bits: Vec<bool>) -> usize {
         bits.iter().fold(0, |acc, &x| acc + x as usize)
+    }
+
+    pub fn compute_domain(
+        domain_type: DomainType,
+        fork_version: ForkVersion,
+        genesis_validators_root: Root,
+    ) -> Result<Domain, Error<T>> {
+        let mut domain = [0u8; 32];
+        domain[0..4].copy_from_slice(&domain_type);
+        domain[4..32].copy_from_slice(
+            //  Return the 32-byte fork data root for the ``current_version`` and ``genesis_validators_root``.
+            //     This is used primarily in signature domains to avoid collisions across forks/chains.
+            &ForkData::new(fork_version, genesis_validators_root).try_hash_tree_root::<T>()?[0..28],
+        );
+        Ok(domain)
+    }
+
+    pub fn compute_signing_root(
+        header: BeaconBlockHeader,
+        domain: Domain,
+    ) -> Result<Root, Error<T>> {
+        let mut signing_data = SigningData::new(header.hash_tree_root::<T>()?, domain);
+        signing_data.try_hash_tree_root::<T>()
     }
 
     // Validate merkle path for a given leaf and root hash (uses sha2_256)
@@ -158,8 +179,8 @@ impl<T: Config> MinimalLightClient<T> {
             Error::<T>::InvalidPeriod
         );
         // Verify update header root is the finalized root of the finality header, if specified
-        let signed_header = if update.finality_header == LatestBeaconBlockHeader::<T>::get() {
-            // assert update.finality_branch == [Bytes32() for _ in range(floorlog2(FINALIZED_ROOT_INDEX))]
+        let _signed_header = if update.finality_header == LatestBeaconBlockHeader::<T>::get() {
+            // Equivalent of assert update.finality_branch == [Bytes32() for _ in range(floorlog2(FINALIZED_ROOT_INDEX))]
             let next_sync_committee_branch: Vec<Bytes32> = (0..FLOOR_LOG_2_OF_FINALIZED_ROOT_INDEX)
                 .map(|_| Bytes32::default())
                 .collect();
@@ -172,7 +193,7 @@ impl<T: Config> MinimalLightClient<T> {
             ensure!(
                 Self::is_valid_merkle_branch(
                     // todo: verify hash_tree_root(update.finality_header) and body_root are the same
-                    update.header.body_root,
+                    update.finality_header.hash_tree_root::<T>()?,
                     update.finality_branch,
                     FLOOR_LOG_2_OF_FINALIZED_ROOT_INDEX,
                     // todo: should be get_subtree_index(FINALIZED_ROOT_INDEX)?
@@ -191,8 +212,6 @@ impl<T: Config> MinimalLightClient<T> {
             Error::<T>::SyncCommitteeParticipantsNotSupermajority
         );
 
-        // todo: @petscheit interestingly these 2 checks would replace the need for us to store SyncCommittees
-        // let sync_committee = <crate::SyncCommittees<T>>::get(period).ok_or(Error::<T>::SyncCommitteeNotFound)?;
         // Verify update next sync committee if the update period incremented
         let sync_committee = if update_period == snapshot_period {
             ensure!(
@@ -216,7 +235,6 @@ impl<T: Config> MinimalLightClient<T> {
                     update.next_sync_committee_branch,
                     NEXT_SYNC_COMMITTEE_DEPTH,
                     // todo: should be get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX)
-                    // get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX),
                     NEXT_SYNC_COMMITTEE_INDEX,
                     update.header.state_root,
                 ),
@@ -234,32 +252,78 @@ impl<T: Config> MinimalLightClient<T> {
             .iter()
             .zip(sync_committee.pubkeys.iter())
         {
-            if *bit == true {
+            if *bit {
                 participant_pubkeys.push(pubkey.clone());
-                // participant_pubkeys.push(<&ssz_rs::Vector<u8, 48> as sp_std::convert::TryInto<T>>::try_into(pubkey).unwrap().clone());
             }
         }
 
-        // todo: verify BLS signature for committee aggregate
-        // match milagro_bls::Signature::from_bytes(&update.sync_committee_signature[..]) {
-        //     Ok(sig) => {
-        //         let mut pubkeys = snapshot
-        //             .current_sync_committee
-        //             .pubkeys
-        //             .iter()
-        //             .map(|pk| milagro_bls::PublicKey::from_bytes(&pk[..]))
-        //             .collect::<Result<Vec<_>, _>>().unwrap();
-        //         let message =
-        //             milagro_bls::G1Affine::from_compressed(&update.header.state_root[..]).unwrap();
-        //         let res = milagro_bls::verify_aggregate(&pubkeys, &message, &sig);
-        //         ensure!(res, Error::<T>::InvalidLightClientUpdate);
-        //     },
-        //     Err(_) => return Err(Error::<T>::InvalidSignature),
-        // }
+        let domain = Self::compute_domain(
+            DOMAIN_SYNC_COMMITTEE,
+            update.fork_version,
+            GenesisValidatorsRoot::<T>::get().0,
+        )?;
 
-        LatestBeaconBlockHeader::<T>::set(update.finality_header);
-        BeaconBlockHeaderUpdates::<T>::insert(update.header.slot, update.header);
+        let signing_root = Self::compute_signing_root(update.header.clone(), domain)?;
 
-        Ok(false)
+        crate::bls::fast_aggregate_verify(
+            participant_pubkeys,
+            signing_root.to_vec(),
+            update.sync_committee_signature,
+        )
+    }
+}
+
+#[cfg(feature = "testing")]
+#[cfg(test)]
+pub mod mlc_test {
+    use super::*;
+    use crate::mock::{run_test, TestRuntime};
+    use codec::Encode;
+    use frame_support::assert_ok;
+    use hex_literal::hex;
+
+    #[test]
+    pub fn mlc_test_compute_domain() {
+        run_test(|| {
+            let domain: Domain = MinimalLightClient::<TestRuntime>::compute_domain(
+                hex!("07000000"),
+                hex!("00000001"),
+                hex!("5dec7ae03261fde20d5b024dfabce8bac3276c9a4908e23d50ba8c9b50b0adff"),
+            )
+            .expect("compute_domain should not fail with correct inputs");
+
+            // assert_ok!(&domain);
+            assert_eq!(
+                domain.encode(),
+                hex!("0700000046324489ceb6ada6d118eacdbe94f49b1fcb49d5481a685979670c7c")
+            );
+        });
+    }
+
+    #[test]
+    pub fn mlc_test_compute_signing_root_bls() {
+        run_test(|| {
+            let signing_root = MinimalLightClient::<TestRuntime>::compute_signing_root(
+                BeaconBlockHeader {
+                    slot: 3529537,
+                    proposer_index: 192549,
+                    parent_root: hex!(
+                        "1f8dc05ea427f78e84e2e2666e13c3befb7106fd1d40ef8a3f67cf615f3f2a4c"
+                    ),
+                    state_root: hex!(
+                        "0dfb492a83da711996d2d76b64604f9bca9dc08b6c13cf63b3be91742afe724b"
+                    ),
+                    body_root: hex!(
+                        "66fba38f7c8c2526f7ddfe09c1a54dd12ff93bdd4d0df6a0950e88e802228bfa"
+                    ),
+                },
+                hex!("07000000afcaaba0efab1ca832a15152469bb09bb84641c405171dfa2d3fb45f"),
+            );
+            assert_ok!(&signing_root);
+            assert_eq!(
+                signing_root.unwrap().encode(),
+                hex!("3ff6e9807da70b2f65cdd58ea1b25ed441a1d589025d2c4091182026d7af08fb")
+            );
+        });
     }
 }

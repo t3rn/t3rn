@@ -25,15 +25,12 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 
-use crate::bridges::runtime::Chain;
 pub type AccountId = u64;
-pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
-pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
 
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
-use crate::{BestFinalizedMap, Config, MultiImportedHeaders};
+use crate::Config;
 
 construct_runtime! {
     pub enum TestRuntime where
@@ -129,43 +126,4 @@ impl Config for TestRuntime {
 
 pub fn run_test<T>(test: impl FnOnce() -> T) -> T {
     sp_io::TestExternalities::new(Default::default()).execute_with(test)
-}
-
-#[cfg(all(feature = "testing", test))]
-pub fn test_header(num: TestNumber) -> TestHeader {
-    // We wrap the call to avoid explicit type annotations in our tests
-    crate::bridges::test_utils::test_header(num)
-}
-
-#[cfg(all(feature = "testing", test))]
-pub fn test_header_with_correct_parent(num: TestNumber, parent_hash: Option<H256>) -> TestHeader {
-    crate::bridges::test_utils::test_header_with_correct_parent(num, parent_hash)
-}
-
-#[cfg(all(feature = "testing", test))]
-pub fn test_header_range(to: u64) -> Vec<TestHeader> {
-    let mut headers: Vec<TestHeader> = vec![];
-    let mut parent_hash = None;
-    for (i, block) in (0..=to).enumerate() {
-        let header = test_header_with_correct_parent(block, parent_hash);
-        headers.push(header);
-        parent_hash = Some(headers[i].hash());
-    }
-    headers
-}
-
-#[cfg(feature = "testing")]
-pub fn brute_seed_block_1(gateway_id: [u8; 4]) {
-    // Brute update storage of MFV::MultiImportedHeaders to blockA = 1 and BestAvailable -> blockA
-
-    let header_1 = crate::bridges::test_utils::test_header::<TestHeader>(1u64);
-    let block_hash_1 = header_1.hash();
-
-    <MultiImportedHeaders<TestRuntime>>::insert::<[u8; 4], H256, TestHeader>(
-        gateway_id,
-        block_hash_1,
-        header_1,
-    );
-
-    <BestFinalizedMap<TestRuntime>>::insert::<[u8; 4], H256>(gateway_id, block_hash_1);
 }

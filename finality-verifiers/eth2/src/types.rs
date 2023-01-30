@@ -1,13 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-use crate::pallet::Config;
+
+use crate::Config;
 use frame_support::pallet_prelude::{PhantomData, *};
-use ssz_rs::{
-    prelude::{List, Vector},
-    Bitlist, Bitvector, Deserialize, Sized,
-};
+
+use ssz_rs::prelude::Vector;
+
+pub use crate::types_to_ssz::*;
+
 // todo: add Default + TypeInfo traits
 // pub use ethereum_types::{Bloom};
 use codec::{Decode, Encode};
+
 use sp_core::{H160, H256, U256};
 
 #[derive(Debug, Clone)]
@@ -27,6 +30,7 @@ pub struct LightClientUpdate<T: Config> {
     pub finality_branch: Vec<Bytes32>,
     pub sync_committee_bits: Vec<bool>,
     pub sync_committee_signature: BLSSignature,
+    pub fork_version: ForkVersion,
     pub _marker: PhantomData<T>,
 }
 
@@ -56,16 +60,11 @@ pub struct ExecutionPayloadHeader {
     pub block_hash: Option<H256>,
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq, ssz_rs_derive::SimpleSerialize)]
-pub struct SyncCommittee {
-    pub pubkeys: Vector<
-        Vector<u8, { crate::constants::BLS_PUBKEY_SIZE }>,
-        { crate::constants::SYNC_COMMITTEE_SIZE },
-    >,
-    pub pubkey_aggregates: Vector<u8, { crate::constants::BLS_PUBKEY_SIZE }>,
+#[derive(Default, Debug, Clone, Encode, Decode, MaxEncodedLen, Eq, PartialEq, TypeInfo)]
+pub struct Eth2LightClientInitData {
+    pub(crate) genesis_validators_root: Root,
+    pub(crate) trusted_snapshot_header: BeaconBlockHeader,
 }
-
-pub type BLSPubkey = Vector<u8, { crate::constants::BLS_PUBKEY_SIZE }>;
 
 pub type BLSSignature = [u8; 96];
 
@@ -85,3 +84,5 @@ pub type Bloom = Vector<u8, { crate::constants::MAX_LOGS_BLOOM_SIZE }>;
 pub type ForkVersion = [u8; 4];
 
 pub type Domain = Bytes32;
+
+pub type DomainType = [u8; 4];
