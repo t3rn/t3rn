@@ -739,6 +739,17 @@ checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 
 [[package]]
 name = "bstr"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba3569f383e8f1598449f1a423e72e99569137b47740b1da11ef19af3d5c3223"
+dependencies = [
+ "lazy_static",
+ "memchr",
+ "regex-automata",
+]
+
+[[package]]
+name = "bstr"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b45ea9b00a7b3f2988e9a65ad3917e62123c38dba709b666506207be96d1790b"
@@ -985,7 +996,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-protocol",
 ]
 
@@ -1002,7 +1013,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1024,7 +1035,7 @@ dependencies = [
  "pallet-clock",
  "pallet-collator-selection",
  "pallet-contracts",
- "pallet-contracts-primitives",
+ "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
  "pallet-evm 0.1.0",
@@ -1044,7 +1055,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -1070,7 +1081,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-protocol",
  "xcm",
  "xcm-builder",
@@ -1132,7 +1143,7 @@ dependencies = [
  "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-protocol",
 ]
 
@@ -1141,7 +1152,7 @@ name = "circuit-standalone-runtime"
 version = "1.0.0-alpha.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1161,7 +1172,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-clock",
  "pallet-contracts",
- "pallet-contracts-primitives",
+ "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "pallet-contracts-rpc-runtime-api",
@@ -1199,7 +1210,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-protocol",
 ]
 
@@ -1320,6 +1331,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c278839b831783b70278b14df4d45e1beb1aad306c07bb796637de9a0e323e8e"
 dependencies = [
  "crossbeam-utils 0.8.14",
+]
+
+[[package]]
+name = "console"
+version = "0.15.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3d79fbe8970a77e3e34151cc13d3b3e248aa0faaecb9f6091fa07ebefe5ad60"
+dependencies = [
+ "encode_unicode",
+ "lazy_static",
+ "libc",
+ "windows-sys",
 ]
 
 [[package]]
@@ -2330,6 +2353,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "diff"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
+
+[[package]]
 name = "digest"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2518,6 +2547,12 @@ dependencies = [
  "subtle",
  "zeroize",
 ]
+
+[[package]]
+name = "encode_unicode"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
 
 [[package]]
 name = "encoding_rs"
@@ -2997,7 +3032,7 @@ dependencies = [
  "parking_lot 0.11.2",
  "relay-utils",
  "stacktrace",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
 ]
 
 [[package]]
@@ -3050,6 +3085,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9c384f161156f5260c24a097c56119f9be8c798586aecc13afbcbe7b7e26bf8"
 dependencies = [
  "percent-encoding 2.2.0",
+]
+
+[[package]]
+name = "fp-evm"
+version = "3.0.0-dev"
+dependencies = [
+ "evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-std",
 ]
 
 [[package]]
@@ -3621,7 +3668,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "029d74589adefde59de1a0c4f4732695c32805624aec7b68d91503d4dba79afc"
 dependencies = [
  "aho-corasick",
- "bstr",
+ "bstr 1.1.0",
  "fnv",
  "log",
  "regex",
@@ -4390,6 +4437,18 @@ dependencies = [
 
 [[package]]
 name = "jsonrpc-derive"
+version = "15.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99a847f9ec7bb52149b2786a17c9cb260d6effc6b8eeb8c16b343a487a7563a3"
+dependencies = [
+ "proc-macro-crate 0.1.5",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "jsonrpc-derive"
 version = "18.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b939a78fa820cdfcb7ee7484466746a7377760970f6f9c6fe19f9edcc8a38d2"
@@ -4453,7 +4512,7 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-tracing",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "tokio 1.24.2",
 ]
 
@@ -4854,6 +4913,12 @@ name = "lazycell"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
+
+[[package]]
+name = "leb128"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "884e2677b40cc8c339eaefcb701c32ef1fd2493d71118dc0ca4b6a736c93bd67"
 
 [[package]]
 name = "libc"
@@ -6333,6 +6398,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b7820b9daea5457c9f21c69448905d723fbd21136ccf521748f23fd49e723ee"
 
 [[package]]
+name = "output_vt100"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "628223faebab4e3e40667ee0b2336d34a5b960ff60ea743ddfdbcf7770bcfb66"
+dependencies = [
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6344,18 +6418,33 @@ dependencies = [
 [[package]]
 name = "pallet-3vm"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
+ "circuit-runtime-types",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "log",
+ "pallet-account-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-circuit",
+ "pallet-contracts-registry",
+ "pallet-grandpa-finality-verifier",
+ "pallet-portal",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-utility",
+ "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git)",
+ "pallet-xdns",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-sdk-primitives",
 ]
 
@@ -6381,7 +6470,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
 ]
 
 [[package]]
@@ -6398,7 +6487,7 @@ dependencies = [
  "sp-std",
  "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
  "t3rn-xcm-primitives",
- "xbi-channel-primitives",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -6640,7 +6729,7 @@ dependencies = [
  "pallet-staking-reward-curve",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6655,7 +6744,7 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-trie",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-protocol",
  "t3rn-sdk-primitives",
 ]
@@ -6683,7 +6772,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
 ]
 
 [[package]]
@@ -6726,29 +6815,67 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
+ "assert_matches",
  "bitflags",
+ "env_logger 0.9.3",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "glob",
  "hex",
+ "hex-literal 0.3.4",
+ "libsecp256k1 0.7.1",
  "log",
- "pallet-contracts-primitives",
+ "pallet-3vm",
+ "pallet-account-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-circuit",
+ "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-proc-macro",
+ "pallet-contracts-registry",
+ "pallet-grandpa-finality-verifier",
+ "pallet-portal",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-utility",
+ "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git)",
+ "pallet-xdns",
  "parity-scale-codec",
+ "pretty_assertions",
  "rand 0.8.5",
+ "rand_pcg 0.3.1",
  "scale-info",
  "serde",
+ "serde_json",
  "smallvec 1.10.0",
  "sp-core",
  "sp-io",
+ "sp-keystore",
  "sp-runtime",
  "sp-sandbox",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-sdk-primitives",
  "wasm-instrument",
  "wasmi-validation",
+ "wat",
+]
+
+[[package]]
+name = "pallet-contracts-primitives"
+version = "5.0.0"
+dependencies = [
+ "bitflags",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -6793,7 +6920,26 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
+]
+
+[[package]]
+name = "pallet-contracts-registry-rpc"
+version = "1.0.0-aplha.0"
+dependencies = [
+ "frame-system",
+ "jsonrpc-core 15.1.0",
+ "jsonrpc-core-client 15.1.0",
+ "jsonrpc-derive 15.1.0",
+ "pallet-contracts-registry",
+ "pallet-contracts-registry-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -6810,16 +6956,16 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-core-client 18.0.0",
- "jsonrpc-derive",
+ "jsonrpc-derive 18.0.0",
  "jsonrpsee 0.14.0",
- "pallet-contracts-primitives",
+ "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
+ "serde_json",
  "sp-api",
  "sp-blockchain",
  "sp-core",
@@ -6830,9 +6976,8 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
- "pallet-contracts-primitives",
+ "pallet-contracts-primitives 5.0.0",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -6913,26 +7058,41 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
+ "hex-literal 0.3.4",
  "log",
+ "pallet-3vm",
+ "pallet-account-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-circuit",
+ "pallet-contracts-registry",
+ "pallet-grandpa-finality-verifier",
+ "pallet-portal",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
  "pallet-timestamp",
+ "pallet-utility",
+ "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git)",
+ "pallet-xdns",
  "parity-scale-codec",
  "primitive-types",
  "rlp",
  "scale-info",
  "serde",
+ "serde_json",
  "sha3 0.10.6",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-sdk-primitives",
 ]
 
@@ -6963,12 +7123,11 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
 version = "0.0.1"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
  "frame-support",
  "pallet-evm 0.1.0",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
 ]
 
 [[package]]
@@ -7048,13 +7207,13 @@ dependencies = [
 [[package]]
 name = "pallet-evm-rpc"
 version = "0.0.1"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
  "jsonrpsee 0.14.0",
  "pallet-evm-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
+ "serde_json",
  "sp-api",
  "sp-blockchain",
  "sp-core",
@@ -7065,11 +7224,10 @@ dependencies = [
 [[package]]
 name = "pallet-evm-rpc-runtime-api"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -7083,18 +7241,32 @@ dependencies = [
 name = "pallet-executors"
 version = "1.0.0-rc.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
+ "pallet-3vm",
+ "pallet-account-manager",
+ "pallet-balances",
+ "pallet-clock",
+ "pallet-contracts",
+ "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-rpc-runtime-api",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "similar-asserts",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
- "xbi-channel-primitives",
+ "t3rn-primitives 1.0.0-alpha.1",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
  "xbi-format 0.1.0",
- "xbi-sender",
+ "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
 ]
 
 [[package]]
@@ -7393,7 +7565,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
 ]
 
 [[package]]
@@ -7402,7 +7574,7 @@ version = "1.0.0-alpha.0"
 dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-core-client 18.0.0",
- "jsonrpc-derive",
+ "jsonrpc-derive 18.0.0",
  "pallet-portal-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
@@ -7420,7 +7592,7 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
 ]
 
 [[package]]
@@ -7744,7 +7916,7 @@ dependencies = [
  "frame-system",
  "impl-trait-for-tuples",
  "log",
- "pallet-contracts-primitives",
+ "pallet-contracts-primitives 5.0.0 (git+https://github.com/t3rn/3vm.git?branch=development)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -7758,10 +7930,41 @@ dependencies = [
  "substrate-contracts-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
  "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
  "t3rn-xcm-primitives",
- "xbi-channel-primitives",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
  "xbi-format 0.2.0",
- "xbi-receiver",
- "xbi-sender",
+ "xbi-receiver 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "xcm",
+]
+
+[[package]]
+name = "pallet-xbi-portal"
+version = "0.9.27"
+source = "git+https://github.com/t3rn/xbi-portal.git#f3aa4167a5106773bdc503a618892c8375afbc1a"
+dependencies = [
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "pallet-contracts-primitives 5.0.0 (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
+ "substrate-contracts-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-xcm-primitives",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
+ "xbi-format 0.2.0",
+ "xbi-receiver 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
+ "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
  "xcm",
 ]
 
@@ -7824,7 +8027,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-protocol",
 ]
 
@@ -7850,7 +8053,7 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
 ]
 
 [[package]]
@@ -9435,9 +9638,8 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-util"
 version = "1.0.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#9f4c08d289cd8c3e2e298c4e0dc2e84090ceeb8c"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -9449,6 +9651,18 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "sp-core",
  "sp-std",
+]
+
+[[package]]
+name = "pretty_assertions"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a25e9bcb20aa780fd0bb16b72403a9064d6b3f22f026946029acb941a50af755"
+dependencies = [
+ "ctor",
+ "diff",
+ "output_vt100",
+ "yansi",
 ]
 
 [[package]]
@@ -9948,7 +10162,7 @@ dependencies = [
  "sp-storage",
  "sp-trie",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "tokio 1.24.2",
 ]
 
@@ -11768,6 +11982,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "similar"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "420acb44afdae038210c99e69aae24109f32f15500aa708e81d46c9f29d55fcf"
+dependencies = [
+ "bstr 0.2.17",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "similar-asserts"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbf644ad016b75129f01a34a355dcb8d66a5bc803e417c7a77cc5d5ee9fa0f18"
+dependencies = [
+ "console",
+ "similar",
+]
+
+[[package]]
 name = "slab"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13226,7 +13460,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t0rn-parachain-runtime",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-protocol",
  "try-runtime-cli",
  "xcm",
@@ -13246,7 +13480,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -13269,7 +13503,7 @@ dependencies = [
  "pallet-clock",
  "pallet-collator-selection",
  "pallet-contracts",
- "pallet-contracts-primitives",
+ "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
  "pallet-evm 0.1.0",
@@ -13289,7 +13523,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -13316,7 +13550,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1",
  "t3rn-protocol",
  "xcm",
  "xcm-builder",
@@ -13389,6 +13623,7 @@ dependencies = [
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t3rn-parachain-runtime",
  "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-protocol",
  "try-runtime-cli",
  "xcm",
 ]
@@ -14401,6 +14636,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicode-segmentation"
+version = "1.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fdbf052a0783de01e944a6ce7a8cb939e295b1e7be835a1112c3b9a7f047a5a"
+
+[[package]]
 name = "unicode-width"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14643,6 +14884,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-encoder"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef126be0e14bdf355ac1a8b41afc89195289e5c7179f80118e3abddb472f0810"
+dependencies = [
+ "leb128",
+]
+
+[[package]]
 name = "wasm-gc-api"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14877,6 +15127,27 @@ dependencies = [
  "serde",
  "thiserror",
  "wasmparser",
+]
+
+[[package]]
+name = "wast"
+version = "52.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "707a9fd59b0144c530f0a31f21737036ffea6ece492918cae0843dd09b6f9bc9"
+dependencies = [
+ "leb128",
+ "memchr",
+ "unicode-width",
+ "wasm-encoder",
+]
+
+[[package]]
+name = "wat"
+version = "1.0.56"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91d73cbaa81acc2f8a3303e2289205c971d99c89245c2f56ab8765c4daabc2be"
+dependencies = [
+ "wast",
 ]
 
 [[package]]
@@ -15242,6 +15513,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "xbi-channel-primitives"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/xbi-portal.git#f3aa4167a5106773bdc503a618892c8375afbc1a"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "xbi-format 0.2.0",
+ "xcm",
+]
+
+[[package]]
 name = "xbi-format"
 version = "0.1.0"
 source = "git+https://github.com/t3rn/xbi.git?branch=development#6dfdca26ac8405171ea3e8b406e1bb99b948e3ac"
@@ -15288,9 +15573,28 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xbi-channel-primitives",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
  "xbi-format 0.2.0",
- "xbi-sender",
+ "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+]
+
+[[package]]
+name = "xbi-receiver"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/xbi-portal.git#f3aa4167a5106773bdc503a618892c8375afbc1a"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
+ "xbi-format 0.2.0",
+ "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
 ]
 
 [[package]]
@@ -15303,7 +15607,21 @@ dependencies = [
  "log",
  "sp-runtime",
  "t3rn-xcm-primitives",
- "xbi-channel-primitives",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "xcm",
+]
+
+[[package]]
+name = "xbi-sender"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/xbi-portal.git#f3aa4167a5106773bdc503a618892c8375afbc1a"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "sp-runtime",
+ "t3rn-xcm-primitives",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
  "xcm",
 ]
 
@@ -15383,6 +15701,12 @@ dependencies = [
  "rand 0.8.5",
  "static_assertions",
 ]
+
+[[package]]
+name = "yansi"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
 
 [[package]]
 name = "zeroize"

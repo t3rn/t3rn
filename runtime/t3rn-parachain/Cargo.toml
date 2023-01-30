@@ -83,7 +83,7 @@ pallet-collator-selection           = { git = 'https://github.com/paritytech/cum
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 
 # t3rn Deps
-# t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = "development" }
+# t3rn-primitives = { default-features = false, path = "../../primitives" }
 # t3rn-protocol = { default-features = false, path = "../../protocol" }
 
 # # t3rn pallets
@@ -101,14 +101,14 @@ parachain-info                      = { git = 'https://github.com/paritytech/cum
 # pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
 
 # # Smart contracts VMs
-# evm-precompile-util                  = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "precompile-util" }
-# pallet-3vm                           = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development" }
-# pallet-3vm-contracts                 = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts" }
-# pallet-3vm-contracts-primitives      = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-primitives" }
-# pallet-3vm-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-rpc-runtime-api" }
-# pallet-3vm-evm                       = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "pallet-evm" }
-# pallet-3vm-evm-primitives            = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "fp-evm" }
-# pallet-evm-rpc-runtime-api           = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false }
+# evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
+# pallet-3vm                           = { default-features = false, path = "../../pallets/3vm" }
+# pallet-3vm-contracts                 = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
+# pallet-3vm-contracts-primitives      = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
+# pallet-3vm-contracts-rpc-runtime-api = { default-features = false, path = "../../pallets/contracts/rpc/runtime-api", package = "pallet-contracts-rpc-runtime-api" }
+# pallet-3vm-evm                       = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
+# pallet-3vm-evm-primitives            = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
+# pallet-evm-rpc-runtime-api           = { default-features = false, path = "../../pallets/evm/rpc/runtime-api" }
 
 # Commons
 circuit-runtime-types = { path = "../common-types", default-features = false }

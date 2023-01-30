@@ -11,8 +11,10 @@ pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use pallet_contracts_registry_rpc_runtime_api::FetchContractsResult;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::generic::BlockId;
-use sp_runtime::traits::{Block as BlockT, Hash as HashT, MaybeDisplay};
+use sp_runtime::{
+    generic::BlockId,
+    traits::{Block as BlockT, Hash as HashT, MaybeDisplay},
+};
 
 const RUNTIME_ERROR: i64 = 1;
 const CONTRACT_DOESNT_EXIST: i64 = 2;
@@ -54,7 +56,7 @@ where
     fn fetch_contracts(
         &self,
         author: Option<AccountId>,
-        metadata: Option<Bytes>,
+        metadata: Option<Vec<u8>>,
     ) -> Result<FetchContractsResult> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().best_hash);

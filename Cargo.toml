@@ -2,12 +2,15 @@
 panic = 'unwind'
 
 [workspace]
-exclude = [ '3vm', '3vm/sdk', 'pallets/executors' ]
+exclude = [  ]
 members = [
   'node/standalone',
   'node/t0rn-parachain',
   'node/t3rn-parachain',
   'pallets/*',
+  'pallets/*/rpc',
+  'pallets/*/precompile/*',
+  'pallets/*/rpc/runtime-api',
   'primitives',
   'primitives/src/bridges/finality',
   'primitives/src/bridges/headers',
