@@ -1,3 +1,14 @@
+# [1.2.0-rc.11](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.10...v1.2.0-rc.11) (2023-01-30)
+
+
+### Features
+
+* enable try-runtime and benchmarks in mainnet ([f01d19e](https://github.com/t3rn/t3rn/commit/f01d19e57c36c68908796230a015e2dd4d7205d5))
+* ensure parachain has some movement in relay chain block height ([2e341a6](https://github.com/t3rn/t3rn/commit/2e341a6ebdb9c043d809b1399c8803b111dcf092))
+* fix try-runtime and endowed accounts to be less rigid ([242ffad](https://github.com/t3rn/t3rn/commit/242ffad1150a39f89dbedba00adeb35007433512))
+
+
+
 # [1.2.0-rc.10](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.9...v1.2.0-rc.10) (2023-01-25)
 
 
@@ -48,15 +59,6 @@
 ### Bug Fixes
 
 * subalfred errors out correctly ([#596](https://github.com/t3rn/t3rn/issues/596)) ([eaa03a4](https://github.com/t3rn/t3rn/commit/eaa03a425ecaa6c3322389be595af34391cf12e3))
-
-
-
-# [1.2.0-rc.6](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.5...v1.2.0-rc.6) (2023-01-23)
-
-
-### Bug Fixes
-
-* rm primitives import ([99f0596](https://github.com/t3rn/t3rn/commit/99f0596c1c91325cbb8a3eedbda8b23d1199c486))
 
 
 
