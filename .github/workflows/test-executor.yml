@@ -1,4 +1,4 @@
-name: Test Executor
+name: Test client's packages (executor and sdk)
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ jobs:
   test-executor:
     defaults:
       run:
-        working-directory: client/packages/executor
+        working-directory: client/packages
 
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +20,5 @@ jobs:
         with:
           node-version: 18
 
-      - run: cd .. && make
-      - run: yarn
-      - run: npm ci
-      - run: npm test
+      - run: cd executor && yarn && npm ci && npm test
+      - run: cd sdk && yarn && npm ci && npm test

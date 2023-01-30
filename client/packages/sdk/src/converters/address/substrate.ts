@@ -1,5 +1,6 @@
 import { decodeAddress, encodeAddress } from "@polkadot/keyring";
-const { hexToU8a, isHex } = require("@polkadot/util");
+// const { hexToU8a, isHex } = require("@polkadot/util");
+import { hexToU8a, isHex } from "@polkadot/util";
 
 /**
  * Convert a substrate pubkey to address

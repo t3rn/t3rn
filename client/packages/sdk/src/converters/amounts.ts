@@ -1,5 +1,5 @@
 const { u8aToHex, isHex, isString, isNumber } = require("@polkadot/util");
-import * as BN from "bn.js";
+import BN from "bn.js";
 
 /**
  * This class is used for doing amount conversions of different types. When dealing with circuit, there are three main encodings are used for representing amounts:
@@ -12,7 +12,7 @@ import * as BN from "bn.js";
  */
 
 export class AmountConverter {
-  value: BN;
+  value: number | BN | string;
   decimals: number;
   valueTypeSize: number;
 
@@ -27,8 +27,6 @@ export class AmountConverter {
    * @param args.decimals - The decimals of the target. Default: 12
    * @param args.valueTypeSize - The value type size in bytes. Default: 16 (u128)
    *
-   *
-   *
    * ```typescript
    * new AmountConverter({
    *   100000,
@@ -39,7 +37,6 @@ export class AmountConverter {
    *
    * ```
    */
-
   constructor(args: {
     value?: number | BN | string;
     decimals?: number;
@@ -61,9 +58,11 @@ export class AmountConverter {
           this.value = new BN.BN(args.value, 10);
         }
       } else if (isNumber(args.value)) {
+        console.log("I'm a number!")
         if (Math.floor(args.value as number) !== args.value) {
+          console.log("I should throw an error")
           throw new Error(
-            "AmountConverter: Float values not supported! Please convert to Integer!"
+            "AmountConverter: Float values not supported! Please pass an integer value or convert to it."
           );
         } else {
           this.value = new BN.BN(args.value, 10);
@@ -77,15 +76,13 @@ export class AmountConverter {
   /**
    * Convert the initialzed value into a float
    */
-
-  toFloat(): BN {
+  toFloat(): number {
     return bnToFloat(this.toBn(), this.decimals);
   }
 
   /**
    * Convert the initialized value into BN
    */
-
   toBn(): BN {
     return this.value as BN;
   }
@@ -94,15 +91,20 @@ export class AmountConverter {
    * Convert a float parameter into BN, using the set decimals
    * @param value - The value to convert
    */
-
   floatToBn(value: number): BN {
-    return floatToBn(value, this.decimals);
+    const result = floatToBn(value, this.decimals);
+    if (this.checkSafeConversion(result)) {
+      return result
+    } else {
+      throw new Error(
+        "AmountConverter: Conversion from `float` to `BN` failed -> Integer larger than valueTypeSize."
+      );
+    }
   }
 
   /**
    * Convert the initialized value into a LittleEndian byte array
    */
-
   toLeArray(): number[] {
     return toLeEncoding(this.value as BN, this.valueTypeSize);
   }
@@ -110,9 +112,24 @@ export class AmountConverter {
   /**
    * Convert the initialized value into LittleEndian encoded hex string
    */
-
   toLeHex(): string {
     return u8aToHex(this.toLeArray());
+  }
+
+  /**
+   * Check that a conversion from float to integer was done 
+   * safely, i.e., the converted value is not larger than 2^valueTypeSize.
+   * 
+   * @param convertedValue Value to be checked 
+   * @returns If the conversion was done safely
+   */
+  checkSafeConversion(convertedValue: BN): boolean {
+    const maxValueForType = new BN.BN(Math.pow(2, this.valueTypeSize * 8))
+    if (convertedValue < maxValueForType) {
+      return false
+    } else {
+      return true
+    }
   }
 }
 
@@ -120,7 +137,6 @@ export class AmountConverter {
  * Converts hex LittleEndian to BN
  * @param hex - The hex string to convert
  */
-
 export const fromLeEncoding = (number: string): BN => {
   return new BN.BN(number.split("0x")[1], 16, "le");
 };
@@ -130,7 +146,6 @@ export const fromLeEncoding = (number: string): BN => {
  * @param number - The number to encode
  * @param valueTypeSize - The size of the value type in bytes
  */
-
 export const toLeEncoding = (
   number: BN,
   valueTypeSize: number | undefined
@@ -146,9 +161,8 @@ export const toLeEncoding = (
  * @param number - The number to convert
  * @param decimals - The decimals of the number
  */
-
 export const floatToBn = (number: number, decimals: number): BN => {
-  return new BN.BN(number * Math.pow(10, decimals));
+  return new BN.BN(number).mul(new BN.BN(Math.pow(10, decimals)));
 };
 
 /**
@@ -156,10 +170,8 @@ export const floatToBn = (number: number, decimals: number): BN => {
  * @param number - The number to convert
  * @param decimals - The decimals of the number
  */
-
-export const bnToFloat = (number: BN, decimals: number): BN => {
-  // return number.toNumber() / Math.pow(10, decimals);
-  return number.div(new BN.BN(Math.pow(10, decimals)));
+export const bnToFloat = (number: BN, decimals: number): number => {
+  return number.div(new BN.BN(Math.pow(10, decimals))).toNumber();
 };
 
 /**
@@ -167,7 +179,6 @@ export const bnToFloat = (number: BN, decimals: number): BN => {
  * As the resulting value is only used on t3rn, we rely on the correct default values here
  * @param insurance - The insurance amount
  */
-
 export const optionalInsurance = (
   insurance: number | BN | string,
   reward: number | BN | string

@@ -33,7 +33,6 @@ export class Circuit {
    * @param value - The value to convert
    * @returns The converted value
    */
-
   floatToBn(value: number): BN {
     return floatToBn(value)
   }
@@ -43,8 +42,7 @@ export class Circuit {
    * @param value - The value to convert
    * @returns The converted value
    */
-
-  toFloat(value: BN | number): BN {
+  toFloat(value: BN | number): number {
     return toFloat(value)
   }
 }
@@ -55,7 +53,7 @@ export class Circuit {
  * @returns The converted value
  */
 
-export const toFloat = (value: BN | number): BN => {
+export const toFloat = (value: BN | number): number => {
   return new AmountConverter({
     value,
     decimals: DECIMALS,

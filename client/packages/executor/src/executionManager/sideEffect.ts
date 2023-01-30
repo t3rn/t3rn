@@ -190,7 +190,7 @@ export class SideEffect extends EventEmitter {
      * @param gatewayType
      * @returns SecurityLevel
      */
-    //ToDo fix parameter type
+    // TODO fix parameter type
     evalSecurityLevel(gatewayType: any): SecurityLevel {
         if (gatewayType.ProgrammableExternal === "0" || gatewayType.OnCircuit === "0") {
             return SecurityLevel.Escrow
@@ -433,7 +433,7 @@ export class SideEffect extends EventEmitter {
 
     /** Update the SFX status */
     readyToExecute() {
-        this.status = SfxStatus.Ready
+        this.status = SfxStatus.ReadyToExecute
     }
 
     // sfx was successfully executed on target and has the inclusion proof data
