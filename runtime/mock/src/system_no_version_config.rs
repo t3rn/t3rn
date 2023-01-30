@@ -121,14 +121,19 @@ impl pallet_authorship::Config for Runtime {
     type UncleGenerations = ();
 }
 
-/// A `HandleCredit` implementation that naively transfers the fees to the block author.
-/// Will drop and burn the assets in case the transfer fails.
+/// A `HandleCredit` implementation that transfers 80% of the fees to the
+/// block author and 20% to the treasury. Will drop and burn the assets
+/// in case the transfer fails.
 pub struct CreditToBlockAuthor;
 impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
     fn handle_credit(credit: CreditOf<AccountId, Assets>) {
         if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
+            let author_credit =
+                credit.peek().saturating_mul(80_u32.into()) / <u32 as Into<Balance>>::into(100_u32);
+            let (author_cut, treasury_cut) = credit.split(author_credit);
             // Drop the result which will trigger the `OnDrop` of the imbalance in case of error.
-            let _ = Assets::resolve(&author, credit);
+            Assets::resolve(&author, author_cut);
+            Assets::resolve(&Treasury::account_id(), treasury_cut);
         }
     }
 }
