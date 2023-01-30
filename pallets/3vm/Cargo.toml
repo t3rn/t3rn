@@ -1,0 +1,74 @@
+[package]
+authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+description = "The pallet that handles t3rn characteristics for a smart contract VM"
+edition     = "2021"
+homepage    = "https://t3rn.io"
+license     = "Apache-2.0"
+name        = "pallet-3vm"
+readme      = "README.md"
+repository  = "https://github.com/t3rn/3vm/"
+version     = "0.1.0"
+
+[package.metadata.docs.rs]
+targets = [ "x86_64-unknown-linux-gnu" ]
+
+[dependencies]
+codec      = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [ "derive" ] }
+log        = { version = "0.4", default-features = false }
+scale-info = { version = "2.0.0", default-features = false, features = [ "derive" ] }
+
+# frame
+frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", optional = true }
+frame-support      = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+frame-system       = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+
+# substrate primitives
+sp-core    = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+sp-io      = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+sp-std     = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+
+# t3rn dependencies
+t3rn-primitives     = { default-features = false, path = "../../primitives" }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
+
+[dev-dependencies]
+hex = "0.4.0"
+
+# t3rn dependencies
+circuit-runtime-types            = { path = "../../runtime/common-types" }
+pallet-account-manager           = { path = "../account-manager" }
+pallet-circuit                   = { path = "../circuit" }
+pallet-contracts-registry        = { path = "../contracts-registry" }
+pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
+pallet-portal                    = { path = "../portal" }
+pallet-xdns                      = { path = "../xdns" }
+
+# Substrate Dependencies
+pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-timestamp                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+
+pallet-xbi-portal = { git = "https://github.com/t3rn/xbi-portal.git" }
+
+[features]
+default = [ "std" ]
+std = [
+  "codec/std",
+  "scale-info/std",
+  "frame-support/std",
+  "frame-system/std",
+  "log/std",
+  "sp-std/std",
+  "sp-core/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "t3rn-primitives/std",
+  "t3rn-sdk-primitives/std",
+]
+
+runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks" ]
+try-runtime        = [ "frame-support/try-runtime" ]

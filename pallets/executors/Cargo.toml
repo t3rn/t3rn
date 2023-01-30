@@ -25,17 +25,17 @@ frame-system       = { git = "https://github.com/paritytech/substrate.git", bran
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'development' }
+t3rn-primitives = { default-features = false, path = "../../primitives" }
 
 xbi-channel-primitives = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
 xbi-format             = { git = "https://github.com/t3rn/xbi.git", branch = "development", default-features = false }
 xbi-sender             = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
 
 [dev-dependencies]
-pallet-3vm                           = { git = "https://github.com/t3rn/3vm.git", branch = "development" }
-pallet-3vm-contracts                 = { git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts" }
-pallet-3vm-contracts-primitives      = { git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-rpc-runtime-api" }
+pallet-3vm                           = { path = "../../pallets/3vm" }
+pallet-3vm-contracts                 = { path = "../../pallets/contracts", package = "pallet-contracts" }
+pallet-3vm-contracts-primitives      = { path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api = { path = "../../pallets/contracts/rpc/runtime-api", package = "pallet-contracts-rpc-runtime-api" }
 
 pallet-account-manager                     = { path = "../account-manager" }
 pallet-balances                            = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }

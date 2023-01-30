@@ -48,6 +48,7 @@ pub mod pallet {
         },
         monetary::DECIMALS,
     };
+    use xbi_channel_primitives::traits::XbiInstructionHandler;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
