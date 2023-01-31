@@ -20,3 +20,8 @@ members = [
   'types',
   'finality-verifiers/grandpa',
 ]
+
+[patch."https://github.com/t3rn/t3rn"]
+fp-evm                      = { path = "./pallets/evm/primitives" }
+pallet-contracts-primitives = { path = "./pallets/contracts/primitives" }
+t3rn-primitives             = { path = "./primitives" }
