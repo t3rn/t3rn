@@ -1,7 +1,6 @@
 import { BiddingEngine, Scenario } from '../src/bidding/index';
 import { SideEffect } from '../src/executionManager/sideEffect';
 import { config } from "../config/config"
-import { expect } from 'chai';
 import { mock, instance, when } from 'ts-mockito';
 import { BehaviorSubject } from 'rxjs';
 
@@ -10,12 +9,12 @@ describe('Bidding: Configuration loading', () => {
         const be = new BiddingEngine();
 
         // Config values
-        expect(be.bidAggressive).to.be.equal(config.bidding.bidAggressive);
-        expect(be.bidPercentile).to.be.equal(config.bidding.bidPercentile);
-        expect(be.bidMeek).to.be.equal(config.bidding.bidMeek);
-        expect(be.overrideNoCompetition).to.be.equal(config.bidding.overrideNoCompetition);
-        expect(be.equalMinProfitBid).to.be.equal(config.bidding.equalMinProfitBid);
-        expect(be.closerPercentageBid).to.be.equal(config.bidding.closerPercentageBid);
+        expect(be.bidAggressive).toBe(config.bidding.bidAggressive);
+        expect(be.bidPercentile).toBe(config.bidding.bidPercentile);
+        expect(be.bidMeek).toBe(config.bidding.bidMeek);
+        expect(be.overrideNoCompetition).toBe(config.bidding.overrideNoCompetition);
+        expect(be.equalMinProfitBid).toBe(config.bidding.equalMinProfitBid);
+        expect(be.closerPercentageBid).toBe(config.bidding.closerPercentageBid);
     })
 })
 
@@ -25,14 +24,13 @@ describe('Bidding: Storing executor bids for certain sfxs', () => {
         const be = new BiddingEngine();
 
         // Add one value to the storage
-        be.storeWhoBidOnWhat("sfxId1", "xtxId1");
+        be.storeWhoBidOnWhat("sfxId1", "bidderId1");
 
         // CHECKS
         // is the correct type
-        expect(be.whoBidsOnWhat).to.be.an('Map');
+        expect(be.whoBidsOnWhat).toBeInstanceOf(Map);
         // Has the correct data
-        expect(be.whoBidsOnWhat).to.have.keys("sfxId1");
-        expect(be.whoBidsOnWhat).to.deep.include(["xtxId1"]);
+        expect(be.whoBidsOnWhat).toMatchObject(new Map([["sfxId1", ["bidderId1"]]]));
     })
 
     it("Correct storage on existing key", () => {
@@ -40,15 +38,13 @@ describe('Bidding: Storing executor bids for certain sfxs', () => {
         const be = new BiddingEngine();
 
         // Add two value to the storage
-        be.storeWhoBidOnWhat("sfxId1", "xtxId1");
-        be.storeWhoBidOnWhat("sfxId1", "xtxId2");
+        be.storeWhoBidOnWhat("sfxId1", "bidderId1");
+        be.storeWhoBidOnWhat("sfxId1", "bidderId2");
 
         // CHECKS
         // Is the correct type
-        expect(be.whoBidsOnWhat).to.be.an('Map');
-        // Has the correct data
-        expect(be.whoBidsOnWhat).to.have.keys("sfxId1");
-        expect(be.whoBidsOnWhat).to.deep.include(["xtxId1", "xtxId2"]);
+        expect(be.whoBidsOnWhat).toBeInstanceOf(Map);
+        expect(be.whoBidsOnWhat).toMatchObject(new Map([["sfxId1", ["bidderId1", "bidderId2"]]]));
     })
 
     it("Correct call on existing key", () => {
@@ -56,15 +52,15 @@ describe('Bidding: Storing executor bids for certain sfxs', () => {
         const be = new BiddingEngine();
 
         // Add two value to the storage
-        be.storeWhoBidOnWhat("sfxId1", "xtxId1");
-        be.storeWhoBidOnWhat("sfxId1", "xtxId2");
+        be.storeWhoBidOnWhat("sfxId1", "bidderId1");
+        be.storeWhoBidOnWhat("sfxId1", "bidderId2");
         be.storeWhoBidOnWhat("sfxId2", "xtxId3");
 
         // ASSERTS
         // Can correctly call first key values
-        expect(be.whoBidsOnWhat.get("sfxId1")).to.deep.equal(["xtxId1", "xtxId2"]);
+        expect(be.whoBidsOnWhat.get("sfxId1")).toEqual(["bidderId1", "bidderId2"]);
         // Can correctly call second key
-        expect(be.whoBidsOnWhat.get("sfxId2")).to.deep.equal(["xtxId3"]);
+        expect(be.whoBidsOnWhat.get("sfxId2")).toEqual(["xtxId3"]);
     })
 })
 
@@ -81,7 +77,7 @@ describe("Bidding: Scenario selection", () => {
         // ACT
         const scenario = be.checkScenario(se);
         // ASSERT
-        expect(scenario).to.be.equal(Scenario.beenOutbid);
+        expect(scenario).toBe(Scenario.beenOutbid);
     })
 
     it("should compute correct 'no bid and competition' scenario", () => {
@@ -96,7 +92,7 @@ describe("Bidding: Scenario selection", () => {
         // ACT
         const scenario = be.checkScenario(se);
         // ASSERT
-        expect(scenario).to.be.equal(Scenario.noBidButCompetition);
+        expect(scenario).toBe(Scenario.noBidButCompetition);
     })
 
     it("should compute correct 'no bid and no competition' scenario", () => {
@@ -111,7 +107,7 @@ describe("Bidding: Scenario selection", () => {
         // ACT
         const scenario = be.checkScenario(se);
         // ASSERT
-        expect(scenario).to.be.equal(Scenario.noBidAndNoCompetition);
+        expect(scenario).toBe(Scenario.noBidAndNoCompetition);
     })
 })
 
@@ -129,11 +125,11 @@ describe("Bidding: computation at scenarios", () => {
         // ACT + ASSERT
         be.overrideNoCompetition = true;
         let bid = be.computeNoBidAndNoCompetition(se);
-        expect(bid).to.be.equal(15);
+        expect(bid).toBe(15);
 
         be.overrideNoCompetition = false;
         bid = be.computeNoBidAndNoCompetition(se);
-        expect(bid).to.be.equal(115);
+        expect(bid).toBe(115);
     })
 
     it("should compute correctly in 'no bid but competition' scenario", () => {
@@ -149,17 +145,17 @@ describe("Bidding: computation at scenarios", () => {
         // ACT + ASSERT
         be.bidAggressive = true;
         let bid = be.computeNoBidButCompetition(se);
-        expect(bid).to.be.equal(5 + 10);
+        expect(bid).toBe(5 + 10);
 
         be.bidAggressive = false;
         be.bidMeek = true;
         bid = be.computeNoBidButCompetition(se);
-        expect(bid).to.be.equal(5 + 10 + 100);
+        expect(bid).toBe(5 + 10 + 100);
 
         be.bidAggressive = false;
         be.bidMeek = false;
         bid = be.computeNoBidButCompetition(se);
-        expect(bid).to.be.equal(5 + 10 + (100 - 10) * 0.75);
+        expect(bid).toBe(5 + 10 + (100 - 10) * 0.75);
     })
 })
 
@@ -173,7 +169,7 @@ describe("Bidding: check helper functions", () => {
         const se: SideEffect = instance(mockedSideEffect);
 
         // ACT + ASSERT
-        expect(be.checkOutbid(se)).to.be.true;
+        expect(be.checkOutbid(se)).toBe(true);
     })
 
     it("should compute not been outbid", () => {
@@ -184,7 +180,7 @@ describe("Bidding: check helper functions", () => {
         when(mockedSideEffect.changedBidLeader).thenReturn(false);
 
         // ACT + ASSERT
-        expect(be.checkOutbid(se)).to.be.false;
+        expect(be.checkOutbid(se)).toBe(false);
     })
 
     it("should clean up stored values sfx and bidder ids", () => {
@@ -199,12 +195,10 @@ describe("Bidding: check helper functions", () => {
 
         // ACT + ASSERT
         be.storeWhoBidOnWhat(sfxId, bidderId);
-        expect(be.whoBidsOnWhat).to.have.keys(sfxId);
-        expect(be.whoBidsOnWhat).to.deep.include([bidderId]);
-
+        expect(be.whoBidsOnWhat).toMatchObject(new Map([[sfxId, [bidderId]]]));
         be.cleanUp(sfxId);
-        expect(be.numberOfBidsOnSfx[sfxId]).to.equal(undefined);
-        expect(be.whoBidsOnWhat[sfxId]).to.equal(undefined);
-        expect(be.timesBeenOutbid[sfxId]).to.equal(undefined);
+        expect(be.numberOfBidsOnSfx[sfxId]).toBeUndefined();
+        expect(be.whoBidsOnWhat[sfxId]).toBeUndefined();
+        expect(be.timesBeenOutbid[sfxId]).toBeUndefined();
     })
 })

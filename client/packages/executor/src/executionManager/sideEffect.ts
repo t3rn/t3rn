@@ -28,7 +28,7 @@ export type TxOutput = {
     /** Output amount as integer */
     amount: BigInt
     /** Output amount in human-readable float */
-    amountHuman: BN
+    amountHuman: number
     /** Output asset tickker */
     asset: string
 }
@@ -73,7 +73,7 @@ export class SideEffect extends EventEmitter {
     /** The phase in which the SFX is part of. First Escrow, then Optimistic */
     phase: number
     /** SFX status, always starting with Bidding on creation */
-    status: SfxStatus = SfxStatus.Bidding
+    status: SfxStatus = SfxStatus.InBidding
     /** SFX action, e.g. tran, swap, etc */
     action: SfxType
     /** Acts as mutex lock to prevent parallel txs on the same SFX */
@@ -89,7 +89,7 @@ export class SideEffect extends EventEmitter {
     /** Is currently the winning bidder of the SFX */
     isBidder: boolean = false
     /** The minimum profit in USD required for executing this SFX. Number is computed by strategy engine */
-    minProfitUsd: BN = new BN.BN(0)
+    minProfitUsd: number = 0
 
     /** If the executor leading the bid changes, store the change */
     changedBidLeader: boolean = false
@@ -103,9 +103,9 @@ export class SideEffect extends EventEmitter {
     /** Encoded arguments, containing the description of what should be executed */
     arguments: string[]
     /** Insurance required for executing this SFX. Amount is deposited throughout the XTX lifecycle and refunded on confirmation */
-    insurance: BN
+    insurance: number
     /** The current reward paid by the user for executing this SFX. This amount can reduce through executor bidding */
-    reward: BehaviorSubject<BN>
+    reward: BehaviorSubject<number>
     /** The raw SideEffect, encoded in SCALE */
     raw: T3rnTypesSideEffect
 
@@ -121,21 +121,21 @@ export class SideEffect extends EventEmitter {
     /** Tx cost in the native currency of the target */
     txCostNative: BehaviorSubject<BN>
     /** Cost of targets native asset in USD. Used for tx cost calculation */
-    nativeAssetPrice: BehaviorSubject<BN>
+    nativeAssetPrice: BehaviorSubject<number>
     /** Current price of the assets that are used for the sfx execution */
-    txOutputAssetPrice: BehaviorSubject<BN>
+    txOutputAssetPrice: BehaviorSubject<number>
     /** Current max profit in USD that can be made when executing */
-    maxProfitUsd = new BehaviorSubject<BN>(new BN.BN(0))
+    maxProfitUsd = new BehaviorSubject<number>(0)
     /** Price for reward assert in USD */
-    rewardAssetPrice = new BehaviorSubject<BN>(new BN.BN(0))
+    rewardAssetPrice = new BehaviorSubject<number>(0)
 
     subscriptions: any[] = []
     /** Tx cost in USD */
-    txCostUsd: BN = new BN.BN(0) //: number = 0
+    txCostUsd: number = 0
     /** Cost of output assets in USD */
-    txOutputCostUsd: BN = new BN.BN(0) //: number = 0
+    txOutputCostUsd: number = 0
     /** Total reward value in USD. This is not profit, as it includes the payment for the assets that are being spent/output by the executor */
-    rewardUsd: BN = new BN.BN(0) //: number = 0
+    rewardUsd: number = 0
 
     /** Tx receipt of the execution on target */
     txReceipt: any // store tx receipt
@@ -175,8 +175,8 @@ export class SideEffect extends EventEmitter {
             this.target = new TextDecoder().decode(sideEffect.target.toU8a())
             this.gateway = sdk.gateways[this.target]
             this.securityLevel = this.evalSecurityLevel(this.gateway.gatewayType)
-            this.reward = new BehaviorSubject(new BN.BN(sdk.circuit.toFloat(sideEffect.maxReward))) // this is always in TRN (native asset)
-            this.insurance = new BN.BN(sdk.circuit.toFloat(sideEffect.insurance)) // this is always in TRN (native asset)
+            this.reward = new BehaviorSubject(sdk.circuit.toFloat(sideEffect.maxReward)) // this is always in TRN (native asset)
+            this.insurance = sdk.circuit.toFloat(sideEffect.insurance) // this is always in TRN (native asset)
             this.strategyEngine = strategyEngine
             this.biddingEngine = biddingEngine
             this.circuitSignerAddress = circuitSignerAddress
@@ -219,9 +219,9 @@ export class SideEffect extends EventEmitter {
      */
     setRiskRewardParameters(
         txCostNative: BehaviorSubject<BN>,
-        nativeAssetPrice: BehaviorSubject<BN>,
-        txOutputAssetPrice: BehaviorSubject<BN>,
-        rewardAssetPrice: BehaviorSubject<BN>
+        nativeAssetPrice: BehaviorSubject<number>,
+        txOutputAssetPrice: BehaviorSubject<number>,
+        rewardAssetPrice: BehaviorSubject<number>
     ) {
         this.txCostNative = txCostNative
         this.nativeAssetPrice = nativeAssetPrice
@@ -275,16 +275,16 @@ export class SideEffect extends EventEmitter {
      * used to determine if another bid should be placed.
      */
     recomputeMaxProfit() {
-        const txCostUsd = this.gateway.toFloat(this.txCostNative.getValue()).mul(this.nativeAssetPrice.getValue())
+        const txCostUsd = this.gateway.toFloat(this.txCostNative.getValue()) * this.nativeAssetPrice.getValue()
         this.txCostUsd = txCostUsd
 
-        const txOutputCostUsd = this.txOutputAssetPrice.getValue().mul(this.getTxOutputs().amountHuman)
+        const txOutputCostUsd = this.txOutputAssetPrice.getValue() * this.getTxOutputs().amountHuman
         this.txOutputCostUsd = txOutputCostUsd
 
-        const rewardValueUsd = this.rewardAssetPrice.getValue().mul(this.reward.getValue())
+        const rewardValueUsd = this.rewardAssetPrice.getValue() * this.reward.getValue()
         this.rewardUsd = rewardValueUsd
 
-        const maxProfitUsd = rewardValueUsd.sub(txCostUsd).sub(txOutputCostUsd)
+        const maxProfitUsd = rewardValueUsd - txCostUsd - txOutputCostUsd
         if (maxProfitUsd !== this.maxProfitUsd.getValue()) {
             this.maxProfitUsd.next(maxProfitUsd)
             this.triggerBid()
@@ -324,7 +324,7 @@ export class SideEffect extends EventEmitter {
     private generateBid(): any {
         if (this.isBidder) return { trigger: false, reason: "Already a bidder" }
         if (this.txStatus !== TxStatus.Ready) return { trigger: false, reason: "Tx not ready" }
-        if (this.status !== SfxStatus.Bidding) return { trigger: false, reason: "Not in bidding phase" }
+        if (this.status !== SfxStatus.InBidding) return { trigger: false, reason: "Not in bidding phase" }
 
         try {
             this.strategyEngine.evaluateSfx(this)
@@ -336,8 +336,8 @@ export class SideEffect extends EventEmitter {
         // we have passed all checks and need to compute the bid amount
         this.txStatus = TxStatus.Pending // acts as mutex lock
         this.minProfitUsd = this.strategyEngine.getMinProfitUsd(this)
-        const bidUsd = new BN.BN(this.biddingEngine.computeBid(this))
-        const bidRewardAsset = bidUsd.div(this.rewardAssetPrice.getValue())
+        const bidUsd = this.biddingEngine.computeBid(this)
+        const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue()
 
         return { trigger: true, bidAmount: bidRewardAsset }
     }

@@ -1,43 +1,38 @@
 import { CoingeckoPricing } from "../src/pricing/coingecko";
 import { PriceEngine } from "../src/pricing/index";
-import { expect } from "chai";
 import { config } from "../config/config";
 
 describe("Basic PriceEngine setup", () => {
-    const pe = new PriceEngine();
 
-    it("should be a class", () => {
-        expect(PriceEngine).to.be.a("function");
+    it("should be a callable", () => {
+        expect(PriceEngine).toBeInstanceOf(Function);
     });
 
-    it("should have a constructor", () => {
-        expect(pe).to.have.property("constructor");
-    });
-
-    it("should have a method called 'getAssetPrice'", () => {
-        expect(pe).to.have.property("getAssetPrice");
+    it("should have a constructor and method called 'getAssetPrice'", async () => {
+        const pe = await new PriceEngine();
+        expect(pe).toHaveProperty("constructor");
+        expect(pe).toHaveProperty("getAssetPrice");
     });
 });
 
 describe("Basic CoinGecko setup", () => {
-    it("should be a class", () => {
-        expect(CoingeckoPricing).to.be.a("function");
+    it("should be a callable", () => {
+        expect(CoingeckoPricing).toBeInstanceOf(Function);
     });
 
     it("should have a constructor and methods", async () => {
         const cg = await new CoingeckoPricing();
-        expect(cg).to.have.property("constructor");
-        expect(cg).to.have.property("getTrackingAssets");
-        expect(cg).to.have.property("updateAssetPrices");
+        expect(cg).toHaveProperty("constructor");
+        expect(cg).toHaveProperty("getTrackingAssets");
+        expect(cg).toHaveProperty("updateAssetPrices");
     });
 
-    it("should load the assets for tracking", () => {
+    it("should load the assets for tracking", async () => {
         // Create a new instance of the class
-        const cg = new CoingeckoPricing();
+        const cg = await new CoingeckoPricing();
         // Load the assets
-        cg.getTrackingAssets();
-
-        // CHECKS
-        expect(cg.assets).to.include.all.keys(Object.keys(config.assets));
+        await cg.getTrackingAssets();
+        // Assert
+        expect(Object.keys(cg.assets)).toEqual(expect.arrayContaining(Object.keys(config.assets)));
     })
 })

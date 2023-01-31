@@ -21,7 +21,7 @@ export class PriceEngine {
      * @param assetId Ticker of the asset we want the price of. These are set in the config file.
      * @returns The price of the asset in USD as a subject
      */
-    getAssetPrice(assetId: string): BehaviorSubject<BN> {
+    getAssetPrice(assetId: string): BehaviorSubject<number> {
         return this.coingecko.prices[assetId]
     }
 }

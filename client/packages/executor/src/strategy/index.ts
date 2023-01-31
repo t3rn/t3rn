@@ -137,12 +137,12 @@ export class StrategyEngine {
      * @param sfx Object of SFX to be evaluated
      * @returns MinProfitUsd constraint from the SFX strategy for a given target
      */
-    getMinProfitUsd(sfx: SideEffect): BN {
+    getMinProfitUsd(sfx: SideEffect): number {
         const strategy = this.sfxStrategies[sfx.target]
         if (strategy.minProfitUsd) {
-            return new BN.BN(strategy.minProfitUsd)
+            return strategy.minProfitUsd
         }
-        return new BN.BN(0)
+        return 0
     }
 
     /**
@@ -154,11 +154,8 @@ export class StrategyEngine {
      */
     minProfitRejected(sfx: SideEffect, strategy: SfxStrategy): void | Error {
         if (strategy.minProfitUsd) {
-            const minProfitUsd: BN = new BN.BN(strategy.minProfitUsd)
-            if (minProfitUsd) {
-                if (sfx.maxProfitUsd.getValue() <= minProfitUsd) {
-                    throw new Error("Min Profit condition not met!")
-                }
+            if (sfx.maxProfitUsd.getValue() <= strategy.minProfitUsd) {
+                throw new Error("Min Profit condition not met!")
             }
         }
     }
@@ -275,6 +272,7 @@ export class StrategyEngine {
      * @returns Share of the given type
      */
     computeShare(sfx: SideEffect, type: string): number {
+        let result: number = 0
         if (type === "fee") {
             return sfx.txCostUsd / sfx.maxProfitUsd.getValue()
         } else if (type === "insurance") {
@@ -282,7 +280,6 @@ export class StrategyEngine {
         } else if (type === "yield") {
             return sfx.maxProfitUsd.getValue() / sfx.txOutputCostUsd
         }
-
-        return 0
+        return result
     }
 }

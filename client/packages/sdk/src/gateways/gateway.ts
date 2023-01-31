@@ -195,7 +195,7 @@ export class Gateway {
      * @param value - The integer value to be converted
      */
 
-  toFloat(value: BN | number): BN {
+  toFloat(value: BN | number): number {
     return new AmountConverter({
       value,
       decimals: this.decimals,

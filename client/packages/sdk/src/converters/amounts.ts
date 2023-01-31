@@ -1,4 +1,4 @@
-const { u8aToHex, isHex, isString, isNumber } = require("@polkadot/util");
+import { u8aToHex, isHex, isString, isNumber } from "@polkadot/util";
 import BN from "bn.js";
 
 /**
@@ -113,7 +113,7 @@ export class AmountConverter {
    * Convert the initialized value into LittleEndian encoded hex string
    */
   toLeHex(): string {
-    return u8aToHex(this.toLeArray());
+    return u8aToHex(new Uint8Array(this.toLeArray()));
   }
 
   /**
@@ -162,7 +162,9 @@ export const toLeEncoding = (
  * @param decimals - The decimals of the number
  */
 export const floatToBn = (number: number, decimals: number): BN => {
-  return new BN.BN(number).mul(new BN.BN(Math.pow(10, decimals)));
+  return new BN.BN(
+    number * Math.pow(10, decimals)
+  )
 };
 
 /**
@@ -171,7 +173,7 @@ export const floatToBn = (number: number, decimals: number): BN => {
  * @param decimals - The decimals of the number
  */
 export const bnToFloat = (number: BN, decimals: number): number => {
-  return number.div(new BN.BN(Math.pow(10, decimals))).toNumber();
+  return number.toNumber() / Math.pow(10, decimals);
 };
 
 /**
@@ -187,5 +189,5 @@ export const optionalInsurance = (
     value: insurance,
   }).toLeArray();
   const encodedReward = new AmountConverter({ value: reward }).toLeArray();
-  return u8aToHex([...encodedInsurance, ...encodedReward]);
+  return u8aToHex(new Uint8Array([...encodedInsurance, ...encodedReward]));
 };

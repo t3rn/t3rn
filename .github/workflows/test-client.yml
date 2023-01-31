@@ -20,5 +20,6 @@ jobs:
         with:
           node-version: 18
 
+      - run: make
       - run: cd executor && yarn && npm ci && npm test
       - run: cd sdk && yarn && npm ci && npm test
