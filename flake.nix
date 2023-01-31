@@ -19,23 +19,26 @@
         };
       in {
         devShell = pkgs.mkShell {
-          LIBCLANG_PATH = "${pkgs.llvmPackages_11.libclang.lib}/lib";
+          LIBCLANG_PATH = pkgs.libclang.lib + "/lib/";
           LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib/:$LD_LIBRARY_PATH";
+
+          stdenv = pkgs.clangStdenv;
+          
           nativeBuildInputs = with pkgs; [ 
-            bashInteractive 
-            cmake 
-            openssl 
-            pkg-config 
-            clang 
-            llvmPackages_11.libclang 
-            stdenv.cc.cc.lib
-            taplo 
+            bashInteractive
+            taplo
+            clang
+            cmake
+            openssl
+            pkg-config
             protobuf
             sccache
             nodejs-slim
           ];
-          buildInputs =
-            [ (rustVersion.override { extensions = [ "rust-src" ]; }) ];
+          buildInputs = with pkgs; [ 
+              (rustVersion.override { extensions = [ "rust-src" ]; }) 
+          ];
+          
         };
   });
 }
