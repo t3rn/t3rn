@@ -1,3 +1,12 @@
+# [1.2.0-rc.12](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.11...v1.2.0-rc.12) (2023-01-31)
+
+
+### Bug Fixes
+
+* loosen collators conf MaxCandidate and SessionTime ([ec4e085](https://github.com/t3rn/t3rn/commit/ec4e085fb8f463ca4d42b7c5be9d3fa2911549c9))
+
+
+
 # [1.2.0-rc.11](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.10...v1.2.0-rc.11) (2023-01-30)
 
 
@@ -50,15 +59,6 @@
 ### Bug Fixes
 
 * correct tests expectations after existential deposit=1 added ([0d66472](https://github.com/t3rn/t3rn/commit/0d6647286d750438d63f09772f31d3c2c414844a))
-
-
-
-# [1.2.0-rc.7](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.6...v1.2.0-rc.7) (2023-01-24)
-
-
-### Bug Fixes
-
-* subalfred errors out correctly ([#596](https://github.com/t3rn/t3rn/issues/596)) ([eaa03a4](https://github.com/t3rn/t3rn/commit/eaa03a425ecaa6c3322389be595af34391cf12e3))
 
 
 
