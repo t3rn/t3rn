@@ -23,16 +23,15 @@ smallvec         = { version = "1.0", default-features = false, features = [ "co
 wasm-instrument  = { version = "0.1", default-features = false }
 wasmi-validation = { version = "0.4", default-features = false }
 
-# Only used in benchmarking to generate random contract code
-libsecp256k1 = { version = "0.7", optional = true, default-features = false, features = [ "hmac", "static-context" ] }
-
-rand     = { version = "0.8", optional = true, default-features = false }
-rand_pcg = { version = "0.3", optional = true }
+# Enabled by benchmarks
+frame-benchmarking = { optional = true, default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+libsecp256k1       = { version = "0.7", optional = true, default-features = false, features = [ "hmac", "static-context" ] }
+rand               = { version = "0.8", optional = true, default-features = false }
+rand_pcg           = { version = "0.3", optional = true }
 
 # Substrate Dependencies
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', optional = true }
-frame-support      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-frame-system       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+frame-system  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
 pallet-contracts-primitives = { default-features = false, path = "primitives" }
 pallet-contracts-proc-macro = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
@@ -75,7 +74,7 @@ pallet-xdns                      = { path = "../xdns" }
 
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-pallet-xbi-portal = { git = "https://github.com/t3rn/xbi-portal.git" }
+pallet-xbi-portal = { git = "https://github.com/t3rn/xbi-portal.git", branch = "feature/expose-xbi-to-circuit" }
 
 [features]
 default = [ "std" ]

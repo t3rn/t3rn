@@ -325,9 +325,9 @@ checksum = "7a40729d2133846d9ed0ea60a8b9541bccddab49cd30f0715a1da672fe9a2524"
 
 [[package]]
 name = "async-trait"
-version = "0.1.63"
+version = "0.1.64"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eff18d764974428cf3a9328e23fc5c986f5fbed46e6cd4cdf42544df5d297ec1"
+checksum = "1cd7fce9ba8c3c042128ce72d8b2ddbf3a05747efb67ea0313c635e10bda47a2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -996,7 +996,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-protocol",
 ]
 
@@ -1035,7 +1035,7 @@ dependencies = [
  "pallet-clock",
  "pallet-collator-selection",
  "pallet-contracts",
- "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
  "pallet-evm 0.1.0",
@@ -1055,7 +1055,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "pallet-xbi-portal",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -1081,7 +1081,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-protocol",
  "xcm",
  "xcm-builder",
@@ -1143,7 +1143,7 @@ dependencies = [
  "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-protocol",
 ]
 
@@ -1172,7 +1172,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-clock",
  "pallet-contracts",
- "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "pallet-contracts-rpc-runtime-api",
@@ -1210,7 +1210,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-protocol",
 ]
 
@@ -2718,32 +2718,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "ethabi-decode"
-version = "1.3.2"
-source = "git+https://github.com/t3rn/t3rn?branch=development#efece9c97cbc82f52051ae106a0b0b2dfc8d3abc"
-dependencies = [
- "ethereum-types",
- "tiny-keccak 1.5.0",
-]
-
-[[package]]
 name = "ethash"
 version = "0.5.0"
 dependencies = [
  "byteorder",
  "ethereum-types",
  "hex-literal 0.2.2",
- "rlp",
- "sha3 0.8.2",
-]
-
-[[package]]
-name = "ethash"
-version = "0.5.0"
-source = "git+https://github.com/t3rn/t3rn?branch=development#efece9c97cbc82f52051ae106a0b0b2dfc8d3abc"
-dependencies = [
- "byteorder",
- "ethereum-types",
  "rlp",
  "sha3 0.8.2",
 ]
@@ -3032,7 +3012,7 @@ dependencies = [
  "parking_lot 0.11.2",
  "relay-utils",
  "stacktrace",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -3090,19 +3070,6 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-dependencies = [
- "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-std",
-]
-
-[[package]]
-name = "fp-evm"
-version = "3.0.0-dev"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#29a687c1837db2bc1e44c871c4548f0216f5f8db"
 dependencies = [
  "evm",
  "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
@@ -4512,7 +4479,7 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-tracing",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "tokio 1.25.0",
 ]
 
@@ -6436,7 +6403,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-utility",
- "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git)",
+ "pallet-xbi-portal",
  "pallet-xdns",
  "parity-scale-codec",
  "scale-info",
@@ -6444,7 +6411,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-sdk-primitives",
 ]
 
@@ -6470,13 +6437,13 @@ dependencies = [
  "sp-std",
  "sp-version",
  "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
 ]
 
 [[package]]
 name = "pallet-asset-registry"
 version = "4.0.0-dev"
-source = "git+https://github.com/t3rn/xbi-portal.git?branch=development#f3aa4167a5106773bdc503a618892c8375afbc1a"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit#b6763d74585b11b2e275a1fe255ba338b641a67c"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6485,9 +6452,9 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives",
  "t3rn-xcm-primitives",
- "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit)",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -6729,7 +6696,7 @@ dependencies = [
  "pallet-staking-reward-curve",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "pallet-xbi-portal",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6744,7 +6711,7 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-trie",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-protocol",
  "t3rn-sdk-primitives",
 ]
@@ -6772,7 +6739,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -6832,7 +6799,7 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-circuit",
- "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-primitives",
  "pallet-contracts-proc-macro",
  "pallet-contracts-registry",
  "pallet-grandpa-finality-verifier",
@@ -6841,7 +6808,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-utility",
- "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git)",
+ "pallet-xbi-portal",
  "pallet-xdns",
  "parity-scale-codec",
  "pretty_assertions",
@@ -6857,7 +6824,7 @@ dependencies = [
  "sp-runtime",
  "sp-sandbox",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-sdk-primitives",
  "wasm-instrument",
  "wasmi-validation",
@@ -6867,21 +6834,6 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "5.0.0"
-dependencies = [
- "bitflags",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-rpc",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-contracts-primitives"
-version = "5.0.0"
-source = "git+https://github.com/t3rn/3vm.git?branch=development#29a687c1837db2bc1e44c871c4548f0216f5f8db"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
@@ -6920,7 +6872,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -6961,7 +6913,7 @@ dependencies = [
  "jsonrpc-core-client 18.0.0",
  "jsonrpc-derive 18.0.0",
  "jsonrpsee 0.14.0",
- "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
@@ -6977,7 +6929,7 @@ dependencies = [
 name = "pallet-contracts-rpc-runtime-api"
 version = "4.0.0-dev"
 dependencies = [
- "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-primitives",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -7079,7 +7031,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-utility",
- "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git)",
+ "pallet-xbi-portal",
  "pallet-xdns",
  "parity-scale-codec",
  "primitive-types",
@@ -7092,7 +7044,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-sdk-primitives",
 ]
 
@@ -7127,7 +7079,7 @@ dependencies = [
  "fp-evm 3.0.0-dev",
  "frame-support",
  "pallet-evm 0.1.0",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -7250,7 +7202,7 @@ dependencies = [
  "pallet-balances",
  "pallet-clock",
  "pallet-contracts",
- "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -7263,7 +7215,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
  "xbi-format 0.1.0",
  "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
@@ -7565,7 +7517,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -7592,7 +7544,7 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -7909,14 +7861,14 @@ dependencies = [
 [[package]]
 name = "pallet-xbi-portal"
 version = "0.9.27"
-source = "git+https://github.com/t3rn/xbi-portal.git?branch=development#f3aa4167a5106773bdc503a618892c8375afbc1a"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit#b6763d74585b11b2e275a1fe255ba338b641a67c"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "fp-evm 3.0.0-dev",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
  "log",
- "pallet-contracts-primitives 5.0.0 (git+https://github.com/t3rn/3vm.git?branch=development)",
+ "pallet-contracts-primitives",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -7928,43 +7880,12 @@ dependencies = [
  "sp-std",
  "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
  "substrate-contracts-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "t3rn-primitives",
  "t3rn-xcm-primitives",
- "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit)",
  "xbi-format 0.2.0",
- "xbi-receiver 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
- "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
- "xcm",
-]
-
-[[package]]
-name = "pallet-xbi-portal"
-version = "0.9.27"
-source = "git+https://github.com/t3rn/xbi-portal.git#f3aa4167a5106773bdc503a618892c8375afbc1a"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/3vm.git?branch=development)",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "log",
- "pallet-contracts-primitives 5.0.0 (git+https://github.com/t3rn/3vm.git?branch=development)",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "substrate-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
- "substrate-contracts-abi 0.1.0 (git+https://github.com/t3rn/xbi.git)",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
- "t3rn-xcm-primitives",
- "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
- "xbi-format 0.2.0",
- "xbi-receiver 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
- "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
+ "xbi-receiver",
+ "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit)",
  "xcm",
 ]
 
@@ -8027,7 +7948,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-protocol",
 ]
 
@@ -8053,7 +7974,7 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -10162,7 +10083,7 @@ dependencies = [
  "sp-storage",
  "sp-trie",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "tokio 1.25.0",
 ]
 
@@ -12098,25 +12019,7 @@ dependencies = [
  "rustc-hex",
  "scale-info",
  "serde",
- "snowbridge-ethereum 0.1.0",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "snowbridge-core"
-version = "0.1.1"
-source = "git+https://github.com/t3rn/t3rn?branch=development#efece9c97cbc82f52051ae106a0b0b2dfc8d3abc"
-dependencies = [
- "enum-iterator",
- "ethereum-types",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "snowbridge-ethereum",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -12126,8 +12029,8 @@ dependencies = [
 name = "snowbridge-ethereum"
 version = "0.1.0"
 dependencies = [
- "ethabi-decode 1.3.2",
- "ethash 0.5.0",
+ "ethabi-decode",
+ "ethash",
  "ethbloom",
  "ethereum-types",
  "getrandom 0.2.8",
@@ -12148,31 +12051,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "wasm-bindgen-test",
-]
-
-[[package]]
-name = "snowbridge-ethereum"
-version = "0.1.0"
-source = "git+https://github.com/t3rn/t3rn?branch=development#efece9c97cbc82f52051ae106a0b0b2dfc8d3abc"
-dependencies = [
- "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn?branch=development)",
- "ethash 0.5.0 (git+https://github.com/t3rn/t3rn?branch=development)",
- "ethbloom",
- "ethereum-types",
- "getrandom 0.2.8",
- "hex-literal 0.3.4",
- "libsecp256k1 0.3.5",
- "parity-bytes",
- "parity-scale-codec",
- "rlp",
- "rustc-hex",
- "scale-info",
- "serde",
- "serde-big-array",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -12207,7 +12085,7 @@ dependencies = [
  "frame-system",
  "pallet-xcm",
  "parity-scale-codec",
- "snowbridge-core 0.1.1",
+ "snowbridge-core",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -13460,7 +13338,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t0rn-parachain-runtime",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-protocol",
  "try-runtime-cli",
  "xcm",
@@ -13503,7 +13381,7 @@ dependencies = [
  "pallet-clock",
  "pallet-collator-selection",
  "pallet-contracts",
- "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
  "pallet-evm 0.1.0",
@@ -13523,7 +13401,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
- "pallet-xbi-portal 0.9.27 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "pallet-xbi-portal",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -13550,7 +13428,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-protocol",
  "xcm",
  "xcm-builder",
@@ -13622,8 +13500,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t3rn-parachain-runtime",
- "t3rn-primitives 1.0.0-alpha.1",
- "t3rn-protocol",
+ "t3rn-primitives",
  "try-runtime-cli",
  "xcm",
 ]
@@ -13710,7 +13587,7 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "snowbridge-core 0.1.1",
+ "snowbridge-core",
  "sp-api",
  "sp-application-crypto",
  "sp-core",
@@ -13726,44 +13603,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "t3rn-primitives"
-version = "1.0.0-alpha.1"
-source = "git+https://github.com/t3rn/t3rn?branch=development#efece9c97cbc82f52051ae106a0b0b2dfc8d3abc"
-dependencies = [
- "ed25519-dalek",
- "finality-grandpa",
- "frame-support",
- "frame-system",
- "hash-db",
- "log",
- "num-traits",
- "pallet-sudo",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "snowbridge-core 0.1.1 (git+https://github.com/t3rn/t3rn?branch=development)",
- "sp-api",
- "sp-application-crypto",
- "sp-core",
- "sp-finality-grandpa",
- "sp-io",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
- "sp-version",
- "t3rn-sdk-primitives",
- "t3rn-types 0.0.1-rc.3 (git+https://github.com/t3rn/t3rn?branch=development)",
-]
-
-[[package]]
 name = "t3rn-protocol"
 version = "1.0.0-alpha.1"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
  "circuit-runtime-types",
- "ethabi-decode 1.3.2",
+ "ethabi-decode",
  "frame-metadata",
  "frame-support",
  "frame-system",
@@ -13779,8 +13625,8 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "snowbridge-core 0.1.1",
- "snowbridge-ethereum 0.1.0",
+ "snowbridge-core",
+ "snowbridge-ethereum",
  "sp-application-crypto",
  "sp-core",
  "sp-io",
@@ -13788,7 +13634,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives",
  "t3rn-types 0.0.1-rc.3",
  "tiny-keccak 2.0.2",
  "triehash",
@@ -13837,22 +13683,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "t3rn-sdk-primitives",
-]
-
-[[package]]
-name = "t3rn-types"
-version = "0.0.1-rc.3"
-source = "git+https://github.com/t3rn/t3rn?branch=development#efece9c97cbc82f52051ae106a0b0b2dfc8d3abc"
-dependencies = [
- "bytes 1.3.0",
- "num",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
 ]
 
 [[package]]
@@ -15503,19 +15333,17 @@ name = "xbi-channel-primitives"
 version = "0.1.0"
 source = "git+https://github.com/t3rn/xbi-portal.git?branch=development#f3aa4167a5106773bdc503a618892c8375afbc1a"
 dependencies = [
- "frame-support",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
  "sp-std",
  "xbi-format 0.2.0",
- "xcm",
 ]
 
 [[package]]
 name = "xbi-channel-primitives"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi-portal.git#f3aa4167a5106773bdc503a618892c8375afbc1a"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit#b6763d74585b11b2e275a1fe255ba338b641a67c"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -15562,7 +15390,7 @@ dependencies = [
 [[package]]
 name = "xbi-receiver"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi-portal.git?branch=development#f3aa4167a5106773bdc503a618892c8375afbc1a"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit#b6763d74585b11b2e275a1fe255ba338b641a67c"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -15573,28 +15401,9 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit)",
  "xbi-format 0.2.0",
- "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
-]
-
-[[package]]
-name = "xbi-receiver"
-version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi-portal.git#f3aa4167a5106773bdc503a618892c8375afbc1a"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
- "xbi-format 0.2.0",
- "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
+ "xbi-sender 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit)",
 ]
 
 [[package]]
@@ -15602,26 +15411,23 @@ name = "xbi-sender"
 version = "0.1.0"
 source = "git+https://github.com/t3rn/xbi-portal.git?branch=development#f3aa4167a5106773bdc503a618892c8375afbc1a"
 dependencies = [
- "frame-support",
- "frame-system",
  "log",
  "sp-runtime",
  "t3rn-xcm-primitives",
  "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=development)",
- "xcm",
 ]
 
 [[package]]
 name = "xbi-sender"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/xbi-portal.git#f3aa4167a5106773bdc503a618892c8375afbc1a"
+source = "git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit#b6763d74585b11b2e275a1fe255ba338b641a67c"
 dependencies = [
  "frame-support",
  "frame-system",
  "log",
  "sp-runtime",
  "t3rn-xcm-primitives",
- "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git)",
+ "xbi-channel-primitives 0.1.0 (git+https://github.com/t3rn/xbi-portal.git?branch=feature/expose-xbi-to-circuit)",
  "xcm",
 ]
 
