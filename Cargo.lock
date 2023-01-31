@@ -6792,7 +6792,6 @@ dependencies = [
  "glob",
  "hex",
  "hex-literal 0.3.4",
- "libsecp256k1 0.7.1",
  "log",
  "pallet-3vm",
  "pallet-account-manager",
