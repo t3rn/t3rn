@@ -29,4 +29,6 @@ jobs:
           git-user-name: t3rn-ci
           git-user-email: 89840377+t3rn-ci@users.noreply.github.com
           pre-release: true
+          output-file: CHANGELOG-dev.md
+          version-file: package-dev.json
 
