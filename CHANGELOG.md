@@ -1,4 +1,4 @@
-# [1.2.0-rc.12](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.11...v1.2.0-rc.12) (2023-01-31)
+## [1.2.1-rc.1](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.11...v1.2.1-rc.1) (2023-01-31)
 
 
 ### Bug Fixes
