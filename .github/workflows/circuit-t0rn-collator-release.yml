@@ -166,15 +166,19 @@
 #           asset_name: ${{ env.PARACHAIN_NAME }}-t0rn-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
 #           asset_content_type: text/plain
 
-#       - name: 📦 Upload the circuit parachain collator gball as a release asset
-#         uses: actions/upload-release-asset@v1.0.2
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#         with:
-#           upload_url: ${{ steps.create_release.outputs.upload_url }}
-#           asset_path: ./target/release/t0rn-collator.gz
-#           asset_name: ${{ env.PARACHAIN_NAME }}-t0rn-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
-#           asset_content_type: application/gzip
+  deploy-to-rococo:
+    runs-on: self-hosted
+    needs: release-on-github
+    steps:
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+      - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
+        run: |
+          CURRENT_HASH=$(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getFinalizedHead", "params": [ ] }' https://rpc.t0rn.io | jq -r .result)
+          CURRENT_HEIGHT=$(curl -sSfH "Content-Type: application/json" -d "{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"chain_getHeader\", \"params\": [\"${CURRENT_HASH}\"] }" https://rpc.t0rn.io | jq -r .result.number)
+          UPGRADE_AT_HEIGHT=$(($CURRENT_HEIGHT + 0x64))
+          echo "UPGRADE RUNTIME AT:" ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
+          ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://dev.net.t3rn.io https://dev.net.t3rn.io/http-rpc ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
 
 #   trigger-downstream:
 #     runs-on: self-hosted
