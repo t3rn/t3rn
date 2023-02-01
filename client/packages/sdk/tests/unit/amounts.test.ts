@@ -19,7 +19,7 @@ describe("AmountConverter @ SDK", () => {
         const be = new AmountConverter({ value: 100 });
         const expectedValue = 100 / (10 ** 12)
         // Act
-        const beAsFloat = be.toFloat();
+        const beAsFloat = Number(be.toFloat());
         // Assert
         expect(beAsFloat).toBeCloseTo(expectedValue);
     });

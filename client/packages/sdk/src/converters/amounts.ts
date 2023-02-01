@@ -1,5 +1,6 @@
 import { u8aToHex, isHex, isString, isNumber } from "@polkadot/util";
 import BN from "bn.js";
+import Big from 'big.js';
 
 /**
  * This class is used for doing amount conversions of different types. When dealing with circuit, there are three main encodings are used for representing amounts:
@@ -12,8 +13,8 @@ import BN from "bn.js";
  */
 
 export class AmountConverter {
-  value: number | BN | string;
-  decimals: number;
+  value: BN;
+  decimals: BN;
   valueTypeSize: number;
 
   /**
@@ -38,15 +39,15 @@ export class AmountConverter {
    * ```
    */
   constructor(args: {
-    value?: number | BN | string;
-    decimals?: number;
+    value?: string | number | BN;
+    decimals?: BN | number;
     valueTypeSize?: number;
   }) {
     // Set defaults
-    if (!args.decimals) args.decimals = 12;
+    if (!args.decimals) args.decimals = new BN(12);  // default: 12 decimals
     if (!args.valueTypeSize) args.valueTypeSize = 16;
 
-    this.decimals = args.decimals;
+    this.decimals = new BN(args.decimals);
     this.valueTypeSize = args.valueTypeSize;
 
     if (args.value) {
@@ -58,9 +59,7 @@ export class AmountConverter {
           this.value = new BN.BN(args.value, 10);
         }
       } else if (isNumber(args.value)) {
-        console.log("I'm a number!")
         if (Math.floor(args.value as number) !== args.value) {
-          console.log("I should throw an error")
           throw new Error(
             "AmountConverter: Float values not supported! Please pass an integer value or convert to it."
           );
@@ -97,7 +96,7 @@ export class AmountConverter {
       return result
     } else {
       throw new Error(
-        "AmountConverter: Conversion from `float` to `BN` failed -> Integer larger than valueTypeSize."
+        "AmountConverter: Conversion from `number` to `BN` failed -> New integer is larger than its valueTypeSize."
       );
     }
   }
@@ -131,6 +130,25 @@ export class AmountConverter {
       return true
     }
   }
+
+  /**
+   * Converts a price from integer (`BN` value) to USD (`number` value)
+   * 
+   * @param price The amount to be converted, with the correct amount of decimals
+   * @returns The price in USD
+   */
+  computeUsdPrice(price: Price): number {
+    // Multiply `BN` numbers to keep precision
+    const baseNumber = this.value.mul(price.amount)
+    // Get the number of decimal places we need to divide by, so we keep the precision safe
+    const decimalPositions = this.decimals.add(price.decimals).sub(USD_DECIMAL_PRECISION)
+    // Get the value to divide by so decimals are removed
+    const decimalsForSafety = new BN(Math.pow(10, decimalPositions.toNumber()))
+    // Divide the `BN` by prev. value to remove the extra decimal places
+    const baseNumberSafe = baseNumber.div(decimalsForSafety)
+    // Get the value as a `number` with decimals
+    return baseNumberSafe.toNumber() / (10 ** USD_DECIMAL_PRECISION.toNumber())
+  }
 }
 
 /**
@@ -161,19 +179,19 @@ export const toLeEncoding = (
  * @param number - The number to convert
  * @param decimals - The decimals of the number
  */
-export const floatToBn = (number: number, decimals: number): BN => {
-  return new BN.BN(
-    number * Math.pow(10, decimals)
-  )
+export const floatToBn = (number: number, decimals: BN): BN => {
+  const bigInteger = new BN.BN(number * Math.pow(10, decimals.toNumber()))
+  return bigInteger
 };
 
 /**
  * Converts uint to a human readable decimal
- * @param number - The number to convert
- * @param decimals - The decimals of the number
+ * @param number - The integer to convert
+ * @param decimals - The decimals of the new number
  */
-export const bnToFloat = (number: BN, decimals: number): number => {
-  return number.toNumber() / Math.pow(10, decimals);
+export const bnToFloat = (number: BN, decimals: BN): number => {
+  const bigFloat = Big(number).div(Math.pow(10, decimals.toNumber()))
+  return bigFloat
 };
 
 /**
@@ -191,3 +209,27 @@ export const optionalInsurance = (
   const encodedReward = new AmountConverter({ value: reward }).toLeArray();
   return u8aToHex(new Uint8Array([...encodedInsurance, ...encodedReward]));
 };
+
+/** Constant for accounting how many decimals places we allow for USD values */
+export const USD_DECIMAL_PRECISION = new BN(4)
+
+// /** Keep track of how many decimals there are in each service */
+// export enum DECIMALS_PRECISION {
+//   CoinGecko = 4,
+//   USD_DECIMAL_PRECISION = 4
+// }
+
+export class Price {
+  amount: BN;
+  decimals: BN;
+
+  constructor(amount: BN, decimals: BN) {
+    // Check that both values are `BN` numbers
+    if (!BN.isBN(amount) || !BN.isBN(decimals)) {
+      this.decimals = decimals;
+      this.amount = amount;
+    } else {
+      throw new Error("Both `amount` and `decimals` fields in `Price` must be integers of type `BN`.")
+    }
+  }
+}

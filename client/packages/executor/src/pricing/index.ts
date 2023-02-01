@@ -1,4 +1,3 @@
-import BN from "bn.js"
 import { CoingeckoPricing } from "./coingecko"
 import { BehaviorSubject } from "rxjs"
 

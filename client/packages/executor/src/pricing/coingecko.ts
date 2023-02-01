@@ -1,4 +1,3 @@
-import BN from "bn.js"
 import { config } from "../../config/config"
 import { BehaviorSubject } from "rxjs"
 const axios = require("axios")

@@ -9,11 +9,12 @@ import { Gateway } from "@t3rn/sdk/dist/src/gateways"
 import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"
 import { EventEmitter } from "events"
-import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
+import { toFloat } from "@t3rn/sdk/dist/src/circuit"
 import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
 import { InclusionData } from "../gateways/types"
 
 import BN from "bn.js"
+import Big from 'big.js';
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"]
@@ -275,16 +276,16 @@ export class SideEffect extends EventEmitter {
      * used to determine if another bid should be placed.
      */
     recomputeMaxProfit() {
-        const txCostUsd = this.gateway.toFloat(this.txCostNative.getValue()) * this.nativeAssetPrice.getValue()
+        const txCostUsd = Big(this.gateway.toFloat(this.txCostNative.getValue())).times(this.nativeAssetPrice.getValue())
         this.txCostUsd = txCostUsd
 
-        const txOutputCostUsd = this.txOutputAssetPrice.getValue() * this.getTxOutputs().amountHuman
+        const txOutputCostUsd = Big(this.txOutputAssetPrice.getValue()).times(this.getTxOutputs().amountHuman)
         this.txOutputCostUsd = txOutputCostUsd
 
-        const rewardValueUsd = this.rewardAssetPrice.getValue() * this.reward.getValue()
+        const rewardValueUsd = Big(this.rewardAssetPrice.getValue()).times(this.reward.getValue())
         this.rewardUsd = rewardValueUsd
 
-        const maxProfitUsd = rewardValueUsd - txCostUsd - txOutputCostUsd
+        const maxProfitUsd = Big(rewardValueUsd).minus(txCostUsd).minus(txOutputCostUsd)
         if (maxProfitUsd !== this.maxProfitUsd.getValue()) {
             this.maxProfitUsd.next(maxProfitUsd)
             this.triggerBid()
@@ -299,7 +300,7 @@ export class SideEffect extends EventEmitter {
                 msg: "Bid generated",
                 bid: result?.bidAmount.toString(),
             })
-            this.logger.info(`Bidding on SFX ${this.humanId}: ${bnToFloat(result.bidAmount, 12)} TRN 🎰`)
+            this.logger.info(`Bidding on SFX ${this.humanId}: ${bnToFloat(result.bidAmount, new BN(12))} TRN 🎰`)
 
             this.emit("Notification", {
                 type: NotificationType.SubmitBid,
@@ -477,7 +478,6 @@ export class SideEffect extends EventEmitter {
             case "tran": {
                 this.action = SfxType.Transfer
                 return true
-                break
             }
             default: {
                 return false

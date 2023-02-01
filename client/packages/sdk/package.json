@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsc -b --verbose",
     "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk",
-    "test": "jest"
+    "test": "jest --no-cache --detectOpenHandles --forceExit"
   },
   "keywords": [
     "t3rn",
@@ -35,7 +35,8 @@
   },
   "homepage": "https://github.com/t3rn/t3rn",
   "dependencies": {
-    "@polkadot/api": "^9.2.4"
+    "@polkadot/api": "^9.2.4",
+    "big.js": "^6.2.1"
   },
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
