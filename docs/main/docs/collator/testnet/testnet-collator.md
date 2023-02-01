@@ -113,6 +113,7 @@ t0rn_boot_node=/dns/bootnode.t0rn.io/tcp/33333/p2p/12D3KooWEepV69XCJB4Zi193cZcm5
   --ws-port 9933 \
   --execution Wasm \
   --pruning=archive \
+  --state-cache-size 0 \
   -- \
   --chain ~/t0rn/specs/rococo.raw.json \
   --bootnodes "$rococo_boot_node" \
@@ -134,6 +135,7 @@ docker run -p 33333:33333 -p 8833:8833 -p 9933:9933 \
   --bootnodes "$t0rn_boot_node" \
   --execution Wasm \
   --pruning=archive \
+  --state-cache-size 0 \
   -- \
   --chain /node/specs/rococo.raw.json \
   --bootnodes "$rococo_boot_node" \
