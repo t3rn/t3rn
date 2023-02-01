@@ -1,10 +1,14 @@
 use crate::*;
 
-use frame_support::{parameter_types, traits::ConstU32, PalletId};
+use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
+use scale_info::TypeInfo;
 use sp_core::H256;
+use sp_runtime::Perbill;
 
-use sp_runtime::traits::{One, Saturating};
+use sp_runtime::traits::One;
+
+use sp_runtime::traits::Zero;
 
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
@@ -15,9 +19,33 @@ struct GlobalOnInitQueues;
 
 impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
     fn process(n: BlockNumber, on_init_weight_limit: Weight) -> Weight {
+        // Iterate over all pre-init hooks implemented by pallets and return aggregated weight
+        #[cfg_attr(rustfmt, rustfmt_skip)] // prefer to keep hooks declaration in one line
+        let hooks = vec![
+            (Circuit::process_signal_queue, BlockNumber::one(), Perbill::from_percent(15), "Circuit::Signals", ),
+            (Circuit::process_xtx_tick_queue, BlockNumber::one(), Perbill::from_percent(35), "Circuit::XtxTicks", ),
+            (Circuit::process_revert_xtx_queue, Circuit::XtxTimeoutCheckInterval::get(), Perbill::from_percent(35), "Circuit::XtxRevert", ),
+            (Clock::check_bump_round, BlockNumber::one(), Perbill::from_percent(5), "Clock::BumpRound", ),
+            (Clock::calculate_claimable_for_round, BlockNumber::one(), Perbill::from_percent(10), "Clock::CalcClaimable", ),
+        ];
 
         let mut weight: Weight = 0;
-        weight = weight.saturating_add(Circuit::process_signal_queue(n, BlockNumber::one(), on_init_weight_limit / 10));
+        for (hook, interval, percentage_share, dbg_queue_name) in hooks {
+            if n % interval == BlockNumber::zero() {
+                weight = weight.saturating_add(hook(
+                    n,
+                    interval,
+                    percentage_share * on_init_weight_limit,
+                ));
+                if weight > on_init_weight_limit {
+                    log::error!(
+                        "GlobalOnInitQueues::on_init_weight_limit exceeded for queue: {}",
+                        dbg_queue_name
+                    );
+                }
+            }
+        }
+        // weight = weight.saturating_add(Circuit::process_signal_queue(n, BlockNumber::one(), Perbill::from_percent(25) * on_init_weight_limit));
         // weight = weight.saturating_add(Circuit::process_xtx_tick_queue(n, BlockNumber::one(), on_init_weight_limit * Percent::from_percent(30)));
         // weight = weight.saturating_add(Circuit::process_revert_xtx_queue(n, BlockNumber::one(), on_init_weight_limit * Percent::from_percent(30)));
         // weight = weight.saturating_add(Self::process_revert_xtx_queue(n, Circuit::XtxTimeoutCheckInterval::get(), BlockExecutionWeight::get() / 10));
@@ -29,9 +57,9 @@ impl pallet_clock::Config for Runtime {
     type AccountManager = AccountManager;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    type RoundDuration = ConstU32<500u32>;
     type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
+    type RoundDuration = ConstU32<500u32>;
 }
 
 impl pallet_xdns::Config for Runtime {

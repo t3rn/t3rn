@@ -96,7 +96,7 @@ pub mod pallet {
     pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
 
     impl<T: Config> Pallet<T> {
-        pub fn calculate_claimable_for_round(n: T::BlockNumber) -> Weight {
+        pub fn calculate_claimable_for_round(n: T::BlockNumber, _interval: T::BlockNumber, _max_allowed_weight: Weight) -> Weight {
             const KILL_WRITES: Weight = 1;
             const KILL_READS: Weight = 2;
             // fixme: move current_round from treasury to circuit-clock
@@ -117,7 +117,7 @@ pub mod pallet {
             T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
         }
 
-        pub fn check_bump_round(n: T::BlockNumber) -> Weight {
+        pub fn check_bump_round(n: T::BlockNumber, _interval: T::BlockNumber, _max_allowed_weight: Weight) -> Weight {
             const KILL_WRITES: Weight = 1;
             const KILL_READS: Weight = 2;
             let past_round = <CurrentRound<T>>::get();
