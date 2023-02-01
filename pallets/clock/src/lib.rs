@@ -32,6 +32,8 @@ mod benchmarking;
 
 mod weights;
 
+pub mod traits;
+
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
 #[frame_support::pallet]
@@ -41,8 +43,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::{prelude::*, vec};
-
-    use sp_runtime::traits::Zero;
+    use crate::traits::OnHookQueues;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_account_manager::Config {
@@ -62,6 +63,12 @@ pub mod pallet {
             Self::BlockNumber,
             u32,
         >;
+
+        /// Description of on_initialize queues and their max. consumption of % of total on_init weight.
+        /// The first element of the tuple is the queue name, the second is the max. % of total on_init weight.}
+        type OnInitializeQueues: OnHookQueues<Self>;
+
+        type OnFinalizeQueues: OnHookQueues<Self>;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -73,7 +80,7 @@ pub mod pallet {
 
     #[pallet::storage]
     pub type LastClaims<T: Config> =
-        StorageMap<_, Identity, T::AccountId, RoundInfo<T::BlockNumber>>;
+    StorageMap<_, Identity, T::AccountId, RoundInfo<T::BlockNumber>>;
 
     #[pallet::storage]
     pub type ClaimableArtifactsPerRound<T: Config> = StorageMap<
@@ -89,19 +96,44 @@ pub mod pallet {
     pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
 
     impl<T: Config> Pallet<T> {
-        fn calculate_claimable_for_round(n: T::BlockNumber) -> DispatchResult {
+        pub fn calculate_claimable_for_round(n: T::BlockNumber) -> Weight {
+            const KILL_WRITES: Weight = 1;
+            const KILL_READS: Weight = 2;
             // fixme: move current_round from treasury to circuit-clock
             let r = Self::current_round();
             let mut claimable_artifacts = vec![];
-            claimable_artifacts.extend(T::AccountManager::on_collect_claimable(n, r)?);
-            // claimable_artifacts.push(T::Treasury::on_collect_claimable(n, r)?);
-            // claimable_artifacts.push(T::Contracts::on_collect_claimable(n, r)?);
-            // claimable_artifacts.push(T::Ambassadors::on_collect_claimable(n, r)?);
-            // claimable_artifacts.push(T::LiquidityPools::on_collect_claimable(n, r)?);
+
+            match T::AccountManager::on_collect_claimable(n, r) {
+                Ok(claimable) => { claimable_artifacts.extend(claimable) },
+                Err(e) => {
+                    log::error!("Clock init_hook error while collecting claimable: {:?}", e);
+                    return T::DbWeight::get().reads_writes(KILL_READS, 0 as Weight);
+                }
+            }
 
             ClaimableArtifactsPerRound::<T>::insert(r, claimable_artifacts.clone());
+
             // todo: aggregated claimable_artifacts to TotalClaimablePerRound
-            Ok(())
+            T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
+        }
+
+        pub fn check_bump_round(n: T::BlockNumber) -> Weight {
+            const KILL_WRITES: Weight = 1;
+            const KILL_READS: Weight = 2;
+            let past_round = <CurrentRound<T>>::get();
+            let term = T::RoundDuration::get();
+            let new_round = RoundInfo {
+                index: past_round.index.saturating_add(1),
+                head: n,
+                term,
+            };
+            <CurrentRound<T>>::put(new_round);
+            Self::deposit_event(Event::NewRound {
+                index: new_round.index,
+                head: new_round.head,
+                term: new_round.term,
+            });
+            T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
         }
     }
 
@@ -110,15 +142,32 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
         fn on_finalize(n: T::BlockNumber) {
+            let max_on_finalize_weight = T::BlockWeights::get()
+                .per_class
+                .get(DispatchClass::Normal)
+                .max_total
+                .unwrap_or(T::BlockWeights::get().max_block.saturating_div(5));
+
+            println!("max_on_finalize_weight: {:?}", max_on_finalize_weight);
+            T::OnFinalizeQueues::process(n, max_on_finalize_weight);
             // Perform necessary data/state clean up here.
 
-            if n % T::RoundDuration::get() == T::BlockNumber::zero() {
-                if let Err(e) = Self::calculate_claimable_for_round(n) {
-                    log::error!(target: "clock", "Error whilst calculating claimable for round {:?}", e);
-                }
-                // After the rewards has been recalculate it's safe to shuffle the executors orded and stakes
-                <T as Config>::Executors::recalculate_executors_stakes();
-            }
+            // T::OnInitializeQueues::get()
+            //     .iter()
+            //     .for_each(|(queue, _weight_percent, _interval)| match queue {
+            //         OnInitQueue::CalculateClaimable => {
+            //             Self::calculate_claimable_for_round(n).unwrap();
+            //         },
+            //         _ => {},
+            //     });
+            // 
+            // if n % T::RoundDuration::get() == T::BlockNumber::zero() {
+            //     if let Err(e) = Self::calculate_claimable_for_round(n) {
+            //         log::error!(target: "clock", "Error whilst calculating claimable for round {:?}", e);
+            //     }
+            //     // After the rewards has been recalculate it's safe to shuffle the executors orded and stakes
+            //     <T as Config>::Executors::recalculate_executors_stakes();
+            // }
         }
 
         // `on_initialize` is executed at the beginning of the block before any extrinsic are
@@ -126,25 +175,33 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-            let term = T::RoundDuration::get();
+            let max_on_finalize_weight = T::BlockWeights::get()
+                .per_class
+                .get(DispatchClass::Normal)
+                .max_total
+                .unwrap_or(T::BlockWeights::get().max_block.saturating_div(5));
 
-            if n % term == T::BlockNumber::zero() {
-                let past_round = <CurrentRound<T>>::get();
-
-                let new_round = RoundInfo {
-                    index: past_round.index.saturating_add(1),
-                    head: n,
-                    term,
-                };
-
-                <CurrentRound<T>>::put(new_round);
-
-                Self::deposit_event(Event::NewRound {
-                    index: new_round.index,
-                    head: new_round.head,
-                    term: new_round.term,
-                });
-            }
+            println!("max_on_finalize_weight: {:?}", max_on_finalize_weight);
+            T::OnInitializeQueues::process(n, max_on_finalize_weight);
+            // let term = T::RoundDuration::get();
+            // 
+            // if n % term == T::BlockNumber::zero() {
+            //     let past_round = <CurrentRound<T>>::get();
+            // 
+            //     let new_round = RoundInfo {
+            //         index: past_round.index.saturating_add(1),
+            //         head: n,
+            //         term,
+            //     };
+            // 
+            //     <CurrentRound<T>>::put(new_round);
+            // 
+            //     Self::deposit_event(Event::NewRound {
+            //         index: new_round.index,
+            //         head: new_round.head,
+            //         term: new_round.term,
+            //     });
+            // }
 
             99 //TODO T::WeightInfo::on_initialize()
         }

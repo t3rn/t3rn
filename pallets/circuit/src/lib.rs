@@ -117,6 +117,7 @@ pub mod pallet {
         substrate_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm},
         xbi_format::XbiCheckOutStatus,
     };
+    use sp_runtime::traits::One;
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -322,50 +323,10 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            let mut weight = Self::process_signal_queue();
-            // Check every XtxTimeoutCheckInterval blocks
-
-            println!("on_initialize: {:?}", BlockExecutionWeight::get());
-            // what happens if the weight for the block is consumed, do these timeouts need to wait
-            // for the next check interval to handle them? maybe we need an immediate queue
-            //
-            let mut deletion_counter: u32 = 0;
-
-            // Check for expiring bids each block
-            let _processed_xtx_bids_count = <PendingXtxBidsTimeoutsMap<T>>::iter()
-                .filter(|(_xtx_id, bidding_timeouts_at)| {
-                    // ToDo consider moving xtx_bids to xtx_ctx in order to self update to always determine status
-                    bidding_timeouts_at <= &n
-                })
-                .map(|(xtx_id, _bidding_timeouts_at)| {
-                    if deletion_counter <= T::DeletionQueueLimit::get() {
-                        weight = weight.saturating_add(Self::process_kill(xtx_id));
-                        deletion_counter = deletion_counter.saturating_add(1);
-                    }
-                })
-                .count();
-
-            // Scenario 1: all the timeout s can be handled in the block space
-            // Scenario 2: all but 5 timeouts can be handled
-            //     - add the 5 timeouts to an immediate queue for the next block
-            if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
-                // Go over all unfinished Xtx to find those that timed out
-                let processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
-                    .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
-                    .map(|(xtx_id, _timeout_at)| {
-                        if deletion_counter <= T::DeletionQueueLimit::get() {
-                            weight = weight.saturating_add(Self::process_revert(xtx_id));
-                            deletion_counter = deletion_counter.saturating_add(1);
-                        }
-                    })
-                    .count();
-
-                weight = weight.saturating_add(T::DbWeight::get().reads_writes(
-                    processed_xtx_revert_count as Weight,
-                    processed_xtx_revert_count as Weight,
-                ));
-            }
-
+            let mut weight: Weight = 0;
+            weight = weight.saturating_add(Self::process_signal_queue(n, T::BlockNumber::one(), BlockExecutionWeight::get() / 10));
+            weight = weight.saturating_add(Self::process_xtx_tick_queue(n, T::BlockNumber::one(), BlockExecutionWeight::get() / 10));
+            weight = weight.saturating_add(Self::process_revert_xtx_queue(n, T::XtxTimeoutCheckInterval::get(), BlockExecutionWeight::get() / 10));
             weight
         }
 
@@ -1201,7 +1162,50 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    pub fn process_revert(xtx_id: XExecSignalId<T>) -> Weight {
+    pub fn process_xtx_tick_queue(n: T::BlockNumber, kill_interval: T::BlockNumber, max_allowed_weight: Weight) -> Weight {
+        let mut current_weight: Weight = 0;
+
+        println!("Processing XTX tick queue at block: {:?} with max weight {:?}", n, max_allowed_weight);
+
+        if n % kill_interval == T::BlockNumber::zero() {
+            println!("MOD passed, Killing XTXs at block: {:?}", n);
+            // Go over all unfinished Xtx to find those that should be killed
+            let _processed_xtx_revert_count = <PendingXtxBidsTimeoutsMap<T>>::iter()
+                .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
+                .map(|(xtx_id, _timeout_at)| {
+                    println!("check weight limit limit {:?} {:?}", current_weight, current_weight <= max_allowed_weight);
+
+                    if current_weight <= max_allowed_weight {
+                        println!("Processing XTX for {:?}", xtx_id);
+                        current_weight = current_weight.saturating_add(Self::process_tick_one(xtx_id));
+                    }
+                })
+                .count();
+        }
+        current_weight
+    }
+
+
+    pub fn process_revert_xtx_queue(n: T::BlockNumber, revert_interval: T::BlockNumber, max_allowed_weight: Weight) -> Weight {
+        let mut current_weight: Weight = 0;
+        // Scenario 1: all the timeout s can be handled in the block space
+        // Scenario 2: all but 5 timeouts can be handled
+        //     - add the 5 timeouts to an immediate queue for the next block
+        if n % revert_interval == T::BlockNumber::zero() {
+            // Go over all unfinished Xtx to find those that timed out
+            let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
+                .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
+                .map(|(xtx_id, _timeout_at)| {
+                    if current_weight <= max_allowed_weight {
+                        current_weight = current_weight.saturating_add(Self::process_revert_one(xtx_id));
+                    }
+                })
+                .count();
+        }
+        current_weight
+    }
+
+    pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> Weight {
         const REVERT_WRITES: Weight = 2;
         const REVERT_READS: Weight = 1;
 
@@ -1213,7 +1217,7 @@ impl<T: Config> Pallet<T> {
         T::DbWeight::get().reads_writes(REVERT_READS, REVERT_WRITES)
     }
 
-    pub fn process_kill(xtx_id: XExecSignalId<T>) -> Weight {
+    pub fn process_tick_one(xtx_id: XExecSignalId<T>) -> Weight {
         const KILL_WRITES: Weight = 4;
         const KILL_READS: Weight = 1;
 
@@ -1243,25 +1247,16 @@ impl<T: Config> Pallet<T> {
     }
 
     // TODO: we also want to save some space for timeouts, split the weight distribution 50-50
-    pub fn process_signal_queue() -> Weight {
+    pub fn process_signal_queue(_n: T::BlockNumber, _interval: T::BlockNumber, max_allowed_weight: Weight) -> Weight {
         let queue_len = <SignalQueue<T>>::decode_len().unwrap_or(0);
         if queue_len == 0 {
             return 0
         }
         let db_weight = T::DbWeight::get();
-
         let mut queue = <SignalQueue<T>>::get();
-
-        // We can do an easy process and only process CONSTANT / something signals for now
-        let mut remaining_key_budget = if let Some(v) = T::SignalQueueDepth::get().checked_div(4) {
-            v
-        } else {
-            log::error!("Division error on signal queue depth (`SignalQueueDepth::get()`).");
-            T::SignalQueueDepth::get()
-        };
         let mut processed_weight = 0 as Weight;
 
-        while !queue.is_empty() && remaining_key_budget > 0 {
+        while !queue.is_empty() && processed_weight < max_allowed_weight {
             // Cannot panic due to loop condition
             let (_requester, signal) = &mut queue[0];
 
@@ -1276,7 +1271,6 @@ impl<T: Config> Pallet<T> {
                         Cause::IntentionalKill,
                         |_status_change, _local_ctx| {
                             queue.swap_remove(0);
-                            remaining_key_budget -= 1;
                             // apply has 2
                             processed_weight += db_weight.reads_writes(2 as Weight, 1 as Weight);
                         },

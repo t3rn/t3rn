@@ -4,9 +4,25 @@ use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
 
+use sp_runtime::traits::{One, Saturating};
+
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
+}
+
+struct GlobalOnInitQueues;
+
+impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
+    fn process(n: BlockNumber, on_init_weight_limit: Weight) -> Weight {
+
+        let mut weight: Weight = 0;
+        weight = weight.saturating_add(Circuit::process_signal_queue(n, BlockNumber::one(), on_init_weight_limit / 10));
+        // weight = weight.saturating_add(Circuit::process_xtx_tick_queue(n, BlockNumber::one(), on_init_weight_limit * Percent::from_percent(30)));
+        // weight = weight.saturating_add(Circuit::process_revert_xtx_queue(n, BlockNumber::one(), on_init_weight_limit * Percent::from_percent(30)));
+        // weight = weight.saturating_add(Self::process_revert_xtx_queue(n, Circuit::XtxTimeoutCheckInterval::get(), BlockExecutionWeight::get() / 10));
+        weight
+    }
 }
 
 impl pallet_clock::Config for Runtime {
@@ -14,6 +30,8 @@ impl pallet_clock::Config for Runtime {
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type RoundDuration = ConstU32<500u32>;
+    type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
+    type OnInitializeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
 }
 
 impl pallet_xdns::Config for Runtime {

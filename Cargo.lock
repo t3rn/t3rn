@@ -2681,7 +2681,7 @@ dependencies = [
 [[package]]
 name = "ethabi-decode"
 version = "1.3.2"
-source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
  "ethereum-types",
  "tiny-keccak 1.5.0",
@@ -2710,7 +2710,7 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "0.5.0"
-source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
  "byteorder",
  "ethereum-types",
@@ -6403,7 +6403,7 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
  "t3rn-xcm-primitives",
  "xbi-channel-primitives",
  "xcm",
@@ -7760,7 +7760,7 @@ dependencies = [
  "sp-std",
  "substrate-abi",
  "substrate-contracts-abi",
- "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "t3rn-primitives 1.0.0-alpha.1 (git+https://github.com/t3rn/t3rn?branch=development)",
  "t3rn-xcm-primitives",
  "xbi-channel-primitives",
  "xbi-format",
@@ -11878,7 +11878,7 @@ dependencies = [
 [[package]]
 name = "snowbridge-core"
 version = "0.1.1"
-source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
  "enum-iterator",
  "ethereum-types",
@@ -11887,7 +11887,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/t3rn?branch=development)",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -11942,10 +11942,10 @@ dependencies = [
 [[package]]
 name = "snowbridge-ethereum"
 version = "0.1.0"
-source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
- "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn.git?branch=development)",
- "ethash 0.5.0 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "ethabi-decode 1.3.2 (git+https://github.com/t3rn/t3rn?branch=development)",
+ "ethash 0.5.0 (git+https://github.com/t3rn/t3rn?branch=development)",
  "ethbloom",
  "ethereum-types",
  "getrandom 0.2.8",
@@ -13517,7 +13517,7 @@ dependencies = [
 [[package]]
 name = "t3rn-primitives"
 version = "1.0.0-alpha.1"
-source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
  "ed25519-dalek",
  "finality-grandpa",
@@ -13530,7 +13530,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "snowbridge-core 0.1.1 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "snowbridge-core 0.1.1 (git+https://github.com/t3rn/t3rn?branch=development)",
  "sp-api",
  "sp-application-crypto",
  "sp-core",
@@ -13542,7 +13542,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-sdk-primitives",
- "t3rn-types 0.0.1-rc.3 (git+https://github.com/t3rn/t3rn.git?branch=development)",
+ "t3rn-types 0.0.1-rc.3 (git+https://github.com/t3rn/t3rn?branch=development)",
 ]
 
 [[package]]
@@ -13662,7 +13662,7 @@ dependencies = [
 [[package]]
 name = "t3rn-types"
 version = "0.0.1-rc.3"
-source = "git+https://github.com/t3rn/t3rn.git?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
+source = "git+https://github.com/t3rn/t3rn?branch=development#dceb2db083f6f6918a27956371be01c637e9788a"
 dependencies = [
  "bytes 1.3.0",
  "num",
