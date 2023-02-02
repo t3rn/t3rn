@@ -2,8 +2,8 @@
 
 set -x
 
-if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 || -z $6 ]]; then
-  echo "usage 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
+if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 ]]; then
+  echo "usage 'collator sudo secret' \$ws_provider \$http_provider \$tag \$parachain_name [--dryrun]"
   # fx: $0 'collator sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up 33 t0rn --dryrun
   exit 1
 fi
@@ -42,8 +42,7 @@ sudo_secret="$1"
 ws_provider=$2
 http_provider=$3
 tag=$4
-when=$5
-parachain_name=$6
+parachain_name=$5
 used_wasm=$HOME/.runtime-upgrade.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
@@ -128,25 +127,18 @@ echo
 
 if [[ "${answer,,}" != "y" ]]; then exit 1; fi
 
-head=$(get_finalized_head)
-
-if [[ $head -gt $(( when - 5 )) ]]; then
-  echo "reschedule at a later block" >&2
-  exit 1
-fi
-
 echo "🎱 authorizing runtime upgrade... $dryrun"
 
 npm i @polkadot/api@8.6.2
 
 if [[ -z $dryrun ]]; then
-  PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
+  PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$after \
     node $root_dir/scripts/schedule-authorize-runtime-upgrade.js
 
-  echo "scheduled runtime upgrade authorization at block $when"
+  echo "scheduled runtime upgrade authorization at block $after"
 else
   echo "
-    PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
+    PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash AFTER=$after \
       node $root_dir/scripts/schedule-authorize-runtime-upgrade.js
   "
   cat $root_dir/scripts/schedule-authorize-runtime-upgrade.js
@@ -155,6 +147,7 @@ fi
 echo "🛂 awaiting runtime upgrade authorization..."
 
 head=$(get_finalized_head)
+when=$(( head + after ))
 
 while [[ $head -ne $when ]]; do
   sleep 12s
