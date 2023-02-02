@@ -1,4 +1,8 @@
+# Changelog
 ## [1.2.1-rc.1](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.11...v1.2.1-rc.1) (2023-01-31)
+
+## `v1.2.0-rc.5` 2023-02-01
+* fix: loosen collators config MaxCandidate and SessionTime
 
 
 ### Bug Fixes
