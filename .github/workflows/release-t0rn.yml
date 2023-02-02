@@ -246,6 +246,12 @@ jobs:
   #     - name: 🏷️ Get the version tag
   #       run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
   #
+  #     - name: 📥 Download runtime WASM
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
+  #         path: ./target/release/
+  #
   #     - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
   #       run: |
   #         SYSTEM_HEALTH=$(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params": [ ] }' https://rpc.t0rn.io | jq -r .result)

@@ -100,22 +100,13 @@ if [[ $new_author_version != $((old_author_version + 1)) ]]; then
   exit 1
 fi
 
+echo "🫧 Check WASM artifact..."
+used_wasm=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
 
-# TODO: dont build WASM but fetch from release
-echo "🏭 building runtime wasm..."
+echo "🔢 release WASM hash is $(subwasm info --json $used_wasm | jq -r .blake2_256)"
+echo "🔢 fetched WASM hash is $(cat ./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm.hash)"
 
-cargo build \
-  --locked \
-  --profile release \
-  --package ${parachain_name}-parachain-runtime \
-  --target-dir $root_dir/target/ \
-  -Z unstable-options
-
-used_wasm=$root_dir/target/release/wbuild/${parachain_name}-parachain-runtime/${parachain_name}_parachain_runtime.compact.compressed.wasm
-
-echo "🔢 hashing ${parachain_name}_parachain_runtime.compact.compressed.wasm..."
-
-# TODO: compare hash with release hash
+# TODO: compare hashes
 hash=$(subwasm info --json $used_wasm | jq -r .blake2_256)
 # TODO: end
 
