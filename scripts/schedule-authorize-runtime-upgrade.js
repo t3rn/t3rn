@@ -1,10 +1,7 @@
 const { ApiPromise, WsProvider, Keyring } = require("@polkadot/api")
 
 async function assertEnv() {
-  if (
-    !process.env.PROVIDER.startsWith("ws://") &&
-    !process.env.PROVIDER.startsWith("wss://")
-  ) {
+  if (!process.env.PROVIDER.startsWith("wss://")) {
     throw Error(`invalid env var PROVIDER ${process.env.PROVIDER}`)
   }
   if (!process.env.SUDO) {
@@ -13,8 +10,8 @@ async function assertEnv() {
   if (!/^0x[0-9a-f]{64}$/.test(process.env.HASH)) {
     throw Error(`invalid env var HASH ${process.env.HASH}`)
   }
-  if (!/^\d+$/.test(process.env.WHEN)) {
-    throw Error(`invalid env var WHEN ${process.env.WHEN}`)
+  if (!/^\d+$/.test(process.env.AFTER)) {
+    throw Error(`invalid env var AFTER ${process.env.AFTER}`)
   }
 }
 
@@ -26,16 +23,19 @@ async function main() {
   const keyring = new Keyring({ type: "sr25519" })
   const sudo = keyring.addFromMnemonic(process.env.SUDO)
   const hash = process.env.HASH
-  const when = BigInt(process.env.WHEN)
+  const after = BigInt(process.env.AFTER)
 
   const maybePeriodic = null
   const schedulePriority = 0
 
+  // TODO: add logs: current wasm hash from relay
+
   const authorizeUpgradeCall =
     circuit.tx.parachainSystem.authorizeUpgrade(hash)
 
-  const scheduleCall = circuit.tx.scheduler.schedule(
-    when,
+  // https://paritytech.github.io/substrate/master/pallet_scheduler/pallet/enum.Call.html#variant.schedule_after
+  const scheduleCall = circuit.tx.scheduler.schedule_after(
+    after,
     maybePeriodic,
     schedulePriority,
     {
@@ -43,8 +43,10 @@ async function main() {
     }
   )
 
-  //  await circuit.tx.balances.transfer(freshAccount.address, 1n * TRN)
-  await circuit.tx.sudo.sudo(scheduleCall).signAndSend(sudo)
+  // TODO: make sure this will work
+  // TODO: add logs: attempted upgrade
+  const tx = await circuit.tx.sudo.sudo(scheduleCall).signAndSend(sudo)
+  console.log(tx)
 
   circuit.disconnect()
 }
