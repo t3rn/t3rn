@@ -1,15 +1,20 @@
-use crate::{accounts_config::AccountManagerCurrencyAdapter, Hash as HashPrimitive, *};
+use crate::{accounts_config::AccountManagerCurrencyAdapter, Assets, Hash as HashPrimitive, *};
+use circuit_runtime_pallets::pallet_asset_tx_payment::HandleCredit;
 use frame_support::{
     parameter_types,
-    traits::{ConstU128, ConstU32, ConstU8, NeverEnsureOrigin},
+    traits::{
+        fungibles::{Balanced, CreditOf},
+        ConstU128, ConstU32, ConstU8, Currency, FindAuthor, Imbalance, NeverEnsureOrigin,
+        OnUnbalanced,
+    },
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
-    PalletId,
+    ConsensusEngineId, PalletId,
 };
 use frame_system::EnsureRoot;
 use sp_runtime::{
     generic,
-    traits::{AccountIdLookup, BlakeTwo256},
-    Permill,
+    traits::{AccountIdLookup, BlakeTwo256, ConvertInto},
+    AccountId32, Permill,
 };
 
 // Configure FRAME pallets to include in runtime.
@@ -79,6 +84,10 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub const ExistentialDeposit: u128 = 1_u128;
+}
+
 impl pallet_balances::Config for Runtime {
     type AccountStore = System;
     /// The type for recording an account's balance.
@@ -86,7 +95,7 @@ impl pallet_balances::Config for Runtime {
     type DustRemoval = ();
     /// The ubiquitous event type.
     type Event = Event;
-    type ExistentialDeposit = ConstU128<0>;
+    type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
@@ -104,6 +113,33 @@ impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = AccountManagerCurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = ConstU8<5>;
     type WeightToFee = IdentityFee<Balance>;
+}
+
+impl pallet_authorship::Config for Runtime {
+    type EventHandler = ();
+    type FilterUncle = ();
+    type FindAuthor = ();
+    type UncleGenerations = ();
+}
+
+/// A `HandleCredit` implementation that naively transfers the fees to the block author.
+/// Will drop and burn the assets in case the transfer fails.
+pub struct CreditToBlockAuthor;
+impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
+    fn handle_credit(credit: CreditOf<AccountId, Assets>) {
+        if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
+            // Drop the result which will trigger the `OnDrop` of the imbalance in case of error.
+            let _ = Assets::resolve(&author, credit);
+        }
+    }
+}
+
+impl pallet_asset_tx_payment::Config for Runtime {
+    type Fungibles = Assets;
+    type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
+        pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+        CreditToBlockAuthor,
+    >;
 }
 
 parameter_types! {

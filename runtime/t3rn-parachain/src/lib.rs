@@ -13,7 +13,28 @@ pub mod xcm_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
+pub use frame_support::traits::EqualPrivilegeOnly;
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
+
+use frame_support::{
+    construct_runtime, parameter_types,
+    weights::{
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
+        ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        WeightToFeePolynomial,
+    },
+};
+use frame_system::limits::{BlockLength, BlockWeights};
+use polkadot_runtime_common::BlockHashCount;
+use polkadot_runtime_constants::weights::RocksDbWeight;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -24,38 +45,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryInto, prelude::*};
 
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
-pub use frame_support::traits::EqualPrivilegeOnly;
-use frame_support::{
-    construct_runtime, parameter_types,
-    weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
-        ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
-    },
-};
-use frame_system::limits::{BlockLength, BlockWeights};
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
-
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
-// Polkadot Imports
-use polkadot_runtime_common::BlockHashCount;
-use polkadot_runtime_constants::weights::RocksDbWeight;
-
-/// Executive: handles dispatch to the various modules.
-pub type Executive = frame_executive::Executive<
-    Runtime,
-    Block,
-    frame_system::ChainContext<Runtime>,
-    Runtime,
-    AllPalletsWithSystem,
->;
+pub const EXISTENTIAL_DEPOSIT: u128 = 1;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
@@ -70,7 +60,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
-    state_version: 1, // 0 = old, 1 = new; see above 4 details
+    state_version: 1, // 0 = old, 1 = new; see above for details
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -82,13 +72,14 @@ pub fn native_version() -> NativeVersion {
     }
 }
 
-/// Calculate the storage deposit based on the number of storage items and the
-/// combined byte size of those items.
-pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    (items as Balance) * 56 * MILLIUNIT + (bytes as Balance) * 50 * MICROUNIT
-}
-
-pub type CurrencyAdapter = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+/// Executive: handles dispatch to the various modules.
+pub type Executive = frame_executive::Executive<
+    Runtime,
+    Block,
+    frame_system::ChainContext<Runtime>,
+    Runtime,
+    AllPalletsWithSystem,
+>;
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -126,7 +117,7 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-        // admin
+        // Admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
     }
 );
@@ -140,10 +131,16 @@ mod benches {
     define_benchmarks!(
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
+        [pallet_collator_selection, CollatorSelection]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_timestamp, Timestamp]
-        [pallet_collator_selection, CollatorSelection]
-        [pallet_account_manager, AccountManager]
+        [pallet_treaury, Treasury]
+        [pallet_utility, Utility]
+        [pallet_scheduler, Scheduler]
+        [pallet_preimage, Preimage]
+        [pallet_xcm, PolkadotXcm]
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [cumulus_pallet_parachain_system, ParachainSystem]
     );
 }
 

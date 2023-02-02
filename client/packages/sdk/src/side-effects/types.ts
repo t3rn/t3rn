@@ -3,7 +3,7 @@
  */
 export enum SfxType {
     /* Native Transfer on Target */
-	Transfer,
+    Transfer,
 }
 
 /**

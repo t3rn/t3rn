@@ -7,6 +7,7 @@ use frame_support::{
     traits::{Everything, Nothing},
     weights::{IdentityFee, Weight},
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
@@ -146,7 +147,28 @@ impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 }
 
+parameter_types! {
+    pub const ExecutiveBody: BodyId = BodyId::Executive;
+}
+
 impl cumulus_pallet_xcm::Config for Runtime {
     type Event = Event;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+    type ChannelInfo = ParachainSystem;
+    type ControllerOrigin = EnsureRoot<AccountId>;
+    type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+    type Event = Event;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type VersionWrapper = PolkadotXcm;
+    type WeightInfo = ();
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+impl cumulus_pallet_dmp_queue::Config for Runtime {
+    type Event = Event;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }

@@ -440,7 +440,6 @@ impl<T: Config> Machine<T> {
                     XExecSignalId<T>,
                     T::BlockNumber,
                 >(local_ctx.xtx_id, local_ctx.xtx.timeouts_at);
-
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::insert::<
                     XExecSignalId<T>,
                     T::BlockNumber,

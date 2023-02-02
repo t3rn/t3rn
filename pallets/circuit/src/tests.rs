@@ -69,6 +69,8 @@ pub const THIRD_SFX_INDEX: u32 = 2;
 pub const FOURTH_SFX_INDEX: u32 = 3;
 pub const FIFTH_SFX_INDEX: u32 = 4;
 
+pub const ED: Balance = 1_u128;
+
 fn set_ids(
     sfx: SideEffect<AccountId32, Balance>,
     requester: AccountId32,
@@ -781,9 +783,11 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ =
-                Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
+            let _ = Balances::deposit_creating(
+                &BOB_RELAYER,
+                REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT + ED,
+            ); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -946,15 +950,53 @@ fn circuit_handles_dropped_at_bidding() {
 
             assert!(
                 events.iter().any(|record| {
-                if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxDroppedAtBidding(xtx_id)) = record.event {
-                    assert_eq!(xtx_id, xtx_id);
-                    true
-                } else {
-                    false
-                } })
+                    if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxDroppedAtBidding(xtx_id)) = record.event {
+                        assert_eq!(xtx_id, xtx_id);
+                        true
+                    } else {
+                        false
+                    } })
             );
             assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
         })
+}
+
+const SINGLE_XTX_DEL_WEIGHT: u64 = 425000000;
+const CLOCK_BUMP_ROUND_WEIGHT: u64 = 150000000;
+const CLOCK_CALC_CLAIMABLE_WEIGHT: u64 = 150000000;
+
+#[test]
+fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            crate::machine::test_extra::stage_single();
+            let xtx_id = crate::machine::test_extra::setup_empty_xtx_and_force_set_status(None);
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                Some(XExecSignal {
+                    requester: ALICE,
+                    timeouts_at: 401u32,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Reserved,
+                    requester_nonce: FIRST_REQUESTER_NONCE,
+                    steps_cnt: (0, 1),
+                })
+            );
+
+            let weight =
+                <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(1 + 4);
+
+            assert_eq!(
+                weight - CLOCK_BUMP_ROUND_WEIGHT - CLOCK_CALC_CLAIMABLE_WEIGHT,
+                SINGLE_XTX_DEL_WEIGHT
+            );
+
+            assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
+        });
 }
 
 #[test]
@@ -1061,7 +1103,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 vec![
                     EventRecord { phase: Phase::Initialization, event: Event::Balances(
                         circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw {
-                            who: BID_WINNER, amount: 6
+                            who: BID_WINNER, amount: 3
                         }),
                         topics: vec![]
                     },
@@ -1070,7 +1112,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                             charge_id: H256::from_str("0xd2170a1bae127064ba4c6cfc7b00108038de5429babc320498493567b5e2cd45").unwrap(),
                             payee: BID_WINNER,
                             recipient: Some(REQUESTER),
-                            amount: 6
+                            amount: 3
                         }),
                         topics: vec![] },
                     EventRecord { phase: Phase::Initialization, event: Event::Circuit(
@@ -1086,7 +1128,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_WINNER),
-                INITIAL_BALANCE - (BID_AMOUNT_C + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
 
             // Charlie bids better offer
@@ -1099,7 +1141,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_LOOSER),
-                INITIAL_BALANCE - (BID_AMOUNT_B + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
             // Unreserve insurance + bid amounts of the previous bidder
             assert_eq!(Balances::free_balance(&BID_WINNER), INITIAL_BALANCE);
@@ -1118,7 +1160,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             // Reserve insurance + bid amounts of the current winner
             assert_eq!(
                 Balances::free_balance(&BID_WINNER),
-                INITIAL_BALANCE - (BID_AMOUNT_A + REQUESTED_INSURANCE_AMOUNT)
+                INITIAL_BALANCE - REQUESTED_INSURANCE_AMOUNT
             );
             // Unreserve insurance + bid amounts of the previous bidder
             assert_eq!(Balances::free_balance(&BID_LOOSER), INITIAL_BALANCE);
@@ -1169,44 +1211,6 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
         });
 }
 
-const SINGLE_XTX_DEL_WEIGHT: u64 = 425000000;
-const CLOCK_BUMP_ROUND_WEIGHT: u64 = 150000000;
-const CLOCK_CALC_CLAIMABLE_WEIGHT: u64 = 150000000;
-
-#[test]
-fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
-    ExtBuilder::default()
-        .with_standard_side_effects()
-        .with_default_xdns_records()
-        .build()
-        .execute_with(|| {
-            crate::machine::test_extra::stage_single();
-            let xtx_id = crate::machine::test_extra::setup_empty_xtx_and_force_set_status(None);
-
-            assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id),
-                Some(XExecSignal {
-                    requester: ALICE,
-                    timeouts_at: 401u32,
-                    delay_steps_at: None,
-                    status: CircuitStatus::Reserved,
-                    requester_nonce: FIRST_REQUESTER_NONCE,
-                    steps_cnt: (0, 1),
-                })
-            );
-
-            let weight =
-                <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(1 + 4);
-
-            assert_eq!(
-                weight - CLOCK_BUMP_ROUND_WEIGHT - CLOCK_CALC_CLAIMABLE_WEIGHT,
-                SINGLE_XTX_DEL_WEIGHT
-            );
-
-            assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
-        });
-}
-
 #[test]
 fn circuit_handles_swap_with_insurance() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
@@ -1240,8 +1244,8 @@ fn circuit_handles_swap_with_insurance() {
         .with_standard_side_effects()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1 + ED); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -1408,8 +1412,8 @@ fn circuit_handles_add_liquidity_with_insurance() {
         .with_standard_side_effects()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1 + ED); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -1843,9 +1847,9 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
 
             let sfx_id = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-                &xtx_id.0,
-                FIRST_SFX_INDEX,
-            );
+                    &xtx_id.0,
+                    FIRST_SFX_INDEX,
+                );
 
             place_winning_bid_and_advance_3_blocks(ALICE, xtx_id, sfx_id, 1);
 
@@ -4629,7 +4633,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 6); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, 6 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -4654,13 +4658,13 @@ fn no_duplicate_xtx_and_sfx_ids() {
 
             assert_eq!(next_events, vec![
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
-                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Deposit { who: ALICE, amount: 6 }), topics: vec![]
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Deposit { who: ALICE, amount: 6 + ED }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::System(
                     circuit_runtime_pallets::frame_system::Event::<Runtime>::NewAccount { account: ALICE }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
-                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: 6 }), topics: vec![]
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: 6  + ED }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
                     circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: 3 }), topics: vec![]

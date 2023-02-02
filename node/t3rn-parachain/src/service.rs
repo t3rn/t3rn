@@ -38,9 +38,9 @@ use substrate_prometheus_endpoint::Registry;
 use polkadot_service::CollatorPair;
 
 /// Native executor instance.
-pub struct TemplateRuntimeExecutor;
+pub struct ParachainNativeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for TemplateRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for ParachainNativeExecutor {
     type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
     fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -408,14 +408,14 @@ where
 /// Build the import queue for the parachain runtime.
 #[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue(
-    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
+    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ParachainNativeExecutor>>>,
     config: &Configuration,
     telemetry: Option<TelemetryHandle>,
     task_manager: &TaskManager,
 ) -> Result<
     sc_consensus::DefaultImportQueue<
         Block,
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ParachainNativeExecutor>>,
     >,
     sc_service::Error,
 > {
@@ -460,9 +460,9 @@ pub async fn start_parachain_node(
     hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(
     TaskManager,
-    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
+    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ParachainNativeExecutor>>>,
 )> {
-    start_node_impl::<RuntimeApi, TemplateRuntimeExecutor, _, _, _>(
+    start_node_impl::<RuntimeApi, ParachainNativeExecutor, _, _, _>(
         parachain_config,
         polkadot_config,
         collator_options,

@@ -1,119 +1,64 @@
-# Changelog
+## [1.2.1-rc.1](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.11...v1.2.1-rc.1) (2023-01-31)
 
-## `v1.0.0` 2022-10-28
-#### Shell Runtime of t3rn
-* no custom features
-* open collator pool
-* upgradable runtime
 
-## `v1.2.0-rc.4` 2022-11-23
-* fix: add t0rn chainspec code_substitutes on height 845420
+### Bug Fixes
 
-## `v1.2.0-rc.3` 2022-11-19
-* fix: add t0rn chainspec bad_blocks on height 845420
+* loosen collators conf MaxCandidate and SessionTime ([ec4e085](https://github.com/t3rn/t3rn/commit/ec4e085fb8f463ca4d42b7c5be9d3fa2911549c9))
 
-## `v1.2.0-rc.2` 2022-11-11
-* fix: add bad_blocks extension to t0rn specs
 
-## `v1.2.0-rc.1` 2022-11-11
-* fix: restore block time to 12s
 
-## `v1.2.0-rc.0` 2022-10-24
-## What's Changed
+# [1.2.0-rc.11](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.10...v1.2.0-rc.11) (2023-01-30)
+
 
 ### Features
-* feat: consolidate runtimes + Integrate XBI + async reward claims for SFX execution + 3VM LVL 4 by @MaciejBaj in https://github.com/t3rn/t3rn/pull/448
-* feat: executors bid for all SFX narrowed to Optimistic and Escrow by @MaciejBaj #477
-* feat: utilise the rearchitecture for 3VM and install EVM to the nodes by @AwesomeIbex in https://github.com/t3rn/t3rn/pull/400
-* feat: Portal LVL3 - Verify ingress messages finality using pluggable Light Clients by @petscheit in https://github.com/t3rn/t3rn/pull/456
 
-### Maintenance & Docs
-* docs: add github and social badges to readme by @chiefbiiko in https://github.com/t3rn/t3rn/pull/409
-* fix: Correct received event names after new SFX are available for executors by @petscheit in https://github.com/t3rn/t3rn/pull/391
-* docs: add registration part to collator docs by @alexand3rwilke in https://github.com/t3rn/t3rn/pull/411
-* fix: fix devnet by unpinning subkey by @chiefbiiko in https://github.com/t3rn/t3rn/pull/414
-* docs: update rotate keys part by @alexand3rwilke in https://github.com/t3rn/t3rn/pull/418
-* feat: unify side effects between sdk and circuit  by @beqaabu in https://github.com/t3rn/t3rn/pull/413
-* chore: enable collator telemetry by @chiefbiiko in https://github.com/t3rn/t3rn/pull/426
-* build: Prepare continous collator deployments by @chiefbiiko in https://github.com/t3rn/t3rn/pull/415
-* refactor: provide non-sensitive artifacts for collators by @chiefbiiko in https://github.com/t3rn/t3rn/pull/434
-* refactor: update TS types to new portal setup and adds step based execution and confirmation logic by @petscheit in https://github.com/t3rn/t3rn/pull/436
-* refactor: add common runtime types as a separate crate by @MaciejBaj in https://github.com/t3rn/t3rn/pull/442
-* refactor: the collator docker image to incl. all runtime deps by @chiefbiiko in https://github.com/t3rn/t3rn/pull/437
-* chore: add DepositReceived event from AccountManager by @MaciejBaj in https://github.com/t3rn/t3rn/pull/455
-* refactor: update path to latest XBI Portal by @MaciejBaj in https://github.com/t3rn/t3rn/pull/458
-* build: commit linting during pipeline execution by @phpengine in https://github.com/t3rn/t3rn/pull/393
-* build: revive devnet run.sh script by @MaciejBaj in https://github.com/t3rn/t3rn/pull/460
-* build: update builds and source files to Polkadot v0.9.27 by @MaciejBaj in https://github.com/t3rn/t3rn/pull/467
-* refactor: install pallet assets to mock, standalone and t0rn runtimes by @MaciejBaj 
+* enable try-runtime and benchmarks in mainnet ([f01d19e](https://github.com/t3rn/t3rn/commit/f01d19e57c36c68908796230a015e2dd4d7205d5))
+* ensure parachain has some movement in relay chain block height ([2e341a6](https://github.com/t3rn/t3rn/commit/2e341a6ebdb9c043d809b1399c8803b111dcf092))
+* fix try-runtime and endowed accounts to be less rigid ([242ffad](https://github.com/t3rn/t3rn/commit/242ffad1150a39f89dbedba00adeb35007433512))
 
-Full Changelog: https://github.com/t3rn/t3rn/compare/v1.1.0-rc.0...v1.2.0-rc.0
 
-## `v1.1.0-rc.0` 2022-07-14
+
+# [1.2.0-rc.10](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.9...v1.2.0-rc.10) (2023-01-25)
+
+
+### Bug Fixes
+
+* add export to index so its documented ([9afaaed](https://github.com/t3rn/t3rn/commit/9afaaed8b1735225c0ae91521bd45571c1c3ccda))
+* bidding engine maps ([57fdc6c](https://github.com/t3rn/t3rn/commit/57fdc6ca632db5564afaa65d8e9b938d1d0b1c1e))
+* build before ([0c1150c](https://github.com/t3rn/t3rn/commit/0c1150c257b1601d6e485039fdc2f8afd363c77a))
+* build pkgs before then test ([67e38f9](https://github.com/t3rn/t3rn/commit/67e38f9c0170492a77dd4e7277e821f61e76a39a))
+* correct type names ([8847f32](https://github.com/t3rn/t3rn/commit/8847f3216f0c8856a629c0547ed2e16095808927))
+* fixed type ([7425a2a](https://github.com/t3rn/t3rn/commit/7425a2a8c9fe3c50a8708572a98bea5943bbc073))
+* maybe correct type ([27b7f3f](https://github.com/t3rn/t3rn/commit/27b7f3f0aa8329ec1bbc0b0257b91c902efd5479))
+* naming in export types ([a55c806](https://github.com/t3rn/t3rn/commit/a55c806f647d9b72866b989b605eb2ac1bca8c4d))
+* rename enum variant from type ([5c55d91](https://github.com/t3rn/t3rn/commit/5c55d9191eb035ef9df430af8449e4ca3503b9bc))
+* use yarn as before ([cbceada](https://github.com/t3rn/t3rn/commit/cbceada7e68d6799857e8180b54b47a113f9a739))
+* workflow fix ([180fdd4](https://github.com/t3rn/t3rn/commit/180fdd4aeef89a7fe867d1c3711701e877c4a434))
+
 
 ### Features
-- [**3VM**: repatriate gas fees to contract authors](https://github.com/t3rn/t3rn/pull/295)
 
-- [**3VM**: create pallet account manager](https://github.com/t3rn/t3rn/pull/273)
-
-
-### Minor Features
-- **3VM**: Introduce system contracts to 3VM 
-
-- **3VM**: Provide the hardened side effects in LocalState for SDK  
-
-- **3VM**: Start handling posted signals asynchronously
-
-- [**Circuit**: Execute optimistic side effects in batches](https://github.com/t3rn/t3rn/pull/306)
-   - _Add support for execution and confirmation of multiple side effects_
-
-- [**Portal**: Add parachain header support](https://github.com/t3rn/t3rn/commit/aa1eb714bf9e70dde3822bb3a2533d59ddc54a30)
-
-- [**Portal**: Update ranger architecture to support dynamic instances and new proofs](https://github.com/t3rn/t3rn/commit/b2bb50d8fd73503ff83e8fe012f392e9d63f36ac)
-
-- [**Portal**: Add parachain type to XDNS entry and decodes parachain header correctly](https://github.com/t3rn/t3rn/commit/27e62f14817c7b8839d0f354877069c82de0f700)
-
-- [**Portal**: Combine grandpa-ranger and executor](https://github.com/t3rn/t3rn/commit/92c12564977a0db951369c3fdc6e1f948bb1ddb5)
+* add Dockerfile for executor ([de82d22](https://github.com/t3rn/t3rn/commit/de82d2299b9db3979ac1fbd7873e9c7a00df69b5))
+* add GHA for tests ([01760e0](https://github.com/t3rn/t3rn/commit/01760e0710625fa800f9855f7c03fcd3d86ad320))
+* finish clean up ([27c8cd7](https://github.com/t3rn/t3rn/commit/27c8cd7a1a6935239adf0b69474590d2dd75a042))
 
 
-- [**Portal**: Expose read and compare best available height]()
+
+# [1.2.0-rc.9](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.8...v1.2.0-rc.9) (2023-01-25)
 
 
-### Maintenance  
+### Features
 
-- **Portal**: Seed the XDNS registry with all Rococo parachains
+* github action stale issues ([c20fbbe](https://github.com/t3rn/t3rn/commit/c20fbbec5ecdfb2820788b70a34124e062816bd3))
 
-- **Community**: Create t0rn collator docs introduction
 
-- **Portal**: Fix invalid header ranges by refetching finalized headers before subm… 
 
-- **Portal**: Restore correct bridges init and event verify from Portal to MFV
+# [1.2.0-rc.8](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.7...v1.2.0-rc.8) (2023-01-24)
 
-- **Portal**: Reconnect MFV to runtimes after Portal is dep no longer
 
-- **Portal**: Fix hitting an invalid justification target
+### Bug Fixes
 
-- **Circuit**: Fix creating new received side effect object to avoid override
+* correct tests expectations after existential deposit=1 added ([0d66472](https://github.com/t3rn/t3rn/commit/0d6647286d750438d63f09772f31d3c2c414844a))
 
-- **Circuit**: Fix xtx cancel timeout by adding current block offset
 
-- **Circuit**: Emit new side effects before Xtx status
 
-- **Circuit**: Emit side effect ids next to new side effects
-
-## `v1.0.0-rc.2` 2022-04-28
-
-Adds pallets scheduler and preimage to the parachain runtime.
-
-## `v1.0.0-rc.1` 2022-04-26
-
-Covers the same sub products as `v1.0.0-rc.0` but fixes the collator setup.
-
-## `v1.0.0-rc.0` 2022-04-25
-#### Release Candidate to Rococo
-
-Includes the following sub products:
-
-- #####  [Circuit LVL 2 - Xtx Lifecycle and steps auto-assignment for both Gateways & 3VM](https://github.com/t3rn/t3rn/pull/279)
-- #####  [Portal LVL 1 - Dynamic on-chain registration of new Substrate-based chains based on GRANDPA range proofs](https://github.com/t3rn/t3rn/tree/development/pallets/circuit-portal)
-- #####  [3VM LVL 1 - Volatile WASM Contracts execution from Contracts Registry](https://github.com/t3rn/t3rn/pull/270)

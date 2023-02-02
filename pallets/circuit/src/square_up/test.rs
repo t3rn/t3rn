@@ -117,7 +117,7 @@ pub mod test {
             >>::get_charge_or_fail(bid_id),
             Ok(RequestCharge {
                 payee: bid.executor.clone(),
-                offered_reward: bid.amount + bid.insurance + bid.reserved_bond.unwrap_or(0),
+                offered_reward: bid.insurance + bid.reserved_bond.unwrap_or(0),
                 maybe_asset_id: bid.reward_asset_id,
                 charge_fee: 0,
                 recipient: Some(bid.requester.clone()),
@@ -183,9 +183,9 @@ pub mod test {
                 assert_err!(
                     SquareUp::<Runtime>::try_request(&local_ctx),
                     DispatchError::Module(ModuleError {
-                        index: 108,
-                        error: [8, 0, 0, 0],
-                        message: Some("RequesterNotEnoughBalance")
+                        index: 10,
+                        error: [2, 0, 0, 0],
+                        message: Some("InsufficientBalance")
                     })
                 );
 
@@ -214,8 +214,8 @@ pub mod test {
                     &REQUESTER,
                     &EXECUTOR,
                     &SFXBid {
-                        amount: 2,
-                        insurance: 1,
+                        amount: get_mocked_transfer_sfx().max_reward,
+                        insurance: get_mocked_transfer_sfx().insurance,
                         reserved_bond: None,
                         reward_asset_id: None,
                         executor: EXECUTOR,
@@ -224,8 +224,15 @@ pub mod test {
                     None
                 ));
 
-                assert_eq!(Balances::free_balance(&REQUESTER), 8);
-                assert_eq!(Balances::free_balance(&EXECUTOR), 7);
+                assert_eq!(
+                    Balances::free_balance(&REQUESTER),
+                    10 - get_mocked_transfer_sfx().max_reward
+                );
+                // only reserve the insurance
+                assert_eq!(
+                    Balances::free_balance(&EXECUTOR),
+                    10 - get_mocked_transfer_sfx().insurance
+                );
             });
     }
 
@@ -350,12 +357,9 @@ pub mod test {
                 // Executor is slashed
                 assert_eq!(
                     Balances::free_balance(&EXECUTOR),
-                    INITIAL_BALANCE - bid.insurance - bid.amount
+                    INITIAL_BALANCE - bid.insurance
                 );
-                assert_eq!(
-                    Balances::free_balance(&ESCROW_ACCOUNT),
-                    bid.insurance + bid.amount
-                );
+                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), bid.insurance);
             });
     }
 
@@ -388,12 +392,9 @@ pub mod test {
                 // Executor is slashed
                 assert_eq!(
                     Balances::free_balance(&EXECUTOR),
-                    INITIAL_BALANCE - bid.insurance - bid.amount
+                    INITIAL_BALANCE - bid.insurance
                 );
-                assert_eq!(
-                    Balances::free_balance(&ESCROW_ACCOUNT),
-                    bid.insurance + bid.amount
-                );
+                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), bid.insurance);
             });
     }
 }

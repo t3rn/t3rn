@@ -31,18 +31,18 @@ pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/r
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'refactor/infallible-square-up' }
+t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'development' }
 t3rn-protocol   = { path = "../../protocol", default-features = false }
 
 # Smart contracts VMs
-evm-precompile-util                  = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", default-features = false, package = "precompile-util" }
-pallet-3vm                           = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up" }
-pallet-3vm-contracts                 = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-contracts" }
-pallet-3vm-contracts-primitives      = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-contracts-rpc-runtime-api" }
-pallet-3vm-evm                       = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", default-features = false, package = "pallet-evm" }
-pallet-3vm-evm-primitives            = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", default-features = false, package = "fp-evm" }
-pallet-evm-rpc-runtime-api           = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", default-features = false }
+evm-precompile-util                  = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "precompile-util" }
+pallet-3vm                           = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development" }
+pallet-3vm-contracts                 = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts" }
+pallet-3vm-contracts-primitives      = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-rpc-runtime-api" }
+pallet-3vm-evm                       = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "pallet-evm" }
+pallet-3vm-evm-primitives            = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false, package = "fp-evm" }
+pallet-evm-rpc-runtime-api           = { git = "https://github.com/t3rn/3vm.git", branch = "development", default-features = false }
 
 # Substrate Dependencies
 frame-executive                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
@@ -51,7 +51,9 @@ frame-system                               = { git = "https://github.com/parityt
 frame-system-rpc-runtime-api               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 node-primitives                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-assets                              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+pallet-asset-tx-payment                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-aura                                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+pallet-authorship                          = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
 pallet-balances                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-grandpa                             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 pallet-identity                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
@@ -82,6 +84,7 @@ frame-benchmarking        = { default-features = false, git = "https://github.co
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', optional = true }
 
 # Common
+# circuit-runtime-pallets = { path = "../common-pallets", default-features = false  }
 circuit-runtime-types = { path = "../common-types", default-features = false }
 
 [features]
@@ -95,7 +98,9 @@ std = [
   "log/std",
   "scale-info/std",
   "pallet-aura/std",
+  "pallet-authorship/std",
   "pallet-assets/std",
+  "pallet-asset-tx-payment/std",
   "t3rn-primitives/std",
   "t3rn-protocol/std",
   "pallet-xdns/std",
@@ -107,6 +112,7 @@ std = [
   "pallet-grandpa-finality-verifier/std",
   "pallet-3vm/std",
   "pallet-3vm-contracts/std",
+  # "circuit-runtime-pallets/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
   "pallet-3vm-evm/std",
@@ -152,6 +158,7 @@ runtime-benchmarks = [
   'frame-system/runtime-benchmarks',
   'hex-literal',
   'pallet-account-manager/runtime-benchmarks',
+  "pallet-assets/runtime-benchmarks",
   'pallet-balances/runtime-benchmarks',
   'pallet-contracts-registry/runtime-benchmarks',
   'pallet-xdns/runtime-benchmarks',

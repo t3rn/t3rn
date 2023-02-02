@@ -74,9 +74,8 @@ impl<T: Config> SquareUp<T> {
         current_best_bid: Option<SFXBid<T::AccountId, BalanceOf<T>, u32>>,
     ) -> DispatchResult {
         let total_bid_deposit = bid
-            .amount
-            .checked_add(&bid.reserved_bond.unwrap_or_else(Zero::zero))
-            .ok_or(Error::<T>::ArithmeticErrorOverflow)?
+            .reserved_bond
+            .unwrap_or_else(Zero::zero)
             .checked_add(&bid.insurance)
             .ok_or(Error::<T>::ArithmeticErrorOverflow)?;
 

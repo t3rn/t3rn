@@ -14,7 +14,7 @@ export class CoingeckoPricing {
         [assetTicker: string]: string
     } = {}
 
-    /** Stores price in USD as a subject */ å
+    /** Stores price in USD as a subject */
     prices: {
         [assetTicker: string]: BehaviorSubject<number>
     } = {}
@@ -22,6 +22,7 @@ export class CoingeckoPricing {
     constructor() {
         this.endpoint = config.pricing.coingecko.endpoint
         this.getTrackingAssets()
+        // This cannot be called here if we want to test it (it doesn't finish)
         this.updateAssetPrices()
     }
 
@@ -38,15 +39,15 @@ export class CoingeckoPricing {
         }
     }
 
-    /** Update the price of all assets we are tracking This is called every 30 seconds */
+    /** Update the price of all assets we are tracking every 30 seconds */
     async updateAssetPrices() {
         const ids = Object.keys(this.assets)
         for (let i = 0; i < ids.length; i++) {
             await axios
                 .get(
                     config.pricing.coingecko.endpoint +
-                        this.assets[ids[i]] +
-                        "?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false"
+                    this.assets[ids[i]] +
+                    "?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false"
                 )
                 .then((res) => {
                     const price = parseFloat(res.data.market_data.current_price["usd"])

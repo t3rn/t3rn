@@ -12,29 +12,23 @@ name = "t3rn-collator"
 path = "src/main.rs"
 
 [dependencies]
-clap         = { version = "3.1", features = [ "derive" ] }
-codec        = { package = "parity-scale-codec", version = "3" }
-derive_more  = "0.99.2"
-hex-literal  = "0.3.4"
-jsonrpc-core = "18.0.0"
-log          = "0.4.14"
-serde        = { version = "1.0", features = [ "derive" ] }
+clap                   = { version = "3.1", features = [ "derive" ] }
+codec                  = { package = "parity-scale-codec", version = "3" }
+derive_more            = "0.99.2"
+futures                = "0.3.21"
+hex-literal            = "0.3.4"
+jsonrpc-core           = "18.0.0"
+jsonrpc-runtime-client = { version = "0.1.0", path = "../../relayers/jsonrpc-runtime-client" }
+jsonrpsee              = { version = "0.14.0", features = [ "server" ] }
+log                    = "0.4.14"
+serde                  = { version = "1.0", features = [ "derive" ] }
 
 # Local
 circuit-parachain-runtime = { path = "../../runtime/t3rn-parachain", package = "t3rn-parachain-runtime" }
-pallet-xdns               = { path = "../../pallets/xdns" } # TODO: the pallet shouldnt be imported in the node, expose primitives or export the type from runtime
-pallet-xdns-rpc           = { path = "../../pallets/xdns/rpc" }
-t3rn-primitives           = { git = "https://github.com/t3rn/t3rn", branch = 'refactor/infallible-square-up' }
-t3rn-protocol             = { path = "../../protocol" }
+t3rn-primitives           = { path = "../../primitives" }
 
-pallet-3vm-contracts-rpc = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-contracts-rpc" }
-pallet-3vm-evm-rpc       = { git = "https://github.com/t3rn/3vm.git", branch = "refactor/infallible-square-up", package = "pallet-evm-rpc" }
-
-# Extras
-async-std              = { version = "1.10.0" }
-futures                = "0.3.21"
-jsonrpc-runtime-client = { version = "0.1.0", path = "../../relayers/jsonrpc-runtime-client" }
-jsonrpsee              = { version = "0.14.0", features = [ "server" ] }
+# Try-runtime
+try-runtime-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", optional = true }
 
 # Substrate
 frame-benchmarking             = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
@@ -71,7 +65,6 @@ sp-timestamp                   = { git = "https://github.com/paritytech/substrat
 sp-transaction-pool            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 substrate-frame-rpc-system     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
-try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 # Polkadot
 polkadot-cli        = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
@@ -99,4 +92,4 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [features]
 default            = [  ]
 runtime-benchmarks = [ "polkadot-cli/runtime-benchmarks" ]
-try-runtime        = [  ]
+try-runtime        = [ "circuit-parachain-runtime/try-runtime", "try-runtime-cli" ]

@@ -1,18 +1,16 @@
 use crate::*;
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
+
 use frame_support::{traits::NeverEnsureOrigin, PalletId};
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
 use sp_runtime::{impl_opaque_keys, Permill};
 use sp_std::prelude::*;
 
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
-
-// XCM Imports
-use xcm::latest::prelude::BodyId;
-use xcm_executor::XcmExecutor;
+// TODO: remove when we import t3rn_primitives
+pub(crate) const TRN: u64 = 1_000_000_000_000;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -48,9 +46,11 @@ impl WeightToFeePolynomial for WeightToFee {
 /// to even the core data structures.
 pub mod opaque {
     use super::*;
-    use sp_runtime::{generic, traits::BlakeTwo256};
 
     pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+
+    use sp_runtime::{generic, traits::BlakeTwo256};
+
     /// Opaque block header type.
     pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// Opaque block type.
@@ -98,6 +98,7 @@ parameter_types! {
         })
         .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
         .build_or_panic();
+    // Allows for t3 prefix in addresses
     pub const SS58Prefix: u16 = 9935;
 }
 
@@ -106,7 +107,7 @@ parameter_types! {
 }
 
 impl pallet_authorship::Config for Runtime {
-    type EventHandler = (CollatorSelection,);
+    type EventHandler = CollatorSelection;
     type FilterUncle = ();
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
     type UncleGenerations = UncleGenerations;
@@ -118,7 +119,7 @@ parameter_types! {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
+    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
     type DmpMessageHandler = DmpQueue;
     type Event = Event;
     type OnSystemEvent = ();
@@ -132,23 +133,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
-
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-    type ChannelInfo = ParachainSystem;
-    type ControllerOrigin = EnsureRoot<AccountId>;
-    type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-    type VersionWrapper = ();
-    type WeightInfo = ();
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type Event = Event;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
 
 parameter_types! {
     pub const Period: u32 = 6 * HOURS;
@@ -179,10 +163,9 @@ impl pallet_aura::Config for Runtime {
 parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
     pub const MaxCandidates: u32 = 1000;
-    pub const MinCandidates: u32 = 5;
-    pub const SessionLength: BlockNumber = 6 * HOURS;
+    pub const MinCandidates: u32 = 2;
+    pub const SessionLength: BlockNumber = 24 * HOURS;
     pub const MaxInvulnerables: u32 = 100;
-    pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
 // We allow root only to execute privileged collator selection operations.
@@ -207,7 +190,7 @@ impl pallet_collator_selection::Config for Runtime {
 parameter_types! {
     pub const PreimageMaxSize: u32 = 4096 * 1024;
     pub const PreImageBaseDeposit: Balance = deposit(2, 64);
-    pub const PreImageByteDeposit: Balance = deposit(0, 1);
+    pub const PreImageByteDeposit: Balance = deposit(0, 1); // FIXME: this is 0 no?
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -245,7 +228,7 @@ parameter_types! {
     pub const MaxApprovals: u32 = 100;
     pub const ProposalBond: Permill = Permill::from_percent(3);
     pub const SpendPeriod: u32 = (60 * 60 * 24) / 12;
-    pub const ProposalBondMinimum: u128 = 10_u128 * 1_000_000_000_000_u128;
+    pub const ProposalBondMinimum: u128 = 10_u128 * (TRN as u128);
 }
 
 impl pallet_treasury::Config for Runtime {

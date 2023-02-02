@@ -116,7 +116,6 @@ pub mod pallet {
         substrate_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm},
         xbi_format::XbiCheckOutStatus,
     };
-
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -317,29 +316,15 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        // `on_initialize` is executed at the beginning of the block before any extrinsic are
-        // dispatched.
-        //
-        // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             0
         }
 
         fn on_finalize(_n: T::BlockNumber) {
-            // We don't do anything here.
-
-            // if module block number
             // x-t3rn#4: Go over open Xtx and cancel if necessary
         }
 
-        // A runtime code run after every block and have access to extended set of APIs.
-        //
-        // For instance you can generate extrinsics for the upcoming produced block.
-        fn offchain_worker(_n: T::BlockNumber) {
-            // We don't do anything here.
-            // but we could dispatch extrinsic (transaction/unsigned/inherent) using
-            // sp_io::submit_extrinsic
-        }
+        fn offchain_worker(_n: T::BlockNumber) {}
     }
 
     impl<T: Config> OnLocalTrigger<T, BalanceOf<T>> for Pallet<T> {

@@ -7,7 +7,7 @@ import { SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionData } f
 import { ExecutionManager, Queue } from "./executionManager"
 import { ApiPromise } from "@polkadot/api"
 import { config, Config, Gateway, Circuit, Strategy } from "../config/config"
-import { BiddingEngine } from "./bidding"
+import { BiddingEngine, BiddingStrategy } from "./bidding"
 import { PriceEngine, CoingeckoPricing } from "./pricing"
 import { StrategyEngine, SfxStrategy, XtxStrategy } from "./strategy"
 import { SideEffect, Notification, NotificationType, TxOutput, TxStatus } from "./executionManager/sideEffect"
@@ -88,6 +88,7 @@ export {
     Circuit,
     Gateway,
     Strategy,
+    BiddingStrategy,
 }
 
 async function main() {

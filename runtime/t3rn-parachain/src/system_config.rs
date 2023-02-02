@@ -1,9 +1,5 @@
 use crate::{Hash as HashPrimitive, *};
-use frame_support::{
-    parameter_types,
-    traits::{ConstU128, ConstU32, ConstU8},
-    weights::IdentityFee,
-};
+use frame_support::{parameter_types, weights::IdentityFee};
 use sp_runtime::traits::BlakeTwo256;
 
 // Configure FRAME pallets to include in runtime.
@@ -73,6 +69,12 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT; // ConstU128<500>
+    pub const MaxLocks: u32 = 50;
+    pub const MaxReserves: u32 = 50;
+}
+
 impl pallet_balances::Config for Runtime {
     type AccountStore = System;
     /// The type for recording an account's balance.
@@ -80,23 +82,26 @@ impl pallet_balances::Config for Runtime {
     type DustRemoval = ();
     /// The ubiquitous event type.
     type Event = Event;
-    type ExistentialDeposit = ConstU128<500>;
-    type MaxLocks = ConstU32<50>;
-    type MaxReserves = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type MaxLocks = MaxLocks;
+    type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
     pub const TransactionByteFee: Balance = 1;
+    pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type Event = Event;
+    // TODO: determine if fee multiplier should be adjusted via SlowAdjustingFeeUpdate
     type FeeMultiplierUpdate = ();
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-    type OnChargeTransaction = CurrencyAdapter;
-    type OperationalFeeMultiplier = ConstU8<5>;
+    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+    type OperationalFeeMultiplier = OperationalFeeMultiplier;
+    // TODO: fees need to be thought about post release
     type WeightToFee = IdentityFee<Balance>;
 }
 

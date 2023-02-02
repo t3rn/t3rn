@@ -89,6 +89,11 @@ export class SideEffect extends EventEmitter {
     /** The minimum profit in USD required for executing this SFX. Number is computed by strategy engine */
     minProfitUsd: number = 0
 
+    /** If the executor leading the bid changes, store the change */
+    changedBidLeader: boolean = false
+    /** Value of the last bid */
+    lastBids: number[]
+
     // SideEffect data
     id: string
     humanId: string
@@ -405,6 +410,11 @@ export class SideEffect extends EventEmitter {
      * @param bidAmount Amount of the incoming bid
      */
     processBid(signer: string, bidAmount: number) {
+        // Add the executor bid to the list 
+        this.biddingEngine.storeWhoBidOnWhat(this.id, signer);
+        // Add how much it bid
+        this.lastBids.push(bidAmount);
+
         // if this is not own bid, update reward and isBidder
         if (signer !== this.circuitSignerAddress) {
             this.logger.info(`Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(bidAmount)} TRN 🎰`)

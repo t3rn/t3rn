@@ -396,13 +396,13 @@ pub mod test {
                 assert_eq!(Balances::free_balance(&EXECUTOR_4), INITIAL_BALANCE);
                 assert_eq!(Balances::free_balance(&EXECUTOR_5), INITIAL_BALANCE);
                 // check dishonest executors have their balance slashed
-                assert_eq!(Balances::free_balance(&EXECUTOR_6), 99939);
-                assert_eq!(Balances::free_balance(&EXECUTOR_7), 99938);
-                assert_eq!(Balances::free_balance(&EXECUTOR_8), 99937);
-                assert_eq!(Balances::free_balance(&EXECUTOR_9), 99936);
-                assert_eq!(Balances::free_balance(&EXECUTOR_10), 99935);
+                assert_eq!(Balances::free_balance(&EXECUTOR_6), 99945);
+                assert_eq!(Balances::free_balance(&EXECUTOR_7), 99945);
+                assert_eq!(Balances::free_balance(&EXECUTOR_8), 99945);
+                assert_eq!(Balances::free_balance(&EXECUTOR_9), 99945);
+                assert_eq!(Balances::free_balance(&EXECUTOR_10), 99945);
                 // check escrow account collected slashed funds from dishonest executors
-                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 315);
+                assert_eq!(Balances::free_balance(&ESCROW_ACCOUNT), 275);
             });
     }
 
@@ -432,10 +432,10 @@ pub mod test {
                 }
 
                 for i in 0..TEN as usize {
-                    let local_ctx = &mut local_context_array_of_10_xtx[i].0;
+                    let mut local_ctx = &mut local_context_array_of_10_xtx[i].0;
                     assert_eq!(local_ctx.xtx.status, CircuitStatus::InBidding);
                     assert_ok!(Machine::<Runtime>::compile(
-                        local_ctx,
+                        &mut local_ctx,
                         |_, _, _, _, _| Ok(PrecompileResult::ForceUpdateStatus(
                             CircuitStatus::Ready
                         )),

@@ -111,6 +111,7 @@ t3rn_boot_node=/dns/bootnode.t3rn.io/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqY
   --ws-port 9933 \
   --execution Wasm \
   --pruning=archive \
+  --state-cache-size 0 \
   -- \
   --chain ~/t3rn/specs/polkadot.raw.json \
   --bootnodes "$polkadot_boot_node" \
@@ -132,6 +133,7 @@ docker run -p 33333:33333 -p 8833:8833 -p 9933:9933 \
   --bootnodes "$t3rn_boot_node" \
   --execution Wasm \
   --pruning=archive \
+  --state-cache-size 0 \
   -- \
   --chain /node/specs/polkadot.raw.json \
   --bootnodes "$polkadot_boot_node" \
