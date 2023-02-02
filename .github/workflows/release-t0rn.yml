@@ -1,8 +1,10 @@
 name: t0rn Rococo Release
 
-# Trigger only on push to this branch
+# Trigger only on tags starting with test
 on:
-  push
+  push:
+    tags:
+      - "test[0-9]+"
 
 # TODO: uncomment after tests
 # on:
@@ -34,20 +36,20 @@ jobs:
           components: rustfmt, clippy
           override: true
 
-      # - name: 🏭 Build circuit
-      #   uses: actions-rs/cargo@v1
-      #   continue-on-error: false
-      #   with:
-      #     command: build
-      #     args: --manifest-path ./node/${{ env.PARACHAIN_NAME }}-parachain/Cargo.toml --locked --release
+      - name: 🏭 Build circuit
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: build
+          args: --manifest-path ./node/${{ env.PARACHAIN_NAME }}-parachain/Cargo.toml --locked --release
 
-      # - name: 📤 Upload collator binary
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
-      #     path: ./target/release/${{ env.PARACHAIN_NAME }}-collator
-      #     if-no-files-found: error
-      #     retention-days: 1
+      - name: 📤 Upload collator binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
+          path: ./target/release/${{ env.PARACHAIN_NAME }}-collator
+          if-no-files-found: error
+          retention-days: 1
 
       - name: 🫧 Build runtime WASM
         run: |
@@ -69,7 +71,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  # TODO: uncomment when finished work on WASM release
   # publish-docker-image:
   #   runs-on: self-hosted
   #   needs: build-release
@@ -79,14 +80,14 @@ jobs:
   #         submodules: recursive
   #         token: ${{ secrets.GH_PAT }}
 
+  #     - name: 🏷️ Get the version tag
+  #       run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
   #     - name: 📥 Download circuit collator
   #       uses: actions/download-artifact@v2
   #       with:
   #         name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
   #         path: ./target/release/
-
-  #     - name: 🏷️ Get the version tag
-  #       run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
   #     - name: 🐋 Login to the GitHub Container Registry
   #       uses: docker/login-action@v2
@@ -117,23 +118,26 @@ jobs:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
 
-      # - name: 📥 Download circuit collator
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
-      #     path: ./target/release/
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-      # - name: 🎱 Gzip circuit collator
-      #   run: |
-      #     gzip -c ./target/release/${{ env.PARACHAIN_NAME }}-collator \
-      #     > ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz
+      - name: 📥 Download circuit collator
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
+          path: ./target/release/
 
-      # - name: 🖐🏾 Fingerprint the gball
-      #   run: |
-      #     sha256sum -b ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz \
-      #     | grep -oE '^[a-f0-9]+' \
-      #     | tr -d '\n' \
-      #     > ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz.sha256sum
+      - name: 🎱 Gzip circuit collator
+        run: |
+          gzip -c ./target/release/${{ env.PARACHAIN_NAME }}-collator \
+          > ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz
+
+      - name: 🖐🏾 Fingerprint the gball
+        run: |
+          sha256sum -b ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz \
+          | grep -oE '^[a-f0-9]+' \
+          | tr -d '\n' \
+          > ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz.sha256sum
 
       - name: 📥 Download runtime WASM
         uses: actions/download-artifact@v2
@@ -153,10 +157,6 @@ jobs:
         with:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.hash
           path: ./target/release/
-
-      - name: 🏷️ Get the version tag
-        # run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-        run: echo "PUSHED_TAG=test" >> $GITHUB_ENV
 
       # TODO: uncomment after finish
       # - name: 🖨️ Get the release notes
@@ -188,25 +188,25 @@ jobs:
           draft: false
           prerelease: true
 
-      # - name: 🍔 Provide the circuit collator sha256sum as a release asset
-      #   uses: actions/upload-release-asset@v1.0.2
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz.sha256sum
-      #     asset_name: ${{ env.PARACHAIN_NAME }}-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
-      #     asset_content_type: text/plain
+      - name: 🍔 Provide the circuit collator sha256sum as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz.sha256sum
+          asset_name: ${{ env.PARACHAIN_NAME }}-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_content_type: text/plain
 
-      # - name: 📦 Upload the circuit collator gball as a release asset
-      #   uses: actions/upload-release-asset@v1.0.2
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz
-      #     asset_name: ${{ env.PARACHAIN_NAME }}-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
-      #     asset_content_type: application/gzip
+      - name: 📦 Upload the circuit collator gball as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz
+          asset_name: ${{ env.PARACHAIN_NAME }}-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_content_type: application/gzip
 
       - name: 🍔 Provide the runtime WASM sha256sum as a release asset
         uses: actions/upload-release-asset@v1.0.2
@@ -215,7 +215,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.sha256sum
-          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime.compact.compressed.wasm.sha256sum
+          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm.sha256sum
           asset_content_type: text/plain
 
       - name: 🍔 Provide the runtime WASM hash as a release asset
@@ -225,7 +225,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.hash
-          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime.compact.compressed.wasm.sha256sum.hash
+          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm.hash
           asset_content_type: text/plain
 
       - name: 📦 Upload the runtime WASM as a release asset
@@ -235,15 +235,8 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
-          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime.compact.compressed.wasm
+          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm
           asset_content_type: text/plain
-
-  # trigger-downstream:
-  #   runs-on: self-hosted
-  #   needs: release-on-github
-  #   steps:
-  #     - name: 🏷️ Get the version tag
-  #       run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
   # TODO: uncomment when confident that pipeline is okay
   # deploy-to-rococo:
@@ -252,6 +245,7 @@ jobs:
   #   steps:
   #     - name: 🏷️ Get the version tag
   #       run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+  #
   #     - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
   #       run: |
   #         SYSTEM_HEALTH=$(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params": [ ] }' https://rpc.t0rn.io | jq -r .result)

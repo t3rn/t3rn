@@ -7,9 +7,6 @@ fi
 
 parachain_name=$1
 
-echo "🏭 installing chevdor/subwasm v0.16.1..."
-cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1
-
 echo "🏭 building runtime wasm..."
 
 cargo build \
