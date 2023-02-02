@@ -69,28 +69,44 @@ print-sccache: ${bin_dir}/sccache
 # ====================== Testing ======================
 
 test-smoke: setup
+
+	@echo "Testing real upgrade for parachain: $(parachain)"
+
+	@if [ $(machine) = "macos" ]; then \
+        echo "You're on macos, this is for CI :< - it uses previously built binaries from this machine only"; \
+		exit 1; \
+	fi
+
+	@echo get last release binary from github
+	git fetch --all --tags -f || true
+
+	@echo get last binary
+	./download_previous_collator.sh $(parachain)
+	
+	@echo build current binary
+	cd ../../node
 	# TODO[Optimisation]: loop through directory and test all
 	# TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
 	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
 
 test-upgrade: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot
-	# @echo "Testing real upgrade for parachain: $(parachain)"
+	@echo "Testing real upgrade for parachain: $(parachain)"
 
-	# @if [ $(machine) = "macos" ]; then \
-    #     echo "You're on macos, this is for CI :< - it uses previously built binaries from this machine only"; \
-	# 	exit 1; \
-	# fi
+	@if [ $(machine) = "macos" ]; then \
+        echo "You're on macos, this is for CI :< - it uses previously built binaries from this machine only"; \
+		exit 1; \
+	fi
 
-	# @echo get last release binary from github
-	# git fetch --all --tags -f || true
+	@echo get last release binary from github
+	git fetch --all --tags -f || true
 
-	# @echo get last binary
-	# ./download_previous_collator.sh $(parachain)
+	@echo get last binary
+	./download_previous_collator.sh $(parachain)
 
-	# @echo get current release
-	# ./download_latest_wasm_blob.sh $(parachain)
+	@echo get current release
+	./download_latest_wasm_blob.sh $(parachain)
 
-	# @echo "deploy with test (ensuring old binary, new blob)"
+	@echo "deploy with test (ensuring old binary, new blob)"
 	node /home/common/projects/zombienet/javascript/packages/cli/dist/cli.js --provider=$(provider) test ./smoke/9999-runtime_upgrade.feature
 
 spawn: setup
@@ -98,4 +114,4 @@ spawn: setup
 	$(bin_dir)/zombienet --provider=$(provider) spawn ./zombienet.toml
 
 # TODO: do we want to just do this on PR's and not pre release?
-test: test-smoke test-upgrade
+test: test-smoke
