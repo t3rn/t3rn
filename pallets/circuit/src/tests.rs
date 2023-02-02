@@ -279,9 +279,7 @@ pub fn place_winning_bid_and_advance_3_blocks(
     let three_blocks_ahead = System::block_number() + 3;
     System::set_block_number(three_blocks_ahead);
 
-    <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
-        three_blocks_ahead,
-    );
+    <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(three_blocks_ahead);
 
     assert_eq!(
         Circuit::get_x_exec_signals(xtx_id).unwrap().status,
@@ -941,7 +939,7 @@ fn circuit_handles_dropped_at_bidding() {
 
             System::reset_events();
             System::set_block_number(4);
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(4);
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(4);
             let events = System::events();
 
             assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE);
@@ -1153,7 +1151,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
             System::set_block_number(BIDDING_BLOCK_NO + BIDDING_TIMEOUT);
 
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
                 BIDDING_BLOCK_NO + BIDDING_TIMEOUT,
             );
 
@@ -1170,7 +1168,10 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             );
         });
 }
+
 const SINGLE_XTX_DEL_WEIGHT: u64 = 425000000;
+const CLOCK_BUMP_ROUND_WEIGHT: u64 = 150000000;
+const CLOCK_CALC_CLAIMABLE_WEIGHT: u64 = 150000000;
 
 #[test]
 fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
@@ -1195,9 +1196,12 @@ fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
             );
 
             let weight =
-                <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(1 + 4);
+                <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(1 + 4);
 
-            assert_eq!(weight, SINGLE_XTX_DEL_WEIGHT);
+            assert_eq!(
+                weight - CLOCK_BUMP_ROUND_WEIGHT - CLOCK_CALC_CLAIMABLE_WEIGHT,
+                SINGLE_XTX_DEL_WEIGHT
+            );
 
             assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
         });
@@ -1847,7 +1851,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
 
             System::set_block_number(410);
 
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -1966,7 +1970,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
 
             System::set_block_number(410);
 
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -4042,7 +4046,7 @@ fn sdk_basic_success() {
 
             // async process the signal
             System::set_block_number(100);
-            <Circuit as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(100);
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(100);
 
             // no signal left
             check_queue(QueueValidator::Length(0));

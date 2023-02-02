@@ -110,14 +110,13 @@ pub mod pallet {
             fungible::{Inspect, Mutate},
             Get,
         },
-        weights::constants::BlockExecutionWeight,
     };
     use frame_system::pallet_prelude::*;
     use pallet_xbi_portal::{
         substrate_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm},
         xbi_format::XbiCheckOutStatus,
     };
-    use sp_runtime::traits::One;
+
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -322,12 +321,8 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(n: T::BlockNumber) -> Weight {
-            let mut weight: Weight = 0;
-            weight = weight.saturating_add(Self::process_signal_queue(n, T::BlockNumber::one(), BlockExecutionWeight::get() / 10));
-            weight = weight.saturating_add(Self::process_xtx_tick_queue(n, T::BlockNumber::one(), BlockExecutionWeight::get() / 10));
-            weight = weight.saturating_add(Self::process_revert_xtx_queue(n, T::XtxTimeoutCheckInterval::get(), BlockExecutionWeight::get() / 10));
-            weight
+        fn on_initialize(_n: T::BlockNumber) -> Weight {
+            0
         }
 
         fn on_finalize(_n: T::BlockNumber) {
@@ -1162,22 +1157,20 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    pub fn process_xtx_tick_queue(n: T::BlockNumber, kill_interval: T::BlockNumber, max_allowed_weight: Weight) -> Weight {
+    pub fn process_xtx_tick_queue(
+        n: T::BlockNumber,
+        kill_interval: T::BlockNumber,
+        max_allowed_weight: Weight,
+    ) -> Weight {
         let mut current_weight: Weight = 0;
-
-        println!("Processing XTX tick queue at block: {:?} with max weight {:?}", n, max_allowed_weight);
-
         if n % kill_interval == T::BlockNumber::zero() {
-            println!("MOD passed, Killing XTXs at block: {:?}", n);
             // Go over all unfinished Xtx to find those that should be killed
             let _processed_xtx_revert_count = <PendingXtxBidsTimeoutsMap<T>>::iter()
                 .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
                 .map(|(xtx_id, _timeout_at)| {
-                    println!("check weight limit limit {:?} {:?}", current_weight, current_weight <= max_allowed_weight);
-
                     if current_weight <= max_allowed_weight {
-                        println!("Processing XTX for {:?}", xtx_id);
-                        current_weight = current_weight.saturating_add(Self::process_tick_one(xtx_id));
+                        current_weight =
+                            current_weight.saturating_add(Self::process_tick_one(xtx_id));
                     }
                 })
                 .count();
@@ -1185,8 +1178,11 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
-
-    pub fn process_revert_xtx_queue(n: T::BlockNumber, revert_interval: T::BlockNumber, max_allowed_weight: Weight) -> Weight {
+    pub fn process_revert_xtx_queue(
+        n: T::BlockNumber,
+        revert_interval: T::BlockNumber,
+        max_allowed_weight: Weight,
+    ) -> Weight {
         let mut current_weight: Weight = 0;
         // Scenario 1: all the timeout s can be handled in the block space
         // Scenario 2: all but 5 timeouts can be handled
@@ -1197,7 +1193,8 @@ impl<T: Config> Pallet<T> {
                 .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
                 .map(|(xtx_id, _timeout_at)| {
                     if current_weight <= max_allowed_weight {
-                        current_weight = current_weight.saturating_add(Self::process_revert_one(xtx_id));
+                        current_weight =
+                            current_weight.saturating_add(Self::process_revert_one(xtx_id));
                     }
                 })
                 .count();
@@ -1247,7 +1244,11 @@ impl<T: Config> Pallet<T> {
     }
 
     // TODO: we also want to save some space for timeouts, split the weight distribution 50-50
-    pub fn process_signal_queue(_n: T::BlockNumber, _interval: T::BlockNumber, max_allowed_weight: Weight) -> Weight {
+    pub fn process_signal_queue(
+        _n: T::BlockNumber,
+        _interval: T::BlockNumber,
+        max_allowed_weight: Weight,
+    ) -> Weight {
         let queue_len = <SignalQueue<T>>::decode_len().unwrap_or(0);
         if queue_len == 0 {
             return 0
