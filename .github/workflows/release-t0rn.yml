@@ -16,7 +16,6 @@ env:
   PARACHAIN_NAME: t0rn
   RUST_BACKTRACE: full
   CARGO_TERM_COLOR: always
-  UPGRADE_AFTER: 100 # after how many blocks we want to run runtime upgrade
 
 jobs:
   build-release:
@@ -260,4 +259,4 @@ jobs:
           echo "Current height: $CURRENT_HEIGHT"
           UPGRADE_AT_HEIGHT=$(($CURRENT_HEIGHT + 0x64))
           echo "UPGRADE RUNTIME:" ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
-          ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://ws.t0rn.io https://rpc.t0rn.io ${{env.PUSHED_TAG}} ${env.UPGRADE_AFTER} ${{env.PARACHAIN_NAME}} --dry-run
+          ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://ws.t0rn.io https://rpc.t0rn.io ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}} --dry-run
