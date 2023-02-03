@@ -6,7 +6,7 @@ on:
     tags:
       - "test[0-9]+"
 
-# TODO: uncomment after tests
+# TODO: uncomment after tests as merges to develop would trigger that
 # on:
 #   push:
 #     tags:
@@ -157,23 +157,18 @@ jobs:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.hash
           path: ./target/release/
 
-      # TODO: uncomment after finish
-      # - name: 🖨️ Get the release notes
-      #   run: |
-      #     node -e "
-      #       const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
-      #       let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
-      #       if (head === -1) { throw Error('cannot parse ${{ env.PUSHED_TAG }} from changelog') }
-      #       else head = head + 1;
-      #       let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
-      #       tail = tail === -1 ? lines.length : tail + head;
-      #       console.log(lines.slice(head, tail).join(''));
-      #     " \
-      #     > ./target/release/notes.md
-
       - name: 🖨️ Get the release notes
         run: |
-          echo "test release" > ./target/release/notes.md
+          node -e "
+            const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
+            let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
+            if (head === -1) { throw Error('cannot parse ${{ env.PUSHED_TAG }} from changelog') }
+            else head = head + 1;
+            let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
+            tail = tail === -1 ? lines.length : tail + head;
+            console.log(lines.slice(head, tail).join(''));
+          " \
+          > ./target/release/notes.md
 
       - name: 🐙 Create a GitHub release
         id: create_release
