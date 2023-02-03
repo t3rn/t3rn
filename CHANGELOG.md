@@ -6,6 +6,9 @@
 * open collator pool
 * upgradable runtime
 
+## `v1.2.0-rc.5` 2023-02-01
+* chore: bogus - zeroize pallet-collator-selection config param `MinCandidates` to allow running with invulnerable collators only
+
 ## `v1.2.0-rc.4` 2022-11-23
 * fix: add t0rn chainspec code_substitutes on height 845420
 
