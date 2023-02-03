@@ -3,7 +3,7 @@
 set -x
 
 if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 || -z $6 ]]; then
-  echo "usage: $0 'collator sudo secret' \$ws_provider \$http_provider \$tag \$after \$parachain_name [--dryrun]"
+  echo "usage: $0 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
   # fx: $0 'collator sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up 33 t0rn --dryrun
   exit 1
 fi
@@ -42,9 +42,9 @@ sudo_secret="$1"
 ws_provider=$2
 http_provider=$3
 tag=$4
-after=$5
+when=$5
 parachain_name=$6
-used_wasm=$HOME/.runtime-upgrade.wasm
+used_wasm=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
 
@@ -52,9 +52,6 @@ if ! git tag --list | grep -Fq $tag; then
   echo -e "$tag is not a git tag\ntag and push the runtime for the upgrade" >&2
   exit 1
 fi
-
-echo "🏭 installing chevdor/subwasm v0.16.1..."
-cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1
 
 set -Ee
 
@@ -101,29 +98,44 @@ if [[ $new_author_version != $((old_author_version + 1)) ]]; then
 fi
 
 echo "🫧 Check WASM artifact..."
-used_wasm=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
+echo "🔢 calculated WASM hash is $(subwasm info --json $used_wasm | jq -r .blake2_256)"
+echo "🔢 fetched WASM hash from release is $(cat ./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm.hash)"
 
-echo "🔢 release WASM hash is $(subwasm info --json $used_wasm | jq -r .blake2_256)"
-echo "🔢 fetched WASM hash is $(cat ./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm.hash)"
+if [[ $(cat ./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm.hash) != $(subwasm info --json $used_wasm | jq -r .blake2_256) ]]; then
+  echo "WASM artifact hash is not matching"
+  exit 1
+fi
 
-# TODO: compare hashes
-hash=$(subwasm info --json $used_wasm | jq -r .blake2_256)
-# TODO: end
+# Unsafe runtime upgrade script assumes below are checked.
+#read -n 1 -p "e2e-tested on rococo-local?
+#runtime upgrade tested on rococo-local?
+#runtime benchmarked?
+#storage migrated?
+#(y/n) " answer
+#
+#echo
+
+#if [[ "${answer,,}" != "y" ]]; then exit 1; fi
 
 head=$(get_finalized_head)
+
+if [[ $head -gt $(( when - 5 )) ]]; then
+  echo "reschedule at a later block" >&2
+  exit 1
+fi
 
 echo "🎱 authorizing runtime upgrade... $dryrun"
 
 npm i @polkadot/api@8.6.2
 
 if [[ -z $dryrun ]]; then
-  PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash AFTER=$after \
+  PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
     node $root_dir/scripts/schedule-authorize-runtime-upgrade.js
 
-  echo "scheduled runtime upgrade authorization at block $after"
+  echo "scheduled runtime upgrade authorization at block $when"
 else
   echo "
-    PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash AFTER=$after \
+    PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
       node $root_dir/scripts/schedule-authorize-runtime-upgrade.js
   "
   cat $root_dir/scripts/schedule-authorize-runtime-upgrade.js
@@ -132,9 +144,8 @@ fi
 echo "🛂 awaiting runtime upgrade authorization..."
 
 head=$(get_finalized_head)
-head_after=$((head + after))
 
-while [[ $head -ne $head_after ]]; do
+while [[ $head -ne $when ]]; do
   sleep 12s
   head=$(get_finalized_head)
 done
