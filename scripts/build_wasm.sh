@@ -7,6 +7,9 @@ fi
 
 parachain_name=$1
 
+# TODO: subwasm always missing on epyc even though it's installed
+cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1
+
 echo "🏭 building runtime wasm..."
 
 cargo build \
