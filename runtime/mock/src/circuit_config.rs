@@ -1,13 +1,14 @@
 use crate::*;
 
-use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
+use sp_std::vec;
+
+use frame_support::{ensure, parameter_types, traits::ConstU32, weights::Weight, PalletId};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
-
 use sp_core::H256;
-use sp_runtime::Perbill;
-
-use sp_runtime::traits::One;
-
+use sp_runtime::{
+    traits::{BlakeTwo256, Convert, One},
+    Perbill,
+};
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
@@ -18,11 +19,25 @@ pub struct GlobalOnInitQueues;
 impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
     fn process(n: BlockNumber, on_init_weight_limit: Weight) -> Weight {
         let mut weights_consumed = vec![];
+        const PROCESS_SIGNAL_SHARE: u32 = 15;
+        const XTX_TICK_SHARE: u32 = 35;
+        const REVERT_XTX_SHARE: u32 = 35;
+        const BUMP_ROUND_SHARE: u32 = 5;
+        const CALC_CLAIMABLE_SHARE: u32 = 10;
+        ensure!(
+            PROCESS_SIGNAL_SHARE
+                + XTX_TICK_SHARE
+                + REVERT_XTX_SHARE
+                + BUMP_ROUND_SHARE
+                + CALC_CLAIMABLE_SHARE
+                == 100,
+            "GlobalOnInitQueues::Invalid shares don't add to 100%"
+        );
         // Iterate over all pre-init hooks implemented by pallets and return aggregated weight
         weights_consumed.push(Circuit::process_signal_queue(
             n,
             BlockNumber::one(),
-            Perbill::from_percent(15) * on_init_weight_limit,
+            Perbill::from_percent(PROCESS_SIGNAL_SHARE) * on_init_weight_limit,
         ));
         log::debug!(
             "Circuit::process_signal_queue consumed: {:?}",
@@ -33,7 +48,7 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
         weights_consumed.push(Circuit::process_xtx_tick_queue(
             n,
             BlockNumber::one(),
-            Perbill::from_percent(35) * on_init_weight_limit,
+            Perbill::from_percent(XTX_TICK_SHARE) * on_init_weight_limit,
         ));
         log::debug!(
             "Circuit::process_xtx_tick_queue consumed: {:?}",
@@ -44,7 +59,7 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
         weights_consumed.push(Circuit::process_revert_xtx_queue(
             n,
             10u32,
-            Perbill::from_percent(35) * on_init_weight_limit,
+            Perbill::from_percent(REVERT_XTX_SHARE) * on_init_weight_limit,
         ));
         log::debug!(
             "Circuit::process_revert_xtx_queue consumed: {:?}",
@@ -55,7 +70,7 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
         weights_consumed.push(Clock::check_bump_round(
             n,
             BlockNumber::one(),
-            Perbill::from_percent(5) * on_init_weight_limit,
+            Perbill::from_percent(BUMP_ROUND_SHARE) * on_init_weight_limit,
         ));
         log::debug!(
             "Clock::check_bump_round consumed: {:?}",
@@ -66,7 +81,7 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
         weights_consumed.push(Clock::calculate_claimable_for_round(
             n,
             BlockNumber::one(),
-            Perbill::from_percent(10) * on_init_weight_limit,
+            Perbill::from_percent(CALC_CLAIMABLE_SHARE) * on_init_weight_limit,
         ));
         log::debug!(
             "Clock::calculate_claimable_for_round consumed: {:?}",
@@ -149,6 +164,8 @@ impl pallet_circuit::Config for Runtime {
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;
     type WeightInfo = ();
+    // type XBIPortal = XBIPortalRuntimeEntry;
+    // type XBIPromise = XBIPortal;
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10u32>;
     type XtxTimeoutDefault = ConstU32<400u32>;
