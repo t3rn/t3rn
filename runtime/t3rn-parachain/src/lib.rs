@@ -250,7 +250,11 @@ impl_runtime_apis! {
 
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
-            ParachainSystem::collect_collation_info(header)
+            let collation_info = ParachainSystem::collect_collation_info(header);
+            if let Some(ref new_validation_code) = collation_info.new_validation_code {
+                log::info!("RuntimeUpgrade::submitting new validation code via HRMP to relay chain {:?}", new_validation_code.hash());
+            }
+            collation_info
         }
     }
 
