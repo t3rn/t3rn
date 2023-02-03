@@ -51,6 +51,7 @@ std = [
   "scale-info/std",
   "hash-db/std",
   "t3rn-primitives/std",
+  "pallet-balances/std",
   "pallet-grandpa-finality-verifier/std",
   "frame-support/std",
   "frame-system/std",
