@@ -1,17 +1,9 @@
 name: t0rn Rococo Release
 
-# Trigger only on tags starting with test
 on:
   push:
     tags:
-      - "test[0-9]+"
-
-# TODO: uncomment after tests as merges to develop would trigger that
-# on:
-#   push:
-#     tags:
-#       - "v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+"
-
+      - "v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+"
 
 env:
   PARACHAIN_NAME: t0rn
