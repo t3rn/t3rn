@@ -77,24 +77,28 @@ new_impl_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs 
 new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'transaction_version: [0-9]*' | tail -1 | grep -o '[0-9]')
 new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]')
 
-if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
-  echo "runtime spec version not incremented" >&2
-  exit 1
-fi
 
-if [[ $new_impl_version != $((old_impl_version + 1)) ]]; then
-  echo "runtime impl version not incremented" >&2
-  exit 1
-fi
+# Skip version tests when run with dryrun flag
+if [[ -z $dryrun ]]; then
+  if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
+    echo "runtime spec version not incremented" >&2
+    exit 1
+  fi
 
-if [[ $new_tx_version != $((old_tx_version + 1)) ]]; then
-  echo "runtime transaction version not incremented" >&2
-  exit 1
-fi
+  if [[ $new_impl_version != $((old_impl_version + 1)) ]]; then
+    echo "runtime impl version not incremented" >&2
+    exit 1
+  fi
 
-if [[ $new_author_version != $((old_author_version + 1)) ]]; then
-  echo "runtime authoring version not incremented" >&2
-  exit 1
+  if [[ $new_tx_version != $((old_tx_version + 1)) ]]; then
+    echo "runtime transaction version not incremented" >&2
+    exit 1
+  fi
+
+  if [[ $new_author_version != $((old_author_version + 1)) ]]; then
+    echo "runtime authoring version not incremented" >&2
+    exit 1
+  fi
 fi
 
 echo "🫧 Check WASM artifact..."
