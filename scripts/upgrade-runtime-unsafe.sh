@@ -42,11 +42,11 @@ http_provider=$3
 tag=$4
 when=$5
 parachain_name=$6
-used_wasm=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
+used_wasm=./target/release/${parachain_name}-parachain-runtime-${tag}.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
 
-if [[ -z $dryrun ]]; then
+if [[ ! -z $dryrun ]]; then
   echo
   echo "🐡 Running with dryrun flag!"
   echo
@@ -66,7 +66,7 @@ git checkout $tag
 echo "🔎 making sure runtime version got updated..."
 
 runtime_version="$( \
-  npx --yes @polkadot/api-cli@0.51.7 \
+  npx --yes --quiet --silent @polkadot/api-cli@0.51.7 \
     --ws $ws_provider \
     consts.system.version \
 )"
@@ -107,17 +107,16 @@ fi
 
 echo "🫧 Check WASM artifact..."
 wasm_hash_calculated=$(subwasm info --json $used_wasm | jq -r .blake2_256)
-wasm_hash_fetched=$(cat ./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm.hash)
+wasm_hash_fetched="$(cat ${used_wasm}.hash)"
 echo "🔢 calculated WASM hash is $wasm_hash_calculated"
 echo "🔢 fetched WASM hash from release is $wasm_hash_fetched"
 
-if [[ $wasm_hash_calculated != $wasm_hash_fetched) ]]; then
-  echo "WASM artifact hash is not matching"
+if [[ "$wasm_hash_calculated" -ne "$wasm_hash_fetched" ]]; then
+  echo "🔴 WASM artifact hash is not matching"
   exit 1
+else
+  echo "✅ WASM artifact hash is matching"
 fi
-
-#TODO: delete
-exit 1
 
 # Unsafe runtime upgrade script assumes below are checked.
 #read -n 1 -p "e2e-tested on rococo-local?
@@ -139,7 +138,11 @@ fi
 
 echo "🎱 authorizing runtime upgrade... $dryrun"
 
+# TODO: update
 npm i @polkadot/api@8.6.2
+
+#TODO: remove when confident
+exit 1 
 
 if [[ -z $dryrun ]]; then
   PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
@@ -159,7 +162,7 @@ echo "🛂 awaiting runtime upgrade authorization..."
 head=$(get_finalized_head)
 
 while [[ $head -ne $when ]]; do
-  sleep 12s
+  sleep 12
   head=$(get_finalized_head)
 done
 
