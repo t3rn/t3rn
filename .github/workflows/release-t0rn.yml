@@ -233,7 +233,7 @@ jobs:
           asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm
           asset_content_type: text/plain
 
-  deploy-to-rococo:
+  deploy-to-rococo-dry-run:
     runs-on: self-hosted
     needs: release-on-github
     steps:
