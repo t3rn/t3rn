@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 || -z $6 ]]; then
   echo "usage: $0 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
   # fx: $0 'collator sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up 33 t0rn --dryrun
@@ -44,17 +42,20 @@ http_provider=$3
 tag=$4
 when=$5
 parachain_name=$6
-used_wasm=$HOME/.runtime-upgrade.wasm
+used_wasm=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
+
+if [[ ! -z $dryrun ]]; then
+  echo
+  echo "🐡 Running with dryrun flag!"
+  echo
+fi
 
 if ! git tag --list | grep -Fq $tag; then
   echo -e "$tag is not a git tag\ntag and push the runtime for the upgrade" >&2
   exit 1
 fi
-
-echo "🏭 installing chevdor/subwasm v0.16.1..."
-cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1
 
 set -Ee
 
@@ -65,7 +66,7 @@ git checkout $tag
 echo "🔎 making sure runtime version got updated..."
 
 runtime_version="$( \
-  npx --yes @polkadot/api-cli@0.51.7 \
+  npx --yes --quiet --silent @polkadot/api-cli@0.51.7 \
     --ws $ws_provider \
     consts.system.version \
 )"
@@ -80,40 +81,42 @@ new_impl_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs 
 new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'transaction_version: [0-9]*' | tail -1 | grep -o '[0-9]')
 new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]')
 
-if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
-  echo "runtime spec version not incremented" >&2
-  exit 1
+
+# Skip version tests when run with dryrun flag
+if [[ -z $dryrun ]]; then
+  if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
+    echo "runtime spec version not incremented" >&2
+    exit 1
+  fi
+
+  if [[ $new_impl_version != $((old_impl_version + 1)) ]]; then
+    echo "runtime impl version not incremented" >&2
+    exit 1
+  fi
+
+  if [[ $new_tx_version != $((old_tx_version + 1)) ]]; then
+    echo "runtime transaction version not incremented" >&2
+    exit 1
+  fi
+
+  if [[ $new_author_version != $((old_author_version + 1)) ]]; then
+    echo "runtime authoring version not incremented" >&2
+    exit 1
+  fi
 fi
 
-if [[ $new_impl_version != $((old_impl_version + 1)) ]]; then
-  echo "runtime impl version not incremented" >&2
+echo "🫧 Check WASM artifact..."
+wasm_hash_calculated=$(subwasm info --json $used_wasm | jq -r .blake2_256)
+wasm_hash_fetched="$(cat ${used_wasm}.blake2_256)"
+echo "🔢 calculated WASM hash is $wasm_hash_calculated"
+echo "🔢 fetched WASM hash from release is $wasm_hash_fetched"
+
+if [[ "$wasm_hash_calculated" -ne "$wasm_hash_fetched" ]]; then
+  echo "🔴 WASM artifact hash is not matching"
   exit 1
+else
+  echo "✅ WASM artifact hash is matching"
 fi
-
-if [[ $new_tx_version != $((old_tx_version + 1)) ]]; then
-  echo "runtime transaction version not incremented" >&2
-  exit 1
-fi
-
-if [[ $new_author_version != $((old_author_version + 1)) ]]; then
-  echo "runtime authoring version not incremented" >&2
-  exit 1
-fi
-
-echo "🏭 building runtime wasm..."
-
-cargo build \
-  --locked \
-  --profile release \
-  --package ${parachain_name}-parachain-runtime \
-  --target-dir $root_dir/target/ \
-  -Z unstable-options
-
-used_wasm=$root_dir/target/release/wbuild/${parachain_name}-parachain-runtime/${parachain_name}_parachain_runtime.compact.compressed.wasm
-
-echo "🔢 hashing ${parachain_name}_parachain_runtime.compact.compressed.wasm..."
-
-hash=$(subwasm info --json $used_wasm | jq -r .blake2_256)
 
 # Unsafe runtime upgrade script assumes below are checked.
 #read -n 1 -p "e2e-tested on rococo-local?
@@ -135,7 +138,11 @@ fi
 
 echo "🎱 authorizing runtime upgrade... $dryrun"
 
+# TODO: update
 npm i @polkadot/api@8.6.2
+
+#TODO: remove when confident
+exit 1 
 
 if [[ -z $dryrun ]]; then
   PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
@@ -155,7 +162,7 @@ echo "🛂 awaiting runtime upgrade authorization..."
 head=$(get_finalized_head)
 
 while [[ $head -ne $when ]]; do
-  sleep 12s
+  sleep 12
   head=$(get_finalized_head)
 done
 
