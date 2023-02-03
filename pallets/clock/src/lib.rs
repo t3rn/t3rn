@@ -150,12 +150,7 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
         fn on_finalize(n: T::BlockNumber) {
-            let max_on_finalize_weight = T::BlockWeights::get()
-                .per_class
-                .get(DispatchClass::Normal)
-                .max_total
-                .unwrap_or_else(|| T::BlockWeights::get().max_block.saturating_div(5));
-
+            let max_on_finalize_weight = T::BlockWeights::get().max_block.saturating_div(5);
             log::info!(
                 "Clock::on_finalize process hooks with max_on_finalize_weight: {:?}",
                 max_on_finalize_weight
@@ -168,12 +163,7 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-            let max_on_initialize_weight = T::BlockWeights::get()
-                .per_class
-                .get(DispatchClass::Normal)
-                .max_total
-                .unwrap_or_else(|| T::BlockWeights::get().max_block.saturating_div(5));
-
+            let max_on_initialize_weight = T::BlockWeights::get().max_block.saturating_div(5);
             log::info!(
                 "Clock::on_initialize process hooks with max_on_initialize_weight: {:?}",
                 max_on_initialize_weight

@@ -566,9 +566,6 @@ pub mod pallet {
         }
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
-        /// Incentivize fast SFX confirmation by rewarding the executors with a small fee for the submission of the proof and confirmation of the SFX below the average time on each target chain.
-        /// The fee is balanced out by the executor submitting the proof and confirmations slower than average, the range must be calculated across agreed number of individual SFX to look at, e.g. 100 SFX per each target chain.
-        /// Marking the submission time must be separated out of time awaiting for the finalization of the SFX on the target chain, therefore there should be a separate submission queue awaiting for the finalization of the SFX.
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
