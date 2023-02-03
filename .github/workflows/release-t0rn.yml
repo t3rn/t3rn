@@ -10,7 +10,8 @@ on:
 # on:
 #   push:
 #     tags:
-#       - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+#       - "v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+"
+
 
 env:
   PARACHAIN_NAME: t0rn
@@ -62,11 +63,11 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: 📤 Upload runtime WASM hash
+      - name: 📤 Upload runtime WASM hash blake2_256
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.hash
-          path: ./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.hash
+          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
+          path: ./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
           if-no-files-found: error
           retention-days: 1
 
@@ -151,10 +152,10 @@ jobs:
           | tr -d '\n' \
           > ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.sha256sum
 
-      - name: 📥 Download runtime WASM hash
+      - name: 📥 Download runtime WASM hash blake2_256
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.hash
+          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
           path: ./target/release/
 
       - name: 🖨️ Get the release notes
@@ -212,14 +213,14 @@ jobs:
           asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm.sha256sum
           asset_content_type: text/plain
 
-      - name: 🍔 Provide the runtime WASM hash as a release asset
+      - name: 🍔 Provide the runtime WASM blake2_256 as a release asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.hash
-          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm.hash
+          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
+          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm.blake2_256
           asset_content_type: text/plain
 
       - name: 📦 Upload the runtime WASM as a release asset
@@ -245,6 +246,12 @@ jobs:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
           path: ./target/release/
   
+      - name: 📥 Download runtime WASM hash blake2_256
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
+          path: ./target/release/
+
       - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
         run: |
           SYSTEM_HEALTH=$(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params": [ ] }' https://rpc.t0rn.io | jq -r .result)

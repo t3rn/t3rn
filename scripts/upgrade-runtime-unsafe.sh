@@ -107,7 +107,7 @@ fi
 
 echo "🫧 Check WASM artifact..."
 wasm_hash_calculated=$(subwasm info --json $used_wasm | jq -r .blake2_256)
-wasm_hash_fetched="$(cat ${used_wasm}.hash)"
+wasm_hash_fetched="$(cat ${used_wasm}.blake2_256)"
 echo "🔢 calculated WASM hash is $wasm_hash_calculated"
 echo "🔢 fetched WASM hash from release is $wasm_hash_fetched"
 

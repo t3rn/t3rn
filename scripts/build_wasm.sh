@@ -21,4 +21,4 @@ used_wasm=target/release/wbuild/${parachain_name}-parachain-runtime/${parachain_
 echo "🔢 hashing ${parachain_name}_parachain_runtime.compact.compressed.wasm..."
 wasm_info=$(subwasm info --json $used_wasm)
 echo $wasm_info | jq .
-echo $wasm_info | jq -r .blake2_256 > $used_wasm.hash
+echo $wasm_info | jq -r .blake2_256 > $used_wasm.blake2_256
