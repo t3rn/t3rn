@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 || -z $6 ]]; then
   echo "usage: $0 'collator sudo secret' \$ws_provider \$http_provider \$tag \$when \$parachain_name [--dryrun]"
   # fx: $0 'collator sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up 33 t0rn --dryrun
@@ -47,6 +45,12 @@ parachain_name=$6
 used_wasm=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
+
+if [[ -z $dryrun ]]; then
+  echo
+  echo "🐡 Running with dryrun flag!"
+  echo
+fi
 
 if ! git tag --list | grep -Fq $tag; then
   echo -e "$tag is not a git tag\ntag and push the runtime for the upgrade" >&2
@@ -102,13 +106,18 @@ if [[ -z $dryrun ]]; then
 fi
 
 echo "🫧 Check WASM artifact..."
-echo "🔢 calculated WASM hash is $(subwasm info --json $used_wasm | jq -r .blake2_256)"
-echo "🔢 fetched WASM hash from release is $(cat ./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm.hash)"
+wasm_hash_calculated=$(subwasm info --json $used_wasm | jq -r .blake2_256)
+wasm_hash_fetched=$(cat ./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm.hash)
+echo "🔢 calculated WASM hash is $wasm_hash_calculated"
+echo "🔢 fetched WASM hash from release is $wasm_hash_fetched"
 
-if [[ $(cat ./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm.hash) != $(subwasm info --json $used_wasm | jq -r .blake2_256) ]]; then
+if [[ $wasm_hash_calculated != $wasm_hash_fetched) ]]; then
   echo "WASM artifact hash is not matching"
   exit 1
 fi
+
+#TODO: delete
+exit 1
 
 # Unsafe runtime upgrade script assumes below are checked.
 #read -n 1 -p "e2e-tested on rococo-local?

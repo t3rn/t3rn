@@ -238,26 +238,26 @@ jobs:
           asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm
           asset_content_type: text/plain
 
-  # TODO: uncomment when confident that pipeline is okay
-  # deploy-to-rococo:
-  #   runs-on: self-hosted
-  #   needs: release-on-github
-  #   steps:
-  #     - name: 🏷️ Get the version tag
-  #       run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-  #
-  #     - name: 📥 Download runtime WASM
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
-  #         path: ./target/release/
-  #
-  #     - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
-  #       run: |
-  #         SYSTEM_HEALTH=$(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params": [ ] }' https://rpc.t0rn.io | jq -r .result)
-  #         echo "RPC endpoint health: $SYSTEM_HEALTH"
-  #         CURRENT_HEIGHT=$(curl -sSfH "Content-Type: application/json" -d "{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"chain_getHeader\", \"params\": [\"${CURRENT_HASH}\"] }" https://rpc.t0rn.io | jq -r .result.number)
-  #         echo "Current height: $CURRENT_HEIGHT"
-  #         UPGRADE_AT_HEIGHT=$(($CURRENT_HEIGHT + 0x64))
-  #         echo "UPGRADE RUNTIME:" ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
-  #         ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://ws.t0rn.io https://rpc.t0rn.io ${{env.PUSHED_TAG}} ${env.UPGRADE_AFTER} ${{env.PARACHAIN_NAME}}
+  deploy-to-rococo:
+    runs-on: self-hosted
+    needs: release-on-github
+    steps:
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+  
+      - name: 📥 Download runtime WASM
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
+          path: ./target/release/
+  
+      - name: 🚀 Shoot (Upgrade Runtime) latest release to Rococo
+        run: |
+          SYSTEM_HEALTH=$(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_health", "params": [ ] }' https://rpc.t0rn.io | jq -r .result)
+          echo "RPC endpoint health: $SYSTEM_HEALTH"
+          CURRENT_HASH=$(curl -sSfH "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "chain_getFinalizedHead", "params": [ ] }' https://rpc.t0rn.io | jq -r .result)          
+          CURRENT_HEIGHT=$(curl -sSfH "Content-Type: application/json" -d "{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"chain_getHeader\", \"params\": [\"${CURRENT_HASH}\"] }" https://rpc.t0rn.io | jq -r .result.number)
+          echo "Current height: $CURRENT_HEIGHT"
+          UPGRADE_AT_HEIGHT=$(($CURRENT_HEIGHT + 0x64))
+          echo "UPGRADE RUNTIME:" ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
+          ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://ws.t0rn.io https://rpc.t0rn.io ${{env.PUSHED_TAG}} ${env.UPGRADE_AFTER} ${{env.PARACHAIN_NAME}} --dry-run
