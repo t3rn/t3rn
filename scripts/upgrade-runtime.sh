@@ -43,6 +43,7 @@ ws_provider=$2
 http_provider=$3
 tag=$4
 parachain_name=$5
+after=100
 used_wasm=$HOME/.runtime-upgrade.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
@@ -132,7 +133,7 @@ echo "🎱 authorizing runtime upgrade... $dryrun"
 npm i @polkadot/api@8.6.2
 
 if [[ -z $dryrun ]]; then
-  PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$after \
+  PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash AFTER=$after \
     node $root_dir/scripts/schedule-authorize-runtime-upgrade.js
 
   echo "scheduled runtime upgrade authorization at block $after"
