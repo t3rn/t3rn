@@ -42,7 +42,7 @@ http_provider=$3
 tag=$4
 when=$5
 parachain_name=$6
-used_wasm=./target/release/${parachain_name}-parachain-runtime-${tag}.compact.compressed.wasm
+used_wasm=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
 
