@@ -226,19 +226,40 @@ jobs:
           asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm
           asset_content_type: text/plain
 
+  run-smoke-tests:
+    runs-on: ["self-hosted", "rust"]
+    needs: release-on-github
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+      - name: ⚙️ Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-06-16
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+      - name: 📼 Run zombienet runtime upgrade test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: make test-upgrade parachain=t0rn
+
   deploy-to-rococo-dry-run:
     runs-on: self-hosted
     needs: release-on-github
     steps:
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-  
+
       - name: 📥 Download runtime WASM
         uses: actions/download-artifact@v2
         with:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
           path: ./target/release/
-  
+
       - name: 📥 Download runtime WASM hash blake2_256
         uses: actions/download-artifact@v2
         with:
