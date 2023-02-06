@@ -24,15 +24,18 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
         const REVERT_XTX_SHARE: u32 = 35;
         const BUMP_ROUND_SHARE: u32 = 5;
         const CALC_CLAIMABLE_SHARE: u32 = 10;
-        ensure!(
-            PROCESS_SIGNAL_SHARE
-                + XTX_TICK_SHARE
-                + REVERT_XTX_SHARE
-                + BUMP_ROUND_SHARE
-                + CALC_CLAIMABLE_SHARE
-                == 100,
-            "GlobalOnInitQueues::Invalid shares don't add to 100%"
-        );
+        if PROCESS_SIGNAL_SHARE
+            + XTX_TICK_SHARE
+            + REVERT_XTX_SHARE
+            + BUMP_ROUND_SHARE
+            + CALC_CLAIMABLE_SHARE
+            > 100
+        {
+            log::error!(
+                "GlobalOnInitQueues::Invalid shares exceed 100%, returning 0 - re-check the shares"
+            );
+            return 0
+        }
         // Iterate over all pre-init hooks implemented by pallets and return aggregated weight
         weights_consumed.push(Circuit::process_signal_queue(
             n,
