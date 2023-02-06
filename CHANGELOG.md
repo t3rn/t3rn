@@ -1,6 +1,6 @@
 # Changelog
-## `v1.2.0-rc.5` 2023-02-01
-* fix: loosen collators config MaxCandidate and SessionTime
+## `v1.2.0-rc.5` 2023-02-06
+* fix: t0rn runtime upgrade
 
 ## `v1.0.0` 2022-10-28
 #### Shell Runtime of t3rn

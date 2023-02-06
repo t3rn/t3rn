@@ -3,7 +3,7 @@ name: t0rn Rococo Release
 on:
   push:
     tags:
-      - "v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
 env:
   PARACHAIN_NAME: t0rn

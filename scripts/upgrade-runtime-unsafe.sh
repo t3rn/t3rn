@@ -108,14 +108,14 @@ fi
 echo "🫧 Check WASM artifact..."
 wasm_hash_calculated=$(subwasm info --json $used_wasm | jq -r .blake2_256)
 wasm_hash_fetched="$(cat ${used_wasm}.blake2_256)"
-echo "🔢 calculated WASM hash is $wasm_hash_calculated"
-echo "🔢 fetched WASM hash from release is $wasm_hash_fetched"
+echo "🔢 calculated WASM blake2_256 hash is $wasm_hash_calculated"
+echo "🔢 fetched WASM blake2_256 hash from release is $wasm_hash_fetched"
 
 if [[ "$wasm_hash_calculated" -ne "$wasm_hash_fetched" ]]; then
-  echo "🔴 WASM artifact hash is not matching"
+  echo "🔴 WASM artifact blake2_256 hash is not matching"
   exit 1
 else
-  echo "✅ WASM artifact hash is matching"
+  echo "✅ WASM artifact blake2_256 hash is matching"
 fi
 
 # Unsafe runtime upgrade script assumes below are checked.
@@ -141,9 +141,6 @@ echo "🎱 authorizing runtime upgrade... $dryrun"
 # TODO: update
 npm i @polkadot/api@8.6.2
 
-#TODO: remove when confident
-exit 1 
-
 if [[ -z $dryrun ]]; then
   PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
     node $root_dir/scripts/schedule-authorize-runtime-upgrade.js
@@ -161,10 +158,13 @@ echo "🛂 awaiting runtime upgrade authorization..."
 
 head=$(get_finalized_head)
 
-while [[ $head -ne $when ]]; do
-  sleep 12
-  head=$(get_finalized_head)
-done
+# Skip waiting if run with dryrun flag
+if [[ -z $dryrun ]]; then
+  while [[ $head -ne $when ]]; do
+    sleep 12
+    head=$(get_finalized_head)
+  done
+fi
 
 echo "⚙️ enacting runtime upgrade... $dryrun"
 
