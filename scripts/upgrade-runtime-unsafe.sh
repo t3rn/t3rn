@@ -137,13 +137,13 @@ echo "🎱 authorizing runtime upgrade... $dryrun"
 npm i @polkadot/api@8.6.2
 
 if [[ -z $dryrun ]]; then
-  PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash AFTER=$after \
+  PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$wasm_hash_calculated AFTER=$after \
     node $root_dir/scripts/schedule-authorize-runtime-upgrade.js
 
   echo "scheduled runtime upgrade authorization at block $after"
 else
   echo "
-    PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$hash AFTER=$after \
+    PROVIDER=$ws_provider SUDO=$sudo_secret HASH=$wasm_hash_calculated AFTER=$after \
       node $root_dir/scripts/schedule-authorize-runtime-upgrade.js
   "
   cat $root_dir/scripts/schedule-authorize-runtime-upgrade.js
