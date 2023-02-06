@@ -68,10 +68,10 @@ git checkout $tag
 echo "🔎 making sure runtime version got updated..."
 
 runtime_version="$( \
-  npx --yes --quiet --silent @polkadot/api-cli@0.51.7 \
+  npx --yes @polkadot/api-cli@0.51.7 \
     --ws $ws_provider \
     consts.system.version \
-)"
+    2>/dev/null )"
 
 old_spec_version=$(jq -r .version.specVersion <<<"$runtime_version")
 old_impl_version=$(jq -r .version.implVersion <<<"$runtime_version")
