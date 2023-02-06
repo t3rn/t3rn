@@ -13,8 +13,8 @@ async function assertEnv() {
   if (!/^0x[0-9a-f]{64}$/.test(process.env.HASH)) {
     throw Error(`invalid env var HASH ${process.env.HASH}`)
   }
-  if (!/^\d+$/.test(process.env.WHEN)) {
-    throw Error(`invalid env var WHEN ${process.env.WHEN}`)
+  if (!/^\d+$/.test(process.env.AFTER)) {
+    throw Error(`invalid env var AFTER ${process.env.AFTER}`)
   }
 }
 
@@ -26,7 +26,7 @@ async function main() {
   const keyring = new Keyring({ type: "sr25519" })
   const sudo = keyring.addFromMnemonic(process.env.SUDO)
   const hash = process.env.HASH
-  const when = BigInt(process.env.WHEN)
+  const after = BigInt(process.env.AFTER)
 
   const maybePeriodic = null
   const schedulePriority = 0
@@ -34,8 +34,8 @@ async function main() {
   const authorizeUpgradeCall =
     circuit.tx.parachainSystem.authorizeUpgrade(hash)
 
-  const scheduleCall = circuit.tx.scheduler.schedule(
-    when,
+  const scheduleCall = circuit.tx.scheduler.scheduleAfter(
+    after,
     maybePeriodic,
     schedulePriority,
     {
