@@ -1,0 +1,40 @@
+settings:
+  chains:
+    relay_chain: &relay_chain
+      wsPort: 9900
+  variables: 
+    chains:
+      relay_chain: 
+        alice_account: &alice_account //Alice
+        bob_account: &bob_account 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
+        amount: &amount 1
+
+tests:
+  - name: Basic transfer
+    its: 
+      - name: Transfer from Alice to Bob
+        actions:
+        - extrinsics: 
+          - chain: *relay_chain
+            sudo: true
+            signer: *alice_account
+            pallet: balances
+            call: transfer
+            args: [ { Id: *bob_account }, *amount ]
+            events:
+              - name: balances.transfer
+                attributes:
+                  - type: Result<Null, SpRuntimeDispatchError>
+                    value: Ok
+
+        # - queries:
+        #     balance_rc_sender_after:
+        #       chain: *relay_chain
+        #       pallet: system
+        #       call: account
+        #       args: [ *alice_account ]
+        #     balance_ap_receiver_after:
+        #       chain: *assets_parachain
+        #       pallet: system
+        #       call: account
+        #       args: [ *bob_account ]

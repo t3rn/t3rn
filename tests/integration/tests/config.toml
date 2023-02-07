@@ -13,6 +13,7 @@ extra_args = [ "-lparachain=debug" ]
 
 [[relaychain.nodes]]
 name = "bob"
+ws_port = 9901
 validator = true
 extra_args = [ "-lparachain=debug" ]
 
