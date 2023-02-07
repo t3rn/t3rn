@@ -1,0 +1,43 @@
+[settings]
+timeout = 1000
+
+[relaychain]
+command = "polkadot"
+chain = "rococo-local"
+
+[[relaychain.nodes]]
+name = "alice"
+ws_port = 9900
+validator = true
+extra_args = [ "-lparachain=debug" ]
+
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+extra_args = [ "-lparachain=debug" ]
+
+[[parachains]]
+id = 3000
+add_to_genesis = true
+cumulus_based = true
+chain = "rococo-local"
+
+[[parachains.collators]]
+name = "t0rn-collator01"
+command = "t0rn-collator"
+ws_port = 9930
+rpc_port = 8830
+args = ["--log=xcm=trace,pallet-assets=trace"]
+
+[[parachains.collators]]
+name = "t0rn-collator02"
+command = "t0rn-collator"
+ws_port = 9931
+rpc_port = 8831
+args = ["--log=xcm=trace,pallet-assets=trace"]
+
+[types.Header]
+number = "u64"
+weigth = "u64"
+parent_hash = "Hash"
+post_state = "Hash"
