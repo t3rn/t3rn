@@ -63,7 +63,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-      - name: 📑 Lint code (standalone+parachain)
+      - name: 📑 Lint code with clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
@@ -103,13 +103,13 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-      - name: 🏭 Build circuit (standalone+parachain)
+      - name: 🏭 Unit test (runtime+node)
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
           command: build
           args: --locked
-      - name: 📼 Run unit tests (standalone)
+      - name: 📼 Run unit tests
         continue-on-error: false
         run: |
           cargo test --workspace --locked --manifest-path Cargo.toml
