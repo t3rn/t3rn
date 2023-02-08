@@ -1,9 +1,0 @@
-{
-  "scripts": {
-    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./*.js"
-  },
-  "dependencies": {
-    "@polkadot/api": "^8.5.1",
-    "@polkadot/types": "^8.5.1"
-  }
-}
