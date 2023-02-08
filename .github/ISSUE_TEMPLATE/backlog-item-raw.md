@@ -1,5 +1,5 @@
 ---
-name: Backlog Item
+name: Backlog Item - Raw text
 about: Add an item to the backlog
 title: ''
 labels: ''
