@@ -1,13 +1,15 @@
 use crate::*;
 
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-use sp_std::{cmp::Ordering};
-use frame_support::{traits::{NeverEnsureOrigin, PrivilegeCmp}, PalletId};
+use frame_support::{
+    traits::{NeverEnsureOrigin, PrivilegeCmp},
+    PalletId,
+};
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 use sp_runtime::{impl_opaque_keys, Permill};
-use sp_std::prelude::*;
+use sp_std::{cmp::Ordering, prelude::*};
 
 // TODO: remove when we import t3rn_primitives
 pub(crate) const TRN: u64 = 1_000_000_000_000;
@@ -25,17 +27,18 @@ pub(crate) const TRN: u64 = 1_000_000_000_000;
 pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
+
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
         // in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
         // in our template, we map to 1/10 of that, or 1/10 MILLIUNIT
         let p = MILLIUNIT / 10;
         let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			negative: false,
-			coeff_frac: Perbill::from_rational(p % q, q),
-			coeff_integer: p / q,
-		}]
+            degree: 1,
+            negative: false,
+            coeff_frac: Perbill::from_rational(p % q, q),
+            coeff_integer: p / q,
+        }]
     }
 }
 
@@ -89,11 +92,11 @@ parameter_types! {
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
     type DmpMessageHandler = DmpQueue;
-    type RuntimeEvent = RuntimeEvent;
     type OnSystemEvent = ();
     type OutboundXcmpMessageSource = XcmpQueue;
     type ReservedDmpWeight = ReservedDmpWeight;
     type ReservedXcmpWeight = ReservedXcmpWeight;
+    type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type XcmpMessageHandler = XcmpQueue;
 }
@@ -109,9 +112,9 @@ parameter_types! {
 }
 
 impl pallet_session::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Keys = SessionKeys;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+    type RuntimeEvent = RuntimeEvent;
     // Essentially just Aura, but lets be pedantic.
     type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type SessionManager = CollatorSelection;
@@ -141,13 +144,13 @@ pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl pallet_collator_selection::Config for Runtime {
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     // should be a multiple of session or things will get inconsistent
     type KickThreshold = Period;
     type MaxCandidates = MaxCandidates;
     type MaxInvulnerables = MaxInvulnerables;
     type MinCandidates = MinCandidates;
     type PotId = PotId;
+    type RuntimeEvent = RuntimeEvent;
     type UpdateOrigin = CollatorSelectionUpdateOrigin;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
@@ -165,27 +168,27 @@ impl pallet_preimage::Config for Runtime {
     type BaseDeposit = PreimageBaseDeposit;
     type ByteDeposit = PreimageByteDeposit;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type ManagerOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
 parameter_types! {
-	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-		crate::system_config::RuntimeBlockWeights::get().max_block;
-	pub const MaxScheduledPerBlock: u32 = 50;
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+        crate::system_config::RuntimeBlockWeights::get().max_block;
+    pub const MaxScheduledPerBlock: u32 = 50;
 }
 
 impl pallet_scheduler::Config for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeEvent = RuntimeEvent;
-    type PalletsOrigin = OriginCaller;
-    type RuntimeCall = RuntimeCall;
-    type MaximumWeight = MaximumSchedulerWeight;
-    type ScheduleOrigin = EnsureRoot<AccountId>;
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
-    type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+    type MaximumWeight = MaximumSchedulerWeight;
     type OriginPrivilegeCmp = OriginPrivilegeCmp;
+    type PalletsOrigin = OriginCaller;
     type Preimages = Preimage;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 
 /// Used the compare the privilege of an origin inside the scheduler.
@@ -224,7 +227,6 @@ impl pallet_treasury::Config for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type MaxApprovals = MaxApprovals;
     type OnSlash = Treasury;
     type PalletId = TreasuryId;
@@ -232,6 +234,7 @@ impl pallet_treasury::Config for Runtime {
     type ProposalBondMaximum = ();
     type ProposalBondMinimum = ProposalBondMinimum;
     type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type SpendFunds = ();
     type SpendOrigin = NeverEnsureOrigin<Balance>;
     type SpendPeriod = SpendPeriod;

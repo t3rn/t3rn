@@ -13,8 +13,8 @@ pub mod system_config;
 pub mod xcm_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
-pub use runtime_types::*;
 pub use frame_support::traits::EqualPrivilegeOnly;
+pub use runtime_types::*;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 

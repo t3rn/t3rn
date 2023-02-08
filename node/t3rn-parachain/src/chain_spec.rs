@@ -1,4 +1,4 @@
-use circuit_parachain_runtime::{AccountId, AuraId, Signature, TRN, SudoConfig};
+use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig, TRN};
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};

@@ -1,11 +1,11 @@
 use std::net::SocketAddr;
 
+use circuit_parachain_runtime::Block;
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::{info, warn};
-use circuit_parachain_runtime::Block;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -132,28 +132,28 @@ pub fn run() -> Result<()> {
         },
         Some(Subcommand::CheckBlock(cmd)) => {
             construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, components.import_queue))
-			})
+                Ok(cmd.run(components.client, components.import_queue))
+            })
         },
         Some(Subcommand::ExportBlocks(cmd)) => {
             construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, config.database))
-			})
+                Ok(cmd.run(components.client, config.database))
+            })
         },
         Some(Subcommand::ExportState(cmd)) => {
             construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, config.chain_spec))
-			})
+                Ok(cmd.run(components.client, config.chain_spec))
+            })
         },
         Some(Subcommand::ImportBlocks(cmd)) => {
             construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, components.import_queue))
-			})
+                Ok(cmd.run(components.client, components.import_queue))
+            })
         },
         Some(Subcommand::Revert(cmd)) => {
             construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, components.backend, None))
-			})
+                Ok(cmd.run(components.client, components.backend, None))
+            })
         },
         Some(Subcommand::PurgeChain(cmd)) => {
             let runner = cli.create_runner(cmd)?;
@@ -161,7 +161,9 @@ pub fn run() -> Result<()> {
             runner.sync_run(|config| {
                 let polkadot_cli = RelayChainCli::new(
                     &config,
-                    [RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
+                    [RelayChainCli::executable_name()]
+                        .iter()
+                        .chain(cli.relay_chain_args.iter()),
                 );
 
                 let polkadot_config = SubstrateCli::create_configuration(
@@ -169,7 +171,7 @@ pub fn run() -> Result<()> {
                     &polkadot_cli,
                     config.tokio_handle.clone(),
                 )
-                    .map_err(|err| format!("Relay chain argument error: {}", err))?;
+                .map_err(|err| format!("Relay chain argument error: {}", err))?;
 
                 cmd.run(config, polkadot_config)
             })
@@ -212,7 +214,7 @@ pub fn run() -> Result<()> {
 						to enable storage benchmarks."
                             .into(),
                     )
-                        .into()),
+                    .into()),
                 #[cfg(feature = "runtime-benchmarks")]
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
                     let partials = new_partial(&config)?;
@@ -240,13 +242,20 @@ pub fn run() -> Result<()> {
             >;
 
             // grab the task manager.
-            let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
+            let registry = &runner
+                .config()
+                .prometheus_config
+                .as_ref()
+                .map(|cfg| &cfg.registry);
             let task_manager =
                 sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
                     .map_err(|e| format!("Error: {:?}", e))?;
 
             runner.async_run(|_| {
-                Ok((cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>>(), task_manager))
+                Ok((
+                    cmd.run::<Block, HostFunctionsOf<ParachainNativeExecutor>>(),
+                    task_manager,
+                ))
             })
         },
         #[cfg(not(feature = "try-runtime"))]
@@ -374,7 +383,9 @@ impl CliConfiguration<Self> for RelayChainCli {
         default_listen_port: u16,
         chain_spec: &Box<dyn ChainSpec>,
     ) -> Result<Option<PrometheusConfig>> {
-        self.base.base.prometheus_config(default_listen_port, chain_spec)
+        self.base
+            .base
+            .prometheus_config(default_listen_port, chain_spec)
     }
 
     fn init<F>(
@@ -384,8 +395,8 @@ impl CliConfiguration<Self> for RelayChainCli {
         _logger_hook: F,
         _config: &sc_service::Configuration,
     ) -> Result<()>
-        where
-            F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+    where
+        F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
     {
         unreachable!("PolkadotCli is never initialized; qed");
     }
@@ -393,7 +404,11 @@ impl CliConfiguration<Self> for RelayChainCli {
     fn chain_id(&self, is_dev: bool) -> Result<String> {
         let chain_id = self.base.base.chain_id(is_dev)?;
 
-        Ok(if chain_id.is_empty() { self.chain_id.clone().unwrap_or_default() } else { chain_id })
+        Ok(if chain_id.is_empty() {
+            self.chain_id.clone().unwrap_or_default()
+        } else {
+            chain_id
+        })
     }
 
     fn role(&self, is_dev: bool) -> Result<sc_service::Role> {
