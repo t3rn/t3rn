@@ -275,4 +275,4 @@ jobs:
           echo "Current height: $CURRENT_HEIGHT"
           UPGRADE_AT_HEIGHT=$(($CURRENT_HEIGHT + 0x64))
           echo "UPGRADE RUNTIME:" ${{env.PUSHED_TAG}} ${UPGRADE_AT_HEIGHT} ${{env.PARACHAIN_NAME}}
-          ./scripts/upgrade-runtime-unsafe.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://ws.t0rn.io https://rpc.t0rn.io ${{env.PUSHED_TAG}} ${{env.PARACHAIN_NAME}} --dry-run
+          ./scripts/upgrade-runtime-set-code.sh ${{secrets.RUNTIME_UPGRADE_SEED}} wss://ws.t0rn.io https://rpc.t0rn.io ${{env.PUSHED_TAG}} ${{env.PARACHAIN_NAME}} --dry-run
