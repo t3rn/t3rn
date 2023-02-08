@@ -10,8 +10,8 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
 const PARACHAIN_ID: u32 = 3333;
-const SUPPLY: u128 = (TRN as u128) * 100_000_000; // 100 million TRN
-const CANDIDACY_BOND: u128 = (TRN as u128) * 10_000; // 10K TRN
+const SUPPLY: u128 = TRN * 100_000_000; // 100 million TRN
+const CANDIDACY_BOND: u128 = TRN * 10_000; // 10K TRN
 const DESIRED_CANDIDATES: u32 = 32;
 const SUDO: &str = "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX";
 pub(crate) const SS58_FORMAT: u16 = 9935;
@@ -46,7 +46,7 @@ type AccountPublic = <Signature as Verify>::Signer;
 
 /// Helper function to generate a crypto pair from seed.
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-    TPublic::Pair::from_string(&format!("//{}", seed), None)
+    TPublic::Pair::from_string(&format!("//{seed}"), None)
         .expect("static values are valid; qed")
         .public()
 }
@@ -122,51 +122,51 @@ pub fn local_testnet_config() -> ChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                        (TRN as u128) * 100,
+                        TRN * 100,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-                        (TRN as u128) * 100000,
+                        TRN * 100000,
                     ),
                 ],
                 PARACHAIN_ID.into(),

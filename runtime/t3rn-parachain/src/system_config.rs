@@ -1,12 +1,6 @@
 use crate::{Hash as HashPrimitive, *};
-use frame_support::{
-    parameter_types,
-    weights::{IdentityFee, Weight},
-};
-use frame_system::{
-    limits::{BlockLength, BlockWeights},
-    EnsureRoot,
-};
+use frame_support::{parameter_types, weights::IdentityFee};
+use frame_system::limits::{BlockLength, BlockWeights};
 use sp_runtime::traits::BlakeTwo256;
 
 parameter_types! {

@@ -1,8 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    pallet_prelude::Weight, parameter_types, weights::constants::WEIGHT_REF_TIME_PER_SECOND,
-};
+use frame_support::{pallet_prelude::Weight, weights::constants::WEIGHT_REF_TIME_PER_SECOND};
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
