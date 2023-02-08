@@ -3,27 +3,25 @@ name: Circuit Build & Test CI
 on:
   pull_request:
     paths:
-      - "**/*.rs"
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
-      - ".github/workflows/circuit.yml"
-      - ".git/modules/*/HEAD"
-  schedule:
-    - cron: '0,1 5 * * MON-FRI'
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/circuit.yml'
+      - '.git/modules/*/HEAD'
 
 env:
   RUST_BACKTRACE: 1
-  RUSTC_WRAPPER: sccache
 
 jobs:
   format:
-    runs-on: [self-hosted, rust]
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
+#        run: git submodule deinit --all && git submodule init && git submodule update
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -38,13 +36,17 @@ jobs:
           args: --all -- --check
 
   lint:
-    runs-on: [self-hosted, rust]
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
+#        run: |
+#          git submodule deinit --all
+#          git submodule init
+#          git submodule update
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -52,14 +54,28 @@ jobs:
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
+      - name: 🕒 Cache Rust binaries and packages
+        uses: actions/cache@v2
+        id: cache-rust
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
       - name: 📑 Lint code (standalone+parachain)
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --all
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
   build-test:
-    runs-on: [self-hosted, rust]
+    runs-on: self-hosted
     needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
@@ -67,6 +83,10 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
+#        run: |
+#          git submodule deinit --all
+#          git submodule init
+#          git submodule update
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -74,6 +94,15 @@ jobs:
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
+      - name: 🕒 Cache Rust binaries and packages
+        uses: actions/cache@v2
+        id: cache-rust
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
       - name: 🏭 Build circuit (standalone+parachain)
         uses: actions-rs/cargo@v1
         continue-on-error: false

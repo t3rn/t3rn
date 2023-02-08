@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Deploy Documentation
+name: update docs
 
 # Controls when the workflow will run
 on:
@@ -10,17 +10,19 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   rust:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
+#        run: git submodule deinit --all && git submodule init && git submodule update
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -37,41 +39,21 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-      - name: Generate Rust Docs
+      - name: Generate Docs
         uses: actions-rs/cargo@v1
         continue-on-error: false
-        env:
-          RUSTDOCFLAGS: --enable-index-page -Zunstable-options
         with:
           command: doc
-          args:
-            --no-deps
-            --workspace
-            --exclude pallet-xbi-portal
-            --exclude t3rn-protocol
-            --exclude pallet-xbi-portal-enter
-            --exclude circuit-runtime-pallets
-            --exclude circuit-mock-runtime
-            --exclude circuit-standalone-runtime
-            --exclude t0rn-parachain-runtime
-            --exclude t3rn-parachain-runtime
-            --exclude t0rn-parachain-collator
-            --exclude t3rn-parachain-collator
-            --exclude snowbridge-core
-            --exclude snowbridge-runtime-primitives
-            --exclude snowbridge-testutils
-            --exclude snowbridge-xcm-support
-      - name: 👾 Deploy to Vercel
-        uses: amondnet/vercel-action@v20
+          args: --no-deps --workspace --exclude t3rn-protocol
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-args: '--force'
-          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID}}
-          vercel-project-id: ${{ secrets.VERCEL_CHAIN_DOCS_PROJECT_ID}}
-          working-directory: target/doc
-          scope: "t3rn"
-          alias-domains: |
-            docs.chain.t3rn.io
+          key: ${{ secrets.RUSTDOCS_SSH_SECRET }} 
+          known_hosts: 'just-a-placeholder-so-we-dont-get-errors'
+      - name: Adding Known Hosts
+        run: ssh-keyscan -H ${{ secrets.ATLAS_IP }} >> ~/.ssh/known_hosts
+      - name: Deploy with rsync
+        run: rsync -avz ./target/doc ${{ secrets.RUSTDOCS_SSH_USER }}@${{ secrets.ATLAS_IP }}:/home/${{ secrets.RUSTDOCS_SSH_USER }}/
   main:
     runs-on: ubuntu-latest
     defaults:
@@ -98,66 +80,4 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_DOCS_PROJECT_ID}}
           scope: "t3rn"
           alias-domains: |
-            docs.t3rn.io
-  executor:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: client/packages
-    timeout-minutes: 15
-    if: "!contains(github.event.head_commit.message, 'skip cd')"
-    steps:
-      - name: 🎞️ Checkout repo
-        uses: actions/checkout@v3
-        with:
-          repository: t3rn/t3rn
-          fetch-depth: 1
-      - name: Build local dependencies
-        run: make
-      - name: 📦 Install packages
-        run: yarn
-        working-directory: client/packages/executor
-      - name: 🏗 Build Docs
-        run: yarn build-docs
-        working-directory: client/packages/executor
-      - name: 👾 Deploy to Vercel
-        uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-args: '--force'
-          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID}}
-          vercel-project-id: ${{ secrets.VERCEL_EXECUTOR_DOCS_PROJECT_ID}}
-          scope: "t3rn"
-          alias-domains: |
-            docs.executor.t3rn.io
-  ts-sdk:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: client/packages
-    timeout-minutes: 15
-    if: "!contains(github.event.head_commit.message, 'skip cd')"
-    steps:
-      - name: 🎞️ Checkout repo
-        uses: actions/checkout@v3
-        with:
-          repository: t3rn/t3rn
-          fetch-depth: 1
-      - name: Build local dependencies
-        run: make
-      - name: 📦 Install packages
-        run: yarn
-        working-directory: client/packages/sdk
-      - name: 🏗 Build Docs
-        run: yarn build:docs
-        working-directory: client/packages/sdk
-      - name: 👾 Deploy to Vercel
-        uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-args: '--force'
-          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID}}
-          vercel-project-id: ${{ secrets.VERCEL_TS_SDK_DOCS_PROJECT_ID}}
-          scope: "t3rn"
-          alias-domains: |
-            docs.ts-sdk.t3rn.io
+            docs-t3rn.vercel.app
