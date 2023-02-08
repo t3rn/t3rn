@@ -21,11 +21,31 @@ tests:
                 pallet: balances
                 call: transfer
                 args: [{ Id: *bob_account }, *amount]
-                # events:
-                #   - name: balances.transfer
-                #     attributes:
-                #       - type: Result<Null, SpRuntimeDispatchError>
-                #         value: Ok
+                events:
+                  - name: balances.Withdraw
+                    attributes:
+                      - type: AccountId
+                        value: *alice_account
+                      - type: Balance
+                        value: *amount
+                  - name: balances.Transfer
+                    attributes:
+                      - type: AccountId
+                        value: *alice_account
+                      - type: AccountId
+                        value: *bob_account
+                      - type: Balance
+                        value: *amount
+                  - name: balances.Deposit
+                    attributes:
+                      - type: AccountId
+                        value: *bob_account
+                      - type: Balance
+                        value: *amount
+                  # - name: balances.transfer
+                  #   attributes:
+                  #     - type: Result<Null, SpRuntimeDispatchError>
+                  #       value: Ok
 
         # - queries:
         #     balance_rc_sender_after:
