@@ -10,8 +10,9 @@ esac
 
 provider=${ZOMBIENET_PROVIDER:-native}
 version=${ZOMBIENET_VERSION:-v1.2.59}
+name=${NAME:-t3rn}
 runtime=${RUNTIME:-t3rn-parachain}
-pdot_branch=${PDOT_BRANCH:-release-v0.9.27}
+pdot_branch=${PDOT_BRANCH:-release-v0.9.37}
 root_dir=$(git rev-parse --show-toplevel)
 [ ! -O /usr/local/bin ] && sudo_maybe=sudo
 
@@ -33,6 +34,6 @@ if [[ ! -x $root_dir/bin/polkadot ]]; then
 fi
 
 cargo build --manifest-path $root_dir/node/$runtime/Cargo.toml --release --locked
-cp -f $root_dir/target/release/circuit-collator $root_dir/bin/circuit-collator
+cp -f $root_dir/target/release/$name-collator $root_dir/bin/$name-collator
 
 PATH=$root_dir/bin:$PATH /usr/local/bin/zombienet --provider=$provider spawn $root_dir/zombienet.toml

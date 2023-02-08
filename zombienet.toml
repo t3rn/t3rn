@@ -11,19 +11,19 @@ name = "bob"
 count = 4
 
 [[parachains]]
-id = 3000
+id = 3333
 cumulus_based = true
 chain = "zombienet.json"
 
 [[parachains.collators]]
 name = "t3rn01-collator01"
-command = "circuit-collator"
+command = "t3rn-collator"
 ws_port = 9930
 rpc_port = 8830
 
 [[parachains.collators]]
 name = "t3rn01-collator02"
-command = "circuit-collator"
+command = "t3rn-collator"
 ws_port = 9931
 rpc_port = 8831
 
@@ -34,24 +34,24 @@ chain = "zombienet.json"
 
 [[parachains.collators]]
 name = "t3rn02-collator01"
-command = "circuit-collator"
+command = "t3rn-collator"
 ws_port = 9940
 rpc_port = 8840
 
 [[parachains.collators]]
 name = "t3rn02-collator02"
-command = "circuit-collator"
+command = "t3rn-collator"
 ws_port = 9941
 rpc_port = 8841
 
 [[hrmp_channels]]
-sender = 3000
+sender = 3333
 recipient = 4000
 max_capacity = 8
 max_message_size = 512
 
 [[hrmp_channels]]
 sender = 4000
-recipient = 3000
+recipient = 3333
 max_capacity = 8
 max_message_size = 512

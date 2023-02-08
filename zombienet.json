@@ -11,7 +11,7 @@
     "ss58Format": 9935
   },
   "relay_chain": "rococo-local",
-  "para_id": 3000,
+  "para_id": 3333,
   "codeSubstitutes": {},
   "genesis": {
     "runtime": {
@@ -41,17 +41,17 @@
       "session": {
         "keys": [
           [
-            "t3W7yG2pkGdLogoX6KJm5KtPMMWBQygvcZArcjtjo5AsJPad2",
-            "t3W7yG2pkGdLogoX6KJm5KtPMMWBQygvcZArcjtjo5AsJPad2",
+            "t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw",
+            "t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw",
             {
-              "aura": "t3W7yG2pkGdLogoX6KJm5KtPMMWBQygvcZArcjtjo5AsJPad2"
+              "aura": "t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw"
             }
           ],
           [
-            "t3X7yGXEmCwTwwS6aFwwNeXDrGT2EU9Cy13G4qUPNpVh4Phjm",
-            "t3X7yGXEmCwTwwS6aFwwNeXDrGT2EU9Cy13G4qUPNpVh4Phjm",
+            "t3VVV3XoajCLGHp7kRWjeV37x43eDPb2XPxXJM92jmwCa1Y5h",
+            "t3VVV3XoajCLGHp7kRWjeV37x43eDPb2XPxXJM92jmwCa1Y5h",
             {
-              "aura": "t3X7yGXEmCwTwwS6aFwwNeXDrGT2EU9Cy13G4qUPNpVh4Phjm"
+              "aura": "t3VVV3XoajCLGHp7kRWjeV37x43eDPb2XPxXJM92jmwCa1Y5h"
             }
           ]
         ]
@@ -60,11 +60,15 @@
         "authorities": []
       },
       "auraExt": null,
+      "transactionPayment": {
+        "multiplier": "1"
+      },
+      "treasury": null,
       "polkadotXcm": {
         "safeXcmVersion": 2
       },
       "sudo": {
-        "key": "t3UH41t54cqKW72s9KSepTr1xW1r9F91aPfJvDfDgQf1CAgRC"
+        "key": "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX"
       }
     }
   }
