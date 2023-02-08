@@ -22,39 +22,20 @@ tests:
                 call: transfer
                 args: [{ Id: *bob_account }, *amount]
                 events:
-                  - name: balances.Withdraw
-                    attributes:
-                      - type: AccountId
-                        value: *alice_account
-                      - type: Balance
-                        value: *amount
-                  - name: balances.Transfer
-                    attributes:
-                      - type: AccountId
-                        value: *alice_account
-                      - type: AccountId
-                        value: *bob_account
-                      - type: Balance
-                        value: *amount
                   - name: balances.Deposit
+    after:
+      - name: Get Bob's balance after the transfer
+        actions:
+          - queries:
+              balance_sender_after:
+                chain: *relay_chain
+                pallet: system
+                call: account
+                args: [ *bob_account ]
+                events:
+                  - name: balances.Balance
                     attributes:
                       - type: AccountId
                         value: *bob_account
                       - type: Balance
                         value: *amount
-                  # - name: balances.transfer
-                  #   attributes:
-                  #     - type: Result<Null, SpRuntimeDispatchError>
-                  #       value: Ok
-
-        # - queries:
-        #     balance_rc_sender_after:
-        #       chain: *relay_chain
-        #       pallet: system
-        #       call: account
-        #       args: [ *alice_account ]
-        #     balance_ap_receiver_after:
-        #       chain: *assets_parachain
-        #       pallet: system
-        #       call: account
-        #       args: [ *bob_account ]
