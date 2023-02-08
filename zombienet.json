@@ -25,15 +25,15 @@
       "balances": {
         "balances": [
           [
-            "t3UH41t54cqKW72s9KSepTr1xW1r9F91aPfJvDfDgQf1CAgRC",
+            "t3UH3gWsemHbtan74rWKJsWc8BXyYKoteMdS78PMYeywzRLBX",
             100000000000000000000
           ]
         ]
       },
       "collatorSelection": {
         "invulnerables": [
-          "t3W7yG2pkGdLogoX6KJm5KtPMMWBQygvcZArcjtjo5AsJPad2",
-          "t3X7yGXEmCwTwwS6aFwwNeXDrGT2EU9Cy13G4qUPNpVh4Phjm"
+          "t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw",
+          "t3VVV3XoajCLGHp7kRWjeV37x43eDPb2XPxXJM92jmwCa1Y5h"
         ],
         "candidacyBond": 10000000000000000,
         "desiredCandidates": 32
