@@ -1,4 +1,4 @@
-use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig};
+use circuit_parachain_runtime::{AccountId, AuraId, Signature, TRN, SudoConfig};
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-use t3rn_primitives::monetary::TRN;
 
 const PARACHAIN_ID: u32 = 3333;
 const SUPPLY: u128 = (TRN as u128) * 100_000_000; // 100 million TRN
@@ -310,6 +309,7 @@ fn polkadot_genesis(
             // Assign network admin rights.
             key: Some(root_key),
         },
+        transaction_payment: Default::default(),
     }
 }
 
