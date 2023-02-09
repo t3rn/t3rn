@@ -1,20 +1,11 @@
-use crate::pallet as pallet_executors;
-use frame_support::{
-    parameter_types,
-    traits::{GenesisBuild, OnFinalize, OnInitialize},
-};
-use sp_core::H256;
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-};
-use t3rn_primitives::{clock::Clock, common::RoundInfo};
+pub use circuit_mock_runtime::*;
+use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 
 pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
 }
 
-pub(crate) fn last_n_events(n: usize) -> Vec<pallet_executors::Event<Test>> {
+pub(crate) fn last_n_events(n: usize) -> Vec<pallet_executors::Event<Runtime>> {
     let events = System::events();
     let len = events.len();
     if len > 0 {
@@ -54,109 +45,10 @@ macro_rules! assert_last_n_events {
     };
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
-pub type Balance = u64;
-
-frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Executors: pallet_executors,
-    }
-);
-
-parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub const SS58Prefix: u8 = 42;
-}
-
-impl frame_system::Config for Test {
-    type AccountData = pallet_balances::AccountData<u64>;
-    type AccountId = u32;
-    type BaseCallFilter = frame_support::traits::Everything;
-    type BlockHashCount = BlockHashCount;
-    type BlockLength = ();
-    type BlockNumber = u64;
-    type BlockWeights = ();
-    type Call = Call;
-    type DbWeight = ();
-    type Event = Event;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type Header = Header;
-    type Index = u64;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
-    type OnKilledAccount = ();
-    type OnNewAccount = ();
-    type OnSetCode = ();
-    type Origin = Origin;
-    type PalletInfo = PalletInfo;
-    type SS58Prefix = SS58Prefix;
-    type SystemWeightInfo = ();
-    type Version = ();
-}
-
-parameter_types! {
-    pub const ExistentialDeposit: u64 = 1u64;
-    pub const MaxLocks: u32 = 50;
-    pub const MaxReserves: u32 = 50;
-}
-
-impl pallet_balances::Config for Test {
-    type AccountStore = System;
-    type Balance = Balance;
-    type DustRemoval = ();
-    type Event = Event;
-    type ExistentialDeposit = ExistentialDeposit;
-    type MaxLocks = MaxLocks;
-    type MaxReserves = MaxReserves;
-    type ReserveIdentifier = [u8; 8];
-    type WeightInfo = ();
-}
-
-impl pallet_executors::Config for Test {
-    type Currency = Balances;
-    type Event = Event;
-    type InstructionHandler = Self;
-    type Treasury = Self;
-    type WeightInfo = ();
-    type Xbi = ();
-}
-
-impl Clock<Test> for Test {
-    fn current_round() -> RoundInfo<<Test as frame_system::Config>::BlockNumber> {
-        RoundInfo::<<Test as frame_system::Config>::BlockNumber> {
-            index: 1,
-            head: System::block_number(),
-            term: System::block_number() + 50,
-        }
-    }
-}
-
-impl xbi_channel_primitives::traits::XbiInstructionHandler<<Test as frame_system::Config>::Origin>
-    for Test
-{
-    fn handle(
-        _origin: &Origin,
-        _xbi: &mut xbi_format::XbiFormat,
-    ) -> Result<
-        xbi_channel_primitives::traits::HandlerInfo<frame_support::weights::Weight>,
-        frame_support::dispatch::DispatchErrorWithPostInfo,
-    > {
-        Err("Not implemented".into())
-    }
-}
-
-pub(crate) fn fast_forward_to(n: u64) {
+pub(crate) fn fast_forward_to(n: u32) {
     while System::block_number() < n {
         Executors::on_finalize(System::block_number());
-        // Treasury::on_finalize(System::block_number());
+        Clock::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::set_block_number(if let Some(v) = System::block_number().checked_add(1) {
@@ -167,17 +59,17 @@ pub(crate) fn fast_forward_to(n: u64) {
         System::on_initialize(System::block_number());
         Balances::on_initialize(System::block_number());
         Executors::on_initialize(System::block_number());
-        // Treasury::on_initialize(System::block_number());
+        Clock::on_initialize(System::block_number());
     }
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+        .build_storage::<Runtime>()
         .expect("mock pallet-staking genesis storage");
 
-    pallet_executors::GenesisConfig::<Test>::default()
+    circuit_runtime_pallets::pallet_executors::GenesisConfig::<Runtime>::default()
         .assimilate_storage(&mut storage)
         .expect("mock pallet-staking genesis storage assimilation");
 

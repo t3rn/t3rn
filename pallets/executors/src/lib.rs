@@ -6,8 +6,11 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+pub use pallet::*;
+
 #[cfg(test)]
 mod mock;
+
 #[cfg(test)]
 mod tests;
 
@@ -172,13 +175,13 @@ pub mod pallet {
     /// The pool of executor candidates, each with their total backing stake.
     #[pallet::storage]
     #[pallet::getter(fn candidate_pool)]
-    pub(crate) type CandidatePool<T: Config> =
+    pub type CandidatePool<T: Config> =
         StorageValue<_, OrderedSet<Bond<T::AccountId, BalanceOf<T>>>, ValueQuery>;
 
     /// Get executor candidate info associated with an account.
     #[pallet::storage]
     #[pallet::getter(fn candidate_info)]
-    pub(crate) type CandidateInfo<T: Config> =
+    pub type CandidateInfo<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, CandidateMetadata<BalanceOf<T>>, OptionQuery>;
 
     /// Active set of executors.
@@ -189,7 +192,7 @@ pub mod pallet {
     /// Get staker state associated with an account.
     #[pallet::storage]
     #[pallet::getter(fn staker_info)]
-    pub(crate) type StakerInfo<T: Config> = StorageMap<
+    pub type StakerInfo<T: Config> = StorageMap<
         _,
         Twox64Concat,
         T::AccountId,
@@ -213,7 +216,7 @@ pub mod pallet {
     /// Outstanding staking requests per executor.
     #[pallet::storage]
     #[pallet::getter(fn scheduled_staking_requests)]
-    pub(crate) type ScheduledStakingRequests<T: Config> = StorageMap<
+    pub type ScheduledStakingRequests<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
         T::AccountId,
@@ -224,25 +227,25 @@ pub mod pallet {
     /// Outstanding configuration change per executor.
     #[pallet::storage]
     #[pallet::getter(fn scheduled_configration_requests)]
-    pub(crate) type ScheduledConfigurationRequests<T: Config> =
+    pub type ScheduledConfigurationRequests<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, ScheduledConfigurationRequest, OptionQuery>;
 
     /// Top stakes by executor candidate.
     #[pallet::storage]
     #[pallet::getter(fn top_stakes)]
-    pub(crate) type TopStakes<T: Config> =
+    pub type TopStakes<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, Stakes<T::AccountId, BalanceOf<T>>, OptionQuery>;
 
     /// Bottom stakes by executor candidate.
     #[pallet::storage]
     #[pallet::getter(fn bottom_stakes)]
-    pub(crate) type BottomStakes<T: Config> =
+    pub type BottomStakes<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, Stakes<T::AccountId, BalanceOf<T>>, OptionQuery>;
 
     /// Total capital locked by this staking pallet.
     #[pallet::storage]
     #[pallet::getter(fn total_value_locked)]
-    pub(crate) type Total<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+    pub type Total<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Total staked of a round's active set of executors.
     #[pallet::storage]

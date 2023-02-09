@@ -123,7 +123,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Cancels the staker's existing [ScheduledStakingRequest] towards a given executor.
-    pub(crate) fn stake_cancel_request(
+    pub fn stake_cancel_request(
         executor: T::AccountId,
         staker: T::AccountId,
     ) -> DispatchResultWithPostInfo {
@@ -145,7 +145,7 @@ impl<T: Config> Pallet<T> {
         Ok(().into())
     }
 
-    fn cancel_request_with_state(
+    pub fn cancel_request_with_state(
         staker: &T::AccountId,
         state: &mut StakerMetadata<T::AccountId, BalanceOf<T>>,
         scheduled_requests: &mut Vec<ScheduledStakingRequest<T::AccountId, BalanceOf<T>>>,
@@ -163,7 +163,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Executes the staker's existing [ScheduledStakingRequest] towards a given executor.
-    pub(crate) fn stake_execute_scheduled_request(
+    pub fn stake_execute_scheduled_request(
         executor: T::AccountId,
         staker: T::AccountId,
     ) -> DispatchResultWithPostInfo {
@@ -298,7 +298,7 @@ impl<T: Config> Pallet<T> {
 
     /// Schedules [StakingAction::Revoke] for the staker, towards all delegated executor.
     /// The last fulfilled request causes the staker to leave the set of stakers.
-    pub(crate) fn staker_schedule_revoke_all(staker: T::AccountId) -> DispatchResultWithPostInfo {
+    pub fn staker_schedule_revoke_all(staker: T::AccountId) -> DispatchResultWithPostInfo {
         let mut state = <StakerInfo<T>>::get(&staker).ok_or(<Error<T>>::NoSuchStaker)?;
         let mut updated_scheduled_requests = vec![];
         let now = T::Treasury::current_round().index;
@@ -355,9 +355,7 @@ impl<T: Config> Pallet<T> {
     /// Cancels every [StakingAction::Revoke] request for a staker towards a executor.
     /// Each stake must have a [StakingAction::Revoke] scheduled that must be allowed to be
     /// executed in the current round, for this function to succeed.
-    pub(crate) fn staker_cancel_scheduled_revoke_all(
-        staker: T::AccountId,
-    ) -> DispatchResultWithPostInfo {
+    pub fn staker_cancel_scheduled_revoke_all(staker: T::AccountId) -> DispatchResultWithPostInfo {
         let mut state = <StakerInfo<T>>::get(&staker).ok_or(<Error<T>>::NoSuchStaker)?;
         let mut updated_scheduled_requests = vec![];
 
@@ -394,7 +392,7 @@ impl<T: Config> Pallet<T> {
     /// Executes every [StakingAction::Revoke] request for a staker towards a executor.
     /// Each stake must have a [StakingAction::Revoke] scheduled that must be allowed to be
     /// executed in the current round, for this function to succeed.
-    pub(crate) fn staker_execute_scheduled_revoke_all(
+    pub fn staker_execute_scheduled_revoke_all(
         staker: T::AccountId,
         stake_count: u32,
     ) -> DispatchResultWithPostInfo {
@@ -469,7 +467,7 @@ impl<T: Config> Pallet<T> {
 
     /// Removes the staker's existing [ScheduledStakingRequest] towards a given executor, if exists.
     /// The state needs to be persisted by the caller of this function.
-    pub(crate) fn stake_remove_request_with_state(
+    pub fn stake_remove_request_with_state(
         executor: &T::AccountId,
         staker: &T::AccountId,
         state: &mut StakerMetadata<T::AccountId, BalanceOf<T>>,
@@ -506,7 +504,10 @@ impl<T: Config> Pallet<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::Test;
+    use crate::mock::{Executors, Runtime};
+    use circuit_mock_runtime::pallet_executors::subject_metadata::StakerMetadata;
+    use circuit_runtime_types::{AccountId, Balance};
+    use sp_runtime::AccountId32;
     use t3rn_primitives::{
         common::OrderedSet,
         executors::{Bond, StakerStatus},
@@ -514,43 +515,47 @@ mod tests {
 
     #[test]
     fn test_cancel_request_with_state_removes_request_for_correct_staker_and_updates_state() {
-        let mut state = StakerMetadata {
-            id: 1,
+        let mut state: StakerMetadata<AccountId, Balance> = StakerMetadata {
+            id: AccountId32::from([1u8; 32]),
             stakes: OrderedSet::from(vec![Bond {
-                amount: 100,
-                owner: 2,
+                amount: 100u128,
+                owner: AccountId32::from([2u8; 32]),
             }]),
-            total: 100,
+            total: 100u128,
             less_total: 100,
             status: StakerStatus::Active,
         };
         let mut scheduled_requests = vec![
             ScheduledStakingRequest {
-                staker: 1,
-                when_executable: 1,
+                staker: AccountId32::from([1u8; 32]),
+                when_executable: 1u32,
                 action: StakingAction::Revoke(100),
             },
             ScheduledStakingRequest {
-                staker: 2,
-                when_executable: 1,
+                staker: AccountId32::from([2u8; 32]),
+                when_executable: 1u32,
                 action: StakingAction::Decrease(50),
             },
         ];
-        let removed_request =
-            <Pallet<Test>>::cancel_request_with_state(&1, &mut state, &mut scheduled_requests);
+        let removed_request: Option<ScheduledStakingRequest<AccountId, Balance>> =
+            Executors::cancel_request_with_state(
+                &AccountId32::from([1u8; 32]),
+                &mut state,
+                &mut scheduled_requests,
+            );
 
         assert_eq!(
             removed_request,
             Some(ScheduledStakingRequest {
-                staker: 1,
-                when_executable: 1,
+                staker: AccountId32::from([1u8; 32]),
+                when_executable: 1u32,
                 action: StakingAction::Revoke(100),
             })
         );
         assert_eq!(
             scheduled_requests,
             vec![ScheduledStakingRequest {
-                staker: 2,
+                staker: AccountId32::from([2u8; 32]),
                 when_executable: 1,
                 action: StakingAction::Decrease(50),
             },]
@@ -558,10 +563,10 @@ mod tests {
         assert_eq!(
             state,
             StakerMetadata {
-                id: 1,
+                id: AccountId32::from([1u8; 32]),
                 stakes: OrderedSet::from(vec![Bond {
                     amount: 100,
-                    owner: 2,
+                    owner: AccountId32::from([2u8; 32]),
                 }]),
                 total: 100,
                 less_total: 0,
@@ -572,29 +577,33 @@ mod tests {
 
     #[test]
     fn test_cancel_request_with_state_does_nothing_when_request_does_not_exist() {
-        let mut state = StakerMetadata {
-            id: 1,
+        let mut state: StakerMetadata<AccountId, Balance> = StakerMetadata {
+            id: AccountId32::from([1u8; 32]),
             stakes: OrderedSet::from(vec![Bond {
-                amount: 100,
-                owner: 2,
+                amount: 100u128,
+                owner: AccountId32::from([2u8; 32]),
             }]),
             total: 100,
             less_total: 100,
             status: StakerStatus::Active,
         };
-        let mut scheduled_requests = vec![ScheduledStakingRequest {
-            staker: 2,
-            when_executable: 1,
-            action: StakingAction::Decrease(50),
-        }];
-        let removed_request =
-            <Pallet<Test>>::cancel_request_with_state(&1, &mut state, &mut scheduled_requests);
+        let mut scheduled_requests: Vec<ScheduledStakingRequest<AccountId, Balance>> =
+            vec![ScheduledStakingRequest {
+                staker: AccountId32::from([2u8; 32]),
+                when_executable: 1,
+                action: StakingAction::Decrease(50u128),
+            }];
+        let removed_request = Executors::cancel_request_with_state(
+            &AccountId32::from([1u8; 32]),
+            &mut state,
+            &mut scheduled_requests,
+        );
 
         assert_eq!(removed_request, None,);
         assert_eq!(
             scheduled_requests,
             vec![ScheduledStakingRequest {
-                staker: 2,
+                staker: AccountId32::from([2u8; 32]),
                 when_executable: 1,
                 action: StakingAction::Decrease(50),
             },]
@@ -602,12 +611,12 @@ mod tests {
         assert_eq!(
             state,
             StakerMetadata {
-                id: 1,
+                id: AccountId32::from([1u8; 32]),
                 stakes: OrderedSet::from(vec![Bond {
                     amount: 100,
-                    owner: 2,
+                    owner: AccountId32::from([2u8; 32]),
                 }]),
-                total: 100,
+                total: 100u128,
                 less_total: 100,
                 status: StakerStatus::Active,
             }
