@@ -48,7 +48,7 @@ pub mod pallet {
         },
         monetary::DECIMALS,
     };
-    use xbi_channel_primitives::traits::XbiInstructionHandler;
+    use xbi_channel_primitives::traits::{HandlerInfo, XbiInstructionHandler};
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -1626,8 +1626,11 @@ pub mod pallet {
         /// @maciejbaj look here TODO: you'll need to do some conversions from side effect into local instruction
         fn execute_xbi(
             origin: &T::Origin,
-            xbi: &xbi_format::XbiFormat,
-        ) -> DispatchResultWithPostInfo {
+            xbi: &mut xbi_format::XbiFormat,
+        ) -> Result<
+            HandlerInfo<frame_support::weights::Weight>,
+            frame_support::dispatch::DispatchErrorWithPostInfo,
+        > {
             T::InstructionHandler::handle(origin, xbi)
         }
     }

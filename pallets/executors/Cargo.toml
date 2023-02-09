@@ -27,9 +27,9 @@ sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = "po
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 
-xbi-channel-primitives = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
-xbi-format             = { git = "https://github.com/t3rn/xbi.git", branch = "development", default-features = false }
-xbi-sender             = { git = "https://github.com/t3rn/xbi-portal.git", branch = "development", default-features = false }
+xbi-channel-primitives = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
+xbi-format             = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
+xbi-sender             = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 
 [dev-dependencies]
 pallet-3vm                           = { path = "../../pallets/3vm" }

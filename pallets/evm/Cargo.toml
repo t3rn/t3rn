@@ -64,7 +64,7 @@ pallet-xdns                      = { path = "../xdns" }
 ## Solc dependencies
 #ethers-solc = { git = "https://github.com/gakonst/ethers-rs" }
 
-pallet-xbi-portal = { git = "https://github.com/t3rn/xbi-portal.git", branch = "feature/expose-xbi-to-circuit" }
+pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
 
 [features]
 default = [ "std" ]
