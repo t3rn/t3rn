@@ -48,7 +48,7 @@ mod contract_metadata {
 
 #[test]
 fn instantiate_all_smart_contracts() {
-    let contracts_path = "../../contracts/**/target/ink/*.wasm";
+    let contracts_path = "fixtures/contracts/*.wasm";
     let contracts: Paths = glob(contracts_path).unwrap();
     assert!(
         glob(contracts_path).unwrap().count() > 0,
