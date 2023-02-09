@@ -9,7 +9,7 @@ set -x
 
 if [[ -z "$1" || -z $2 || -z $3 ]]; then
   echo "usage: $0 'collator sudo secret' \$ws_provider \$wasm"
-  # fx: $0 'collator sudo secret' wss://dev.net.t3rn.io /tmp/wasm
+  # fx: $0 'collator sudo secret' wss://ws.t0rn.io /tmp/wasm
   exit 1
 fi
 

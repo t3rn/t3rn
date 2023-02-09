@@ -16,7 +16,7 @@
     "ss58Format": 9935
   },
   "relay_chain": "polkadot",
-  "para_id": 3000,
+  "para_id": 3333,
   "codeSubstitutes": {},
   "genesis": {
     "raw": {

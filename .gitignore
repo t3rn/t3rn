@@ -18,3 +18,13 @@ client/cli/yarn-error.log
 
 # mac
 **/.DS_Store
+
+bin
+
+# docs
+
+docs/executor
+docs/ts-sdk
+
+
+.direnv

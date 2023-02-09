@@ -21,7 +21,7 @@ t3rn facilitates building interoperable solutions in familiar smart contract lan
 [Learn more about Gateways and how to integrate with t3rn.](./gateway)
 
 ## Multi-chain execution platform - execute on Circuit
-Gateway Cicuit shares the context of the overall Interoperable Transaction and passes it over to the Gateways. The context contains all of the necessary data base on the Parachains can decide whether to not proceed with the execution. 
+Gateway Circuit shares the context of the overall Interoperable Transaction and passes it over to the Gateways. The context contains all of the necessary data base on the Parachains can decide whether to not proceed with the execution. 
 Gateway Circuit has an access to all of the ongoing Interoperable Transactions and before the execution is started the circuit checks if there is no two transactions changing the same account at the same time. 
 
 [Work on the Circuit Prototype is currently in progress.](./circuit)
@@ -35,7 +35,7 @@ Each successful compilation of Composable Smart Contracts is immediately availab
 
 All the newly created code for interoperable programming is automatically shared with other developers to reuse:
 •  projects can easily collaborate by sharing and re-using the business logic 
-•  developers can contribute code for free or expecting renumeration per usage. This open up a way for developers of earning money for writing the Open Source code.
+•  developers can contribute code for free or expect remuneration per usage. This opens up a way for developers of earning money for writing the Open Source code.
 
 Smart contracts can be written in familiar languages like !ink, Solidity, WebAssembly. Existent smart contracts can be uploaded as they are, no rewriting required. 
 
@@ -43,13 +43,13 @@ Smart contracts can be written in familiar languages like !ink, Solidity, WebAss
 
 ## Motivation
 
-Creating safe solutions operating and synchronizing multiple blockchains comes with the new challenges.
+Creating safe solutions operating and synchronizing multiple blockchains comes with new challenges.
  
 ### Synchronisation
 Multiple blockchains means that accounts and the storage allocated by them is located on different chains. Without the overarching synchronisation mechanism there is no guarantee that the state of accounts won't change while the interoperable transaction is executed. t3rn offers the interoperable execution protocol performed by Circuit, which manages the multi-chain transactions.
 
 ### Non-reversible
-Once a transaction is applied on a blockchians it's non-reversible, which constitutes a problem for transactions only considered useful if they succeed on multiple blockchains simultaneously. t3rn introduces multiple phases to execution of interoperable transactions and implements the safety mechanisms which are able to revert the execution on affected chains in case the overall interoperable transaction fails. 
+Once a transaction is applied on a blockchain it's non-reversible, which constitutes a problem for transactions only considered useful if they succeed on multiple blockchains simultaneously. t3rn introduces multiple phases to execution of interoperable transactions and implements the safety mechanisms which are able to revert the execution on affected chains in case the overall interoperable transaction fails. 
 
 ### Complexity
 Designing interoperable solutions is complex and requires developers and users to operate on multiple blockchains, possibly creating multiple different accounts, acquiring multiple currencies, providing a way for different blockchains to communicate. t3rn brings that complexity down and offers services and packages that facilitate interoperable execution securely.
@@ -66,6 +66,23 @@ git submodule update
 cargo build --release --features with-standalone-runtime
 cargo run --bin circuit-collator --features with-standalone-runtime
 ```
+
+### Deletion of submodules
+
+We have now deleted submodules, we have a way of utilizing the build system(cargo) to reason about dependencies. However, this requires some changes to your configs. Ensure you have your SSH key added to github.
+
+`~/.gitconfig`
+```
+[url "git@github.com:"]
+  insteadOf = https://github.com/
+```
+
+`~/.cargo/config`
+```
+[net]
+git-fetch-with-cli = true
+```
+
 #### Running benchmarks
 
 1. Build the circuit node with ```runtime-benchmarks``` feature:
@@ -83,7 +100,7 @@ This concludes the process of generating weights for the pallet.
 ## License
 
 ---
-Copyright 2020 t3rn Ltd.
+Copyright 2020-2022 t3rn Ltd.
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -98,3 +115,4 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 
 ---
+

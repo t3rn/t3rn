@@ -1,15 +1,17 @@
-use crate::{
-    AccountId, Balance, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
-    Runtime, XcmpQueue,
+use super::{
+    AccountId, Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+    RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
+use core::marker::PhantomData;
 use frame_support::{
-    match_types, parameter_types,
+    log, match_types, parameter_types,
     traits::{Everything, Nothing},
-    weights::{IdentityFee, Weight},
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-use xcm::latest::prelude::*;
+use polkadot_runtime_common::impls::ToAuthor;
+use xcm::latest::{prelude::*, Weight as XCMWeight};
 use xcm_builder::{
     AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
     EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
@@ -17,12 +19,12 @@ use xcm_builder::{
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     UsingComponents,
 };
-use xcm_executor::XcmExecutor;
+use xcm_executor::{traits::ShouldExecute, XcmExecutor};
 
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
     pub const RelayNetwork: NetworkId = NetworkId::Any;
-    pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
+    pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
 
@@ -59,23 +61,23 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // Sovereign account converter; this attempts to derive an `AccountId` from the origin location
     // using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
     // foreign chains who want to have a local sovereign account on this chain which they control.
-    SovereignSignedViaLocation<LocationToAccountId, Origin>,
+    SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
     // Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
     // recognized.
-    RelayChainAsNative<RelayChainOrigin, Origin>,
+    RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
     // Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
     // recognized.
-    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
     // Native signed account converter; this just converts an `AccountId32` origin into a normal
-    // `Origin::Signed` origin of the same 32-byte value.
-    SignedAccountId32AsNative<RelayNetwork, Origin>,
+    // `RuntimeOrigin::Signed` origin of the same 32-byte value.
+    SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-    XcmPassthrough<Origin>,
+    XcmPassthrough<RuntimeOrigin>,
 );
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: Weight = 1_000_000_000;
+    pub UnitWeightCost: u64 = 1_000_000_000;
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -86,12 +88,99 @@ match_types! {
     };
 }
 
-pub type Barrier = (
-    TakeWeightCredit,
-    AllowTopLevelPaidExecutionFrom<Everything>,
-    AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-    // ^^^ Parent and its exec plurality get free execution
-);
+//TODO: move DenyThenTry to polkadot's xcm module.
+/// Deny executing the xcm message if it matches any of the Deny filter regardless of anything else.
+/// If it passes the Deny, and matches one of the Allow cases then it is let through.
+pub struct DenyThenTry<Deny, Allow>(PhantomData<Deny>, PhantomData<Allow>)
+where
+    Deny: ShouldExecute,
+    Allow: ShouldExecute;
+
+impl<Deny, Allow> ShouldExecute for DenyThenTry<Deny, Allow>
+where
+    Deny: ShouldExecute,
+    Allow: ShouldExecute,
+{
+    fn should_execute<RuntimeCall>(
+        origin: &MultiLocation,
+        message: &mut Xcm<RuntimeCall>,
+        max_weight: XCMWeight,
+        weight_credit: &mut XCMWeight,
+    ) -> Result<(), ()> {
+        Deny::should_execute(origin, message, max_weight, weight_credit)?;
+        Allow::should_execute(origin, message, max_weight, weight_credit)
+    }
+}
+
+// See issue <https://github.com/paritytech/polkadot/issues/5233>
+pub struct DenyReserveTransferToRelayChain;
+impl ShouldExecute for DenyReserveTransferToRelayChain {
+    fn should_execute<RuntimeCall>(
+        origin: &MultiLocation,
+
+        message: &mut Xcm<RuntimeCall>,
+        _max_weight: XCMWeight,
+        _weight_credit: &mut XCMWeight,
+    ) -> Result<(), ()> {
+        if message.0.iter().any(|inst| {
+            matches!(
+                inst,
+                InitiateReserveWithdraw {
+                    reserve: MultiLocation {
+                        parents: 1,
+                        interior: Here
+                    },
+                    ..
+                } | DepositReserveAsset {
+                    dest: MultiLocation {
+                        parents: 1,
+                        interior: Here
+                    },
+                    ..
+                } | TransferReserveAsset {
+                    dest: MultiLocation {
+                        parents: 1,
+                        interior: Here
+                    },
+                    ..
+                }
+            )
+        }) {
+            return Err(()) // Deny
+        }
+
+        // An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
+        // should not allow this, but we just log it here.
+        if matches!(
+            origin,
+            MultiLocation {
+                parents: 1,
+                interior: Here
+            }
+        ) && message
+            .0
+            .iter()
+            .any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
+        {
+            log::warn!(
+                target: "xcm::barriers",
+                "Unexpected ReserveAssetDeposited from the Relay Chain",
+            );
+        }
+        // Permit everything else
+        Ok(())
+    }
+}
+
+pub type Barrier = DenyThenTry<
+    DenyReserveTransferToRelayChain,
+    (
+        TakeWeightCredit,
+        AllowTopLevelPaidExecutionFrom<Everything>,
+        AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+        // ^^^ Parent and its exec plurality get free execution
+    ),
+>;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -100,21 +189,22 @@ impl xcm_executor::Config for XcmConfig {
     type AssetTransactor = LocalAssetTransactor;
     type AssetTrap = PolkadotXcm;
     type Barrier = Barrier;
-    type Call = Call;
     type IsReserve = NativeAsset;
     type IsTeleporter = ();
     // Teleporting is disabled.
     type LocationInverter = LocationInverter<Ancestry>;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type ResponseHandler = PolkadotXcm;
+    type RuntimeCall = RuntimeCall;
     type SubscriptionService = PolkadotXcm;
-    type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Trader =
+        UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type XcmSender = XcmRouter;
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
+pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
@@ -128,14 +218,14 @@ pub type XcmRouter = (
 impl pallet_xcm::Config for Runtime {
     // ^ Override for AdvertisedXcmVersion default
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-    type Call = Call;
-    type Event = Event;
-    type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type LocationInverter = LocationInverter<Ancestry>;
-    type Origin = Origin;
-    type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-    type XcmExecuteFilter = Everything;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+    type XcmExecuteFilter = Nothing;
     // ^ Disable dispatchable execute on the XCM pallet.
     // Needs to be `Everything` for local testing.
     type XcmExecutor = XcmExecutor<XcmConfig>;
@@ -146,7 +236,24 @@ impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 }
 
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+    type ChannelInfo = ParachainSystem;
+    type ControllerOrigin = EnsureRoot<AccountId>;
+    type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
+    type VersionWrapper = ();
+    type WeightInfo = ();
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
 impl cumulus_pallet_xcm::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+impl cumulus_pallet_dmp_queue::Config for Runtime {
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }

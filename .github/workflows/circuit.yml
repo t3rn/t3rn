@@ -25,7 +25,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-06-17
+          toolchain: nightly-2023-01-24
           profile: minimal
           components: rustfmt
           override: true
@@ -50,7 +50,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-06-17
+          toolchain: nightly-2023-01-24
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
@@ -63,7 +63,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-      - name: 📑 Lint code (standalone+parachain)
+      - name: 📑 Lint code with clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
@@ -90,7 +90,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-06-17
+          toolchain: nightly-2023-01-24
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
@@ -103,15 +103,13 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
-      - name: 🏭 Build circuit (standalone+parachain)
+      - name: 🏭 Unit test (runtime+node)
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
           command: build
           args: --locked
-      - name: 📼 Run unit tests (standalone)
+      - name: 📼 Run unit tests
         continue-on-error: false
         run: |
-          chmod +x target/debug/circuit-standalone
-          target/debug/circuit-standalone --alice --log=main,debug --tmp > /dev/null 2>&1 &
-          cargo test --workspace --locked --features runtime --manifest-path Cargo.toml
+          cargo test --workspace --locked --manifest-path Cargo.toml
