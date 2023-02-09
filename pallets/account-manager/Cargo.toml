@@ -29,7 +29,7 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
 circuit-runtime-types = { path = "../../runtime/common-types", default-features = false }
-substrate-abi         = { git = "https://github.com/t3rn/xbi.git", default-features = false }
+substrate-abi         = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 t3rn-primitives       = { default-features = false, path = "../../primitives" }
 
 [dev-dependencies]
