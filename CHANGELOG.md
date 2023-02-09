@@ -1,6 +1,5 @@
 ## [1.0.1](https://github.com/t3rn/t3rn/compare/v1.0.0...v1.0.1) (2023-02-09)
 
-
 ### Bug Fixes
 
 * t3rn release ([d3b70c1](https://github.com/t3rn/t3rn/commit/d3b70c1fa9932a563aa0959496423da001fe4957))
