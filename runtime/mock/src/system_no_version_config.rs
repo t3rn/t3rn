@@ -4,17 +4,16 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU128, ConstU32, ConstU8, Currency, FindAuthor, Imbalance, NeverEnsureOrigin,
-        OnUnbalanced,
+        ConstU32, ConstU8, NeverEnsureOrigin,
     },
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
-    ConsensusEngineId, PalletId,
+    PalletId,
 };
 use frame_system::EnsureRoot;
 use sp_runtime::{
     generic,
     traits::{AccountIdLookup, BlakeTwo256, ConvertInto},
-    AccountId32, Permill,
+    Permill,
 };
 
 // Configure FRAME pallets to include in runtime.

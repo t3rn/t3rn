@@ -262,10 +262,10 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");
-
+        // TODO: reenable
         // pallet_executors::GenesisConfig::<Runtime>::default()
         //     .assimilate_storage(&mut t)
-        //     .expect("mock pallet-staking genesis storage assimilation");
+        //     .expect("mock pallet-executors genesis storage assimilation");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
