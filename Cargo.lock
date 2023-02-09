@@ -1025,6 +1025,7 @@ dependencies = [
  "log",
  "pallet-3vm",
  "pallet-account-manager",
+ "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
  "pallet-aura",
@@ -1040,6 +1041,7 @@ dependencies = [
  "pallet-contracts-rpc-runtime-api",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
+ "pallet-executors",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -1060,6 +1062,7 @@ dependencies = [
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
  "parachain-info",
+ "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-runtime-common",
@@ -3789,9 +3792,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "856b5cb0902c2b6d65d5fd97dfa30f9b70c7538e770b98eab5ed52d8db923e01"
+checksum = "fed44880c466736ef9a5c5b5facefb5ed0785676d0c02d612db14e54f0d84286"
 
 [[package]]
 name = "hex"
@@ -4243,7 +4246,7 @@ version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22e18b0a45d56fe973d6db23972bf5bc46f988a4a2385deac9cc29572f09daef"
 dependencies = [
- "hermit-abi 0.3.0",
+ "hermit-abi 0.3.1",
  "io-lifetimes 1.0.5",
  "rustix 0.36.8",
  "windows-sys 0.45.0",
@@ -7198,20 +7201,13 @@ dependencies = [
 name = "pallet-executors"
 version = "1.0.0-rc.0"
 dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
+ "circuit-runtime-types",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "pallet-3vm",
- "pallet-account-manager",
- "pallet-balances",
- "pallet-clock",
- "pallet-contracts",
- "pallet-contracts-primitives",
- "pallet-contracts-rpc-runtime-api",
- "pallet-timestamp",
- "pallet-transaction-payment",
- "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -11745,9 +11741,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.92"
+version = "1.0.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7434af0dc1cbd59268aa98b4c22c131c0584d2232f6fb166efb993e2832e896a"
+checksum = "cad406b69c91885b5107daf2c29572f6c8cdb3c66826821e286c533490c0bc76"
 dependencies = [
  "indexmap",
  "itoa 1.0.5",

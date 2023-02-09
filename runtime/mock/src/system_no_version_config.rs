@@ -54,7 +54,7 @@ impl frame_system::Config for Runtime {
     /// What to do if a new account is created.
     type OnNewAccount = ();
     /// The set code logic, just the default since we're not a parachain.
-    type OnSetCode = ();
+    type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     /// The ubiquitous origin type.
     type Origin = Origin;
     /// Converts a module to the index of the module in `construct_runtime!`.

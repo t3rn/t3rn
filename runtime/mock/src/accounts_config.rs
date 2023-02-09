@@ -52,3 +52,15 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
 }
+
+parameter_types! {
+    pub const RegCost: u128 = 100_000_000_000;
+}
+
+impl pallet_asset_registry::Config for Runtime {
+    type Assets = Assets;
+    type Call = Call;
+    type Currency = Balances;
+    type Event = Event;
+    type RegistrationCost = RegCost;
+}
