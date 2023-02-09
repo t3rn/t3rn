@@ -4,7 +4,7 @@ use circuit_runtime_pallets::{
 };
 use codec::{self, Encode};
 use frame_support::{
-    assert_err, assert_ok,
+    assert_ok,
     dispatch::{DispatchInfo, PostDispatchInfo},
     traits::fungibles::Mutate,
     weights::Weight,
