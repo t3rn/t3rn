@@ -32,20 +32,22 @@ xbi-format             = { git = "https://github.com/t3rn/xbi", version = "0.3.0
 xbi-sender             = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 
 [dev-dependencies]
+similar-asserts = "1.1.0"
+
 pallet-3vm                           = { path = "../../pallets/3vm" }
 pallet-3vm-contracts                 = { path = "../../pallets/contracts", package = "pallet-contracts" }
 pallet-3vm-contracts-primitives      = { path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
 pallet-3vm-contracts-rpc-runtime-api = { path = "../../pallets/contracts/rpc/runtime-api", package = "pallet-contracts-rpc-runtime-api" }
+pallet-account-manager               = { path = "../account-manager" }
+pallet-clock                         = { path = "../clock" }
 
-pallet-account-manager                     = { path = "../account-manager" }
-pallet-balances                            = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
-pallet-clock                               = { path = "../clock" }
+pallet-balances                            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 pallet-timestamp                           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
-similar-asserts                            = "1.1.0"
-sp-core                                    = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
-sp-io                                      = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+sp-io   = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
 
 [features]
 default = [ "std" ]

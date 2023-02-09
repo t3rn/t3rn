@@ -1,8 +1,7 @@
 use crate::{
     assert_last_event, assert_last_n_events,
     mock::{
-        fast_forward_to, new_test_ext, Balance, Event as MockEvent, Executors, Origin, System,
-        Test, Treasury,
+        fast_forward_to, new_test_ext, Balance, Event as MockEvent, Executors, Origin, System, Test,
     },
     pallet::{
         BottomStakes, CandidateInfo, CandidatePool, Config, Error, Event, ExecutorConfig,
@@ -11,10 +10,10 @@ use crate::{
     stakes::Stakes,
     subject_metadata::{CandidateMetadata, StakerMetadata},
 };
-
 use frame_support::{assert_noop, assert_ok, traits::Currency};
 use sp_runtime::Percent;
 use t3rn_primitives::{
+    clock::Clock,
     common::{OrderedSet, Range, DEFAULT_ROUND_TERM},
     executors::{
         Bond, ExecutorInfo, ExecutorStatus, Fixtures as StakingFixtures,
@@ -23,6 +22,9 @@ use t3rn_primitives::{
     },
     monetary::DECIMALS,
 };
+
+// We do a dummy impl of the treasury round provider here since it was tightly coupled to account manager
+type Treasury = Test;
 
 /*
         pub fn set_fixtures(

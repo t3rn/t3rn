@@ -7,9 +7,8 @@ use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
 };
-use t3rn_primitives::common::BLOCKS_PER_HOUR;
+use t3rn_primitives::{clock::Clock, common::RoundInfo};
 
 pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
@@ -67,8 +66,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Treasury: pallet_treasury::{Pallet, Call,Config<T>, Storage, Event<T>},
-        Executors: pallet_executors::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Executors: pallet_executors,
     }
 );
 
@@ -122,44 +120,43 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
 }
 
-parameter_types! {
-    pub const TreasuryAccount: u32 = 0;
-    pub const ReserveAccount: u32 = 1;
-    pub const AuctionFund: u32 = 2;
-    pub const ContractFund: u32 = 3;
-    pub const MinRoundTerm: u32 = 20; // TODO
-    pub const DefaultRoundTerm: u32 = 6 * BLOCKS_PER_HOUR; // TODO
-    pub const GenesisIssuance: u32 = 20_000_000; // TODO
-    pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
-    pub const InflationRegressionMonths: u32 = 72;
-}
-
-impl pallet_treasury::Config for Test {
-    type AuctionFund = AuctionFund;
-    type ContractFund = ContractFund;
-    type Currency = Balances;
-    type DefaultRoundTerm = DefaultRoundTerm;
-    type Event = Event;
-    type GenesisIssuance = GenesisIssuance;
-    type IdealPerpetualInflation = IdealPerpetualInflation;
-    type InflationRegressionMonths = InflationRegressionMonths;
-    type MinRoundTerm = MinRoundTerm;
-    type ReserveAccount = ReserveAccount;
-    type TreasuryAccount = TreasuryAccount;
-    type WeightInfo = ();
-}
-
 impl pallet_executors::Config for Test {
     type Currency = Balances;
     type Event = Event;
-    type Treasury = Treasury;
+    type InstructionHandler = Self;
+    type Treasury = Self;
     type WeightInfo = ();
+    type Xbi = ();
+}
+
+impl Clock<Test> for Test {
+    fn current_round() -> RoundInfo<<Test as frame_system::Config>::BlockNumber> {
+        RoundInfo::<<Test as frame_system::Config>::BlockNumber> {
+            index: 1,
+            head: System::block_number(),
+            term: System::block_number() + 50,
+        }
+    }
+}
+
+impl xbi_channel_primitives::traits::XbiInstructionHandler<<Test as frame_system::Config>::Origin>
+    for Test
+{
+    fn handle(
+        _origin: &Origin,
+        _xbi: &mut xbi_format::XbiFormat,
+    ) -> Result<
+        xbi_channel_primitives::traits::HandlerInfo<frame_support::weights::Weight>,
+        frame_support::dispatch::DispatchErrorWithPostInfo,
+    > {
+        Err("Not implemented".into())
+    }
 }
 
 pub(crate) fn fast_forward_to(n: u64) {
     while System::block_number() < n {
         Executors::on_finalize(System::block_number());
-        Treasury::on_finalize(System::block_number());
+        // Treasury::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::set_block_number(if let Some(v) = System::block_number().checked_add(1) {
@@ -170,7 +167,7 @@ pub(crate) fn fast_forward_to(n: u64) {
         System::on_initialize(System::block_number());
         Balances::on_initialize(System::block_number());
         Executors::on_initialize(System::block_number());
-        Treasury::on_initialize(System::block_number());
+        // Treasury::on_initialize(System::block_number());
     }
 }
 
