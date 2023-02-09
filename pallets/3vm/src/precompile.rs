@@ -230,7 +230,7 @@ mod tests {
                 Ok(LocalStateExecutionView::<Test, BalanceOf<Test>> {
                     local_state: Default::default(),
                     hardened_side_effects: vec![vec![]],
-                    steps_cnt: (0, 0),
+                    steps_cnt: (0, 1),
                     xtx_id: <Test as frame_system::Config>::Hash::decode(
                         &mut &hex::decode(
                             "e0f81c92f7ec3253b2bc5356d5bd928792d40f3022c38ce088553dc8f5bb32c0"
