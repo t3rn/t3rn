@@ -115,10 +115,10 @@ jobs:
         run: |
           node -e "
             const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
-            let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
-            if (head === -1) { throw Error('cannot parse ${{ env.PUSHED_TAG }} from changelog') }
+            let head = lines.findIndex(l => /^\s*#+[^v]+/.test(l));
+            if (head === -1) { throw Error('cannot parse changelog') }
             else head = head + 1;
-            let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
+            let tail = lines.slice(head).findIndex(l => /^\s*#+[^v]+v/.test(l));
             tail = tail === -1 ? lines.length : tail + head;
             console.log(lines.slice(head, tail).join(''));
           " \
