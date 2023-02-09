@@ -31,9 +31,11 @@ ${bin_dir}/zombienet:
 	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(zombienet_version)/zombienet-$(machine)
 	chmod +x $(bin_dir)/zombienet
 
-$(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot:
+$(polkadot_tmp_dir)/$(pdot_branch):
 	mkdir -p $(polkadot_tmp_dir);
 	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch);
+
+$(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot: $(polkadot_tmp_dir)/$(pdot_branch)
 	cargo build --manifest-path $(polkadot_tmp_dir)/$(pdot_branch)/Cargo.toml --features fast-runtime --release --locked;
 	
 ${bin_dir}/polkadot: $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot
