@@ -1,6 +1,7 @@
 use crate::{Hash as HashPrimitive, *};
 use frame_support::{parameter_types, weights::IdentityFee};
 use frame_system::limits::{BlockLength, BlockWeights};
+use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_runtime::traits::BlakeTwo256;
 
 parameter_types! {
@@ -127,8 +128,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-    // TODO: determine if fee multiplier should be adjusted via SlowAdjustingFeeUpdate
-    type FeeMultiplierUpdate = ();
+    type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
