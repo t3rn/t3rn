@@ -202,12 +202,11 @@ pub fn polkadot_config() -> ChainSpec {
         // Name
         "t3rn",
         // Id
-        "t3rn_polkadot",
+        "t3rn",
         ChainType::Live,
         move || {
             // TODO: needs updating
             polkadot_genesis(
-                // Invulnerable collators FIXME: these are NOT the right collators
                 vec![
                     (
                         // Collator 1: t3XXX7FGKAsG3pwE188CP91zCgt4p2mEQkdeELwocRJ4kCrSw
