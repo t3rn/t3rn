@@ -1,9 +1,8 @@
 {
   "name": "t3rn",
-  "id": "t3rn_polkadot",
+  "id": "t3rn",
   "chainType": "Live",
-  "bootNodes": [
-  ],
+  "bootNodes": [],
   "telemetryEndpoints": [
     [
       "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F",
