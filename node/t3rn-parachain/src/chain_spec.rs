@@ -234,7 +234,16 @@ pub fn polkadot_config() -> ChainSpec {
             )
         },
         // Bootnodes
-        vec![],
+        vec![
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-1.t3rn.io/tcp/33333/p2p/12D3KooWDWGoYHhsVUtLehNEdwp8JNi4DLTJVB2L53HMHarBXw66",
+            )
+            .expect("Failed to parse bootnode #1 address"),
+            sc_service::config::MultiaddrWithPeerId::from_str(
+                "/dns/bootnode-2.t3rn.io/tcp/33333/p2p/12D3KooWLGtGEf92p8CbUmzwFYavEtDUaJNJCbBSp4muSqs2cVz1",
+            )
+            .expect("Failed to parse bootnode #2 address"),
+        ],
         // Telemetry
         Some(
             TelemetryEndpoints::new(vec![(
