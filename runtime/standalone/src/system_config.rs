@@ -1,5 +1,8 @@
 use super::*;
-use crate::{accounts_config::AccountManagerCurrencyAdapter, Hash as HashPrimitive};
+use crate::{
+    accounts_config::AccountManagerCurrencyAdapter, impl_versioned_runtime_with_api::Version,
+    Hash as HashPrimitive,
+};
 use frame_support::{
     parameter_types,
     traits::{
@@ -9,9 +12,8 @@ use frame_support::{
     PalletId,
 };
 use pallet_asset_tx_payment::HandleCredit;
+use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_runtime::{traits::*, Permill};
-
-use crate::impl_versioned_runtime_with_api::Version;
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -104,7 +106,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type Event = Event;
-    type FeeMultiplierUpdate = ();
+    type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type OnChargeTransaction = AccountManagerCurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = ConstU8<5>;
