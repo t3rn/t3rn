@@ -1148,7 +1148,9 @@ impl<T: Config> Pallet<T> {
         max_allowed_weight: Weight,
     ) -> Weight {
         let mut current_weight: Weight = 0;
-        if n % kill_interval == T::BlockNumber::zero() {
+        if kill_interval == T::BlockNumber::zero() {
+            return current_weight
+        } else if n % kill_interval == T::BlockNumber::zero() {
             // Go over all unfinished Xtx to find those that should be killed
             let _processed_xtx_revert_count = <PendingXtxBidsTimeoutsMap<T>>::iter()
                 .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
@@ -1172,7 +1174,9 @@ impl<T: Config> Pallet<T> {
         // Scenario 1: all the timeout s can be handled in the block space
         // Scenario 2: all but 5 timeouts can be handled
         //     - add the 5 timeouts to an immediate queue for the next block
-        if n % revert_interval == T::BlockNumber::zero() {
+        if revert_interval == T::BlockNumber::zero() {
+            return current_weight
+        } else if n % revert_interval == T::BlockNumber::zero() {
             // Go over all unfinished Xtx to find those that timed out
             let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
                 .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
