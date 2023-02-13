@@ -1,12 +1,11 @@
 name: Sprint goal
 about: Open a new Sprint Goal
-title: ''
+title: 'Release X.Y.Z-rcN'
 labels: ''
-assignees: ''
 ---
 ## Description
 
-Write a description of the issue
+Describe the sprint goal as detailed as possible in terms of materialized outcomes and end user value.
 
 
 ### Goal and Acceptance Criteria
