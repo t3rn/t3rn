@@ -2152,7 +2152,10 @@ fn execute_stake_request_fails_if_not_due_yet() {
             1
         ));
 
-        fast_forward_to(419);
+        let when_executable =
+            Clock::current_round().index + Executors::fixtures().revoke_stake_delay;
+
+        fast_forward_to(when_executable - 1);
 
         assert_noop!(
             Executors::execute_stake_request(Origin::signed(staker.clone()), staker, executor),
