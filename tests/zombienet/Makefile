@@ -80,8 +80,8 @@ test-smoke: setup
 	@echo get last release binary from github
 	git fetch --all --tags -f || true
 
-	@echo get last binary
-	./download_previous_collator.sh $(parachain)
+	@echo get previous binary
+	./download_previous_version.sh $(parachain)
 	
 	# TODO[Optimisation]: loop through directory and test all
 	# TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it

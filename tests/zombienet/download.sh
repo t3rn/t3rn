@@ -20,7 +20,7 @@ case "$1" in
     tag_version="$old_version"
     echo Version: "$tag_version"
 
-    ./download_previous_collator.sh "$old_version"
+    ./download_collator.sh "$old_version" "-old"
     ./download_latest_wasm_blob.sh "$new_version"
     ;;
   t3rn*)
@@ -39,7 +39,7 @@ case "$1" in
     tag_version="$old_version"
     echo Version: "$tag_version"
 
-    ./download_previous_collator.sh "$old_version"
+    ./download_collator.sh "$old_version" "-old"
     ./download_latest_wasm_blob.sh "$new_version"
     ;;
   *)        

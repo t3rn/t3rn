@@ -3,6 +3,7 @@ name: Perform zombienet tests
 env:
   RUST_BACKTRACE: full
   RUSTC_WRAPPER: sccache
+  parachain: t0rn # TODO: fix before merging master
 on:
   pull_request:
     paths:
