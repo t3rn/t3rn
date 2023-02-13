@@ -125,8 +125,10 @@ pub struct CreditToBlockAuthor;
 impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
     fn handle_credit(credit: CreditOf<AccountId, Assets>) {
         if let Some(author) = pallet_authorship::Pallet::<Runtime>::author() {
-            let author_credit =
-                credit.peek().saturating_mul(80_u32.into()) / <u32 as Into<Balance>>::into(100_u32);
+            let author_credit = credit
+                .peek()
+                .saturating_mul(80_u32.into())
+                .saturating_div(<u32 as Into<Balance>>::into(100_u32));
             let (author_cut, treasury_cut) = credit.split(author_credit);
             // Drop the result which will trigger the `OnDrop` of the imbalance in case of error.
             Assets::resolve(&author, author_cut);
