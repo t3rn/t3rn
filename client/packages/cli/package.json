@@ -10,6 +10,8 @@
     "@t3rn/types": "../types",
     "axios": "^0.27.2",
     "bn.js": "^5.2.1",
-    "commander": "^9.4.0"
+    "commander": "^9.4.0",
+    "pino": "^8.10.0",
+    "pino-pretty": "^9.2.0"
   }
 }
