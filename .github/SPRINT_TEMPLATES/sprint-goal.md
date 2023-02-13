@@ -43,6 +43,7 @@ enum DeliveryDomain {
     Documentation,
     Testing,
     Security,
+    DepsUpdate,
     Other,
 }
 ```
