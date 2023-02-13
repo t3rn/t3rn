@@ -12,6 +12,20 @@ import {bid} from "./commands/bid";
 const program = new Command();
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
+const pino = require("pino")
+const logger = pino(
+    {
+        level: process.env.LOG_LEVEL || "info",
+        formatters: {
+            level: (label) => {
+                return { level: label }
+            },
+        },
+        base: undefined,
+    }
+    // pino.destination(`${__dirname}/logger.log`) // remove comment to export to file
+)
+
 program
   .name('t3rn CLI')
   .description('CLI for interacting with the t3rn circuit')
@@ -65,9 +79,23 @@ class CircuitCLI {
                 registrationData[0].registration_data.toHex()
             );
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createSudo(tx))
-                .then(() => console.log("Success: Gateway registered!"))
+                .then(() => {
+                    logger.info("Success: Gateway registered! ID:", registrationData[0].gateway_id)
+                    this.addLog({
+                        success: true,
+                        msg: "Gateway registered!",
+                        gatewayId: registrationData[0].gateway_id
+                    })
+                })
                 .catch(err => {
-                    console.error("Error: Registration Failed! Err:", err)
+                    logger.info("Error: Registration Failed! Err:", err)
+
+                    this.addLog({
+                        success: false,
+                        msg: "Registration failed!",
+                        err,
+                        gatewayId: registrationData[0].gateway_id
+                    })
                     this.error()
                 })
 
@@ -80,7 +108,7 @@ class CircuitCLI {
             }
 
         } else {
-            console.log(`Config for ${process.argv[3]} not found!`)
+            logger.debug(`Config for ${process.argv[3]} not found!`)
             this.error();
         }
     }
@@ -91,9 +119,22 @@ class CircuitCLI {
             const transactionArgs = await setOperational(this.circuit, data, operational)
             const tx = this.circuit.tx.portal.setOperational(transactionArgs?.gatewayId, transactionArgs?.operational);
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createSudo(tx))
-                .then(() => console.log("Success: Operational status set!"))
+                .then(() => {
+                    logger.info("Success: Operational status set!")
+                     this.addLog({
+                         success: true,
+                         msg: "Operational status set!",
+                         gatewayId: transactionArgs?.gatewayId
+                    })
+                })
                 .catch(err => {
-                    console.error("Error: setOperational Failed! Err:", err)
+                    logger.info("Error: setOperational Failed! Err:", err)
+                     this.addLog({
+                         success: false,
+                         msg: "setOperational Failed!",
+                         err,
+                         gatewayId: transactionArgs?.gatewayId
+                    })
                     this.error()
                 })
 
@@ -106,7 +147,7 @@ class CircuitCLI {
             }
 
         } else {
-            console.log(`Config or argument for ${process.argv[3]} not found!`)
+            logger.debug(`Config or argument for ${process.argv[3]} not found!`)
             this.error();
         }
     }
@@ -118,7 +159,7 @@ class CircuitCLI {
                 // @ts-ignore
                 gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
             }
-            const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id)
+            const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id, logger)
             let tx = this.sdk.circuit.tx.createBatch(transactionArgs.map(args => {
                 return this.circuit.tx.portal.submitHeaders(
                     args.gatewayId,
@@ -127,11 +168,22 @@ class CircuitCLI {
             }))
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
                 .then(height => {
-                    console.log("Success: Header Range submitted!")
+                    logger.info(`Success: Header Range submitted! ID ${id}`)
+                    this.addLog({
+                        success: true,
+                        msg: "Header Range submitted!",
+                        gatewayId: id
+                    })
                     return height
                 })
                 .catch(err => {
-                    console.error("Error: Header Submission Failed! Err:", err)
+                    logger.info("Error: Header Submission Failed! Err:", err)
+                    this.addLog({
+                         success: false,
+                         msg: "Header Submission Failed!",
+                         err,
+                         gatewayId: id
+                    })
                     this.error()
                 })
 
@@ -144,7 +196,7 @@ class CircuitCLI {
             }
 
         } else {
-            console.log(`Config for ${process.argv[3]} not found!`)
+            logger.debug(`Config for ${process.argv[3]} not found!`)
             this.error();
         }
     }
@@ -159,11 +211,11 @@ class CircuitCLI {
             // @ts-ignore
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
                 .then(height => {
-                    console.log("Success: Transfer submitted!")
+                    logger.info("Success: Transfer submitted!")
                     return height
                 })
                 .catch(err => {
-                    console.error("Error: Transfer submission failed! Err:", err);
+                    logger.info("Error: Transfer submission failed! Err:", err);
                     this.error()
                 })
 
@@ -175,14 +227,14 @@ class CircuitCLI {
             }
 
         } else {
-            console.log(`Config or argument for ${process.argv[3]} not found!`)
+            logger.info(`Config or argument for ${process.argv[3]} not found!`)
             this.error();
         }
     }
 
     async submitSideEffects(path: string, exportArgs: boolean, exportName: string) {
         if (!fs.existsSync(path)) {
-             console.log("File doesn't exist!")
+             logger.info("File doesn't exist!")
              this.error()
          }
 
@@ -191,7 +243,7 @@ class CircuitCLI {
         // Check we have an config for each SideEffect
         data.sideEffects.forEach(effect => {
             if (!config.gateways.find(entry => entry.id === effect.target)) {
-                console.error(`Error: Gateway for SideEffect ${effect.type} not found!`)
+                logger.info(`Error: Gateway for SideEffect ${effect.type} not found!`)
                 this.error()
             }
         })
@@ -201,11 +253,11 @@ class CircuitCLI {
 
         const submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
             .then(height => {
-                console.log("Success: SideEffects submitted!!")
+                logger.info("Success: SideEffects submitted!!")
                 return height
             })
             .catch(err => {
-                console.error("Error: SideEffects submission failed! Err:", err);
+                logger.info("Error: SideEffects submission failed! Err:", err);
                 this.error()
             })
 
@@ -224,11 +276,11 @@ class CircuitCLI {
         // @ts-ignore
         let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
             .then(height => {
-                console.log("Success: Bid submitted!")
+                logger.info("Success: Bid submitted!")
                 return height
             })
             .catch(err => {
-                console.error("Error: Bidding Failed! Err:", err);
+                logger.info("Error: Bidding Failed! Err:", err);
                 this.error()
             })
 
@@ -252,13 +304,23 @@ class CircuitCLI {
         let encoded = Converters.Utils.encodeExport(deepCopy, transactionType, submissionHeight as string);
         fs.writeFile(fileName, JSON.stringify(encoded, null, 4), (err) => {
             if(err) {
-                console.error("Error: Failed to export data! Err:", err);
+                logger.info("Error: Failed to export data! Err:", err);
                 this.error();
             } else {
-                console.log("JSON saved to " + fileName);
+                logger.info("JSON saved to " + fileName);
                 this.close();
             }
         });
+    }
+
+    private addLog(msg: any, debug: boolean = true) {
+        msg.component = "CLI"
+
+        if (debug) {
+            logger.debug(msg)
+        } else {
+            logger.error(msg)
+        }
     }
 }
 

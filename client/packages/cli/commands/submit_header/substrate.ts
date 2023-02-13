@@ -2,19 +2,26 @@ import { Encodings } from "@t3rn/sdk";
 import {fetchBestFinalizedHash, fetchLatestPossibleParachainHeader, getStorageProof} from "../../utils/substrate"
 const axios = require('axios').default;
 
-export const submitParachainHeaders = async (circuit: any, target: any, gatewayData: any) => {
-    return generateParachainProof(circuit, target, gatewayData)
+export const submitParachainHeaders = async (circuit: any, target: any, gatewayData: any, logger: any) => {
+    return generateParachainProof(circuit, target, gatewayData, logger)
 }
 
-export const submitRelaychainHeaders = async (circuit: any, target: any, gatewayId: string) => {
+export const submitRelaychainHeaders = async (circuit: any, target: any, gatewayId: string, logger: any) => {
     const from = (await fetchGatewayHeight(gatewayId, circuit)) + 1;
-    console.log("Latest on Gateway:", from - 1);
     const to = await fetchCurrentHeight(target);
-    console.log("Latest on Target: ", to.toNumber());
-    return generateBatchProof(circuit, target, gatewayId, from, to)
+    return generateBatchProof(circuit, target, gatewayId, from, to, logger)
 }
 
-const generateBatchProof = async (circuit: any, target: any, gatewayId: string, from: number, to: number) => {
+const generateBatchProof = async (circuit: any, target: any, gatewayId: string, from: number, to: number, logger: any) => {
+    let batches: any[] = []
+    let logMsg = {
+        type: "RELAYCHAIN",
+        gatewayId,
+        latesteCircuit: from,
+        latestTarget: to,
+        batches,
+    };
+
     let transactionArguments: any[] = [];
     while(from < to) {
         // get finalityProof element of epoch that contains block #from
@@ -26,10 +33,12 @@ const generateBatchProof = async (circuit: any, target: any, gatewayId: string, 
         // query from header again, as its not part of the proof, and concat
         headers = [await getHeader(target, from), ...headers]
         let range = circuit.createType("Vec<Header>", headers)
-
-        console.log("Batch:")
-        console.log(`Range: From #${range[0].number.toNumber()} to #${range[range.length - 1].number.toNumber()}`)
-        console.log("__________________________________________________________________")
+        logMsg.batches.push(
+            {
+                targetFrom: range[0].number.toNumber(),
+                targetTo: range[range.length - 1].number.toNumber(),
+            }
+        )
 
         const relaychainHeaderData = circuit.createType("RelaychainHeaderData<Header>", {
             signed_header,
@@ -41,10 +50,12 @@ const generateBatchProof = async (circuit: any, target: any, gatewayId: string, 
         transactionArguments.push({gatewayId: circuit.createType("ChainId", gatewayId), data: relaychainHeaderData})
         from = parseInt(signed_header.number.toJSON()) + 1
     }
+
+    logger.debug(logMsg)
     return transactionArguments;
 }
 
-const generateParachainProof = async (circuit: any, target: any, gatewayData: any) => {
+const generateParachainProof = async (circuit: any, target: any, gatewayData: any, logger: any) => {
     const latestRelayChainHeader = await fetchBestFinalizedHash(circuit, gatewayData.registrationData.parachain.relayChainId)
     const parachainHeader: any = await fetchLatestPossibleParachainHeader(
         gatewayData.relaychainRpc,
@@ -53,11 +64,19 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
     )
     const decodedParachainHeader = Encodings.Substrate.Decoders.headerDecode(parachainHeader.toJSON())
     const parachainHeightCircuit = await fetchGatewayHeight(gatewayData.id, circuit)
-    console.log("Latest Para Finalized Height:", parachainHeightCircuit)
-    console.log("Newest potential header:", decodedParachainHeader.number.toNumber())
+    let logMsg = {
+        type: "PARACHAIN",
+        gatewayId: gatewayData.id,
+        latesteCircuit: parachainHeightCircuit,
+        latestTarget: decodedParachainHeader.number.toNumber(),
+    };
+
     let headers = await collectHeaderRange(target, parachainHeightCircuit + 1, decodedParachainHeader.number.toNumber() - 1) // the new highest header is in the proof
 
     const proof = await getStorageProof(gatewayData.relaychainRpc, latestRelayChainHeader.toJSON(), gatewayData.registrationData.parachain.id)
+
+    logMsg["targetFrom"] = parachainHeightCircuit + 1;
+    logMsg["targetTo"] = decodedParachainHeader.number.toNumber() - 1;
 
     const parachainHeaderData = circuit.createType("ParachainHeaderData<Header>", {
         relay_block_hash: latestRelayChainHeader.toJSON(),
@@ -66,6 +85,7 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
             trieNodes: proof.toJSON().proof
         }
     })
+    logger.debug(logMsg)
     return [{gatewayId: circuit.createType("ChainId", gatewayData.id), data: parachainHeaderData}]
 }
 
@@ -77,8 +97,6 @@ const collectHeaderRange = async (target: any, from: number, to: number) => {
                 await target.rpc.chain.getBlockHash(from)
             )).toJSON()
         )
-        console.log("fetched #", from)
-
         from += 1
     }
     return headers;
