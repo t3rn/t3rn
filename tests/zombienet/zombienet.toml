@@ -17,13 +17,13 @@ chain = "rococo-local"
 
 [[parachains.collators]]
 name = "t0rn-collator01"
-command = "t0rn-collator"
+command = "collator"
 ws_port = 9930
 rpc_port = 8830
 
 [[parachains.collators]]
 name = "t0rn-collator02"
-command = "t0rn-collator"
+command = "collator"
 ws_port = 9931
 rpc_port = 8831
 
@@ -34,13 +34,13 @@ chain = "local"
 
 [[parachains.collators]]
 name = "t3rn-collator01"
-command = "t3rn-collator"
+command = "collator"
 ws_port = 9940
 rpc_port = 8840
 
 [[parachains.collators]]
 name = "t3rn-collator02"
-command = "t3rn-collator"
+command = "collator"
 ws_port = 9941
 rpc_port = 8841
 

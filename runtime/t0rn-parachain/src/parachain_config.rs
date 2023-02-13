@@ -142,8 +142,9 @@ impl pallet_aura::Config for Runtime {
 parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
     pub const MaxCandidates: u32 = 1000;
-    pub const MinCandidates: u32 = 2;
-    pub const SessionLength: BlockNumber = 30 * MINUTES;
+    // pub const MinCandidates: u32 = 2;
+    pub const MinCandidates: u32 = 5;
+    pub const SessionLength: BlockNumber = 6 * HOURS;
     pub const MaxInvulnerables: u32 = 100;
     pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
@@ -184,7 +185,8 @@ impl pallet_preimage::Config for Runtime {
 }
 
 parameter_types! {
-    pub MaximumSchedulerWeight: Weight = 10_000_000;
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+        RuntimeBlockWeights::get().max_block;
     pub const MaxScheduledPerBlock: u32 = 50;
     pub const NoPreimagePostponement: Option<BlockNumber> = Some(10);
 }

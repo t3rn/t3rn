@@ -3,6 +3,7 @@ name: Perform zombienet tests
 env:
   RUST_BACKTRACE: full
   RUSTC_WRAPPER: sccache
+  parachain: t0rn # TODO: fix before merging master
 on:
   pull_request:
     paths:
@@ -29,7 +30,7 @@ jobs:
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-06-17
+          toolchain: nightly-2023-01-24
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true

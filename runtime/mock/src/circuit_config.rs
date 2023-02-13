@@ -194,3 +194,12 @@ impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Runtime 
     type HeadersToStore = HeadersToStore;
     type WeightInfo = ();
 }
+
+impl pallet_executors::Config for Runtime {
+    type Currency = Balances;
+    type Event = Event;
+    type InstructionHandler = XbiPortal;
+    type Treasury = Clock;
+    type WeightInfo = ();
+    type Xbi = ();
+}

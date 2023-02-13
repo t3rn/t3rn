@@ -25,6 +25,7 @@ mod circuit_config;
 mod consensus_aura_config;
 mod contracts_config;
 mod system_no_version_config;
+mod xbi_config;
 
 frame_support::construct_runtime!(
     pub enum Runtime where
@@ -35,6 +36,9 @@ frame_support::construct_runtime!(
         System: frame_system,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
+        ParachainSystem: cumulus_pallet_parachain_system::{
+            Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
+        },
 
         RandomnessCollectiveFlip: pallet_randomness_collective_flip,
         Timestamp: pallet_timestamp,
@@ -56,12 +60,22 @@ frame_support::construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Treasury: pallet_treasury = 109,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
+        Executors: pallet_executors = 111,
+
+        // XCM helpers.
+        XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
+        PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
+        CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
+        DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+        XbiPortal: pallet_xbi_portal = 34,
+        AssetRegistry: pallet_asset_registry = 35,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
+
         // Portal
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
         RococoBridge: pallet_grandpa_finality_verifier::{
@@ -262,10 +276,10 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");
-
+        // TODO: reenable
         // pallet_executors::GenesisConfig::<Runtime>::default()
         //     .assimilate_storage(&mut t)
-        //     .expect("mock pallet-staking genesis storage assimilation");
+        //     .expect("mock pallet-executors genesis storage assimilation");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));

@@ -4,17 +4,16 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU128, ConstU32, ConstU8, Currency, FindAuthor, Imbalance, NeverEnsureOrigin,
-        OnUnbalanced,
+        ConstU32, ConstU8, NeverEnsureOrigin,
     },
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
-    ConsensusEngineId, PalletId,
+    PalletId,
 };
 use frame_system::EnsureRoot;
 use sp_runtime::{
     generic,
     traits::{AccountIdLookup, BlakeTwo256, ConvertInto},
-    AccountId32, Permill,
+    Permill,
 };
 
 // Configure FRAME pallets to include in runtime.
@@ -55,7 +54,7 @@ impl frame_system::Config for Runtime {
     /// What to do if a new account is created.
     type OnNewAccount = ();
     /// The set code logic, just the default since we're not a parachain.
-    type OnSetCode = ();
+    type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     /// The ubiquitous origin type.
     type Origin = Origin;
     /// Converts a module to the index of the module in `construct_runtime!`.

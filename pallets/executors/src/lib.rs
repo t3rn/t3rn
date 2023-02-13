@@ -6,8 +6,11 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+pub use pallet::*;
+
 #[cfg(test)]
 mod mock;
+
 #[cfg(test)]
 mod tests;
 
@@ -48,6 +51,7 @@ pub mod pallet {
         },
         monetary::DECIMALS,
     };
+    use xbi_channel_primitives::traits::{HandlerInfo, XbiInstructionHandler};
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -130,6 +134,13 @@ pub mod pallet {
         type Treasury: Clock<Self>;
 
         type WeightInfo: weights::WeightInfo;
+
+        /// Allow executors to execute side effects on circuit
+        type InstructionHandler: xbi_channel_primitives::traits::XbiInstructionHandler<Self::Origin>;
+
+        // TODO: We might not need this here, maybe we will just inject this into the pallets that need it, although here is a decent entrypoint for it.
+        /// Allow other pallets in circuit to send messages over xbi
+        type Xbi: xbi_sender::Sender<xbi_channel_primitives::Message>;
     }
 
     #[pallet::pallet]
@@ -164,13 +175,13 @@ pub mod pallet {
     /// The pool of executor candidates, each with their total backing stake.
     #[pallet::storage]
     #[pallet::getter(fn candidate_pool)]
-    pub(crate) type CandidatePool<T: Config> =
+    pub type CandidatePool<T: Config> =
         StorageValue<_, OrderedSet<Bond<T::AccountId, BalanceOf<T>>>, ValueQuery>;
 
     /// Get executor candidate info associated with an account.
     #[pallet::storage]
     #[pallet::getter(fn candidate_info)]
-    pub(crate) type CandidateInfo<T: Config> =
+    pub type CandidateInfo<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, CandidateMetadata<BalanceOf<T>>, OptionQuery>;
 
     /// Active set of executors.
@@ -181,7 +192,7 @@ pub mod pallet {
     /// Get staker state associated with an account.
     #[pallet::storage]
     #[pallet::getter(fn staker_info)]
-    pub(crate) type StakerInfo<T: Config> = StorageMap<
+    pub type StakerInfo<T: Config> = StorageMap<
         _,
         Twox64Concat,
         T::AccountId,
@@ -205,7 +216,7 @@ pub mod pallet {
     /// Outstanding staking requests per executor.
     #[pallet::storage]
     #[pallet::getter(fn scheduled_staking_requests)]
-    pub(crate) type ScheduledStakingRequests<T: Config> = StorageMap<
+    pub type ScheduledStakingRequests<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
         T::AccountId,
@@ -216,25 +227,25 @@ pub mod pallet {
     /// Outstanding configuration change per executor.
     #[pallet::storage]
     #[pallet::getter(fn scheduled_configration_requests)]
-    pub(crate) type ScheduledConfigurationRequests<T: Config> =
+    pub type ScheduledConfigurationRequests<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, ScheduledConfigurationRequest, OptionQuery>;
 
     /// Top stakes by executor candidate.
     #[pallet::storage]
     #[pallet::getter(fn top_stakes)]
-    pub(crate) type TopStakes<T: Config> =
+    pub type TopStakes<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, Stakes<T::AccountId, BalanceOf<T>>, OptionQuery>;
 
     /// Bottom stakes by executor candidate.
     #[pallet::storage]
     #[pallet::getter(fn bottom_stakes)]
-    pub(crate) type BottomStakes<T: Config> =
+    pub type BottomStakes<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, Stakes<T::AccountId, BalanceOf<T>>, OptionQuery>;
 
     /// Total capital locked by this staking pallet.
     #[pallet::storage]
     #[pallet::getter(fn total_value_locked)]
-    pub(crate) type Total<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+    pub type Total<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Total staked of a round's active set of executors.
     #[pallet::storage]
@@ -1610,6 +1621,20 @@ pub mod pallet {
                     bond
                 })
                 .collect()
+        }
+
+        /// Execute a side effect via XBI
+        /// `xbi` could change to side effects and do the conversions into Xbi messages
+        ///
+        /// @maciejbaj look here TODO: you'll need to do some conversions from side effect into local instruction
+        fn execute_xbi(
+            origin: &T::Origin,
+            xbi: &mut xbi_format::XbiFormat,
+        ) -> Result<
+            HandlerInfo<frame_support::weights::Weight>,
+            frame_support::dispatch::DispatchErrorWithPostInfo,
+        > {
+            T::InstructionHandler::handle(origin, xbi)
         }
     }
 }

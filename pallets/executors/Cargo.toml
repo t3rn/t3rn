@@ -25,23 +25,21 @@ frame-system       = { git = "https://github.com/paritytech/substrate.git", bran
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 
-t3rn-primitives = { default-features = false, git = "https://github.com/t3rn/t3rn", branch = 'development' }
+t3rn-primitives = { default-features = false, path = "../../primitives" }
+
+xbi-channel-primitives = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false, features = [ "frame" ] }
+xbi-format             = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
+xbi-sender             = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 
 [dev-dependencies]
-pallet-3vm                           = { git = "https://github.com/t3rn/3vm.git", branch = "development" }
-pallet-3vm-contracts                 = { git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts" }
-pallet-3vm-contracts-primitives      = { git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { git = "https://github.com/t3rn/3vm.git", branch = "development", package = "pallet-contracts-rpc-runtime-api" }
+similar-asserts = "1.1.0"
 
-pallet-account-manager                     = { path = "../account-manager" }
-pallet-balances                            = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
-pallet-clock                               = { path = "../clock" }
-pallet-timestamp                           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
-similar-asserts                            = "1.1.0"
-sp-core                                    = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
-sp-io                                      = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+sp-io   = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+
+circuit-mock-runtime    = { path = "../../runtime/mock" }
+circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
+circuit-runtime-types   = { path = "../../runtime/common-types" }
 
 [features]
 default = [ "std" ]
@@ -52,19 +50,13 @@ std = [
   "scale-info/std",
   "sp-runtime/std",
   "sp-std/std",
-  "pallet-balances/std",
-  "pallet-3vm/std",
-  "pallet-3vm-contracts/std",
-  "pallet-3vm-contracts-primitives/std",
-  "pallet-3vm-contracts-rpc-runtime-api/std",
-  "pallet-clock/std",
-  "pallet-account-manager/std",
-  "pallet-transaction-payment/std",
-  "pallet-transaction-payment-rpc-runtime-api/std",
-  "pallet-timestamp/std",
   "t3rn-primitives/std",
   "frame-support/std",
   "frame-system/std",
+  "xbi-channel-primitives/std",
+  "xbi-channel-primitives/frame-std",
+  "xbi-sender/std",
+  "xbi-format/std",
 ]
 
 runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks" ]

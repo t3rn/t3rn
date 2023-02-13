@@ -70,11 +70,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 3,
-    spec_version: 4,
-    impl_version: 2,
+    authoring_version: 4,
+    spec_version: 5,
+    impl_version: 3,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 3,
+    transaction_version: 4,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -400,7 +400,11 @@ impl_runtime_apis! {
 
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
-            ParachainSystem::collect_collation_info(header)
+            let collation_info = ParachainSystem::collect_collation_info(header);
+            if let Some(ref new_validation_code) = collation_info.new_validation_code {
+                log::info!("RuntimeUpgrade::submitting new validation code via HRMP to relay chain {:?}", new_validation_code.hash());
+            }
+            collation_info
         }
     }
 

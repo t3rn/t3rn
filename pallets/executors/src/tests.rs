@@ -1,19 +1,18 @@
 use crate::{
     assert_last_event, assert_last_n_events,
     mock::{
-        fast_forward_to, new_test_ext, Balance, Event as MockEvent, Executors, Origin, System,
-        Test, Treasury,
+        fast_forward_to, new_test_ext, Balance, Balances, Clock, Event as MockEvent, Executors,
+        Origin, Runtime, System,
     },
-    pallet::{
-        BottomStakes, CandidateInfo, CandidatePool, Config, Error, Event, ExecutorConfig,
-        ScheduledConfigurationRequests, StakerInfo, TopStakes, Total,
-    },
+};
+use circuit_runtime_pallets::pallet_executors::{
     stakes::Stakes,
     subject_metadata::{CandidateMetadata, StakerMetadata},
+    BottomStakes, CandidateInfo, CandidatePool, Config, Error, Event, ExecutorConfig,
+    ScheduledConfigurationRequests, StakerInfo, TopStakes, Total,
 };
-
 use frame_support::{assert_noop, assert_ok, traits::Currency};
-use sp_runtime::Percent;
+use sp_runtime::{AccountId32, Percent};
 use t3rn_primitives::{
     common::{OrderedSet, Range, DEFAULT_ROUND_TERM},
     executors::{
@@ -81,7 +80,7 @@ fn fixtures_can_only_be_set_by_sudo() {
         let fixtures: StakingFixtures<Balance> = Default::default();
 
         assert_noop!(
-            Executors::set_fixtures(Origin::signed(419), fixtures),
+            Executors::set_fixtures(Origin::signed(AccountId32::from([41u8; 32])), fixtures),
             sp_runtime::DispatchError::BadOrigin
         );
     });
@@ -94,7 +93,7 @@ fn fixtures_cannot_be_zero() {
 
         assert_noop!(
             Executors::set_fixtures(Origin::root(), fixtures),
-            <Error<Test>>::FixturesCannotBeZero,
+            Error::<Runtime>::FixturesCannotBeZero,
         );
     });
 }
@@ -110,10 +109,10 @@ fn fixtures_set_and_emitted() {
             },
             max_commission: Percent::from_percent(50),
             max_risk: Percent::from_percent(50),
-            min_executor_bond: 1000_u64,
-            min_candidate_bond: 1000_u64,
-            min_atomic_stake: 500_u64,
-            min_total_stake: 500_u64,
+            min_executor_bond: 1000,
+            min_candidate_bond: 1000,
+            min_atomic_stake: 500,
+            min_total_stake: 500,
             max_top_stakes_per_candidate: 300,
             max_bottom_stakes_per_candidate: 50,
             max_stakes_per_staker: 100,
@@ -135,10 +134,10 @@ fn fixtures_set_and_emitted() {
             },
             max_commission: Percent::from_percent(50),
             max_risk: Percent::from_percent(50),
-            min_executor_bond: 1000_u64,
-            min_candidate_bond: 1000_u64,
-            min_atomic_stake: 500_u64,
-            min_total_stake: 500_u64,
+            min_executor_bond: 1000,
+            min_candidate_bond: 1000,
+            min_atomic_stake: 500,
+            min_total_stake: 500,
             max_top_stakes_per_candidate: 300,
             max_bottom_stakes_per_candidate: 50,
             max_stakes_per_staker: 100,
@@ -159,8 +158,12 @@ fn schedule_configure_executor_fails_if_risk_gt_max() {
         let risk = Percent::from_percent(51);
 
         assert_noop!(
-            Executors::schedule_configure_executor(Origin::signed(3), commission, risk),
-            <Error<Test>>::TooMuchRisk,
+            Executors::schedule_configure_executor(
+                Origin::signed(AccountId32::from([3u8; 32])),
+                commission,
+                risk
+            ),
+            Error::<Runtime>::TooMuchRisk,
         );
     });
 }
@@ -172,8 +175,12 @@ fn schedule_configure_executor_fails_if_commission_gt_max() {
         let risk = Percent::from_percent(1);
 
         assert_noop!(
-            Executors::schedule_configure_executor(Origin::signed(3), commission, risk),
-            <Error<Test>>::TooMuchCommission,
+            Executors::schedule_configure_executor(
+                Origin::signed(AccountId32::from([3u8; 32])),
+                commission,
+                risk
+            ),
+            Error::<Runtime>::TooMuchCommission,
         );
     });
 }
@@ -181,18 +188,18 @@ fn schedule_configure_executor_fails_if_commission_gt_max() {
 #[test]
 fn initial_executor_configuration_is_effective_immediately() {
     new_test_ext().execute_with(|| {
-        let executor = 13;
+        let executor = AccountId32::from([13u8; 32]);
         let commission = Percent::from_percent(10);
         let risk = Percent::from_percent(42);
 
         assert_ok!(Executors::schedule_configure_executor(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             commission,
             risk
         ));
 
         assert_eq!(
-            <ExecutorConfig<Test>>::get(executor).unwrap(),
+            <ExecutorConfig<Runtime>>::get(executor.clone()).unwrap(),
             ExecutorInfo { commission, risk }
         );
 
@@ -208,22 +215,22 @@ fn initial_executor_configuration_is_effective_immediately() {
 fn executor_reconfiguration_gets_scheduled() {
     new_test_ext().execute_with(|| {
         let fixtures = Executors::fixtures();
-        let executor = 14;
+        let executor = AccountId32::from([14u8; 32]);
 
         assert_ok!(Executors::schedule_configure_executor(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             Percent::from_percent(10),
             Percent::from_percent(42),
         ));
 
         assert_ok!(Executors::schedule_configure_executor(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             Percent::from_percent(20),
             Percent::from_percent(32),
         ));
 
         assert_eq!(
-            <ExecutorConfig<Test>>::get(executor).unwrap(),
+            <ExecutorConfig<Runtime>>::get(executor.clone()).unwrap(),
             ExecutorInfo {
                 commission: Percent::from_percent(10),
                 risk: Percent::from_percent(42)
@@ -231,15 +238,15 @@ fn executor_reconfiguration_gets_scheduled() {
         );
 
         assert_last_event!(MockEvent::Executors(Event::ExecutorConfigured {
-            executor,
+            executor: executor.clone(),
             commission: Percent::from_percent(10),
             risk: Percent::from_percent(42),
         }));
 
         assert_eq!(
-            <ScheduledConfigurationRequests<Test>>::get(executor).unwrap(),
+            <ScheduledConfigurationRequests<Runtime>>::get(executor.clone()).unwrap(),
             ScheduledConfigurationRequest {
-                when_executable: Treasury::current_round()
+                when_executable: Clock::current_round()
                     .index
                     .saturating_add(fixtures.configure_executor_delay),
                 commission: Percent::from_percent(20),
@@ -253,23 +260,23 @@ fn executor_reconfiguration_gets_scheduled() {
 fn anyone_can_execute_scheduled_reconfiguration() {
     new_test_ext().execute_with(|| {
         let fixtures = Executors::fixtures();
-        let executor = 14;
-        let other_user = 15;
+        let executor = AccountId32::from([14u8; 32]);
+        let other_user = AccountId32::from([15u8; 32]);
 
         assert_ok!(Executors::schedule_configure_executor(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             Percent::from_percent(10),
             Percent::from_percent(42),
         ));
 
         assert_ok!(Executors::schedule_configure_executor(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             Percent::from_percent(20),
             Percent::from_percent(32),
         ));
 
         assert_eq!(
-            <ExecutorConfig<Test>>::get(executor).unwrap(),
+            <ExecutorConfig<Runtime>>::get(executor.clone()).unwrap(),
             ExecutorInfo {
                 commission: Percent::from_percent(10),
                 risk: Percent::from_percent(42)
@@ -277,15 +284,15 @@ fn anyone_can_execute_scheduled_reconfiguration() {
         );
 
         assert_last_event!(MockEvent::Executors(Event::ExecutorConfigured {
-            executor,
+            executor: executor.clone(),
             commission: Percent::from_percent(10),
             risk: Percent::from_percent(42),
         }));
 
         assert_eq!(
-            <ScheduledConfigurationRequests<Test>>::get(executor).unwrap(),
+            <ScheduledConfigurationRequests<Runtime>>::get(executor.clone()).unwrap(),
             ScheduledConfigurationRequest {
-                when_executable: Treasury::current_round()
+                when_executable: Clock::current_round()
                     .index
                     .saturating_add(fixtures.configure_executor_delay),
                 commission: Percent::from_percent(20),
@@ -294,23 +301,22 @@ fn anyone_can_execute_scheduled_reconfiguration() {
         );
 
         fast_forward_to(
-            System::block_number()
-                + (DEFAULT_ROUND_TERM * fixtures.configure_executor_delay) as u64,
+            System::block_number() + (DEFAULT_ROUND_TERM * fixtures.configure_executor_delay),
         );
 
         assert_ok!(Executors::execute_configure_executor(
             Origin::signed(other_user),
-            executor,
+            executor.clone(),
         ));
 
         assert_last_event!(MockEvent::Executors(Event::ExecutorConfigured {
-            executor,
+            executor: executor.clone(),
             commission: Percent::from_percent(20),
             risk: Percent::from_percent(32),
         }));
 
         assert_eq!(
-            <ExecutorConfig<Test>>::get(executor).unwrap(),
+            <ExecutorConfig<Runtime>>::get(executor.clone()).unwrap(),
             ExecutorInfo {
                 commission: Percent::from_percent(20),
                 risk: Percent::from_percent(32),
@@ -323,25 +329,25 @@ fn anyone_can_execute_scheduled_reconfiguration() {
 fn only_executor_can_cancel_scheduled_configuration() {
     new_test_ext().execute_with(|| {
         let fixtures = Executors::fixtures();
-        let executor = 14;
-        let other_user = 15;
+        let executor = AccountId32::from([14u8; 32]);
+        let other_user = AccountId32::from([15u8; 32]);
 
         assert_ok!(Executors::schedule_configure_executor(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             Percent::from_percent(10),
             Percent::from_percent(42),
         ));
 
         assert_ok!(Executors::schedule_configure_executor(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             Percent::from_percent(20),
             Percent::from_percent(32),
         ));
 
         assert_eq!(
-            <ScheduledConfigurationRequests<Test>>::get(executor).unwrap(),
+            <ScheduledConfigurationRequests<Runtime>>::get(executor.clone()).unwrap(),
             ScheduledConfigurationRequest {
-                when_executable: Treasury::current_round()
+                when_executable: Clock::current_round()
                     .index
                     .saturating_add(fixtures.configure_executor_delay),
                 commission: Percent::from_percent(20),
@@ -351,15 +357,15 @@ fn only_executor_can_cancel_scheduled_configuration() {
 
         assert_noop!(
             Executors::cancel_configure_executor(Origin::signed(other_user)),
-            Error::<Test>::NoSuchConfigurationRequest
+            Error::<Runtime>::NoSuchConfigurationRequest
         );
 
         assert_ok!(Executors::cancel_configure_executor(Origin::signed(
-            executor
+            executor.clone()
         )));
 
         assert_eq!(
-            <ExecutorConfig<Test>>::get(executor).unwrap(),
+            <ExecutorConfig<Runtime>>::get(executor.clone()).unwrap(),
             ExecutorInfo {
                 commission: Percent::from_percent(10),
                 risk: Percent::from_percent(42),
@@ -371,23 +377,20 @@ fn only_executor_can_cancel_scheduled_configuration() {
 #[test]
 fn cannot_double_join_candidates() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 1),
-            <Error<Test>>::CandidateExists
+            Executors::join_candidates(Origin::signed(executor.clone()), min_candidate_bond, 1),
+            Error::<Runtime>::CandidateExists
         );
     });
 }
@@ -395,18 +398,18 @@ fn cannot_double_join_candidates() {
 #[test]
 fn cannot_join_candidates_as_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_candidate_bond,
         ));
 
-        <StakerInfo<Test>>::insert(
-            staker,
+        <StakerInfo<Runtime>>::insert(
+            staker.clone(),
             StakerMetadata {
-                id: staker,
+                id: staker.clone(),
                 stakes: OrderedSet(vec![]),
                 total: 0,
                 less_total: 0,
@@ -415,8 +418,8 @@ fn cannot_join_candidates_as_staker() {
         );
 
         assert_noop!(
-            Executors::join_candidates(Origin::signed(staker), min_candidate_bond, 0),
-            <Error<Test>>::StakerExists
+            Executors::join_candidates(Origin::signed(staker.clone()), min_candidate_bond, 0),
+            Error::<Runtime>::StakerExists
         );
     });
 }
@@ -424,17 +427,14 @@ fn cannot_join_candidates_as_staker() {
 #[test]
 fn join_candidates_enforces_a_min_bond() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = 10 ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = 10 ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_noop!(
-            Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
-            <Error<Test>>::CandidateBondBelowMin
+            Executors::join_candidates(Origin::signed(executor.clone()), min_candidate_bond, 0),
+            Error::<Runtime>::CandidateBondBelowMin
         );
     });
 }
@@ -442,22 +442,19 @@ fn join_candidates_enforces_a_min_bond() {
 #[test]
 fn join_candidates_fails_on_insufficient_weight_hint() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        <CandidatePool<Test>>::set(OrderedSet(vec![Bond {
-            owner: executor,
+        <CandidatePool<Runtime>>::set(OrderedSet(vec![Bond {
+            owner: executor.clone(),
             amount: 0,
         }]));
 
         assert_noop!(
-            Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
-            <Error<Test>>::TooLowCandidateCountWeightHintJoinCandidates
+            Executors::join_candidates(Origin::signed(executor.clone()), min_candidate_bond, 0),
+            Error::<Runtime>::TooLowCandidateCountWeightHintJoinCandidates
         );
     });
 }
@@ -465,12 +462,12 @@ fn join_candidates_fails_on_insufficient_weight_hint() {
 #[test]
 fn join_candidates_fails_on_insufficient_balance() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
         assert_noop!(
-            Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
-            <Error<Test>>::InsufficientBalance
+            Executors::join_candidates(Origin::signed(executor.clone()), min_candidate_bond, 0),
+            Error::<Runtime>::InsufficientBalance
         );
     });
 }
@@ -478,40 +475,43 @@ fn join_candidates_fails_on_insufficient_balance() {
 #[test]
 fn join_candidates_successfully() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let empty_stakes: Stakes<<Test as frame_system::Config>::AccountId, Balance> =
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let empty_stakes: Stakes<<Runtime as frame_system::Config>::AccountId, Balance> =
             Default::default();
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             1
         ));
 
         assert_eq!(
-            <CandidateInfo<Test>>::get(executor).unwrap(),
+            <CandidateInfo<Runtime>>::get(executor.clone()).unwrap(),
             CandidateMetadata::new(min_candidate_bond),
         );
 
-        assert_eq!(<TopStakes<Test>>::get(executor).unwrap(), empty_stakes);
-
-        assert_eq!(<BottomStakes<Test>>::get(executor).unwrap(), empty_stakes);
+        assert_eq!(
+            <TopStakes<Runtime>>::get(executor.clone()).unwrap(),
+            empty_stakes
+        );
 
         assert_eq!(
-            <CandidatePool<Test>>::get(),
+            <BottomStakes<Runtime>>::get(executor.clone()).unwrap(),
+            empty_stakes
+        );
+
+        assert_eq!(
+            <CandidatePool<Runtime>>::get(),
             OrderedSet(vec![Bond {
-                owner: executor,
+                owner: executor.clone(),
                 amount: min_candidate_bond,
             }])
         );
 
-        assert_eq!(<Total<Test>>::get(), min_candidate_bond);
+        assert_eq!(<Total<Runtime>>::get(), min_candidate_bond);
 
         assert_last_event!(MockEvent::Executors(Event::CandidateJoined {
             account: executor,
@@ -524,23 +524,20 @@ fn join_candidates_successfully() {
 #[test]
 fn schedule_leave_candidates_fails_on_insufficient_weight_hint() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Executors::schedule_leave_candidates(Origin::signed(executor), 0),
-            <Error<Test>>::TooLowCandidateCountToLeaveCandidates
+            Executors::schedule_leave_candidates(Origin::signed(executor.clone()), 0),
+            Error::<Runtime>::TooLowCandidateCountToLeaveCandidates
         );
     });
 }
@@ -548,31 +545,30 @@ fn schedule_leave_candidates_fails_on_insufficient_weight_hint() {
 #[test]
 fn schedule_leave_candidates_successfully() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let now = Treasury::current_round().index;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let now = Clock::current_round().index;
         let leave_candidates_delay = Executors::fixtures().leave_candidates_delay;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::schedule_leave_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             1
         ),);
 
-        assert_eq!(<CandidatePool<Test>>::get().0.len(), 0);
+        assert_eq!(<CandidatePool<Runtime>>::get().0.len(), 0);
 
         assert_eq!(
-            <CandidateInfo<Test>>::get(executor).unwrap().status,
+            <CandidateInfo<Runtime>>::get(executor.clone())
+                .unwrap()
+                .status,
             ExecutorStatus::Leaving(now + leave_candidates_delay)
         );
 
@@ -587,49 +583,46 @@ fn schedule_leave_candidates_successfully() {
 #[test]
 fn execute_leave_candidates_fails_on_insufficient_weight_hint() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let staker = 15;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let staker = AccountId32::from([15u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_leave_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             1
         ));
 
         fast_forward_to(
-            ((Treasury::current_round().index + Executors::fixtures().leave_candidates_delay)
+            ((Clock::current_round().index + Executors::fixtures().leave_candidates_delay)
                 * DEFAULT_ROUND_TERM)
                 .into(),
         );
 
         assert_noop!(
-            Executors::execute_leave_candidates(Origin::signed(executor), executor, 0),
-            <Error<Test>>::TooLowCandidateStakeCountToLeaveCandidates
+            Executors::execute_leave_candidates(Origin::signed(executor.clone()), executor, 0),
+            Error::<Runtime>::TooLowCandidateStakeCountToLeaveCandidates
         );
     });
 }
@@ -638,30 +631,27 @@ fn execute_leave_candidates_fails_on_insufficient_weight_hint() {
 #[test]
 fn execute_leave_candidates_fails_if_not_leaving() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let staker = 15;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let staker = AccountId32::from([15u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Executors::execute_leave_candidates(Origin::signed(executor), executor, 0),
-            <Error<Test>>::CandidateNotLeaving
+            Executors::execute_leave_candidates(Origin::signed(executor.clone()), executor, 0),
+            Error::<Runtime>::CandidateNotLeaving
         );
     });
 }
@@ -669,43 +659,40 @@ fn execute_leave_candidates_fails_if_not_leaving() {
 #[test]
 fn execute_leave_candidates_fails_if_too_early() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let staker = 15;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let staker = AccountId32::from([15u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_leave_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             1
         ));
 
         assert_noop!(
-            Executors::execute_leave_candidates(Origin::signed(executor), executor, 1),
-            <Error<Test>>::CandidateCannotLeaveYet
+            Executors::execute_leave_candidates(Origin::signed(executor.clone()), executor, 1),
+            Error::<Runtime>::CandidateCannotLeaveYet
         );
     });
 }
@@ -713,61 +700,61 @@ fn execute_leave_candidates_fails_if_too_early() {
 #[test]
 fn anyone_can_execute_leave_candidates() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let staker = 15;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let staker = AccountId32::from([15u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_leave_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             1
         ));
 
         fast_forward_to(
-            ((Treasury::current_round().index + Executors::fixtures().leave_candidates_delay)
+            ((Clock::current_round().index + Executors::fixtures().leave_candidates_delay)
                 * DEFAULT_ROUND_TERM)
                 .into(),
         );
 
         assert_ok!(Executors::execute_leave_candidates(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             1
         ));
 
-        assert_eq!(Executors::staker_info(staker), None);
+        assert_eq!(Executors::staker_info(staker.clone()), None);
 
-        assert_eq!(Executors::top_stakes(executor), None);
+        assert_eq!(Executors::top_stakes(executor.clone()), None);
 
-        assert_eq!(Executors::bottom_stakes(executor), None);
+        assert_eq!(Executors::bottom_stakes(executor.clone()), None);
 
-        assert_eq!(Executors::candidate_info(executor), None);
+        assert_eq!(Executors::candidate_info(executor.clone()), None);
 
-        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(
+            Executors::scheduled_staking_requests(staker.clone()),
+            vec![]
+        );
 
         assert_eq!(Executors::total_value_locked(), 0);
 
@@ -782,29 +769,26 @@ fn anyone_can_execute_leave_candidates() {
 #[test]
 fn cancel_leave_candidates_fails_if_not_executor() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let staker = 15;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let staker = AccountId32::from([15u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::schedule_leave_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             1
         ),);
 
         assert_noop!(
-            Executors::cancel_leave_candidates(Origin::signed(staker), 1),
-            <Error<Test>>::NoSuchCandidate,
+            Executors::cancel_leave_candidates(Origin::signed(staker.clone()), 1),
+            Error::<Runtime>::NoSuchCandidate,
         );
     });
 }
@@ -812,23 +796,20 @@ fn cancel_leave_candidates_fails_if_not_executor() {
 #[test]
 fn cancel_leave_candidates_fails_if_not_leaving() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Executors::cancel_leave_candidates(Origin::signed(executor), 1),
-            <Error<Test>>::CandidateNotLeaving,
+            Executors::cancel_leave_candidates(Origin::signed(executor.clone()), 1),
+            Error::<Runtime>::CandidateNotLeaving,
         );
     });
 }
@@ -836,22 +817,16 @@ fn cancel_leave_candidates_fails_if_not_leaving() {
 #[test]
 fn cancel_leave_candidates_fails_if_too_low_weight_hint() {
     new_test_ext().execute_with(|| {
-        let executor1 = 14;
-        let executor2 = 13;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor1 = AccountId32::from([14u8; 32]);
+        let executor2 = AccountId32::from([13u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor1,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor1, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor2,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor2, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor1),
+            Origin::signed(executor1.clone()),
             min_candidate_bond,
             0
         ));
@@ -863,13 +838,13 @@ fn cancel_leave_candidates_fails_if_too_low_weight_hint() {
         ));
 
         assert_ok!(Executors::schedule_leave_candidates(
-            Origin::signed(executor1),
+            Origin::signed(executor1.clone()),
             2
         ),);
 
         assert_noop!(
             Executors::cancel_leave_candidates(Origin::signed(executor1), 0),
-            <Error<Test>>::TooLowCandidateCountWeightHintCancelLeaveCandidates,
+            Error::<Runtime>::TooLowCandidateCountWeightHintCancelLeaveCandidates,
         );
     });
 }
@@ -877,34 +852,31 @@ fn cancel_leave_candidates_fails_if_too_low_weight_hint() {
 #[test]
 fn cancel_leave_candidates_fails_if_already_active() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::schedule_leave_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             2
         ),);
 
-        <CandidatePool<Test>>::put(OrderedSet(vec![Bond {
-            owner: executor,
+        <CandidatePool<Runtime>>::put(OrderedSet(vec![Bond {
+            owner: executor.clone(),
             amount: min_candidate_bond + min_atomic_stake,
         }]));
 
         assert_noop!(
-            Executors::cancel_leave_candidates(Origin::signed(executor), 1),
-            <Error<Test>>::AlreadyActive,
+            Executors::cancel_leave_candidates(Origin::signed(executor.clone()), 1),
+            Error::<Runtime>::AlreadyActive,
         );
     });
 }
@@ -912,39 +884,36 @@ fn cancel_leave_candidates_fails_if_already_active() {
 #[test]
 fn cancel_leave_candidates_successfully() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::schedule_leave_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             2
         ),);
 
         assert_ok!(Executors::cancel_leave_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             1
         ));
 
         assert_eq!(
             Executors::candidate_pool().contains(&Bond {
-                owner: executor,
+                owner: executor.clone(),
                 amount: 0, // ignored by PartialEq
             }),
             true
         );
 
-        assert_eq!(Executors::candidate_info(executor).is_some(), true);
+        assert_eq!(Executors::candidate_info(executor.clone()).is_some(), true);
 
         assert_last_event!(MockEvent::Executors(Event::CandidateExitCancelled {
             candidate: executor,
@@ -955,11 +924,11 @@ fn cancel_leave_candidates_successfully() {
 #[test]
 fn go_offline_fails_if_not_candidate() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
+        let staker = AccountId32::from([15u8; 32]);
 
         assert_noop!(
-            Executors::go_offline(Origin::signed(staker)),
-            <Error<Test>>::NoSuchCandidate,
+            Executors::go_offline(Origin::signed(staker.clone())),
+            Error::<Runtime>::NoSuchCandidate,
         );
     });
 }
@@ -967,32 +936,29 @@ fn go_offline_fails_if_not_candidate() {
 #[test]
 fn go_offline_successfully() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Executors::go_offline(Origin::signed(executor)));
+        assert_ok!(Executors::go_offline(Origin::signed(executor.clone())));
 
         assert_eq!(
             Executors::candidate_pool().contains(&Bond {
-                owner: executor,
+                owner: executor.clone(),
                 amount: 0, // ignored by PartialEq
             }),
             false
         );
 
         assert_eq!(
-            Executors::candidate_info(executor).unwrap().status,
+            Executors::candidate_info(executor.clone()).unwrap().status,
             ExecutorStatus::Idle
         );
 
@@ -1005,11 +971,11 @@ fn go_offline_successfully() {
 #[test]
 fn go_online_fails_if_not_candidate() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
+        let staker = AccountId32::from([15u8; 32]);
 
         assert_noop!(
-            Executors::go_online(Origin::signed(staker)),
-            <Error<Test>>::NoSuchCandidate,
+            Executors::go_online(Origin::signed(staker.clone())),
+            Error::<Runtime>::NoSuchCandidate,
         );
     });
 }
@@ -1017,34 +983,31 @@ fn go_online_fails_if_not_candidate() {
 #[test]
 fn go_online_successfully() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Executors::go_offline(Origin::signed(executor)));
+        assert_ok!(Executors::go_offline(Origin::signed(executor.clone())));
 
-        assert_ok!(Executors::go_online(Origin::signed(executor)));
+        assert_ok!(Executors::go_online(Origin::signed(executor.clone())));
 
         assert_eq!(
             Executors::candidate_pool().contains(&Bond {
-                owner: executor,
+                owner: executor.clone(),
                 amount: 0, // ignored by PartialEq
             }),
             true
         );
 
         assert_eq!(
-            Executors::candidate_info(executor).unwrap().status,
+            Executors::candidate_info(executor.clone()).unwrap().status,
             ExecutorStatus::Active
         );
 
@@ -1057,13 +1020,19 @@ fn go_online_successfully() {
 #[test]
 fn stake_fails_on_insufficient_balance() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
         assert_noop!(
-            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 0, 0),
-            Error::<Test>::InsufficientBalance
+            Executors::stake(
+                Origin::signed(staker.clone()),
+                executor,
+                min_atomic_stake,
+                0,
+                0
+            ),
+            Error::<Runtime>::InsufficientBalance
         );
     });
 }
@@ -1071,30 +1040,27 @@ fn stake_fails_on_insufficient_balance() {
 #[test]
 fn first_staking_requires_min_bond() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Executors::stake(Origin::signed(staker), executor, 419, 0, 0),
-            Error::<Test>::StakerBondBelowMin
+            Executors::stake(Origin::signed(staker.clone()), executor, 419, 0, 0),
+            Error::<Runtime>::StakerBondBelowMin
         );
     });
 }
@@ -1102,38 +1068,35 @@ fn first_staking_requires_min_bond() {
 #[test]
 fn non_first_stakes_enforce_a_minimum() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             2 * min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::stake(Origin::signed(staker), executor, 419, 1, 1),
-            <Error<Test>>::StakeBelowMin
+            Executors::stake(Origin::signed(staker.clone()), executor, 419, 1, 1),
+            Error::<Runtime>::StakeBelowMin
         );
     });
 }
@@ -1141,24 +1104,27 @@ fn non_first_stakes_enforce_a_minimum() {
 #[test]
 fn candidates_cannot_stake() {
     new_test_ext().execute_with(|| {
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Executors::stake(Origin::signed(executor), executor, min_atomic_stake, 0, 0),
-            Error::<Test>::CandidateExists
+            Executors::stake(
+                Origin::signed(executor.clone()),
+                executor,
+                min_atomic_stake,
+                0,
+                0
+            ),
+            Error::<Runtime>::CandidateExists
         );
     });
 }
@@ -1166,38 +1132,41 @@ fn candidates_cannot_stake() {
 #[test]
 fn non_first_stakes_enforce_a_stake_count_weight_hint() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             2 * min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 1, 0),
-            <Error<Test>>::TooLowStakeCountToStake
+            Executors::stake(
+                Origin::signed(staker.clone()),
+                executor,
+                min_atomic_stake,
+                1,
+                0
+            ),
+            Error::<Runtime>::TooLowStakeCountToStake
         );
     });
 }
@@ -1205,13 +1174,13 @@ fn non_first_stakes_enforce_a_stake_count_weight_hint() {
 #[test]
 fn staker_stakings_are_capped() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             101 * min_atomic_stake,
         ));
 
@@ -1220,20 +1189,20 @@ fn staker_stakings_are_capped() {
         let mut exec = 16;
 
         for i in 1..=100 {
-            drop(<Test as Config>::Currency::deposit_creating(
-                &exec,
+            drop(Balances::deposit_creating(
+                &AccountId32::from([exec as u8; 32]),
                 min_candidate_bond,
             ));
 
             assert_ok!(Executors::join_candidates(
-                Origin::signed(exec),
+                Origin::signed(AccountId32::from([exec as u8; 32])),
                 min_candidate_bond,
                 i - 1
             ));
 
             assert_ok!(Executors::stake(
-                Origin::signed(staker),
-                exec,
+                Origin::signed(staker.clone()),
+                AccountId32::from([exec as u8; 32]),
                 min_atomic_stake,
                 stake_count,
                 candidate_stake_count
@@ -1244,8 +1213,14 @@ fn staker_stakings_are_capped() {
         }
 
         assert_noop!(
-            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 100, 100),
-            <Error<Test>>::MaxStakesExceeded
+            Executors::stake(
+                Origin::signed(staker.clone()),
+                executor,
+                min_atomic_stake,
+                100,
+                100
+            ),
+            Error::<Runtime>::MaxStakesExceeded
         );
     });
 }
@@ -1253,38 +1228,41 @@ fn staker_stakings_are_capped() {
 #[test]
 fn cannot_stake_twice_on_the_same_candidate() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             2 * min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 1, 1),
-            <Error<Test>>::AlreadyStakedCandidate
+            Executors::stake(
+                Origin::signed(staker.clone()),
+                executor,
+                min_atomic_stake,
+                1,
+                1
+            ),
+            Error::<Runtime>::AlreadyStakedCandidate
         );
     });
 }
@@ -1292,18 +1270,24 @@ fn cannot_stake_twice_on_the_same_candidate() {
 #[test]
 fn cannot_stake_on_non_candidate() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             2 * min_atomic_stake,
         ));
 
         assert_noop!(
-            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 0, 0),
-            <Error<Test>>::NoSuchCandidate
+            Executors::stake(
+                Origin::signed(staker.clone()),
+                executor,
+                min_atomic_stake,
+                0,
+                0
+            ),
+            Error::<Runtime>::NoSuchCandidate
         );
     });
 }
@@ -1311,36 +1295,33 @@ fn cannot_stake_on_non_candidate() {
 #[test]
 fn cannot_stake_with_insufficient_candidate_stake_count() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let other_staker = 44;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let other_staker = AccountId32::from([44u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &other_staker,
+        drop(Balances::deposit_creating(
+            &other_staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
@@ -1354,7 +1335,7 @@ fn cannot_stake_with_insufficient_candidate_stake_count() {
                 0,
                 1
             ),
-            <Error<Test>>::TooLowCandidateStakeCountToStake
+            Error::<Runtime>::TooLowCandidateStakeCountToStake
         );
     });
 }
@@ -1362,30 +1343,27 @@ fn cannot_stake_with_insufficient_candidate_stake_count() {
 #[test]
 fn stake_sets_storage_and_emits_events() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             2 * min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
@@ -1396,10 +1374,15 @@ fn stake_sets_storage_and_emits_events() {
             min_atomic_stake + min_candidate_bond
         );
 
-        assert_eq!(Executors::candidate_info(executor).unwrap().stake_count, 1);
+        assert_eq!(
+            Executors::candidate_info(executor.clone())
+                .unwrap()
+                .stake_count,
+            1
+        );
 
         assert_eq!(
-            Executors::staker_info(staker).unwrap().total,
+            Executors::staker_info(staker.clone()).unwrap().total,
             min_atomic_stake
         );
 
@@ -1417,38 +1400,35 @@ fn stake_sets_storage_and_emits_events() {
 #[test]
 fn schedule_revoke_stake_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             2 * min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::schedule_revoke_stake(Origin::signed(executor), executor),
-            <Error<Test>>::NoSuchStaker
+            Executors::schedule_revoke_stake(Origin::signed(executor.clone()), executor),
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -1456,43 +1436,40 @@ fn schedule_revoke_stake_fails_if_not_staker() {
 #[test]
 fn cannot_schedule_revoke_stake_twice() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             2 * min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_revoke_stake(
-            Origin::signed(staker),
-            executor
+            Origin::signed(staker.clone()),
+            executor.clone()
         ),);
 
         assert_noop!(
-            Executors::schedule_revoke_stake(Origin::signed(staker), executor),
-            <Error<Test>>::PendingStakeRequestAlreadyExists
+            Executors::schedule_revoke_stake(Origin::signed(staker.clone()), executor),
+            Error::<Runtime>::PendingStakeRequestAlreadyExists
         );
     });
 }
@@ -1500,61 +1477,57 @@ fn cannot_schedule_revoke_stake_twice() {
 #[test]
 fn schedule_revoke_stake_successfully() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             2 * min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_revoke_stake(
-            Origin::signed(staker),
-            executor
+            Origin::signed(staker.clone()),
+            executor.clone()
         ),);
 
         assert_eq!(
-            Executors::scheduled_staking_requests(executor),
+            Executors::scheduled_staking_requests(executor.clone()),
             vec![ScheduledStakingRequest {
-                staker,
+                staker: staker.clone(),
                 action: StakingAction::Revoke(min_atomic_stake),
-                when_executable: Treasury::current_round().index
+                when_executable: Clock::current_round().index
                     + Executors::fixtures().revoke_stake_delay,
             }]
         );
 
         assert_eq!(
-            Executors::staker_info(staker).unwrap().less_total,
+            Executors::staker_info(staker.clone()).unwrap().less_total,
             min_atomic_stake
         );
 
         assert_last_event!(MockEvent::Executors(Event::StakeRevocationScheduled {
-            round: Treasury::current_round().index,
+            round: Clock::current_round().index,
             staker,
             candidate: executor,
-            scheduled_exit: Treasury::current_round().index
-                + Executors::fixtures().revoke_stake_delay,
+            scheduled_exit: Clock::current_round().index + Executors::fixtures().revoke_stake_delay,
         }));
     });
 }
@@ -1562,12 +1535,12 @@ fn schedule_revoke_stake_successfully() {
 #[test]
 fn cancel_stake_request_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
 
         assert_noop!(
-            Executors::cancel_stake_request(Origin::signed(staker), executor),
-            <Error<Test>>::NoSuchStaker
+            Executors::cancel_stake_request(Origin::signed(staker.clone()), executor),
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -1575,38 +1548,32 @@ fn cancel_stake_request_fails_if_not_staker() {
 #[test]
 fn cancel_stake_request_fails_if_not_requested() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::cancel_stake_request(Origin::signed(staker), executor),
-            <Error<Test>>::NoSuchPendingStakeRequest
+            Executors::cancel_stake_request(Origin::signed(staker.clone()), executor),
+            Error::<Runtime>::NoSuchPendingStakeRequest
         );
     });
 }
@@ -1614,45 +1581,39 @@ fn cancel_stake_request_fails_if_not_requested() {
 #[test]
 fn cancel_stake_request_fails_if_origin_not_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let other_staker = 16;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let other_staker = AccountId32::from([16u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            min_atomic_stake + 1,
-        ));
+        drop(Balances::deposit_creating(&staker, min_atomic_stake + 1));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake + 1,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_staker_bond_less(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             1,
         ));
 
         assert_noop!(
             Executors::cancel_stake_request(Origin::signed(other_staker), executor,),
-            <Error<Test>>::NoSuchStaker
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -1660,50 +1621,50 @@ fn cancel_stake_request_fails_if_origin_not_staker() {
 #[test]
 fn cancel_stake_request_successfully() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_revoke_stake(
-            Origin::signed(staker),
-            executor
+            Origin::signed(staker.clone()),
+            executor.clone()
         ));
 
-        let req = Executors::scheduled_staking_requests(executor)[0].clone();
+        let req = Executors::scheduled_staking_requests(executor.clone())[0].clone();
 
         assert_ok!(Executors::cancel_stake_request(
-            Origin::signed(staker),
-            executor
+            Origin::signed(staker.clone()),
+            executor.clone()
         ));
 
-        assert_eq!(Executors::scheduled_staking_requests(executor), vec![]);
+        assert_eq!(
+            Executors::scheduled_staking_requests(executor.clone()),
+            vec![]
+        );
 
-        assert_eq!(Executors::staker_info(staker).unwrap().less_total, 0);
+        assert_eq!(
+            Executors::staker_info(staker.clone()).unwrap().less_total,
+            0
+        );
 
         assert_last_event!(MockEvent::Executors(Event::StakeRequestCancelled {
             staker,
@@ -1716,12 +1677,12 @@ fn cancel_stake_request_successfully() {
 #[test]
 fn staker_bond_more_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
 
         assert_noop!(
-            Executors::staker_bond_more(Origin::signed(staker), executor, 1),
-            <Error<Test>>::NoSuchStaker
+            Executors::staker_bond_more(Origin::signed(staker.clone()), executor, 1),
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -1729,43 +1690,37 @@ fn staker_bond_more_fails_if_not_staker() {
 #[test]
 fn staker_bond_more_fails_if_pending_stake_revoke() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_revoke_stake(
-            Origin::signed(staker),
-            executor
+            Origin::signed(staker.clone()),
+            executor.clone()
         ));
 
         assert_noop!(
-            Executors::staker_bond_more(Origin::signed(staker), executor, 1),
-            <Error<Test>>::PendingStakeRevoke
+            Executors::staker_bond_more(Origin::signed(staker.clone()), executor, 1),
+            Error::<Runtime>::PendingStakeRevoke
         );
     });
 }
@@ -1773,39 +1728,33 @@ fn staker_bond_more_fails_if_pending_stake_revoke() {
 #[test]
 fn staker_bond_more_fails_if_no_such_stake() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let other_exec = 16;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let other_exec = AccountId32::from([16u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::staker_bond_more(Origin::signed(staker), other_exec, 1),
-            <Error<Test>>::NoSuchStake
+            Executors::staker_bond_more(Origin::signed(staker.clone()), other_exec, 1),
+            Error::<Runtime>::NoSuchStake
         );
     });
 }
@@ -1813,43 +1762,39 @@ fn staker_bond_more_fails_if_no_such_stake() {
 #[test]
 fn staker_bond_more_successfully() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::staker_bond_more(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             1
         ));
 
         assert_eq!(
-            Executors::candidate_info(executor).unwrap().total_counted,
+            Executors::candidate_info(executor.clone())
+                .unwrap()
+                .total_counted,
             min_candidate_bond + min_atomic_stake + 1
         );
 
@@ -1859,7 +1804,7 @@ fn staker_bond_more_successfully() {
         );
 
         assert_eq!(
-            Executors::staker_info(staker).unwrap().total,
+            Executors::staker_info(staker.clone()).unwrap().total,
             min_atomic_stake + 1
         );
 
@@ -1875,12 +1820,12 @@ fn staker_bond_more_successfully() {
 #[test]
 fn schedule_staker_bond_less_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
 
         assert_noop!(
-            Executors::schedule_staker_bond_less(Origin::signed(staker), executor, 1),
-            <Error<Test>>::NoSuchStaker
+            Executors::schedule_staker_bond_less(Origin::signed(staker.clone()), executor, 1),
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -1888,43 +1833,37 @@ fn schedule_staker_bond_less_fails_if_not_staker() {
 #[test]
 fn schedule_staker_bond_less_fails_if_pending_stake_request_exists() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_revoke_stake(
-            Origin::signed(staker),
-            executor
+            Origin::signed(staker.clone()),
+            executor.clone()
         ));
 
         assert_noop!(
-            Executors::schedule_staker_bond_less(Origin::signed(staker), executor, 1),
-            <Error<Test>>::PendingStakeRequestAlreadyExists
+            Executors::schedule_staker_bond_less(Origin::signed(staker.clone()), executor, 1),
+            Error::<Runtime>::PendingStakeRequestAlreadyExists
         );
     });
 }
@@ -1932,39 +1871,33 @@ fn schedule_staker_bond_less_fails_if_pending_stake_request_exists() {
 #[test]
 fn schedule_staker_bond_less_fails_if_no_such_stake() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let other_exec = 16;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let other_exec = AccountId32::from([16u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::schedule_staker_bond_less(Origin::signed(staker), other_exec, 1),
-            <Error<Test>>::NoSuchStake
+            Executors::schedule_staker_bond_less(Origin::signed(staker.clone()), other_exec, 1),
+            Error::<Runtime>::NoSuchStake
         );
     });
 }
@@ -1972,30 +1905,24 @@ fn schedule_staker_bond_less_fails_if_no_such_stake() {
 #[test]
 fn schedule_staker_bond_less_cannot_decrease_below_min_bond() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
@@ -2003,11 +1930,11 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_bond() {
 
         assert_noop!(
             Executors::schedule_staker_bond_less(
-                Origin::signed(staker),
+                Origin::signed(staker.clone()),
                 executor,
                 min_atomic_stake
             ),
-            <Error<Test>>::StakerBondBelowMin
+            Error::<Runtime>::StakerBondBelowMin
         );
     });
 }
@@ -2016,30 +1943,24 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_bond() {
 #[test]
 fn schedule_staker_bond_less_cannot_decrease_below_min_stake() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            2 * min_atomic_stake,
-        ));
+        drop(Balances::deposit_creating(&staker, 2 * min_atomic_stake));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
@@ -2047,11 +1968,11 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_stake() {
 
         assert_noop!(
             Executors::schedule_staker_bond_less(
-                Origin::signed(staker),
+                Origin::signed(staker.clone()),
                 executor,
                 min_atomic_stake / 2
             ),
-            <Error<Test>>::StakeBelowMin
+            Error::<Runtime>::StakeBelowMin
         );
     });
 }
@@ -2059,54 +1980,51 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_stake() {
 #[test]
 fn schedule_staker_bond_less_successfully() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
-            min_atomic_stake + 1,
-        ));
+        drop(Balances::deposit_creating(&staker, min_atomic_stake + 1));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake + 1,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_staker_bond_less(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             1
         ));
 
         let when_executable =
-            Treasury::current_round().index + Executors::fixtures().revoke_stake_delay;
+            Clock::current_round().index + Executors::fixtures().revoke_stake_delay;
 
         assert_eq!(
-            Executors::scheduled_staking_requests(executor),
+            Executors::scheduled_staking_requests(executor.clone()),
             vec![ScheduledStakingRequest {
-                staker,
+                staker: staker.clone(),
                 action: StakingAction::Decrease(1),
                 when_executable,
             }]
         );
 
-        assert_eq!(Executors::staker_info(staker).unwrap().less_total, 1);
+        assert_eq!(
+            Executors::staker_info(staker.clone()).unwrap().less_total,
+            1
+        );
 
         assert_last_event!(MockEvent::Executors(Event::StakeDecreaseScheduled {
             staker,
@@ -2120,44 +2038,45 @@ fn schedule_staker_bond_less_successfully() {
 #[test]
 fn execute_stake_request_fails_if_no_such_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake + 1,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake + 1,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_staker_bond_less(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             1
         ));
 
         assert_noop!(
-            Executors::execute_stake_request(Origin::signed(staker), 419, executor),
-            <Error<Test>>::NoSuchStaker
+            Executors::execute_stake_request(
+                Origin::signed(staker.clone()),
+                AccountId32::from([41u8; 32]),
+                executor
+            ),
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -2165,38 +2084,35 @@ fn execute_stake_request_fails_if_no_such_staker() {
 #[test]
 fn execute_stake_request_fails_if_no_such_request() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake + 1,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake + 1,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::execute_stake_request(Origin::signed(staker), staker, executor),
-            <Error<Test>>::NoSuchPendingStakeRequest
+            Executors::execute_stake_request(Origin::signed(staker.clone()), staker, executor),
+            Error::<Runtime>::NoSuchPendingStakeRequest
         );
     });
 }
@@ -2204,46 +2120,43 @@ fn execute_stake_request_fails_if_no_such_request() {
 #[test]
 fn execute_stake_request_fails_if_not_due_yet() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake + 1,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake + 1,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_staker_bond_less(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             1
         ));
 
         fast_forward_to(419);
 
         assert_noop!(
-            Executors::execute_stake_request(Origin::signed(staker), staker, executor),
-            <Error<Test>>::PendingStakeRequestNotDueYet
+            Executors::execute_stake_request(Origin::signed(staker.clone()), staker, executor),
+            Error::<Runtime>::PendingStakeRequestNotDueYet
         );
     });
 }
@@ -2251,62 +2164,62 @@ fn execute_stake_request_fails_if_not_due_yet() {
 #[test]
 fn executing_staking_action_revoke_successfully_and_leaving_stakers() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_revoke_stake(
-            Origin::signed(staker),
-            executor
+            Origin::signed(staker.clone()),
+            executor.clone()
         ));
 
         fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
         assert_ok!(Executors::execute_stake_request(
-            Origin::signed(staker),
-            staker,
-            executor
+            Origin::signed(staker.clone()),
+            staker.clone(),
+            executor.clone().clone()
         ));
 
-        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(
+            Executors::scheduled_staking_requests(staker.clone()),
+            vec![]
+        );
 
-        assert_eq!(Executors::staker_info(staker), None);
+        assert_eq!(Executors::staker_info(staker.clone()), None);
 
         assert_last_n_events!(
             2,
             vec![
                 Event::StakeRevoked {
-                    staker,
+                    staker: staker.clone(),
                     candidate: executor,
                     unstaked: min_atomic_stake,
                 },
                 Event::StakerLeft {
-                    staker,
+                    staker: staker.clone(),
                     unstaked: min_atomic_stake,
                 }
             ]
@@ -2317,47 +2230,44 @@ fn executing_staking_action_revoke_successfully_and_leaving_stakers() {
 #[test]
 fn executing_staking_action_decrease_successfully() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake + 1,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone().clone(),
             min_atomic_stake + 1,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_staker_bond_less(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             1,
         ));
 
         fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
         assert_ok!(Executors::execute_stake_request(
-            Origin::signed(staker),
-            staker,
-            executor
+            Origin::signed(staker.clone()),
+            staker.clone(),
+            executor.clone()
         ));
 
         assert_eq!(
@@ -2365,15 +2275,18 @@ fn executing_staking_action_decrease_successfully() {
             min_candidate_bond + min_atomic_stake
         );
 
-        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(
+            Executors::scheduled_staking_requests(staker.clone()),
+            vec![]
+        );
 
         assert_eq!(
-            Executors::staker_info(staker).unwrap().total,
+            Executors::staker_info(staker.clone()).unwrap().total,
             min_atomic_stake
         );
 
         assert_last_event!(MockEvent::Executors(Event::StakeDecreased {
-            staker,
+            staker: staker.clone(),
             candidate: executor,
             amount: 1,
             in_top: true,
@@ -2384,47 +2297,44 @@ fn executing_staking_action_decrease_successfully() {
 #[test]
 fn anyone_can_execute_staking_requests() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake + 1,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_staker_bond_less(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             1,
         ));
 
         fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
         assert_ok!(Executors::execute_stake_request(
-            Origin::signed(419),
-            staker,
-            executor
+            Origin::signed(AccountId32::from([255u8; 32])),
+            staker.clone(),
+            executor.clone()
         ));
     });
 }
@@ -2432,11 +2342,11 @@ fn anyone_can_execute_staking_requests() {
 #[test]
 fn schedule_leave_stakers_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
+        let staker = AccountId32::from([15u8; 32]);
 
         assert_noop!(
-            Executors::schedule_leave_stakers(Origin::signed(staker)),
-            <Error<Test>>::NoSuchStaker
+            Executors::schedule_leave_stakers(Origin::signed(staker.clone())),
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -2444,43 +2354,40 @@ fn schedule_leave_stakers_fails_if_not_staker() {
 #[test]
 fn schedule_leave_stakers_fails_if_already_leaving() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_ok!(Executors::schedule_revoke_stake(
-            Origin::signed(staker),
+            Origin::signed(staker.clone()),
             executor
         ));
 
         assert_noop!(
-            Executors::schedule_leave_stakers(Origin::signed(staker)),
-            <Error<Test>>::StakerAlreadyLeaving
+            Executors::schedule_leave_stakers(Origin::signed(staker.clone())),
+            Error::<Runtime>::StakerAlreadyLeaving
         );
     });
 }
@@ -2488,49 +2395,50 @@ fn schedule_leave_stakers_fails_if_already_leaving() {
 #[test]
 fn schedule_leave_stakers_successfully() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
-        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
-
-        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(
+            staker.clone()
+        )));
 
         assert_eq!(
-            Executors::staker_info(staker).unwrap().less_total,
+            Executors::scheduled_staking_requests(staker.clone()),
+            vec![]
+        );
+
+        assert_eq!(
+            Executors::staker_info(staker.clone()).unwrap().less_total,
             min_atomic_stake
         );
 
         assert_last_event!(MockEvent::Executors(Event::StakerExitScheduled {
-            round: Treasury::current_round().index,
-            staker,
-            scheduled_exit: Treasury::current_round().index
-                + Executors::fixtures().revoke_stake_delay
+            round: Clock::current_round().index,
+            staker: staker.clone(),
+            scheduled_exit: Clock::current_round().index + Executors::fixtures().revoke_stake_delay
         }));
     });
 }
@@ -2538,30 +2446,31 @@ fn schedule_leave_stakers_successfully() {
 #[test]
 fn execute_leave_stakers_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Executors::execute_leave_stakers(Origin::signed(419), staker, 1),
-            <Error<Test>>::NoSuchStaker
+            Executors::execute_leave_stakers(
+                Origin::signed(AccountId32::from([41u8; 32])),
+                staker.clone(),
+                1
+            ),
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -2569,42 +2478,41 @@ fn execute_leave_stakers_fails_if_not_staker() {
 #[test]
 fn execute_leave_stakers_fails_with_insufficient_weight_hint() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
-        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(
+            staker.clone()
+        )));
 
         fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
         assert_noop!(
-            Executors::execute_leave_stakers(Origin::signed(staker), staker, 0),
-            <Error<Test>>::TooLowStakeCountToLeaveStakers
+            Executors::execute_leave_stakers(Origin::signed(staker.clone()), staker.clone(), 0),
+            Error::<Runtime>::TooLowStakeCountToLeaveStakers
         );
     });
 }
@@ -2612,40 +2520,39 @@ fn execute_leave_stakers_fails_with_insufficient_weight_hint() {
 #[test]
 fn execute_leave_stakers_fails_if_not_due_yet() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
-        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(
+            staker.clone()
+        )));
 
         assert_noop!(
-            Executors::execute_leave_stakers(Origin::signed(staker), staker, 1),
-            <Error<Test>>::StakerCannotLeaveYet
+            Executors::execute_leave_stakers(Origin::signed(staker.clone()), staker.clone(), 1),
+            Error::<Runtime>::StakerCannotLeaveYet
         );
     });
 }
@@ -2653,41 +2560,40 @@ fn execute_leave_stakers_fails_if_not_due_yet() {
 #[test]
 fn anyone_can_execute_leave_stakers() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
-        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(
+            staker.clone()
+        )));
 
         fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
         assert_ok!(Executors::execute_leave_stakers(
-            Origin::signed(419),
+            Origin::signed(AccountId32::from([41u8; 32])),
             staker,
             1
         ));
@@ -2697,40 +2603,39 @@ fn anyone_can_execute_leave_stakers() {
 #[test]
 fn cancel_leave_stakers_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
-        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(
+            staker.clone()
+        )));
 
         assert_noop!(
-            Executors::cancel_leave_stakers(Origin::signed(419)),
-            <Error<Test>>::NoSuchStaker
+            Executors::cancel_leave_stakers(Origin::signed(AccountId32::from([41u8; 32]))),
+            Error::<Runtime>::NoSuchStaker
         );
     });
 }
@@ -2738,38 +2643,35 @@ fn cancel_leave_stakers_fails_if_not_staker() {
 #[test]
 fn cancel_leave_stakers_fails_if_not_leaving() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
         assert_noop!(
-            Executors::cancel_leave_stakers(Origin::signed(staker)),
-            <Error<Test>>::StakerNotLeaving
+            Executors::cancel_leave_stakers(Origin::signed(staker.clone())),
+            Error::<Runtime>::StakerNotLeaving
         );
     });
 }
@@ -2777,44 +2679,48 @@ fn cancel_leave_stakers_fails_if_not_leaving() {
 #[test]
 fn cancel_leave_stakers_successfully() {
     new_test_ext().execute_with(|| {
-        let staker = 15;
-        let executor = 14;
-        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
-        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
+        let staker = AccountId32::from([15u8; 32]);
+        let executor = AccountId32::from([14u8; 32]);
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u128;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u128;
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &executor,
-            min_candidate_bond,
-        ));
+        drop(Balances::deposit_creating(&executor, min_candidate_bond));
 
-        drop(<Test as Config>::Currency::deposit_creating(
-            &staker,
+        drop(Balances::deposit_creating(
+            &staker.clone(),
             min_atomic_stake,
         ));
 
         assert_ok!(Executors::join_candidates(
-            Origin::signed(executor),
+            Origin::signed(executor.clone()),
             min_candidate_bond,
             0
         ));
 
         assert_ok!(Executors::stake(
-            Origin::signed(staker),
-            executor,
+            Origin::signed(staker.clone()),
+            executor.clone(),
             min_atomic_stake,
             0,
             0
         ));
 
-        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(
+            staker.clone()
+        )));
 
         fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
-        assert_ok!(Executors::cancel_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::cancel_leave_stakers(Origin::signed(
+            staker.clone()
+        )));
 
-        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(
+            Executors::scheduled_staking_requests(staker.clone()),
+            vec![]
+        );
 
-        assert_eq!(Executors::staker_info(staker).is_some(), true);
+        assert_eq!(Executors::staker_info(staker.clone()).is_some(), true);
 
         assert_last_event!(MockEvent::Executors(Event::StakerExitCancelled { staker }));
     });

@@ -173,7 +173,7 @@ where
         _origin: &T::Origin,
         _xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Err("Local State Not implemented").map_err(|e| e.into())
     }
 }
 
@@ -182,7 +182,9 @@ impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance>
         _payee: &T::AccountId,
         _module: &Module,
     ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(Remunerated {
+            remuneration_id: None,
+        })
     }
 
     fn try_remunerate_exact<Module: ModuleOperations<T, Balance>>(
@@ -190,7 +192,9 @@ impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance>
         _amount: Balance,
         _module: &Module,
     ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(Remunerated {
+            remuneration_id: None,
+        })
     }
 
     fn try_finalize(_ledger_id: T::Hash, _outcome: Outcome) -> DispatchResult {
@@ -220,7 +224,7 @@ where
     fn invoke(
         _args: PrecompileArgs<T, Balance>,
     ) -> Result<PrecompileInvocation<T, Balance>, DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Err("Precompile Invocation Not implemented").map_err(|e| e.into())
     }
 }
 
@@ -237,7 +241,7 @@ impl<T: frame_system::Config, Balance: Encode + Decode> ThreeVm<T, Balance> for 
         >,
         DispatchError,
     > {
-        Err("Not implemented").map_err(|e| e.into())
+        Err("Registry Peek Not implemented").map_err(|e| e.into())
     }
 
     fn from_registry<Module, ModuleGen>(
@@ -248,36 +252,36 @@ impl<T: frame_system::Config, Balance: Encode + Decode> ThreeVm<T, Balance> for 
         Module: ModuleOperations<T, Balance>,
         ModuleGen: Fn(Vec<u8>) -> Module,
     {
-        Err("Not implemented").map_err(|e| e.into())
+        Err("From Registry Not implemented").map_err(|e| e.into())
     }
 
     fn instantiate_check(_kind: &ContractType) -> Result<(), DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(())
     }
 
     fn storage_check(_kind: &ContractType) -> Result<(), DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(())
     }
 
     fn volatile_check(_kind: &ContractType) -> Result<(), DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(())
     }
 
     fn remunerable_check(_kind: &ContractType) -> Result<(), DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(())
     }
 
     fn try_persist_author(
         _contract: &<T as frame_system::Config>::AccountId,
         _author: Option<&AuthorInfo<<T as frame_system::Config>::AccountId, Balance>>,
     ) -> Result<(), DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(())
     }
 
     fn try_remove_author(
         _conztract: &<T as frame_system::Config>::AccountId,
     ) -> Result<(), DispatchError> {
-        Err("Not implemented").map_err(|e| e.into())
+        Ok(())
     }
 }
 
