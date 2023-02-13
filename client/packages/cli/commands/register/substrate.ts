@@ -1,5 +1,5 @@
 import{ ApiPromise, Keyring, WsProvider } from'@polkadot/api';
-import { encodings } from "@t3rn/sdk"
+import { Encodings } from "@t3rn/sdk"
 import "@t3rn/types"
 // @ts-ignore
 import { GatewayGenesisConfig, GatewayABIConfig, GatewaySysProps } from '@polkadot/types/lookup'
@@ -114,7 +114,7 @@ const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise,
     )
 
     const finalityProof = await target.rpc.grandpa.proveFinality(registrationHeight);
-    const authorities= encodings.substrate.decoders.extractAuthoritySetFromFinalityProof(finalityProof)
+    const authorities= Encodings.Substrate.Decoders.extractAuthoritySetFromFinalityProof(finalityProof)
     const registratationHeaderHash = await target.rpc.chain.getBlockHash(registrationHeight);
     const targetAt = await target.at(registratationHeaderHash);
     const authoritySetId = await targetAt.query.grandpa.currentSetId()
@@ -134,7 +134,7 @@ const fetchConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatew
     )
 
     const finalityProof = await target.rpc.grandpa.proveFinality(registrationHeight);
-    const authorities = encodings.substrate.decoders.extractAuthoritySetFromFinalityProof(finalityProof)
+    const authorities = Encodings.Substrate.Decoders.extractAuthoritySetFromFinalityProof(finalityProof)
     const authoritySetId = await target.query.grandpa.currentSetId()
     return {
         registrationHeader: circuit.createType('Bytes', registrationHeader.toHex()),
