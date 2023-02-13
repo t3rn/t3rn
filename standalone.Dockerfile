@@ -1,6 +1,5 @@
 FROM docker.io/paritytech/ci-linux:production AS build
 
-ADD /3vm /3vm
 ADD /finality-verifiers /finality-verifiers
 ADD /node/standalone /node/standalone
 ADD /pallets /pallets
