@@ -1,5 +1,5 @@
-import { encodings } from "@t3rn/sdk";
-import {fetchBestFinalizedHash, fetchLatestPossibleParachainHeader, getStorageProof} from "../../utils/substrate";
+import { Encodings } from "@t3rn/sdk";
+import {fetchBestFinalizedHash, fetchLatestPossibleParachainHeader, getStorageProof} from "../../utils/substrate"
 const axios = require('axios').default;
 
 export const submitParachainHeaders = async (circuit: any, target: any, gatewayData: any) => {
@@ -20,7 +20,7 @@ const generateBatchProof = async (circuit: any, target: any, gatewayId: string, 
         // get finalityProof element of epoch that contains block #from
         const finalityProof = await target.rpc.grandpa.proveFinality(from)
         // decode finality proof
-        let { justification, headers } = encodings.substrate.decoders.finalityProofDecode(finalityProof)
+        let { justification, headers } = Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
         let signed_header = headers.pop()
 
         // query from header again, as its not part of the proof, and concat
@@ -34,7 +34,7 @@ const generateBatchProof = async (circuit: any, target: any, gatewayId: string, 
         const relaychainHeaderData = circuit.createType("RelaychainHeaderData<Header>", {
             signed_header,
             range,
-            justification: encodings.substrate.decoders.justificationDecode(justification)
+            justification: Encodings.Substrate.Decoders.justificationDecode(justification)
         })
 
         //push to transaction queue
@@ -51,7 +51,7 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
         latestRelayChainHeader.toJSON(),
         gatewayData.registrationData.parachain.id
     )
-    const decodedParachainHeader = encodings.substrate.decoders.headerDecode(parachainHeader.toJSON())
+    const decodedParachainHeader = Encodings.Substrate.Decoders.headerDecode(parachainHeader.toJSON())
     const parachainHeightCircuit = await fetchGatewayHeight(gatewayData.id, circuit)
     console.log("Latest Para Finalized Height:", parachainHeightCircuit)
     console.log("Newest potential header:", decodedParachainHeader.number.toNumber())

@@ -5,7 +5,7 @@ import { setOperational } from "./commands/operational";
 import {onExtrinsicTrigger} from "./commands/onExtrinsicTrigger";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";
-import { Sdk, converters } from "@t3rn/sdk/dist/src";
+import { Sdk, Converters } from "@t3rn/sdk/dist/src";
 
 import { Command } from 'commander';
 import {bid} from "./commands/bid";
@@ -249,7 +249,7 @@ class CircuitCLI {
             deepCopy = {...data};
         }
 
-        let encoded = converters.utils.encodeExport(deepCopy, transactionType, submissionHeight as string);
+        let encoded = Converters.Utils.encodeExport(deepCopy, transactionType, submissionHeight as string);
         fs.writeFile(fileName, JSON.stringify(encoded, null, 4), (err) => {
             if(err) {
                 console.error("Error: Failed to export data! Err:", err);
