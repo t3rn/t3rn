@@ -29,5 +29,6 @@ docs/ts-sdk
 
 .direnv
 
-
+# ignore dev folders
 **/node_modules
+**/parachains-integration-tests
