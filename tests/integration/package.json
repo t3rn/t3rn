@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "jest",
-    "start": "npx ts-node index.ts"
+    "send": "npx ts-node index.ts"
   },
   "keywords": [],
   "author": "",

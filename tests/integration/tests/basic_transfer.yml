@@ -22,7 +22,10 @@ tests:
                 call: transfer
                 args: [{ Id: *bob_account }, *amount]
                 events:
+                  - name: balances.Withdraw
                   - name: balances.Deposit
+                  - name: transactionPayment.TransactionFeePaid
+                  - name: system.ExtrinsicSuccess
     after:
       - name: Get Bob's balance after the transfer
         actions:
