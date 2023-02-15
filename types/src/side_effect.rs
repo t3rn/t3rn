@@ -1,4 +1,7 @@
-use crate::abi::Type as AbiType;
+use crate::{
+    abi::{decode_buf2val, GatewayABIConfig, Type as AbiType, Type},
+    interface::SideEffectInterface,
+};
 use bytes::Buf;
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::{
@@ -10,11 +13,12 @@ use scale_info::{
 use num::Zero;
 #[cfg(feature = "runtime")]
 use scale_info::prelude::collections::VecDeque;
+use sp_runtime::DispatchError;
 
 pub type TargetId = [u8; 4];
-pub type EventSignature = Vec<u8>;
-pub type SideEffectName = Vec<u8>;
-type Bytes = Vec<u8>;
+pub type Bytes = Vec<u8>;
+pub type EventSignature = Bytes;
+pub type SideEffectName = Bytes;
 
 pub const COMPOSABLE_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"comp";
 pub const WASM_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"wasm";
@@ -97,6 +101,139 @@ where
 
     pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
         id.as_ref().to_vec()
+    }
+
+    pub fn read_interface(&self) -> Result<SideEffectInterface, DispatchError> {
+        let decoded_action: [u8; 4] = decode_buf2val(self.encoded_action.to_owned())?;
+
+        let sfx_interface: SideEffectInterface = match &decoded_action {
+            DATA_SIDE_EFFECT_ID => crate::standard::get_data_interface(),
+            TRANSFER_SIDE_EFFECT_ID => crate::standard::get_transfer_interface(),
+            ORML_TRANSFER_SIDE_EFFECT_ID
+            | ASSETS_TRANSFER_SIDE_EFFECT_ID
+            | MULTI_TRANSFER_SIDE_EFFECT_ID => crate::standard::get_transfer_assets_interface(),
+            SWAP_SIDE_EFFECT_ID => crate::standard::get_swap_interface(),
+            // todo: add remove liquidity interface
+            ADD_LIQUIDITY_SIDE_EFFECT_ID => crate::standard::get_add_liquidity_interface(),
+            EVM_CALL_SIDE_EFFECT_ID => crate::standard::get_call_evm_interface(),
+            WASM_CALL_SIDE_EFFECT_ID => crate::standard::get_call_wasm_interface(),
+            COMPOSABLE_CALL_SIDE_EFFECT_ID | CALL_SIDE_EFFECT_ID =>
+                crate::standard::get_call_composable_interface(),
+            &_ => return Err("SFX::validate - type not recognized".into()),
+        };
+
+        Ok(sfx_interface)
+    }
+
+    pub fn validate(&self, abi: GatewayABIConfig) -> Result<TargetId, DispatchError> {
+        // Validate optional insurance as the required last encoded argument for each SFX
+        let last_arg = self
+            .encoded_args
+            .last()
+            .ok_or("SFX::validate - Empty encoded args")?;
+
+        let arg_insurance_and_reward: [u128; 2] = decode_buf2val(last_arg.to_owned())?;
+
+        if arg_insurance_and_reward[0].encode() != self.insurance.encode() {
+            return Err("SFX::validate - Invalid insurance".into())
+        }
+        if arg_insurance_and_reward[1].encode() != self.max_reward.encode() {
+            return Err("SFX::validate - Invalid reward".into())
+        }
+
+        let decoded_action: [u8; 4] = decode_buf2val(self.encoded_action.to_owned())?;
+
+        let sfx_interface: SideEffectInterface = self.read_interface()?;
+
+        // Validate the encoded args against the ABI
+        for (index, arg) in self.encoded_args.iter().enumerate() {
+            let abi_type: &Type = sfx_interface
+                .argument_abi
+                .get(index)
+                .ok_or("SFX::validate - Invalid number of encoded args")?;
+            abi_type.eval_abi(arg.to_owned(), &abi)?;
+        }
+
+        Ok(decoded_action)
+    }
+
+    pub fn match_event_property_name_with_input_argument_name(
+        &self,
+        event_property_name: &Vec<u8>,
+        sfx_interface: &SideEffectInterface,
+    ) -> Result<Bytes, DispatchError> {
+        match sfx_interface.argument_to_state_mapper.iter().position(|arg_name| {
+            arg_name == event_property_name
+        }) {
+            Some(index) => {
+                match self.encoded_args.get(index) {
+                    Some(encoded_bytes) => Ok(encoded_bytes.to_owned()),
+                    _ => Err("SFX::match_event_property_name_with_input_argument_name - Invalid argument index".into()),
+                }
+            },
+            None => Err("SFX::match_event_property_name_with_input_argument_name - Argument name doesn't match input parameter".into()),
+        }
+    }
+
+    pub fn confirm(
+        &self,
+        output_payload_arguments: Vec<Vec<u8>>,
+        security_lvl: SecurityLvl,
+        security_coordinates: Bytes,
+        source: Bytes,
+    ) -> Result<(), DispatchError> {
+        let sfx_interface: SideEffectInterface = self.read_interface()?;
+
+        let mut was_source_validated: bool = false;
+        let expected_event_signature = &sfx_interface.get_confirming_events()[0];
+        // Handle special case for vec!["<InclusionOnly>"]
+        //  where the execution confirmation isn't required hence the side effect doesn't produce
+        //  any event or event's arguments can't be known beforehand - like GetDataSideEffect
+        if *expected_event_signature == b"<InclusionOnly>".encode() {
+            return Ok(())
+        }
+
+        let (_, property_names) = crate::abi::extract_property_names_from_signature_as_bytes(
+            expected_event_signature.encode(),
+        )?;
+
+        for (output_argument_index, property_name) in property_names.iter().enumerate() {
+            //  Check each argument of decoded "encoded_remote_events" against the values from State
+            //      Don't check arguments starts with "_" - (95u8). In case of dirty actions we don't know / care who the author is
+            if property_name.is_empty() || property_name[0] == 95u8 {
+                if property_name == b"_source" {
+                    if security_coordinates != source.clone() {
+                        return Err(
+                            "Confirmation Failed - received event confirmed by different entity than selected Executor".into(),
+                        )
+                    }
+                    was_source_validated = true;
+                }
+                continue
+            }
+
+            let encoded_input_argument = self.match_event_property_name_with_input_argument_name(
+                property_name,
+                &sfx_interface,
+            )?;
+
+            if output_payload_arguments[output_argument_index] != encoded_input_argument {
+                return Err(
+                    "Confirmation Failed - received event arguments differ from expected input"
+                        .into(),
+                )
+            }
+        }
+
+        if security_lvl == SecurityLvl::Escrow {
+            if !was_source_validated {
+                return Err(
+                    "Confirmation Failed - Escrowed SFX require source to be correctly derived from incoming events".into(),
+                )
+            }
+        }
+
+        Ok(())
     }
 }
 

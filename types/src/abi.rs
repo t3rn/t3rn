@@ -15,6 +15,7 @@ use crate::Bytes;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::DispatchError;
 
 #[cfg(feature = "runtime")]
 use sp_runtime::RuntimeString;
@@ -644,7 +645,7 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
 
 pub fn extract_property_names_from_signature_as_bytes(
     signature: Vec<u8>,
-) -> Result<(Vec<u8>, Vec<Vec<u8>>), &'static str> {
+) -> Result<(Vec<u8>, Vec<Vec<u8>>), DispatchError> {
     const BEGIN_ARGS_CHAR: u8 = b'(';
     const END_ARGS_CHAR: u8 = b')';
     const COMMA_SEPARATOR: u8 = b',';

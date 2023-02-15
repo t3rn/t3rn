@@ -3,6 +3,8 @@
 use scale_info::prelude::vec::Vec;
 
 pub mod abi;
+pub mod interface;
 pub mod side_effect;
+pub mod standard;
 
 pub type Bytes = Vec<u8>;
