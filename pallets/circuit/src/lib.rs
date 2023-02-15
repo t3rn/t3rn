@@ -892,23 +892,12 @@ impl<T: Config> Pallet<T> {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
 
             let allowed_side_effects = <T as Config>::Xdns::allowed_side_effects(&sfx.target);
+            let decoded_sfx_type = sfx.validate(gateway_abi)?;
 
-            local_ctx
-                .use_protocol
-                .notice_gateway(sfx.target, allowed_side_effects);
-
-            local_ctx
-                .use_protocol
-                .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
-                    sfx.clone(),
-                    gateway_abi,
-                    &mut local_ctx.local_state,
-                    local_ctx.xtx_id.as_ref(),
-                    index as u32
-                ).map_err(|e| {
-                log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
-                e
-            })?;
+            allowed_side_effects
+                .iter()
+                .find(|(&x, _)| x == decoded_sfx_type)
+                .ok_or("SFX not allowed on that target")?;
 
             if let Some(next) = side_effects.get(index + 1) {
                 if sfx.reward_asset_id != next.reward_asset_id {
@@ -918,30 +907,6 @@ impl<T: Config> Pallet<T> {
                 }
             }
 
-            let (insurance, reward) = if let Some(insurance_and_reward) =
-                UniversalSideEffectsProtocol::ensure_required_insurance::<
-                    T::AccountId,
-                    T::BlockNumber,
-                    BalanceOf<T>,
-                    SystemHashing<T>,
-                >(
-                    sfx.clone(),
-                    &mut local_ctx.local_state,
-                    local_ctx.xtx_id.as_ref(),
-                    index as u32,
-                )? {
-                (insurance_and_reward[0], insurance_and_reward[1])
-            } else {
-                return Err(
-                    "SFX must have its insurance and reward linked into the last arguments list",
-                )
-            };
-            if sfx.max_reward != reward {
-                return Err("Side_effect max_reward must be equal to reward of Optional Insurance")
-            }
-            if sfx.insurance != insurance {
-                return Err("Side_effect insurance must be equal to reward of Optional Insurance")
-            }
             let submission_target_height = T::Portal::get_latest_finalized_height(sfx.target)?
                 .ok_or("target height not found")?;
 
@@ -1069,21 +1034,13 @@ impl<T: Config> Pallet<T> {
         // ToDo: handle misbehaviour
         log::debug!("SFX confirmation params: {:?}", params);
 
-        let side_effect_interface =
-            <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
-
-        log::debug!("Found SFX interface!");
-
-        confirmation_plug::<T>(
-            &Box::new(side_effect_interface.unwrap()),
+        fsx.input.confirm(
             params,
-            source,
-            local_state,
-            Some(sfx_id.as_ref().to_vec()),
             fsx.security_lvl,
             <T as Config>::Xdns::get_gateway_security_coordinates(&fsx.input.target)?,
-        )
-        .map_err(|_| "Execution can't be confirmed.")?;
+            source,
+        )?;
+
         log::debug!("confirmation plug ok");
 
         Ok(())
