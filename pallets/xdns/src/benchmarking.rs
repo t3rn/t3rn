@@ -4,6 +4,9 @@ use super::*;
 use crate::Pallet as XDNS;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
+use sp_std::prelude::*;
+use t3rn_primitives::xdns::Xdns;
+use t3rn_primitives::GatewaySysProps;
 
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
@@ -17,6 +20,7 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     impl_version: 1,
     apis: sp_version::create_apis_vec!([]),
     transaction_version: 1,
+    state_version: 0,
 };
 
 benchmarks! {

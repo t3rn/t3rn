@@ -8,13 +8,14 @@
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
 use sp_runtime::traits::Hash;
-use sp_std::{collections::btree_map::BTreeMap, prelude::*};
-pub use t3rn_primitives::{
+use sp_std::{prelude::*};
+pub use t3rn_types::{
     abi::{GatewayABIConfig, Type},
-    protocol::SideEffectProtocol,
     side_effect::{EventSignature, SideEffectId, SideEffectName},
-    ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
+
+pub use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,};
+
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
 
@@ -44,8 +45,8 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
+    use t3rn_types::interface::SideEffectInterface;
     use t3rn_primitives::{
-        side_effect::interface::SideEffectInterface,
         xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
         Bytes, ChainId, GatewaySysProps, GatewayType, GatewayVendor,
     };
@@ -305,35 +306,10 @@ pub mod pallet {
         /// returns a mapping of all allowed side_effects of a gateway.
         fn allowed_side_effects(
             gateway_id: &ChainId,
-        ) -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> {
-            let mut allowed_side_effects: BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> =
-                BTreeMap::new();
-
-            if let Some(xdns_entry) = <XDNSRegistry<T>>::get(gateway_id) {
-                for side_effect in xdns_entry.allowed_side_effects {
-                    if <StandardSideEffects<T>>::contains_key(side_effect) {
-                        // is it somehow possible to only pass a reference here? aka each gateway would access the same addresses/structs in memory?
-                        let se = <StandardSideEffects<T>>::get(side_effect).unwrap();
-                        allowed_side_effects.insert(se.get_id(), Box::new(se.clone()));
-                    } else {
-                        // TODO implement custom side_effect lookup
-                    }
-                }
-            }
-
-            allowed_side_effects
-        }
-
-        fn fetch_side_effect_interface(
-            id: [u8; 4],
-        ) -> Result<Box<dyn SideEffectProtocol>, DispatchError> {
-            if <StandardSideEffects<T>>::contains_key(id) {
-                Ok(Box::new(<StandardSideEffects<T>>::get(id).unwrap()))
-            } else {
-                match <CustomSideEffects<T>>::get(T::Hashing::hash(&id.encode())) {
-                    Some(entry) => Ok(Box::new(entry)),
-                    None => Err(Error::<T>::SideEffectInterfaceNotFound.into()),
-                }
+        ) -> Vec<AllowedSideEffect> {
+            match <XDNSRegistry<T>>::get(gateway_id) {
+                Some(xdns_record) => xdns_record.allowed_side_effects,
+                None => Vec::new(),
             }
         }
 
