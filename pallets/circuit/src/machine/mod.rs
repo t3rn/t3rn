@@ -75,7 +75,6 @@ impl<T: Config> Machine<T> {
 
         let mut local_xtx_ctx = LocalXtxCtx {
             local_state: LocalState::new(),
-            use_protocol: UniversalSideEffectsProtocol::new(),
             xtx_id,
             xtx,
             full_side_effects: vec![],
@@ -266,7 +265,6 @@ impl<T: Config> Machine<T> {
 
         Ok(LocalXtxCtx {
             local_state,
-            use_protocol: UniversalSideEffectsProtocol::new(),
             xtx_id,
             xtx,
             full_side_effects,

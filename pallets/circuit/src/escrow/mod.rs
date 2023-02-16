@@ -177,35 +177,27 @@ pub mod test {
     use frame_support::{assert_ok, traits::Currency};
     use frame_system::{EventRecord, Phase};
 
-    use t3rn_primitives::{abi::Type, xtx::LocalState};
-    use t3rn_protocol::side_effects::test_utils::*;
+    use circuit_mock_runtime::test_utils::*;
+    use t3rn_primitives::{abi::Type};
 
     use crate::tests::brute_seed_block_1;
     use circuit_mock_runtime::*;
     use circuit_runtime_pallets::pallet_circuit;
+    use hex_literal::hex;
     use pallet_circuit::escrow::Escrow;
 
     #[test]
     fn escrow_transfer_execute_and_commit_work() {
         let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-        let transfer_protocol_box =
-            Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-        let mut local_state = LocalState::new();
-
         let mut valid_transfer_side_effect = produce_and_validate_side_effect(
+            t3rn_types::standard::get_transfer_interface(),
             vec![
                 (Type::Address(32), ArgVariant::A),
                 (Type::Address(32), ArgVariant::B),
                 (Type::Uint(128), ArgVariant::A),
                 (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
             ],
-            &mut local_state,
-            transfer_protocol_box,
-            ALICE,
-            FIRST_REQUESTER_NONCE,
-            0,
         );
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];
@@ -274,23 +266,14 @@ pub mod test {
     fn escrow_transfer_execute_and_revert_work() {
         let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-        let transfer_protocol_box =
-            Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-        let mut local_state = LocalState::new();
-
         let mut valid_transfer_side_effect = produce_and_validate_side_effect(
+            t3rn_types::standard::get_transfer_interface(),
             vec![
                 (Type::Address(32), ArgVariant::A),
                 (Type::Address(32), ArgVariant::B),
                 (Type::Uint(128), ArgVariant::A),
                 (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
             ],
-            &mut local_state,
-            transfer_protocol_box,
-            ALICE,
-            FIRST_REQUESTER_NONCE,
-            0,
         );
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];

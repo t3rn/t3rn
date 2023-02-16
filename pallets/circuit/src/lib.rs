@@ -44,7 +44,13 @@ use sp_runtime::{
     traits::{CheckedAdd, Zero},
     KeyTypeId,
 };
-use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
+use sp_std::{convert::TryInto, vec, vec::Vec};
+
+pub use t3rn_types::{
+    bid::SFXBid,
+    fsx::FullSideEffect,
+    side_effect::{ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
+};
 
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
@@ -54,25 +60,15 @@ pub use t3rn_primitives::{
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
     portal::Portal,
-    side_effect::{
-        ConfirmedSideEffect, FullSideEffect, HardenedSideEffect, SFXBid, SecurityLvl, SideEffect,
-        SideEffectId,
-    },
     volatile::LocalState,
     xdns::Xdns,
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
 
-use t3rn_protocol::side_effects::{
-    confirm::protocol::*,
-    loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
-};
-
 use crate::machine::{Machine, *};
 pub use state::XExecSignal;
 
-pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 #[cfg(test)]
@@ -583,12 +579,11 @@ pub mod pallet {
 
             Machine::<T>::compile(
                 &mut Machine::<T>::load_xtx(xtx_id)?,
-                |current_fsx, local_state, _steps_cnt, __status, _requester| {
-                    Self::confirm(xtx_id, current_fsx, &local_state, &sfx_id, &confirmation)
-                        .map_err(|e| {
-                            log::error!("Self::confirm hit an error -- {:?}", e);
-                            Error::<T>::ConfirmationFailed
-                        })?;
+                |current_fsx, _local_state, _steps_cnt, __status, _requester| {
+                    Self::confirm(xtx_id, current_fsx, &sfx_id, &confirmation).map_err(|e| {
+                        log::error!("Self::confirm hit an error -- {:?}", e);
+                        Error::<T>::ConfirmationFailed
+                    })?;
                     Ok(PrecompileResult::TryUpdateFSX(current_fsx.clone()))
                 },
                 |_status_change, local_ctx| {
@@ -896,7 +891,7 @@ impl<T: Config> Pallet<T> {
 
             allowed_side_effects
                 .iter()
-                .find(|(&x, _)| x == decoded_sfx_type)
+                .find(|&&x| x == decoded_sfx_type)
                 .ok_or("SFX not allowed on that target")?;
 
             if let Some(next) = side_effects.get(index + 1) {
@@ -959,7 +954,6 @@ impl<T: Config> Pallet<T> {
                 BalanceOf<T>,
             >,
         >,
-        local_state: &LocalState,
         sfx_id: &SideEffectId<T>,
         confirmation: &ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -1063,8 +1057,8 @@ impl<T: Config> Pallet<T> {
 
     /// Get pending Bids for SFX - Pending meaning that the SFX is still In Bidding
     pub fn get_pending_sfx_bids(
-        xtx_id: XExecSignalId<T>,
-        sfx_id: SideEffectId<T>,
+        xtx_id: T::Hash,
+        sfx_id: T::Hash,
     ) -> Result<Option<SFXBid<T::AccountId, BalanceOf<T>, u32>>, Error<T>> {
         let local_ctx = Machine::<T>::load_xtx(xtx_id)?;
         let current_step_fsx = Machine::<T>::read_current_step_fsx(&local_ctx);

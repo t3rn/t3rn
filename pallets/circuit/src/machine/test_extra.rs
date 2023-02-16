@@ -14,10 +14,9 @@ use circuit_runtime_pallets::pallet_circuit::{
     state::{Cause, CircuitStatus, LocalXtxCtx},
     Config, Error, XExecSignal,
 };
-use t3rn_primitives::{
-    side_effect::{ConfirmedSideEffect, FullSideEffect},
-    xtx::LocalState,
-};
+use t3rn_types::side_effect::{ConfirmedSideEffect, FullSideEffect};
+
+use t3rn_primitives::xtx::LocalState;
 
 pub fn no_post_updates<T: Config>(
     _status_change: (CircuitStatus, CircuitStatus),
