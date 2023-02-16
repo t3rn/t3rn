@@ -25,11 +25,11 @@ use t3rn_primitives::{
         },
     },
     monetary::TRN,
-    side_effect::interface::SideEffectInterface,
     xdns::{Parachain, XdnsRecord},
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
 
+use t3rn_types::interface::SideEffectInterface;
 const PARACHAIN_ID: u32 = 3333_u32;
 
 fn is_relaychain(chain_id: &ChainId) -> bool {
@@ -140,7 +140,7 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
-    t3rn_protocol::side_effects::standards::standard_side_effects()
+    t3rn_types::standard::standard_side_effects()
 }
 
 /// Fetches gateway initialization data by chain id.
@@ -222,7 +222,7 @@ type AccountPublic = <Signature as Verify>::Signer;
 
 /// Helper function to generate a crypto pair from seed.
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-    TPublic::Pair::from_string(&format!("//{}", seed), None)
+    TPublic::Pair::from_string(&format!("//{seed}"), None)
         .expect("static values are valid; qed")
         .public()
 }

@@ -9,7 +9,6 @@ use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::{
     impl_opaque_keys,
-    traits::{BlakeTwo256, Convert},
 };
 use sp_std::convert::{TryFrom, TryInto};
 
@@ -26,6 +25,7 @@ mod consensus_aura_config;
 mod contracts_config;
 mod system_no_version_config;
 mod xbi_config;
+pub mod test_utils;
 
 frame_support::construct_runtime!(
     pub enum Runtime where
@@ -84,10 +84,13 @@ frame_support::construct_runtime!(
     }
 );
 
-use t3rn_primitives::{
+use t3rn_types::{
+    interface::SideEffectInterface,
     abi::{CryptoAlgo, HasherAlgo},
+};
+
+use t3rn_primitives::{
     contracts_registry::RegistryContract,
-    side_effect::interface::SideEffectInterface,
     xdns::{Parachain, XdnsRecord},
     GatewaySysProps, GatewayType, GatewayVendor,
 };
@@ -118,7 +121,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+            t3rn_types::standard::standard_side_effects_ids(),
         );
 
         let polka_like_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -138,7 +141,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+            t3rn_types::standard::standard_side_effects_ids(),
         );
 
         let evm_like_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -167,7 +170,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+            t3rn_types::standard::standard_side_effects_ids(),
         );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -183,7 +186,7 @@ impl ExtBuilder {
                 token_decimals: 0,
             },
             vec![],
-            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+            t3rn_types::standard::standard_side_effects_ids(),
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -199,7 +202,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+            t3rn_types::standard::standard_side_effects_ids(),
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -215,7 +218,7 @@ impl ExtBuilder {
                 token_decimals: 10,
             },
             vec![],
-            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+            t3rn_types::standard::standard_side_effects_ids(),
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -231,7 +234,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+            t3rn_types::standard::standard_side_effects_ids(),
         );
         self.known_xdns_records = vec![
             zero_xdns_record,
@@ -248,7 +251,7 @@ impl ExtBuilder {
     pub fn with_standard_side_effects(mut self) -> ExtBuilder {
         // map side_effects to id, keeping lib.rs clean
         self.standard_side_effects =
-            t3rn_protocol::side_effects::standards::standard_side_effects();
+            t3rn_types::standard::standard_side_effects();
 
         self
     }

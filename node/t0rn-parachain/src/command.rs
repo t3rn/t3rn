@@ -178,7 +178,7 @@ pub fn run() -> Result<()> {
                     &polkadot_cli,
                     config.tokio_handle.clone(),
                 )
-                .map_err(|err| format!("Relay chain argument error: {}", err))?;
+                .map_err(|err| format!("Relay chain argument error: {err}"))?;
 
                 cmd.run(config, polkadot_config)
             })
@@ -248,7 +248,7 @@ pub fn run() -> Result<()> {
                     .map(|cfg| &cfg.registry);
                 let task_manager =
                     TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-                        .map_err(|e| format!("Error: {:?}", e))?;
+                        .map_err(|e| format!("Error: {e:?}"))?;
 
                 runner.async_run(|config| {
                     Ok((
@@ -290,13 +290,13 @@ pub fn run() -> Result<()> {
 
                 let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
                 let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
-                    .map_err(|e| format!("{:?}", e))?;
+                    .map_err(|e| format!("{e:?}"))?;
                 let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
                 let tokio_handle = config.tokio_handle.clone();
                 let polkadot_config =
                     SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-                        .map_err(|err| format!("Relay chain argument error: {}", err))?;
+                        .map_err(|err| format!("Relay chain argument error: {err}"))?;
 
                 info!("Parachain id: {:?}", id);
                 info!("Parachain Account: {}", parachain_account);

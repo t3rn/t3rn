@@ -43,3 +43,6 @@ pub use polkadot_parachain;
 pub use xcm;
 pub use xcm_builder;
 pub use xcm_executor;
+
+pub use t3rn_primitives;
+pub use t3rn_types;
