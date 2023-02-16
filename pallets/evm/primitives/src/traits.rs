@@ -34,6 +34,5 @@ impl<Origin> Evm<Origin> for () {
         _nonce: Option<U256>,
         _access_list: Vec<(H160, Vec<H256>)>,
     ) -> Self::Outcome {
-        
     }
 }

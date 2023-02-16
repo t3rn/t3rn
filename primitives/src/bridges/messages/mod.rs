@@ -51,8 +51,6 @@ pub enum OperatingMode {
     Halted,
 }
 
-
-
 /// Messages pallet parameter.
 pub trait Parameter: frame_support::Parameter {
     /// Save parameter value in the runtime storage.

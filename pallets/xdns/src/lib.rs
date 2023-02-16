@@ -8,13 +8,13 @@
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
 use sp_runtime::traits::Hash;
-use sp_std::{prelude::*};
+use sp_std::prelude::*;
 pub use t3rn_types::{
     abi::{GatewayABIConfig, Type},
     side_effect::{EventSignature, SideEffectId, SideEffectName},
 };
 
-pub use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,};
+pub use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
@@ -45,11 +45,11 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_types::interface::SideEffectInterface;
     use t3rn_primitives::{
         xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
         Bytes, ChainId, GatewaySysProps, GatewayType, GatewayVendor,
     };
+    use t3rn_types::interface::SideEffectInterface;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -304,9 +304,7 @@ pub mod pallet {
         }
 
         /// returns a mapping of all allowed side_effects of a gateway.
-        fn allowed_side_effects(
-            gateway_id: &ChainId,
-        ) -> Vec<AllowedSideEffect> {
+        fn allowed_side_effects(gateway_id: &ChainId) -> Vec<AllowedSideEffect> {
             match <XDNSRegistry<T>>::get(gateway_id) {
                 Some(xdns_record) => xdns_record.allowed_side_effects,
                 None => Vec::new(),
