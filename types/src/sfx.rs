@@ -219,7 +219,11 @@ where
                 &sfx_interface,
             )?;
 
-            if output_payload_arguments[output_argument_index] != encoded_input_argument {
+            if *output_payload_arguments
+                .get(output_argument_index)
+                .ok_or("Confirmation Failed - expected payload args order not out of bounds")?
+                != encoded_input_argument
+            {
                 return Err(
                     "Confirmation Failed - received event arguments differ from expected input"
                         .into(),

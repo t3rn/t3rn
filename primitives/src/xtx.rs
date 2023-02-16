@@ -1,4 +1,4 @@
-use t3rn_types::side_effect::*;
+use t3rn_types::sfx::*;
 
 use codec::{Decode, Encode};
 use sp_runtime::{traits::Zero, RuntimeDebug};

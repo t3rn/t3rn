@@ -3,7 +3,7 @@ use sp_runtime::traits::Zero;
 
 use crate::square_up::SquareUp;
 use sp_std::marker::PhantomData;
-use t3rn_types::side_effect::SFXBid;
+use t3rn_types::sfx::SFXBid;
 
 pub struct Bids<T: Config> {
     _phantom: PhantomData<T>,

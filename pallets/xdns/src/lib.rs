@@ -11,7 +11,7 @@ use sp_runtime::traits::Hash;
 use sp_std::prelude::*;
 pub use t3rn_types::{
     abi::{GatewayABIConfig, Type},
-    side_effect::{EventSignature, SideEffectId, SideEffectName},
+    sfx::{EventSignature, SideEffectId, SideEffectName},
 };
 
 pub use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
