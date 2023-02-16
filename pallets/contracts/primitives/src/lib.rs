@@ -323,7 +323,7 @@ mod as_string {
 
     pub fn serialize<S: Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
         std::str::from_utf8(bytes)
-            .map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {}", e)))?
+            .map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {e}")))?
             .serialize(serializer)
     }
 

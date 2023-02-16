@@ -131,7 +131,7 @@ fn initialize_author() -> H160 {
 /// Get the create address from given scheme. Nonce isnt required unless legacy
 pub fn create_2_contract_address(caller: &H160, code_hash: &H256, salt: &H256) -> H160 {
     let mut hasher = Keccak256::new();
-    hasher.update(&[0xff]);
+    hasher.update([0xff]);
     hasher.update(&caller[..]);
     hasher.update(&salt[..]);
     hasher.update(&code_hash[..]);
@@ -519,7 +519,7 @@ fn handle_sufficient_reference() {
                 <Test as Config>::AddressMapping::get_or_into_account_id(&addr_2);
 
             // Sufficients should increase when creating EVM accounts.
-            <crate::AccountCodes<Test>>::insert(addr, &vec![0]);
+            <crate::AccountCodes<Test>>::insert(addr, vec![0]);
             let account = frame_system::Account::<Test>::get(substrate_addr);
             // Using storage is not correct as it leads to a sufficient reference mismatch.
             assert_eq!(account.sufficients, 0);

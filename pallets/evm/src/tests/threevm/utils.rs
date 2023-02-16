@@ -65,13 +65,13 @@ where
     T: frame_system::Config,
 {
     let fixture_path = ["fixtures/", fixture_name, ".json"].concat();
-    let blob = std::fs::read(&fixture_path).unwrap();
+    let blob = std::fs::read(fixture_path).unwrap();
     let solidity: solidity::SolidityMetadata = serde_json::from_slice(&blob).unwrap();
     let code_hash = H256::from_slice(Keccak256::digest(&blob).as_slice());
 
     let contract = solidity
         .contracts
-        .get(&format!("{}.sol:{}", fixture_name, fixture_name))
+        .get(&format!("{fixture_name}.sol:{fixture_name}"))
         .unwrap();
     (contract.bin.clone(), code_hash)
 }

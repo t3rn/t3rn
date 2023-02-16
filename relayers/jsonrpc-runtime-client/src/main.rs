@@ -30,6 +30,6 @@ fn main() {
     async_std::task::block_on(async move {
         let client = create_rpc_client(&sub_params).await.unwrap();
         let first_header = get_first_header(&client).await.unwrap();
-        println!("first header {:?}", first_header);
+        println!("first header {first_header:?}");
     });
 }

@@ -5,11 +5,11 @@ use std::sync::Arc;
 pub use self::gen_client::Client as ContractsRegistryClient;
 use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_core_client::RpcError;
+
 use jsonrpc_derive::rpc;
 pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use pallet_contracts_registry_rpc_runtime_api::FetchContractsResult;
-use sp_api::{ApiError, ProvideRuntimeApi};
+use sp_api::{ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
     generic::BlockId,
@@ -63,7 +63,7 @@ where
 
         let result = api
             .fetch_contracts(&at, author, metadata)
-            .map_err(|e| runtime_error_into_rpc_err(e))?;
+            .map_err(runtime_error_into_rpc_err)?;
 
         Ok(result)
     }
@@ -73,6 +73,6 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
     Error {
         code: ErrorCode::ServerError(RUNTIME_ERROR),
         message: "Runtime error".into(),
-        data: Some(format!("{:?}", err).into()),
+        data: Some(format!("{err:?}").into()),
     }
 }

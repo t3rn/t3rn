@@ -193,8 +193,7 @@ impl ChainExtension<Test> for TestExtension {
             }),
             _ => {
                 panic!(
-                    "Passed unknown func_id to test chain extension: {}",
-                    func_id
+                    "Passed unknown func_id to test chain extension: {func_id}"
                 );
             },
         }
@@ -1841,7 +1840,7 @@ fn lazy_removal_partial_remove_works() {
     let weight_limit = 5_000_000_000;
     let (_, max_keys) = Storage::<Test>::deletion_budget(1, weight_limit);
     let vals: Vec<_> = (0..max_keys + extra_keys)
-        .map(|i| (blake2_256(&i.encode()), (i as u32), (i as u32).encode()))
+        .map(|i| (blake2_256(&i.encode()), i, i.encode()))
         .collect();
 
     let mut ext = ExtBuilder::default().existential_deposit(50).build();
@@ -2035,7 +2034,7 @@ fn lazy_removal_does_not_use_all_weight() {
 
         // We create a contract with one less storage item than we can remove within the limit
         let vals: Vec<_> = (0..max_keys - 1)
-            .map(|i| (blake2_256(&i.encode()), (i as u32), (i as u32).encode()))
+            .map(|i| (blake2_256(&i.encode()), i, i.encode()))
             .collect();
 
         // Put value into the contracts child trie
@@ -2214,8 +2213,8 @@ fn refcounter() {
             assert_refcount!(code_hash, 0);
 
             // refcount is `0` but code should still exists because it needs to be removed manually
-            assert!(crate::PristineCode::<Test>::contains_key(&code_hash));
-            assert!(crate::CodeStorage::<Test>::contains_key(&code_hash));
+            assert!(crate::PristineCode::<Test>::contains_key(code_hash));
+            assert!(crate::CodeStorage::<Test>::contains_key(code_hash));
         });
 }
 
@@ -2258,7 +2257,7 @@ fn reinstrument_does_charge() {
 
             // We cannot change the schedule. Instead, we decrease the version of the deployed
             // contract below the current schedule's version.
-            crate::CodeStorage::mutate(&code_hash, |code: &mut Option<PrefabWasmModule<Test>>| {
+            crate::CodeStorage::mutate(code_hash, |code: &mut Option<PrefabWasmModule<Test>>| {
                 code.as_mut().unwrap().decrement_version();
             });
 
@@ -2555,7 +2554,7 @@ fn ecdsa_recover() {
             params.extend_from_slice(&message_hash);
             assert!(params.len() == 65 + 32);
             let result =
-                <Pallet<Test>>::bare_call(ALICE, addr.clone(), 0, GAS_LIMIT, None, params, false)
+                <Pallet<Test>>::bare_call(ALICE, addr, 0, GAS_LIMIT, None, params, false)
                     .result
                     .unwrap();
             assert!(!result.did_revert());
@@ -3456,8 +3455,8 @@ fn set_code_hash() {
                     phase: Phase::Initialization,
                     event: Event::Contracts(crate::Event::ContractCodeUpdated {
                         contract: contract_addr.clone(),
-                        new_code_hash: new_code_hash.clone(),
-                        old_code_hash: code_hash.clone(),
+                        new_code_hash,
+                        old_code_hash: code_hash,
                     }),
                     topics: vec![],
                 },

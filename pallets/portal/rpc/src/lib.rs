@@ -67,6 +67,6 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
     Error {
         code: ErrorCode::ServerError(RUNTIME_ERROR),
         message: "Runtime error".into(),
-        data: Some(format!("{:?}", err).into()),
+        data: Some(format!("{err:?}").into()),
     }
 }

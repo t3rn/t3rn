@@ -1206,7 +1206,7 @@ mod tests {
     #[cfg(feature = "unstable-interface")]
     fn contract_ecdsa_recover() {
         let mut mock_ext = MockExt::default();
-        assert_ok!(execute(&CODE_ECDSA_RECOVER, vec![], &mut mock_ext));
+        assert_ok!(execute(CODE_ECDSA_RECOVER, vec![], &mut mock_ext));
         assert_eq!(mock_ext.ecdsa_recover.into_inner(), [([1; 65], [1; 32])]);
     }
 

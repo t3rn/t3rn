@@ -282,7 +282,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
             &precompiles,
             is_transactional,
             |executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
-            <Account3vmInfo<T>>::get(&target).as_ref(),
+            <Account3vmInfo<T>>::get(target).as_ref(),
         )?)
     }
 
@@ -381,7 +381,7 @@ impl<T: Config> RunnerT<T> for Runner<T> {
 
                 if let ExitReason::Succeed(_) = reason {
                     if let Some(vm_info) = vm_info.as_ref() {
-                        <Account3vmInfo<T>>::insert(&address, vm_info);
+                        <Account3vmInfo<T>>::insert(address, vm_info);
                     }
                 }
 
@@ -569,7 +569,7 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
     }
 
     fn code(&self, address: H160) -> Vec<u8> {
-        <AccountCodes<T>>::get(&address)
+        <AccountCodes<T>>::get(address)
     }
 
     fn storage(&self, address: H160, index: H256) -> H256 {

@@ -442,18 +442,13 @@ pub mod pallet {
     }
 
     #[pallet::genesis_config]
-    pub struct GenesisConfig {
+    #[derive(Default)]
+pub struct GenesisConfig {
         pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
     }
 
     #[cfg(feature = "std")]
-    impl Default for GenesisConfig {
-        fn default() -> Self {
-            Self {
-                accounts: Default::default(),
-            }
-        }
-    }
+    
 
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig {
@@ -662,8 +657,8 @@ where
             let addr = account_to_default_evm_address(account_id);
 
             // create reverse mapping
-            EvmAccountAddressMapping::<T>::insert(&addr, &account_id);
-            AccountEvmAddressMapping::<T>::insert(&account_id, &addr);
+            EvmAccountAddressMapping::<T>::insert(addr, account_id);
+            AccountEvmAddressMapping::<T>::insert(account_id, addr);
 
             Pallet::<T>::deposit_event(Event::ClaimAccount {
                 account_id: account_id.clone(),
@@ -701,7 +696,7 @@ impl GasWeightMapping for () {
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        weight as u64
+        weight
     }
 }
 
@@ -740,7 +735,7 @@ impl<T: Config> Pallet<T> {
             return
         }
 
-        if !<AccountCodes<T>>::contains_key(&address) {
+        if !<AccountCodes<T>>::contains_key(address) {
             let account_id = T::AddressMapping::get_or_into_account_id(&address);
             let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
         }
@@ -966,7 +961,7 @@ impl<T: Config> fp_evm::traits::Evm<T::Origin> for Pallet<T> {
             },
             _ => {
                 let error = Event::<T>::ExecutedFailed(target);
-                Pallet::<T>::deposit_event(error.clone());
+                Pallet::<T>::deposit_event(error);
             },
         };
         let gas = T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into());

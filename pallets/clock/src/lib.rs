@@ -18,7 +18,6 @@ pub use t3rn_primitives::{
     clock::Clock,
     common::RoundInfo,
     executors::Executors,
-    protocol::SideEffectProtocol,
     ChainId, EscrowTrait, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 
