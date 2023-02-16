@@ -1,6 +1,5 @@
 use crate::{
     abi::{GatewayABIConfig, Type},
-    protocol::SideEffectProtocol,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 use codec::{Decode, Encode};
@@ -8,7 +7,7 @@ use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
 use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
-use sp_std::{boxed::Box, collections::btree_map::BTreeMap, vec::Vec};
+use sp_std::{vec::Vec};
 
 pub type AllowedSideEffect = [u8; 4];
 
@@ -170,11 +169,7 @@ pub trait Xdns<T: frame_system::Config> {
     ) -> DispatchResult;
 
     fn allowed_side_effects(gateway_id: &ChainId)
-        -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>>;
-
-    fn fetch_side_effect_interface(
-        id: [u8; 4],
-    ) -> Result<Box<dyn SideEffectProtocol>, DispatchError>;
+        -> Vec<[u8; 4]>;
 
     fn update_gateway_ttl(gateway_id: ChainId, last_finalized: u64) -> DispatchResultWithPostInfo;
 

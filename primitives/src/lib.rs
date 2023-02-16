@@ -59,8 +59,6 @@ pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod monetary;
 pub mod portal;
-pub mod protocol;
-pub mod side_effect;
 pub mod signature_caster;
 pub mod storage;
 pub mod threevm;
@@ -99,18 +97,16 @@ impl GatewayType {
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub enum GatewayVendor {
     Polkadot,
     Kusama,
+    #[default]
     Rococo,
     Ethereum,
 }
 
-impl Default for GatewayVendor {
-    fn default() -> Self {
-        GatewayVendor::Rococo
-    }
-}
+
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
