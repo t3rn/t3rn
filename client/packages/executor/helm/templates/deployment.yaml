@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "executor.fullname" . }}
+  labels:
+    {{- include "executor.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "executor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "executor.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "executor.name" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: executor
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.repository }}:{{ .Values.tag }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: WS_CIRCUIT_ENDPOINT
+              value: "{{ .Values.websocketEndpoint }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
