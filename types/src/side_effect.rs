@@ -1,6 +1,7 @@
-use crate::{
-    abi::{decode_buf2val, GatewayABIConfig, Type as AbiType, Type},
-    interface::SideEffectInterface,
+use crate::abi::{decode_buf2val, GatewayABIConfig, Type};
+pub use crate::{
+    bid::SFXBid,
+    fsx::{FullSideEffect, SideEffectId, SideEffectInterface},
 };
 use bytes::Buf;
 use codec::{Decode, Encode, MaxEncodedLen};
@@ -8,12 +9,13 @@ use scale_info::{
     prelude::{fmt::Debug, vec, vec::Vec},
     TypeInfo,
 };
+use sp_runtime::DispatchError;
+use sp_std::borrow::ToOwned;
 
 #[cfg(feature = "runtime")]
 use num::Zero;
 #[cfg(feature = "runtime")]
 use scale_info::prelude::collections::VecDeque;
-use sp_runtime::DispatchError;
 
 pub type TargetId = [u8; 4];
 pub type Bytes = Vec<u8>;
@@ -45,12 +47,12 @@ pub struct SideEffect<AccountId, BalanceOf> {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
-pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
+pub struct HardenedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
     pub encoded_action: [u8; 4],
     pub encoded_args: Vec<Bytes>,
-    pub encoded_args_abi: Vec<AbiType>,
+    pub encoded_args_abi: Vec<Type>,
     pub security_lvl: SecurityLvl,
     pub confirmation_outcome: Option<ConfirmationOutcome>,
     pub confirmed_executioner: Option<AccountId>,
@@ -60,14 +62,14 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
 }
 
 impl<AccountId, BlockNumber, BalanceOf> Default
-    for FullSideEffect<AccountId, BlockNumber, BalanceOf>
+    for HardenedSideEffect<AccountId, BlockNumber, BalanceOf>
 where
     AccountId: From<[u8; 32]>,
     BlockNumber: Default,
     BalanceOf: Default,
 {
     fn default() -> Self {
-        FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
+        HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
             prize: BalanceOf::default(),
             encoded_action: [0, 0, 0, 0],
@@ -225,12 +227,10 @@ where
             }
         }
 
-        if security_lvl == SecurityLvl::Escrow {
-            if !was_source_validated {
-                return Err(
-                    "Confirmation Failed - Escrowed SFX require source to be correctly derived from incoming events".into(),
-                )
-            }
+        if security_lvl == SecurityLvl::Escrow && !was_source_validated {
+            return Err(
+                "Confirmation Failed - Escrowed SFX require source to be correctly derived from incoming events".into(),
+            )
         }
 
         Ok(())
@@ -318,9 +318,9 @@ impl TryFrom<u8> for Action {
     }
 }
 
-impl Into<[u8; 4]> for Action {
-    fn into(self) -> [u8; 4] {
-        match self {
+impl From<Action> for [u8; 4] {
+    fn from(val: Action) -> Self {
+        match val {
             Action::Transfer => *TRANSFER_SIDE_EFFECT_ID,
             Action::AddLiquidity => *ADD_LIQUIDITY_SIDE_EFFECT_ID,
             Action::Swap => *SWAP_SIDE_EFFECT_ID,
@@ -476,8 +476,9 @@ fn take_insurance<Balance: MaxEncodedLen>(bytes: &mut bytes::Bytes, args: &mut V
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo, Default)]
 pub enum ConfirmationOutcome {
+    #[default]
     Success,
     MisbehaviourMalformedValues {
         key: Bytes,
@@ -485,12 +486,6 @@ pub enum ConfirmationOutcome {
         received: Bytes,
     },
     TimedOut,
-}
-
-impl Default for ConfirmationOutcome {
-    fn default() -> Self {
-        ConfirmationOutcome::Success
-    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
@@ -503,16 +498,11 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub cost: Option<BalanceOf>,
 }
 
-#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo, Default)]
 pub enum SecurityLvl {
+    #[default]
     Optimistic,
     Escrow,
-}
-
-impl Default for SecurityLvl {
-    fn default() -> Self {
-        SecurityLvl::Optimistic
-    }
 }
 
 // Side effects conversion error.
