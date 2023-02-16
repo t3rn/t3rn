@@ -152,7 +152,7 @@ where
         {
             // Unconditionally add the token to the storage.
             let erased_tok = ErasedToken {
-                description: format!("{:?}", token),
+                description: format!("{token:?}"),
                 token: Box::new(token),
             };
             self.tokens.push(erased_tok);

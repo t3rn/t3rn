@@ -779,6 +779,6 @@ mod test {
     #[test]
     fn print_test_schedule() {
         let schedule = Schedule::<Test>::default();
-        println!("{:#?}", schedule);
+        println!("{schedule:#?}");
     }
 }

@@ -132,7 +132,7 @@ fn rent_fees_are_deducted_on_init() {
                 topics: vec![],
             }));
 
-            println!("EVM System Events {:?} ", events);
+            println!("EVM System Events {events:?} ");
             assert!(events.contains(&EventRecord {
                 phase: Phase::Initialization,
                 event: Event::AccountManager(pallet_account_manager::Event::DepositReceived {
@@ -224,7 +224,7 @@ fn rent_fees_are_deducted_on_init_and_call() {
 
             let events = System::events();
 
-            println!("EVM MMMMM {:?}", events);
+            println!("EVM MMMMM {events:?}");
             assert!(events.contains(&EventRecord {
                 phase: Phase::Initialization,
                 event: Event::AccountManager(pallet_account_manager::Event::DepositReceived {

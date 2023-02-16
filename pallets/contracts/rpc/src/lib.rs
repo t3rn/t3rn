@@ -343,7 +343,7 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> JsonRpseeError {
     CallError::Custom(ErrorObject::owned(
         RUNTIME_ERROR,
         "Runtime error",
-        Some(format!("{:?}", err)),
+        Some(format!("{err:?}")),
     ))
     .into()
 }
@@ -352,7 +352,7 @@ fn decode_hex<H: std::fmt::Debug + Copy, T: TryFrom<H>>(from: H, name: &str) -> 
     from.try_into().map_err(|_| {
         JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
             ErrorCode::InvalidParams.code(),
-            format!("{:?} does not fit into the {} type", from, name),
+            format!("{from:?} does not fit into the {name} type"),
             None::<()>,
         )))
     })
@@ -363,8 +363,7 @@ fn limit_gas(gas_limit: Weight) -> RpcResult<()> {
         Err(JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
             ErrorCode::InvalidParams.code(),
             format!(
-                "Requested gas limit is greater than maximum allowed: {} > {}",
-                gas_limit, GAS_LIMIT
+                "Requested gas limit is greater than maximum allowed: {gas_limit} > {GAS_LIMIT}"
             ),
             None::<()>,
         ))))

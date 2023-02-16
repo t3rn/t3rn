@@ -79,7 +79,7 @@ impl From<std::io::Error> for Error {
 
 impl From<tokio::task::JoinError> for Error {
     fn from(error: tokio::task::JoinError) -> Self {
-        Error::Custom(format!("Failed to wait tokio task: {}", error))
+        Error::Custom(format!("Failed to wait tokio task: {error}"))
     }
 }
 
@@ -106,12 +106,12 @@ impl std::fmt::Display for Error {
             Self::AccountDoesNotExist => "Account does not exist on the chain".into(),
             Self::MissingMandatoryCodeEntry =>
                 "Mandatory :code: entry is missing from runtime storage".into(),
-            Self::StorageProofError(e) => format!("Error when parsing storage proof: {:?}", e),
-            Self::ClientNotSynced(health) => format!("Substrate client is not synced: {}", health),
+            Self::StorageProofError(e) => format!("Error when parsing storage proof: {e:?}"),
+            Self::ClientNotSynced(health) => format!("Substrate client is not synced: {health}"),
             Self::Custom(e) => e.clone(),
         };
 
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

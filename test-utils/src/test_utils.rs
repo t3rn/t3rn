@@ -11,8 +11,10 @@ use sp_std::vec::Vec;
 
 use t3rn_primitives::AuthorityId;
 
-use t3rn_protocol::chain_generic_metadata::*;
-use t3rn_protocol::substrate_gateway_protocol::*;
+pub mod chain_generic_metadata;
+pub mod substrate_gateway_protocol;
+use crate::chain_generic_metadata::*;
+use crate::substrate_gateway_protocol::*;
 
 use codec::Decode;
 use jsonrpsee_types::traits::Client as WsClient;

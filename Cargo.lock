@@ -997,7 +997,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "t3rn-primitives",
- "t3rn-protocol",
+ "t3rn-types 0.0.1-rc.3",
 ]
 
 [[package]]
@@ -1085,7 +1085,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "t3rn-primitives",
- "t3rn-protocol",
+ "t3rn-types 0.0.1-rc.3",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -1147,7 +1147,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "t3rn-primitives",
- "t3rn-protocol",
+ "t3rn-types 0.0.1-rc.3",
 ]
 
 [[package]]
@@ -1214,7 +1214,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "t3rn-primitives",
- "t3rn-protocol",
+ "t3rn-types 0.0.1-rc.3",
 ]
 
 [[package]]
@@ -6721,8 +6721,8 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "t3rn-primitives",
- "t3rn-protocol",
  "t3rn-sdk-primitives",
+ "t3rn-types 0.0.1-rc.3",
 ]
 
 [[package]]
@@ -7950,7 +7950,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
- "t3rn-protocol",
+ "t3rn-types 0.0.1-rc.3",
 ]
 
 [[package]]
@@ -8380,15 +8380,6 @@ name = "pkg-config"
 version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
-
-[[package]]
-name = "plain_hasher"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e19e6491bdde87c2c43d70f4c194bc8a758f2eb732df00f61e43f7362e3b4cc"
-dependencies = [
- "crunchy",
-]
 
 [[package]]
 name = "platforms"
@@ -13311,7 +13302,7 @@ dependencies = [
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27)",
  "t0rn-parachain-runtime",
  "t3rn-primitives",
- "t3rn-protocol",
+ "t3rn-types 0.0.1-rc.3",
  "try-runtime-cli",
  "xcm",
 ]
@@ -13401,7 +13392,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "t3rn-primitives",
- "t3rn-protocol",
+ "t3rn-types 0.0.1-rc.3",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -13575,44 +13566,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "t3rn-protocol"
-version = "1.0.0-alpha.1"
-dependencies = [
- "circuit-mock-runtime",
- "circuit-runtime-pallets",
- "circuit-runtime-types",
- "ethabi-decode",
- "frame-metadata",
- "frame-support",
- "frame-system",
- "hash-db",
- "hex",
- "hex-literal 0.3.4",
- "log",
- "pallet-balances",
- "pallet-sudo",
- "parity-scale-codec",
- "plain_hasher",
- "relay-substrate-client",
- "scale-info",
- "serde",
- "serde_json",
- "snowbridge-core",
- "snowbridge-ethereum",
- "sp-application-crypto",
- "sp-core",
- "sp-io",
- "sp-keystore",
- "sp-runtime",
- "sp-std",
- "sp-version",
- "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
- "tiny-keccak 2.0.2",
- "triehash",
-]
-
-[[package]]
 name = "t3rn-sdk-primitives"
 version = "0.1.1-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13643,9 +13596,12 @@ name = "t3rn-types"
 version = "0.0.1-rc.3"
 dependencies = [
  "bytes 1.4.0",
+ "circuit-runtime-types",
+ "frame-system",
  "hex",
  "hex-literal 0.3.4",
  "num",
+ "num-traits",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -13654,6 +13610,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-std",
  "t3rn-sdk-primitives",
 ]
 

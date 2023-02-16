@@ -16,7 +16,7 @@ pub async fn get_first_header(sub_client: &SubstrateClient<Rococo>) -> Result<Ve
     let initial_header = sub_client.header_by_number(Zero::zero()).await;
     initial_header
         .map(|header| header.encode())
-        .map_err(|error| format!("Error reading Substrate genesis header: {:?}", error))
+        .map_err(|error| format!("Error reading Substrate genesis header: {error:?}"))
 }
 
 pub async fn get_metadata(
@@ -44,7 +44,7 @@ pub async fn get_gtwy_init_data(
         .client
         .request("chain_getFinalizedHead", JsonRpcParams::NoParams)
         .await
-        .map_err(|error| format!("chain_getFinalizedHead failed: {:?}", error))?;
+        .map_err(|error| format!("chain_getFinalizedHead failed: {error:?}"))?;
 
     let header: Header = sub_client
         .client
@@ -53,7 +53,7 @@ pub async fn get_gtwy_init_data(
             JsonRpcParams::Array(vec![block_hash.clone()]),
         )
         .await
-        .map_err(|error| format!("chain_getHeader failed: {:?}", error))?;
+        .map_err(|error| format!("chain_getHeader failed: {error:?}"))?;
 
     if is_relay_chain {
         let encoded_finality_proof: Bytes = sub_client
@@ -63,14 +63,14 @@ pub async fn get_gtwy_init_data(
                 JsonRpcParams::Array(vec![header.number.into()]),
             )
             .await
-            .map_err(|error| format!("grandpa_proveFinality failed: {:?}", error))?;
+            .map_err(|error| format!("grandpa_proveFinality failed: {error:?}"))?;
 
         let finality_proof = <FinalityProof<Header>>::decode(&mut &encoded_finality_proof[..])
-            .map_err(|error| format!("finality proof decoding failed: {:?}", error))?;
+            .map_err(|error| format!("finality proof decoding failed: {error:?}"))?;
 
         let justification =
             GrandpaJustification::<Header>::decode(&mut &*finality_proof.justification)
-                .map_err(|error| format!("justification decoding failed: {:?}", error))?;
+                .map_err(|error| format!("justification decoding failed: {error:?}"))?;
 
         let mut authorities = Vec::with_capacity(justification.commit.precommits.len());
 
@@ -96,10 +96,10 @@ pub async fn get_parachain_id(sub_client: &SubstrateClient<Rococo>) -> Result<u3
             ]),
         )
         .await
-        .map_err(|err| format!("state_getStorage failed: {:?}", err))?;
+        .map_err(|err| format!("state_getStorage failed: {err:?}"))?;
 
     let parachain_id: u32 = Decode::decode(&mut &bytes[..])
-        .map_err(|err| format!("parachain id decoding failed: {:?}", err))?;
+        .map_err(|err| format!("parachain id decoding failed: {err:?}"))?;
 
     Ok(parachain_id)
 }

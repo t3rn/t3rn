@@ -57,7 +57,7 @@ fn instantiate_all_smart_contracts() {
     for entry in contracts {
         let entry = entry.unwrap();
         let path = entry.to_str().unwrap();
-        println!("instantiating: {:?}", path);
+        println!("instantiating: {path:?}");
 
         let metadata_path = path.clone().replace(".wasm", ".contract");
         let file = std::fs::File::open(metadata_path).unwrap();
@@ -86,7 +86,7 @@ fn instantiate_all_smart_contracts() {
                 let ctor_selector =
                     hex::decode(ctor.selector.clone().strip_prefix("0x").unwrap_or_default())
                         .unwrap();
-                println!("Found ctor: {:?}", ctor);
+                println!("Found ctor: {ctor:?}");
                 assert_ok!(Contracts::instantiate_with_code(
                     Origin::signed(ALICE),
                     if ctor.payable { 30_000 } else { 0 },

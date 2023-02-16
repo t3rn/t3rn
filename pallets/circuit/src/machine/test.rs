@@ -432,7 +432,7 @@ pub mod test {
                 }
 
                 for i in 0..TEN as usize {
-                    let mut local_ctx = &mut local_context_array_of_10_xtx[i].0;
+                    let local_ctx = &mut local_context_array_of_10_xtx[i].0;
                     assert_eq!(local_ctx.xtx.status, CircuitStatus::InBidding);
                     assert_ok!(Machine::<Runtime>::compile(
                         local_ctx,
