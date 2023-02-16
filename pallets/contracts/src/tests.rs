@@ -192,9 +192,7 @@ impl ChainExtension<Test> for TestExtension {
                 data: vec![42, 99],
             }),
             _ => {
-                panic!(
-                    "Passed unknown func_id to test chain extension: {func_id}"
-                );
+                panic!("Passed unknown func_id to test chain extension: {func_id}");
             },
         }
     }
@@ -2553,10 +2551,9 @@ fn ecdsa_recover() {
             params.extend_from_slice(&signature);
             params.extend_from_slice(&message_hash);
             assert!(params.len() == 65 + 32);
-            let result =
-                <Pallet<Test>>::bare_call(ALICE, addr, 0, GAS_LIMIT, None, params, false)
-                    .result
-                    .unwrap();
+            let result = <Pallet<Test>>::bare_call(ALICE, addr, 0, GAS_LIMIT, None, params, false)
+                .result
+                .unwrap();
             assert!(!result.did_revert());
             assert_eq!(result.data.as_ref(), &EXPECTED_COMPRESSED_PUBLIC_KEY);
         })

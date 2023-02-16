@@ -32,7 +32,8 @@ impl<T: Config> LocalTrigger<T> {
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalStateExecutionView<T: Config, BalanceOf> {
     pub local_state: LocalState,
-    pub hardened_side_effects: Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf>>>,
+    pub hardened_side_effects:
+        Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf>>>,
     pub steps_cnt: (u32, u32),
     pub xtx_id: <T as Config>::Hash,
 }

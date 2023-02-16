@@ -178,7 +178,7 @@ pub mod test {
     use frame_system::{EventRecord, Phase};
 
     use circuit_mock_runtime::test_utils::*;
-    use t3rn_primitives::{abi::Type};
+    use t3rn_primitives::abi::Type;
 
     use crate::tests::brute_seed_block_1;
     use circuit_mock_runtime::*;

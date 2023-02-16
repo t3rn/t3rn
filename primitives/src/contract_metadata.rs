@@ -141,8 +141,7 @@ impl Display for Compiler {
 }
 
 /// Type of the contract.
-#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo, Copy)]
-#[derive(Default)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo, Copy, Default)]
 pub enum ContractType {
     #[default]
     System,
@@ -151,8 +150,6 @@ pub enum ContractType {
     VolatileEvm,
     VolatileWasm,
 }
-
-
 
 impl From<ContractType> for u8 {
     fn from(value: ContractType) -> Self {

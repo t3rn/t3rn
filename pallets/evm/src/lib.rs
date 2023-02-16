@@ -443,13 +443,11 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     #[derive(Default)]
-pub struct GenesisConfig {
+    pub struct GenesisConfig {
         pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
     }
 
     #[cfg(feature = "std")]
-    
-
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig {
         fn build(&self) {

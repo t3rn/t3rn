@@ -198,8 +198,7 @@ pub enum StakerStatus {
 }
 
 /// The activity status of the executor
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
-#[derive(Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, Default)]
 pub enum ExecutorStatus {
     /// Committed to be online and producing valid blocks (not equivocating)
     Active,
@@ -209,8 +208,6 @@ pub enum ExecutorStatus {
     /// Bonded until the inner round
     Leaving(RoundIndex),
 }
-
-
 
 /// Capacity status for top or bottom stakes.
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]

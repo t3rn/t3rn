@@ -7,7 +7,7 @@ use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
 use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
-use sp_std::{vec::Vec};
+use sp_std::vec::Vec;
 
 pub type AllowedSideEffect = [u8; 4];
 
@@ -168,8 +168,7 @@ pub trait Xdns<T: frame_system::Config> {
         allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> DispatchResult;
 
-    fn allowed_side_effects(gateway_id: &ChainId)
-        -> Vec<[u8; 4]>;
+    fn allowed_side_effects(gateway_id: &ChainId) -> Vec<[u8; 4]>;
 
     fn update_gateway_ttl(gateway_id: ChainId, last_finalized: u64) -> DispatchResultWithPostInfo;
 

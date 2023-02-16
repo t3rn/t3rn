@@ -7,9 +7,7 @@ use frame_support::pallet_prelude::GenesisBuild;
 
 use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
 use sp_core::{crypto::KeyTypeId, H256};
-use sp_runtime::{
-    impl_opaque_keys,
-};
+use sp_runtime::impl_opaque_keys;
 use sp_std::convert::{TryFrom, TryInto};
 
 pub use circuit_runtime_pallets::*;
@@ -24,8 +22,8 @@ mod circuit_config;
 mod consensus_aura_config;
 mod contracts_config;
 mod system_no_version_config;
-mod xbi_config;
 pub mod test_utils;
+mod xbi_config;
 
 frame_support::construct_runtime!(
     pub enum Runtime where
@@ -85,8 +83,8 @@ frame_support::construct_runtime!(
 );
 
 use t3rn_types::{
-    interface::SideEffectInterface,
     abi::{CryptoAlgo, HasherAlgo},
+    interface::SideEffectInterface,
 };
 
 use t3rn_primitives::{
@@ -250,8 +248,7 @@ impl ExtBuilder {
 
     pub fn with_standard_side_effects(mut self) -> ExtBuilder {
         // map side_effects to id, keeping lib.rs clean
-        self.standard_side_effects =
-            t3rn_types::standard::standard_side_effects();
+        self.standard_side_effects = t3rn_types::standard::standard_side_effects();
 
         self
     }

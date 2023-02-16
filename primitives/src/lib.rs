@@ -106,8 +106,6 @@ pub enum GatewayVendor {
     Ethereum,
 }
 
-
-
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Structure used at gateway registration as a starting point for multi-finality-verifier
