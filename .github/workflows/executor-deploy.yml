@@ -1,13 +1,12 @@
 name: Executor Deploy
 
-on: [push]
-# on:
-#   push:
-#     branches:
-#       - development
-#     paths:
-#       - "client/packages/executor/**/*.ts"
-#       - "client/packages/executor/**/*.json"
+on:
+  push:
+    branches:
+      - development
+    paths:
+      - "client/packages/executor/**/*.ts"
+      - "client/packages/executor/**/*.json"
 
 env:
   RUST_BACKTRACE: 1
