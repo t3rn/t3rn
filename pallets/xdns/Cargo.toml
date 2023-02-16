@@ -30,7 +30,7 @@ sp-version = { default-features = false, git = "https://github.com/paritytech/su
 
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 t3rn-primitives  = { default-features = false, path = "../../primitives" }
-t3rn-protocol    = { path = "../../protocol", default-features = false }
+t3rn-types  = { default-features = false, path = "../../types", features = [ "runtime" ] }
 
 [dev-dependencies]
 circuit-mock-runtime    = { path = "../../runtime/mock" }
@@ -58,6 +58,6 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
-  "t3rn-protocol/std",
+  "t3rn-types/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]
