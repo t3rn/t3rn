@@ -43,7 +43,7 @@ sp-keystore             = { git = "https://github.com/paritytech/substrate", bra
 
 [features]
 default = [ "std" ]
-runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks" ]
+runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-support/runtime-benchmarks", "frame-system/runtime-benchmarks", "pallet-timestamp/runtime-benchmarks", "sp-runtime/runtime-benchmarks"]
 std = [
   "codec/std",
   "frame-support/std",
@@ -60,4 +60,4 @@ std = [
   "t3rn-primitives/std",
   "t3rn-types/std",
 ]
-try-runtime = [ "frame-support/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime" ]

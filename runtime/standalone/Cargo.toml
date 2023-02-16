@@ -149,6 +149,7 @@ std = [
   "pallet-clock/std",
   "circuit-runtime-types/std",
 ]
+
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration
 runtime-benchmarks = [
@@ -165,6 +166,15 @@ runtime-benchmarks = [
   'pallet-timestamp/runtime-benchmarks',
   'sp-runtime/runtime-benchmarks',
   "pallet-treasury/runtime-benchmarks",
+  "pallet-3vm/runtime-benchmarks",
+  "pallet-circuit/runtime-benchmarks",
+  "pallet-clock/runtime-benchmarks",
+  "pallet-3vm-contracts/runtime-benchmarks",
+  "pallet-3vm-evm/runtime-benchmarks",
+  "pallet-grandpa/runtime-benchmarks",
+  "pallet-grandpa-finality-verifier/runtime-benchmarks",
+  "pallet-identity/runtime-benchmarks",
+  "pallet-utility/runtime-benchmarks",
 ]
 # Make contract callable functions marked as __unstable__ available. Do not enable
 # on live chains as those are subject to change.
