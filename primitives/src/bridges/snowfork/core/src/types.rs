@@ -57,8 +57,8 @@ pub enum AuxiliaryDigestItem {
     Commitment(ChannelId, H256),
 }
 
-impl Into<DigestItem> for AuxiliaryDigestItem {
-    fn into(self) -> DigestItem {
-        DigestItem::Other(self.encode())
+impl From<AuxiliaryDigestItem> for DigestItem {
+    fn from(val: AuxiliaryDigestItem) -> Self {
+        DigestItem::Other(val.encode())
     }
 }

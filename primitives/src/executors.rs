@@ -199,20 +199,18 @@ pub enum StakerStatus {
 
 /// The activity status of the executor
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Default)]
 pub enum ExecutorStatus {
     /// Committed to be online and producing valid blocks (not equivocating)
     Active,
     /// Temporarily inactive and excused for inactivity
+    #[default]
     Idle,
     /// Bonded until the inner round
     Leaving(RoundIndex),
 }
 
-impl Default for ExecutorStatus {
-    fn default() -> ExecutorStatus {
-        ExecutorStatus::Idle
-    }
-}
+
 
 /// Capacity status for top or bottom stakes.
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]

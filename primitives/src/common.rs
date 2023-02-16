@@ -66,7 +66,7 @@ impl<
 
     /// Check if the round should be updated
     pub fn should_update(&self, now: B) -> bool {
-        now - self.head >= self.term.into()
+        now - self.head >= self.term
     }
 
     /// New round

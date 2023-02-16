@@ -185,7 +185,7 @@ mod tests {
             let path: PathBuf = [env!("CARGO_MANIFEST_DIR"), "tests", "fixtures", fixture]
                 .iter()
                 .collect();
-            serde_json::from_reader(File::open(&path).unwrap()).unwrap()
+            serde_json::from_reader(File::open(path).unwrap()).unwrap()
         }
     }
 

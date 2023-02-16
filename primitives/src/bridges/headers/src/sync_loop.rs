@@ -367,7 +367,7 @@ async fn run_until_connection_lost<P: HeadersSyncPipeline, TC: TargetClient<P>>(
             submitted_headers = target_submit_header_future => {
                 // following line helps Rust understand the type of `submitted_headers` :/
                 let submitted_headers: SubmittedHeaders<HeaderIdOf<P>, TC::Error> = submitted_headers;
-                let submitted_headers_str = format!("{}", submitted_headers);
+                let submitted_headers_str = format!("{submitted_headers}");
                 let all_headers_rejected = submitted_headers.submitted.is_empty()
                     && submitted_headers.incomplete.is_empty();
                 let has_submitted_headers = sync.headers().headers_in_status(HeaderStatus::Submitted) != 0;
@@ -375,7 +375,7 @@ async fn run_until_connection_lost<P: HeadersSyncPipeline, TC: TargetClient<P>>(
                 let maybe_fatal_error = match submitted_headers.fatal_error {
                     Some(fatal_error) => Err(StringifiedMaybeConnectionError::new(
                         fatal_error.is_connection_error(),
-                        format!("{:?}", fatal_error),
+                        format!("{fatal_error:?}"),
                     )),
                     None if all_headers_rejected && !has_submitted_headers =>
                         Err(StringifiedMaybeConnectionError::new(false, "All headers were rejected".into())),

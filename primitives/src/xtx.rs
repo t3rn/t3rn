@@ -1,4 +1,5 @@
-use crate::side_effect::*;
+use t3rn_types::side_effect::*;
+
 use codec::{Decode, Encode};
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::vec::Vec;
@@ -107,7 +108,7 @@ impl<
         xtx_id: <Hasher as sp_core::Hasher>::Out,
         sfx_index: u32,
     ) -> Result<bool, &'static str> {
-        let sfx_id = input.generate_id::<Hasher>(&xtx_id.as_ref(), sfx_index);
+        let sfx_id = input.generate_id::<Hasher>(xtx_id.as_ref(), sfx_index);
 
         // Double check there are some side effects for that Xtx - should have been checked at API level tho already
         if self.full_side_effects.is_empty() {
@@ -132,7 +133,7 @@ impl<
                     // Check the current unconfirmed step before attempt to confirm the full side effect.
                     return if full_side_effect
                         .input
-                        .generate_id::<Hasher>(&xtx_id.as_ref(), full_side_effect.index)
+                        .generate_id::<Hasher>(xtx_id.as_ref(), full_side_effect.index)
                         == sfx_id
                         && unconfirmed_step_no == Some(i)
                     {
