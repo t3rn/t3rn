@@ -266,4 +266,10 @@ try-runtime = [
   "pallet-circuit/try-runtime",
   "pallet-grandpa/try-runtime",
   "pallet-babe/try-runtime",
+  "pallet-account-manager/try-runtime",
+  "pallet-membership/try-runtime",
+  "pallet-preimage/try-runtime",
+  "pallet-scheduler/try-runtime",
+  "pallet-session/try-runtime",
+  "pallet-sudo/try-runtime",
 ]
