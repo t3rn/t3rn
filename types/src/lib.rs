@@ -6,7 +6,7 @@ pub mod abi;
 pub mod bid;
 pub mod fsx;
 pub mod interface;
-pub mod side_effect;
+pub mod sfx;
 pub mod standard;
 
 pub type Bytes = Vec<u8>;

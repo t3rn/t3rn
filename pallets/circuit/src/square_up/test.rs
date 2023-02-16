@@ -25,7 +25,7 @@ pub mod test {
 
     use crate::tests::ESCROW_ACCOUNT;
     use sp_runtime::DispatchResult;
-    use t3rn_types::side_effect::ConfirmedSideEffect;
+    use t3rn_types::sfx::ConfirmedSideEffect;
 
     const REQUESTER: AccountId = ALICE;
     const EXECUTOR: AccountId = BOB;

@@ -12,7 +12,7 @@ use sp_std::{
 pub use crate::{
     bid::SFXBid,
     interface::*,
-    side_effect::{
+    sfx::{
         ConfirmationOutcome, ConfirmedSideEffect, Error, EventSignature, HardenedSideEffect,
         SecurityLvl, SideEffect, SideEffectName, TargetId, ADD_LIQUIDITY_SIDE_EFFECT_ID,
         ASSETS_TRANSFER_SIDE_EFFECT_ID, CALL_SIDE_EFFECT_ID, COMPOSABLE_CALL_SIDE_EFFECT_ID,

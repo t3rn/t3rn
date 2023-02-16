@@ -11,7 +11,7 @@ use frame_support::{assert_ok, traits::Currency};
 use sp_runtime::AccountId32;
 use t3rn_primitives::xtx::LocalState;
 
-use t3rn_types::{fsx::FullSideEffect, side_effect::ConfirmedSideEffect};
+use t3rn_types::{fsx::FullSideEffect, sfx::ConfirmedSideEffect};
 
 pub const REQUESTER_1: AccountId = AccountId32::new([1u8; 32]);
 pub const REQUESTER_2: AccountId = AccountId32::new([2u8; 32]);

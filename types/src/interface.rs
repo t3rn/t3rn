@@ -1,6 +1,6 @@
 use crate::{
     abi::Type,
-    side_effect::{EventSignature, SideEffectName},
+    sfx::{EventSignature, SideEffectName},
 };
 use scale_info::prelude::vec::Vec;
 

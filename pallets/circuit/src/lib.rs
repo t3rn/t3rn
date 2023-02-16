@@ -49,7 +49,7 @@ use sp_std::{convert::TryInto, vec, vec::Vec};
 pub use t3rn_types::{
     bid::SFXBid,
     fsx::FullSideEffect,
-    side_effect::{ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
+    sfx::{ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
 };
 
 pub use t3rn_primitives::{

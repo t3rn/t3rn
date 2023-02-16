@@ -40,7 +40,7 @@ use sp_io::TestExternalities;
 use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs, str::FromStr};
-use t3rn_types::{abi::*, side_effect::*};
+use t3rn_types::{abi::*, sfx::*};
 
 use t3rn_primitives::{
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
