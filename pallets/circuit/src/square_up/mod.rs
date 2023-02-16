@@ -124,12 +124,16 @@ impl<T: Config> SquareUp<T> {
             let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             if let Some(bid) = &fsx.best_bid {
                 if !<T as Config>::AccountManager::assign_deposit(sfx_id, &bid.executor) {
+                    log::info!("bind_bidders: FAILED!!!!!!!!");
+                    log::info!("THIS IS THE ISSUE");
                     log::error!(
                         "assign_deposit: expect assign_deposit to succeed for sfx_id: {:?}",
                         sfx_id
                     );
                 } else {
                     fsx.input.enforce_executor = Some(bid.executor.clone());
+                    log::info!("bind_bidders: SUCCESS!!!!!");
+                    log::info!("sfx: {:?}", fsx.input);
                     res = true;
                 }
             } else {

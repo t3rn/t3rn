@@ -1208,6 +1208,12 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     steps_cnt: (0, 1),
                 })
             );
+
+            // This is not equal when I run with real data
+            assert_eq!(
+                Circuit::get_full_side_effects(xtx_id).unwrap()[0][0].input.enforce_executor,
+                Some(BID_WINNER)
+            );
         });
 }
 

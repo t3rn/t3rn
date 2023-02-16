@@ -151,6 +151,8 @@ impl<T: Config>
                 total_deposit,
                 request_charge.maybe_asset_id,
             )?;
+            log::info!("Deposit received for charge: {:?}", charge_id);
+            log::info!("current round: {:?}", T::Clock::current_round());
             PendingChargesPerRound::<T>::insert(
                 T::Clock::current_round(),
                 charge_id,
@@ -332,6 +334,9 @@ impl<T: Config>
     }
 
     fn assign_deposit(charge_id: T::Hash, recipient: &T::AccountId) -> bool {
+        log::info!("Assigning deposit to {:?}", recipient);
+        log::info!("Charge Id: {:?}", charge_id);
+        log::info!("Current round: {:?}", T::Clock::current_round());
         PendingChargesPerRound::<T>::mutate(T::Clock::current_round(), charge_id, |maybe_charge| {
             match maybe_charge {
                 Some(charge) => {
