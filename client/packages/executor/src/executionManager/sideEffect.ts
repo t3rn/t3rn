@@ -92,7 +92,7 @@ export class SideEffect extends EventEmitter {
     /** If the executor leading the bid changes, store the change */
     changedBidLeader: boolean = false
     /** Value of the last bid */
-    lastBids: number[]
+    lastBids: number[] = [];
 
     // SideEffect data
     id: string

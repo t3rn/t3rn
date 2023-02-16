@@ -34,6 +34,10 @@ export class BiddingEngine {
     /** Which executors are bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
     whoBidsOnWhat = new Map<string, string[]>();
 
+    constructor(logger: any) {
+        this.logger = logger;
+    }
+
     /**
      * Computes the bidding amount for a given SFX for a certain scenario.
      *
@@ -42,16 +46,18 @@ export class BiddingEngine {
      */
     computeBid(sfx: SideEffect): number {
         const scenario = this.checkScenario(sfx)
+        console.log(scenario)
         let bid: number = 0
         switch (scenario) {
             case Scenario.noBidAndNoCompetition:
                 bid = this.computeNoBidAndNoCompetition(sfx)
+                break;
             case Scenario.noBidButCompetition:
                 bid = this.computeNoBidButCompetition(sfx)
+                break;
             case Scenario.beenOutbid:
                 bid = this.computeBeenOutbid(sfx)
-            default:
-                this.logger.error("Cannot find the scenario for the bidding engine")
+                break;
         }
         return bid
     }
@@ -142,15 +148,13 @@ export class BiddingEngine {
     checkScenario(sfx: SideEffect): Scenario {
         const executorIsTopBidder = sfx.isBidder
         const otherBidsOnSFX: boolean = sfx.lastBids.length > 0 ? true : false
-
-        if (!executorIsTopBidder) {
+        
+        if(!otherBidsOnSFX) { // No other, so we should be first
+            return Scenario.noBidAndNoCompetition
+        } else if(!executorIsTopBidder) { // Othes, but we're not top bidder
             return Scenario.beenOutbid
-        } else {
-            if (otherBidsOnSFX) {
-                return Scenario.noBidButCompetition
-            } else {
-                return Scenario.noBidAndNoCompetition
-            }
+        } else { // ToDo: This is probably incorrect, because there should be 4 scenarios
+            return Scenario.noBidButCompetition
         }
     }
 

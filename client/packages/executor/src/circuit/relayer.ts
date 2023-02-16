@@ -49,11 +49,13 @@ export class CircuitRelayer extends EventEmitter {
      */
     async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
         const txs: SubmittableExtrinsic[] = sfxs.map((sfx) => this.createConfirmTx(sfx))
+        console.log("Here")
         const nonce = await fetchNonce(this.api, this.sdk.signer.address)
         if (txs.length > 1) {
             // only batch if more than one tx
             return this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createBatch(txs))
         } else {
+            console.log("Single sfx")
             return this.sdk.circuit.tx.signAndSendSafe(txs[0])
         }
     }
