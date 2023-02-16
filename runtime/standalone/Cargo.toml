@@ -32,7 +32,7 @@ pallet-xdns                               = { path = "../../pallets/xdns", defau
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
-t3rn-protocol   = { path = "../../protocol", default-features = false }
+t3rn-types   = { path = "../../types", default-features = false }
 
 # Smart contracts VMs
 evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
@@ -102,7 +102,7 @@ std = [
   "pallet-assets/std",
   "pallet-asset-tx-payment/std",
   "t3rn-primitives/std",
-  "t3rn-protocol/std",
+  "t3rn-types/std",
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
   "pallet-contracts-registry-rpc-runtime-api/std",

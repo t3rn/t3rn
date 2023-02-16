@@ -1,8 +1,8 @@
 use codec::Encode;
-pub use hex_literal::hex;
-use sp_std::{boxed::Box, vec, vec::Vec};
-use crate::{
-    abi::{GatewayABIConfig, Type},
+use hex_literal::hex;
+use sp_std::{vec, vec::Vec};
+use t3rn_types::{
+    abi::{Type},
     interface::SideEffectInterface,
     side_effect::SideEffect,
     Bytes,
@@ -115,9 +115,6 @@ pub fn produce_test_args(types: Vec<(Type, ArgVariant)>) -> Arguments {
 pub fn produce_and_validate_side_effect(
     sfx_interface: SideEffectInterface,
     args_variants: Vec<(Type, ArgVariant)>,
-    requester: AccountId,
-    requester_nonce: u32,
-    sfx_index: u32,
 ) -> SideEffect<AccountId, BalanceOf> {
     produce_test_side_effect(
         sfx_interface.get_id(),

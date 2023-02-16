@@ -258,11 +258,11 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 }
 
 impl GetChannelInfo for Runtime {
-    fn get_channel_max(id: ParaId) -> Option<usize> {
+    fn get_channel_max(_id: ParaId) -> Option<usize> {
         None
     }
 
-    fn get_channel_status(id: ParaId) -> cumulus_primitives_core::ChannelStatus {
+    fn get_channel_status(_id: ParaId) -> cumulus_primitives_core::ChannelStatus {
         cumulus_primitives_core::ChannelStatus::Ready(200, 200)
     }
 }

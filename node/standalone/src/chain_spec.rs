@@ -25,10 +25,10 @@ use t3rn_primitives::{
             SOONSOCIAL_CHAIN_ID,
         },
     },
-    side_effect::interface::SideEffectInterface,
     xdns::{Parachain, XdnsRecord},
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
+use t3rn_types::interface::SideEffectInterface;
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -38,7 +38,7 @@ pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-    TPublic::Pair::from_string(&format!("//{}", seed), None)
+    TPublic::Pair::from_string(&format!("//{seed}"), None)
         .expect("static values are valid; qed")
         .public()
 }
@@ -166,7 +166,7 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
-    t3rn_protocol::side_effects::standards::standard_side_effects()
+    t3rn_types::standard::standard_side_effects()
 }
 
 /// Fetches gateway initialization data by chain id.
