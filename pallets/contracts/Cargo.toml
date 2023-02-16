@@ -77,7 +77,7 @@ pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
 
 [features]
 default = [ "std" ]
-runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "rand", "rand_pcg", "unstable-interface" ]
+runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-system/runtime-benchmarks", "frame-support/runtime-benchmarks", "sp-runtime/runtime-benchmarks",  "rand", "rand_pcg", "unstable-interface" ]
 std = [
   "serde/std",
   "codec/std",
@@ -99,7 +99,7 @@ std = [
   "t3rn-primitives/std",
   "t3rn-sdk-primitives/std",
 ]
-try-runtime = [ "frame-support/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime" ]
 # Make contract callable functions marked as __unstable__ available. Do not enable
 # on live chains as those are subject to change.
 unstable-interface = [  ]

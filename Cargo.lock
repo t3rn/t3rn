@@ -6454,6 +6454,7 @@ name = "pallet-asset-registry"
 version = "0.3.0"
 source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -7865,6 +7866,7 @@ version = "0.3.0"
 source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
 dependencies = [
  "fp-evm 3.0.0-dev",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
