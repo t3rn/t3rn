@@ -31,6 +31,8 @@ use frame_support::{
 
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 
+use circuit_mock_runtime::test_utils::*;
+use hex_literal::hex;
 pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_core::H256;
@@ -38,16 +40,14 @@ use sp_io::TestExternalities;
 use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs, str::FromStr};
+use t3rn_types::{abi::*, side_effect::*};
+
 use t3rn_primitives::{
-    abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
-    side_effect::*,
     volatile::LocalState,
     xdns::AllowedSideEffect,
     Balance, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
-
-use t3rn_protocol::side_effects::test_utils::*;
 
 use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;
 
@@ -447,23 +447,14 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
 #[test]
 fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A),
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -596,23 +587,14 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
 fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
-
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A),
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -641,23 +623,14 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
-
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A),
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -753,23 +726,14 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
 fn circuit_handles_single_bid_for_transfer_sfx() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
-
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, reward = 1
+            (Type::OptionalInsurance, ArgVariant::A),
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -872,23 +836,14 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
 fn circuit_handles_dropped_at_bidding() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
-
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, reward = 1
+            (Type::OptionalInsurance, ArgVariant::A),
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -1001,23 +956,14 @@ fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
 
 #[test]
 fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
-
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::C), // insurance = 3, max_reward/reward = 3
+            (Type::OptionalInsurance, ArgVariant::C),
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -1217,9 +1163,8 @@ fn circuit_handles_swap_with_insurance() {
 
     let ext = ExtBuilder::default();
 
-    let mut local_state = LocalState::new();
-    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
     let valid_swap_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_swap_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),       // caller
             (Type::Address(32), ArgVariant::B),       // to
@@ -1229,11 +1174,6 @@ fn circuit_handles_swap_with_insurance() {
             (Type::Bytes(4), ArgVariant::B),          // asset_to
             (Type::OptionalInsurance, ArgVariant::A), // insurance
         ],
-        &mut local_state,
-        swap_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_swap_side_effect.clone()];
@@ -1317,12 +1257,9 @@ fn circuit_handles_add_liquidity_without_insurance() {
     let origin = Origin::signed(ALICE);
 
     let ext = ExtBuilder::default();
-    let mut local_state = LocalState::new();
-
-    let add_liquidity_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_add_liquidity_interface());
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_add_liquidity_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),       // argument_0: caller
             (Type::Address(32), ArgVariant::B),       // argument_1: to
@@ -1334,11 +1271,6 @@ fn circuit_handles_add_liquidity_without_insurance() {
             (Type::Uint(128), ArgVariant::A),         // argument_7: amount_liquidity_token
             (Type::OptionalInsurance, ArgVariant::A), // argument_8: no insurance, empty bytes
         ],
-        &mut local_state,
-        add_liquidity_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
@@ -1380,12 +1312,9 @@ fn circuit_handles_add_liquidity_with_insurance() {
     let origin = Origin::signed(ALICE);
 
     let ext = ExtBuilder::default();
-    let mut local_state = LocalState::new();
-
-    let add_liquidity_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_add_liquidity_interface());
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_add_liquidity_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),       // argument_0: caller
             (Type::Address(32), ArgVariant::B),       // argument_1: to
@@ -1397,11 +1326,6 @@ fn circuit_handles_add_liquidity_with_insurance() {
             (Type::Uint(128), ArgVariant::A),         // argument_7: amount_liquidity_token
             (Type::OptionalInsurance, ArgVariant::A), // argument_8: Variant A insurance = 1, reward = 2
         ],
-        &mut local_state,
-        add_liquidity_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
@@ -1565,38 +1489,24 @@ fn circuit_handles_add_liquidity_with_insurance() {
 fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
-
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
-        &mut local_state,
-        transfer_protocol_box.clone(),
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::B),
             (Type::Address(32), ArgVariant::A),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        SECOND_REQUESTER_NONCE,
-        SECOND_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
@@ -1628,38 +1538,24 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
 fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
-
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
-        &mut local_state,
-        transfer_protocol_box.clone(),
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::B),
             (Type::Address(32), ArgVariant::A),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        SECOND_REQUESTER_NONCE,
-        SECOND_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
@@ -1690,40 +1586,29 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
 fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
-
-    let mut local_state = LocalState::new();
+    let _local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
-        &mut local_state,
-        transfer_protocol_box.clone(),
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::A),
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        SECOND_REQUESTER_NONCE,
-        SECOND_SFX_INDEX,
     );
 
     let valid_swap_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_swap_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),       // caller
             (Type::Address(32), ArgVariant::B),       // to
@@ -1733,11 +1618,6 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
             (Type::Bytes(4), ArgVariant::B),          // asset_to
             (Type::OptionalInsurance, ArgVariant::A), // no insurance
         ],
-        &mut local_state,
-        swap_protocol_box,
-        ALICE,
-        THIRD_REQUESTER_NONCE,
-        THIRD_SFX_INDEX,
     );
 
     let side_effects = vec![
@@ -1770,25 +1650,14 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 fn circuit_cancels_xtx_with_bids_after_timeout() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
-
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-    let _swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
-
-    let mut local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::A),
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -1810,12 +1679,6 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                 side_effects,
                 sequential,
             ));
-
-            let _events = System::events();
-            // assert_eq!(events.len(), 8);
-
-            // let xtx_id: sp_core::H256 =
-            //     hex!("9946104f0d553532303b8a763d5828d75ed4493c585c948d10b7e9317ade6331").into();
 
             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
 
@@ -1896,25 +1759,15 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
 fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
-
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-    let _swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
-
-    let mut local_state = LocalState::new();
+    let _local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     const MAX_FEE: Balance = 1;
@@ -4352,7 +4205,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 //
 //     let transfer_protocol_box =
-//         Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+//         Box::new(t3rn_types::standard::get_transfer_interface());
 //
 //     let mut local_state = LocalState::new();
 //     let mut valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -4590,23 +4443,14 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 fn no_duplicate_xtx_and_sfx_ids() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box =
-        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
-
-    let mut local_state = LocalState::new();
-
     let valid_transfer_side_effect = produce_and_validate_side_effect(
+        t3rn_types::standard::get_transfer_interface(),
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(128), ArgVariant::A),
             (Type::OptionalInsurance, ArgVariant::C), // insurance = 3, max_reward/reward = 3
         ],
-        &mut local_state,
-        transfer_protocol_box,
-        ALICE,
-        FIRST_REQUESTER_NONCE,
-        FIRST_SFX_INDEX,
     );
 
     let expected_xtx_id_1 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);

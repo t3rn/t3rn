@@ -9,10 +9,9 @@ use circuit_runtime_pallets::pallet_circuit::{
 use codec::Encode;
 use frame_support::{assert_ok, traits::Currency};
 use sp_runtime::AccountId32;
-use t3rn_primitives::{
-    side_effect::{ConfirmedSideEffect, FullSideEffect},
-    xtx::LocalState,
-};
+use t3rn_primitives::xtx::LocalState;
+
+use t3rn_types::{fsx::FullSideEffect, side_effect::ConfirmedSideEffect};
 
 pub const REQUESTER_1: AccountId = AccountId32::new([1u8; 32]);
 pub const REQUESTER_2: AccountId = AccountId32::new([2u8; 32]);
@@ -132,7 +131,7 @@ pub fn setup_xtx_with_10_sfx(
             sfx_arr_of_10[sfx_index as usize]
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
                     &local_ctx.xtx_id[..],
-                    sfx_index as u32,
+                    sfx_index,
                 ),
         );
     }
@@ -182,7 +181,7 @@ pub fn bid_for_n_out_of_10_sfx_in_xtx(
             .input
             .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
             &local_ctx.xtx_id.0,
-            sfx_index as u32,
+            sfx_index,
         );
 
         assert_ok!(Machine::<Runtime>::compile(
