@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - development
-    paths:
-      - "client/packages/executor/**/*.ts"
-      - "client/packages/executor/**/*.json"
 
 env:
   RUST_BACKTRACE: 1
@@ -57,4 +54,4 @@ jobs:
 
       - name: Helm Upgrade
         working-directory: ./client/packages/executor
-        run: helm upgrade executor helm -n executor -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}"
+        run: helm upgrade executor helm -n executor -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-executor"
