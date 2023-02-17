@@ -49,7 +49,11 @@ pub mod pallet {
         xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
         Bytes, ChainId, GatewaySysProps, GatewayType, GatewayVendor,
     };
-    use t3rn_types::interface::SideEffectInterface;
+    use t3rn_types::{
+        fsx::{SecurityLvl, TargetId},
+        interface::SideEffectInterface,
+        sfx::{Sfx4bId, SfxExpectedDescriptor},
+    };
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -193,6 +197,8 @@ pub mod pallet {
         UnknownXdnsRecord,
         /// Xdns Record not found
         XdnsRecordNotFound,
+        /// Xdns Record not found
+        SideEffectDescriptorAlreadyExists,
         /// SideEffect already stored
         SideEffectInterfaceAlreadyExists,
         /// SideEffect interface was not found in storage
@@ -202,7 +208,12 @@ pub mod pallet {
     }
 
     #[pallet::storage]
-    pub type StandardSideEffects<T: Config> = StorageMap<_, Identity, [u8; 4], SideEffectInterface>;
+    pub type StandardSideEffects<T: Config> =
+        StorageMap<_, Identity, TargetId, SideEffectInterface>;
+
+    #[pallet::storage]
+    pub type SeenSideEffects<T: Config> =
+        StorageDoubleMap<_, Identity, TargetId, Identity, Sfx4bId, SfxExpectedDescriptor>;
 
     #[pallet::storage]
     #[pallet::getter(fn side_effect_registry)]
@@ -382,6 +393,83 @@ pub mod pallet {
 
         fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
             <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
+        }
+
+        fn extend_optimistic_sfx_descriptor(
+            origin: OriginFor<T>,
+            gateway_id: ChainId,
+            sfx_4b_id: Sfx4bId,
+            sfx_expected_descriptor: SfxExpectedDescriptor,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            if !<XDNSRegistry<T>>::contains_key(gateway_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
+
+            <SeenSideEffects<T>>::mutate(gateway_id, sfx_4b_id, |sfx_descriptor| {
+                match sfx_descriptor {
+                    Some(_) => Err(Error::<T>::SideEffectDescriptorAlreadyExists),
+                    None => {
+                        *sfx_descriptor = Some(sfx_expected_descriptor);
+                        Ok(())
+                    },
+                }
+            })?;
+
+            Ok(())
+        }
+
+        fn override_optimistic_sfx_descriptor(
+            origin: OriginFor<T>,
+            gateway_id: ChainId,
+            new_sfx_descriptors: Vec<(Sfx4bId, SfxExpectedDescriptor)>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            if !<XDNSRegistry<T>>::contains_key(gateway_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
+
+            for (sfx_4b_id, sfx_expected_descriptor) in new_sfx_descriptors {
+                <SeenSideEffects<T>>::mutate(gateway_id, sfx_4b_id, |sfx_descriptor| {
+                    *sfx_descriptor = Some(sfx_expected_descriptor);
+                });
+            }
+
+            Ok(())
+        }
+
+        fn get_optimistic_sfx_descriptors(
+            gateway_id: &ChainId,
+        ) -> Vec<(Sfx4bId, SfxExpectedDescriptor)> {
+            <SeenSideEffects<T>>::iter_prefix(gateway_id)
+                .map(|(sfx_4b_id, sfx_descriptor)| (sfx_4b_id, sfx_descriptor))
+                .collect()
+        }
+
+        fn get_optimistic_sfx_descriptor(
+            gateway_id: &ChainId,
+            sfx_4b_id: Sfx4bId,
+        ) -> Option<SfxExpectedDescriptor> {
+            <SeenSideEffects<T>>::get(gateway_id, sfx_4b_id)
+        }
+
+        fn modify_security_level(
+            origin: OriginFor<T>,
+            gateway_id: ChainId,
+            _security_level: SecurityLvl,
+            security_coordinates: Vec<u8>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            XDNSRegistry::<T>::mutate(gateway_id, |xdns_record| match xdns_record {
+                None => Err(Error::<T>::XdnsRecordNotFound),
+                Some(record) => {
+                    record.security_coordinates = security_coordinates;
+                    Ok(())
+                },
+            })?;
+
+            Ok(())
         }
     }
 }
