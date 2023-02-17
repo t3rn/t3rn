@@ -25,20 +25,18 @@ import type {
   AccountId32,
   H160,
   H256,
-  Perbill,
 } from "@polkadot/types/interfaces/runtime";
 import type {
   EthereumLog,
   FrameSupportTokensMiscBalanceStatus,
   FrameSupportWeightsDispatchInfo,
-  PalletXbiPortalXbiFormatXbiCheckOutStatus,
-  PalletXbiPortalXbiFormatXbiNotificationKind,
   SpFinalityGrandpaAppPublic,
   SpRuntimeDispatchError,
   T3rnPrimitivesContractMetadataContractType,
-  T3rnPrimitivesSideEffectFullSideEffect,
   T3rnSdkPrimitivesSignalSignalKind,
-  T3rnTypesSideEffect,
+  T3rnTypesFsxFullSideEffect,
+  T3rnTypesSfxSideEffect,
+  XbiFormatXbiCheckOutStatus,
 } from "@polkadot/types/lookup";
 
 export type __AugmentedEvent<ApiType extends ApiTypes> =
@@ -57,13 +55,13 @@ declare module "@polkadot/api-base/types/events" {
         [
           chargeId: H256,
           payee: AccountId32,
-          recipient: AccountId32,
+          recipient: Option<AccountId32>,
           amount: u128
         ],
         {
           chargeId: H256;
           payee: AccountId32;
-          recipient: AccountId32;
+          recipient: Option<AccountId32>;
           amount: u128;
         }
       >;
@@ -305,7 +303,7 @@ declare module "@polkadot/api-base/types/events" {
     circuit: {
       AddLiquidity: AugmentedEvent<
         ApiType,
-        [AccountId32, u64, u64, u128, u128, u128]
+        [AccountId32, u32, u32, u128, u128, u128]
       >;
       CallCustom: AugmentedEvent<
         ApiType,
@@ -333,65 +331,51 @@ declare module "@polkadot/api-base/types/events" {
       >;
       CancelledSideEffects: AugmentedEvent<
         ApiType,
-        [AccountId32, H256, Vec<T3rnTypesSideEffect>]
+        [AccountId32, H256, Vec<T3rnTypesSfxSideEffect>]
       >;
       EscrowTransfer: AugmentedEvent<ApiType, [AccountId32, AccountId32, u128]>;
       NewSideEffectsAvailable: AugmentedEvent<
         ApiType,
-        [AccountId32, H256, Vec<T3rnTypesSideEffect>, Vec<H256>]
-      >;
-      Notification: AugmentedEvent<
-        ApiType,
-        [
-          AccountId32,
-          AccountId32,
-          PalletXbiPortalXbiFormatXbiNotificationKind,
-          Bytes,
-          Bytes
-        ]
+        [AccountId32, H256, Vec<T3rnTypesSfxSideEffect>, Vec<H256>]
       >;
       Result: AugmentedEvent<
         ApiType,
-        [
-          AccountId32,
-          AccountId32,
-          PalletXbiPortalXbiFormatXbiCheckOutStatus,
-          Bytes,
-          Bytes
-        ]
+        [AccountId32, AccountId32, XbiFormatXbiCheckOutStatus, Bytes, Bytes]
       >;
-      SFXNewBidReceived: AugmentedEvent<
-        ApiType,
-        [H256, H256, AccountId32, u128]
-      >;
+      SFXNewBidReceived: AugmentedEvent<ApiType, [H256, AccountId32, u128]>;
       SideEffectConfirmed: AugmentedEvent<ApiType, [H256]>;
-      SideEffectInsuranceReceived: AugmentedEvent<ApiType, [H256, AccountId32]>;
       SideEffectsConfirmed: AugmentedEvent<
         ApiType,
-        [H256, Vec<Vec<T3rnPrimitivesSideEffectFullSideEffect>>]
+        [H256, Vec<Vec<T3rnTypesFsxFullSideEffect>>]
       >;
-      Swap: AugmentedEvent<ApiType, [AccountId32, u64, u64, u128, u128, u128]>;
+      Swap: AugmentedEvent<ApiType, [AccountId32, u32, u32, u128, u128, u128]>;
       Transfer: AugmentedEvent<
         ApiType,
         [AccountId32, AccountId32, AccountId32, u128]
       >;
       TransferAssets: AugmentedEvent<
         ApiType,
-        [AccountId32, u64, AccountId32, AccountId32, u128]
+        [AccountId32, u32, AccountId32, AccountId32, u128]
       >;
       TransferORML: AugmentedEvent<
         ApiType,
-        [AccountId32, u64, AccountId32, AccountId32, u128]
+        [AccountId32, u32, AccountId32, AccountId32, u128]
       >;
       XTransactionReadyForExec: AugmentedEvent<ApiType, [H256]>;
       XTransactionReceivedForExec: AugmentedEvent<ApiType, [H256]>;
       XTransactionStepFinishedExec: AugmentedEvent<ApiType, [H256]>;
+      XTransactionXtxDroppedAtBidding: AugmentedEvent<ApiType, [H256]>;
       XTransactionXtxFinishedExecAllSteps: AugmentedEvent<ApiType, [H256]>;
       XTransactionXtxRevertedAfterTimeOut: AugmentedEvent<ApiType, [H256]>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
     clock: {
+      NewRound: AugmentedEvent<
+        ApiType,
+        [index: u32, head: u32, term: u32],
+        { index: u32; head: u32; term: u32 }
+      >;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
@@ -483,6 +467,73 @@ declare module "@polkadot/api-base/types/events" {
       Paused: AugmentedEvent<ApiType, []>;
       /** Current authority set has been resumed. */
       Resumed: AugmentedEvent<ApiType, []>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    identity: {
+      /** A name was cleared, and the given balance returned. */
+      IdentityCleared: AugmentedEvent<
+        ApiType,
+        [who: AccountId32, deposit: u128],
+        { who: AccountId32; deposit: u128 }
+      >;
+      /** A name was removed and the given balance slashed. */
+      IdentityKilled: AugmentedEvent<
+        ApiType,
+        [who: AccountId32, deposit: u128],
+        { who: AccountId32; deposit: u128 }
+      >;
+      /** A name was set or reset (which will remove all judgements). */
+      IdentitySet: AugmentedEvent<
+        ApiType,
+        [who: AccountId32],
+        { who: AccountId32 }
+      >;
+      /** A judgement was given by a registrar. */
+      JudgementGiven: AugmentedEvent<
+        ApiType,
+        [target: AccountId32, registrarIndex: u32],
+        { target: AccountId32; registrarIndex: u32 }
+      >;
+      /** A judgement was asked from a registrar. */
+      JudgementRequested: AugmentedEvent<
+        ApiType,
+        [who: AccountId32, registrarIndex: u32],
+        { who: AccountId32; registrarIndex: u32 }
+      >;
+      /** A judgement request was retracted. */
+      JudgementUnrequested: AugmentedEvent<
+        ApiType,
+        [who: AccountId32, registrarIndex: u32],
+        { who: AccountId32; registrarIndex: u32 }
+      >;
+      /** A registrar was added. */
+      RegistrarAdded: AugmentedEvent<
+        ApiType,
+        [registrarIndex: u32],
+        { registrarIndex: u32 }
+      >;
+      /** A sub-identity was added to an identity and the deposit paid. */
+      SubIdentityAdded: AugmentedEvent<
+        ApiType,
+        [sub: AccountId32, main: AccountId32, deposit: u128],
+        { sub: AccountId32; main: AccountId32; deposit: u128 }
+      >;
+      /** A sub-identity was removed from an identity and the deposit freed. */
+      SubIdentityRemoved: AugmentedEvent<
+        ApiType,
+        [sub: AccountId32, main: AccountId32, deposit: u128],
+        { sub: AccountId32; main: AccountId32; deposit: u128 }
+      >;
+      /**
+       * A sub-identity was cleared, and the given deposit repatriated from the
+       * main identity account to the sub-identity account.
+       */
+      SubIdentityRevoked: AugmentedEvent<
+        ApiType,
+        [sub: AccountId32, main: AccountId32, deposit: u128],
+        { sub: AccountId32; main: AccountId32; deposit: u128 }
+      >;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
@@ -615,55 +666,46 @@ declare module "@polkadot/api-base/types/events" {
       [key: string]: AugmentedEvent<ApiType>;
     };
     treasury: {
-      BeneficiaryTokensIssued: AugmentedEvent<ApiType, [AccountId32, u128]>;
-      InflationAllocationChanged: AugmentedEvent<
+      /** Some funds have been allocated. */
+      Awarded: AugmentedEvent<
         ApiType,
-        [developer: Perbill, executor: Perbill],
-        { developer: Perbill; executor: Perbill }
+        [proposalIndex: u32, award: u128, account: AccountId32],
+        { proposalIndex: u32; award: u128; account: AccountId32 }
       >;
-      InflationConfigChanged: AugmentedEvent<
+      /** Some of our funds have been burnt. */
+      Burnt: AugmentedEvent<ApiType, [burntFunds: u128], { burntFunds: u128 }>;
+      /** Some funds have been deposited. */
+      Deposit: AugmentedEvent<ApiType, [value: u128], { value: u128 }>;
+      /** New proposal. */
+      Proposed: AugmentedEvent<
         ApiType,
-        [
-          annualMin: Perbill,
-          annualIdeal: Perbill,
-          annualMax: Perbill,
-          roundMin: Perbill,
-          roundIdeal: Perbill,
-          roundMax: Perbill
-        ],
-        {
-          annualMin: Perbill;
-          annualIdeal: Perbill;
-          annualMax: Perbill;
-          roundMin: Perbill;
-          roundIdeal: Perbill;
-          roundMax: Perbill;
-        }
+        [proposalIndex: u32],
+        { proposalIndex: u32 }
       >;
-      NewRound: AugmentedEvent<
+      /** A proposal was rejected; funds were slashed. */
+      Rejected: AugmentedEvent<
         ApiType,
-        [round: u32, head: u32],
-        { round: u32; head: u32 }
+        [proposalIndex: u32, slashed: u128],
+        { proposalIndex: u32; slashed: u128 }
       >;
-      RewardsClaimed: AugmentedEvent<ApiType, [AccountId32, u128]>;
-      RoundTermChanged: AugmentedEvent<
+      /** Spending has finished; this is the amount that rolls over until next spend. */
+      Rollover: AugmentedEvent<
         ApiType,
-        [
-          old: u32,
-          new_: u32,
-          roundMin: Perbill,
-          roundIdeal: Perbill,
-          roundMax: Perbill
-        ],
-        {
-          old: u32;
-          new_: u32;
-          roundMin: Perbill;
-          roundIdeal: Perbill;
-          roundMax: Perbill;
-        }
+        [rolloverBalance: u128],
+        { rolloverBalance: u128 }
       >;
-      RoundTokensIssued: AugmentedEvent<ApiType, [u32, u128]>;
+      /** A new spend proposal has been approved. */
+      SpendApproved: AugmentedEvent<
+        ApiType,
+        [proposalIndex: u32, amount: u128, beneficiary: AccountId32],
+        { proposalIndex: u32; amount: u128; beneficiary: AccountId32 }
+      >;
+      /** We have ended a spend period and will now allocate funds. */
+      Spending: AugmentedEvent<
+        ApiType,
+        [budgetRemaining: u128],
+        { budgetRemaining: u128 }
+      >;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
@@ -695,11 +737,6 @@ declare module "@polkadot/api-base/types/events" {
         [error: SpRuntimeDispatchError],
         { error: SpRuntimeDispatchError }
       >;
-      /** Generic event */
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    xbiPortal: {
-      AbiInstructionExecuted: AugmentedEvent<ApiType, []>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };

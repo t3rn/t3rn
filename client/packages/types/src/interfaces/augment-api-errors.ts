@@ -23,6 +23,8 @@ declare module "@polkadot/api-base/types/errors" {
       PendingChargeNotFoundAtCommit: AugmentedError<ApiType>;
       PendingChargeNotFoundAtRefund: AugmentedError<ApiType>;
       SkippingEmptyCharges: AugmentedError<ApiType>;
+      TransferDepositFailedOldChargeNotFound: AugmentedError<ApiType>;
+      TransferDepositFailedToReleasePreviousCharge: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
@@ -64,6 +66,24 @@ declare module "@polkadot/api-base/types/errors" {
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
+    authorship: {
+      /** The uncle is genesis. */
+      GenesisUncle: AugmentedError<ApiType>;
+      /** The uncle parent not in the chain. */
+      InvalidUncleParent: AugmentedError<ApiType>;
+      /** The uncle isn't recent enough to be included. */
+      OldUncle: AugmentedError<ApiType>;
+      /** The uncle is too high in chain. */
+      TooHighUncle: AugmentedError<ApiType>;
+      /** Too many uncles. */
+      TooManyUncles: AugmentedError<ApiType>;
+      /** The uncle is already included. */
+      UncleAlreadyIncluded: AugmentedError<ApiType>;
+      /** Uncles already set in the block. */
+      UnclesAlreadySet: AugmentedError<ApiType>;
+      /** Generic error */
+      [key: string]: AugmentedError<ApiType>;
+    };
     balances: {
       /** Beneficiary account must pre-exist */
       DeadAccount: AugmentedError<ApiType>;
@@ -87,14 +107,20 @@ declare module "@polkadot/api-base/types/errors" {
     circuit: {
       ApplyFailed: AugmentedError<ApiType>;
       ApplyTriggeredWithUnexpectedStatus: AugmentedError<ApiType>;
+      ArithmeticErrorDivisionByZero: AugmentedError<ApiType>;
+      ArithmeticErrorOverflow: AugmentedError<ApiType>;
+      ArithmeticErrorUnderflow: AugmentedError<ApiType>;
+      BidderNotEnoughBalance: AugmentedError<ApiType>;
       BiddingFailedExecutorsBalanceTooLowToReserve: AugmentedError<ApiType>;
       BiddingInactive: AugmentedError<ApiType>;
       BiddingRejectedBetterBidFound: AugmentedError<ApiType>;
       BiddingRejectedBidBelowDust: AugmentedError<ApiType>;
       BiddingRejectedBidTooHigh: AugmentedError<ApiType>;
-      BiddingRejectedExecutorNotEnoughBalance: AugmentedError<ApiType>;
+      BiddingRejectedFailedToDepositBidderBond: AugmentedError<ApiType>;
+      BiddingRejectedInsuranceTooLow: AugmentedError<ApiType>;
       ChargingTransferFailed: AugmentedError<ApiType>;
       ChargingTransferFailedAtPendingExecution: AugmentedError<ApiType>;
+      ConfirmationFailed: AugmentedError<ApiType>;
       ContractXtxKilledRunOutOfFunds: AugmentedError<ApiType>;
       CriticalStateSquareUpCalledToFinishWithoutFsxConfirmed: AugmentedError<ApiType>;
       DeterminedForbiddenXtxStatus: AugmentedError<ApiType>;
@@ -111,21 +137,27 @@ declare module "@polkadot/api-base/types/errors" {
       FatalErroredRevertSideEffectConfirmationAttempt: AugmentedError<ApiType>;
       FatalXtxTimeoutXtxIdNotMatched: AugmentedError<ApiType>;
       FinalizeSquareUpFailed: AugmentedError<ApiType>;
+      FSXNotFoundById: AugmentedError<ApiType>;
       InsuranceBondAlreadyDeposited: AugmentedError<ApiType>;
       InsuranceBondNotRequired: AugmentedError<ApiType>;
       InvalidFSXBidStateLocated: AugmentedError<ApiType>;
+      InvalidFTXStateEmptyBidForReadyXtx: AugmentedError<ApiType>;
+      InvalidFTXStateEmptyConfirmationForFinishedXtx: AugmentedError<ApiType>;
+      InvalidFTXStateIncorrectExecutorForReadySFX: AugmentedError<ApiType>;
+      InvalidFTXStateUnassignedExecutorForReadySFX: AugmentedError<ApiType>;
       InvalidLocalTrigger: AugmentedError<ApiType>;
       LocalExecutionUnauthorized: AugmentedError<ApiType>;
       LocalSideEffectExecutionNotApplicable: AugmentedError<ApiType>;
+      OnLocalTriggerFailedToSetupXtx: AugmentedError<ApiType>;
       RefundTransferFailed: AugmentedError<ApiType>;
       RelayEscrowedFailedNothingToConfirm: AugmentedError<ApiType>;
       RequesterNotEnoughBalance: AugmentedError<ApiType>;
       RewardTransferFailed: AugmentedError<ApiType>;
+      SanityAfterCreatingSFXDepositsFailed: AugmentedError<ApiType>;
       SetupFailed: AugmentedError<ApiType>;
       SetupFailedDuplicatedXtx: AugmentedError<ApiType>;
       SetupFailedEmptyXtx: AugmentedError<ApiType>;
       SetupFailedIncorrectXtxStatus: AugmentedError<ApiType>;
-      SetupFailedUnknownXtx: AugmentedError<ApiType>;
       SetupFailedXtxAlreadyFinished: AugmentedError<ApiType>;
       SetupFailedXtxNotFound: AugmentedError<ApiType>;
       SetupFailedXtxReverted: AugmentedError<ApiType>;
@@ -137,10 +169,15 @@ declare module "@polkadot/api-base/types/errors" {
       SignalQueueFull: AugmentedError<ApiType>;
       UnauthorizedCancellation: AugmentedError<ApiType>;
       UnsupportedRole: AugmentedError<ApiType>;
+      UpdateAttemptDoubleKill: AugmentedError<ApiType>;
+      UpdateAttemptDoubleRevert: AugmentedError<ApiType>;
+      UpdateForcedStateTransitionDisallowed: AugmentedError<ApiType>;
+      UpdateStateTransitionDisallowed: AugmentedError<ApiType>;
       UpdateXtxTriggeredWithUnexpectedStatus: AugmentedError<ApiType>;
       XBIExitFailedOnSFXConfirmation: AugmentedError<ApiType>;
       XtxChargeBondDepositFailedCantAccessBid: AugmentedError<ApiType>;
       XtxChargeFailedRequesterBalanceTooLow: AugmentedError<ApiType>;
+      XtxDoesNotExist: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
@@ -306,6 +343,42 @@ declare module "@polkadot/api-base/types/errors" {
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
+    identity: {
+      /** Account ID is already named. */
+      AlreadyClaimed: AugmentedError<ApiType>;
+      /** Empty index. */
+      EmptyIndex: AugmentedError<ApiType>;
+      /** Fee is changed. */
+      FeeChanged: AugmentedError<ApiType>;
+      /** The index is invalid. */
+      InvalidIndex: AugmentedError<ApiType>;
+      /** Invalid judgement. */
+      InvalidJudgement: AugmentedError<ApiType>;
+      /** The target is invalid. */
+      InvalidTarget: AugmentedError<ApiType>;
+      /** Judgement given. */
+      JudgementGiven: AugmentedError<ApiType>;
+      /** No identity found. */
+      NoIdentity: AugmentedError<ApiType>;
+      /** Account isn't found. */
+      NotFound: AugmentedError<ApiType>;
+      /** Account isn't named. */
+      NotNamed: AugmentedError<ApiType>;
+      /** Sub-account isn't owned by sender. */
+      NotOwned: AugmentedError<ApiType>;
+      /** Sender is not a sub-account. */
+      NotSub: AugmentedError<ApiType>;
+      /** Sticky judgement. */
+      StickyJudgement: AugmentedError<ApiType>;
+      /** Too many additional fields. */
+      TooManyFields: AugmentedError<ApiType>;
+      /** Maximum amount of registrars reached. Cannot add any more. */
+      TooManyRegistrars: AugmentedError<ApiType>;
+      /** Too many subs-accounts. */
+      TooManySubAccounts: AugmentedError<ApiType>;
+      /** Generic error */
+      [key: string]: AugmentedError<ApiType>;
+    };
     portal: {
       /** The gateways vendor is not available, which is a result of a missing XDNS record. */
       GatewayVendorNotFound: AugmentedError<ApiType>;
@@ -424,6 +497,8 @@ declare module "@polkadot/api-base/types/errors" {
       ContractNotFound: AugmentedError<ApiType>;
       /** A user exceeded the bounce threshold for submitting signals */
       ExceededSignalBounceThreshold: AugmentedError<ApiType>;
+      /** Invalid arithmetic computation causes overflow */
+      InvalidArithmeticOverflow: AugmentedError<ApiType>;
       /** An origin could not be extracted from the buffer */
       InvalidOrigin: AugmentedError<ApiType>;
       /** Invalid precompile arguments */
@@ -434,42 +509,25 @@ declare module "@polkadot/api-base/types/errors" {
       [key: string]: AugmentedError<ApiType>;
     };
     treasury: {
-      InvalidInflationAllocation: AugmentedError<ApiType>;
-      InvalidInflationConfig: AugmentedError<ApiType>;
-      NoRewardsAvailable: AugmentedError<ApiType>;
-      NotBeneficiary: AugmentedError<ApiType>;
-      RoundTermTooShort: AugmentedError<ApiType>;
-      ValueNotChanged: AugmentedError<ApiType>;
+      /**
+       * The spend origin is valid but the amount it is allowed to spend is
+       * lower than the amount to be spent.
+       */
+      InsufficientPermission: AugmentedError<ApiType>;
+      /** Proposer's balance is too low. */
+      InsufficientProposersBalance: AugmentedError<ApiType>;
+      /** No proposal or bounty at that index. */
+      InvalidIndex: AugmentedError<ApiType>;
+      /** Proposal has not been approved. */
+      ProposalNotApproved: AugmentedError<ApiType>;
+      /** Too many approvals in the queue. */
+      TooManyApprovals: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
     utility: {
       /** Too many calls batched. */
       TooManyCalls: AugmentedError<ApiType>;
-      /** Generic error */
-      [key: string]: AugmentedError<ApiType>;
-    };
-    xbiPortal: {
-      EnterFailedOnMultiLocationTransform: AugmentedError<ApiType>;
-      EnterFailedOnXcmSend: AugmentedError<ApiType>;
-      ExitUnhandled: AugmentedError<ApiType>;
-      No3VMSupportedAtDest: AugmentedError<ApiType>;
-      NoAddLiquiditySupportedAtDest: AugmentedError<ApiType>;
-      NoEVMSupportedAtDest: AugmentedError<ApiType>;
-      NoSwapSupportedAtDest: AugmentedError<ApiType>;
-      NoTransferAssetsSupportedAtDest: AugmentedError<ApiType>;
-      NoTransferEscrowSupportedAtDest: AugmentedError<ApiType>;
-      NoTransferMultiEscrowSupportedAtDest: AugmentedError<ApiType>;
-      NoTransferORMLSupportedAtDest: AugmentedError<ApiType>;
-      NoTransferSupportedAtDest: AugmentedError<ApiType>;
-      NoWASMSupportedAtDest: AugmentedError<ApiType>;
-      NoXBICallbackSupported: AugmentedError<ApiType>;
-      XBIABIFailedToCastBetweenTypesAddress: AugmentedError<ApiType>;
-      XBIABIFailedToCastBetweenTypesValue: AugmentedError<ApiType>;
-      XBIAlreadyCheckedIn: AugmentedError<ApiType>;
-      XBIInstructionNotAllowedHere: AugmentedError<ApiType>;
-      XBINotificationTimeOutDelivery: AugmentedError<ApiType>;
-      XBINotificationTimeOutExecution: AugmentedError<ApiType>;
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };

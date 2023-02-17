@@ -10,10 +10,10 @@ import type {
   AugmentedQuery,
   QueryableStorageEntry,
 } from "@polkadot/api-base/types";
+import type { Data } from "@polkadot/types";
 import type {
   Bytes,
   Option,
-  Struct,
   U8aFixed,
   Vec,
   bool,
@@ -38,6 +38,7 @@ import type {
   PalletAssetsAssetAccount,
   PalletAssetsAssetDetails,
   PalletAssetsAssetMetadata,
+  PalletAuthorshipUncleEntryItem,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReleases,
@@ -52,11 +53,10 @@ import type {
   PalletGrandpaFinalityVerifierParachain,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
+  PalletIdentityRegistrarInfo,
+  PalletIdentityRegistration,
   PalletTransactionPaymentReleases,
-  PalletTreasuryInflationInflationInfo,
-  PalletXbiPortalCall,
-  PalletXbiPortalXbiFormatXbiCheckIn,
-  PalletXbiPortalXbiFormatXbiCheckOut,
+  PalletTreasuryProposal,
   SpConsensusAuraSr25519AppSr25519Public,
   SpRuntimeDigest,
   SpRuntimeHeader,
@@ -65,14 +65,11 @@ import type {
   T3rnPrimitivesClaimableClaimableArtifacts,
   T3rnPrimitivesCommonRoundInfo,
   T3rnPrimitivesContractsRegistryRegistryContract,
-  T3rnPrimitivesMonetaryBeneficiaryRole,
-  T3rnPrimitivesMonetaryInflationAllocation,
-  T3rnPrimitivesSideEffectFullSideEffect,
-  T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
-  T3rnPrimitivesSideEffectSfxBid,
   T3rnPrimitivesVolatileLocalState,
   T3rnPrimitivesXdnsXdnsRecord,
   T3rnSdkPrimitivesSignalExecutionSignal,
+  T3rnTypesFsxFullSideEffect,
+  T3rnTypesInterfaceSideEffectInterface,
 } from "@polkadot/types/lookup";
 import type { Observable } from "@polkadot/types/types";
 
@@ -92,19 +89,14 @@ declare module "@polkadot/api-base/types/storage" {
         []
       > &
         QueryableStorageEntry<ApiType, []>;
-      pendingChargesPerRound: AugmentedQuery<
+      pendingCharges: AugmentedQuery<
         ApiType,
         (
-          arg1:
-            | T3rnPrimitivesCommonRoundInfo
-            | { index?: any; head?: any; term?: any }
-            | string
-            | Uint8Array,
-          arg2: H256 | string | Uint8Array
+          arg: H256 | string | Uint8Array
         ) => Observable<Option<T3rnPrimitivesAccountManagerRequestCharge>>,
-        [T3rnPrimitivesCommonRoundInfo, H256]
+        [H256]
       > &
-        QueryableStorageEntry<ApiType, [T3rnPrimitivesCommonRoundInfo, H256]>;
+        QueryableStorageEntry<ApiType, [H256]>;
       settlementsPerRound: AugmentedQuery<
         ApiType,
         (
@@ -183,6 +175,27 @@ declare module "@polkadot/api-base/types/storage" {
        * This will be set in `on_initialize`.
        */
       currentSlot: AugmentedQuery<ApiType, () => Observable<u64>, []> &
+        QueryableStorageEntry<ApiType, []>;
+      /** Generic query */
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
+    authorship: {
+      /** Author of current block. */
+      author: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<AccountId32>>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      /** Whether uncles were already set in this block. */
+      didSetUncles: AugmentedQuery<ApiType, () => Observable<bool>, []> &
+        QueryableStorageEntry<ApiType, []>;
+      /** Uncles */
+      uncles: AugmentedQuery<
+        ApiType,
+        () => Observable<Vec<PalletAuthorshipUncleEntryItem>>,
+        []
+      > &
         QueryableStorageEntry<ApiType, []>;
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
@@ -280,9 +293,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg: H256 | string | Uint8Array
-        ) => Observable<
-          Option<Vec<Vec<T3rnPrimitivesSideEffectFullSideEffect>>>
-        >,
+        ) => Observable<Option<Vec<Vec<T3rnTypesFsxFullSideEffect>>>>,
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;
@@ -304,21 +315,9 @@ declare module "@polkadot/api-base/types/storage" {
       > &
         QueryableStorageEntry<ApiType, [H256]>;
       /**
-       * Temporary bids for SFX executions. Cleaned out each
-       * Config::BidsInterval, where are moved from PendingSFXBids to FSX::accepted_bids
-       */
-      pendingSFXBids: AugmentedQuery<
-        ApiType,
-        (
-          arg1: H256 | string | Uint8Array,
-          arg2: H256 | string | Uint8Array
-        ) => Observable<Option<T3rnPrimitivesSideEffectSfxBid>>,
-        [H256, H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256, H256]>;
-      /**
-       * Temporary bids for SFX executions. Cleaned out each
-       * Config::BidsInterval, where are moved from PendingSFXBids to FSX::accepted_bids
+       * Temporary bidding timeouts map for SFX executions. Cleaned out each
+       * Config::BidsInterval, where for each FSX::best_bid bidders are assigned
+       * for SFX::enforce_executor or Xtx is dropped.
        */
       pendingXtxBidsTimeoutsMap: AugmentedQuery<
         ApiType,
@@ -388,6 +387,13 @@ declare module "@polkadot/api-base/types/storage" {
         [T3rnPrimitivesCommonRoundInfo]
       > &
         QueryableStorageEntry<ApiType, [T3rnPrimitivesCommonRoundInfo]>;
+      /** Information on the current round. */
+      currentRound: AugmentedQuery<
+        ApiType,
+        () => Observable<T3rnPrimitivesCommonRoundInfo>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
       lastClaims: AugmentedQuery<
         ApiType,
         (
@@ -589,6 +595,63 @@ declare module "@polkadot/api-base/types/storage" {
         []
       > &
         QueryableStorageEntry<ApiType, []>;
+      /** Generic query */
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
+    identity: {
+      /**
+       * Information that is pertinent to identify the entity behind an account.
+       *
+       * TWOX-NOTE: OK ― `AccountId` is a secure hash.
+       */
+      identityOf: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PalletIdentityRegistration>>,
+        [AccountId32]
+      > &
+        QueryableStorageEntry<ApiType, [AccountId32]>;
+      /**
+       * The set of registrars. Not expected to get very big as can only be
+       * added through a special origin (likely a council motion).
+       *
+       * The index into this can be cast to `RegistrarIndex` to get a valid value.
+       */
+      registrars: AugmentedQuery<
+        ApiType,
+        () => Observable<Vec<Option<PalletIdentityRegistrarInfo>>>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      /**
+       * Alternative "sub" identities of this account.
+       *
+       * The first item is the deposit, the second is a vector of the accounts.
+       *
+       * TWOX-NOTE: OK ― `AccountId` is a secure hash.
+       */
+      subsOf: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<ITuple<[u128, Vec<AccountId32>]>>,
+        [AccountId32]
+      > &
+        QueryableStorageEntry<ApiType, [AccountId32]>;
+      /**
+       * The super-identity of an alternative "sub" identity together with its
+       * name, within that context. If the account is not some other account's
+       * sub-identity, then just `None`.
+       */
+      superOf: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<ITuple<[AccountId32, Data]>>>,
+        [AccountId32]
+      > &
+        QueryableStorageEntry<ApiType, [AccountId32]>;
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };
@@ -916,131 +979,21 @@ declare module "@polkadot/api-base/types/storage" {
       [key: string]: QueryableStorageEntry<ApiType>;
     };
     treasury: {
-      beneficiaries: AugmentedQuery<
-        ApiType,
-        (
-          arg1: AccountId32 | string | Uint8Array,
-          arg2:
-            | T3rnPrimitivesMonetaryBeneficiaryRole
-            | "Developer"
-            | "Executor"
-            | number
-            | Uint8Array
-        ) => Observable<Option<u128>>,
-        [AccountId32, T3rnPrimitivesMonetaryBeneficiaryRole]
-      > &
-        QueryableStorageEntry<
-          ApiType,
-          [AccountId32, T3rnPrimitivesMonetaryBeneficiaryRole]
-        >;
-      beneficiaryRoundRewards: AugmentedQuery<
-        ApiType,
-        (
-          arg1: AccountId32 | string | Uint8Array,
-          arg2: u32 | AnyNumber | Uint8Array
-        ) => Observable<u128>,
-        [AccountId32, u32]
-      > &
-        QueryableStorageEntry<ApiType, [AccountId32, u32]>;
-      /** Information on the current treasury round. */
-      currentRound: AugmentedQuery<
-        ApiType,
-        () => Observable<T3rnPrimitivesCommonRoundInfo>,
-        []
-      > &
+      /** Proposal indices that have been approved but not yet awarded. */
+      approvals: AugmentedQuery<ApiType, () => Observable<Vec<u32>>, []> &
         QueryableStorageEntry<ApiType, []>;
-      /** The pallet's rewards allocation config. */
-      inflationAlloc: AugmentedQuery<
-        ApiType,
-        () => Observable<T3rnPrimitivesMonetaryInflationAllocation>,
-        []
-      > &
+      /** Number of proposals that have been made. */
+      proposalCount: AugmentedQuery<ApiType, () => Observable<u32>, []> &
         QueryableStorageEntry<ApiType, []>;
-      /** The pallet's inflation mechanism configuration. */
-      inflationConfig: AugmentedQuery<
-        ApiType,
-        () => Observable<PalletTreasuryInflationInflationInfo>,
-        []
-      > &
-        QueryableStorageEntry<ApiType, []>;
-      /**
-       * Expected total stake sum of active executors and collators. Active
-       * means member of the respective active set.
-       */
-      totalStakeExpectation: AugmentedQuery<
-        ApiType,
-        () => Observable<
-          {
-            readonly min: u128;
-            readonly ideal: u128;
-            readonly max: u128;
-          } & Struct
-        >,
-        []
-      > &
-        QueryableStorageEntry<ApiType, []>;
-      /** Generic query */
-      [key: string]: QueryableStorageEntry<ApiType>;
-    };
-    xbiPortal: {
-      /** XBI called for execution */
-      xbiCheckIns: AugmentedQuery<
+      /** Proposals that have been made. */
+      proposals: AugmentedQuery<
         ApiType,
         (
-          arg: H256 | string | Uint8Array
-        ) => Observable<Option<PalletXbiPortalXbiFormatXbiCheckIn>>,
-        [H256]
+          arg: u32 | AnyNumber | Uint8Array
+        ) => Observable<Option<PalletTreasuryProposal>>,
+        [u32]
       > &
-        QueryableStorageEntry<ApiType, [H256]>;
-      /** Processed XBI queue pending for execution */
-      xbiCheckInsPending: AugmentedQuery<
-        ApiType,
-        (
-          arg: H256 | string | Uint8Array
-        ) => Observable<Option<PalletXbiPortalXbiFormatXbiCheckIn>>,
-        [H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256]>;
-      /** Queue XBI for batch execution */
-      xbiCheckInsQueued: AugmentedQuery<
-        ApiType,
-        (
-          arg: H256 | string | Uint8Array
-        ) => Observable<Option<PalletXbiPortalXbiFormatXbiCheckIn>>,
-        [H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256]>;
-      /** XBI Results of execution on local (here) Parachain */
-      xbiCheckOuts: AugmentedQuery<
-        ApiType,
-        (
-          arg: H256 | string | Uint8Array
-        ) => Observable<Option<PalletXbiPortalXbiFormatXbiCheckOut>>,
-        [H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256]>;
-      /**
-       * Lifecycle: If executed: XBICheckInsPending -> XBICheckIns ->
-       * XBICheckOutsQueued Lifecycle: If not executed: XBICheckInsPending ->
-       * XBICheckOutsQueued
-       */
-      xbiCheckOutsQueued: AugmentedQuery<
-        ApiType,
-        (
-          arg: H256 | string | Uint8Array
-        ) => Observable<Option<PalletXbiPortalXbiFormatXbiCheckOut>>,
-        [H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256]>;
-      /** Processed XBI queue pending for execution */
-      xbiPromisePendingCallbacks: AugmentedQuery<
-        ApiType,
-        (
-          arg: H256 | string | Uint8Array
-        ) => Observable<Option<PalletXbiPortalCall>>,
-        [H256]
-      > &
-        QueryableStorageEntry<ApiType, [H256]>;
+        QueryableStorageEntry<ApiType, [u32]>;
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };
@@ -1049,9 +1002,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg: H256 | string | Uint8Array
-        ) => Observable<
-          Option<T3rnPrimitivesSideEffectInterfaceSideEffectInterface>
-        >,
+        ) => Observable<Option<T3rnTypesInterfaceSideEffectInterface>>,
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;
@@ -1059,9 +1010,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg: U8aFixed | string | Uint8Array
-        ) => Observable<
-          Option<T3rnPrimitivesSideEffectInterfaceSideEffectInterface>
-        >,
+        ) => Observable<Option<T3rnTypesInterfaceSideEffectInterface>>,
         [U8aFixed]
       > &
         QueryableStorageEntry<ApiType, [U8aFixed]>;

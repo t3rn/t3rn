@@ -14,6 +14,7 @@ import type {
   FinalityGrandpaPrecommit,
   FinalityGrandpaPrevote,
   FrameSupportDispatchRawOrigin,
+  FrameSupportPalletId,
   FrameSupportTokensMiscBalanceStatus,
   FrameSupportWeightsDispatchClass,
   FrameSupportWeightsDispatchInfo,
@@ -44,6 +45,7 @@ import type {
   PalletAccountManagerCall,
   PalletAccountManagerError,
   PalletAccountManagerEvent,
+  PalletAssetTxPaymentChargeAssetTxPayment,
   PalletAssetsApproval,
   PalletAssetsAssetAccount,
   PalletAssetsAssetDetails,
@@ -53,6 +55,9 @@ import type {
   PalletAssetsError,
   PalletAssetsEvent,
   PalletAssetsExistenceReason,
+  PalletAuthorshipCall,
+  PalletAuthorshipError,
+  PalletAuthorshipUncleEntryItem,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesCall,
@@ -64,6 +69,7 @@ import type {
   PalletCircuitCall,
   PalletCircuitError,
   PalletCircuitEvent,
+  PalletCircuitStateCause,
   PalletCircuitStateCircuitStatus,
   PalletCircuitStateXExecSignal,
   PalletClockError,
@@ -94,6 +100,15 @@ import type {
   PalletGrandpaFinalityVerifierParachain,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
+  PalletIdentityBitFlags,
+  PalletIdentityCall,
+  PalletIdentityError,
+  PalletIdentityEvent,
+  PalletIdentityIdentityField,
+  PalletIdentityIdentityInfo,
+  PalletIdentityJudgement,
+  PalletIdentityRegistrarInfo,
+  PalletIdentityRegistration,
   PalletPortalCall,
   PalletPortalError,
   PalletPortalEvent,
@@ -101,27 +116,15 @@ import type {
   PalletSudoError,
   PalletSudoEvent,
   PalletTimestampCall,
-  PalletTransactionPaymentChargeTransactionPayment,
   PalletTransactionPaymentEvent,
   PalletTransactionPaymentReleases,
   PalletTreasuryCall,
   PalletTreasuryError,
   PalletTreasuryEvent,
-  PalletTreasuryInflationInflationInfo,
+  PalletTreasuryProposal,
   PalletUtilityCall,
   PalletUtilityError,
   PalletUtilityEvent,
-  PalletXbiPortalCall,
-  PalletXbiPortalError,
-  PalletXbiPortalEvent,
-  PalletXbiPortalXbiFormat,
-  PalletXbiPortalXbiFormatActionNotificationTimeouts,
-  PalletXbiPortalXbiFormatXbiCheckIn,
-  PalletXbiPortalXbiFormatXbiCheckOut,
-  PalletXbiPortalXbiFormatXbiCheckOutStatus,
-  PalletXbiPortalXbiFormatXbiInstr,
-  PalletXbiPortalXbiFormatXbiMetadata,
-  PalletXbiPortalXbiFormatXbiNotificationKind,
   PalletXdnsCall,
   PalletXdnsError,
   PalletXdnsEvent,
@@ -162,11 +165,6 @@ import type {
   T3rnPrimitivesGatewaySysProps,
   T3rnPrimitivesGatewayType,
   T3rnPrimitivesGatewayVendor,
-  T3rnPrimitivesMonetaryBeneficiaryRole,
-  T3rnPrimitivesMonetaryInflationAllocation,
-  T3rnPrimitivesSideEffectFullSideEffect,
-  T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
-  T3rnPrimitivesSideEffectSfxBid,
   T3rnPrimitivesStorageRawAliveContractInfo,
   T3rnPrimitivesVolatileLocalState,
   T3rnPrimitivesXdnsParachain,
@@ -181,31 +179,14 @@ import type {
   T3rnTypesAbiParameter,
   T3rnTypesAbiStructDecl,
   T3rnTypesAbiType,
-  T3rnTypesSideEffect,
-  T3rnTypesSideEffectConfirmationOutcome,
-  T3rnTypesSideEffectConfirmedSideEffect,
-  T3rnTypesSideEffectSecurityLvl,
-  XcmDoubleEncoded,
-  XcmV0JunctionBodyId,
-  XcmV0JunctionBodyPart,
-  XcmV0JunctionNetworkId,
-  XcmV0OriginKind,
-  XcmV1Junction,
-  XcmV1MultiAsset,
-  XcmV1MultiLocation,
-  XcmV1MultiassetAssetId,
-  XcmV1MultiassetAssetInstance,
-  XcmV1MultiassetFungibility,
-  XcmV1MultiassetMultiAssetFilter,
-  XcmV1MultiassetMultiAssets,
-  XcmV1MultiassetWildFungibility,
-  XcmV1MultiassetWildMultiAsset,
-  XcmV1MultilocationJunctions,
-  XcmV2Instruction,
-  XcmV2Response,
-  XcmV2TraitsError,
-  XcmV2WeightLimit,
-  XcmV2Xcm,
+  T3rnTypesBidSfxBid,
+  T3rnTypesFsxFullSideEffect,
+  T3rnTypesInterfaceSideEffectInterface,
+  T3rnTypesSfxConfirmationOutcome,
+  T3rnTypesSfxConfirmedSideEffect,
+  T3rnTypesSfxSecurityLvl,
+  T3rnTypesSfxSideEffect,
+  XbiFormatXbiCheckOutStatus,
 } from "@polkadot/types/lookup";
 
 declare module "@polkadot/types/types/registry" {
@@ -218,6 +199,7 @@ declare module "@polkadot/types/types/registry" {
     FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
     FinalityGrandpaPrevote: FinalityGrandpaPrevote;
     FrameSupportDispatchRawOrigin: FrameSupportDispatchRawOrigin;
+    FrameSupportPalletId: FrameSupportPalletId;
     FrameSupportTokensMiscBalanceStatus: FrameSupportTokensMiscBalanceStatus;
     FrameSupportWeightsDispatchClass: FrameSupportWeightsDispatchClass;
     FrameSupportWeightsDispatchInfo: FrameSupportWeightsDispatchInfo;
@@ -248,6 +230,7 @@ declare module "@polkadot/types/types/registry" {
     PalletAccountManagerCall: PalletAccountManagerCall;
     PalletAccountManagerError: PalletAccountManagerError;
     PalletAccountManagerEvent: PalletAccountManagerEvent;
+    PalletAssetTxPaymentChargeAssetTxPayment: PalletAssetTxPaymentChargeAssetTxPayment;
     PalletAssetsApproval: PalletAssetsApproval;
     PalletAssetsAssetAccount: PalletAssetsAssetAccount;
     PalletAssetsAssetDetails: PalletAssetsAssetDetails;
@@ -257,6 +240,9 @@ declare module "@polkadot/types/types/registry" {
     PalletAssetsError: PalletAssetsError;
     PalletAssetsEvent: PalletAssetsEvent;
     PalletAssetsExistenceReason: PalletAssetsExistenceReason;
+    PalletAuthorshipCall: PalletAuthorshipCall;
+    PalletAuthorshipError: PalletAuthorshipError;
+    PalletAuthorshipUncleEntryItem: PalletAuthorshipUncleEntryItem;
     PalletBalancesAccountData: PalletBalancesAccountData;
     PalletBalancesBalanceLock: PalletBalancesBalanceLock;
     PalletBalancesCall: PalletBalancesCall;
@@ -268,6 +254,7 @@ declare module "@polkadot/types/types/registry" {
     PalletCircuitCall: PalletCircuitCall;
     PalletCircuitError: PalletCircuitError;
     PalletCircuitEvent: PalletCircuitEvent;
+    PalletCircuitStateCause: PalletCircuitStateCause;
     PalletCircuitStateCircuitStatus: PalletCircuitStateCircuitStatus;
     PalletCircuitStateXExecSignal: PalletCircuitStateXExecSignal;
     PalletClockError: PalletClockError;
@@ -298,6 +285,15 @@ declare module "@polkadot/types/types/registry" {
     PalletGrandpaFinalityVerifierParachain: PalletGrandpaFinalityVerifierParachain;
     PalletGrandpaStoredPendingChange: PalletGrandpaStoredPendingChange;
     PalletGrandpaStoredState: PalletGrandpaStoredState;
+    PalletIdentityBitFlags: PalletIdentityBitFlags;
+    PalletIdentityCall: PalletIdentityCall;
+    PalletIdentityError: PalletIdentityError;
+    PalletIdentityEvent: PalletIdentityEvent;
+    PalletIdentityIdentityField: PalletIdentityIdentityField;
+    PalletIdentityIdentityInfo: PalletIdentityIdentityInfo;
+    PalletIdentityJudgement: PalletIdentityJudgement;
+    PalletIdentityRegistrarInfo: PalletIdentityRegistrarInfo;
+    PalletIdentityRegistration: PalletIdentityRegistration;
     PalletPortalCall: PalletPortalCall;
     PalletPortalError: PalletPortalError;
     PalletPortalEvent: PalletPortalEvent;
@@ -305,27 +301,15 @@ declare module "@polkadot/types/types/registry" {
     PalletSudoError: PalletSudoError;
     PalletSudoEvent: PalletSudoEvent;
     PalletTimestampCall: PalletTimestampCall;
-    PalletTransactionPaymentChargeTransactionPayment: PalletTransactionPaymentChargeTransactionPayment;
     PalletTransactionPaymentEvent: PalletTransactionPaymentEvent;
     PalletTransactionPaymentReleases: PalletTransactionPaymentReleases;
     PalletTreasuryCall: PalletTreasuryCall;
     PalletTreasuryError: PalletTreasuryError;
     PalletTreasuryEvent: PalletTreasuryEvent;
-    PalletTreasuryInflationInflationInfo: PalletTreasuryInflationInflationInfo;
+    PalletTreasuryProposal: PalletTreasuryProposal;
     PalletUtilityCall: PalletUtilityCall;
     PalletUtilityError: PalletUtilityError;
     PalletUtilityEvent: PalletUtilityEvent;
-    PalletXbiPortalCall: PalletXbiPortalCall;
-    PalletXbiPortalError: PalletXbiPortalError;
-    PalletXbiPortalEvent: PalletXbiPortalEvent;
-    PalletXbiPortalXbiFormat: PalletXbiPortalXbiFormat;
-    PalletXbiPortalXbiFormatActionNotificationTimeouts: PalletXbiPortalXbiFormatActionNotificationTimeouts;
-    PalletXbiPortalXbiFormatXbiCheckIn: PalletXbiPortalXbiFormatXbiCheckIn;
-    PalletXbiPortalXbiFormatXbiCheckOut: PalletXbiPortalXbiFormatXbiCheckOut;
-    PalletXbiPortalXbiFormatXbiCheckOutStatus: PalletXbiPortalXbiFormatXbiCheckOutStatus;
-    PalletXbiPortalXbiFormatXbiInstr: PalletXbiPortalXbiFormatXbiInstr;
-    PalletXbiPortalXbiFormatXbiMetadata: PalletXbiPortalXbiFormatXbiMetadata;
-    PalletXbiPortalXbiFormatXbiNotificationKind: PalletXbiPortalXbiFormatXbiNotificationKind;
     PalletXdnsCall: PalletXdnsCall;
     PalletXdnsError: PalletXdnsError;
     PalletXdnsEvent: PalletXdnsEvent;
@@ -366,11 +350,6 @@ declare module "@polkadot/types/types/registry" {
     T3rnPrimitivesGatewaySysProps: T3rnPrimitivesGatewaySysProps;
     T3rnPrimitivesGatewayType: T3rnPrimitivesGatewayType;
     T3rnPrimitivesGatewayVendor: T3rnPrimitivesGatewayVendor;
-    T3rnPrimitivesMonetaryBeneficiaryRole: T3rnPrimitivesMonetaryBeneficiaryRole;
-    T3rnPrimitivesMonetaryInflationAllocation: T3rnPrimitivesMonetaryInflationAllocation;
-    T3rnPrimitivesSideEffectFullSideEffect: T3rnPrimitivesSideEffectFullSideEffect;
-    T3rnPrimitivesSideEffectInterfaceSideEffectInterface: T3rnPrimitivesSideEffectInterfaceSideEffectInterface;
-    T3rnPrimitivesSideEffectSfxBid: T3rnPrimitivesSideEffectSfxBid;
     T3rnPrimitivesStorageRawAliveContractInfo: T3rnPrimitivesStorageRawAliveContractInfo;
     T3rnPrimitivesVolatileLocalState: T3rnPrimitivesVolatileLocalState;
     T3rnPrimitivesXdnsParachain: T3rnPrimitivesXdnsParachain;
@@ -385,30 +364,13 @@ declare module "@polkadot/types/types/registry" {
     T3rnTypesAbiParameter: T3rnTypesAbiParameter;
     T3rnTypesAbiStructDecl: T3rnTypesAbiStructDecl;
     T3rnTypesAbiType: T3rnTypesAbiType;
-    T3rnTypesSideEffect: T3rnTypesSideEffect;
-    T3rnTypesSideEffectConfirmationOutcome: T3rnTypesSideEffectConfirmationOutcome;
-    T3rnTypesSideEffectConfirmedSideEffect: T3rnTypesSideEffectConfirmedSideEffect;
-    T3rnTypesSideEffectSecurityLvl: T3rnTypesSideEffectSecurityLvl;
-    XcmDoubleEncoded: XcmDoubleEncoded;
-    XcmV0JunctionBodyId: XcmV0JunctionBodyId;
-    XcmV0JunctionBodyPart: XcmV0JunctionBodyPart;
-    XcmV0JunctionNetworkId: XcmV0JunctionNetworkId;
-    XcmV0OriginKind: XcmV0OriginKind;
-    XcmV1Junction: XcmV1Junction;
-    XcmV1MultiAsset: XcmV1MultiAsset;
-    XcmV1MultiLocation: XcmV1MultiLocation;
-    XcmV1MultiassetAssetId: XcmV1MultiassetAssetId;
-    XcmV1MultiassetAssetInstance: XcmV1MultiassetAssetInstance;
-    XcmV1MultiassetFungibility: XcmV1MultiassetFungibility;
-    XcmV1MultiassetMultiAssetFilter: XcmV1MultiassetMultiAssetFilter;
-    XcmV1MultiassetMultiAssets: XcmV1MultiassetMultiAssets;
-    XcmV1MultiassetWildFungibility: XcmV1MultiassetWildFungibility;
-    XcmV1MultiassetWildMultiAsset: XcmV1MultiassetWildMultiAsset;
-    XcmV1MultilocationJunctions: XcmV1MultilocationJunctions;
-    XcmV2Instruction: XcmV2Instruction;
-    XcmV2Response: XcmV2Response;
-    XcmV2TraitsError: XcmV2TraitsError;
-    XcmV2WeightLimit: XcmV2WeightLimit;
-    XcmV2Xcm: XcmV2Xcm;
+    T3rnTypesBidSfxBid: T3rnTypesBidSfxBid;
+    T3rnTypesFsxFullSideEffect: T3rnTypesFsxFullSideEffect;
+    T3rnTypesInterfaceSideEffectInterface: T3rnTypesInterfaceSideEffectInterface;
+    T3rnTypesSfxConfirmationOutcome: T3rnTypesSfxConfirmationOutcome;
+    T3rnTypesSfxConfirmedSideEffect: T3rnTypesSfxConfirmedSideEffect;
+    T3rnTypesSfxSecurityLvl: T3rnTypesSfxSecurityLvl;
+    T3rnTypesSfxSideEffect: T3rnTypesSfxSideEffect;
+    XbiFormatXbiCheckOutStatus: XbiFormatXbiCheckOutStatus;
   } // InterfaceTypes
 } // declare module

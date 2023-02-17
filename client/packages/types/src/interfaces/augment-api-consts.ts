@@ -6,10 +6,19 @@
 import "@polkadot/api-base/types/consts";
 
 import type { ApiTypes, AugmentedConst } from "@polkadot/api-base/types";
-import type { U8aFixed, u128, u16, u32, u64, u8 } from "@polkadot/types-codec";
-import type { Codec } from "@polkadot/types-codec/types";
-import type { AccountId32, Perbill } from "@polkadot/types/interfaces/runtime";
 import type {
+  Option,
+  U8aFixed,
+  u128,
+  u16,
+  u32,
+  u64,
+  u8,
+} from "@polkadot/types-codec";
+import type { Codec } from "@polkadot/types-codec/types";
+import type { AccountId32, Permill } from "@polkadot/types/interfaces/runtime";
+import type {
+  FrameSupportPalletId,
   FrameSupportWeightsRuntimeDbWeight,
   FrameSystemLimitsBlockLength,
   FrameSystemLimitsBlockWeights,
@@ -49,6 +58,15 @@ declare module "@polkadot/api-base/types/consts" {
       metadataDepositPerByte: u128 & AugmentedConst<ApiType>;
       /** The maximum length of a name or symbol stored on-chain. */
       stringLimit: u32 & AugmentedConst<ApiType>;
+      /** Generic const */
+      [key: string]: Codec;
+    };
+    authorship: {
+      /**
+       * The number of blocks back we should accept uncles. This means that we
+       * will deal with uncle-parents that are `UncleGenerations + 1` before `now`.
+       */
+      uncleGenerations: u32 & AugmentedConst<ApiType>;
       /** Generic const */
       [key: string]: Codec;
     };
@@ -167,6 +185,33 @@ declare module "@polkadot/api-base/types/consts" {
       /** Generic const */
       [key: string]: Codec;
     };
+    identity: {
+      /** The amount held on deposit for a registered identity */
+      basicDeposit: u128 & AugmentedConst<ApiType>;
+      /** The amount held on deposit per additional field for a registered identity. */
+      fieldDeposit: u128 & AugmentedConst<ApiType>;
+      /**
+       * Maximum number of additional fields that may be stored in an ID. Needed
+       * to bound the I/O required to access an identity, but can be pretty high.
+       */
+      maxAdditionalFields: u32 & AugmentedConst<ApiType>;
+      /**
+       * Maxmimum number of registrars allowed in the system. Needed to bound
+       * the complexity of, e.g., updating judgements.
+       */
+      maxRegistrars: u32 & AugmentedConst<ApiType>;
+      /** The maximum number of sub-accounts allowed per identified account. */
+      maxSubAccounts: u32 & AugmentedConst<ApiType>;
+      /**
+       * The amount held on deposit for a registered subaccount. This should
+       * account for the fact that one storage item's value will increase by the
+       * size of an account ID, and there will be another trie item whose value
+       * is the size of an account ID plus 32 bytes.
+       */
+      subAccountDeposit: u128 & AugmentedConst<ApiType>;
+      /** Generic const */
+      [key: string]: Codec;
+    };
     rococoBridge: {
       /**
        * Maximal number of finalized headers to keep in the storage.
@@ -258,44 +303,35 @@ declare module "@polkadot/api-base/types/consts" {
       [key: string]: Codec;
     };
     treasury: {
-      /** The parachain auction fund account. 30%. */
-      auctionFund: AccountId32 & AugmentedConst<ApiType>;
-      /** The contracts fund account for additional builder rewards. 3%. */
-      contractFund: AccountId32 & AugmentedConst<ApiType>;
-      /** Default number of blocks per round being applied in pallet genesis. */
-      defaultRoundTerm: u32 & AugmentedConst<ApiType>;
-      /** Total amount to be issued at genesis. */
-      genesisIssuance: u32 & AugmentedConst<ApiType>;
-      /** The ideal perpetual annual inflation rate targeted after 72 months. */
-      idealPerpetualInflation: Perbill & AugmentedConst<ApiType>;
-      /** The inflation regression duration in months. */
-      inflationRegressionMonths: u32 & AugmentedConst<ApiType>;
+      /** Percentage of spare funds (if any) that are burnt per spend period. */
+      burn: Permill & AugmentedConst<ApiType>;
       /**
-       * Minimum number of blocks per round. Serves as the default round term
-       * being applied in pallet genesis. NOTE: Must be at least the size of the
-       * active collator set.
+       * The maximum number of approvals that can wait in the spending queue.
+       *
+       * NOTE: This parameter is also used within the Bounties Pallet extension
+       * if enabled.
        */
-      minRoundTerm: u32 & AugmentedConst<ApiType>;
-      /** The vault reserve account. 9%. */
-      reserveAccount: AccountId32 & AugmentedConst<ApiType>;
-      /** The parachain treasury account. 5%. */
-      treasuryAccount: AccountId32 & AugmentedConst<ApiType>;
+      maxApprovals: u32 & AugmentedConst<ApiType>;
+      /** The treasury's pallet id, used for deriving its sovereign account ID. */
+      palletId: FrameSupportPalletId & AugmentedConst<ApiType>;
+      /**
+       * Fraction of a proposal's value that should be bonded in order to place
+       * the proposal. An accepted proposal gets these back. A rejected proposal
+       * does not.
+       */
+      proposalBond: Permill & AugmentedConst<ApiType>;
+      /** Maximum amount of funds that should be placed in a deposit for making a proposal. */
+      proposalBondMaximum: Option<u128> & AugmentedConst<ApiType>;
+      /** Minimum amount of funds that should be placed in a deposit for making a proposal. */
+      proposalBondMinimum: u128 & AugmentedConst<ApiType>;
+      /** Period between successive spends. */
+      spendPeriod: u32 & AugmentedConst<ApiType>;
       /** Generic const */
       [key: string]: Codec;
     };
     utility: {
       /** The limit on the number of batched calls. */
       batchedCallsLimit: u32 & AugmentedConst<ApiType>;
-      /** Generic const */
-      [key: string]: Codec;
-    };
-    xbiPortal: {
-      checkInLimit: u32 & AugmentedConst<ApiType>;
-      checkInterval: u32 & AugmentedConst<ApiType>;
-      checkOutLimit: u32 & AugmentedConst<ApiType>;
-      expectedBlockTimeMs: u32 & AugmentedConst<ApiType>;
-      myParachainId: u32 & AugmentedConst<ApiType>;
-      timeoutChecksLimit: u32 & AugmentedConst<ApiType>;
       /** Generic const */
       [key: string]: Codec;
     };
