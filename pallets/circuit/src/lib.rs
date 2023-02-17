@@ -584,7 +584,7 @@ pub mod pallet {
                         log::error!("Self::confirm hit an error -- {:?}", e);
                         Error::<T>::ConfirmationFailed
                     })?;
-                    Ok(PrecompileResult::TryUpdateFSX(current_fsx.clone()))
+                    Ok(PrecompileResult::TryConfirm(sfx_id, confirmation))
                 },
                 |_status_change, local_ctx| {
                     Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
@@ -706,6 +706,7 @@ pub mod pallet {
         ApplyTriggeredWithUnexpectedStatus,
         BidderNotEnoughBalance,
         RequesterNotEnoughBalance,
+        SanityAfterCreatingSFXDepositsFailed,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
         ChargingTransferFailedAtPendingExecution,
@@ -992,7 +993,7 @@ impl<T: Config> Pallet<T> {
             // Find sfx object index in the current step
             match step_side_effects
                 .iter()
-                .position(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
+                .position(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
             {
                 Some(index) => {
                     // side effect found in current step
@@ -1064,7 +1065,7 @@ impl<T: Config> Pallet<T> {
         let current_step_fsx = Machine::<T>::read_current_step_fsx(&local_ctx);
         let fsx = current_step_fsx
             .iter()
-            .find(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
+            .find(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
             .ok_or(Error::<T>::FSXNotFoundById)?;
 
         match &fsx.best_bid {
