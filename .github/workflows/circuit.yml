@@ -103,6 +103,10 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+      - name: 🦖 Check if chainspecs are regenerated
+        continue-on-error: false
+        run: |
+          ./scripts/regenerate_parachain_build_artifacts.sh
       - name: 🏭 Unit test (runtime+node)
         uses: actions-rs/cargo@v1
         continue-on-error: false
