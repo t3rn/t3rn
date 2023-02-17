@@ -1,11 +1,9 @@
-#!/bin/bash
-
-set -x
+#!/bin/bash -ex
 
 PARACHAIN_NAME=${1:-t3rn}
 RELAYCHAIN_NAME=${2:-polkadot}
 
-echo "building artifacts for: $PARACHAIN_NAME at $RELAYCHAIN_NAME"
+echo "building artifacts for: $PARACHAIN_NAME / $RELAYCHAIN_NAME"
 
 ROOT_DIR=$(git rev-parse --show-toplevel)
 
