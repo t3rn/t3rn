@@ -94,10 +94,8 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn pending_charges_per_round)]
-    pub type PendingChargesPerRound<T: Config> = StorageDoubleMap<
+    pub type PendingCharges<T: Config> = StorageMap<
         _,
-        Blake2_128,
-        RoundInfo<T::BlockNumber>,
         Identity,
         T::Hash, // sfx_id
         RequestCharge<
