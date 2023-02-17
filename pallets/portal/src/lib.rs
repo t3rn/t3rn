@@ -8,7 +8,7 @@ mod tests;
 
 use sp_std::vec::Vec;
 use t3rn_primitives::{
-    portal::{Portal, RococoBridge},
+    portal::{KusamaLightClient, PolkadotLightClient, Portal, RococoLightClient},
     xdns::Xdns,
     ChainId, GatewayVendor,
 };
@@ -24,7 +24,7 @@ pub mod pallet {
     use sp_std::{vec, vec::Vec};
     use t3rn_primitives::{
         abi::GatewayABIConfig,
-        portal::RococoBridge,
+        portal::{KusamaLightClient, PolkadotLightClient, RococoLightClient},
         xdns::{AllowedSideEffect, Xdns},
         ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
     };
@@ -32,7 +32,10 @@ pub mod pallet {
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config:
-        frame_system::Config + pallet_grandpa_finality_verifier::Config<RococoBridge>
+        frame_system::Config
+        + pallet_grandpa_finality_verifier::Config<RococoLightClient>
+        + pallet_grandpa_finality_verifier::Config<KusamaLightClient>
+        + pallet_grandpa_finality_verifier::Config<PolkadotLightClient>
     {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -118,12 +121,24 @@ pub mod pallet {
             )?;
 
             let res = match gateway_vendor {
-                GatewayVendor::Rococo =>
-                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(
-                        origin,
-                        gateway_id,
-                        encoded_registration_data,
-                    ),
+                GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    RococoLightClient,
+                >::initialize(
+                    origin, gateway_id, encoded_registration_data
+                ),
+                GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    KusamaLightClient,
+                >::initialize(
+                    origin, gateway_id, encoded_registration_data
+                ),
+                GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    PolkadotLightClient,
+                >::initialize(
+                    origin, gateway_id, encoded_registration_data
+                ),
                 _ => return Err(Error::<T>::UnimplementedGatewayVendor.into()),
             };
 
@@ -148,12 +163,24 @@ pub mod pallet {
             let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)?;
 
             let res = match vendor {
-                GatewayVendor::Rococo =>
-                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_owner(
-                        origin,
-                        gateway_id,
-                        encoded_new_owner.clone(),
-                    ),
+                GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    RococoLightClient,
+                >::set_owner(
+                    origin, gateway_id, encoded_new_owner.clone()
+                ),
+                GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    KusamaLightClient,
+                >::set_owner(
+                    origin, gateway_id, encoded_new_owner.clone()
+                ),
+                GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    PolkadotLightClient,
+                >::set_owner(
+                    origin, gateway_id, encoded_new_owner.clone()
+                ),
                 _ => unimplemented!(),
             };
 
@@ -176,12 +203,24 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
             let res = match vendor {
-                GatewayVendor::Rococo =>
-                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_operational(
-                        origin,
-                        operational,
-                        gateway_id,
-                    ),
+                GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    RococoLightClient,
+                >::set_operational(
+                    origin, operational, gateway_id
+                ),
+                GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    KusamaLightClient,
+                >::set_operational(
+                    origin, operational, gateway_id
+                ),
+                GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    PolkadotLightClient,
+                >::set_operational(
+                    origin, operational, gateway_id
+                ),
                 _ => unimplemented!(),
             };
 
@@ -206,13 +245,25 @@ pub mod pallet {
             let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)?;
 
             let res = match vendor {
-                GatewayVendor::Rococo =>
-                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::submit_headers(
-                        origin,
-                        gateway_id,
-                        encoded_header_data,
-                    ),
-                _ => unimplemented!(), // ToDo remove once we remove the old vendors
+                GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    RococoLightClient,
+                >::submit_headers(
+                    origin, gateway_id, encoded_header_data
+                ),
+                GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    KusamaLightClient,
+                >::submit_headers(
+                    origin, gateway_id, encoded_header_data
+                ),
+                GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<
+                    T,
+                    PolkadotLightClient,
+                >::submit_headers(
+                    origin, gateway_id, encoded_header_data
+                ),
+                _ => return Err(Error::<T>::UnimplementedGatewayVendor.into()),
             };
 
             match res {
@@ -237,11 +288,17 @@ impl<T: Config> Portal<T> for Pallet<T> {
         match vendor {
             GatewayVendor::Rococo => Ok(pallet_grandpa_finality_verifier::Pallet::<
                 T,
-                RococoBridge,
-            >::get_latest_finalized_header(
-                gateway_id
-            )),
-            _ => unimplemented!(),
+                RococoLightClient,
+            >::get_latest_finalized_header(gateway_id)),
+            GatewayVendor::Kusama => Ok(pallet_grandpa_finality_verifier::Pallet::<
+                T,
+                KusamaLightClient,
+            >::get_latest_finalized_header(gateway_id)),
+            GatewayVendor::Polkadot => Ok(pallet_grandpa_finality_verifier::Pallet::<
+                T,
+                PolkadotLightClient,
+            >::get_latest_finalized_header(gateway_id)),
+            _ => Err(Error::<T>::GatewayVendorNotFound.into()),
         }
     }
 
@@ -250,8 +307,19 @@ impl<T: Config> Portal<T> for Pallet<T> {
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
         match vendor {
-            GatewayVendor::Rococo => Ok(pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_height(gateway_id)),
-            _ => unimplemented!()
+            GatewayVendor::Rococo => Ok(pallet_grandpa_finality_verifier::Pallet::<
+                T,
+                RococoLightClient,
+            >::get_latest_finalized_height(gateway_id)),
+            GatewayVendor::Kusama => Ok(pallet_grandpa_finality_verifier::Pallet::<
+                T,
+                KusamaLightClient,
+            >::get_latest_finalized_height(gateway_id)),
+            GatewayVendor::Polkadot => Ok(pallet_grandpa_finality_verifier::Pallet::<
+                T,
+                PolkadotLightClient,
+            >::get_latest_finalized_height(gateway_id)),
+            _ => Err(Error::<T>::GatewayVendorNotFound.into()),
         }
     }
 
@@ -265,14 +333,56 @@ impl<T: Config> Portal<T> for Pallet<T> {
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
         match vendor {
-            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::confirm_and_decode_payload_params(
+            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoLightClient>::confirm_event_inclusion_with_decode(
                 gateway_id,
                 encoded_inclusion_data,
                 submission_target_height,
                 <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes(),
                 side_effect_id,
             ),
-            _ => unimplemented!()
+            GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<T, KusamaLightClient>::confirm_event_inclusion_with_decode(
+                gateway_id,
+                encoded_inclusion_data,
+                submission_target_height,
+                <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes(),
+                side_effect_id,
+            ),
+            GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<T, PolkadotLightClient>::confirm_event_inclusion_with_decode(
+                gateway_id,
+                encoded_inclusion_data,
+                submission_target_height,
+                <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes(),
+                side_effect_id,
+            ),
+            _ => Err(Error::<T>::GatewayVendorNotFound.into()),
+        }
+    }
+
+    fn confirm_inclusion(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+    ) -> Result<Vec<u8>, DispatchError> {
+        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+
+        match vendor {
+            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoLightClient>::confirm_event_inclusion(
+                gateway_id,
+                encoded_inclusion_data,
+                submission_target_height,
+            ),
+            GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<T, KusamaLightClient>::confirm_event_inclusion(
+                gateway_id,
+                encoded_inclusion_data,
+                submission_target_height,
+            ),
+            GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<T, PolkadotLightClient>::confirm_event_inclusion(
+                gateway_id,
+                encoded_inclusion_data,
+                submission_target_height,
+            ),
+            _ => Err(Error::<T>::GatewayVendorNotFound.into()),
         }
     }
 }

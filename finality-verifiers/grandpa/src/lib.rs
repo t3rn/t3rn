@@ -811,7 +811,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
     }
 
-    pub fn confirm_and_decode_payload_params(
+    pub fn confirm_event_inclusion_with_decode(
         gateway_id: ChainId,
         encoded_inclusion_data: Vec<u8>,
         submission_target_height: Vec<u8>,
@@ -826,7 +826,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         executed_after_creation::<T, I>(gateway_id, submission_target_height)?;
 
         match &side_effect_id {
-            b"tran" => verify_event_storage_proof::<T, I>(
+            b"tran" => verify_event_storage_proof_with_decode::<T, I>(
                 gateway_id,
                 inclusion_data,
                 value_abi_unsigned_type,
@@ -834,6 +834,20 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             ),
             _ => unimplemented!(),
         }
+    }
+
+    pub fn confirm_event_inclusion(
+        gateway_id: ChainId,
+        encoded_inclusion_data: Vec<u8>,
+        submission_target_height: Vec<u8>,
+    ) -> Result<Vec<u8>, DispatchError> {
+        let inclusion_data: InclusionData<BridgedHeader<T, I>> =
+            Decode::decode(&mut &*encoded_inclusion_data)
+                .map_err(|_| Error::<T, I>::InclusionDataDecodeError)?;
+
+        // ensures old equal side_effects can't be replayed
+        executed_after_creation::<T, I>(gateway_id, submission_target_height)?;
+        verify_event_storage_proof::<T, I>(gateway_id, inclusion_data)
     }
 
     pub fn get_latest_finalized_header(gateway_id: ChainId) -> Option<Vec<u8>> {
@@ -988,12 +1002,21 @@ pub(crate) fn find_forced_change<H: HeaderT>(
         .convert_first(|l| l.try_to(id).and_then(filter_log))
 }
 
-pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
+pub(crate) fn verify_event_storage_proof_with_decode<T: Config<I>, I: 'static>(
     gateway_id: ChainId,
     inclusion_data: InclusionData<BridgedHeader<T, I>>,
     value_abi_unsigned_type: &[u8],
     side_effect_id: [u8; 4],
 ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
+    let encoded_payload = verify_event_storage_proof::<T, I>(gateway_id, inclusion_data)?;
+
+    decode_event::<T, I>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
+}
+
+pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
+    gateway_id: ChainId,
+    inclusion_data: InclusionData<BridgedHeader<T, I>>,
+) -> Result<Vec<u8>, DispatchError> {
     let InclusionData {
         encoded_payload,
         proof,
@@ -1021,7 +1044,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
         Error::<T, I>::EventNotIncluded
     );
 
-    decode_event::<T, I>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
+    Ok(encoded_payload)
 }
 
 pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
