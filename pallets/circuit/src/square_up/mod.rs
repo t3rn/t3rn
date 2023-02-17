@@ -1,4 +1,5 @@
 use crate::*;
+use frame_support::ensure;
 use sp_runtime::DispatchResult;
 
 #[cfg(test)]
@@ -44,7 +45,7 @@ impl<T: Config> SquareUp<T> {
             .iter()
             .map(|fsx| {
                 (
-                    fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
+                    fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
                     RequestCharge {
                         payee: requester.clone(),
                         offered_reward: fsx.input.max_reward,
@@ -59,6 +60,19 @@ impl<T: Config> SquareUp<T> {
             .collect::<Vec<(T::Hash, RequestCharge<T::AccountId, BalanceOf<T>, u32>)>>();
 
         <T as Config>::AccountManager::deposit_batch(request_charges)?;
+
+        // Ensure that all deposits were successful and left associated under the SFX id.
+        // This is a sanity check, as the next step during status transition to "Ready"
+        //  will associate the deposits by SFX id with bidders and set the .enforce_execution field.
+        ensure!(
+            fsx_array.iter().all(|fsx| {
+                <T as Config>::AccountManager::get_charge_or_fail(
+                    fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id),
+                )
+                .is_ok()
+            }),
+            Error::<T>::SanityAfterCreatingSFXDepositsFailed
+        );
 
         Ok(())
     }
@@ -121,7 +135,7 @@ impl<T: Config> SquareUp<T> {
                 .expect("read_current_step_fsx to have at least one step in FSX steps"),
         };
         for mut fsx in step_fsx.iter_mut() {
-            let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+            let sfx_id = fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             if let Some(bid) = &fsx.best_bid {
                 if !<T as Config>::AccountManager::assign_deposit(sfx_id, &bid.executor) {
                     log::error!(
@@ -147,7 +161,7 @@ impl<T: Config> SquareUp<T> {
     pub fn kill(local_ctx: &LocalXtxCtx<T>) -> bool {
         let mut killed = false;
         for fsx in Machine::<T>::read_current_step_fsx(local_ctx).iter() {
-            let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+            let sfx_id = fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             if !<T as Config>::AccountManager::cancel_deposit(sfx_id) {
                 log::error!(
                     "kill: expect cancel_deposit to succeed for sfx_id: {:?}",
@@ -189,7 +203,7 @@ impl<T: Config> SquareUp<T> {
         let mut step_outcome = Outcome::Commit;
 
         for fsx in optimistic_fsx_in_step.iter() {
-            let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+            let sfx_id = fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
             match &fsx.best_bid {
                 Some(bid) => {
                     let outcome = match &fsx.confirmed {
@@ -225,7 +239,7 @@ impl<T: Config> SquareUp<T> {
         Machine::<T>::read_current_step_fsx(local_ctx)
             .iter()
             .for_each(|fsx| {
-                let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+                let sfx_id = fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                 if !<T as Config>::AccountManager::finalize_infallible(sfx_id, step_outcome.clone())
                 {
                     log::error!(
