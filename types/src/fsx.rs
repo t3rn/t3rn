@@ -70,15 +70,21 @@ where
         &self,
         xtx_id: T::Hash,
     ) -> <Hasher as sp_core::Hasher>::Out {
-        self.input.generate_id::<Hasher>(xtx_id.as_ref(), self.index)
+        self.input
+            .generate_id::<Hasher>(xtx_id.as_ref(), self.index)
     }
 
     pub fn calc_bid_id<Hasher: sp_core::Hasher, T: frame_system::Config>(
         &self,
         xtx_id: T::Hash,
-    ) -> Option<<Hasher as sp_core::Hasher>::Out> where T::Hash: From<<Hasher as sp_core::Hasher>::Out> {
+    ) -> Option<<Hasher as sp_core::Hasher>::Out>
+    where
+        T::Hash: From<<Hasher as sp_core::Hasher>::Out>,
+    {
         if let Some(sfx_bid) = &self.best_bid {
-            let sfx_id = self.input.generate_id::<Hasher>(xtx_id.as_ref(), self.index);
+            let sfx_id = self
+                .input
+                .generate_id::<Hasher>(xtx_id.as_ref(), self.index);
             Some(sfx_bid.generate_id::<Hasher, T>(sfx_id.into()))
         } else {
             None
