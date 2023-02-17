@@ -73,7 +73,7 @@ jobs:
           components: rustfmt, clippy
           override: true
 
-      - name: 🏭 Unit test (runtime+node)
+      - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:

@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 PARACHAIN_NAME=${1:-t3rn}
 RELAYCHAIN_NAME=${2:-polkadot}
@@ -12,7 +12,7 @@ mkdir -p "${ROOT_DIR}"/target/release/specs
 exec
   "$ROOT_DIR"/target/release/"${PARACHAIN_NAME}"-collator build-spec --chain "$RELAYCHAIN_NAME" > "${ROOT_DIR}"/target/release/specs/"${PARACHAIN_NAME}".json
   "$ROOT_DIR"/target/release/"${PARACHAIN_NAME}"-collator build-spec --chain "$RELAYCHAIN_NAME" --raw > "${ROOT_DIR}"/target/release/specs/"${PARACHAIN_NAME}".raw.json
-  "$ROOT_DIR"/target/release/"${PARACHAIN_NAME}"-collator export-genesis-wasm --chain "${ROOT_DIR}"/target/release/specs/"${PARACHAIN_NAME}".raw.json > "${ROOT_DIR}"/target/release/specs/"${PARACHAIN_NAME}".wasm
+  "$ROOT_DIR"/target/release/"${PARACHAIN_NAME}"-collator export-genesis-wasm --chain specs/${PARACHAIN_NAME}.raw.json > "${ROOT_DIR}"/target/release/specs/"${PARACHAIN_NAME}".wasm
 
 cp "${ROOT_DIR}"/target/release/specs/"${PARACHAIN_NAME}".json "${ROOT_DIR}"/specs/"${PARACHAIN_NAME}".json
 cp "${ROOT_DIR}"/target/release/specs/"${PARACHAIN_NAME}".raw.json "${ROOT_DIR}"/specs/"${PARACHAIN_NAME}".raw.json
