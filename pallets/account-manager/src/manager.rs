@@ -55,9 +55,7 @@ impl<T: Config>
         RequestCharge<T::AccountId, BalanceOf<T>, <T::Assets as Inspect<T::AccountId>>::AssetId>,
         DispatchError,
     > {
-        if let Some(pending_charge) =
-            PendingCharges::<T>::get(charge_id)
-        {
+        if let Some(pending_charge) = PendingCharges::<T>::get(charge_id) {
             Ok(pending_charge)
         } else {
             Err(Error::<T>::NoChargeOfGivenIdRegistered.into())
@@ -65,9 +63,7 @@ impl<T: Config>
     }
 
     fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
-        if let Some(_pending_charge) =
-            PendingCharges::<T>::get(charge_id)
-        {
+        if let Some(_pending_charge) = PendingCharges::<T>::get(charge_id) {
             Err(Error::<T>::ChargeAlreadyRegistered.into())
         } else {
             Ok(())
@@ -151,10 +147,7 @@ impl<T: Config>
                 total_deposit,
                 request_charge.maybe_asset_id,
             )?;
-            PendingCharges::<T>::insert(
-                charge_id,
-                request_charge.clone(),
-            );
+            PendingCharges::<T>::insert(charge_id, request_charge.clone());
             Self::deposit_event(crate::Event::DepositReceived {
                 charge_id,
                 payee: request_charge.payee.clone(),
@@ -260,8 +253,7 @@ impl<T: Config>
     }
 
     fn finalize_infallible(charge_id: T::Hash, outcome: Outcome) -> bool {
-        if let Some(charge) = PendingCharges::<T>::get(charge_id)
-        {
+        if let Some(charge) = PendingCharges::<T>::get(charge_id) {
             // Infallible recipient assignment to Escrow
             let recipient = match charge.recipient {
                 Some(recipient) => recipient,
@@ -331,14 +323,12 @@ impl<T: Config>
     }
 
     fn assign_deposit(charge_id: T::Hash, recipient: &T::AccountId) -> bool {
-        PendingCharges::<T>::mutate(charge_id, |maybe_charge| {
-            match maybe_charge {
-                Some(charge) => {
-                    charge.recipient = Some(recipient.clone());
-                    true
-                },
-                None => false,
-            }
+        PendingCharges::<T>::mutate(charge_id, |maybe_charge| match maybe_charge {
+            Some(charge) => {
+                charge.recipient = Some(recipient.clone());
+                true
+            },
+            None => false,
         })
     }
 
@@ -584,11 +574,8 @@ mod tests {
                 DEFAULT_BALANCE - DEPOSIT_AMOUNT
             );
 
-            let charge_item = AccountManager::pending_charges_per_round::<
-                RoundInfo<BlockNumber>,
-                H256,
-            >(Default::default(), execution_id)
-            .unwrap();
+            let charge_item =
+                AccountManager::pending_charges_per_round::<H256>(execution_id).unwrap();
             assert_eq!(charge_item.payee, ALICE);
             assert_eq!(charge_item.recipient, Some(BOB));
             assert_eq!(charge_item.charge_fee, DEPOSIT_AMOUNT);
@@ -707,10 +694,7 @@ mod tests {
             );
 
             assert_eq!(
-                AccountManager::pending_charges_per_round::<RoundInfo<BlockNumber>, H256>(
-                    Default::default(),
-                    execution_id,
-                ),
+                AccountManager::pending_charges_per_round::<H256>(execution_id,),
                 None
             );
 
@@ -835,10 +819,7 @@ mod tests {
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
 
             assert_eq!(
-                AccountManager::pending_charges_per_round::<RoundInfo<BlockNumber>, H256>(
-                    Default::default(),
-                    execution_id,
-                ),
+                AccountManager::pending_charges_per_round::<H256>(execution_id,),
                 None
             );
 
@@ -916,10 +897,7 @@ mod tests {
             );
 
             assert_eq!(
-                AccountManager::pending_charges_per_round::<RoundInfo<BlockNumber>, H256>(
-                    Default::default(),
-                    execution_id,
-                ),
+                AccountManager::pending_charges_per_round::<H256>(execution_id,),
                 None
             );
 

@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::ensure;
 use crate::{pallet::Error, *};
+use frame_support::ensure;
 
 use crate::square_up::SquareUp;
 
