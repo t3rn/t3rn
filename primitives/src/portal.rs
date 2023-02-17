@@ -32,11 +32,12 @@ pub struct RegistrationData {
 }
 
 pub type RococoLightClient = ();
-pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance1;
-pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance2;
+pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
+pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 
 pub trait Portal<T: frame_system::Config> {
     fn get_latest_finalized_header(chain_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError>;
+
     fn get_latest_finalized_height(chain_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError>;
 
     fn confirm_and_decode_payload_params(
@@ -45,6 +46,7 @@ pub trait Portal<T: frame_system::Config> {
         encoded_inclusion_data: Vec<u8>,
         side_effect_id: [u8; 4],
     ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError>;
+
     fn confirm_inclusion(
         gateway_id: [u8; 4],
         submission_target_height: Vec<u8>,

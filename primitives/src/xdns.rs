@@ -8,8 +8,10 @@ use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
-use t3rn_types::fsx::SecurityLvl;
-use t3rn_types::sfx::{Sfx4bId, SfxExpectedDescriptor};
+use t3rn_types::{
+    fsx::SecurityLvl,
+    sfx::{Sfx4bId, SfxExpectedDescriptor},
+};
 
 pub type AllowedSideEffect = [u8; 4];
 
