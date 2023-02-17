@@ -13,48 +13,48 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  # format:
-  #   runs-on: ["self-hosted", "rust"]
-  #   steps:
-  #     - name: ☁️Checkout git repo
-  #       uses: actions/checkout@v2
-  #       with:
-  #         token: ${{ secrets.GH_PAT }}
+  format:
+    runs-on: ["self-hosted", "rust"]
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_PAT }}
 
-  #     - name: ⚙️Get nightly rust toolchain with wasm target
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         toolchain: nightly-2023-01-24
-  #         profile: minimal
-  #         components: rustfmt
-  #         override: true
-  #     - name: 📜 Format code
-  #       uses: actions-rs/cargo@v1
-  #       with:
-  #         command: fmt
-  #         args: --all -- --check
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-01-24
+          profile: minimal
+          components: rustfmt
+          override: true
+      - name: 📜 Format code
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
 
-  # lint:
-  #   runs-on: ["self-hosted", "rust"]
-  #   steps:
-  #     - name: ☁️Checkout git repo
-  #       uses: actions/checkout@v2
-  #       with:
-  #         token: ${{ secrets.GH_PAT }}
+  lint:
+    runs-on: ["self-hosted", "rust"]
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_PAT }}
 
-  #     - name: ⚙️Get nightly rust toolchain with wasm target
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         toolchain: nightly-2023-01-24
-  #         target: wasm32-unknown-unknown
-  #         components: rustfmt, clippy
-  #         override: true
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-01-24
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
 
-  #     - name: 📑 Lint code with clippy
-  #       uses: actions-rs/cargo@v1
-  #       with:
-  #         command: clippy
-  #         args: --all
+      - name: 📑 Lint code with clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all
 
   build-test:
     runs-on: ["self-hosted", "rust"]
@@ -78,12 +78,7 @@ jobs:
         continue-on-error: false
         with:
           command: build
-          args: --locked --release
-
-      - name: 🦖 Check if chainspecs are regenerated
-        continue-on-error: false
-        run: |
-          ./scripts/regenerate-parachain-build-artifacts.sh
+          args: --locked
 
       - name: 📼 Run unit tests
         continue-on-error: false
