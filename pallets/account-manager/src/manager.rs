@@ -1,6 +1,6 @@
 use crate::{
     AccountManager as AccountManagerExt, BalanceOf, Config, ContractsRegistryExecutionNonce, Error,
-    Outcome, Pallet, PendingChargesPerRound, SettlementsPerRound,
+    Outcome, Pallet, PendingCharges, SettlementsPerRound,
 };
 
 use codec::{Decode, Encode};
@@ -56,7 +56,7 @@ impl<T: Config>
         DispatchError,
     > {
         if let Some(pending_charge) =
-            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+            PendingCharges::<T>::get(charge_id)
         {
             Ok(pending_charge)
         } else {
@@ -66,7 +66,7 @@ impl<T: Config>
 
     fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
         if let Some(_pending_charge) =
-            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+            PendingCharges::<T>::get(charge_id)
         {
             Err(Error::<T>::ChargeAlreadyRegistered.into())
         } else {
@@ -151,8 +151,7 @@ impl<T: Config>
                 total_deposit,
                 request_charge.maybe_asset_id,
             )?;
-            PendingChargesPerRound::<T>::insert(
-                T::Clock::current_round(),
+            PendingCharges::<T>::insert(
                 charge_id,
                 request_charge.clone(),
             );
@@ -248,7 +247,7 @@ impl<T: Config>
             );
         }
 
-        PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
+        PendingCharges::<T>::remove(charge_id);
 
         // Take what's left to treasury
         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::deposit(
@@ -261,7 +260,7 @@ impl<T: Config>
     }
 
     fn finalize_infallible(charge_id: T::Hash, outcome: Outcome) -> bool {
-        if let Some(charge) = PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+        if let Some(charge) = PendingCharges::<T>::get(charge_id)
         {
             // Infallible recipient assignment to Escrow
             let recipient = match charge.recipient {
@@ -309,7 +308,7 @@ impl<T: Config>
                     charge.charge_fee,
                 );
             }
-            PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
+            PendingCharges::<T>::remove(charge_id);
             true
         } else {
             false
@@ -317,14 +316,14 @@ impl<T: Config>
     }
 
     fn cancel_deposit(charge_id: T::Hash) -> bool {
-        match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
+        match PendingCharges::<T>::get(charge_id) {
             Some(charge) => {
                 Self::deposit_immediately(
                     &charge.payee,
                     charge.offered_reward,
                     charge.maybe_asset_id,
                 );
-                PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
+                PendingCharges::<T>::remove(charge_id);
                 true
             },
             None => false,
@@ -332,7 +331,7 @@ impl<T: Config>
     }
 
     fn assign_deposit(charge_id: T::Hash, recipient: &T::AccountId) -> bool {
-        PendingChargesPerRound::<T>::mutate(T::Clock::current_round(), charge_id, |maybe_charge| {
+        PendingCharges::<T>::mutate(charge_id, |maybe_charge| {
             match maybe_charge {
                 Some(charge) => {
                     charge.recipient = Some(recipient.clone());
@@ -350,7 +349,7 @@ impl<T: Config>
         new_payee: Option<&T::AccountId>,
         new_recipient: Option<&T::AccountId>,
     ) -> DispatchResult {
-        match PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id) {
+        match PendingCharges::<T>::get(charge_id) {
             Some(charge) => {
                 let offered_reward = if let Some(reward) = new_reward {
                     reward

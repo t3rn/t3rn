@@ -22,7 +22,7 @@ impl<T: Config> Bids<T> {
         let fsx = step_fsx
             .iter()
             .filter(|&fsx| fsx.confirmed.is_none())
-            .find(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
+            .find(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
             .ok_or(Error::<T>::FSXNotFoundById)?;
 
         let mut bid = SFXBid::<T::AccountId, BalanceOf<T>, u32>::new_none_optimistic(
@@ -66,7 +66,7 @@ impl<T: Config> Bids<T> {
                 .iter()
                 .filter(|&fsx| fsx.security_lvl == SecurityLvl::Optimistic)
                 // All FSX but the current one
-                .filter(|&fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) != sfx_id)
+                .filter(|&fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) != sfx_id)
                 // Since we don't know the final bid amounts, sum up the max reward for each SFX
                 .map(|fsx| fsx.input.max_reward)
                 .reduce(|total_reserved, next_amount| {
@@ -96,7 +96,7 @@ impl<T: Config> Bids<T> {
         // Replace the best bid for the FSX
         if let Some(mut fsx) = step_fsx
             .iter_mut()
-            .find(|fsx| fsx.generate_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
+            .find(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
         {
             fsx.best_bid = Some(bid);
         }
