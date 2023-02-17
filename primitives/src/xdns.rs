@@ -8,6 +8,8 @@ use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
+use t3rn_types::fsx::SecurityLvl;
+use t3rn_types::sfx::{Sfx4bId, SfxExpectedDescriptor};
 
 pub type AllowedSideEffect = [u8; 4];
 
@@ -166,6 +168,35 @@ pub trait Xdns<T: frame_system::Config> {
         gateway_sys_props: GatewaySysProps,
         security_coordinates: Vec<u8>,
         allowed_side_effects: Vec<AllowedSideEffect>,
+    ) -> DispatchResult;
+
+    fn extend_optimistic_sfx_descriptor(
+        origin: OriginFor<T>,
+        gateway_id: ChainId,
+        sfx_4b_id: Sfx4bId,
+        sfx_expected_descriptor: SfxExpectedDescriptor,
+    ) -> DispatchResult;
+
+    fn override_optimistic_sfx_descriptor(
+        origin: OriginFor<T>,
+        gateway_id: ChainId,
+        new_sfx_descriptors: Vec<(Sfx4bId, SfxExpectedDescriptor)>,
+    ) -> DispatchResult;
+
+    fn get_optimistic_sfx_descriptors(
+        gateway_id: &ChainId,
+    ) -> Vec<(Sfx4bId, SfxExpectedDescriptor)>;
+
+    fn get_optimistic_sfx_descriptor(
+        gateway_id: &ChainId,
+        sfx_4b_id: Sfx4bId,
+    ) -> Option<SfxExpectedDescriptor>;
+
+    fn modify_security_level(
+        origin: OriginFor<T>,
+        gateway_id: ChainId,
+        security_level: SecurityLvl,
+        security_coordinates: Vec<u8>,
     ) -> DispatchResult;
 
     fn allowed_side_effects(gateway_id: &ChainId) -> Vec<[u8; 4]>;
