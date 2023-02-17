@@ -180,9 +180,9 @@ construct_runtime!(
 
          // Portal
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
-        RococoBridge: pallet_grandpa_finality_verifier::{
-            Pallet, Storage
-        } = 129,
+        RococoBridge: pallet_grandpa_finality_verifier = 129,
+        PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
+        KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
