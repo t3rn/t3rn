@@ -98,7 +98,6 @@ where
     ) -> <Hasher as sp_core::Hasher>::Out {
         let mut sfx_id = xtx_id.to_vec();
         sfx_id.extend_from_slice(&sfx_index.to_be_bytes());
-        // sfx_id.extend_from_slice(&self.encoded_args.to_be_bytes());
 
         Hasher::hash(sfx_id.as_slice())
     }
