@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::ensure;
 use crate::{pallet::Error, *};
 
 use crate::square_up::SquareUp;
@@ -36,6 +37,14 @@ pub enum PrecompileResult<T: Config> {
             BalanceOf<T>,
             <T as frame_system::Config>::AccountId,
         ),
+    ),
+    TryConfirm(
+        SideEffectId<T>,
+        ConfirmedSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            BalanceOf<T>,
+        >,
     ),
     TryRequest,
     Continue,
@@ -214,6 +223,18 @@ impl<T: Config> Machine<T> {
             },
             PrecompileResult::TryUpdateFSX(updated_fsx) => {
                 Self::update_current_step_fsx(local_ctx, &updated_fsx);
+                None
+            },
+            PrecompileResult::TryConfirm(sfx_id, confirmed_sfx) => {
+                let mut found = false;
+                current_fsx.iter_mut().for_each(|fsx| {
+                    if fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id) == sfx_id {
+                        found = true;
+                        fsx.confirmed = Some(confirmed_sfx.clone());
+                    }
+                });
+                ensure!(found, Error::<T>::FSXNotFoundById);
+                Self::update_current_step_fsx(local_ctx, &current_fsx);
                 None
             },
             PrecompileResult::TryBid((sfx_id, bid_amount, bidder)) => {
@@ -404,7 +425,7 @@ impl<T: Config> Machine<T> {
                             .iter()
                             .map(|full_side_effect| {
                                 full_side_effect
-                                    .generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
+                                    .calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
                             })
                             .map(|side_effect_hash| {
                                 (
@@ -495,7 +516,7 @@ impl<T: Config> Machine<T> {
                 let mut fsx_mut_arr = local_ctx.full_side_effects.clone();
                 for fsx_step in fsx_mut_arr.iter_mut() {
                     for fsx in fsx_step {
-                        let sfx_id = fsx.generate_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
+                        let sfx_id = fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
                         <pallet::Pallet<T> as Store>::SFX2XTXLinksMap::remove(sfx_id);
                     }
                 }
