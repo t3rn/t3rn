@@ -8,6 +8,7 @@ use crate::{
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
+use t3rn_types::recode::Codec;
 
 // #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 // #[derive(Clone, Eq, PartialEq, Debug, TypeInfo)]
@@ -40,14 +41,43 @@ pub trait Portal<T: frame_system::Config> {
 
     fn get_latest_finalized_height(chain_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError>;
 
-    fn confirm_and_decode_payload_params(
+    fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
-        side_effect_id: [u8; 4],
-    ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError>;
+        abi_descriptor: Vec<u8>,
+        out_codec: Codec,
+    ) -> Result<Vec<u8>, DispatchError>;
 
-    fn confirm_inclusion(
+    fn verify_state_inclusion(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+    ) -> Result<Vec<u8>, DispatchError>;
+
+    fn verify_tx_inclusion_and_recode(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+        abi_descriptor: Vec<u8>,
+        out_codec: Codec,
+    ) -> Result<Vec<u8>, DispatchError>;
+
+    fn verify_tx_inclusion(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+    ) -> Result<Vec<u8>, DispatchError>;
+
+    fn verify_event_inclusion_and_recode(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+        abi_descriptor: Vec<u8>,
+        out_codec: Codec,
+    ) -> Result<Vec<u8>, DispatchError>;
+
+    fn verify_event_inclusion(
         gateway_id: [u8; 4],
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
