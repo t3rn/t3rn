@@ -10,7 +10,7 @@ use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_types::{
     fsx::SecurityLvl,
-    sfx::{Sfx4bId, SfxExpectedDescriptor},
+    sfx::{SFXAbi, Sfx4bId},
 };
 
 pub type AllowedSideEffect = [u8; 4];
@@ -172,27 +172,22 @@ pub trait Xdns<T: frame_system::Config> {
         allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> DispatchResult;
 
-    fn extend_optimistic_sfx_descriptor(
+    fn extend_optimistic_sfx_abi(
         origin: OriginFor<T>,
         gateway_id: ChainId,
         sfx_4b_id: Sfx4bId,
-        sfx_expected_descriptor: SfxExpectedDescriptor,
+        sfx_expected_abi: SFXAbi,
     ) -> DispatchResult;
 
-    fn override_optimistic_sfx_descriptor(
+    fn override_optimistic_sfx_abi(
         origin: OriginFor<T>,
         gateway_id: ChainId,
-        new_sfx_descriptors: Vec<(Sfx4bId, SfxExpectedDescriptor)>,
+        new_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     ) -> DispatchResult;
 
-    fn get_optimistic_sfx_descriptors(
-        gateway_id: &ChainId,
-    ) -> Vec<(Sfx4bId, SfxExpectedDescriptor)>;
+    fn get_optimistic_sfx_abis(gateway_id: &ChainId) -> Vec<(Sfx4bId, SFXAbi)>;
 
-    fn get_optimistic_sfx_descriptor(
-        gateway_id: &ChainId,
-        sfx_4b_id: Sfx4bId,
-    ) -> Option<SfxExpectedDescriptor>;
+    fn get_optimistic_sfx_abi(gateway_id: &ChainId, sfx_4b_id: Sfx4bId) -> Option<SFXAbi>;
 
     fn modify_security_level(
         origin: OriginFor<T>,

@@ -3,6 +3,8 @@
 use frame_support::sp_runtime::DispatchError;
 pub use pallet::*;
 
+use t3rn_types::recode::{recode_bytes_with_descriptor, Codec};
+
 #[cfg(test)]
 mod tests;
 
@@ -85,6 +87,8 @@ pub mod pallet {
         NoGatewayHeightAvailable,
         /// SideEffect confirmation failed
         SideEffectConfirmationFailed,
+        /// Recoding failed
+        SFXRecodeError,
     }
 
     // Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -280,6 +284,15 @@ pub mod pallet {
     }
 }
 
+pub fn match_vendor_with_codec(vendor: GatewayVendor) -> Codec {
+    match vendor {
+        GatewayVendor::Rococo => Codec::Scale,
+        GatewayVendor::Kusama => Codec::Scale,
+        GatewayVendor::Polkadot => Codec::Scale,
+        GatewayVendor::Ethereum => Codec::Rlp,
+    }
+}
+
 impl<T: Config> Portal<T> for Pallet<T> {
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
@@ -323,42 +336,126 @@ impl<T: Config> Portal<T> for Pallet<T> {
         }
     }
 
-    fn confirm_and_decode_payload_params(
+    fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
-        side_effect_id: [u8; 4],
-    ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
+        abi_descriptor: Vec<u8>,
+        out_codec: t3rn_types::recode::Codec,
+    ) -> Result<Vec<u8>, DispatchError> {
+        let encoded_ingress = Self::verify_tx_inclusion(
+            gateway_id,
+            submission_target_height,
+            encoded_inclusion_data,
+        )?;
+
+        let in_codec = match_vendor_with_codec(
+            <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+                .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
+        );
+
+        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+    }
+
+    fn verify_state_inclusion_and_recode(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+        abi_descriptor: Vec<u8>,
+        out_codec: t3rn_types::recode::Codec,
+    ) -> Result<Vec<u8>, DispatchError> {
+        let encoded_ingress = Self::verify_state_inclusion(
+            gateway_id,
+            submission_target_height,
+            encoded_inclusion_data,
+        )?;
+
+        let in_codec = match_vendor_with_codec(
+            <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+                .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
+        );
+
+        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+    }
+
+    fn verify_event_inclusion_and_recode(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+        abi_descriptor: Vec<u8>,
+        out_codec: t3rn_types::recode::Codec,
+    ) -> Result<Vec<u8>, DispatchError> {
+        let encoded_ingress = Self::verify_event_inclusion(
+            gateway_id,
+            submission_target_height,
+            encoded_inclusion_data,
+        )?;
+
+        let in_codec = match_vendor_with_codec(
+            <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+                .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
+        );
+
+        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+    }
+
+    fn verify_state_inclusion(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+    ) -> Result<Vec<u8>, DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
         match vendor {
-            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoLightClient>::confirm_event_inclusion_with_decode(
+            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoLightClient>::confirm_event_inclusion(
                 gateway_id,
                 encoded_inclusion_data,
                 submission_target_height,
-                <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes(),
-                side_effect_id,
             ),
-            GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<T, KusamaLightClient>::confirm_event_inclusion_with_decode(
+            GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<T, KusamaLightClient>::confirm_event_inclusion(
                 gateway_id,
                 encoded_inclusion_data,
                 submission_target_height,
-                <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes(),
-                side_effect_id,
             ),
-            GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<T, PolkadotLightClient>::confirm_event_inclusion_with_decode(
+            GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<T, PolkadotLightClient>::confirm_event_inclusion(
                 gateway_id,
                 encoded_inclusion_data,
                 submission_target_height,
-                <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes(),
-                side_effect_id,
             ),
             _ => Err(Error::<T>::GatewayVendorNotFound.into()),
         }
     }
 
-    fn confirm_inclusion(
+    fn verify_tx_inclusion(
+        gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
+        encoded_inclusion_data: Vec<u8>,
+    ) -> Result<Vec<u8>, DispatchError> {
+        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+
+        match vendor {
+            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoLightClient>::confirm_event_inclusion(
+                gateway_id,
+                encoded_inclusion_data,
+                submission_target_height,
+            ),
+            GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<T, KusamaLightClient>::confirm_event_inclusion(
+                gateway_id,
+                encoded_inclusion_data,
+                submission_target_height,
+            ),
+            GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<T, PolkadotLightClient>::confirm_event_inclusion(
+                gateway_id,
+                encoded_inclusion_data,
+                submission_target_height,
+            ),
+            _ => Err(Error::<T>::GatewayVendorNotFound.into()),
+        }
+    }
+
+    fn verify_event_inclusion(
         gateway_id: [u8; 4],
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
