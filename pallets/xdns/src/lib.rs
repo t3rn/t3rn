@@ -52,7 +52,7 @@ pub mod pallet {
     use t3rn_types::{
         fsx::{SecurityLvl, TargetId},
         interface::SideEffectInterface,
-        sfx::{Sfx4bId, SfxExpectedDescriptor},
+        sfx::{SFXAbi, Sfx4bId},
     };
 
     #[pallet::config]
@@ -213,7 +213,7 @@ pub mod pallet {
 
     #[pallet::storage]
     pub type SeenSideEffects<T: Config> =
-        StorageDoubleMap<_, Identity, TargetId, Identity, Sfx4bId, SfxExpectedDescriptor>;
+        StorageDoubleMap<_, Identity, TargetId, Identity, Sfx4bId, SFXAbi>;
 
     #[pallet::storage]
     #[pallet::getter(fn side_effect_registry)]
@@ -395,61 +395,54 @@ pub mod pallet {
             <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
         }
 
-        fn extend_optimistic_sfx_descriptor(
+        fn extend_optimistic_sfx_abi(
             origin: OriginFor<T>,
             gateway_id: ChainId,
             sfx_4b_id: Sfx4bId,
-            sfx_expected_descriptor: SfxExpectedDescriptor,
+            sfx_expected_abi: SFXAbi,
         ) -> DispatchResult {
             ensure_root(origin)?;
             if !<XDNSRegistry<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
 
-            <SeenSideEffects<T>>::mutate(gateway_id, sfx_4b_id, |sfx_descriptor| {
-                match sfx_descriptor {
-                    Some(_) => Err(Error::<T>::SideEffectDescriptorAlreadyExists),
-                    None => {
-                        *sfx_descriptor = Some(sfx_expected_descriptor);
-                        Ok(())
-                    },
-                }
+            <SeenSideEffects<T>>::mutate(gateway_id, sfx_4b_id, |sfx_abi| match sfx_abi {
+                Some(_) => Err(Error::<T>::SideEffectDescriptorAlreadyExists),
+                None => {
+                    *sfx_abi = Some(sfx_expected_abi);
+                    Ok(())
+                },
             })?;
 
             Ok(())
         }
 
-        fn override_optimistic_sfx_descriptor(
+        fn override_optimistic_sfx_abi(
             origin: OriginFor<T>,
             gateway_id: ChainId,
-            new_sfx_descriptors: Vec<(Sfx4bId, SfxExpectedDescriptor)>,
+            new_sfx_abis: Vec<(Sfx4bId, SFXAbi)>,
         ) -> DispatchResult {
             ensure_root(origin)?;
             if !<XDNSRegistry<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
 
-            for (sfx_4b_id, sfx_expected_descriptor) in new_sfx_descriptors {
-                <SeenSideEffects<T>>::mutate(gateway_id, sfx_4b_id, |sfx_descriptor| {
-                    *sfx_descriptor = Some(sfx_expected_descriptor);
+            for (sfx_4b_id, sfx_expected_abi) in new_sfx_abis {
+                <SeenSideEffects<T>>::mutate(gateway_id, sfx_4b_id, |sfx_abi| {
+                    *sfx_abi = Some(sfx_expected_abi);
                 });
             }
 
             Ok(())
         }
 
-        fn get_optimistic_sfx_descriptors(
-            gateway_id: &ChainId,
-        ) -> Vec<(Sfx4bId, SfxExpectedDescriptor)> {
+        fn get_optimistic_sfx_abis(gateway_id: &ChainId) -> Vec<(Sfx4bId, SFXAbi)> {
             <SeenSideEffects<T>>::iter_prefix(gateway_id)
-                .map(|(sfx_4b_id, sfx_descriptor)| (sfx_4b_id, sfx_descriptor))
+                .map(|(sfx_4b_id, sfx_abi)| (sfx_4b_id, sfx_abi))
                 .collect()
         }
 
-        fn get_optimistic_sfx_descriptor(
-            gateway_id: &ChainId,
-            sfx_4b_id: Sfx4bId,
-        ) -> Option<SfxExpectedDescriptor> {
+        fn get_optimistic_sfx_abi(gateway_id: &ChainId, sfx_4b_id: Sfx4bId) -> Option<SFXAbi> {
             <SeenSideEffects<T>>::get(gateway_id, sfx_4b_id)
         }
 
