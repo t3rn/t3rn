@@ -2,9 +2,9 @@
 
 POLKADOT_CLI_VERSION="@polkadot/api-cli@0.52.27"
 
-if [[ -z "$1" || -z $2 || -z $3 || -z $4 || -z $5 ]]; then
-  echo "usage 'sudo secret' \$ws_provider \$http_provider \$tag \$parachain_name [--dryrun]"
-  # fx: $0 'sudo secret' ws://localhost:1933 http://localhost:1833 v0.0.0-up t0rn --dryrun
+if [[ -z "$1" || -z $2 || -z $3 ]]; then
+  echo "usage 'sudo secret' \$tag \$parachain_name [--dryrun]"
+  # fx: $0 'sudo secret' v0.0.0-up t0rn --dryrun
   exit 1
 fi
 
@@ -39,10 +39,10 @@ get_finalized_head(){
 }
 
 sudo_secret="$1"
-ws_provider=$2
-http_provider=$3
-tag=$4
-parachain_name=$5
+tag=$2
+parachain_name=$3
+ws_provider="wss://ws.${parachain_name}.io"
+http_provider="https://rpc.${parachain_name}.io"
 wasm_binary=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry) || true
@@ -128,7 +128,7 @@ fi
 
 echo "⚙️ set_code runtime upgrade... $dryrun"
 
-# What we are actually doing here and is it necessary? Adding 0x before wasm?
+# Convert wasm to hex and write to file
 node <<<"
   var fs = require('fs')
   fs.writeFileSync(
