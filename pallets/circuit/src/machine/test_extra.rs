@@ -197,7 +197,7 @@ pub fn setup_single_sfx_xtx_and_confirm() -> H256 {
 
     Machine::<Runtime>::compile(
         &mut local_ctx,
-        |current_fsx: &mut Vec<FullSideEffect<AccountId, BlockNumber, Balance>>,
+        |_current_fsx: &mut Vec<FullSideEffect<AccountId, BlockNumber, Balance>>,
          _local_state: LocalState,
          _steps_cnt: (u32, u32),
          _status: CircuitStatus,

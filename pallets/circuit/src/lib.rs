@@ -70,6 +70,7 @@ use crate::machine::{Machine, *};
 pub use state::XExecSignal;
 
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
+use t3rn_types::{recode::Codec, sfx::Sfx4bId, sfx_abi::SFXAbi};
 
 #[cfg(test)]
 pub mod tests;
@@ -1016,21 +1017,27 @@ impl<T: Config> Pallet<T> {
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
-        let (params, source) = <T as Config>::Portal::confirm_and_decode_payload_params(
+        let encoded_event_params = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
             fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
             fsx.input.action,
         )
-        .map_err(|_| "SideEffect confirmation failed!")?;
-        // ToDo: handle misbehaviour
-        log::debug!("SFX confirmation params: {:?}", params);
+        .map_err(|_| "SideEffect confirmation of inclusion failed")?;
 
-        fsx.input.confirm(
-            params,
-            fsx.security_lvl,
-            <T as Config>::Xdns::get_gateway_security_coordinates(&fsx.input.target)?,
-            source,
+        // ToDo: handle misbehaviour
+        log::debug!("SFX confirmation params: {:?}", encoded_event_params);
+
+        let sfx_abi: SFXAbi =
+            match <T as Config>::Xdns::get_optimistic_sfx_abi(&fsx.input.target, sfx_4b_id) {
+                Some(sfx_abi) => sfx_abi,
+                None => return Err("Unable to find matching Side Effect descriptor in XDNS"),
+            };
+
+        sfx_abi.validate_arguments_against_received(
+            &fsx.input.encoded_args,
+            encoded_event_params,
+            Codec::Scale,
         )?;
 
         log::debug!("confirmation plug ok");
