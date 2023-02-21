@@ -292,6 +292,22 @@ class CircuitCLI {
         }
     }
 
+    async purgeXdns(data: any) {
+        const tx = this.circuit.tx.xdns.purgeXdnsRecord(this.signer.pubkey, data.id);
+        const sudo = this.sdk.circuit.tx.createSudo(tx)
+        await this.sdk.circuit.tx.signAndSendSafe(sudo)
+            .then(height => {
+                logger.info("Success: Purged!")
+                return height
+            })
+            .catch(err => {
+                console.log(err)
+                logger.info("Error: Purge Failed! Err:", err);
+                this.error()
+            })
+
+    }
+
     exportData(data: any, fileName: string, transactionType: string, submissionHeight: string) {
         let deepCopy;
         // since its pass-by-reference
@@ -325,7 +341,7 @@ class CircuitCLI {
 }
 
 program.command('register')
-      .description('Register a gateway on the t3rn blockchain')
+      .description('Register a gateway on the t3rn blockchain. SUDO ONLY!')
       .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
       .option('-t, --teleport <number>', 'how many epochs the registration should go back.', "0")
       .option('-e, --export', 'export the transaction arguments as JSON', false)
@@ -398,6 +414,15 @@ program.command('bid')
           let cli = new CircuitCLI();
           await cli.setup()
           cli.bid({sfxId, amount}, options.export, options.output)
+      });
+
+program.command('purge')
+      .description('Purge an XDNS record. SUDO ONLY!')
+      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+      .action(async (id) => {
+          let cli = new CircuitCLI();
+          await cli.setup()
+          cli.purgeXdns({id})
       });
 
 program.parse();
