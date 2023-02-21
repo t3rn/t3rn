@@ -7521,6 +7521,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
+ "t3rn-types 0.0.1-rc.3",
 ]
 
 [[package]]
@@ -10185,6 +10186,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb919243f34364b6bd2fc10ef797edbfa75f33c252e7998527479c6d6b47e1ec"
 dependencies = [
  "bytes 1.4.0",
+ "rlp-derive",
  "rustc-hex",
 ]
 
@@ -13600,13 +13602,17 @@ version = "0.0.1-rc.3"
 dependencies = [
  "bytes 1.4.0",
  "circuit-runtime-types",
+ "frame-support",
  "frame-system",
  "hex",
  "hex-literal 0.3.4",
  "num",
  "num-traits",
+ "pallet-balances",
  "parity-scale-codec",
  "primitive-types",
+ "rlp",
+ "rlp-derive",
  "scale-info",
  "serde",
  "serde_json",
