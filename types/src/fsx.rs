@@ -59,7 +59,7 @@ where
 
     pub fn get_bond_value(&self, max_reward: BalanceOf) -> BalanceOf {
         if let Some(sfx_bid) = &self.best_bid {
-            sfx_bid.amount.clone()
+            sfx_bid.amount
         } else {
             max_reward
         }
