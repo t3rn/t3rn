@@ -22,6 +22,8 @@ pub type Sfx4bId = [u8; 4];
 pub type Bytes = Vec<u8>;
 pub type EventSignature = Bytes;
 pub type SfxExpectedDescriptor = EventSignature;
+pub use crate::sfx_abi::SFXAbi;
+
 pub type SideEffectName = Bytes;
 pub type ActionId = [u8; 4];
 
