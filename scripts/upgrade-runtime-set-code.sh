@@ -140,7 +140,7 @@ node <<<"
 if [[ -z $dryrun ]]; then
   npx --yes $POLKADOT_CLI_VERSION \
     --ws $ws_provider \
-    --sudo \
+    --sudoUncheckedWeight "100000" \
     --seed "$sudo_secret" \
     --params $wasm_binary \
     tx.system.setCode
@@ -148,7 +148,7 @@ else
   echo "
   npx --yes $POLKADOT_CLI_VERSION 
     --ws $ws_provider
-    --sudo
+    --sudoUncheckedWeight "100000"
     --seed "$sudo_secret"
     --params $wasm_binary
     tx.system.setCode
