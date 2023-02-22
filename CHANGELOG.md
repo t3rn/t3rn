@@ -1,66 +1,70 @@
-# Changelog
-## `v1.2.0-rc.5` 2023-02-06
+## [1.3.0-rc.0](https://github.com/t3rn/t3rn/compare/1.2.0-rc.5...1.3.0-rc.0) (2023-02-22)
+
+
+### features
+
+* add logging for ranger monitoring ([cbb23a8](https://github.com/t3rn/t3rn/commit/cbb23a8758c39f3ca30dea254d508b02c66f802a))
+* added inital workflow for building docker ([bd21797](https://github.com/t3rn/t3rn/commit/bd217974f354477594b11fa40e9c6bd82d2c889b))
+* foreign fee split ([f6659e0](https://github.com/t3rn/t3rn/commit/f6659e099923b3b822b0eb26a1828d5dfa0994c0))
+* implement confirm() and validate() as part of sfx struct ([313aa8c](https://github.com/t3rn/t3rn/commit/313aa8c39244e537d2b2ad622f0a6e6118ede6ac))
+* introduce onhook traits to clock ([84de0ab](https://github.com/t3rn/t3rn/commit/84de0ab6c0be354fffc854adb5f0189dbfa011ba))
+* multistage docker build for node standalone ([0bd169e](https://github.com/t3rn/t3rn/commit/0bd169e2ae0a54d81f87f649896c9460b4f51ccb))
+* standalone dockerfile ([d2071ee](https://github.com/t3rn/t3rn/commit/d2071eeb15ea3ccd648235f2114a24c548507a55))
+* test harness with parachains integration tool ([#629](https://github.com/t3rn/t3rn/issues/629)) ([c1314e7](https://github.com/t3rn/t3rn/commit/c1314e73785f8dec49b57e97a33418fd09d24b2a))
+
+
+### bug fixes
+
+* division in fee calc ([b92aa1b](https://github.com/t3rn/t3rn/commit/b92aa1bdea4bf6bc9d311788e9f2fd7c2603182a))
+* fix pendingstakerequestnotdueyet test setup ([d40dfc2](https://github.com/t3rn/t3rn/commit/d40dfc2c18d22c376c00480a6865b068379955ce))
+* remove primary round key from pendingcharges ([3cf65c8](https://github.com/t3rn/t3rn/commit/3cf65c8876c501039ec05657bab04174f6d8b975))
+* return 0 weight if on_init hook consumes more than allowed ([fa78011](https://github.com/t3rn/t3rn/commit/fa78011a0314682710032c104cee138587697abe))
+* **t0rn:** add slow adjusting fee  ([9c7b5a5](https://github.com/t3rn/t3rn/commit/9c7b5a53b33a91a8dcf3d15c91e94d7b8363fca2))
+* update sdk imports ([5b27826](https://github.com/t3rn/t3rn/commit/5b278267c82700aadd3e68498422d7fc88b49221))
+
+# [1.2.0-rc.5] 2023-02-06
 * fix: t0rn runtime upgrade
 
-
-### Bug Fixes
-
-* loosen collators conf MaxCandidate and SessionTime ([ec4e085](https://github.com/t3rn/t3rn/commit/ec4e085fb8f463ca4d42b7c5be9d3fa2911549c9))
-
-
-
-# [1.2.0-rc.11](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.10...v1.2.0-rc.11) (2023-01-30)
+# [1.2.0-rc.4](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.3...v1.2.0-rc.4) (2022-11-23)
 
 
 ### Features
 
-* enable try-runtime and benchmarks in mainnet ([f01d19e](https://github.com/t3rn/t3rn/commit/f01d19e57c36c68908796230a015e2dd4d7205d5))
-* ensure parachain has some movement in relay chain block height ([2e341a6](https://github.com/t3rn/t3rn/commit/2e341a6ebdb9c043d809b1399c8803b111dcf092))
-* fix try-runtime and endowed accounts to be less rigid ([242ffad](https://github.com/t3rn/t3rn/commit/242ffad1150a39f89dbedba00adeb35007433512))
+* remove badblocks from chainspec ([b361f80](https://github.com/t3rn/t3rn/commit/b361f80b293124223233fd38313863bc3901cf60))
 
 
 
-# [1.2.0-rc.10](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.9...v1.2.0-rc.10) (2023-01-25)
-
-
-### Bug Fixes
-
-* add export to index so its documented ([9afaaed](https://github.com/t3rn/t3rn/commit/9afaaed8b1735225c0ae91521bd45571c1c3ccda))
-* bidding engine maps ([57fdc6c](https://github.com/t3rn/t3rn/commit/57fdc6ca632db5564afaa65d8e9b938d1d0b1c1e))
-* build before ([0c1150c](https://github.com/t3rn/t3rn/commit/0c1150c257b1601d6e485039fdc2f8afd363c77a))
-* build pkgs before then test ([67e38f9](https://github.com/t3rn/t3rn/commit/67e38f9c0170492a77dd4e7277e821f61e76a39a))
-* correct type names ([8847f32](https://github.com/t3rn/t3rn/commit/8847f3216f0c8856a629c0547ed2e16095808927))
-* fixed type ([7425a2a](https://github.com/t3rn/t3rn/commit/7425a2a8c9fe3c50a8708572a98bea5943bbc073))
-* maybe correct type ([27b7f3f](https://github.com/t3rn/t3rn/commit/27b7f3f0aa8329ec1bbc0b0257b91c902efd5479))
-* naming in export types ([a55c806](https://github.com/t3rn/t3rn/commit/a55c806f647d9b72866b989b605eb2ac1bca8c4d))
-* rename enum variant from type ([5c55d91](https://github.com/t3rn/t3rn/commit/5c55d9191eb035ef9df430af8449e4ca3503b9bc))
-* use yarn as before ([cbceada](https://github.com/t3rn/t3rn/commit/cbceada7e68d6799857e8180b54b47a113f9a739))
-* workflow fix ([180fdd4](https://github.com/t3rn/t3rn/commit/180fdd4aeef89a7fe867d1c3711701e877c4a434))
-
-
-### Features
-
-* add Dockerfile for executor ([de82d22](https://github.com/t3rn/t3rn/commit/de82d2299b9db3979ac1fbd7873e9c7a00df69b5))
-* add GHA for tests ([01760e0](https://github.com/t3rn/t3rn/commit/01760e0710625fa800f9855f7c03fcd3d86ad320))
-* finish clean up ([27c8cd7](https://github.com/t3rn/t3rn/commit/27c8cd7a1a6935239adf0b69474590d2dd75a042))
-
-
-
-# [1.2.0-rc.9](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.8...v1.2.0-rc.9) (2023-01-25)
-
-
-### Features
-
-* github action stale issues ([c20fbbe](https://github.com/t3rn/t3rn/commit/c20fbbec5ecdfb2820788b70a34124e062816bd3))
-
-
-
-# [1.2.0-rc.8](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.7...v1.2.0-rc.8) (2023-01-24)
+# [1.2.0-rc.3](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.2...v1.2.0-rc.3) (2022-11-19)
 
 
 ### Bug Fixes
 
-* correct tests expectations after existential deposit=1 added ([0d66472](https://github.com/t3rn/t3rn/commit/0d6647286d750438d63f09772f31d3c2c414844a))
+* align millis per block constant to 12000 across codebaseC ([48068df](https://github.com/t3rn/t3rn/commit/48068df610c2376dc4b053e43e4d3001a63d1e74))
+* align millis per block constant to 12000 across codebaseC ([40d3898](https://github.com/t3rn/t3rn/commit/40d38986ed562c527114eb0891c7918dc1268c14))
+* bump t0rn patchfix version and merge remedy chainspecs ([b47d699](https://github.com/t3rn/t3rn/commit/b47d6992661c273e5edfdf03f4b2183667a72512))
+* ensureroot needs account type ([3f4f0f8](https://github.com/t3rn/t3rn/commit/3f4f0f83fae4a99352ddc55cc2495b31590b8973))
+* ensureroot needs account type ([2d33ec9](https://github.com/t3rn/t3rn/commit/2d33ec9abd61b553cc2f3262d2f99116573a0bc6))
+* imports were bad from find and replace ([a394a35](https://github.com/t3rn/t3rn/commit/a394a3507577a592b492c976184cbbca8195c8fc))
+* imports were bad from find and replace ([7d81dfd](https://github.com/t3rn/t3rn/commit/7d81dfdeeda1af88e2c86e8f3efdf0ab37cbcaa6))
+* remove bad_blocks from t0rn chain specs ([72c2062](https://github.com/t3rn/t3rn/commit/72c206295e2d5cf52630cce67f764ee49b175568))
+
+
+
+# [1.2.0-rc.2](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.1...v1.2.0-rc.2) (2022-11-15)
+
+
+### Bug Fixes
+
+* add bad_blocks extension to t0rn chain specs ([fb427e3](https://github.com/t3rn/t3rn/commit/fb427e3eb801449a4027951b3bd0a2469b8a16ac))
+
+
+
+# [1.2.0-rc.1](https://github.com/t3rn/t3rn/compare/v1.2.0-rc.0...v1.2.0-rc.1) (2022-11-12)
+
+
+### Reverts
+
+* back to 12s block time ([1bb0db1](https://github.com/t3rn/t3rn/commit/1bb0db16221a7cdedd872679969b816beebb2797))
 
 
 
