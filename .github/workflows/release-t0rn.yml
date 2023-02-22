@@ -152,19 +152,6 @@ jobs:
           name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
           path: ./target/release/
 
-      - name: 🖨️ Get the release notes
-        run: |
-          node -e "
-            const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
-            let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
-            if (head === -1) { throw Error('cannot parse ${{ env.PUSHED_TAG }} from changelog') }
-            else head = head + 1;
-            let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
-            tail = tail === -1 ? lines.length : tail + head;
-            console.log(lines.slice(head, tail).join(''));
-          " \
-          > ./target/release/notes.md
-
       - name: 🐙 Create a GitHub release
         id: create_release
         uses: actions/create-release@v1.1.4
@@ -173,7 +160,6 @@ jobs:
         with:
           tag_name: ${{ env.PUSHED_TAG }}
           release_name: ${{ env.PUSHED_TAG }}
-          body_path: ./target/release/notes.md
           draft: false
           prerelease: true
 
