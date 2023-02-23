@@ -13,8 +13,8 @@ metadata:
   labels:
     chart: "{{ $chart_name }}-{{ $chart_version }}"
 spec:
-  concurrencyPolicy: {{ $job.concurrencyPolicy }}
-  failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit }}
+  concurrencyPolicy: {{ $job.concurrencyPolicy | default "Forbid" }}
+  failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit | default 10 }}
   jobTemplate:
     spec:
       template:
@@ -30,21 +30,14 @@ spec:
           serviceAccountName: {{ $job.name }}
         {{- end }}
         {{- end }}
-        {{- if hasKey $job "securityContext" }}
-          {{- if $job.securityContext.runAsUser }}
           securityContext:
-            runAsUser: {{ $job.securityContext.runAsUser }}
-            {{- if $job.securityContext.runAsGroup }}
-            runAsGroup: {{ $job.securityContext.runAsGroup }}
-            {{- end }}
-            {{- if $job.securityContext.fsGroup }}
-            fsGroup: {{ $job.securityContext.fsGroup }}
-            {{- end }}
-          {{- end }}
-        {{- end }}
+            runAsNonRoot: true
+            runAsUser: 1000
+            # runAsGroup: 
+            # fsGroup: 
           containers:
           - image: "{{ $repository }}:{{ $tag }}"
-            imagePullPolicy: {{ $job.image.imagePullPolicy }}
+            imagePullPolicy: {{ $job.image.imagePullPolicy | default "Always"}}
             name: {{ $job.name }}
             {{- with $job.env }}
             env:
@@ -61,10 +54,13 @@ spec:
             args:
 {{ toYaml . | indent 12 }}
               {{- end }}
-            {{- with $job.resources }}
             resources:
-{{ toYaml . | indent 14 }}
-            {{- end }}
+              limits:
+                cpu: 500m
+                memory: 1024Mi
+              requests:
+                cpu: 50m
+                memory: 256Mi
             {{- with $job.volumeMounts }}
             volumeMounts:
 {{ toYaml . | indent 12 }}
@@ -81,11 +77,11 @@ spec:
           tolerations:
 {{ toYaml . | indent 12 }}
           {{- end }}
-          restartPolicy: {{ $job.restartPolicy }}
+          restartPolicy: {{ $job.restartPolicy | default "OnFailure"}}
           {{- with $job.volumes }}
           volumes:
 {{ toYaml . | indent 12 }}
           {{- end }}
   schedule: {{ $job.schedule | quote }}
-  successfulJobsHistoryLimit: {{ $job.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ $job.successfulJobsHistoryLimit | default 3 }}
 {{- end }}
