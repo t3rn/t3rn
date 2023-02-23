@@ -118,14 +118,16 @@ fi
 
 echo "⚙️ set_code runtime upgrade... $dryrun"
 
-# Convert wasm to hex and write to file
-node <<<"
-  var fs = require('fs')
-  fs.writeFileSync(
-    '$wasm_binary',
-    '0x' + fs.readFileSync('$wasm_binary').toString('hex')
-  )
-"
+# Skip converting wasm to hex when run with dryrun flag
+if [[ ! -z $dryrun ]]; then
+  node <<<"
+    var fs = require('fs')
+    fs.writeFileSync(
+      '$wasm_binary',
+      '0x' + fs.readFileSync('$wasm_binary').toString('hex')
+    )
+  "
+fi
 
 if [[ -z $dryrun ]]; then
   npx --yes $POLKADOT_CLI_VERSION \
