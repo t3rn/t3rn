@@ -236,7 +236,7 @@ jobs:
 
   deploy-to-rococo:
     runs-on: self-hosted
-    needs: release-on-github
+    needs: run-smoke-tests
     steps:
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
