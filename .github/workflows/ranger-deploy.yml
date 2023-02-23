@@ -54,4 +54,4 @@ jobs:
 
       - name: Helm Upgrade
         working-directory: ./client/packages/cli
-        run: helm upgrade ranger helm -n ranger -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-ranger"
+        run: helm upgrade ranger helm -n ranger -f helm/values-t0rn.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-ranger"

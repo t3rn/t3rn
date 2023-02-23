@@ -15,4 +15,4 @@ ADD packages/tsconfig.json /app/cli/
 
 WORKDIR /app/cli
 
-CMD ["ts-node", "index.ts"]
+ENTRYPOINT ["ts-node", "index.ts"]

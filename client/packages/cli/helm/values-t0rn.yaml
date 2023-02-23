@@ -1,0 +1,27 @@
+jobs:
+  - name: ranger
+    image:
+      imagePullPolicy: Always
+    schedule: "*/5 * * * *"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1024Mi
+      requests:
+        cpu: 50m
+        memory: 256Mi
+    args:
+    - submit-headers
+    - roco
+    failedJobsHistoryLimit: 10
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    securityContext: 
+      capabilities:
+        drop:
+        - ALL
+      # Node requires writing :|
+      # readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
