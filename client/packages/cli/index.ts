@@ -43,7 +43,7 @@ class CircuitCLI {
                 ? keyring.addFromUri("//Alice")
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
 
-        this.sdk = new Sdk("ws://127.0.0.1:9944", this.signer)
+        this.sdk = new Sdk(config.circuit.rpc, this.signer)
         // @ts-ignore suddenly this is not working
         this.circuit = await this.sdk.init();
     }
@@ -305,6 +305,8 @@ class CircuitCLI {
                 logger.info("Error: Purge Failed! Err:", err);
                 this.error()
             })
+
+        this.close()
 
     }
 
