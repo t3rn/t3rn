@@ -306,6 +306,8 @@ class CircuitCLI {
                 this.error()
             })
 
+        this.close()
+
     }
 
     exportData(data: any, fileName: string, transactionType: string, submissionHeight: string) {
