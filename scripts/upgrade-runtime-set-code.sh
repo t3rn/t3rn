@@ -8,16 +8,6 @@ if [[ -z "$1" || -z $2 || -z $3 ]]; then
   exit 1
 fi
 
-trap 'cleanup' EXIT
-
-cleanup() {
-  rm -rf $root_dir/scripts/node_modules
-  rm -f \
-    $root_dir/scripts/package.json \
-    $root_dir/scripts/package-lock.json \
-    $wasm_binary
-}
-
 get_finalized_head(){
   block_hash="$( \
     curl \

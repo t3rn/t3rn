@@ -234,7 +234,7 @@ jobs:
         working-directory: tests/zombienet
         run: make test-upgrade parachain=t0rn
 
-  deploy-to-rococo-dry-run:
+  deploy-to-rococo:
     runs-on: self-hosted
     needs: release-on-github
     steps:
@@ -259,7 +259,7 @@ jobs:
 
       - name: Approval
         uses: trstringer/manual-approval@v1
-        timeout-minutes: 120
+        timeout-minutes: 300
         with:
           secret: ${{ secrets.GH_PAT }}
           approvers: ${{ env.APPROVERS }}
