@@ -89,16 +89,17 @@ where
 impl<AccountId, BalanceOf> SideEffect<AccountId, BalanceOf>
 where
     AccountId: Encode,
-    BalanceOf: Copy + sp_runtime::traits::Zero + Encode + Decode,
+    BalanceOf: Copy + Zero + Encode + Decode,
 {
     pub fn generate_id<Hasher: sp_core::Hasher>(
         &self,
         xtx_id: &[u8], // would a slice also be fine here for XBI?
         sfx_index: u32,
     ) -> <Hasher as sp_core::Hasher>::Out {
-        let mut xtx_id_and_index = xtx_id.to_vec();
-        xtx_id_and_index.extend_from_slice(&sfx_index.to_be_bytes());
-        Hasher::hash(xtx_id_and_index.as_slice())
+        let mut sfx_id = xtx_id.to_vec();
+        sfx_id.extend_from_slice(&sfx_index.to_be_bytes());
+
+        Hasher::hash(sfx_id.as_slice())
     }
 
     pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {

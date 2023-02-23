@@ -1196,6 +1196,7 @@ dependencies = [
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec",
+ "polkadot-runtime-common",
  "precompile-util",
  "scale-info",
  "serde",

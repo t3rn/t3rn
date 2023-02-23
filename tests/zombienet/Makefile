@@ -3,7 +3,7 @@
 provider := native
 zombienet_version := v1.3.17
 runtime := t3rn
-pdot_branch := release-v0.9.27
+pdot_branch := release-v0.9.37
 root_dir := $(shell git rev-parse --show-toplevel)
 bin_dir := $(root_dir)/bin
 arch := $(shell sh -c 'uname -s 2>/dev/null || echo not')
@@ -31,20 +31,27 @@ ${bin_dir}/zombienet:
 	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(zombienet_version)/zombienet-$(machine)
 	chmod +x $(bin_dir)/zombienet
 
-${bin_dir}/polkadot:
-	@if [ ! -f $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot ]; then \
-		mkdir -p $(polkadot_tmp_dir); \
-		git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch); \
-		cargo build --manifest-path $(polkadot_tmp_dir)/$(pdot_branch)/Cargo.toml --features fast-runtime --release --locked; \
-	fi
+$(polkadot_tmp_dir)/$(pdot_branch):
+	mkdir -p $(polkadot_tmp_dir);
+	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch);
+
+$(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot: $(polkadot_tmp_dir)/$(pdot_branch)
+	cargo build --manifest-path $(polkadot_tmp_dir)/$(pdot_branch)/Cargo.toml --features fast-runtime --release --locked;
+	
+${bin_dir}/polkadot: $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot
 	cp $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot $(bin_dir)/polkadot
 
-setup: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot
+${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(root_dir)/*/t3rn-parachain/Cargo.toml Makefile
+	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
+	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
+
+setup: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t3rn-collator
 
 # ====================== Caching ======================
 #
 # sccache is already present on Github Action workers, no need to set it up
 #
+
 ${bin_dir}/sccache:
 	@if [ $(machine) = "macos" ]; then \
         brew update; \
@@ -70,19 +77,11 @@ print-sccache: ${bin_dir}/sccache
 
 test-smoke: setup
 
-	@echo "Testing real upgrade for parachain: $(parachain)"
-
 	@if [ $(machine) = "macos" ]; then \
         echo "You're on macos, this is for CI :< - it uses previously built binaries from this machine only"; \
 		exit 1; \
 	fi
 
-	@echo get last release binary from github
-	git fetch --all --tags -f || true
-
-	@echo get previous binary
-	./download_previous_version.sh $(parachain)
-	
 	# TODO[Optimisation]: loop through directory and test all
 	# TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
 	$(bin_dir)/zombienet --provider=$(provider) test ./smoke/0001-is_up_and_registered.feature
@@ -107,5 +106,8 @@ spawn: setup
 	$(bin_dir)/zombienet --help
 	$(bin_dir)/zombienet --provider=$(provider) spawn ./zombienet.toml
 
-# TODO: do we want to just do this on PR's and not pre release?
 test: test-smoke
+
+pull-request: test
+
+release: test-upgrade

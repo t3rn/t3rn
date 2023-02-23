@@ -202,16 +202,15 @@ pub fn setup_single_sfx_xtx_and_confirm() -> H256 {
          _steps_cnt: (u32, u32),
          _status: CircuitStatus,
          _requester: AccountId| {
-            current_fsx[0].confirmed =
-                Some(ConfirmedSideEffect::<AccountId, BlockNumber, Balance> {
-                    err: None,
-                    output: None,
-                    inclusion_data: vec![1, 2, 3],
-                    executioner: BOB_RELAYER,
-                    received_at: 2,
-                    cost: None,
-                });
-            Ok(PrecompileResult::TryUpdateFSX(current_fsx.clone()))
+            let confirmation = ConfirmedSideEffect::<AccountId, BlockNumber, Balance> {
+                err: None,
+                output: None,
+                inclusion_data: vec![1, 2, 3],
+                executioner: BOB_RELAYER,
+                received_at: 2,
+                cost: None,
+            };
+            Ok(PrecompileResult::TryConfirm(sfx_id, confirmation))
         },
         no_post_updates,
     )

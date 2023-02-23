@@ -8,6 +8,7 @@ use frame_support::{
     weights::IdentityFee,
 };
 use pallet_asset_tx_payment::HandleCredit;
+use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_runtime::traits::{BlakeTwo256, ConvertInto};
 
 // Configure FRAME pallets to include in runtime.
@@ -101,7 +102,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type Event = Event;
-    type FeeMultiplierUpdate = ();
+    type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type OnChargeTransaction = AccountManagerCurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = ConstU8<5>;
