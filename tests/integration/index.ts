@@ -92,33 +92,84 @@ function formatEvent({
   }
 }
 
+
+
+
+
+
 async function main() {
   // New provider instance for local zombienet
-  const wsProvider = new WsProvider('ws://127.0.0.1:9900');
-
-  // Instantiate the API
+  const wsProvider = new WsProvider('ws://127.0.0.1:9944');
   const api = await ApiPromise.create({ provider: wsProvider });
-
-  // Construct the keyring after the API (crypto has an async init)
   const keyring = new Keyring({ type: 'sr25519' });
-
-  // Add Alice to our keyring with a hard-derivation path (empty phrase, so uses dev)
   const alice = keyring.addFromUri('//Alice');
+  const bob = keyring.addFromUri('//Bob');
   const BOB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
 
   // Create a extrinsic, transferring 12345 units to Bob
-  const transfer = api.tx.balances.transfer(BOB, 12345);
-
-  // Sign and send the transaction using our account
+  // const transfer = api.tx.balances.transfer(BOB, 12345);
   // const hash = await transfer.signAndSend(alice);
-  // console.log('Transfer sent with hash', hash.toHex());
+  // console.log('Transfer sent with hash', hash.toHex());  
+  // const event = await signAndSendSafe(api, alice, transfer);
+  // event['events'].forEach((e: any) => {
+  //   console.log('[TRANSFER] event ->', e);
+  // })
 
-  // thanks @chiefbiiko
-  const event = await signAndSendSafe(api, alice, transfer);
-  event['events'].forEach((e) => {
-    // @ts-ignore
-    console.log('event ->', e);
-  })
+  // // Create a bid on an SFX and send it
+  // const encodedSfxId = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000000")
+  // const encodedAmount = api.createType("u128", 1)
+  // const bidSfx = api.tx.circuit.bidSfx(encodedSfxId, encodedAmount)
+  // const event = await bidSfx.signAndSend(alice)
+  // console.log('[BIDSFX] event -> ', event)
+
+  //
+  //
+  // TESTS TESTS TESTS
+  // TESTS TESTS TESTS
+  // TESTS TESTS TESTS
+  //
+  //
+  // Test
+  // Submit an sfx - no bid should kill
+  const encodedSfxId1 = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000001")
+  const encodedAmount1 = api.createType("u128", 0)
+  const bidSfx1 = api.tx.circuit.bidSfx(encodedSfxId1, encodedAmount1)
+
+  console.log('[BIDSFX] BEFORE bidSfx itself -> ', bidSfx1)
+  console.log('[BIDSFX] BEFORE bidSfx unwrap -> ', bidSfx1.unwrap())
+
+
+  const event1 = await bidSfx1.signAndSend(alice)
+
+  console.log('[BIDSFX] Hash of the signAndSend -> ', event1.toHuman())
+
+  console.log('[BIDSFX] bidSfx itself -> ', bidSfx1)
+  console.log('[BIDSFX] bidSfx unwrap -> ', bidSfx1.unwrap())
+
+
+  // Test
+  // Submit a sfx - bid should set to ready
+  // const encodedSfxId2 = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000002")
+  // const encodedAmount2 = api.createType("u128", 1)
+  // const bidSfx2 = api.tx.circuit.bidSfx(encodedSfxId2, encodedAmount2)
+  // const event2 = await bidSfx2.signAndSend(alice)
+  // console.log('[BIDSFX] event -> ', event2)
+
+  // Test
+  // Submit a sfx confirmation - moves to finished
+  // const encodedSfxId2 = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000002")
+  // const encodedAmount2 = api.createType("u128", 1)
+  // const bidSfx2 = api.tx.circuit.bidSfx(encodedSfxId2, encodedAmount2)
+  // const event2 = await bidSfx2.signAndSend(alice)
+  // console.log('[BIDSFX] event -> ', event2)
+
+  // Test
+  // Not submitting after bid moves to revert
+  // const encodedSfxId2 = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000002")
+  // const encodedAmount2 = api.createType("u128", 1)
+  // const bidSfx2 = api.tx.circuit.bidSfx(encodedSfxId2, encodedAmount2)
+  // const event2 = await bidSfx2.signAndSend(alice)
+  // console.log('[BIDSFX] event -> ', event2)
 
 }
 

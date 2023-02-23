@@ -1,0 +1,47 @@
+settings:
+  chains:
+    para_chain: &para_chain
+      wsPort: 9944
+  variables:
+    chains:
+      relay_chain:
+        alice_account: &alice_account //Alice
+        sfxId: &sfxId "0x0000000000000000000000000000000000000000000000000000000000000001"
+        amount: &amount 1
+
+
+# Should submit a transfer to a registered target
+tests:
+  - name: Requesters submit SFX transfers to registered target (self)
+    its:
+      - name: SFX submission to target
+        actions:
+          - extrinsics:
+              - chain: *para_chain
+                sudo: true
+                signer: *alice_account
+                pallet: circuit
+                # call: bidSfx
+                call: onExtrinsicTrigger
+                args: [ 
+                  "0x0000000000000000000000000000000000000000000000000000000000000001", 
+                  0 
+                ]
+                # events:
+                #   - name: balances.Withdraw
+                #   - name: balances.Deposit
+                #   - name: transactionPayment.TransactionFeePaid
+                #   - name: system.ExtrinsicSuccess
+
+  # - name: Requesters submit SFX transfers to registered XBI target - HydraDX
+  #   its:
+  #     - name: 
+
+  # - name: SFX without bids are killed after 3 blocks and funds are returned to the requester
+  #   its:
+
+  # - name: SFX without confirmations are reverted after 400 blocks and funds are returned to the requester and executors slashed
+  #   its:
+
+  # - name: SFX with confirmations finalized and rewards reach executors
+  #   its:

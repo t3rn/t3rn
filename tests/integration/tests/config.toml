@@ -1,44 +1,77 @@
-[settings]
-timeout = 1000
+# [settings]
+# timeout = 1000
 
 [relaychain]
+chain   = "rococo-local"
 command = "polkadot"
-chain = "rococo-local"
 
-[[relaychain.nodes]]
-name = "alice"
-ws_port = 9900
-validator = true
-extra_args = [ "-lparachain=debug" ]
+    [[relaychain.nodes]]
+      name       = "alice"
+      ws_port    = 9900
+    # validator  = true
+    # extra_args = [ "-lparachain=debug" ]
 
-[[relaychain.nodes]]
-name = "bob"
-ws_port = 9901
-validator = true
-extra_args = [ "-lparachain=debug" ]
+    # [[relaychain.nodes]]
+    #   name       = "bob"
+    #   ws_port    = 9901
+    # validator  = true
+    # extra_args = [ "-lparachain=debug" ]
+    #
+    [[relaychain.node_groups]]
+    count = 4
+    name  = "bob"
 
 [[parachains]]
-id = 3000
-add_to_genesis = true
-cumulus_based = true
-chain = "rococo-local"
+  chain          = "local"
+  cumulus_based  = true
+  id             = 3000
+# add_to_genesis = true
 
-[[parachains.collators]]
-name = "t0rn-collator01"
-command = "t0rn-collator"
-ws_port = 9930
-rpc_port = 8830
-args = ["--log=xcm=trace,pallet-assets=trace"]
+    [[parachains.collators]]
+    command  = "t0rn-collator"
+    name     = "t0rn-collator01"
+    rpc_port = 8830
+    ws_port  = 9944
+    # args     = ["--log=xcm=trace,pallet-assets=trace"]
 
-[[parachains.collators]]
-name = "t0rn-collator02"
-command = "t0rn-collator"
-ws_port = 9931
-rpc_port = 8831
-args = ["--log=xcm=trace,pallet-assets=trace"]
+    [[parachains.collators]]
+    command  = "t0rn-collator"
+    name     = "t0rn-collator02"
+    rpc_port = 8831
+    ws_port  = 9931
+    # args     = ["--log=xcm=trace,pallet-assets=trace"]
+
+[[parachains]]
+  chain         = "local"
+  cumulus_based = true
+  id            = 4000
+
+    [[parachains.collators]]
+    name     = "t3rn-collator01"
+    command  = "t3rn-collator"
+    rpc_port = 8840
+    ws_port  = 9940
+
+    [[parachains.collators]]
+    name     = "t3rn-collator02"
+    command  = "t3rn-collator"
+    rpc_port = 8841
+    ws_port  = 9941
+
+[[hrmp_channels]]
+sender = 3000
+recipient = 4000
+max_capacity = 8
+max_message_size = 512
+
+[[hrmp_channels]]
+sender = 4000
+recipient = 3000
+max_capacity = 8
+max_message_size = 512
 
 [types.Header]
 number = "u64"
 weigth = "u64"
-parent_hash = "Hash"
-post_state = "Hash"
+# parent_hash = "Hash"
+# post_state = "Hash"

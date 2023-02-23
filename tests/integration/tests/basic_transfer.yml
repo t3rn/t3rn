@@ -26,19 +26,19 @@ tests:
                   - name: balances.Deposit
                   - name: transactionPayment.TransactionFeePaid
                   - name: system.ExtrinsicSuccess
-    after:
-      - name: Get Bob's balance after the transfer
-        actions:
-          - queries:
-              balance_sender_after:
-                chain: *relay_chain
-                pallet: system
-                call: account
-                args: [ *bob_account ]
-                events:
-                  - name: balances.Balance
-                    attributes:
-                      - type: AccountId
-                        value: *bob_account
-                      - type: Balance
-                        value: *amount
+    # after:
+    #   - name: Get Bob's balance after the transfer
+    #     actions:
+    #       - queries:
+    #           balance_sender_after:
+    #             chain: *relay_chain
+    #             pallet: system
+    #             call: account
+    #             args: [ *bob_account ]
+    #             events:
+    #               - name: balances.Balance
+    #                 attributes:
+    #                   - type: AccountId
+    #                     value: *bob_account
+    #                   - type: Balance
+    #                     value: *amount

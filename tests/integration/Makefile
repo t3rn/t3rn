@@ -5,7 +5,7 @@ url := https://github.com/paritytech/$(dir).git
 # relative to $(dir)...
 test_path := "../tests"
 config_path := "../tests"
-zombienet_config := "../../zombienet/zombienet.toml"
+zombienet_config := "../../integration/tests/config.toml"
 opts := --chain-logs "../chain.log" --test-logs "../test.log"
 # from zombienet's Makefile
 provider := native

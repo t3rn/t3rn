@@ -31,7 +31,7 @@ pub mod pallet {
     };
     use core::ops::Mul;
     use frame_support::{
-        pallet_prelude::*,
+        pallet_prelude::{DispatchResult, *},
         traits::{tokens::WithdrawReasons, Currency, LockableCurrency, ReservableCurrency},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
@@ -51,7 +51,10 @@ pub mod pallet {
         },
         monetary::DECIMALS,
     };
-    use xbi_channel_primitives::traits::{HandlerInfo, XbiInstructionHandler};
+    use xbi_channel_primitives::{
+        traits::{HandlerInfo, XbiInstructionHandler},
+        Instruction,
+    };
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -1635,6 +1638,30 @@ pub mod pallet {
             frame_support::dispatch::DispatchErrorWithPostInfo,
         > {
             T::InstructionHandler::handle(origin, xbi)
+        }
+
+        /// Convert a side effect from XBI to local instructions
+        fn convert_xbi_to_instruction(
+            origin: OriginFor<T>,
+            sfx: &xbi_format::XbiFormat,
+        ) -> DispatchResult {
+            // Ensure the origin is an executor in the active set
+            ensure_signed(origin)?;
+
+            // Convert an SFX to XBI instructions
+            let instructions = match sfx {
+                xbi_format::XbiFormat::Xcm(xcm) => Instruction::Xcm(xcm.clone()),
+                xbi_format::XbiFormat::XcmVersioned(xcm) => Instruction::XcmVersioned(xcm.clone()),
+                xbi_format::XbiFormat::XcmResponse(xcm) => Instruction::XcmResponse(xcm.clone()),
+                xbi_format::XbiFormat::XcmResponseVersioned(xcm) =>
+                    Instruction::XcmResponseVersioned(xcm.clone()),
+                _ => return Err("Invalid instruction data".into()),
+            };
+
+            // Pipe the instrucion to Self::execute_xbi
+            Self::execute_xbi(&origin, &instructions);
+
+            Ok(())
         }
     }
 }

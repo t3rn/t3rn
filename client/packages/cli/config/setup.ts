@@ -101,7 +101,7 @@ export default {
                 gatewaySysProps: {
                     tokenSymbol: "BSX",
                     tokenDecimals: 12,
-                        ss58Format: 10041
+                    ss58Format: 10041
                 },
                 allowedSideEffects: ["tran"],
             }
