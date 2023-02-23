@@ -37,7 +37,7 @@ spec:
             # fsGroup: 
           containers:
           - image: "{{ $repository }}:{{ $tag }}"
-            imagePullPolicy: {{ $job.image.imagePullPolicy | default "Always"}}
+            imagePullPolicy: "Always"
             name: {{ $job.name }}
             {{- with $job.env }}
             env:
