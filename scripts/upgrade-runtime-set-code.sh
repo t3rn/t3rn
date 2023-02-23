@@ -119,7 +119,7 @@ fi
 echo "⚙️ set_code runtime upgrade... $dryrun"
 
 # Skip converting wasm to hex when run with dryrun flag
-if [[ ! -z $dryrun ]]; then
+if [[ -z $dryrun ]]; then
   node <<<"
     var fs = require('fs')
     fs.writeFileSync(
@@ -127,6 +127,7 @@ if [[ ! -z $dryrun ]]; then
       '0x' + fs.readFileSync('$wasm_binary').toString('hex')
     )
   "
+  echo "✅ Converted WASM to hex"
 fi
 
 if [[ -z $dryrun ]]; then
