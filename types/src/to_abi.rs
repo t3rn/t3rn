@@ -1,5 +1,8 @@
-use crate::types::*;
+use crate::{recode::trim_bytes, types::*};
 use codec::{Decode, Encode};
+use primitive_types::{H160, H256};
+
+use crate::to_filled_abi::FilledAbi;
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
 
@@ -11,6 +14,7 @@ pub enum Abi {
     Option(Option<Name>, Box<Abi>),
     Account20(Option<Name>),
     Account32(Option<Name>),
+    H256(Option<Name>),
     Bytes(Option<Name>),
     Value256(Option<Name>),
     Value128(Option<Name>),
@@ -31,6 +35,7 @@ impl Abi {
             Abi::Option(name, _) => name.clone(),
             Abi::Account20(name) => name.clone(),
             Abi::Account32(name) => name.clone(),
+            Abi::H256(name) => name.clone(),
             Abi::Bytes(name) => name.clone(),
             Abi::Value256(name) => name.clone(),
             Abi::Value128(name) => name.clone(),
@@ -51,6 +56,7 @@ impl Abi {
             Abi::Option(_, _field) => 1,
             Abi::Account20(_) => 20,
             Abi::Account32(_) => 32,
+            Abi::H256(_name) => 32,
             Abi::Bytes(_) => 32,
             Abi::Value256(_) => 32,
             Abi::Value128(_) => 16,
@@ -71,6 +77,7 @@ impl Abi {
             Abi::Option(_, field) => 1 + field.get_size(),
             Abi::Account20(_) => 20,
             Abi::Account32(_) => 32,
+            Abi::H256(_) => 32,
             Abi::Bytes(_) => 32,
             Abi::Value256(_) => 32,
             Abi::Value128(_) => 16,
@@ -81,6 +88,117 @@ impl Abi {
             // this needs to be multiplied by the length of the vec
             Abi::Vec(_, field) => 1usize + field.get_size(),
             Abi::Tuple(_, (field1, field2)) => field1.get_size() + field2.get_size(),
+        }
+    }
+
+    pub fn decode_topics_as_rlp(
+        &self,
+        input: Vec<u8>,
+    ) -> Result<(FilledAbi, usize), DispatchError> {
+        frame_support::ensure!(
+            input.len() >= 32,
+            "decode_topics_as_rlp -- Invalid input length lesser than 32"
+        );
+        match self {
+            Abi::Account20(name) => {
+                frame_support::ensure!(input.len() >= 20, "Decode Abi::Account20 too short");
+                let data: H160 = H160::from_slice(&input[input.len() - 20..input.len()]);
+                Ok((
+                    FilledAbi::Account20(name.clone(), data.as_bytes().to_vec()),
+                    32usize,
+                ))
+            },
+            Abi::H256(name) | Abi::Account32(name) => {
+                frame_support::ensure!(
+                    input.len() == 32,
+                    "Decode Abi::Account32 size mismatches 32 bytes"
+                );
+                let data: H256 = H256::from_slice(input.as_slice());
+                Ok((
+                    FilledAbi::H256(name.clone(), data.as_bytes().to_vec()),
+                    32usize,
+                ))
+            },
+            Abi::Bytes(name) => Ok((FilledAbi::Bytes(name.clone(), input), 32usize)),
+            Abi::Value256(name) => {
+                frame_support::ensure!(
+                    input.len() == 32,
+                    "Value256InvalidInput size mismatches 32 bytes"
+                );
+                let trimmed = trim_bytes(input.as_slice(), 32);
+                Ok((FilledAbi::Value256(name.clone(), trimmed.to_vec()), 32usize))
+            },
+            Abi::Value128(name) => {
+                let data: u128 = rlp::decode(input.as_slice()).unwrap();
+                let recoded = rlp::encode(&data);
+                Ok((FilledAbi::Value128(name.clone(), recoded.to_vec()), 32usize))
+            },
+            Abi::Value64(name) => {
+                let data: u64 = rlp::decode(input.as_slice()).unwrap();
+                let recoded = rlp::encode(&data);
+                Ok((FilledAbi::Value64(name.clone(), recoded.to_vec()), 32usize))
+            },
+            Abi::Value32(name) => {
+                let data: u32 = rlp::decode(input.as_slice()).unwrap();
+                let recoded = rlp::encode(&data);
+                Ok((FilledAbi::Value32(name.clone(), recoded.to_vec()), 32usize))
+            },
+            Abi::Byte(name) | Abi::Bool(name) => {
+                frame_support::ensure!(
+                    input.len() == 32,
+                    "Decode Abi::Byte size mismatches 1 byte"
+                );
+                Ok((FilledAbi::Byte(name.clone(), vec![input[31]]), 32usize))
+            },
+
+            Abi::Tuple(name, (field1, field2)) => {
+                let filled_1 = field1.decode_topics_as_rlp(input.clone())?;
+                let filled_2 = field2.decode_topics_as_rlp(input[32..].to_vec())?;
+                Ok((
+                    FilledAbi::Tuple(name.clone(), (Box::new(filled_1.0), Box::new(filled_2.0))),
+                    64usize,
+                ))
+            },
+            Abi::Vec(name, field) => {
+                let mut filled_vec = Vec::new();
+                let mut input = input;
+                let mut consumed = 0usize;
+                loop {
+                    if input.is_empty() {
+                        break
+                    }
+                    let filled = field.decode_topics_as_rlp(input.clone())?;
+                    filled_vec.push(filled.0);
+                    consumed += filled.1;
+                    input = input[32..].to_vec();
+                }
+                Ok((
+                    FilledAbi::Vec(name.clone(), Box::new(filled_vec), 0u8),
+                    consumed,
+                ))
+            },
+            Abi::Option(name, field) => {
+                let filled = field.decode_topics_as_rlp(input)?;
+                Ok((FilledAbi::Option(name.clone(), Box::new(filled.0)), 33usize))
+            },
+            Abi::Struct(name, fields) => {
+                let mut filled_fields = Vec::new();
+                let mut input = input;
+                let mut consumed = 0usize;
+                for field in fields {
+                    let filled = field.decode_topics_as_rlp(input.clone())?;
+                    filled_fields.push(Box::new(filled.0));
+                    consumed += filled.1;
+                    input = input[32..].to_vec();
+                }
+                Ok((
+                    FilledAbi::Struct(name.clone(), filled_fields, 0u8),
+                    consumed,
+                ))
+            },
+            _ => {
+                unreachable!("decode_topics_as_rlp -- Invalid type")
+            },
         }
     }
 }
@@ -230,11 +348,10 @@ pub fn parse_descriptor_flat(
     let descriptor_str = sp_std::str::from_utf8(descriptor.as_slice())
         .map_err(|_e| "CrossCodec::failed to stringify field descriptor")?;
 
-    println!("PRE PARSED type_str: {descriptor_str}");
-
     let mut current_lvl = 0usize;
     let mut descriptors: Vec<(String, Option<String>, usize)> = vec![];
     let mut maybe_name_field: Option<String> = None;
+    let mut maybe_indexed: Option<bool> = None;
     let mut current_field: String = "".into();
 
     for x in descriptor_str.chars() {
@@ -244,29 +361,36 @@ pub fn parse_descriptor_flat(
                 current_lvl += 1;
                 current_field = "".into();
                 maybe_name_field = None;
+                maybe_indexed = None;
             },
             '>' | ')' => {
                 descriptors.push((current_field, maybe_name_field.clone(), current_lvl));
                 current_field = "".into();
                 maybe_name_field = None;
+                maybe_indexed = None;
                 current_lvl -= 1;
             },
             ',' => {
                 descriptors.push((current_field, maybe_name_field.clone(), current_lvl));
                 current_field = "".into();
                 maybe_name_field = None;
+                maybe_indexed = None;
             },
             ':' => {
                 maybe_name_field = Some(current_field.clone());
                 current_field = "".into();
+            },
+            '+' => {
+                maybe_indexed = Some(true);
+            },
+            '-' => {
+                maybe_indexed = Some(false);
             },
             _ => {
                 current_field.push(x);
             },
         }
     }
-
-    println!("POST PARSED descriptor: {descriptors:?}");
 
     let res = descriptors
         .into_iter()

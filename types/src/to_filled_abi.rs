@@ -6,11 +6,10 @@ use crate::{
 use codec::{Decode, Encode};
 use frame_support::ensure;
 
-use primitive_types::H160;
+use primitive_types::{H160, H256};
 use sp_core::{crypto::AccountId32, ByteArray};
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
-use std::u32;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
 pub enum FilledAbi {
@@ -21,6 +20,7 @@ pub enum FilledAbi {
     Bytes(Option<Name>, Data),
     Account20(Option<Name>, Data),
     Account32(Option<Name>, Data),
+    H256(Option<Name>, Data),
     Value256(Option<Name>, Data),
     Value128(Option<Name>, Data),
     Value64(Option<Name>, Data),
@@ -29,6 +29,26 @@ pub enum FilledAbi {
     Bool(Option<Name>, Data),
     Vec(Option<Name>, Box<Vec<FilledAbi>>, u8),
     Tuple(Option<Name>, (Box<FilledAbi>, Box<FilledAbi>)),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+pub enum IndexedAbi {
+    Struct(Option<Name>, Vec<Box<IndexedAbi>>, bool),
+    Enum(Option<Name>, Vec<Box<IndexedAbi>>, bool),
+    Log(Option<Name>, Vec<Box<IndexedAbi>>, bool),
+    Option(Option<Name>, Box<IndexedAbi>, bool),
+    Bytes(Option<Name>, bool),
+    Account20(Option<Name>, bool),
+    Account32(Option<Name>, bool),
+    H256(Option<Name>, bool),
+    Value256(Option<Name>, bool),
+    Value128(Option<Name>, bool),
+    Value64(Option<Name>, bool),
+    Value32(Option<Name>, bool),
+    Byte(Option<Name>, bool),
+    Bool(Option<Name>, bool),
+    Vec(Option<Name>, Box<Vec<IndexedAbi>>, u8),
+    Tuple(Option<Name>, (Box<IndexedAbi>, Box<IndexedAbi>)),
 }
 
 impl FilledAbi {
@@ -57,6 +77,7 @@ impl FilledAbi {
             FilledAbi::Bytes(_, data) => data.clone(),
             FilledAbi::Account20(_, data) => data.clone(),
             FilledAbi::Account32(_, data) => data.clone(),
+            FilledAbi::H256(_, data) => data.clone(),
             FilledAbi::Value256(_, data) => data.clone(),
             FilledAbi::Value128(_, data) => data.clone(),
             FilledAbi::Value64(_, data) => data.clone(),
@@ -107,6 +128,7 @@ impl FilledAbi {
                 | FilledAbi::Bytes(name, _data)
                 | FilledAbi::Account20(name, _data)
                 | FilledAbi::Account32(name, _data)
+                | FilledAbi::H256(name, _data)
                 | FilledAbi::Value256(name, _data)
                 | FilledAbi::Value128(name, _data)
                 | FilledAbi::Value64(name, _data)
@@ -162,6 +184,7 @@ impl FilledAbi {
                 | FilledAbi::Bytes(name, data)
                 | FilledAbi::Account20(name, data)
                 | FilledAbi::Account32(name, data)
+                | FilledAbi::H256(name, data)
                 | FilledAbi::Value256(name, data)
                 | FilledAbi::Value128(name, data)
                 | FilledAbi::Value64(name, data)
@@ -236,7 +259,6 @@ pub fn encoded_struct_chopper(
             fields_iter
                 .map(|field_descriptor| {
                     let field_size = field_descriptor.get_size();
-                    println!("abi: {field_descriptor:?}  + field_size: {field_size:?}");
                     let (left, right) = split_bytes(no_strut_prefix_data, field_size)?;
                     no_strut_prefix_data = right;
                     Ok(left.to_vec())
@@ -248,7 +270,6 @@ pub fn encoded_struct_chopper(
             rlp.into_iter().map(|rlp| rlp.as_raw().to_vec()).collect()
         },
     };
-    println!("chopped_field_data: {chopped_field_data:?}");
     ensure!(
         memo_prefix.len() == 1,
         "encoded_struct_chopper - Memo cannot be empty for structs"
@@ -260,6 +281,61 @@ pub fn encoded_struct_chopper(
             .expect("encoded_struct_chopper - Memo cannot be empty for structs"),
     ))
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+pub struct EthIngressEventLog(pub Vec<H256>, pub Vec<u8>);
+
+pub fn encoded_evm_event_chopper(
+    field_data: &[u8],
+    name: Option<Name>,
+    fields_iter_clone: IntoIter<Box<Abi>>,
+) -> Result<(FilledAbi, usize), DispatchError> {
+    let eth_ingress_event_log: EthIngressEventLog =
+        EthIngressEventLog::decode(&mut &field_data[..])
+            .map_err(|_e| "EthIngressEventLog::decode can't be derived with provided data")?;
+
+    let (topics, mut data) = (eth_ingress_event_log.0, eth_ingress_event_log.1);
+
+    let mut flat_topics: Vec<u8> = topics
+        .into_iter()
+        // skip the first topic, which is the event signature - we use the custom ABI
+        .skip(1)
+        .flat_map(|t| t.as_ref().to_vec())
+        .collect::<Vec<u8>>();
+
+    let mut total_size = 0usize;
+    // Make sure original fields iterator won't be consumed
+    // let fields_iter_clone = fields_descriptors.iter().cloned();
+    let fields_iter = fields_iter_clone.peekable();
+    let filled_abi_content = fields_iter
+        .map(|field_descriptor| {
+            let _field_size = field_descriptor.get_size();
+            // Use the last byte being either "+" or "-" to determine if the field is a topic or data.
+            //   this is a convention of Indexed = true/false of Eth event fields
+            let name = field_descriptor.get_name().unwrap_or(b"+".to_vec());
+            let next_filled_abi = if name.last() == Some(&b'+') {
+                let (filled_abi, chopped_size) =
+                    field_descriptor.decode_topics_as_rlp(flat_topics.clone())?;
+                let (_left_topic, remaining_topics) = split_bytes(&flat_topics, chopped_size)?;
+                flat_topics = remaining_topics.to_vec();
+                total_size += chopped_size;
+                filled_abi
+            } else {
+                let (filled_abi, chopped_size) =
+                    field_descriptor.decode_topics_as_rlp(data.clone())?;
+                let (_left_topic, remaining_data) = split_bytes(&data, chopped_size)?;
+                data = remaining_data.to_vec();
+                total_size += chopped_size;
+
+                filled_abi
+            };
+            Ok(Box::new(next_filled_abi))
+        })
+        .collect::<Result<Vec<Box<FilledAbi>>, DispatchError>>()?;
+
+    Ok((FilledAbi::Log(name, filled_abi_content, 0u8), total_size))
+}
+
 impl FilledAbi {
     pub fn recode_as(&self, in_codec: &Codec, out_codec: &Codec) -> Result<Data, DispatchError> {
         match self {
@@ -322,28 +398,29 @@ impl FilledAbi {
                 }
             },
             FilledAbi::Byte(_name, data) | FilledAbi::Bool(_name, data) => Ok(data.clone()),
-            FilledAbi::Account32(_name, data) => match (in_codec, out_codec) {
-                (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
-                (Codec::Scale, Codec::Rlp) => {
-                    let decoded_account: AccountId32 = AccountId32::decode(&mut &data[..])
-                        .map_err(|_e| "Account32 error at recoding back to Scale")?;
+            FilledAbi::H256(_name, data) | FilledAbi::Account32(_name, data) =>
+                match (in_codec, out_codec) {
+                    (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
+                    (Codec::Scale, Codec::Rlp) => {
+                        let decoded_account: AccountId32 = AccountId32::decode(&mut &data[..])
+                            .map_err(|_e| "Account32 error at recoding back to Scale")?;
 
-                    Ok(rlp::encode(&decoded_account.to_raw_vec()).to_vec())
-                },
-                (Codec::Rlp, Codec::Scale) => {
-                    // In RLP the account is encoded as a list of 33 bytes.
-                    ensure!(
-                        data.len() == 33,
-                        "RLP encoded account should be 33 bytes long"
-                    );
-                    let no_prefix_data: [u8; 32] = data[1..33]
-                        .try_into()
-                        .map_err(|_e| "Account32 error at recoding back to [u8; 32]")?;
+                        Ok(rlp::encode(&decoded_account.to_raw_vec()).to_vec())
+                    },
+                    (Codec::Rlp, Codec::Scale) => {
+                        // In RLP the account is encoded as a list of 33 bytes.
+                        ensure!(
+                            data.len() == 33,
+                            "RLP encoded account should be 33 bytes long"
+                        );
+                        let no_prefix_data: [u8; 32] = data[1..33]
+                            .try_into()
+                            .map_err(|_e| "Account32 error at recoding back to [u8; 32]")?;
 
-                    let account_id = AccountId32::new(no_prefix_data);
-                    Ok(account_id.encode())
+                        let account_id = AccountId32::new(no_prefix_data);
+                        Ok(account_id.encode())
+                    },
                 },
-            },
             FilledAbi::Account20(_name, data) => match (in_codec, out_codec) {
                 (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
                 (Codec::Scale, Codec::Rlp) => {
@@ -409,35 +486,6 @@ impl FilledAbi {
                     Ok(value_256.encode())
                 },
             },
-            // FilledAbi::Tuple(_name, (field_a, field_b)) => {
-            //     let mut encoded_fields: Vec<u8> = vec![];
-            //     encoded_fields.extend_from_slice(
-            //         &mut &field_a.recode_as(in_codec.clone(), out_codec.clone())?[..],
-            //     );
-            //     encoded_fields.extend_from_slice(
-            //         &mut &field_b.recode_as(in_codec.clone(), out_codec.clone())?[..],
-            //     );
-            //
-            //     match (in_codec, out_codec) {
-            //         (_, Codec::Scale) => Ok(encoded_fields),
-            //         (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
-            //     }
-            // },
-            // FilledAbi::Vec(name, field, _) => {
-            //     // Option Prefix
-            //     let mut encoded_fields: Vec<u8> = vec![];
-            //     encoded_fields.extend_from_slice(
-            //         &mut &Self::recursive_encode_filled_abi(*field, out_codec.clone())?[..],
-            //     );
-            //     match out_codec {
-            //         Recode::Scale(_) => Ok(encoded_fields),
-            //         Recode::Rlp(_) => Ok({
-            //             let mut rlp_encoded_list = vec![0xc3]; // assume 0xc3 is the code for a list
-            //             rlp_encoded_list.extend_from_slice(&mut &encoded_fields);
-            //             rlp_encoded_list
-            //         }),
-            //     }
-            // },
             _ => Err(DispatchError::Other("Not implemented yet")),
         }
     }
@@ -449,13 +497,23 @@ impl FilledAbi {
             field_data: &[u8],
             in_codec: Codec,
         ) -> Result<(FilledAbi, usize), DispatchError> {
-            let l = field_data.len();
-            println!("recursive_fill_abi - field_data: {field_data:?} + length: {l}");
-            match abi {
+            let _l = field_data.len();
+            match abi.clone() {
                 Abi::Struct(name, fields_descriptors)
                 | Abi::Log(name, fields_descriptors)
                 | Abi::Enum(name, fields_descriptors) => {
                     let mut fields = Vec::new();
+
+                    if in_codec == Codec::Rlp
+                        && (abi == Abi::Log(name.clone(), fields_descriptors.clone())
+                            || abi == Abi::Enum(name.clone(), fields_descriptors.clone()))
+                    {
+                        return encoded_evm_event_chopper(
+                            field_data,
+                            name,
+                            fields_descriptors.into_iter(),
+                        )
+                    }
 
                     let (mut chopped_field_data_iter, memo_prefix) = encoded_struct_chopper(
                         field_data,
@@ -463,14 +521,9 @@ impl FilledAbi {
                         fields_descriptors.clone().into_iter(),
                     )?;
 
-                    for chopped_piece in chopped_field_data_iter.clone() {
-                        println!("Abi::Struct - chopped_piece: {chopped_piece:?}");
-                    }
-
                     let mut total_struct_size = 0usize;
 
                     for field_descriptor in fields_descriptors {
-                        println!("Abi::Struct - next field_descriptor: {field_descriptor:?}");
                         let (field, size) = recursive_fill_abi(
                             *field_descriptor,
                             chopped_field_data_iter
@@ -479,7 +532,6 @@ impl FilledAbi {
                                 .as_slice(),
                             in_codec.clone(),
                         )?;
-                        println!("Abi::Struct - size: {size:?}");
                         total_struct_size += size;
                         fields.push(Box::new(field));
                     }
@@ -490,9 +542,7 @@ impl FilledAbi {
                     ))
                 },
                 Abi::Option(name, field_descriptor) => {
-                    println!("Abi::Option - field_data: {field_data:?}");
                     let no_option_prefix_data = trim_bytes(field_data, 1);
-                    println!("Abi::Option - no_option_prefix_data: {no_option_prefix_data:?}");
                     let (field, size) =
                         recursive_fill_abi(*field_descriptor, no_option_prefix_data, in_codec)?;
                     Ok((FilledAbi::Option(name, Box::new(field)), size + 1))
@@ -523,12 +573,7 @@ impl FilledAbi {
                         field_data.len(),
                     ))
                 },
-                Abi::Account32(name) => {
-                    println!(
-                        "Abi::Account32 - field_data: {:?}, len: {:?}",
-                        field_data,
-                        field_data.len()
-                    );
+                Abi::Account32(name) | Abi::H256(name) => {
                     let len = match in_codec {
                         // Expect AccountId32 to be 32 bytes
                         Codec::Scale => 32usize,
@@ -579,13 +624,10 @@ impl FilledAbi {
                     }
 
                     let recoded_vector_data = ensure_vector_and_trim_prefix(field_data, &in_codec)?;
-                    println!("Abi::Vec - recoded_vector_data: {recoded_vector_data:?}");
 
                     let mut vec = Vec::new();
                     let mut offset = 0;
-
                     let max_size_of_current_field = field_descriptor.get_size();
-                    println!("Abi::Vec - max_size_of_current_field: {max_size_of_current_field:?}");
 
                     while offset + max_size_of_current_field <= recoded_vector_data.len() {
                         let (field, size) = recursive_fill_abi(
@@ -614,15 +656,6 @@ impl FilledAbi {
                         size1 + size2,
                     ))
                 },
-                // Abi::Enum(name, (field1, field2)) => {
-                //     let (field1, size1) = recursive_fill_abi(*field1, field_data)?;
-                //     let (field2, size2) = recursive_fill_abi(*field2, &field_data[size1..])?;
-                //
-                //     Ok((
-                //         FilledAbi::Enum(name, (Box::new(field1), Box::new(field2))),
-                //         size1 + size2,
-                //     ))
-                // },
             }
         }
 
@@ -638,6 +671,7 @@ mod test_fill_abi {
     use super::*;
     use crate::mini_mock::MiniRuntime;
     use hex_literal::hex;
+
     use rlp_derive::{RlpDecodable, RlpEncodable};
     use sp_core::{crypto::AccountId32, ByteArray};
 
@@ -845,6 +879,112 @@ mod test_fill_abi {
                 hex!("0909090909090909090909090909090909090909090909090909090909090909").to_vec()
             )
         )
+    }
+
+    #[test]
+    fn decodes_eth_events_with_mocked_data() {
+        use ethabi::{Event, EventParam, ParamType, RawLog};
+
+        let correct_event = Event {
+            name: "Test".into(),
+            inputs: vec![
+                EventParam {
+                    name: "tuple".into(),
+                    kind: ParamType::Tuple(vec![ParamType::Address, ParamType::Address]),
+                    indexed: false,
+                },
+                EventParam {
+                    name: "addr".into(),
+                    kind: ParamType::Address,
+                    indexed: true,
+                },
+            ],
+            anonymous: false,
+        };
+        // swap indexed params
+        let mut wrong_event = correct_event.clone();
+        wrong_event.inputs[0].indexed = true;
+        wrong_event.inputs[1].indexed = false;
+
+        let abi = Abi::Enum(
+            Some(b"test".to_vec()),
+            vec![
+                Box::new(Abi::Tuple(
+                    Some(b"tuple-".to_vec()),
+                    (
+                        Box::new(Abi::Account20(Some(b"A-".to_vec()))),
+                        Box::new(Abi::Account20(Some(b"B-".to_vec()))),
+                    ),
+                )),
+                Box::new(Abi::Account20(Some(b"C+".to_vec()))),
+            ],
+        );
+
+        let log = RawLog {
+            topics: vec![
+                hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
+                hex!("0000000000000000000000000000000000000000000000000000000000012321").into(),
+            ],
+            data: hex!(
+                "
+			0000000000000000000000000000000000000000000000000000000000012345
+			0000000000000000000000000000000000000000000000000000000000054321
+			"
+            )
+            .into(),
+        };
+
+        // write parse_rlp_log function that returns the content of the log as per defined in the abi
+        let corr_res = correct_event.parse_log(log.clone());
+
+        println!("{corr_res:?}");
+
+        assert!(wrong_event.parse_log(log.clone()).is_ok());
+        assert!(correct_event.parse_log(log).is_ok());
+
+        let rlp_raw_log_bytes = EthIngressEventLog(
+            vec![
+                hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
+                hex!("0000000000000000000000000000000000000000000000000000000000012321").into(),
+            ],
+            hex!(
+                "
+			0000000000000000000000000000000000000000000000000000000000012345
+			0000000000000000000000000000000000000000000000000000000000054321
+			"
+            )
+            .into(),
+        );
+
+        let filled_abi =
+            FilledAbi::try_fill_abi(abi, rlp_raw_log_bytes.encode(), Codec::Rlp).unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Log(
+                Some(b"test".to_vec()),
+                vec![
+                    Box::new(FilledAbi::Tuple(
+                        Some(b"tuple-".to_vec()),
+                        (
+                            Box::new(FilledAbi::Account20(
+                                Some(b"A-".to_vec()),
+                                vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 67, 33]
+                            )),
+                            Box::new(FilledAbi::Account20(
+                                Some(b"B-".to_vec()),
+                                vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 67, 33]
+                            )),
+                        ),
+                    )),
+                    Box::new(FilledAbi::Account20(
+                        Some(b"C+".to_vec()),
+                        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 35, 33]
+                    )),
+                ],
+                0
+            )
+        );
     }
 
     #[test]
