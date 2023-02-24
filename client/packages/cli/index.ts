@@ -43,7 +43,7 @@ class CircuitCLI {
                 ? keyring.addFromUri("//Alice")
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
 
-        this.sdk = new Sdk("ws://127.0.0.1:9944", this.signer)
+        this.sdk = new Sdk(process.env.CIRCUIT_WS || "ws://localhost:9944", this.signer)
         // @ts-ignore suddenly this is not working
         this.circuit = await this.sdk.init();
     }
