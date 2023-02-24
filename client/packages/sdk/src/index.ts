@@ -1,5 +1,6 @@
 import "@polkadot/api-augment"; // DO NOT REMOVE THIS LINE
 import { ApiPromise, WsProvider } from "@polkadot/api";
+import { cryptoWaitReady } from '@polkadot/util-crypto';
 
 import types from "./config/types.json";
 import rpc from "./config/rpc.json";
@@ -45,6 +46,7 @@ export class Sdk {
    * @returns ApiPromise instance
    */
   async init(): Promise<ApiPromise> {
+    await cryptoWaitReady()
     this.client = await ApiPromise.create({
       provider: new WsProvider(this.rpcUrl),
       types: types as any,
