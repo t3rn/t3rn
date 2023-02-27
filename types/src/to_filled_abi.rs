@@ -51,6 +51,25 @@ pub enum IndexedAbi {
     Tuple(Option<Name>, (Box<IndexedAbi>, Box<IndexedAbi>)),
 }
 
+pub fn matches_name(field_name: Option<&Name>, by_name: &Name) -> bool {
+    match field_name {
+        Some(field_name) => {
+            match field_name.last() {
+                Some(last_char) => {
+                    if (*last_char == b"+"[0] || *last_char == b"-"[0])
+                        && &field_name[..field_name.len() - 1].to_vec() == by_name
+                    {
+                        return true
+                    }
+                },
+                None => return false,
+            }
+            field_name == by_name
+        },
+        None => false,
+    }
+}
+
 impl FilledAbi {
     pub fn get_data(&self) -> Data {
         match self {
@@ -100,13 +119,34 @@ impl FilledAbi {
         }
     }
 
+    pub fn get_name(&self) -> Option<Name> {
+        match self {
+            FilledAbi::Struct(name, _, _)
+            | FilledAbi::Enum(name, _, _)
+            | FilledAbi::Log(name, _, _)
+            | FilledAbi::Option(name, _)
+            | FilledAbi::Bytes(name, _)
+            | FilledAbi::Account20(name, _)
+            | FilledAbi::Account32(name, _)
+            | FilledAbi::H256(name, _)
+            | FilledAbi::Value256(name, _)
+            | FilledAbi::Value128(name, _)
+            | FilledAbi::Value64(name, _)
+            | FilledAbi::Value32(name, _)
+            | FilledAbi::Byte(name, _)
+            | FilledAbi::Bool(name, _)
+            | FilledAbi::Vec(name, _, _)
+            | FilledAbi::Tuple(name, _) => name.clone(),
+        }
+    }
+
     pub fn get_by_name(&self, by_name: &Name) -> Option<FilledAbi> {
         fn recursive_get_by_name(abi: &FilledAbi, by_name: &Name) -> Option<FilledAbi> {
             match abi {
                 FilledAbi::Struct(name, fields, _)
                 | FilledAbi::Enum(name, fields, _)
                 | FilledAbi::Log(name, fields, _) => {
-                    if name.as_ref() == Some(by_name) {
+                    if matches_name(name.as_ref(), by_name) {
                         return Some(abi.clone())
                     }
 
@@ -119,7 +159,7 @@ impl FilledAbi {
                     None
                 },
                 FilledAbi::Option(name, field) => {
-                    if name.as_ref() == Some(by_name) {
+                    if matches_name(name.as_ref(), by_name) {
                         return Some(abi.clone())
                     }
 
@@ -135,7 +175,7 @@ impl FilledAbi {
                 | FilledAbi::Value32(name, _data)
                 | FilledAbi::Bool(name, _data)
                 | FilledAbi::Byte(name, _data) => {
-                    if name.as_ref() == Some(by_name) {
+                    if matches_name(name.as_ref(), by_name) {
                         return Some(abi.clone())
                     }
 
@@ -162,7 +202,7 @@ impl FilledAbi {
                 FilledAbi::Struct(name, fields, _)
                 | FilledAbi::Enum(name, fields, _)
                 | FilledAbi::Log(name, fields, _) => {
-                    if name.as_ref() == Some(by_name) {
+                    if matches_name(name.as_ref(), by_name) {
                         return Some(abi.encode())
                     }
 
@@ -175,7 +215,7 @@ impl FilledAbi {
                     None
                 },
                 FilledAbi::Option(name, field) => {
-                    if name.as_ref() == Some(by_name) {
+                    if matches_name(name.as_ref(), by_name) {
                         return Some(abi.encode())
                     }
 
@@ -190,14 +230,14 @@ impl FilledAbi {
                 | FilledAbi::Value64(name, data)
                 | FilledAbi::Value32(name, data)
                 | FilledAbi::Byte(name, data) => {
-                    if name.as_ref() == Some(by_name) {
+                    if matches_name(name.as_ref(), by_name) {
                         return Some(data.clone())
                     }
 
                     None
                 },
                 FilledAbi::Bool(name, data) => {
-                    if name.as_ref() == Some(by_name) {
+                    if matches_name(name.as_ref(), by_name) {
                         return Some(data.clone())
                     }
 
@@ -308,22 +348,29 @@ pub fn encoded_evm_event_chopper(
     // let fields_iter_clone = fields_descriptors.iter().cloned();
     let fields_iter = fields_iter_clone.peekable();
     let filled_abi_content = fields_iter
+        // start from the last field, and continue trimming the data from the end
+        .rev()
         .map(|field_descriptor| {
             let _field_size = field_descriptor.get_size();
+
             // Use the last byte being either "+" or "-" to determine if the field is a topic or data.
             //   this is a convention of Indexed = true/false of Eth event fields
             let name = field_descriptor.get_name().unwrap_or(b"+".to_vec());
+            let _name_str = sp_std::str::from_utf8(name.as_slice())
+                .map_err(|_e| "CrossCodec::failed to stringify name_str")?;
+
             let next_filled_abi = if name.last() == Some(&b'+') {
                 let (filled_abi, chopped_size) =
                     field_descriptor.decode_topics_as_rlp(flat_topics.clone())?;
-                let (_left_topic, remaining_topics) = split_bytes(&flat_topics, chopped_size)?;
+                let (remaining_topics, _read_topic) =
+                    split_bytes(&flat_topics, flat_topics.len() - chopped_size)?;
                 flat_topics = remaining_topics.to_vec();
                 total_size += chopped_size;
                 filled_abi
             } else {
                 let (filled_abi, chopped_size) =
                     field_descriptor.decode_topics_as_rlp(data.clone())?;
-                let (_left_topic, remaining_data) = split_bytes(&data, chopped_size)?;
+                let (remaining_data, _read_topic) = split_bytes(&data, data.len() - chopped_size)?;
                 data = remaining_data.to_vec();
                 total_size += chopped_size;
 
@@ -331,7 +378,10 @@ pub fn encoded_evm_event_chopper(
             };
             Ok(Box::new(next_filled_abi))
         })
-        .collect::<Result<Vec<Box<FilledAbi>>, DispatchError>>()?;
+        .collect::<Result<Vec<Box<FilledAbi>>, DispatchError>>()?
+        .into_iter()
+        .rev()
+        .collect::<Vec<Box<FilledAbi>>>();
 
     Ok((FilledAbi::Log(name, filled_abi_content, 0u8), total_size))
 }
