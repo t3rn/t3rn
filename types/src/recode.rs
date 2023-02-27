@@ -20,6 +20,17 @@ pub fn trim_bytes(input: &[u8], n: usize) -> &[u8] {
     }
 }
 
+pub fn take_last_n(input: &[u8], n: usize) -> Result<&[u8], DispatchError> {
+    let len = input.len();
+    println!("take_last_n::len vs input size {} {}", n, input.len());
+
+    if n > len {
+        Err(DispatchError::Other("take_last_n::Invalid size of input"))
+    } else {
+        Ok(&input[(len - n)..len])
+    }
+}
+
 pub fn split_bytes(input: &[u8], n: usize) -> Result<(&[u8], &[u8]), DispatchError> {
     let len = input.len();
     println!("split_bytes::len vs input size {} {}", n, input.len());
@@ -29,6 +40,18 @@ pub fn split_bytes(input: &[u8], n: usize) -> Result<(&[u8], &[u8]), DispatchErr
     } else {
         Ok(input.split_at(n))
     }
+}
+
+pub fn trim_till_non_zero(input: &[u8], _n: usize) -> Result<(&[u8], &[u8]), DispatchError> {
+    let len = input.len();
+    let mut pos: usize = 0;
+    while pos < len {
+        if input[pos] != 0u8 {
+            break
+        }
+        pos += 1;
+    }
+    split_bytes(input, pos)
 }
 
 pub fn trim_bytes_to(input: &[u8], n: usize) -> Result<Vec<u8>, DispatchError> {

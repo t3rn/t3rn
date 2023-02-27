@@ -3,16 +3,23 @@ use crate::{
     types::{Data, Name},
 };
 use codec::{Decode, Encode};
+use primitive_types::U256;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 
 use crate::{to_abi::Abi, to_filled_abi::FilledAbi};
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+pub struct IngressAbiDescriptors {
+    for_rlp: Vec<u8>,
+    for_scale: Vec<u8>,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct SFXAbi {
     // must match encoded args order. bool is for optional validation
     pub args_names: Vec<(Name, bool)>,
-    pub expected_optimistic_descriptor: Name,
+    pub ingress_abi_descriptors: IngressAbiDescriptors,
 }
 
 impl SFXAbi {
@@ -20,8 +27,111 @@ impl SFXAbi {
         self.args_names.clone()
     }
 
-    pub fn get_expected_optimistic_descriptor(&self) -> Name {
-        self.expected_optimistic_descriptor.clone()
+    pub fn get_expected_optimistic_descriptor(&self, codec: Codec) -> Name {
+        match codec {
+            Codec::Scale => self.ingress_abi_descriptors.for_scale.clone(),
+            Codec::Rlp => self.ingress_abi_descriptors.for_rlp.clone(),
+        }
+    }
+
+    pub fn check_args_equal(
+        ordered_arg: Data,
+        filled_abi: FilledAbi,
+        output_codec: &Codec,
+        in_codec: &Codec,
+    ) -> Result<bool, DispatchError> {
+        match filled_abi.clone() {
+            FilledAbi::Value256(_name, encoded_value) => {
+                let output_val_u256 = match output_codec {
+                    Codec::Scale => U256::from_little_endian(&encoded_value),
+                    Codec::Rlp => U256::from_big_endian(&encoded_value),
+                };
+                let input_val_u256 = match in_codec {
+                    Codec::Scale => U256::from_little_endian(ordered_arg.as_slice()),
+                    Codec::Rlp => U256::from_big_endian(ordered_arg.as_slice()),
+                };
+
+                Ok(output_val_u256 == input_val_u256)
+            },
+            FilledAbi::Value128(_name, encoded_value) => {
+                println!("U128 Args CMP received_arg: {ordered_arg:?} for {filled_abi:?}");
+                let output_val_u128: u128 = match output_codec {
+                    Codec::Scale => u128::decode(&mut &encoded_value[..]).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                    Codec::Rlp => rlp::decode(&encoded_value).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                }?;
+
+                let input_val_u128: u128 = match in_codec {
+                    Codec::Scale => u128::decode(&mut &ordered_arg[..]).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                    Codec::Rlp => rlp::decode(&ordered_arg).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                }?;
+
+                println!(
+                    "U128 Args CMP received_arg: {:?} {:?} for {:?}",
+                    input_val_u128.clone(),
+                    output_val_u128.clone(),
+                    filled_abi
+                );
+
+                Ok(output_val_u128 == input_val_u128)
+            },
+            FilledAbi::Value64(_name, encoded_value) => {
+                let output_val_u64 = match output_codec {
+                    Codec::Scale => u64::decode(&mut &encoded_value[..]).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                    Codec::Rlp => rlp::decode(&encoded_value).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                }?;
+
+                let input_val_u64 = match in_codec {
+                    Codec::Scale => u64::decode(&mut &ordered_arg[..]).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                    Codec::Rlp => rlp::decode(&ordered_arg).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                }?;
+
+                Ok(output_val_u64 == input_val_u64)
+            },
+            FilledAbi::Value32(_name, encoded_value) => {
+                let output_val_u32: u32 = match output_codec {
+                    Codec::Scale => u32::decode(&mut &encoded_value[..]).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                    Codec::Rlp => rlp::decode(&encoded_value).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                }?;
+
+                let input_val_u32: u32 = match in_codec {
+                    Codec::Scale => u32::decode(&mut &ordered_arg[..]).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                    Codec::Rlp => rlp::decode(&ordered_arg).map_err(|_| {
+                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
+                    }),
+                }?;
+
+                Ok(output_val_u32 == input_val_u32)
+            },
+            _ => {
+                let received_arg = filled_abi.get_data();
+                frame_support::log::debug!(
+                    "Global Args CMP received_arg: {received_arg:?} {ordered_arg:?} for {filled_abi:?}"
+                );
+                Ok(received_arg == ordered_arg)
+            },
+        }
     }
 
     pub fn ensure_arguments_order(&self, ordered_args: &Vec<Data>) -> Result<(), DispatchError> {
@@ -47,29 +157,33 @@ impl SFXAbi {
         payload_codec: Codec,
     ) -> Result<(), DispatchError> {
         self.ensure_arguments_order(ordered_args)?;
-        let abi: Abi = self.get_expected_optimistic_descriptor().try_into()?;
-        let filled_named_abi: FilledAbi =
-            FilledAbi::try_fill_abi(abi, received_payload, payload_codec)?;
+        let abi: Abi = self
+            .get_expected_optimistic_descriptor(payload_codec.clone())
+            .try_into()?;
 
-        for (i, get_data_by_name) in ordered_args.iter().enumerate() {
+        let filled_named_abi: FilledAbi =
+            FilledAbi::try_fill_abi(abi, received_payload, payload_codec.clone())?;
+
+        for (i, ordered_arg) in ordered_args.iter().enumerate() {
             let (current_arg_name, is_to_verify) = self.args_names.get(i).ok_or(
                 DispatchError::Other("SFXAbi::Invalid argument - check ensure arguments order"),
             )?;
             if !is_to_verify {
                 continue
             }
-            println!("SFXAbi:: Validating argument {current_arg_name:?}");
-
-            let received_arg =
+            let filled_abi_matched_by_name =
                 filled_named_abi
-                    .get_data_by_name(current_arg_name)
+                    .get_by_name(current_arg_name)
                     .ok_or(DispatchError::Other(
                         "SFXAbi::Cannot find payload argument by name {current_arg_name:?}",
                     ))?;
 
-            if received_arg != *get_data_by_name {
-                println!(
-                    "SFXAbi:: Received argument {received_arg:?} != {get_data_by_name:?} does not match for field name {current_arg_name:?}");
+            if !SFXAbi::check_args_equal(
+                ordered_arg.clone(),
+                filled_abi_matched_by_name,
+                &payload_codec,
+                &Codec::Scale,
+            )? {
                 return Err(DispatchError::Other("SFXAbi:: Invalid argument"))
             }
         }
@@ -78,7 +192,7 @@ impl SFXAbi {
     }
 }
 
-pub fn get_default_evm_transfer_interface() -> SFXAbi {
+pub fn get_standard_sfx_transfer_interface() -> SFXAbi {
     SFXAbi {
         args_names: vec![
             (b"from".to_vec(), false),
@@ -86,20 +200,11 @@ pub fn get_default_evm_transfer_interface() -> SFXAbi {
             (b"amount".to_vec(), true),
             (b"insurance".to_vec(), false),
         ],
-        expected_optimistic_descriptor: b"Transfer:Log(to:Account32,amount:Value256)".to_vec(),
-    }
-}
-
-pub fn get_default_substrate_transfer_interface() -> SFXAbi {
-    SFXAbi {
-        args_names: vec![
-            (b"from".to_vec(), true),
-            (b"to".to_vec(), true),
-            (b"amount".to_vec(), true),
-            (b"insurance".to_vec(), false),
-        ],
-        expected_optimistic_descriptor:
-            b"Transfer:Struct(from:Account32,to:Account32,amount:Value128)".to_vec(),
+        ingress_abi_descriptors: IngressAbiDescriptors {
+            // assume all indexed in topics ("+")
+            for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount+:Value128)".to_vec(),
+            for_scale: b"Transfer:Enum(from:Account32,to:Account32,amount:Value128)".to_vec(),
+        },
     }
 }
 
@@ -107,12 +212,15 @@ pub fn get_default_substrate_transfer_interface() -> SFXAbi {
 mod test_sfx_abi {
     use super::*;
     use crate::mini_mock::MiniRuntime;
+    use hex_literal::hex;
+    use primitive_types::{H160, U256};
 
+    use crate::to_filled_abi::EthIngressEventLog;
     use sp_runtime::AccountId32;
 
     #[test]
     fn test_transfer_validate_arguments_against_received_substrate_balances_event() {
-        let transfer_interface = get_default_substrate_transfer_interface();
+        let transfer_interface = get_standard_sfx_transfer_interface();
         let ordered_args = vec![
             AccountId32::new([2; 32]).encode(),
             AccountId32::new([1; 32]).encode(),
@@ -137,20 +245,42 @@ mod test_sfx_abi {
     }
 
     #[test]
-    fn test_transfer_interface() {
-        let transfer_interface = get_default_substrate_transfer_interface();
-        assert_eq!(
-            transfer_interface.args_names,
+    fn test_transfer_validate_arguments_against_received_evm_balances_event() {
+        let transfer_interface = get_standard_sfx_transfer_interface();
+        const HUNDRED: u128 = 100;
+        const FIFTY: u128 = 50;
+
+        let ordered_args = vec![
+            H160::from(hex!("0000000000000000000000000000000000012321")).encode(),
+            H160::from(hex!("0000000000000000000000000000000000054321")).encode(),
+            HUNDRED.encode(),
+            FIFTY.encode(),
+        ];
+
+        let hundred_u256: U256 = U256::from(HUNDRED);
+        let mut hundred_u256_bytes = [0u8; 32];
+        hundred_u256.to_big_endian(&mut hundred_u256_bytes);
+        let rlp_raw_log_bytes = EthIngressEventLog(
             vec![
-                (b"from".to_vec(), true),
-                (b"to".to_vec(), true),
-                (b"amount".to_vec(), true),
-                (b"insurance".to_vec(), false),
-            ]
+                hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
+                hex!("0000000000000000000000000000000000000000000000000000000000012321").into(),
+                hex!("0000000000000000000000000000000000000000000000000000000000054321").into(),
+                hundred_u256_bytes.into(),
+            ],
+            hex!(
+                "
+			"
+            )
+            .into(),
         );
-        assert_eq!(
-            transfer_interface.expected_optimistic_descriptor,
-            b"Transfer:Struct(from:Account32,to:Account32,amount:Value128)".to_vec()
+
+        let res = transfer_interface.validate_arguments_against_received(
+            &ordered_args,
+            rlp_raw_log_bytes.encode(),
+            Codec::Rlp,
         );
+
+        println!("{res:?}");
+        assert!(res.is_ok());
     }
 }
