@@ -1,14 +1,14 @@
 import config from "./config/setup"
-import { ApiPromise, Keyring } from'@polkadot/api';
+import { ApiPromise, Keyring } from '@polkadot/api';
 import { register } from "./commands/register/register";
 import { setOperational } from "./commands/operational";
-import {onExtrinsicTrigger} from "./commands/onExtrinsicTrigger";
+import { onExtrinsicTrigger } from "./commands/onExtrinsicTrigger";
 import * as fs from "fs";
-import {submitHeader} from "./commands/submit_header/submit_header";
+import { submitHeader } from "./commands/submit_header/submit_header";
 import { Sdk, Converters } from "@t3rn/sdk/dist/src";
 
 import { Command } from 'commander';
-import {bid} from "./commands/bid";
+import { bid } from "./commands/bid";
 const program = new Command();
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
@@ -27,9 +27,9 @@ const logger = pino(
 )
 
 program
-  .name('t3rn CLI')
-  .description('CLI for interacting with the t3rn circuit')
-  .version('0.1.0');
+    .name('t3rn CLI')
+    .description('CLI for interacting with the t3rn circuit')
+    .version('0.1.0');
 
 class CircuitCLI {
     circuit: ApiPromise;
@@ -40,8 +40,8 @@ class CircuitCLI {
         await cryptoWaitReady();
         const keyring = new Keyring({ type: "sr25519" })
         this.signer = process.env.CIRCUIT_KEY === undefined
-                ? keyring.addFromUri("//Alice")
-                : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+            ? keyring.addFromUri("//Alice")
+            : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
 
         this.sdk = new Sdk(process.env.CIRCUIT_WS || "ws://localhost:9944", this.signer)
         // @ts-ignore suddenly this is not working
@@ -60,8 +60,8 @@ class CircuitCLI {
 
     async register(id: string, teleport: number, exportArgs: boolean, exportName: string) {
         let data: any = config.gateways.find(elem => elem.id === id)
-        if(data) {
-            if(data.registrationData?.parachain !== null) {
+        if (data) {
+            if (data.registrationData?.parachain !== null) {
                 // @ts-ignore
                 data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
             }
@@ -121,19 +121,19 @@ class CircuitCLI {
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createSudo(tx))
                 .then(() => {
                     logger.info("Success: Operational status set!")
-                     this.addLog({
-                         success: true,
-                         msg: "Operational status set!",
-                         gatewayId: transactionArgs?.gatewayId
+                    this.addLog({
+                        success: true,
+                        msg: "Operational status set!",
+                        gatewayId: transactionArgs?.gatewayId
                     })
                 })
                 .catch(err => {
                     logger.info("Error: setOperational Failed! Err:", err)
-                     this.addLog({
-                         success: false,
-                         msg: "setOperational Failed!",
-                         err,
-                         gatewayId: transactionArgs?.gatewayId
+                    this.addLog({
+                        success: false,
+                        msg: "setOperational Failed!",
+                        err,
+                        gatewayId: transactionArgs?.gatewayId
                     })
                     this.error()
                 })
@@ -154,8 +154,8 @@ class CircuitCLI {
 
     async submitHeaders(id: string, exportArgs: boolean, exportName: string) {
         const gatewayData = config.gateways.find(elem => elem.id === id)
-        if(gatewayData) {
-            if(gatewayData.registrationData?.parachain !== null) {
+        if (gatewayData) {
+            if (gatewayData.registrationData?.parachain !== null) {
                 // @ts-ignore
                 gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
             }
@@ -179,10 +179,10 @@ class CircuitCLI {
                 .catch(err => {
                     logger.info("Error: Header Submission Failed! Err:", err)
                     this.addLog({
-                         success: false,
-                         msg: "Header Submission Failed!",
-                         err,
-                         gatewayId: id
+                        success: false,
+                        msg: "Header Submission Failed!",
+                        err,
+                        gatewayId: id
                     })
                     this.error()
                 })
@@ -204,8 +204,8 @@ class CircuitCLI {
     async transfer(data: any, sequential: boolean) {
         const gatewayData = config.gateways.find(elem => elem.id === data.target)
 
-        if(gatewayData) {
-            if(data.to === '') data.to = gatewayData.transferData.receiver;
+        if (gatewayData) {
+            if (data.to === '') data.to = gatewayData.transferData.receiver;
             const transactionArgs: any = onExtrinsicTrigger(this.circuit, [data], sequential, this.signer.address, this.sdk)
             const tx = this.circuit.tx.circuit.onExtrinsicTrigger(transactionArgs.sideEffects, 0, false)
             // @ts-ignore
@@ -234,9 +234,9 @@ class CircuitCLI {
 
     async submitSideEffects(path: string, exportArgs: boolean, exportName: string) {
         if (!fs.existsSync(path)) {
-             logger.info("File doesn't exist!")
-             this.error()
-         }
+            logger.info("File doesn't exist!")
+            this.error()
+        }
 
         const data = (await import('./' + path)).default;
 
@@ -313,15 +313,15 @@ class CircuitCLI {
     exportData(data: any, fileName: string, transactionType: string, submissionHeight: string) {
         let deepCopy;
         // since its pass-by-reference
-        if(Array.isArray(data)) {
+        if (Array.isArray(data)) {
             deepCopy = [...data];
         } else {
-            deepCopy = {...data};
+            deepCopy = { ...data };
         }
 
         let encoded = Converters.Utils.encodeExport(deepCopy, transactionType, submissionHeight as string);
         fs.writeFile(fileName, JSON.stringify(encoded, null, 4), (err) => {
-            if(err) {
+            if (err) {
                 logger.info("Error: Failed to export data! Err:", err);
                 this.error();
             } else {
@@ -343,88 +343,88 @@ class CircuitCLI {
 }
 
 program.command('register')
-      .description('Register a gateway on the t3rn blockchain. SUDO ONLY!')
-      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-      .option('-t, --teleport <number>', 'how many epochs the registration should go back.', "0")
-      .option('-e, --export', 'export the transaction arguments as JSON', false)
-      .option('-o, --output <string>', 'specify the filename of the export', "export")
-      .action(async (id, options) => {
-          let cli = new CircuitCLI();
-          await cli.setup()
-          cli.register(id, parseInt(options.teleport), options.export, options.output)
-      });
+    .description('Register a gateway on the t3rn blockchain. SUDO ONLY!')
+    .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+    .option('-t, --teleport <number>', 'how many epochs the registration should go back.', "0")
+    .option('-e, --export', 'export the transaction arguments as JSON', false)
+    .option('-o, --output <string>', 'specify the filename of the export', "export")
+    .action(async (id, options) => {
+        let cli = new CircuitCLI();
+        await cli.setup()
+        cli.register(id, parseInt(options.teleport), options.export, options.output)
+    });
 
 program.command('set-operational')
-      .description('Activate/deactivate a gateway')
-      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-      .argument('operational <bool>', 'gateway_id as specified in setup.ts')
-      .option('-e, --export', 'export the transaction arguments as JSON', false)
-      .option('-o, --output <string>', 'specify the filename of the export', "export")
-      .action(async (id, operational, options) => {
-          let cli = new CircuitCLI();
-          await cli.setup()
-          operational = operational === "true" ? true : false;
-          cli.setOperational(id, operational, options.export, options.output)
-      });
+    .description('Activate/deactivate a gateway')
+    .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+    .argument('operational <bool>', 'gateway_id as specified in setup.ts')
+    .option('-e, --export', 'export the transaction arguments as JSON', false)
+    .option('-o, --output <string>', 'specify the filename of the export', "export")
+    .action(async (id, operational, options) => {
+        let cli = new CircuitCLI();
+        await cli.setup()
+        operational = operational === "true" ? true : false;
+        cli.setOperational(id, operational, options.export, options.output)
+    });
 
 program.command('submit-headers')
-      .description('Submit the latest headers of a gateway to portal. All available finalized headers will be added.')
-      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-      .option('-e, --export', 'export the transaction arguments as JSON', false)
-      .option('-o, --output <string>', 'specify the filename of the export', "export")
-      .action(async (id, options) => {
-          let cli = new CircuitCLI();
-          await cli.setup()
-          cli.submitHeaders(id, options.export, options.output)
-      });
+    .description('Submit the latest headers of a gateway to portal. All available finalized headers will be added.')
+    .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+    .option('-e, --export', 'export the transaction arguments as JSON', false)
+    .option('-o, --output <string>', 'specify the filename of the export', "export")
+    .action(async (id, options) => {
+        let cli = new CircuitCLI();
+        await cli.setup()
+        cli.submitHeaders(id, options.export, options.output)
+    });
 
 program.command('transfer')
-      .description('Triggers a transfer SideEffect, sending the targets nativ asset')
-      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-      .option('-t --to <string>', 'receiver address', '')
-      .option('-a --amount <flaot>', 'The Amount to send in target native asset', '0.01')
-      .option('-r --reward <float>', 'Reward paid for execution', '1')
-      .option('-i --insurance <float>', 'Insurance required for execution', '1')
-      .option('-e, --export', 'export the transaction arguments as JSON', false)
-      .option('-o, --output <string>', 'specify the filename of the export', "export")
-      .action(async (id, options) => {
-          let cli = new CircuitCLI();
-          await cli.setup()
-          options.target = id
-          options.type = "tran"
-          cli.transfer(options, false)
-      });
+    .description('Triggers a transfer SideEffect, sending the targets native asset')
+    .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+    .option('-t --to <string>', 'receiver address', '')
+    .option('-a --amount <float>', 'The Amount to send in target native asset', '0.01')
+    .option('-r --reward <float>', 'Reward paid for execution', '1')
+    .option('-i --insurance <float>', 'Insurance required for execution', '1')
+    .option('-e, --export', 'export the transaction arguments as JSON', false)
+    .option('-o, --output <string>', 'specify the filename of the export', "export")
+    .action(async (id, options) => {
+        let cli = new CircuitCLI();
+        await cli.setup()
+        options.target = id
+        options.type = "tran"
+        cli.transfer(options, false)
+    });
 
 program.command('submit-side-effects')
-      .description('Submits SideEffects based on input file')
-      .argument('path <string>', 'path to file')
-      .option('-e, --export', 'export the transaction arguments as JSON', false)
-      .option('-o, --output <string>', 'specify the filename of the export', "export")
-      .action(async (path, options) => {
-          let cli = new CircuitCLI();
-          await cli.setup()
-          cli.submitSideEffects(path, options.export, options.output)
-      });
+    .description('Submits SideEffects based on input file')
+    .argument('path <string>', 'path to file')
+    .option('-e, --export', 'export the transaction arguments as JSON', false)
+    .option('-o, --output <string>', 'specify the filename of the export', "export")
+    .action(async (path, options) => {
+        let cli = new CircuitCLI();
+        await cli.setup()
+        cli.submitSideEffects(path, options.export, options.output)
+    });
 
 program.command('bid')
-      .description('Bid on an execution as an Executor')
-      .argument('sfxId <string>', 'sfxId of the side effect to bid on')
-      .argument('amount <float>', 'bid amount')
-      .option('-e, --export', 'export the transaction arguments as JSON', false)
-      .option('-o, --output <string>', 'specify the filename of the export', "export")
-      .action(async (sfxId, amount, options) => {
-          let cli = new CircuitCLI();
-          await cli.setup()
-          cli.bid({sfxId, amount}, options.export, options.output)
-      });
+    .description('Bid on an execution as an Executor')
+    .argument('sfxId <string>', 'sfxId of the side effect to bid on')
+    .argument('amount <float>', 'bid amount')
+    .option('-e, --export', 'export the transaction arguments as JSON', false)
+    .option('-o, --output <string>', 'specify the filename of the export', "export")
+    .action(async (sfxId, amount, options) => {
+        let cli = new CircuitCLI();
+        await cli.setup()
+        cli.bid({ sfxId, amount }, options.export, options.output)
+    });
 
 program.command('purge')
-      .description('Purge an XDNS record. SUDO ONLY!')
-      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-      .action(async (id) => {
-          let cli = new CircuitCLI();
-          await cli.setup()
-          cli.purgeXdns({id})
-      });
+    .description('Purge an XDNS record. SUDO ONLY!')
+    .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+    .action(async (id) => {
+        let cli = new CircuitCLI();
+        await cli.setup()
+        cli.purgeXdns({ id })
+    });
 
 program.parse();

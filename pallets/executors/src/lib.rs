@@ -8,6 +8,8 @@
 
 pub use pallet::*;
 
+use t3rn_types::sfx::*;
+
 #[cfg(test)]
 mod mock;
 
@@ -1641,24 +1643,17 @@ pub mod pallet {
         }
 
         /// Convert a side effect from XBI to local instructions
-        fn convert_xbi_to_instruction(
-            origin: OriginFor<T>,
-            sfx: &xbi_format::XbiFormat,
-        ) -> DispatchResult {
+        fn convert_xbi_to_instruction(origin: OriginFor<T>, sfx: SideEffect) -> DispatchResult {
             // Ensure the origin is an executor in the active set
             ensure_signed(origin)?;
 
             // Convert an SFX to XBI instructions
             let instructions = match sfx {
-                xbi_format::XbiFormat::Xcm(xcm) => Instruction::Xcm(xcm.clone()),
-                xbi_format::XbiFormat::XcmVersioned(xcm) => Instruction::XcmVersioned(xcm.clone()),
-                xbi_format::XbiFormat::XcmResponse(xcm) => Instruction::XcmResponse(xcm.clone()),
-                xbi_format::XbiFormat::XcmResponseVersioned(xcm) =>
-                    Instruction::XcmResponseVersioned(xcm.clone()),
+                SideEffect::Xbi(xbi) => xbi,
                 _ => return Err("Invalid instruction data".into()),
             };
 
-            // Pipe the instrucion to Self::execute_xbi
+            // Pipe the instruction to Self::execute_xbi
             Self::execute_xbi(&origin, &instructions);
 
             Ok(())
