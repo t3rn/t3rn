@@ -1,11 +1,7 @@
-// @ts-ignore
+import { createType } from "@t3rn/types";
+
 import {
-  // @ts-ignore
-  T3rnPrimitivesXdnsXdnsRecord,
-  // @ts-ignore
-  T3rnTypesSideEffect,
-  // @ts-ignore
-  u128,
+  T3rnTypesSfxSideEffect,
 } from "@polkadot/types/lookup";
 import * as BN from "bn.js";
 
@@ -27,22 +23,23 @@ export const createSfx = (args: {
   target: number[];
   signature: string | undefined;
   nonce: number;
-  enforceExecutioner: string | undefined;
+  enforceExecutor: string | undefined;
   maxReward: BN;
   insurance: BN;
   encodedArgs: string[];
   encodedAction: string;
-}): T3rnTypesSideEffect => {
-  const sfx: T3rnTypesSideEffect = {
-    target: args.target,
-    maxReward: args.maxReward,
-    insurance: args.insurance,
-    encodedAction: args.encodedAction,
-    encodedArgs: args.encodedArgs,
-    signature: args.signature,
-    nonce: args.nonce,
-    enforceExecutioner: args.enforceExecutioner,
-  };
-
-  return sfx;
+}): T3rnTypesSfxSideEffect => {
+    return createType(
+        "T3rnTypesSfxSideEffect",
+        {
+          target: args.target,
+          maxReward: args.maxReward,
+          insurance: args.insurance,
+          encodedAction: args.encodedAction,
+          encodedArgs: args.encodedArgs,
+          signature: args.signature,
+          enforceExecutor: args.enforceExecutor,
+          rewardAssetId: null
+        }
+    )
 };

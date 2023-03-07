@@ -1,6 +1,4 @@
 import { ApiPromise } from "@polkadot/api";
-// @ts-ignore
-import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup";
 import { Gateway } from "./gateway";
 
 export enum GatewayType {
@@ -16,7 +14,7 @@ export enum GatewayType {
 
 export const initGateways = async (api: ApiPromise) => {
   // @ts-ignore
-  const records = (await api.rpc.xdns.fetchRecords())["xdns_records"];
+  const records = (await api.rpc.xdns.fetchRecords()).xdns_records;
 
   let res: Record<string, Gateway> = {};
 

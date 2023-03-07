@@ -1,14 +1,6 @@
 import { ApiPromise } from "@polkadot/api";
 
-// @ts-ignore
-import {
-  // @ts-ignore
-  T3rnPrimitivesXdnsXdnsRecord,
-  // @ts-ignore
-  T3rnTypesSideEffect,
-  // @ts-ignore
-  u128,
-} from "@polkadot/types/lookup";
+import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 
 /**
  * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
@@ -71,7 +63,7 @@ export class Tx {
    * @param tx - The transaction to sudo
    */
 
-  createSudo(tx: any) {
+  createSudo(tx: any): SubmittableExtrinsic {
     return this.api.tx.sudo.sudo(tx);
   }
 
@@ -80,7 +72,7 @@ export class Tx {
    * @param txs - The transactions to batch
    */
 
-  createBatch(txs: any[]) {
+  createBatch(txs: any[]): SubmittableExtrinsic {
     return this.api.tx.utility.batch(txs);
   }
 }

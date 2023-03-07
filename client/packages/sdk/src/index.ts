@@ -1,4 +1,4 @@
-import "@polkadot/api-augment"; // DO NOT REMOVE THIS LINE
+import "@t3rn/types"; // DO NOT REMOVE THIS LINE
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
@@ -7,9 +7,6 @@ import rpc from "./config/rpc.json";
 import { Gateway, initGateways } from "./gateways";
 
 import * as Types from "./types";
-
-// @ts-ignore
-import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
 import * as Encodings from "./encodings";
 import * as Converters from "./converters";
 import { Circuit, Tx } from "./circuit";
@@ -49,8 +46,8 @@ export class Sdk {
     await cryptoWaitReady()
     this.client = await ApiPromise.create({
       provider: new WsProvider(this.rpcUrl),
-      types: types as any,
-      rpc: rpc as any,
+      rpc: rpc as any, // ToDo: figure out why the rpc augmentation is not working
+      types: types as any, // ToDo: remove once rpc augmentation is working
     });
     this.gateways = await initGateways(this.client);
     this.circuit = new Circuit(this.client, this.signer);

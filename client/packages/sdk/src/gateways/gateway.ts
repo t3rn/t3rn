@@ -1,8 +1,6 @@
 import {
-  // @ts-ignore
   T3rnPrimitivesXdnsXdnsRecord,
-  // @ts-ignore
-  T3rnTypesSideEffect,
+  T3rnTypesSfxSideEffect,
 } from "@polkadot/types/lookup";
 import * as BN from "bn.js";
 import { AmountConverter, optionalInsurance } from "../converters/amounts";
@@ -43,29 +41,18 @@ export class Gateway {
    */
 
   constructor(xdnsEntry: T3rnPrimitivesXdnsXdnsRecord) {
-    this.id = xdnsEntry.toHuman().gateway_id;
-    this.rpc = xdnsEntry.url.toHuman();
-    // @ts-ignore
-    this.vendor = xdnsEntry.toHuman().gateway_vendor.toString();
+    this.id = xdnsEntry.gatewayId.toString();
+    this.rpc = xdnsEntry.url.toHuman().toString();
+    this.vendor = xdnsEntry.gatewayVendor.toHuman().toString();
     this.executionLayerType = this.getType(
-      xdnsEntry.toHuman().gateway_vendor.toString()
+      xdnsEntry.gatewayVendor.toHuman().toString()
     ) as unknown as ExecutionLayerType;
-    // @ts-ignore
-    this.ticker = xdnsEntry.toHuman().gateway_sys_props.token_symbol;
-    // @ts-ignore
-    this.decimals = parseInt(
-      xdnsEntry.toHuman().gateway_sys_props.token_decimals
-    );
-    // @ts-ignore
-    this.addressFormat = parseInt(
-      xdnsEntry.toHuman().gateway_sys_props.ss58_format
-    );
-    // @ts-ignore
-    this.valueTypeSize = parseInt(
-      xdnsEntry.toHuman().gateway_abi.value_type_size
-    );
-    this.allowedSideEffects = xdnsEntry.toHuman().allowed_side_effects;
-    this.gatewayType = xdnsEntry.toHuman().gateway_type;
+    this.ticker = xdnsEntry.gatewaySysProps.tokenSymbol.toHuman().toString();
+    this.decimals = xdnsEntry.gatewaySysProps.tokenDecimals.toNumber()
+    this.addressFormat = xdnsEntry.gatewaySysProps.ss58Format.toNumber()
+    this.valueTypeSize = xdnsEntry.gatewayAbi.valueTypeSize.toNumber()
+    this.allowedSideEffects = xdnsEntry.allowedSideEffects.map((sfx) => sfx.toHuman().toString())
+    this.gatewayType = xdnsEntry.gatewayType.toHuman();
     this.setSfxBindings();
   }
 
@@ -79,7 +66,7 @@ export class Gateway {
    * @param args.insurance - The insurance for the side effect
    * @param args.nonce - The nonce of the side effect
    * @param args.signature - The signature of the side effect
-   * @param args.enforceExecutioner - The address of the executioner
+   * @param args.enforceExecutor - The address of the executioner
    */
 
   createTransferSfx = (args: {
@@ -90,8 +77,8 @@ export class Gateway {
     insurance: number | BN | string;
     nonce: number;
     signature?: string;
-    enforceExecutioner?: string;
-  }): T3rnTypesSideEffect => {
+    enforceExecutor?: string;
+  }): T3rnTypesSfxSideEffect => {
     const encodedArgs: string[] = this.encodeTransferArgs(
       args.from,
       args.to,
@@ -111,7 +98,7 @@ export class Gateway {
       encodedArgs,
       encodedAction: "tran",
       signature: args.signature,
-      enforceExecutioner: args.enforceExecutioner,
+      enforceExecutor: args.enforceExecutor,
     });
   };
 
