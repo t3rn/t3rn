@@ -3,7 +3,9 @@ import { Keyring } from '@polkadot/keyring'
 import { SubmittableExtrinsic } from "@polkadot/api/types"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { cryptoWaitReady } from '@polkadot/util-crypto';
-import { Sdk } from '../../client/packages/sdk';
+import { Sdk, Tx } from '../../client/packages/sdk';
+
+const { exec } = require('child_process');
 
 /**
  * The extrinsic type.
@@ -95,237 +97,209 @@ function formatEvent({
 }
 
 
+// Paul's
+const execute = async (command: string, waitInSec: number) => {
+  console.log("Executing: ", command)
+  return new Promise((resolve, reject) => {
+    exec(
+      `ts-node index.ts ${command}`,
+      (error: any, stdout: string, stderr: string) => {
+        console.log(stdout)
+        if (error) {
+          reject(error);
+        } else {
+          resolve(stdout);
+        }
+      });
+  })
+    .then(() => {
+      return wait(waitInSec)
+    })
+}
+
+const wait = (waitInSecs: number) => {
+  console.log(`Waiting ${waitInSecs} seconds!`)
+  return new Promise(resolve => setTimeout(resolve, waitInSecs * 1000));
+};
+
+
+
+
 async function main() {
 
+  // already PRed by Noah, but rebased here and still asking, so here it is
   await cryptoWaitReady();
 
-  // const wsProvider = new WsProvider('ws://127.0.0.1:9944');
-  // const api = await ApiPromise.create({ provider: wsProvider });
-  // const keyring = new Keyring({ type: 'sr25519' });
-  // const BOB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
-  // const transfer = api.tx.balances.transfer(BOB, 12345);
-  // const event = await signAndSendSafe(api, alice, transfer);
-  // event['events'].forEach((e: any) => {
-  //   console.log('[TRANSFER] event ->', e);
-  // })
+  // await execute("register roco", 10)
 
-
-  //
-  //
-  // TESTS TESTS TESTS
-  // TESTS TESTS TESTS
-  // TESTS TESTS TESTS
-  //
-  //
-  // await submitNoBidShouldKill()
-
-  await submitShouldSetToReady()
+  await submitNoBidShouldKill()
+  // await submitShouldSetToReady()
+  // await submitSfxConfirmationMovesToFinished()
+  // await notSubmitAfterBidMovesToRevert()
 }
+
+
+
+// TEST - 1
+async function submitNoBidShouldKill() {
+
+  const function_name = "[1 - submitNoBidShouldKill] "
+
+  const keyring = new Keyring({ type: 'sr25519' });
+  const signer = process.env.CIRCUIT_KEY === undefined
+    ? keyring.addFromUri("//Alice")
+    : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+  const sdk = new Sdk("ws://127.0.0.1:9944", signer)
+  const api = await sdk.init();
+  const txs = new Tx(api, signer)
+
+  const tx = api.tx.circuit.onExtrinsicTrigger(
+    [
+      {
+        target: "roco",
+        type: "tran",
+        to: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+        amount: "4", // in ROC
+        insurance: "1", // in TRN
+        reward: "4", // in TRN
+      },
+    ],
+    false,
+  )
+  console.log(function_name, "Created xtx with onExtrinsicTrigger")
+  console.log(function_name, "Signing and sending...")
+
+  await txs.signAndSendSafe(tx).catch(res => console.error(res)).then(res => console.log(res))
+
+  console.log(function_name, "Finished test")
+
+  // NOAH: Wait and, if nobody bids, it will be killed
+}
+
+
+
+
+// TEST - 2
+async function submitShouldSetToReady() {
+
+  const function_name = "[2 - submitShouldSetToReady] "
+
+  const keyring = new Keyring({ type: 'sr25519' });
+  const signer = process.env.CIRCUIT_KEY === undefined
+    ? keyring.addFromUri("//Alice")
+    : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+  const sdk = new Sdk("ws://127.0.0.1:9944", signer)
+  const api = await sdk.init();
+  const txs = new Tx(api, signer)
+
+  const tx = api.tx.circuit.onExtrinsicTrigger(
+    [
+      {
+        target: "roco",
+        type: "tran",
+        to: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+        amount: "4", // in ROC
+        insurance: "1", // in TRN
+        reward: "4", // in TRN
+      },
+    ],
+    false,
+  )
+  console.log(function_name, "Created xtx with onExtrinsicTrigger")
+
+  await txs.signAndSendSafe(tx).catch(console.error).then(console.log)
+
+  // How to check if it's in ready state?
+}
+
+
+
+
+// TEST - 3 
+async function submitSfxConfirmationMovesToFinished() {
+
+  const function_name = "[3 - submitSfxConfirmationMovesToFinished] "
+
+  const keyring = new Keyring({ type: 'sr25519' });
+  const signer = process.env.CIRCUIT_KEY === undefined
+    ? keyring.addFromUri("//Alice")
+    : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+  const sdk = new Sdk("ws://127.0.0.1:9944", signer)
+  const api = await sdk.init();
+  const txs = new Tx(api, signer)
+
+  const tx = api.tx.circuit.onExtrinsicTrigger(
+    [
+      {
+        target: "roco",
+        type: "tran",
+        to: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+        amount: "4", // in ROC
+        insurance: "1", // in TRN
+        reward: "4", // in TRN
+      },
+    ],
+    false,
+  )
+  console.log(function_name, "Created xtx with onExtrinsicTrigger")
+
+  await txs.signAndSendSafe(tx).catch(console.error).then(console.log)
+  console.log(function_name, "Signed and sent xtx")
+
+  api.tx.circuit.bidSfx(
+    api.createType("Hash", tx.hash),
+    api.createType("u128", 1000),
+  )
+  console.log(function_name, "Bid '1000' on the SFX")
+
+  // Is it in ready state?
+}
+
+
+
+
+
+// TESTS - 4
+async function notSubmitAfterBidMovesToRevert() {
+
+  const function_name = "[4 - notSubmitAfterBidMovesToRevert] "
+
+  const keyring = new Keyring({ type: 'sr25519' });
+  const signer = process.env.CIRCUIT_KEY === undefined
+    ? keyring.addFromUri("//Alice")
+    : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+  const sdk = new Sdk("ws://127.0.0.1:9944", signer)
+  const api = await sdk.init();
+
+  const xtx = api.tx.circuit.onExtrinsicTrigger(
+    [
+      {
+        target: "roco",
+        type: "tran",
+        to: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+        amount: "4000000000000", // in ROC
+        insurance: "100000000000", // in TRN
+        reward: "4", // in TRN
+      },
+    ],
+    false,
+  )
+  console.log(function_name, "Created xtx with onExtrinsicTrigger")
+
+  await xtx.signAndSend(signer)
+  console.log(function_name, "Signed and sent xtx")
+
+  api.tx.circuit.bidSfx(
+    api.createType("Hash", xtx.hash),
+    api.createType("u128", 1000),
+  )
+  console.log(function_name, "Bid '1000' on the SFX")
+
+  // Is it in ready state?
+}
+
+
+
+
 
 main().catch(console.error).finally(() => process.exit());
-
-// TEST
-async function submitNoBidShouldKill() {
-  const keyring = new Keyring({ type: 'sr25519' });
-  const signer = process.env.CIRCUIT_KEY === undefined
-    ? keyring.addFromUri("//Alice")
-    : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
-  const sdk = new Sdk("ws://127.0.0.1:9944", signer)
-  const api = await sdk.init();
-
-  const encodedSfxId = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000001")
-  const encodedAmount = api.createType("u128", 0)
-
-  const xtx = api.tx.circuit.onExtrinsicTrigger(
-    encodedSfxId,
-    encodedAmount
-  )
-
-  console.log("[1 - submitNoBidShouldKill] Created xtx with onExtrinsicTrigger")
-
-  await xtx.signAndSend(signer)
-
-  console.log("[1 - submitNoBidShouldKill] Signed and sent xtx")
-  //
-  // Received event `circuit.XTransactionXtxDroppedAtBidding` with H256 value: `0xebe4e9da59c8e9a464d7f1760183f29339842900032194edde113d7277d85e4f`
-  //
-  // I guess it's the correct way to go, since the amount is 0 and it's not supposed to work then.
-  //
-  // From before:
-  // This doesn't work.
-  // const event = api.tx.circuit.bidSfx(xtx, 0)
-  //
-  // Fails with the following error:
-  // Error: createType(Call):: Call: failed decoding circuit.bidSfx:: Struct: failed on args: {"sfx_id":"H256","bid_amount":"u128"}:: Struct: failed on sfx_id: H256:: Expected input with 32 bytes (256 bits), found 1 bytes
-  //
-  // This works. Why?
-  // const event = api.tx.circuit.bidSfx(
-  //   encodedSfxId,
-  //   encodedAmount
-  // )
-  // await event.signAndSend(signer);
-  // console.log(event);
-}
-
-// TEST
-async function submitShouldSetToReady() {
-  const keyring = new Keyring({ type: 'sr25519' });
-  const signer = process.env.CIRCUIT_KEY === undefined
-    ? keyring.addFromUri("//Alice")
-    : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
-  const sdk = new Sdk("ws://127.0.0.1:9944", signer)
-  const api = await sdk.init();
-
-  const encodedSfxId = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000009")
-  const encodedAmount = api.createType("u128", 9000000)
-
-  const xtx = api.tx.circuit.onExtrinsicTrigger(
-    encodedSfxId,
-    encodedAmount
-  )
-
-  console.log("[2 - submitShouldSetToReady] Created xtx with onExtrinsicTrigger")
-
-  await xtx.signAndSend(signer)
-
-  console.log("[2 - submitShouldSetToReady] Signed and sent xtx")
-
-  console.log('[2 - submitShouldSetToReady] XTX toHuman() -> ', xtx.toHuman())
-
-  const confirmation = api.tx.circuit.confirmSideEffect(xtx)
-
-  console.log('[2 - submitShouldSetToReady] Created confirmation tx -> ', confirmation.toHuman())
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// TEST -> Submit a sfx confirmation- moves to finished 
-async function submitSfxConfirmationMovesToFinished() {
-  const keyring = new Keyring({ type: 'sr25519' });
-  const signer = process.env.CIRCUIT_KEY === undefined
-    ? keyring.addFromUri("//Alice")
-    : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
-  const sdk = new Sdk("ws://127.0.0.1:9944", signer)
-  const api = await sdk.init();
-
-  const encodedSfxId = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000010")
-  const encodedAmount = api.createType("u128", 4000000)
-
-  const xtx = api.tx.circuit.onExtrinsicTrigger(
-    encodedSfxId,
-    encodedAmount
-  )
-
-  console.log("[3 - submitSfxConfirmationMovesToFinished] Created xtx with onExtrinsicTrigger")
-
-  await xtx.signAndSend(signer)
-
-  console.log("[3 - submitSfxConfirmationMovesToFinished] Signed and sent xtx")
-
-
-}
-
-// TESTS -> Not submitting after bid moves to revert
-async function notSubmitAfterBidMovesToRevert() {
-  const keyring = new Keyring({ type: 'sr25519' });
-  const signer = process.env.CIRCUIT_KEY === undefined
-    ? keyring.addFromUri("//Alice")
-    : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
-  const sdk = new Sdk("ws://127.0.0.1:9944", signer)
-  const api = await sdk.init();
-
-  const encodedSfxId = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000011")
-  const encodedAmount = api.createType("u128", 4000000)
-
-  const xtx = api.tx.circuit.onExtrinsicTrigger(
-    encodedSfxId,
-    encodedAmount
-  )
-
-  console.log("[4 - notSubmitAfterBidMovesToRevert] Created xtx with onExtrinsicTrigger")
-
-  await xtx.signAndSend(signer)
-
-  console.log("[4 - notSubmitAfterBidMovesToRevert] Signed and sent xtx")
-
-
-}
-
-
-
-
-
-
-
-
-
-// async function old() {
-//   const wsProvider = new WsProvider('ws://127.0.0.1:9944');
-//   const api = await ApiPromise.create({ provider: wsProvider });
-//   const keyring = new Keyring({ type: 'sr25519' });
-
-//   const alice = keyring.addFromUri('//Alice');
-//   const BOB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
-
-//   // Create a extrinsic, transferring 12345 units to Bob
-//   const transfer = api.tx.balances.transfer(BOB, 12345);
-
-//   // const hash = await transfer.signAndSend(alice);
-//   // console.log('Transfer sent with hash', hash.toHex());
-//   const event = await signAndSendSafe(api, alice, transfer);
-//   event['events'].forEach((e) => {
-//     // @ts-ignore
-//     console.log('event ->', e);
-//   })
-
-//   const encodedSfxId = api.createType("Hash", "0x0000000000000000000000000000000000000000000000000000000000000011")
-//   const encodedAmount = api.createType("u128", 4000000)
-//   const xtx = api.tx.circuit.onExtrinsicTrigger(
-//     encodedSfxId,
-//     encodedAmount
-//   )
-//   const hashExtrinsic = await xtx.signAndSend(alice)
-
-//   // Bid ?
-//   const bid = api.tx.circuit.bid(encodedSfxId, encodedAmount)
-//   const hashBid = await bid.signAndSend(alice)
-
-//   console.log('bid hash -> ', hashBid.toHex())
-
-// }

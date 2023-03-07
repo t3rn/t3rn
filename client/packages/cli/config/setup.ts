@@ -1,6 +1,7 @@
 export default {
     circuit: {
-        rpc: "wss://ws.t0rn.io",
+        // rpc: "wss://ws.t0rn.io",
+        rpc: "ws://127.0.0.1:9944",
         decimals: 12,
         valueTypeSize: 16 //bytes
     },

@@ -1,47 +1,80 @@
 settings:
   chains:
-    para_chain: &para_chain
+    relay_chain: &relay_chain
+      wsPort: 9900
+    t3rn: &t3rn
+      wsPort: 9940
+    t0rn: &t0rn
       wsPort: 9944
   variables:
     chains:
       relay_chain:
-        alice_account: &alice_account //Alice
-        sfxId: &sfxId "0x0000000000000000000000000000000000000000000000000000000000000001"
-        amount: &amount 1
+        signer: &rc_signer //Alice
+      t0rn:
+        signer: &t0_signer //Alice
 
 
-# Should submit a transfer to a registered target
 tests:
-  - name: Requesters submit SFX transfers to registered target (self)
+  - name: SFX submission for bidding and execution
     its:
-      - name: SFX submission to target
+      - name: Submit a SFX transfer - no bid should kill
         actions:
           - extrinsics:
-              - chain: *para_chain
-                sudo: true
-                signer: *alice_account
-                pallet: circuit
-                # call: bidSfx
-                call: onExtrinsicTrigger
-                args: [ 
-                  "0x0000000000000000000000000000000000000000000000000000000000000001", 
-                  0 
-                ]
-                # events:
-                #   - name: balances.Withdraw
-                #   - name: balances.Deposit
-                #   - name: transactionPayment.TransactionFeePaid
-                #   - name: system.ExtrinsicSuccess
+            - chain: *t0rn
+              signer: *t0_signer
+              pallet: circuit
+              call: onExtrinsicTrigger
+              args: [
+                [
+                  {
+                    target: "roco",
+                    type: "tran",
+                    to: 5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp,
+                    amount: 4,
+                    insurance: 1,
+                    reward: 4,
+                  }
+                ],
+                false
+              ]
+              events:
+                - name: accountManager.DepositReceived
+                - name: circuit.NewSideEffectsAvailable
+                - name: circuit.XTransactionReceivedForExec
+                - name: clock.NewRound 
+                - name: clock.NewRound
+                - name: circuit.XTransactionXtxDroppedAtBidding
 
-  # - name: Requesters submit SFX transfers to registered XBI target - HydraDX
-  #   its:
-  #     - name: 
+      # - name: Submit a SFX - bid should set to ready
+      #   actions:
+      #     - extrinsics:
+      #       - chain: *para_chain
+      #         sudo: false
+      #         signer: *signer
+      #         pallet: circuit
+      #         call: onExtrinsicTrigger
+      #         args: [
+      #           [
+      #             {
+      #               target: "roco",
+      #               type: "tran",
+      #               to: 5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp,
+      #               amount: 4,
+      #               insurance: 1,
+      #               reward: 4,
+      #             }
+      #           ],
+      #           false
+      #         ]
+      #         events:
+      #           - name: accountManager.DepositReceived
+      #           - name: circuit.NewSideEffectsAvailable
+      #           - name: circuit.XTransactionReceivedForExec
+            
+      # - name: Submit a SFX confirmation - moves to finished
+      #   its:
+      #     - name: 
+      # - name: Not submitting SFX after bid moves to revert 
+      #   its:
+      #     - name: 
 
-  # - name: SFX without bids are killed after 3 blocks and funds are returned to the requester
-  #   its:
-
-  # - name: SFX without confirmations are reverted after 400 blocks and funds are returned to the requester and executors slashed
-  #   its:
-
-  # - name: SFX with confirmations finalized and rewards reach executors
-  #   its:
