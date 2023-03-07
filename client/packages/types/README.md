@@ -2,61 +2,26 @@
 
 This package contains all the necessary types and RPC calls to interact with the t3rn protocol via the @polkadot/api client.
 
-## Installation 
-
-Just add this package as a dependency to your project, import it and instantiate a new `ApiPromise` client to a t3rn 
-collator node as shown below.
-
-Since `@polkadot/typegen@^7.0.0`, all custom types are injected to the `@polkadot/*` namespaces.
+## Usage 
 
 ```typescript
-import '@t3rn/types'
-import { ApiPromise } from '@polkadot/api';
-import { WsProvider } from '@polkadot/rpc-provider';
+import '@t3rn/types' // always import for @polkadot/api augmentations
+import { createType } from "@t3rn/types"; // function for building typesafe types
+import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup" // import the specific type that was added via augmentation
 
-const circuitApi = new ApiPromise({ provider: new WsProvider('localhost:9944') });
+let sfx: T3rnTypesSfxSideEffect = createType(
+	"T3rnTypesSfxSideEffect",
+    // The second parameter is automatically typesafe!
+	{
+        target: "roco",
+        maxReward: 1000000,
+        insurance: 100000,
+        encodedAction: "tran",
+        encodedArgs: ["0x0", "0x1"],
+        signature: "",
+        enforceExecutor: "",
+        rewardAssetId: 1
+    }
+)
 
 ```
-
-## Example extrinsic call with types 
-
-Given you have already imported the types, you can try calling an extrinsic as follows: 
-```typescript
-const keyring = createTestPairs({ type: 'sr25519' });
-return circuitApi.tx.circuit
-.onExtrinsicTrigger(
-  [{
-    target: 'abcd', // [97, 98, 99, 100] 
-    prize: 0,
-    orderedAt: 0,
-    encodedAction: 'tran', 
-    encodedArgs: [
-      keyring.alice.address, 
-      keyring.charlie.address, 
-      10000000
-    ],
-    signature: [],
-    enforceExecutioner: false,
-  }],
-  0, // fee must be set to 0
-  true
-).signAndSend(keyring.alice)
-.catch(err => console.error(err));
-```
-
-## Usage in @polkadot/apps
-
-To get a JSON file ready for use with the https://polkadot.js.org/apps interface, you can run `yarn load:meta` with a 
-circuit node running, to generate the latest metadata.
-
-## Development
-
-To build the type definitions, access to a running circuit standalone or collator node is required. This can be either locally 
-as documented in the [circuit README](../../node/README.md), or online.
-
-Past that, all you need to do is run `yarn generate`, make sure everything generation was completed successfully and then `yarn build`.
-
-Make any updates to the proper `definitions.ts` file, please make sure to not edit any other file as they are generated
-by the `@polkadot/types` tools and your changes will be overwritten.
-
-Finally, after your changes are done, just do `yarn build`.
