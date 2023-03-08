@@ -542,7 +542,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * Blind version should only be used for testing - unsafe since skips inclusion proof check.
        **/
       confirmSideEffect: AugmentedSubmittable<(sfxId: H256 | string | Uint8Array, confirmation: T3rnTypesSfxConfirmedSideEffect | { err?: any; output?: any; inclusionData?: any; executioner?: any; receivedAt?: any; cost?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [H256, T3rnTypesSfxConfirmedSideEffect]>;
-      onExtrinsicTrigger: AugmentedSubmittable<(sideEffects: Vec<T3rnTypesSfxSideEffect> | (T3rnTypesSfxSideEffect | { target?: any; maxReward?: any; insurance?: any; encodedAction?: any; encodedArgs?: any; signature?: any; enforceExecutor?: any; rewardAssetId?: any } | string | Uint8Array)[], sequential: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<T3rnTypesSfxSideEffect>, bool]>;
+      onExtrinsicTrigger: AugmentedSubmittable<(sideEffects: Vec<T3rnTypesSfxSideEffect> | (T3rnTypesSfxSideEffect | { target?: any; action?: any; maxReward?: any; insurance?: any; encodedArgs?: any; signature?: any; enforceExecutor?: any; rewardAssetId?: any } | string | Uint8Array)[], sequential: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<T3rnTypesSfxSideEffect>, bool]>;
       /**
        * Used by other pallets that want to create the exec order
        **/

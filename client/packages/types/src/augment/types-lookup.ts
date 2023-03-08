@@ -581,9 +581,9 @@ declare module '@polkadot/types/lookup' {
   /** @name T3rnTypesSfxSideEffect (58) */
   export interface T3rnTypesSfxSideEffect extends Struct {
     readonly target: U8aFixed;
+    readonly action: U8aFixed;
     readonly maxReward: u128;
     readonly insurance: u128;
-    readonly encodedAction: Bytes;
     readonly encodedArgs: Vec<Bytes>;
     readonly signature: Bytes;
     readonly enforceExecutor: Option<AccountId32>;

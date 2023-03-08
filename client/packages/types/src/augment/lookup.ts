@@ -509,9 +509,9 @@ export default {
    **/
   T3rnTypesSfxSideEffect: {
     target: '[u8;4]',
+    action: '[u8;4]',
     maxReward: 'u128',
     insurance: 'u128',
-    encodedAction: 'Bytes',
     encodedArgs: 'Vec<Bytes>',
     signature: 'Bytes',
     enforceExecutor: 'Option<AccountId32>',
