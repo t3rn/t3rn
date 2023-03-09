@@ -141,7 +141,7 @@ impl Abi {
                 let as_u256 = primitive_types::U256::from_big_endian(trimmed_32b);
                 let as_val: u128 = as_u256.as_u128();
                 let recoded = rlp::encode(&as_val);
-                let recoded_vec = recoded.to_vec();
+                let _recoded_vec = recoded.to_vec();
 
                 Ok((FilledAbi::Value128(name.clone(), recoded.to_vec()), 32usize))
             },

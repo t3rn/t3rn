@@ -351,14 +351,9 @@ pub fn encoded_evm_event_chopper(
         // start from the last field, and continue trimming the data from the end
         .rev()
         .map(|field_descriptor| {
-            let _field_size = field_descriptor.get_size();
-
             // Use the last byte being either "+" or "-" to determine if the field is a topic or data.
             //   this is a convention of Indexed = true/false of Eth event fields
             let name = field_descriptor.get_name().unwrap_or(b"+".to_vec());
-            let _name_str = sp_std::str::from_utf8(name.as_slice())
-                .map_err(|_e| "CrossCodec::failed to stringify name_str")?;
-
             let next_filled_abi = if name.last() == Some(&b'+') {
                 let (filled_abi, chopped_size) =
                     field_descriptor.decode_topics_as_rlp(flat_topics.clone())?;
@@ -985,7 +980,7 @@ mod test_fill_abi {
         };
 
         // write parse_rlp_log function that returns the content of the log as per defined in the abi
-        let corr_res = correct_event.parse_log(log.clone());
+        let _corr_res = correct_event.parse_log(log.clone());
 
         assert!(wrong_event.parse_log(log.clone()).is_ok());
         assert!(correct_event.parse_log(log).is_ok());
