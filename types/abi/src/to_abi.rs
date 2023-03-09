@@ -3,6 +3,7 @@ use codec::{Decode, Encode};
 use primitive_types::{H160, H256};
 
 use crate::{recode::take_last_n, to_filled_abi::FilledAbi};
+use scale_info::prelude::string::String;
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
 
@@ -95,23 +96,14 @@ impl Abi {
         &self,
         input: Vec<u8>,
     ) -> Result<(FilledAbi, usize), DispatchError> {
-        println!(
-            "START Abi::decode_as_rlp -- input: {:?} - len {:?} {:?}",
-            input,
-            input.len(),
-            self
-        );
         frame_support::ensure!(
             input.len() >= 32,
             "decode_topics_as_rlp -- Invalid input length lesser than 32"
         );
         match self {
             Abi::Account20(name) => {
-                println!("Abi::Account20 -- input: {input:?}");
                 frame_support::ensure!(input.len() >= 20, "Decode Abi::Account20 too short");
                 let data: H160 = H160::from_slice(&input[input.len() - 20..input.len()]);
-                println!("Abi::Account20 -- data: {data:?}");
-
                 Ok((
                     FilledAbi::Account20(name.clone(), data.as_bytes().to_vec()),
                     32usize,
@@ -122,11 +114,7 @@ impl Abi {
                     input.len() == 32,
                     "Decode Abi::Account32 size mismatches 32 bytes"
                 );
-
-                println!("Abi::H256 -- input: {input:?}");
                 let data: H256 = H256::from_slice(input.as_slice());
-                println!("Abi::H256 -- data: {data:?}");
-
                 Ok((
                     FilledAbi::H256(name.clone(), data.as_bytes().to_vec()),
                     32usize,
@@ -149,18 +137,11 @@ impl Abi {
                     input.len() >= 32,
                     "Value256InvalidInput size mismatches 32 bytes"
                 );
-                println!("hello 128 rlp recode");
                 let trimmed_32b = take_last_n(input.as_slice(), 32usize)?;
-
-                println!("hello 128 rlp recode trim_till_non_zero {trimmed_32b:?}");
                 let as_u256 = primitive_types::U256::from_big_endian(trimmed_32b);
                 let as_val: u128 = as_u256.as_u128();
-
-                println!("hello 128 rlp recode trim_till_non_zero {as_val:?}");
                 let recoded = rlp::encode(&as_val);
-                println!("hello3 128 rlp encode {recoded:?}");
                 let recoded_vec = recoded.to_vec();
-                println!("hello3 128 rlp encode vec {recoded_vec:?}");
 
                 Ok((FilledAbi::Value128(name.clone(), recoded.to_vec()), 32usize))
             },
@@ -173,8 +154,6 @@ impl Abi {
                 let as_u256 = primitive_types::U256::from_big_endian(trimmed_32b);
                 let as_val: u64 = as_u256.as_u64();
                 let recoded = rlp::encode(&as_val);
-
-                println!("hello 64 rlp recode {recoded:?}");
                 Ok((FilledAbi::Value64(name.clone(), recoded.to_vec()), 32usize))
             },
             Abi::Value32(name) => {
@@ -396,7 +375,6 @@ pub fn parse_descriptor_flat(
     let mut current_lvl = 0usize;
     let mut descriptors: Vec<(String, Option<String>, usize)> = vec![];
     let mut maybe_name_field: Option<String> = None;
-    let mut maybe_indexed: Option<bool> = None;
     let mut current_field: String = "".into();
 
     for x in descriptor_str.chars() {
@@ -406,20 +384,17 @@ pub fn parse_descriptor_flat(
                 current_lvl += 1;
                 current_field = "".into();
                 maybe_name_field = None;
-                maybe_indexed = None;
             },
             '>' | ')' => {
                 descriptors.push((current_field, maybe_name_field.clone(), current_lvl));
                 current_field = "".into();
                 maybe_name_field = None;
-                maybe_indexed = None;
                 current_lvl -= 1;
             },
             ',' => {
                 descriptors.push((current_field, maybe_name_field.clone(), current_lvl));
                 current_field = "".into();
                 maybe_name_field = None;
-                maybe_indexed = None;
             },
             ':' => {
                 maybe_name_field = Some(current_field.clone());

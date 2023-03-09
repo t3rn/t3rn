@@ -1,7 +1,7 @@
 use codec::Encode;
 use hex_literal::hex;
 use sp_std::{vec, vec::Vec};
-use t3rn_types::{abi::Type, interface::SideEffectInterface, sfx::SideEffect, Bytes};
+use t3rn_types::{abi::Type, interface::SideEffectInterface, sfx::SideEffect, types::Bytes};
 
 pub use circuit_runtime_types::{AccountId, Balance as BalanceOf, BlockNumber};
 

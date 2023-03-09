@@ -30,6 +30,7 @@ sp-trie            = { default-features = false, git = "https://github.com/parit
 
 pallet-xbi-portal   = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 t3rn-types          = { default-features = false, path = "../../types", features = [ "runtime" ] }
+t3rn-abi          = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
 t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 
@@ -84,6 +85,7 @@ std = [
   "sp-std/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
+  "t3rn-abi/std",
   "t3rn-sdk-primitives/std",
   "pallet-xbi-portal/std",
 ]

@@ -1,4 +1,4 @@
-use crate::Bytes;
+use crate::types::Bytes;
 use codec::{Decode, Encode};
 
 use num_traits::Zero;

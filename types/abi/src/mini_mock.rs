@@ -1,5 +1,5 @@
 #[cfg(test)]
-use primitive_types::H256;
+use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, ConstU32, IdentityLookup},

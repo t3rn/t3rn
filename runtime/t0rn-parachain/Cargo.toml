@@ -195,6 +195,7 @@ std = [
   "pallet-randomness-collective-flip/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
+  "t3rn-abi/std",
   # t3rn pallets
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",

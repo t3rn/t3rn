@@ -25,7 +25,8 @@ sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkad
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
-t3rn-types = { path = "../../types", features = [ "runtime" ] }
+t3rn-types = { default-features = false, path = "../../types", features = [ "runtime" ] }
+t3rn-abi = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 
 [dev-dependencies]
 hex              = "0.4.2"
@@ -53,6 +54,7 @@ std = [
   "hash-db/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
+  "t3rn-abi/std",
   "pallet-grandpa-finality-verifier/std",
   "frame-support/std",
   "frame-system/std",
