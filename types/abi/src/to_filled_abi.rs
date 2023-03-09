@@ -7,7 +7,7 @@ use codec::{Decode, Encode};
 use frame_support::ensure;
 
 use primitive_types::{H160, H256};
-use sp_core::{crypto::AccountId32, ByteArray};
+use sp_core::crypto::{AccountId32, ByteArray};
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
 
@@ -987,8 +987,6 @@ mod test_fill_abi {
         // write parse_rlp_log function that returns the content of the log as per defined in the abi
         let corr_res = correct_event.parse_log(log.clone());
 
-        println!("{corr_res:?}");
-
         assert!(wrong_event.parse_log(log.clone()).is_ok());
         assert!(correct_event.parse_log(log).is_ok());
 
@@ -1142,8 +1140,6 @@ mod test_fill_abi {
 
         let scale_encoded_campaign: Vec<u8> = campaign.encode();
 
-        println!("scale_encoded_campaign: {scale_encoded_campaign:?}");
-
         let abi = get_campaign_abi();
 
         let donation = Donation {
@@ -1263,8 +1259,6 @@ mod test_fill_abi {
             amount: 1,
         }
         .encode();
-
-        println!("scale_encoded_transfer_event: {scale_encoded_transfer_event:?}");
 
         let res = FilledAbi::try_fill_abi(abi, scale_encoded_transfer_event, Codec::Scale);
 

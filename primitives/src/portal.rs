@@ -8,7 +8,7 @@ use crate::{
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
-use t3rn_types::recode::Codec;
+use t3rn_abi::recode::Codec;
 
 // #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 // #[derive(Clone, Eq, PartialEq, Debug, TypeInfo)]

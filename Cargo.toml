@@ -36,6 +36,7 @@ members = [
   'primitives/src/bridges/snowfork/*',
   'runtime/*',
   'types',
+  'types/abi',
   'finality-verifiers/grandpa',
 ]
 

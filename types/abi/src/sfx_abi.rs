@@ -1,13 +1,14 @@
 use crate::{
     recode::Codec,
+    to_abi::Abi,
+    to_filled_abi::FilledAbi,
     types::{Data, Name},
 };
 use codec::{Decode, Encode};
 use primitive_types::U256;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
-
-use crate::{to_abi::Abi, to_filled_abi::FilledAbi};
+use sp_std::prelude::*;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct IngressAbiDescriptors {
@@ -18,7 +19,7 @@ pub struct IngressAbiDescriptors {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct SFXAbi {
     // must match encoded args order. bool is for optional validation
-    pub args_names: Vec<(Name, bool)>,
+    pub args_names: Vec<(Data, bool)>,
     pub ingress_abi_descriptors: IngressAbiDescriptors,
 }
 
@@ -54,7 +55,6 @@ impl SFXAbi {
                 Ok(output_val_u256 == input_val_u256)
             },
             FilledAbi::Value128(_name, encoded_value) => {
-                println!("U128 Args CMP received_arg: {ordered_arg:?} for {filled_abi:?}");
                 let output_val_u128: u128 = match output_codec {
                     Codec::Scale => u128::decode(&mut &encoded_value[..]).map_err(|_| {
                         DispatchError::Other("SFXAbi::check args equal - Invalid output value")
@@ -72,13 +72,6 @@ impl SFXAbi {
                         DispatchError::Other("SFXAbi::check args equal - Invalid output value")
                     }),
                 }?;
-
-                println!(
-                    "U128 Args CMP received_arg: {:?} {:?} for {:?}",
-                    input_val_u128.clone(),
-                    output_val_u128.clone(),
-                    filled_abi
-                );
 
                 Ok(output_val_u128 == input_val_u128)
             },

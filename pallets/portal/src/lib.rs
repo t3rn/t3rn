@@ -3,7 +3,7 @@
 use frame_support::sp_runtime::DispatchError;
 pub use pallet::*;
 
-use t3rn_types::recode::{recode_bytes_with_descriptor, Codec};
+use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
 
 #[cfg(test)]
 mod tests;
@@ -341,7 +341,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
         abi_descriptor: Vec<u8>,
-        out_codec: t3rn_types::recode::Codec,
+        out_codec: t3rn_abi::recode::Codec,
     ) -> Result<Vec<u8>, DispatchError> {
         let encoded_ingress = Self::verify_tx_inclusion(
             gateway_id,
@@ -362,7 +362,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
         abi_descriptor: Vec<u8>,
-        out_codec: t3rn_types::recode::Codec,
+        out_codec: t3rn_abi::recode::Codec,
     ) -> Result<Vec<u8>, DispatchError> {
         let encoded_ingress = Self::verify_state_inclusion(
             gateway_id,
@@ -383,7 +383,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
         abi_descriptor: Vec<u8>,
-        out_codec: t3rn_types::recode::Codec,
+        out_codec: t3rn_abi::recode::Codec,
     ) -> Result<Vec<u8>, DispatchError> {
         let encoded_ingress = Self::verify_event_inclusion(
             gateway_id,

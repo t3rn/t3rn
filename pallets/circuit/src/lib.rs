@@ -39,7 +39,6 @@ use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     pallet_prelude::OriginFor,
 };
-// use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
     KeyTypeId,
@@ -69,8 +68,9 @@ pub use t3rn_primitives::{
 use crate::machine::{Machine, *};
 pub use state::XExecSignal;
 
+use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
-use t3rn_types::{recode::Codec, sfx::Sfx4bId, sfx_abi::SFXAbi};
+use t3rn_types::sfx::Sfx4bId;
 
 #[cfg(test)]
 pub mod tests;

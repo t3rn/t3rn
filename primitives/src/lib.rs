@@ -27,7 +27,7 @@ use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
-pub use t3rn_types::{abi, Bytes};
+pub use t3rn_types::{abi, types::Bytes};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

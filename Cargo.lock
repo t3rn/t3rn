@@ -2717,7 +2717,10 @@ checksum = "7413c5f74cc903ea37386a8965a936cbeb334bd270862fdece542c1b2dcbc898"
 dependencies = [
  "ethereum-types 0.14.1",
  "hex",
+ "once_cell",
+ "regex",
  "serde",
+ "serde_json",
  "sha3 0.10.6",
  "thiserror",
  "uint 0.9.5",
@@ -2756,7 +2759,7 @@ dependencies = [
  "fixed-hash 0.7.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde",
+ "impl-serde 0.3.2",
  "scale-info",
  "tiny-keccak 2.0.2",
 ]
@@ -2769,6 +2772,8 @@ checksum = "c22d4b5885b6aa2fe5e8b9329fb8d232bf739e434e6b87347c63bdd00c120f60"
 dependencies = [
  "crunchy",
  "fixed-hash 0.8.0",
+ "impl-rlp",
+ "impl-serde 0.4.0",
  "tiny-keccak 2.0.2",
 ]
 
@@ -2801,7 +2806,7 @@ dependencies = [
  "fixed-hash 0.7.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde",
+ "impl-serde 0.3.2",
  "primitive-types 0.11.1",
  "scale-info",
  "uint 0.9.5",
@@ -2815,6 +2820,8 @@ checksum = "02d215cbf040552efcbe99a38372fe80ab9d00268e20012b79fcd0f073edd8ee"
 dependencies = [
  "ethbloom 0.13.0",
  "fixed-hash 0.8.0",
+ "impl-rlp",
+ "impl-serde 0.4.0",
  "primitive-types 0.12.1",
  "uint 0.9.5",
 ]
@@ -4176,6 +4183,15 @@ name = "impl-serde"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4551f042f3438e64dbd6226b20527fc84a6e1fe65688b58746a2f53623f25f5c"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "impl-serde"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebc88fc67028ae3db0c853baa36269d398d5f45b6982f95549ff5def78c935cd"
 dependencies = [
  "serde",
 ]
@@ -6771,6 +6787,7 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-trie",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
  "t3rn-types 0.0.1-rc.3",
@@ -7569,6 +7586,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types 0.0.1-rc.3",
 ]
@@ -8001,6 +8019,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types 0.0.1-rc.3",
 ]
@@ -9639,7 +9658,7 @@ dependencies = [
  "fixed-hash 0.7.0",
  "impl-codec",
  "impl-rlp",
- "impl-serde",
+ "impl-serde 0.3.2",
  "scale-info",
  "uint 0.9.5",
 ]
@@ -9652,6 +9671,8 @@ checksum = "9f3486ccba82358b11a77516035647c34ba167dfa53312630de83b12bd4f3d66"
 dependencies = [
  "fixed-hash 0.8.0",
  "impl-codec",
+ "impl-rlp",
+ "impl-serde 0.4.0",
  "uint 0.9.5",
 ]
 
@@ -12405,7 +12426,7 @@ dependencies = [
  "hash-db",
  "hash256-std-hasher",
  "hex",
- "impl-serde",
+ "impl-serde 0.3.2",
  "lazy_static",
  "libsecp256k1 0.7.1",
  "log",
@@ -12775,7 +12796,7 @@ name = "sp-storage"
 version = "6.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27#5bfdbab8ba28523ef10e365627fed64ef2b77cbf"
 dependencies = [
- "impl-serde",
+ "impl-serde 0.3.2",
  "parity-scale-codec",
  "ref-cast",
  "serde",
@@ -12870,7 +12891,7 @@ name = "sp-version"
 version = "5.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.27#5bfdbab8ba28523ef10e365627fed64ef2b77cbf"
 dependencies = [
- "impl-serde",
+ "impl-serde 0.3.2",
  "parity-scale-codec",
  "parity-wasm 0.42.2",
  "scale-info",
@@ -13455,11 +13476,39 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types 0.0.1-rc.3",
  "xcm",
  "xcm-builder",
  "xcm-executor",
+]
+
+[[package]]
+name = "t3rn-abi"
+version = "1.0.0-rc.0"
+dependencies = [
+ "bytes 1.4.0",
+ "circuit-runtime-types",
+ "ethabi",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.3.4",
+ "num",
+ "num-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "primitive-types 0.11.1",
+ "rlp",
+ "rlp-derive",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-sdk-primitives",
 ]
 
 [[package]]
@@ -13626,6 +13675,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "sp-version",
+ "t3rn-abi",
  "t3rn-sdk-primitives",
  "t3rn-types 0.0.1-rc.3",
 ]
@@ -13662,19 +13712,13 @@ version = "0.0.1-rc.3"
 dependencies = [
  "bytes 1.4.0",
  "circuit-runtime-types",
- "ethabi",
- "ethereum-types 0.14.1",
- "frame-support",
  "frame-system",
  "hex",
  "hex-literal 0.3.4",
  "num",
  "num-traits",
- "pallet-balances",
  "parity-scale-codec",
  "primitive-types 0.11.1",
- "rlp",
- "rlp-derive",
  "scale-info",
  "serde",
  "serde_json",

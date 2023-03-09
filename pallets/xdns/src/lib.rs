@@ -45,6 +45,7 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
+    use t3rn_abi::sfx_abi::SFXAbi;
     use t3rn_primitives::{
         xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
         Bytes, ChainId, GatewaySysProps, GatewayType, GatewayVendor,
@@ -52,7 +53,7 @@ pub mod pallet {
     use t3rn_types::{
         fsx::{SecurityLvl, TargetId},
         interface::SideEffectInterface,
-        sfx::{SFXAbi, Sfx4bId},
+        sfx::Sfx4bId,
     };
 
     #[pallet::config]
