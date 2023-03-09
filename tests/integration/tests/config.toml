@@ -1,5 +1,5 @@
-# [settings]
-# timeout = 1000
+[settings]
+timeout = 1000
 
 [relaychain]
 chain   = "rococo-local"

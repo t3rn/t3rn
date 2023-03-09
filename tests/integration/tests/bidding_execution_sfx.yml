@@ -1,38 +1,55 @@
 settings:
   chains:
-    relay_chain: &relay_chain
-      wsPort: 9900
-    t3rn: &t3rn
-      wsPort: 9940
+    # relay_chain: &relay_chain
+    #   wsPort: 9900
+    # t3rn: &t3rn
+    #   wsPort: 9940
     t0rn: &t0rn
       wsPort: 9944
   variables:
     chains:
-      relay_chain:
-        signer: &rc_signer //Alice
+      # relay_chain:
+      #   signer: &rc_signer //Alice
       t0rn:
         signer: &t0_signer //Alice
 
 
 tests:
+  # - name: Open the gatewayyyy
   - name: SFX submission for bidding and execution
+    before:
+      - name: Register gateway
+        actions:
+          - customs:
+            - path: ./registerGateway.ts
+              args: []
+              events:
+                - name: clock.NewRound
+              #   - name: portal.GatewayRegistered
+              #   - name: sudo.Sudid
     its:
       - name: Submit a SFX transfer - no bid should kill
         actions:
           - extrinsics:
             - chain: *t0rn
               signer: *t0_signer
+              sudo: false
               pallet: circuit
               call: onExtrinsicTrigger
               args: [
                 [
                   {
                     target: "roco",
-                    type: "tran",
-                    to: 5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp,
-                    amount: 4,
-                    insurance: 1,
-                    reward: 4,
+                    maxReward: 4000000000000,
+                    insurance: 100000000000,
+                    encodedAction: "tran",
+                    encodedArgs: [
+                      "0x6c51de0380769219d483abd2686e0b3f4feb4163a18fe6ae6d622f8014f21b72",
+                      "0x78f0f126e03af9a51a3fc1498a6249776fac77839b27170daa9ae04ca1b17b7a",
+                      "0x00e40b54020000000000000000000000",
+                      "0x00e8764817000000000000000000000000409452a30300000000000000000000"
+                    ],
+                    signature: "0x1234"
                   }
                 ],
                 false

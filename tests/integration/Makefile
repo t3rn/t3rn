@@ -5,7 +5,8 @@ url := https://github.com/paritytech/$(dir).git
 # relative to $(dir)...
 test_path := "../tests"
 config_path := "../tests"
-zombienet_config := "../../integration/tests/config.toml"
+zombienet_config := "../tests/config.toml"
+# zombienet_config := "../../integration/tests/config.toml"
 opts := --chain-logs "../chain.log" --test-logs "../test.log"
 # from zombienet's Makefile
 provider := native
@@ -74,41 +75,23 @@ check: setup
 	@cd $(dir); \
 	yarn checker -t $(test_path);
 
-test: setup
+tests: setup
 	@echo "✅ Set up DONE!"
 	@echo "⏳ Started testing..."
 	@cd $(dir); \
 	yarn test -t $(test_path)
 
-test-logs: setup
-	@echo "✅ Set up DONE!"
-	@echo "⏳ Started testing (check logs in file)..."
-	@cd $(dir); \
-	yarn test -t $(test_path) $(opts)
-
-ctest: clean setup
+clean-tests: clean setup
 	@echo "✅ Set up and clean DONE!"
 	@echo "⏳ Started testing..."
 	@cd $(dir); \
 	yarn test -t $(test_path) $(opts)
-
-ctest-logs: clean setup
-	@echo "✅ Set up and clean DONE!"
-	@echo "⏳ Started testing (check logs in file)..."
-	@cd $(dir); \
-	yarn test -t $(test_path)
 
 zombie: setup
 	@echo "✅ Set up DONE!"
 	@echo "⏳ Started zombienet testing..."
 	@cd $(dir); \
 	yarn zombienet -c $(zombienet_config)
-
-zombie-logs: setup
-	@echo "✅ Set up DONE!"
-	@echo "⏳ Started zombienet testing (check logs in file)..."
-	@cd $(dir); \
-	yarn zombienet -c $(zombienet_config) $(opts)
 
 zombie-test: setup
 	@echo "✅ Set up DONE!"
@@ -117,9 +100,27 @@ zombie-test: setup
 	yarn checker -t $(test_path); \
 	yarn zombienet-test -t $(test_path) -c $(zombienet_config)
 
-zombie-test-logs: setup
-	@echo "✅ Set up DONE!"
-	@echo "⏳ Started zombienet testing (check logs in file)..."
-	@cd $(dir); \
-	yarn checker -t $(test_path); \
-	yarn zombienet-test -t $(test_path) -c $(zombienet_config) $(opts)
+# ctest-logs: clean setup
+# 	@echo "✅ Set up and clean DONE!"
+# 	@echo "⏳ Started testing (check logs in file)..."
+# 	@cd $(dir); \
+# 	yarn test -t $(test_path)
+
+# test-logs: setup
+# 	@echo "✅ Set up DONE!"
+# 	@echo "⏳ Started testing (check logs in file)..."
+# 	@cd $(dir); \
+# 	yarn test -t $(test_path) $(opts)
+
+# zombie-logs: setup
+# 	@echo "✅ Set up DONE!"
+# 	@echo "⏳ Started zombienet testing (check logs in file)..."
+# 	@cd $(dir); \
+# 	yarn zombienet -c $(zombienet_config) $(opts)
+
+# zombie-test-logs: setup
+# 	@echo "✅ Set up DONE!"
+# 	@echo "⏳ Started zombienet testing (check logs in file)..."
+# 	@cd $(dir); \
+# 	yarn checker -t $(test_path); \
+# 	yarn zombienet-test -t $(test_path) -c $(zombienet_config) $(opts)
