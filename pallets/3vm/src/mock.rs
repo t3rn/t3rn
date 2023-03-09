@@ -42,9 +42,9 @@ frame_support::construct_runtime!(
         CircuitPortal: pallet_portal,
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
-        RococoBridge: pallet_grandpa_finality_verifier::{
-            Pallet, Storage
-        },
+        RococoBridge: pallet_grandpa_finality_verifier = 129,
+        PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
+        KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
     }
 );
 
@@ -216,7 +216,7 @@ parameter_types! {
     pub const HeadersToStore: u32 = 100;
 }
 
-type RococoBridgeInstance = ();
+use t3rn_primitives::portal::{KusamaLightClient, PolkadotLightClient, RococoLightClient};
 
 #[derive(Debug)]
 pub struct Blake2ValU32Chain;
@@ -227,7 +227,19 @@ impl pallet_grandpa_finality_verifier::bridges::runtime::Chain for Blake2ValU32C
     type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
 }
 
-impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
+impl pallet_grandpa_finality_verifier::Config<RococoLightClient> for Test {
+    type BridgedChain = Blake2ValU32Chain;
+    type HeadersToStore = HeadersToStore;
+    type WeightInfo = ();
+}
+
+impl pallet_grandpa_finality_verifier::Config<PolkadotLightClient> for Test {
+    type BridgedChain = Blake2ValU32Chain;
+    type HeadersToStore = HeadersToStore;
+    type WeightInfo = ();
+}
+
+impl pallet_grandpa_finality_verifier::Config<KusamaLightClient> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type HeadersToStore = HeadersToStore;
     type WeightInfo = ();
