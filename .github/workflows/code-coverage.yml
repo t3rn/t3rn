@@ -1,0 +1,29 @@
+name: Code coverage workflow
+
+on:
+  pull_request:
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - .github/workflows/code_coverage.yml
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.*"
+      - .github/workflows/code_coverage.yml
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📑 Test workspace and collect coverage data
+        uses: actions-rs/cargo@v1
+        with:
+          command: llvm-cov
+          args: nextest --workspace --lcov --output-path lcov.info
