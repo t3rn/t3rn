@@ -1,24 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2015",
-    "module": "CommonJS",
-    "moduleResolution": "node",
     "strict": true,
     "noImplicitAny": true,
+    "noUnusedLocals": true,
     "noImplicitReturns": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true /* Allow default imports from modules with no default export. This does not affect code emit, just typechecking. */,
+    "esModuleInterop": true /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */,
+    "experimentalDecorators": true /* Enables experimental support for ES7 decorators. */,
     "declaration": true,
-    "rootDir": "./src/",
-    "outDir": "./dist/",
-    "paths": {
-      "@t3rn/api-augment/*": ["src/*"],
-      "@polkadot/api/augment": ["src/interfaces/augment-api.ts"],
-      "@polkadot/types/augment": ["src/interfaces/augment-types.ts"],
-      "@polkadot/types/lookup": ["src/interfaces/types-lookup.ts"],
-    }
+    "declarationDir": "lib",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "."
   },
-  "exclude": ["node_modules", "dist"],
-  "include": ["src"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts", "**/*.d.ts"]
 }
