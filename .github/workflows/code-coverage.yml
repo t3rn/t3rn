@@ -20,10 +20,46 @@ env:
 
 jobs:
   coverage:
+    # if: ${{ !contains(github.event.head_commit.message, 'build(cargo-release):') }}
     runs-on: ubuntu-latest
     steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          components: clippy, rustfmt, llvm-tools-preview
+          override: true
+
+      - name: Install nextest
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-nextest
+
+      - name: Install cargo-llvm-cov
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-llvm-cov
+
       - name: 📑 Test workspace and collect coverage data
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
           args: nextest --workspace --lcov --output-path lcov.info
+
+      - name: Upload coverage data
+        uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v1
+        with:
+          name: code-coverage-report
+          path: lcov.info
