@@ -1,7 +1,7 @@
 settings:
   chains:
-    # relay_chain: &relay_chain
-    #   wsPort: 9900
+    relay_chain: &relay_chain
+      wsPort: 9900
     # t3rn: &t3rn
     #   wsPort: 9940
     t0rn: &t0rn
@@ -15,7 +15,6 @@ settings:
 
 
 tests:
-  # - name: Open the gatewayyyy
   - name: SFX submission for bidding and execution
     before:
       - name: Register gateway
@@ -62,36 +61,57 @@ tests:
                 - name: clock.NewRound
                 - name: circuit.XTransactionXtxDroppedAtBidding
 
-      # - name: Submit a SFX - bid should set to ready
-      #   actions:
-      #     - extrinsics:
-      #       - chain: *para_chain
-      #         sudo: false
-      #         signer: *signer
-      #         pallet: circuit
-      #         call: onExtrinsicTrigger
-      #         args: [
-      #           [
-      #             {
-      #               target: "roco",
-      #               type: "tran",
-      #               to: 5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp,
-      #               amount: 4,
-      #               insurance: 1,
-      #               reward: 4,
-      #             }
-      #           ],
-      #           false
-      #         ]
-      #         events:
-      #           - name: accountManager.DepositReceived
-      #           - name: circuit.NewSideEffectsAvailable
-      #           - name: circuit.XTransactionReceivedForExec
-            
-      # - name: Submit a SFX confirmation - moves to finished
-      #   its:
-      #     - name: 
-      # - name: Not submitting SFX after bid moves to revert 
-      #   its:
-      #     - name: 
+  - name: Submit a SFX - bidding on it should set to ready
+    its:
+      - name: Send the extrinsic and then bid on it
+        actions:
+          - extrinsics:
+            - chain: *t0rn
+              sudo: false
+              signer: *t0_signer
+              pallet: circuit
+              call: onExtrinsicTrigger
+              args: [
+                    [
+                      {
+                        target: "roco",
+                        maxReward: 4000000000000,
+                        insurance: 100000000000,
+                        encodedAction: "tran",
+                        encodedArgs: [
+                          "0x6c51de0380769219d483abd2686e0b3f4feb4163a18fe6ae6d622f8014f21b72",
+                          "0x78f0f126e03af9a51a3fc1498a6249776fac77839b27170daa9ae04ca1b17b7a",
+                          "0x00e40b54020000000000000000000000",
+                          "0x00e8764817000000000000000000000000409452a30300000000000000000000"
+                        ],
+                        signature: "0x1234"
+                      }
+                    ],
+                    false
+                  ]
+              events:
+                - name: accountManager.DepositReceived
+                - name: circuit.NewSideEffectsAvailable
+                - name: circuit.XTransactionReceivedForExec
+            - chain: *t0rn
+              sudo: false
+              signer: *t0_signer
+              pallet: circuit
+              call: bidSfx
+              args: [
+                # how do I get the SFX id from the previous extrinsic?
+
+              ]
+              events:
+                - name: accountManager.DepositReceived
+                - name: circuit.SFXNewBidReceived
+                - name: circuit.XTransactionReadForExec
+
+   # TODO: how to submit a confirmation?   
+  # - name: Submit a SFX confirmation - moves to finished
+  #   its:
+  #     - name: 
+  # - name: Not submitting SFX after bid moves to revert 
+  #   its:
+  #     - name: 
 

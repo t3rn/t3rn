@@ -437,10 +437,10 @@
     "@types/node" "*"
     "form-data" "^3.0.0"
 
-"@types/node@*":
-  "integrity" "sha512-5EWrvLmglK+imbCJY0+INViFWUHg1AHel1sq4ZVSfdcNqGy9Edv3UB9IIzzg+xPaUcAgZYcfVs2fBcwDeZzU0A=="
-  "resolved" "https://registry.npmjs.org/@types/node/-/node-18.14.0.tgz"
-  "version" "18.14.0"
+"@types/node@*", "@types/node@^18.15.0":
+  "integrity" "sha512-z6nr0TTEOBGkzLGmbypWOGnpSpSIBorEhC4L+4HeQ2iezKCi4f77kyslRwvHeNitymGQ+oFyIWGP96l/DPSV9w=="
+  "resolved" "https://registry.npmjs.org/@types/node/-/node-18.15.0.tgz"
+  "version" "18.15.0"
 
 "@types/typescript@^2.0.0":
   "integrity" "sha512-WMEWfMISiJ2QKyk5/dSdgL0ZwP//PZj0jmDU0hMh51FmLq4WIYzjlngsUQZXejQL+QtkXJUOGjb3G3UCvgZuSQ=="

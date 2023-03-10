@@ -132,8 +132,8 @@ async function main() {
 
   // await execute("register roco", 10)
 
-  await submitNoBidShouldKill()
-  // await submitShouldSetToReady()
+  // await submitNoBidShouldKill()
+  await submitShouldSetToReady()
   // await submitSfxConfirmationMovesToFinished()
   // await notSubmitAfterBidMovesToRevert()
 }
@@ -157,19 +157,24 @@ async function submitNoBidShouldKill() {
     [
       {
         target: "roco",
-        type: "tran",
-        to: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
-        amount: "4", // in ROC
-        insurance: "1", // in TRN
-        reward: "4", // in TRN
-      },
+        maxReward: 4000000000000,
+        insurance: 100000000000,
+        encodedAction: "tran",
+        encodedArgs: [
+          "0x6c51de0380769219d483abd2686e0b3f4feb4163a18fe6ae6d622f8014f21b72",
+          "0x78f0f126e03af9a51a3fc1498a6249776fac77839b27170daa9ae04ca1b17b7a",
+          "0x00e40b54020000000000000000000000",
+          "0x00e8764817000000000000000000000000409452a30300000000000000000000"
+        ],
+        signature: "0x1234"
+      }
     ],
     false,
   )
   console.log(function_name, "Created xtx with onExtrinsicTrigger")
   console.log(function_name, "Signing and sending...")
 
-  await txs.signAndSendSafe(tx).catch(res => console.error(res)).then(res => console.log(res))
+  await txs.signAndSendSafe(tx).catch(console.error).then(console.log)
 
   console.log(function_name, "Finished test")
 
@@ -196,18 +201,25 @@ async function submitShouldSetToReady() {
     [
       {
         target: "roco",
-        type: "tran",
-        to: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
-        amount: "4", // in ROC
-        insurance: "1", // in TRN
-        reward: "4", // in TRN
-      },
+        maxReward: 4000000000000,
+        insurance: 100000000000,
+        encodedAction: "tran",
+        encodedArgs: [
+          "0x6c51de0380769219d483abd2686e0b3f4feb4163a18fe6ae6d622f8014f21b72",
+          "0x78f0f126e03af9a51a3fc1498a6249776fac77839b27170daa9ae04ca1b17b7a",
+          "0x00e40b54020000000000000000000000",
+          "0x00e8764817000000000000000000000000409452a30300000000000000000000"
+        ],
+        signature: "0x1234"
+      }
     ],
     false,
   )
   console.log(function_name, "Created xtx with onExtrinsicTrigger")
 
-  await txs.signAndSendSafe(tx).catch(console.error).then(console.log)
+  await txs.signAndSendSafe(tx).catch(r => console.error(r)).then(r => console.log(r))
+
+
 
   // How to check if it's in ready state?
 }
