@@ -110,7 +110,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use pallet_xbi_portal::{
         substrate_abi::{AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm},
-        xbi_format::XbiCheckOutStatus,
+        xp_format::XbiResult,
     };
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
@@ -638,7 +638,7 @@ pub mod pallet {
             Data,
         ),
         // Notification(T::AccountId, AccountId32, XBINotificationKind, Data, Data),
-        Result(T::AccountId, AccountId32, XbiCheckOutStatus, Data, Data),
+        Result(T::AccountId, AccountId32, XbiResult, Data, Data),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
         // New best bid for SFX has been accepted. Account here is an executor.
