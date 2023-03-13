@@ -11,12 +11,14 @@ use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct IngressAbiDescriptors {
-    for_rlp: Vec<u8>,
-    for_scale: Vec<u8>,
+    pub for_rlp: Vec<u8>,
+    pub for_scale: Vec<u8>,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct SFXAbi {
     // must match encoded args order. bool is for optional validation
     pub args_names: Vec<(Data, bool)>,
@@ -119,9 +121,6 @@ impl SFXAbi {
             },
             _ => {
                 let received_arg = filled_abi.get_data();
-                frame_support::log::debug!(
-                    "Global Args CMP received_arg: {received_arg:?} {ordered_arg:?} for {filled_abi:?}"
-                );
                 Ok(received_arg == ordered_arg)
             },
         }
@@ -182,98 +181,5 @@ impl SFXAbi {
         }
 
         Ok(())
-    }
-}
-
-pub fn get_standard_sfx_transfer_interface() -> SFXAbi {
-    SFXAbi {
-        args_names: vec![
-            (b"from".to_vec(), false),
-            (b"to".to_vec(), true),
-            (b"amount".to_vec(), true),
-            (b"insurance".to_vec(), false),
-        ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
-            // assume all indexed in topics ("+")
-            for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount+:Value128)".to_vec(),
-            for_scale: b"Transfer:Enum(from:Account32,to:Account32,amount:Value128)".to_vec(),
-        },
-    }
-}
-
-#[cfg(test)]
-mod test_sfx_abi {
-    use super::*;
-    use crate::mini_mock::MiniRuntime;
-    use hex_literal::hex;
-    use primitive_types::{H160, U256};
-
-    use crate::to_filled_abi::EthIngressEventLog;
-    use sp_runtime::AccountId32;
-
-    #[test]
-    fn test_transfer_validate_arguments_against_received_substrate_balances_event() {
-        let transfer_interface = get_standard_sfx_transfer_interface();
-        let ordered_args = vec![
-            AccountId32::new([2; 32]).encode(),
-            AccountId32::new([1; 32]).encode(),
-            100u128.encode(),
-            50u128.encode(),
-        ];
-        let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
-            from: AccountId32::new([2; 32]),
-            to: AccountId32::new([1; 32]),
-            amount: 100u128,
-        }
-        .encode();
-
-        let res = transfer_interface.validate_arguments_against_received(
-            &ordered_args,
-            scale_encoded_transfer_event,
-            Codec::Scale,
-        );
-
-        println!("{res:?}");
-        assert!(res.is_ok());
-    }
-
-    #[test]
-    fn test_transfer_validate_arguments_against_received_evm_balances_event() {
-        let transfer_interface = get_standard_sfx_transfer_interface();
-        const HUNDRED: u128 = 100;
-        const FIFTY: u128 = 50;
-
-        let ordered_args = vec![
-            H160::from(hex!("0000000000000000000000000000000000012321")).encode(),
-            H160::from(hex!("0000000000000000000000000000000000054321")).encode(),
-            HUNDRED.encode(),
-            FIFTY.encode(),
-        ];
-
-        let hundred_u256: U256 = U256::from(HUNDRED);
-        let mut hundred_u256_bytes = [0u8; 32];
-        hundred_u256.to_big_endian(&mut hundred_u256_bytes);
-        let rlp_raw_log_bytes = EthIngressEventLog(
-            vec![
-                hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
-                hex!("0000000000000000000000000000000000000000000000000000000000012321").into(),
-                hex!("0000000000000000000000000000000000000000000000000000000000054321").into(),
-                hundred_u256_bytes.into(),
-            ],
-            hex!(
-                "
-			"
-            )
-            .into(),
-        );
-
-        let res = transfer_interface.validate_arguments_against_received(
-            &ordered_args,
-            rlp_raw_log_bytes.encode(),
-            Codec::Rlp,
-        );
-
-        println!("{res:?}");
-        assert!(res.is_ok());
     }
 }
