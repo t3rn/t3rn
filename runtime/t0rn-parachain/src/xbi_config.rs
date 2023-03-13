@@ -6,8 +6,8 @@ use crate::{
 use cumulus_primitives_core::ParaId;
 use frame_support::{
     match_types, parameter_types,
-    traits::{ConstU32, Everything, PalletInfoAccess},
-    weights::{IdentityFee, Weight},
+    traits::{ConstU128, ConstU32, ConstU64, Everything, PalletInfoAccess},
+    weights::{ConstantMultiplier, IdentityFee, Weight},
 };
 
 use pallet_xcm::XcmPassthrough;
@@ -47,7 +47,10 @@ impl pallet_xbi_portal::Config for Runtime {
     type Event = Event;
     type Evm = Evm;
     type ExpectedBlockTimeMs = ConstU32<6000>;
+    type FeeConversion = ConstantMultiplier<u128, ConstU128<10u128>>;
+    type NotificationWeight = ConstU64<1_000_000_000>;
     type ParachainId = ConstU32<3333>;
+    type ReserveBalanceCustodian = XbiSovereign;
     type TimeoutChecksLimit = ConstU32<3000>;
     type Xcm = XcmRouter;
     type XcmSovereignOrigin = XbiSovereign;

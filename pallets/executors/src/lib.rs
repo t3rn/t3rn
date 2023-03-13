@@ -51,7 +51,7 @@ pub mod pallet {
         },
         monetary::DECIMALS,
     };
-    use xbi_channel_primitives::traits::{HandlerInfo, XbiInstructionHandler};
+    use xp_channel::traits::{HandlerInfo, XbiInstructionHandler};
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -136,11 +136,11 @@ pub mod pallet {
         type WeightInfo: weights::WeightInfo;
 
         /// Allow executors to execute side effects on circuit
-        type InstructionHandler: xbi_channel_primitives::traits::XbiInstructionHandler<Self::Origin>;
+        type InstructionHandler: xp_channel::traits::XbiInstructionHandler<Self::Origin>;
 
         // TODO: We might not need this here, maybe we will just inject this into the pallets that need it, although here is a decent entrypoint for it.
         /// Allow other pallets in circuit to send messages over xbi
-        type Xbi: xbi_sender::Sender<xbi_channel_primitives::Message>;
+        type Xbi: xs_channel::Sender<xp_channel::Message>;
     }
 
     #[pallet::pallet]
@@ -1629,7 +1629,7 @@ pub mod pallet {
         /// @maciejbaj look here TODO: you'll need to do some conversions from side effect into local instruction
         fn execute_xbi(
             origin: &T::Origin,
-            xbi: &mut xbi_format::XbiFormat,
+            xbi: &mut xp_format::XbiFormat,
         ) -> Result<
             HandlerInfo<frame_support::weights::Weight>,
             frame_support::dispatch::DispatchErrorWithPostInfo,

@@ -6,7 +6,7 @@ use circuit_runtime_pallets::{cumulus_primitives_core::GetChannelInfo, *};
 use cumulus_primitives_core::ParaId;
 use frame_support::{
     match_types, parameter_types,
-    traits::{ConstU32, Everything, PalletInfoAccess},
+    traits::{ConstU32, ConstU64, Everything, PalletInfoAccess},
     weights::{IdentityFee, Weight},
 };
 
@@ -36,8 +36,6 @@ impl pallet_xbi_portal::Config for Runtime {
     type AssetRegistry = AssetRegistry;
     type Assets = Assets;
     type Call = Call;
-    // type SelfAccountId = XbiSovereign;
-    // type Callback = XBIPortalRuntimeEntry;
     type Callback = ();
     type CheckInLimit = ConstU32<100>;
     type CheckInterval = ConstU32<3>;
@@ -48,7 +46,10 @@ impl pallet_xbi_portal::Config for Runtime {
     type Event = Event;
     type Evm = Evm;
     type ExpectedBlockTimeMs = ConstU32<6000>;
+    type FeeConversion = IdentityFee<Balance>;
+    type NotificationWeight = ConstU64<1_000_000>;
     type ParachainId = ConstU32<3333>;
+    type ReserveBalanceCustodian = XbiSovereign;
     type TimeoutChecksLimit = ConstU32<3000>;
     type Xcm = XcmRouter;
     type XcmSovereignOrigin = XbiSovereign;

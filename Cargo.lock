@@ -4261,7 +4261,7 @@ checksum = "334e04b4d781f436dc315cb1e7515bd96826426345d498149e4bde36b67f8ee9"
 dependencies = [
  "async-channel",
  "castaway",
- "crossbeam-utils 0.8.14",
+ "crossbeam-utils 0.7.2",
  "curl",
  "curl-sys",
  "encoding_rs",
@@ -6452,8 +6452,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-registry"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6464,11 +6464,11 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-primitives",
- "t3rn-xcm-primitives",
- "xbi-channel-primitives",
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xp-channel",
+ "xp-xcm",
 ]
 
 [[package]]
@@ -7219,9 +7219,9 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-primitives",
- "xbi-channel-primitives",
- "xbi-format",
- "xbi-sender",
+ "xp-channel",
+ "xp-format",
+ "xs-channel",
 ]
 
 [[package]]
@@ -7863,8 +7863,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-xbi-portal"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
  "fp-evm 3.0.0-dev",
  "frame-benchmarking",
@@ -7885,12 +7885,11 @@ dependencies = [
  "substrate-abi",
  "substrate-contracts-abi",
  "t3rn-primitives",
- "t3rn-xcm-primitives",
- "xbi-channel-primitives",
- "xbi-format",
- "xbi-receiver",
- "xbi-sender",
  "xcm",
+ "xp-channel",
+ "xp-format",
+ "xp-xcm",
+ "xs-channel",
 ]
 
 [[package]]
@@ -13022,8 +13021,8 @@ dependencies = [
 
 [[package]]
 name = "substrate-abi"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -13069,8 +13068,8 @@ dependencies = [
 
 [[package]]
 name = "substrate-contracts-abi"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -13615,17 +13614,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-sdk-primitives",
-]
-
-[[package]]
-name = "t3rn-xcm-primitives"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
-dependencies = [
- "parity-scale-codec",
- "sp-std",
- "xcm",
- "xcm-executor",
 ]
 
 [[package]]
@@ -14194,7 +14182,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.11.2",
+ "parking_lot 0.10.2",
  "regex",
  "serde",
  "serde_json",
@@ -15285,69 +15273,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "xbi-channel-primitives"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime",
- "sp-std",
- "xbi-format",
- "xcm",
-]
-
-[[package]]
-name = "xbi-format"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
-dependencies = [
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
- "substrate-abi",
- "substrate-contracts-abi",
-]
-
-[[package]]
-name = "xbi-receiver"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xbi-channel-primitives",
- "xbi-format",
- "xbi-sender",
-]
-
-[[package]]
-name = "xbi-sender"
-version = "0.3.0"
-source = "git+https://github.com/t3rn/xbi#7ff3b85c200632c3938ab268adfed4a78bef95a6"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "sp-runtime",
- "t3rn-xcm-primitives",
- "xbi-channel-primitives",
- "xcm",
-]
-
-[[package]]
 name = "xcm"
 version = "0.9.27"
 source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.27#b017bad50d360a1c6e3cdf9652bdb85e5f479fea"
@@ -15408,6 +15333,67 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "xp-channel"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+dependencies = [
+ "frame-support",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xp-format",
+]
+
+[[package]]
+name = "xp-format"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+dependencies = [
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "substrate-abi",
+ "substrate-contracts-abi",
+]
+
+[[package]]
+name = "xp-xcm"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+dependencies = [
+ "parity-scale-codec",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "xs-channel"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xp-channel",
+ "xp-format",
+ "xp-xcm",
 ]
 
 [[package]]

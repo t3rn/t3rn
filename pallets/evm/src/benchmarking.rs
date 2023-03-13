@@ -75,7 +75,7 @@ benchmarks! {
         let nonce_as_u256: U256 = nonce.into();
 
         let value = U256::default();
-        let gas_limit_create: u64 = 1_250_000.checked_mul(1_000_000_000).unwrap();
+        let gas_limit_create: u64 = 1_250_000_u64.checked_mul(1_000_000_000).unwrap();
         let is_transactional = true;
         let create_runner_results = T::Runner::create(
             caller,
