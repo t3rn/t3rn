@@ -393,7 +393,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
 
 #[test]
 fn add_new_contract_succeeds_for_default() {
-    let origin = Origin::root();
+    let origin = Origin::signed(ALICE);
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
@@ -430,8 +430,8 @@ fn add_new_contract_succeeds_for_default() {
 }
 
 #[test]
-fn add_new_contract_fails_for_no_sudo_origin() {
-    let origin = Origin::signed(ALICE);
+fn add_new_contract_fails_for_sudo_origin() {
+    let origin = Origin::root();
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
@@ -468,7 +468,7 @@ fn add_new_contract_fails_for_no_sudo_origin() {
 
 #[test]
 fn add_new_contract_fails_if_contract_already_exists() {
-    let origin = Origin::root();
+    let origin = Origin::signed(ALICE);
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],

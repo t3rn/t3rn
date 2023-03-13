@@ -116,14 +116,14 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Inserts a contract into the on-chain registry. Root only access.
+        /// Inserts a contract into the on-chain registry.
         #[pallet::weight(<T as Config>::WeightInfo::add_new_contract())]
         pub fn add_new_contract(
             origin: OriginFor<T>,
             requester: T::AccountId,
             contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
+            ensure_signed(origin)?;
 
             let contract_id = contract.generate_id::<T>();
 
