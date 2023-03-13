@@ -1,7 +1,7 @@
 .EXPORT_ALL_VARIABLES:
 
 provider := native
-zombienet_version := v1.3.17
+zombienet_version := v1.3.29
 runtime := t3rn
 pdot_branch := release-v0.9.37
 root_dir := $(shell git rev-parse --show-toplevel)
@@ -16,7 +16,7 @@ export PATH := $(shell echo $$PATH):$(bin_dir)
 ifneq ($(findstring Darwin,$(arch)),)
 	machine := macos
 else ifneq ($(findstring Linux,$(arch)),)
-	machine := linux
+	machine := linux-x64
 endif
 
 # ====================== Setup ======================
@@ -31,6 +31,7 @@ ${bin_dir}/zombienet:
 	curl -fL -o $(bin_dir)/zombienet https://github.com/paritytech/zombienet/releases/download/$(zombienet_version)/zombienet-$(machine)
 	chmod +x $(bin_dir)/zombienet
 
+# Polkadot
 $(polkadot_tmp_dir)/$(pdot_branch):
 	mkdir -p $(polkadot_tmp_dir);
 	git clone --branch $(pdot_branch) --depth 1 https://github.com/paritytech/polkadot $(polkadot_tmp_dir)/$(pdot_branch);
@@ -41,38 +42,21 @@ $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot: $(polkadot_tmp_dir)/
 ${bin_dir}/polkadot: $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot
 	cp $(polkadot_tmp_dir)/$(pdot_branch)/target/release/polkadot $(bin_dir)/polkadot
 
-${bin_dir}/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(root_dir)/*/t3rn-parachain/Cargo.toml Makefile
-	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --release --locked
-	cp -f $(root_dir)/target/release/t3rn-collator $(bin_dir)/
+# Nodes
+$(root_dir)/target/debug/t0rn-collator: $(wildcard $(root_dir)/*/t0rn-parachain/src/*.rs) $(wildcard $(root_dir)/*/t0rn-parachain/Cargo.toml) Makefile
+	cargo build --manifest-path $(root_dir)/node/t0rn-parachain/Cargo.toml --locked
 
-setup: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t3rn-collator
+${bin_dir}/t0rn-collator: $(root_dir)/target/debug/t0rn-collator
+	cp -f $(root_dir)/target/debug/t3rn-collator $(bin_dir)/
 
-# ====================== Caching ======================
-#
-# sccache is already present on Github Action workers, no need to set it up
-#
+$(root_dir)/target/debug/t3rn-collator: $(wildcard $(root_dir)/*/t3rn-parachain/src/*.rs) $(wildcard $(root_dir)/*/t3rn-parachain/Cargo.toml) Makefile
+	cargo build --manifest-path $(root_dir)/node/t3rn-parachain/Cargo.toml --locked
 
-${bin_dir}/sccache:
-	@if [ $(machine) = "macos" ]; then \
-        brew update; \
-		brew install -qf sccache | true; \
-		cp -n /opt/homebrew/bin/sccache $(bin_dir)/sccache; \
-	elif [ $(machine) = "linux" ]; then \
-		tmp_dir=$(shell mktemp -d); \
-		curl -fL https://github.com/mozilla/sccache/releases/download/$(SCCACHE_VERSION)/$(SCCACHE_FILE).tar.gz | tar xzvf - -C $(bin_dir)/; \
-		mv $(bin_dir)/$(SCCACHE_FILE)/sccache $(bin_dir)/; \
-		sudo chmod +x $(bin_dir)/sccache; \
-	fi
-	
-start-sccache: $(bin_dir) ${bin_dir}/sccache
-	sccache --start-server || true
+${bin_dir}/t3rn-collator: $(root_dir)/target/debug/t3rn-collator
+	cp -f $(root_dir)/target/debug/t3rn-collator $(bin_dir)/
 
-stop-sccache: ${bin_dir}/sccache
-	sccache --stop-server || true
-	
-print-sccache: ${bin_dir}/sccache
-	sccache --show-stats
-	
+setup: $(bin_dir) ${bin_dir}/zombienet ${bin_dir}/polkadot ${bin_dir}/t3rn-collator ${bin_dir}/t0rn-collator
+
 # ====================== Testing ======================
 
 test-smoke: setup
