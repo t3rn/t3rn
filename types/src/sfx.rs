@@ -21,6 +21,7 @@ pub type TargetId = [u8; 4];
 pub type Bytes = Vec<u8>;
 pub type EventSignature = Bytes;
 pub type SideEffectName = Bytes;
+pub type ActionId = [u8; 4];
 
 pub const COMPOSABLE_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"comp";
 pub const WASM_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"wasm";
@@ -37,9 +38,9 @@ pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 pub struct SideEffect<AccountId, BalanceOf> {
     pub target: TargetId,
+    pub action: ActionId,
     pub max_reward: BalanceOf,
     pub insurance: BalanceOf,
-    pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
     pub enforce_executor: Option<AccountId>,
@@ -49,8 +50,8 @@ pub struct SideEffect<AccountId, BalanceOf> {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 pub struct HardenedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
+    pub action: ActionId,
     pub prize: BalanceOf,
-    pub encoded_action: [u8; 4],
     pub encoded_args: Vec<Bytes>,
     pub encoded_args_abi: Vec<Type>,
     pub security_lvl: SecurityLvl,
@@ -72,7 +73,7 @@ where
         HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
             prize: BalanceOf::default(),
-            encoded_action: [0, 0, 0, 0],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             encoded_args_abi: vec![],
             security_lvl: SecurityLvl::Optimistic,
@@ -107,9 +108,7 @@ where
     }
 
     pub fn read_interface(&self) -> Result<SideEffectInterface, DispatchError> {
-        let decoded_action: [u8; 4] = decode_buf2val(self.encoded_action.to_owned())?;
-
-        let sfx_interface: SideEffectInterface = match &decoded_action {
+        let sfx_interface: SideEffectInterface = match &self.action {
             DATA_SIDE_EFFECT_ID => crate::standard::get_data_interface(),
             TRANSFER_SIDE_EFFECT_ID => crate::standard::get_transfer_interface(),
             ORML_TRANSFER_SIDE_EFFECT_ID
@@ -144,8 +143,6 @@ where
             return Err("SFX::validate - Invalid reward".into())
         }
 
-        let decoded_action: [u8; 4] = decode_buf2val(self.encoded_action.to_owned())?;
-
         let sfx_interface: SideEffectInterface = self.read_interface()?;
 
         // Validate the encoded args against the ABI
@@ -157,7 +154,7 @@ where
             abi_type.eval_abi(arg.to_owned(), &abi)?;
         }
 
-        Ok(decoded_action)
+        Ok(self.action)
     }
 
     pub fn match_event_property_name_with_input_argument_name(
@@ -264,12 +261,11 @@ where
             &mut bytes::Bytes::from(bytes),
         )?;
         let action_bytes: [u8; 4] = action.into();
-        let action_bytes = action_bytes.encode();
 
         Ok(SideEffect::<AccountId, BalanceOf> {
             target,
             max_reward: Zero::zero(),
-            encoded_action: action_bytes,
+            action: action_bytes,
             encoded_args: args,
             signature: vec![],
             insurance: Zero::zero(),
@@ -531,7 +527,7 @@ mod tests {
         let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 0,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 0,
@@ -544,7 +540,7 @@ mod tests {
             SideEffect {
                 target: [0, 0, 0, 0],
                 max_reward: 0,
-                encoded_action: vec![],
+                action: [0, 0, 0, 0],
                 encoded_args: vec![],
                 signature: vec![],
                 insurance: 0,
@@ -565,7 +561,7 @@ mod tests {
         let tsfx_input = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 0,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![
                 from.encode(),
                 to.encode(),
@@ -584,7 +580,7 @@ mod tests {
                 target: [0, 0, 0, 0],
                 max_reward: 0,
                 insurance: 0,
-                encoded_action: vec![],
+                action: [0, 0, 0, 0],
                 encoded_args: vec![
                     vec![
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,

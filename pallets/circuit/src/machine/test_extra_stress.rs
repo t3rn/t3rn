@@ -60,7 +60,7 @@ pub fn stage_transfer_sfx(
         target,
         max_reward,
         // Encoded Transfer SFX
-        encoded_action: vec![116, 114, 97, 110],
+        action: [116, 114, 97, 110],
         encoded_args: vec![
             FROM_ACCOUNT.encode(),
             TO_ACCOUNT.encode(),

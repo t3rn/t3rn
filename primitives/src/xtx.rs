@@ -193,7 +193,7 @@ mod tests {
         let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,
@@ -260,7 +260,7 @@ mod tests {
         let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,
@@ -271,7 +271,7 @@ mod tests {
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,
@@ -393,7 +393,7 @@ mod tests {
         let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,
@@ -404,7 +404,7 @@ mod tests {
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,
@@ -525,7 +525,7 @@ mod tests {
         let input_side_effect_1 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,
@@ -536,7 +536,7 @@ mod tests {
         let input_side_effect_2 = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 1],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,

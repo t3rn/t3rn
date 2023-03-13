@@ -112,8 +112,7 @@ where
         Ok(HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: self.input.target,
             prize: self.input.max_reward,
-            encoded_action: TargetId::try_from(self.input.encoded_action.clone())
-                .unwrap_or_default(),
+            action: self.input.action.clone(),
             encoded_args: self.input.encoded_args,
             encoded_args_abi: vec![],
             security_lvl: self.security_lvl,
@@ -145,7 +144,7 @@ mod tests {
         let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,
@@ -158,7 +157,7 @@ mod tests {
             SideEffect {
                 target: [0, 0, 0, 0],
                 max_reward: 1,
-                encoded_action: vec![],
+                action: [0, 0, 0, 0],
                 encoded_args: vec![],
                 signature: vec![],
                 insurance: 1,
@@ -180,7 +179,7 @@ mod tests {
             target: [0, 0, 0, 0],
             max_reward: 3,
             insurance: 2,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![
                 from.encode(),
                 to.encode(),
@@ -215,7 +214,7 @@ mod tests {
             HardenedSideEffect {
                 target: [0, 0, 0, 0],
                 prize: 3,
-                encoded_action: [0, 0, 0, 0],
+                action: [0, 0, 0, 0],
                 encoded_args: vec![
                     vec![
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -248,7 +247,7 @@ mod tests {
             SideEffect {
                 target: [0, 0, 0, 0],
                 max_reward: 3,
-                encoded_action: vec![],
+                action: [0, 0, 0, 0],
                 encoded_args: vec![
                     vec![
                         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -278,7 +277,7 @@ mod tests {
         let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,
@@ -302,7 +301,7 @@ mod tests {
         let empty_side_effect = SideEffect::<AccountId, BalanceOf> {
             target: [0, 0, 0, 0],
             max_reward: 1,
-            encoded_action: vec![],
+            action: [0, 0, 0, 0],
             encoded_args: vec![],
             signature: vec![],
             insurance: 1,

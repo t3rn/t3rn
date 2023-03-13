@@ -26,7 +26,7 @@ pub fn produce_test_side_effect(
     SideEffect::<AccountId, BalanceOf> {
         target: [0, 0, 0, 0],
         max_reward: insurance_and_reward_u128[0],
-        encoded_action: name.to_vec(),
+        action: name,
         encoded_args: arguments,
         signature,
         insurance: insurance_and_reward_u128[1],
