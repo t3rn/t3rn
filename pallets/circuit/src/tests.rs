@@ -396,7 +396,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
     let side_effects = vec![SideEffect {
         target: [0u8, 0u8, 0u8, 0u8],
         max_reward: 2,
-        encoded_action: vec![116, 114, 97, 110],
+        action: [116, 114, 97, 110],
         encoded_args: vec![
             vec![
                 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44,
@@ -500,7 +500,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                             vec![SideEffect {
                                 target: [0u8, 0u8, 0u8, 0u8],
                                 max_reward: 1,
-                                encoded_action: vec![116, 114, 97, 110],
+                                action: [116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![
                                         9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
@@ -677,7 +677,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                 target: [0u8, 0u8, 0u8, 0u8],
                                 max_reward: 1 as Balance,
                                 insurance: 1 as Balance,
-                                encoded_action: vec![116, 114, 97, 110],
+                                action: [116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![
                                         9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
@@ -4142,7 +4142,7 @@ fn into_se_from_chain() {
             target: [112u8, 100u8, 111u8, 116u8],
             max_reward: 0,
             insurance: 0,
-            encoded_action: vec![116, 114, 97, 110],
+            action: [116, 114, 97, 110],
             encoded_args: vec![
                 vec![
                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -4528,7 +4528,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
                                 target: [0, 0, 0, 0],
                                 max_reward: 3,
                                 insurance: 3,
-                                encoded_action: vec![116, 114, 97, 110],
+                                action: [116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
                                     vec![6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
@@ -4563,7 +4563,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
                                 target: [0, 0, 0, 0],
                                 max_reward: 3,
                                 insurance: 3,
-                                encoded_action: vec![116, 114, 97, 110],
+                                action: [116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
                                     vec![6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],

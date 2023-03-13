@@ -1014,16 +1014,13 @@ impl<T: Config> Pallet<T> {
 
         log::debug!("Order confirmed!");
 
-        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-        side_effect_id.copy_from_slice(&fsx.input.encoded_action[0..4]);
-
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
         let (params, source) = <T as Config>::Portal::confirm_and_decode_payload_params(
             fsx.input.target,
             fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
-            side_effect_id,
+            fsx.input.action,
         )
         .map_err(|_| "SideEffect confirmation failed!")?;
         // ToDo: handle misbehaviour

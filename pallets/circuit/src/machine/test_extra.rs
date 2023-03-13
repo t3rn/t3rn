@@ -288,7 +288,7 @@ pub fn get_mocked_transfer_sfx() -> SideEffect<AccountId, Balance> {
     SideEffect {
         target: [0u8, 0u8, 0u8, 0u8],
         max_reward: 2,
-        encoded_action: vec![116, 114, 97, 110],
+        action: [116, 114, 97, 110],
         encoded_args: vec![
             vec![
                 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44,
@@ -315,7 +315,7 @@ pub fn get_mocked_transfer_sfx_with_executor_enforced() -> SideEffect<AccountId,
     SideEffect {
         target: [0u8, 0u8, 0u8, 0u8],
         max_reward: 2,
-        encoded_action: vec![116, 114, 97, 110],
+        action: [116, 114, 97, 110],
         encoded_args: vec![
             vec![
                 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44,
