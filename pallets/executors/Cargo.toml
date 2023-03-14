@@ -31,6 +31,8 @@ xp-channel = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-f
 xp-format  = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 xs-channel = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 
+pallet-circuit = { path = "../circuit", default-features = true }
+
 [dev-dependencies]
 similar-asserts = "1.1.0"
 

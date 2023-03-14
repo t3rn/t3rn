@@ -29,18 +29,21 @@ pub mod pallet {
         subject_metadata::{CandidateMetadata, StakerMetadata},
         weights,
     };
-    use core::ops::Mul;
+    use core::{fmt::Result, ops::Mul};
     use frame_support::{
         pallet_prelude::*,
         traits::{tokens::WithdrawReasons, Currency, LockableCurrency, ReservableCurrency},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
+    use pallet_circuit::SideEffect;
+    use sabi::{Sabi, *};
     use sp_runtime::{
         traits::{One, Saturating, Zero},
         Percent,
     };
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
+        circuit::XExecSignalId,
         // treasury::Treasury as TTreasury,
         clock::Clock,
         common::{OrderedSet, Range, RoundIndex},
@@ -51,7 +54,16 @@ pub mod pallet {
         },
         monetary::DECIMALS,
     };
-    use xp_channel::traits::{HandlerInfo, XbiInstructionHandler};
+    use t3rn_types::{
+        bid::SFXBid,
+        fsx::FullSideEffect,
+        sfx::{ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
+    };
+    use xbi_channel_primitives::{
+        traits::{HandlerInfo, XbiInstructionHandler},
+        XbiInstruction,
+    };
+    use xp_format::{xbi_codec::*, Fees, XbiError, XbiFormat, XbiMetadata, XbiResult};
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -1216,6 +1228,11 @@ pub mod pallet {
         InsufficientBalance,
         MaxStakesExceeded,
         AlreadyStakedCandidate,
+        FailedToCreateXBIMetadataDueToWrongAccountConversion,
+        FailedToConvertSFX2XBI,
+        SideEffectIsAlreadyScheduledToExecuteOverXBI,
+        EnterSfxNotRecognized,
+        EnterSfxDecodingValueErr,
     }
 
     #[pallet::genesis_config]
@@ -1623,18 +1640,227 @@ pub mod pallet {
                 .collect()
         }
 
+        pub fn execute_side_effects_with_xbi(
+            origin: OriginFor<T>, // Active relayer
+            xtx_id: XExecSignalId<T>,
+            side_effect: SideEffect<T::AccountId, BalanceOf<T>>,
+            max_exec_cost: u128,
+            max_notifications_cost: u128,
+        ) -> DispatchResult {
+            // validate extrinsic origin is actually an executor in the active set
+            let executor = ensure_signed(origin)?;
+            let mut state =
+                <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+            ensure!(!state.is_active(), Error::<T>::AlreadyActive);
+
+            let sfx_id = side_effect.generate_id(xtx_id.as_ref(), 0u32);
+
+            if T::XBIPortal::get_status(sfx_id) != T::XBIStatus::UnknownId {
+                return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
+            }
+
+            // Setup: retrieve local xtx context
+            let mut local_ctx: pallet_circuit::state::LocalXtxCtx<T> = Self::setup(
+                pallet_circuit::state::CircuitStatus::PendingExecution,
+                &executor,
+                Some(xtx_id),
+            )?;
+
+            let xbi =
+                Self::sfx_2_xbi(
+                    origin,
+                    &side_effect,
+                    XbiMetadata::new_with_default_timeouts(
+                        XbiId::<T>::local_hash_2_xbi_id(sfx_id)?,
+                        T::Xdns::get_gateway_para_id(&side_effect.target)?,
+                        T::SelfParaId::get(),
+                        Fees::new(sfx_id, Some(max_exec_cost), Some(max_notifications_cost)),
+                        Some(Sabi::account_bytes_2_account_32(executor.encode()).map_err(
+                            |_| Error::<T>::FailedToCreateXBIMetadataDueToWrongAccountConversion,
+                        )?),
+                    ),
+                )
+                .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
+
+            Self::execute_xbi(&origin, &mut xbi)?;
+
+            // Use encoded XBI hash as ID for the executor's charge
+            let charge_id = T::Hashing::hash(&xbi.encode()[..]);
+            let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
+
+            // fixme: must be solved with charging and update status order if XBI is the first SFX
+            if local_ctx.xtx.status == pallet_circuit::state::CircuitStatus::Ready {
+                local_ctx.xtx.status = pallet_circuit::state::CircuitStatus::PendingExecution;
+            }
+
+            Self::square_up(
+                &mut local_ctx,
+                Some((charge_id, executor, total_max_rewards)),
+            )?;
+
+            T::XBIPromise::then(xbi, Call::<T>::on_xbi_sfx_resolved { sfx_id }.into())?;
+
+            let status_change = Self::update(&mut local_ctx)?;
+
+            Self::apply(&mut local_ctx, status_change);
+
+            Ok(().into())
+        }
+
+        pub fn sfx_2_xbi(
+            origin: OriginFor<T>,
+            side_effect: SideEffect<T::AccountId, BalanceOf<T>>,
+            metadata: XbiMetadata,
+            // Result<XbiFormat, frame_support::dispatch::DispatchErrorWithPostInfo>
+        ) -> Result<XbiFormat, XbiError> {
+            match &side_effect.encoded_action[0..4] {
+                b"tran" => {
+                    Ok(XbiFormat {
+                        instr: XbiInstruction::Transfer {
+                            // Get dest as argument_1 of SFX::Transfer of Type::DynamicAddress
+                            dest: Decode::decode(&mut &side_effect.encoded_args[1][..])
+                                .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                            // Get dest as argument_2 of SFX::Transfer of Type::Value
+                            value: Sabi::value_bytes_2_value_128(&side_effect.encoded_args[2])
+                                .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                        },
+                        metadata,
+                    })
+                },
+                b"mult" | b"tass" => Ok(XbiFormat {
+                    instr: XbiInstruction::TransferAssets {
+                        // Get dest as argument_0 of SFX::TransferAssets of Type::DynamicBytes
+                        currency_id: Decode::decode(&mut &side_effect.encoded_args[0][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_1 of SFX::TransferAssets of Type::DynamicAddress
+                        dest: Decode::decode(&mut &side_effect.encoded_args[1][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_2 of SFX::TransferAssets of Type::Value
+                        value: Sabi::value_bytes_2_value_128(&side_effect.encoded_args[2])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                    },
+                    metadata,
+                }),
+                b"orml" => Ok(XbiFormat {
+                    instr: XbiInstruction::TransferORML {
+                        // Get dest as argument_0 of SFX::TransferOrml of Type::DynamicBytes
+                        currency_id: Decode::decode(&mut &side_effect.encoded_args[0][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_1 of SFX::TransferOrml of Type::DynamicAddress
+                        dest: Decode::decode(&mut &side_effect.encoded_args[1][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_2 of SFX::TransferOrml of Type::Value
+                        value: Sabi::value_bytes_2_value_128(&side_effect.encoded_args[2])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                    },
+                    metadata,
+                }),
+                b"swap" => Err(XbiError::<T>::EnterSfxNotRecognized),
+                b"aliq" => Err(XbiError::<T>::EnterSfxNotRecognized),
+                b"cevm" => Ok(XbiFormat {
+                    instr: XbiInstruction::CallEvm {
+                        // Get dest as argument_0 of SFX::CallEvm of Type::DynamicAddress
+                        source: Decode::decode(&mut &side_effect.encoded_args[0][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_1 of SFX::CallEvm of Type::DynamicAddress
+                        target: Decode::decode(&mut &side_effect.encoded_args[1][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_2 of SFX::CallEvm of Type::Value
+                        value: Sabi::value_bytes_2_value_256(&side_effect.encoded_args[2])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_3 of SFX::CallEvm of Type::DynamicBytes
+                        input: Decode::decode(&mut &side_effect.encoded_args[3][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingDataErr)?,
+                        // Get dest as argument_4 of SFX::CallEvm of Type::Uint(64)
+                        gas_limit: Sabi::value_bytes_2_value_64(&side_effect.encoded_args[4])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_5 of SFX::CallEvm of Type::Value
+                        max_fee_per_gas: Sabi::value_bytes_2_value_256(
+                            &side_effect.encoded_args[5],
+                        )
+                        .map_err(|_| Error::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_6 of SFX::CallEvm of Type::Option(Box::from(Type::Value))
+                        max_priority_fee_per_gas: Sabi::maybe_value_bytes_2_maybe_value_256(
+                            &side_effect.encoded_args[6],
+                        )
+                        .map_err(|_| Error::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_7 of SFX::CallEvm of Type::Option(Box::from(Type::Value))
+                        nonce: Sabi::maybe_value_bytes_2_maybe_value_256(
+                            &side_effect.encoded_args[7],
+                        )
+                        .map_err(|_| Error::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_8 of SFX::CallEvm of Type::DynamicBytes
+                        access_list: Decode::decode(&mut &side_effect.encoded_args[8][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingDataErr)?,
+                    },
+                    metadata,
+                }),
+                b"wasm" => Ok(XbiFormat {
+                    instr: XbiInstruction::CallWasm {
+                        // Get dest as argument_0 of SFX::CallWasm of Type::DynamicAddress
+                        dest: Decode::decode(&mut &side_effect.encoded_args[0][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_1 of SFX::CallWasm of Type::Value
+                        value: Sabi::value_bytes_2_value_128(&side_effect.encoded_args[2])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_2 of SFX::CallWasm of Type::Value
+                        gas_limit: Sabi::value_bytes_2_value_64(&side_effect.encoded_args[2])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_3 of SFX::CallEvm of Type::Option(Box::from(Type::Value))
+                        storage_deposit_limit: Sabi::maybe_value_bytes_2_maybe_value_128(
+                            &side_effect.encoded_args[3],
+                        )
+                        .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_4 of SFX::CallEvm of Type::DynamicBytes
+                        data: side_effect.encoded_args[4].clone(),
+                    },
+                    metadata,
+                }),
+                b"comp" => Err(XbiError::<T>::EnterSfxNotRecognized),
+                b"call" => Ok(XbiFormat {
+                    instr: XbiInstruction::CallCustom {
+                        // Get dest as argument_0 of SFX::CallWasm of Type::DynamicAddress
+                        caller: Decode::decode(&mut &side_effect.encoded_args[0][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_1 of SFX::CallWasm of Type::DynamicAddress
+                        dest: Decode::decode(&mut &side_effect.encoded_args[1][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingAddressErr)?,
+                        // Get dest as argument_2 of SFX::CallWasm of Type::Value
+                        value: Sabi::value_bytes_2_value_128(&side_effect.encoded_args[2])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_3 of SFX::CallEvm of Type::DynamicBytes
+                        input: Decode::decode(&mut &side_effect.encoded_args[3][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingDataErr)?,
+                        // Get dest as argument_4 of SFX::CallWasm of Type::Value
+                        limit: Sabi::value_bytes_2_value_64(&side_effect.encoded_args[4])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                        // Get dest as argument_5 of SFX::CallEvm of Type::DynamicBytes
+                        additional_params: Decode::decode(&mut &side_effect.encoded_args[5][..])
+                            .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
+                    },
+                    metadata,
+                }),
+                &_ => Err(Error::<T>::EnterSfxNotRecognized),
+            }
+        }
+
         /// Execute a side effect via XBI
         /// `xbi` could change to side effects and do the conversions into Xbi messages
-        ///
-        /// @maciejbaj look here TODO: you'll need to do some conversions from side effect into local instruction
-        fn execute_xbi(
-            origin: &T::Origin,
-            xbi: &mut xp_format::XbiFormat,
-        ) -> Result<
-            HandlerInfo<frame_support::weights::Weight>,
-            frame_support::dispatch::DispatchErrorWithPostInfo,
-        > {
-            T::InstructionHandler::handle(origin, xbi)
+        fn execute_xbi(origin: &T::Origin, xbi: &mut XbiFormat) -> Result {
+            T::InstructionHandler::handle(origin, xbi);
+            Ok(().into())
+        }
+
+        // #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
+        pub fn on_xbi_sfx_resolved(
+            _origin: OriginFor<T>,
+            sfx_id: T::Hash,
+        ) -> DispatchResultWithPostInfo {
+            Self::do_xbi_exit(
+                T::XBIPortal::get_check_in(sfx_id)?,
+                T::XBIPortal::get_check_out(sfx_id)?,
+            )?;
+            Ok(().into())
         }
     }
 }
