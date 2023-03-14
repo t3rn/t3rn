@@ -232,7 +232,7 @@ jobs:
       - name: 📼 Run zombienet runtime upgrade test
         continue-on-error: false
         working-directory: tests/zombienet
-        run: make test-upgrade parachain=t0rn
+        run: ./zombienet.sh upgrade t0rn
 
   deploy-to-rococo:
     runs-on: self-hosted

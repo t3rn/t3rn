@@ -1,9 +1,10 @@
 #!/bin/bash
 bin_dir=../../bin
 
-echo "Downloading collator for tag $1"
+echo "Downloading collator for parachain $1"
 
-export url=$(curl -s https://api.github.com/repos/t3rn/t3rn/releases/tags/"$1" | jq -r '.assets[] | select(.name | endswith ("unknown-linux-gnu.gz")).browser_download_url')
+url=$(./releases.sh "$1" --latest | awk '{print $2}')
+
 echo Url: $url
 
 [ "$url" ] || exit 1
