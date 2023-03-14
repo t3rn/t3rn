@@ -13,7 +13,7 @@ export const registerSubstrate = async (circuit: ApiPromise, gatewayData: any, e
         provider: new WsProvider(gatewayData.rpc),
     })
 
-    if(gatewayData.registrationData.parachain === null) { // relaychain
+    if(!gatewayData.registrationData.parachain) { // relaychain
         return registerRelaychain(circuit, target, gatewayData, epochsAgo)
     } else {
         return registerParachain(circuit, target, gatewayData)
@@ -32,24 +32,16 @@ const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatew
         gateway_genesis: await createGatewayGenesis(circuit, target),
         gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
-        registration_data: circuit.createType('GrandpaRegistrationData', [
+        registration_data: circuit.createType('RelaychainRegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
             authoritySetId,
-            gatewayData.registrationData.owner,
-            null
+            gatewayData.registrationData.owner
         ])
     }]
 }
 
 const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
-    const latestRelayChainHeader = await fetchBestFinalizedHash(circuit, gatewayData.registrationData.parachain.relayChainId)
-    const parachainHeader: any = await fetchLatestPossibleParachainHeader(
-        gatewayData.relaychainRpc,
-        latestRelayChainHeader.toJSON(),
-        gatewayData.registrationData.parachain.id
-    )
-
     return [{
         url: circuit.createType("Vec<u8>", gatewayData.rpc),
         gateway_id: circuit.createType("ChainId", gatewayData.id),
@@ -59,13 +51,7 @@ const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewa
         gateway_genesis: await createGatewayGenesis(circuit, target),
         gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
-        registration_data: circuit.createType('GrandpaRegistrationData', [
-            parachainHeader.toJSON(),
-            null,
-            null,
-            gatewayData.registrationData.owner,
-            circuit.createType("Parachain", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
-        ])
+        registration_data: circuit.createType("ParachainRegistrationData", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
     }]
 }
 
@@ -122,24 +108,6 @@ const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise,
         registrationHeader,
         authorities:  circuit.createType('Vec<AccountId>', authorities),
         authoritySetId: circuit.createType('SetId', authoritySetId),
-    }
-}
-
-const fetchConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {
-    const registrationHeight = await fetchLatestAuthoritySetUpdateBlock(gatewayData, epochsAgo)
-    console.log("Latest AuthoritySetUpdate:", registrationHeight)
-
-    const registrationHeader = await target.rpc.chain.getHeader(
-        await target.rpc.chain.getBlockHash(registrationHeight)
-    )
-
-    const finalityProof = await target.rpc.grandpa.proveFinality(registrationHeight);
-    const authorities = Encodings.Substrate.Decoders.extractAuthoritySetFromFinalityProof(finalityProof)
-    const authoritySetId = await target.query.grandpa.currentSetId()
-    return {
-        registrationHeader: circuit.createType('Bytes', registrationHeader.toHex()),
-        authorities:  circuit.createType('Option<Vec<AccountId>>', authorities),
-        authoritySetId: circuit.createType('Option<SetId>', authoritySetId),
     }
 }
 
