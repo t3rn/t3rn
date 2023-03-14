@@ -55,7 +55,6 @@ use sp_std::{vec, vec::Vec};
 mod types;
 
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
-use types::GrandpaRegistrationData;
 
 #[cfg(feature = "testing")]
 pub mod mock;
@@ -86,7 +85,10 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 use crate::{
     side_effects::decode_event,
-    types::{InclusionData, Parachain, ParachainHeaderData, RelaychainHeaderData},
+    types::{
+        GrandpaHeaderData, ParachainRegistrationData, RelaychainInclusionProof,
+        RelaychainRegistrationData,
+    },
 };
 use frame_system::pallet_prelude::*;
 
@@ -170,10 +172,10 @@ pub mod pallet {
     pub(super) type CurrentAuthoritySet<T: Config<I>, I: 'static = ()> =
         StorageValue<_, bp_header_chain::AuthoritySet, OptionQuery>;
 
-    /// Maps a parachain ID to the corresponding chain ID.
+    /// Maps a parachain chain_id to the corresponding chain ID.
     #[pallet::storage]
     pub(super) type ParachainIdMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, Parachain>;
+        StorageMap<_, Blake2_256, ChainId, ParachainRegistrationData>;
 
     /// Optional pallet owner.
     ///
@@ -626,36 +628,48 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
 
-        let registration_data: GrandpaRegistrationData<T::AccountId> =
-            Decode::decode(&mut &*encoded_registration_data)
-                .map_err(|_| "Registration data decoding error!")?;
-        let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
-            .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
-        match registration_data.parachain {
-            Some(parachain) => can_init_para_chain::<T, I>(&parachain),
-            None => {
-                ensure!(!<BestFinalizedHash<T, I>>::exists(), "Already initialized");
+        match <RelayChainId<T, I>>::get() {
+            Some(relay_chain_id) => {
+                // Register parachain
+                ensure!(relay_chain_id != gateway_id, "chain_id already initialized");
+                let parachain_registration_data: ParachainRegistrationData =
+                    Decode::decode(&mut &*encoded_registration_data)
+                        .map_err(|_| "Parachain registration decoding error")?;
+
                 ensure!(
-                    registration_data.authorities.is_some()
-                        && registration_data.authority_set_id.is_some(),
-                    "Relaychain parameters missing"
+                    parachain_registration_data.relay_gateway_id == relay_chain_id,
+                    "Invalid relay chain id"
                 );
+
+                <ParachainIdMap<T, I>>::insert(gateway_id, parachain_registration_data);
+
+                return Ok(())
+            },
+            None => {
+                // register relaychain
+                let registration_data: RelaychainRegistrationData<T::AccountId> =
+                    Decode::decode(&mut &*encoded_registration_data)
+                        .map_err(|_| "Decoding Error")?;
+
+                let header: BridgedHeader<T, I> =
+                    Decode::decode(&mut &registration_data.first_header[..])
+                        .map_err(|_| "header decoding error")?;
 
                 let init_data = InitializationData {
                     header,
                     authority_list: registration_data
                         .authorities
-                        .unwrap()
                         .iter()
                         .map(|id| {
                             sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap()
                         }) // not sure why this is still needed
                         .map(|authority| (authority, 1))
                         .collect::<Vec<_>>(),
-                    set_id: registration_data.authority_set_id.unwrap(),
+                    set_id: registration_data.authority_set_id,
                     is_halted: false,
                     gateway_id,
                 };
+
                 initialize_relay_chain::<T, I>(init_data, registration_data.owner)
             },
         }
@@ -707,7 +721,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ) -> Result<Vec<u8>, DispatchError> {
         ensure_operational_single::<T, I>()?;
         ensure_signed(origin)?;
-        let data: RelaychainHeaderData<BridgedHeader<T, I>> =
+        let data: GrandpaHeaderData<BridgedHeader<T, I>> =
             Decode::decode(&mut &*encoded_header_data)
                 .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
 
@@ -721,7 +735,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         value_abi_unsigned_type: &[u8],
         side_effect_id: [u8; 4],
     ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
-        let inclusion_data: InclusionData<BridgedHeader<T, I>> =
+        let inclusion_proof: RelaychainInclusionProof<BridgedHeader<T, I>> =
             Decode::decode(&mut &*encoded_inclusion_data)
                 .map_err(|_| Error::<T, I>::InclusionDataDecodeError)?;
 
@@ -731,7 +745,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         match &side_effect_id {
             b"tran" => verify_event_storage_proof_with_decode::<T, I>(
                 gateway_id,
-                inclusion_data,
+                inclusion_proof,
                 value_abi_unsigned_type,
                 side_effect_id,
             ),
@@ -845,22 +859,6 @@ fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> 
     }
 }
 
-/// Ensure that no relaychain has been set so far. Relaychains are unique
-fn can_init_para_chain<T: Config<I>, I: 'static>(
-    parachain: &Parachain,
-) -> Result<(), &'static str> {
-    match <RelayChainId<T, I>>::get() {
-        Some(relay_chain_id) => {
-            // we have a relaychain setup
-            match relay_chain_id == parachain.relay_chain_id {
-                true => Ok(()), // registering relachchain_id matches the stored one
-                false => Err("Invalid relaychainId"), // wrong relaychain_id was passed
-            }
-        },
-        None => Err("No relaychain"), // we have no relaychain setup
-    }
-}
-
 /// Ensure that the SideEffect was executed after it was created.
 fn executed_after_creation<T: Config<I>, I: 'static>(
     submission_target_height: Vec<u8>,
@@ -904,24 +902,15 @@ pub(crate) fn find_forced_change<H: HeaderT>(
 
 pub(crate) fn verify_event_storage_proof_with_decode<T: Config<I>, I: 'static>(
     gateway_id: ChainId,
-    inclusion_data: InclusionData<BridgedHeader<T, I>>,
+    inclusion_proof: RelaychainInclusionProof<BridgedHeader<T, I>>,
     value_abi_unsigned_type: &[u8],
     side_effect_id: [u8; 4],
 ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
-    let encoded_payload = verify_event_storage_proof::<T, I>(gateway_id, inclusion_data)?;
-
-    decode_event::<T, I>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
-}
-
-pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
-    gateway_id: ChainId,
-    inclusion_data: InclusionData<BridgedHeader<T, I>>,
-) -> Result<Vec<u8>, DispatchError> {
-    let InclusionData {
+    let RelaychainInclusionProof {
         encoded_payload,
         proof,
         block_hash,
-    } = inclusion_data;
+    } = inclusion_proof;
 
     // storage key for System_Events
     let key: Vec<u8> = [
@@ -950,7 +939,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
 pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
-    parachain: Parachain,
+    parachain: ParachainRegistrationData,
 ) -> Result<BridgedHeader<T, I>, DispatchError> {
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
@@ -964,7 +953,7 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
 
     // ToDo not very concise
     let encoded_header_vec = verify_storage_proof::<T, I>(
-        parachain.relay_chain_id,
+        parachain.relay_gateway_id,
         relay_block_hash,
         key,
         proof,
@@ -1031,18 +1020,17 @@ mod tests {
     use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
-    use crate::types::RelaychainHeaderData;
+    use crate::types::GrandpaHeaderData;
 
     fn initialize_relaychain(
         origin: Origin,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
         let genesis = test_header_with_correct_parent(0, None);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: Some(authorities()),
+        let init_data = RelaychainRegistrationData::<AccountId> {
+            authorities: authorities(),
             first_header: genesis.encode(),
-            authority_set_id: Some(1),
+            authority_set_id: 1,
             owner: 1u64,
-            parachain: None,
         };
 
         initialize_custom_relaychain(origin, *b"pdot", init_data)
@@ -1051,14 +1039,13 @@ mod tests {
     fn initialize_named_relaychain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
         let genesis = test_header(0);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: Some(authorities()),
+        let init_data = RelaychainRegistrationData::<AccountId> {
+            authorities: authorities(),
             first_header: genesis.encode(),
-            authority_set_id: Some(1),
+            authority_set_id: 1,
             owner: 1u64,
-            parachain: None,
         };
 
         initialize_custom_relaychain(origin, gateway_id, init_data)
@@ -1067,24 +1054,16 @@ mod tests {
     fn initialize_custom_relaychain(
         origin: Origin,
         gateway_id: ChainId,
-        init_data: GrandpaRegistrationData<AccountId>,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+        init_data: RelaychainRegistrationData<AccountId>,
+    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn initialize_parachain(
-        origin: Origin,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+    fn initialize_parachain(origin: Origin) -> Result<ParachainRegistrationData, &'static str> {
         let genesis = test_header(0);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: None,
-            first_header: genesis.encode(),
-            authority_set_id: None,
-            owner: 1u64,
-            parachain: Some(Parachain {
-                relay_chain_id: *b"pdot",
-                id: 0,
-            }),
+        let init_data = ParachainRegistrationData {
+            relay_gateway_id: *b"pdot",
+            id: 0,
         };
 
         initialize_custom_parachain(origin, *b"moon", init_data)
@@ -1093,17 +1072,11 @@ mod tests {
     fn initialize_named_parachain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+    ) -> Result<ParachainRegistrationData, &'static str> {
         let genesis = test_header(0);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: None,
-            first_header: genesis.encode(),
-            authority_set_id: None,
-            owner: 1u64,
-            parachain: Some(Parachain {
-                relay_chain_id: *b"pdot",
-                id: 0,
-            }),
+        let init_data = ParachainRegistrationData {
+            relay_gateway_id: *b"pdot",
+            id: 0,
         };
 
         initialize_custom_parachain(origin, gateway_id, init_data)
@@ -1112,19 +1085,19 @@ mod tests {
     fn initialize_custom_parachain(
         origin: Origin,
         gateway_id: ChainId,
-        init_data: GrandpaRegistrationData<AccountId>,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+        init_data: ParachainRegistrationData,
+    ) -> Result<ParachainRegistrationData, &'static str> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn submit_headers(from: u8, to: u8) -> Result<RelaychainHeaderData<TestHeader>, &'static str> {
+    fn submit_headers(from: u8, to: u8) -> Result<GrandpaHeaderData<TestHeader>, &'static str> {
         let headers: Vec<TestHeader> = test_header_range(to.into());
         let signed_header: &TestHeader = headers.last().unwrap();
         let justification = make_default_justification(&signed_header.clone());
         let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec();
 
         let default_gateway: ChainId = *b"pdot";
-        let data = RelaychainHeaderData::<TestHeader> {
+        let data = GrandpaHeaderData::<TestHeader> {
             signed_header: signed_header.clone(),
             range,
             justification,
@@ -1188,6 +1161,7 @@ mod tests {
             // Reset storage so we can initialize the pallet again
             BestFinalizedHash::<TestRuntime>::set(None);
             PalletOwner::<TestRuntime>::put(2);
+            RelayChainId::<TestRuntime>::set(None);
             assert_ok!(initialize_relaychain(Origin::signed(2)));
         })
     }
@@ -1204,14 +1178,17 @@ mod tests {
     fn cant_register_duplicate_gateway_ids() {
         run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
-            assert_err!(initialize_relaychain(Origin::root()), "Already initialized");
+            assert_err!(
+                initialize_relaychain(Origin::root()),
+                "chain_id already initialized"
+            );
         })
     }
 
     #[test]
     fn cant_register_parachain_without_relaychain() {
         run_test(|| {
-            assert_noop!(initialize_parachain(Origin::root()), "No relaychain");
+            assert_noop!(initialize_parachain(Origin::root()), "Decoding Error");
         })
     }
 
@@ -1221,19 +1198,14 @@ mod tests {
             assert_ok!(initialize_relaychain(Origin::root()));
 
             let genesis = test_header(0);
-            let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: None,
-                first_header: genesis.encode(),
-                authority_set_id: None,
-                owner: 1,
-                parachain: Some(Parachain {
-                    relay_chain_id: *b"roco",
-                    id: 0,
-                }),
+            let init_data = ParachainRegistrationData {
+                relay_gateway_id: *b"roco",
+                id: 0,
             };
+
             assert_noop!(
                 initialize_custom_parachain(Origin::root(), *b"moon", init_data),
-                "Invalid relaychainId"
+                "Invalid relay chain id"
             );
         })
     }
@@ -1242,42 +1214,6 @@ mod tests {
     fn cant_register_relaychain_as_non_root() {
         run_test(|| {
             assert_err!(initialize_relaychain(Origin::signed(1)), "Bad origin");
-        })
-    }
-
-    #[test]
-    fn cant_register_relaychain_with_missing_authorities() {
-        run_test(|| {
-            let genesis = test_header(0);
-            let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: None,
-                first_header: genesis.encode(),
-                authority_set_id: Some(1),
-                owner: 1,
-                parachain: None,
-            };
-            assert_noop!(
-                initialize_custom_relaychain(Origin::root(), *b"pdot", init_data),
-                "Relaychain parameters missing"
-            );
-        })
-    }
-
-    #[test]
-    fn cant_register_relaychain_with_missing_authority_set_id() {
-        run_test(|| {
-            let genesis = test_header(0);
-            let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: Some(authorities()),
-                first_header: genesis.encode(),
-                authority_set_id: None,
-                owner: 1,
-                parachain: None,
-            };
-            assert_noop!(
-                initialize_custom_relaychain(Origin::root(), *b"pdot", init_data),
-                "Relaychain parameters missing"
-            );
         })
     }
 
@@ -1315,7 +1251,10 @@ mod tests {
     fn init_can_only_initialize_pallet_once() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
-            assert_noop!(initialize_relaychain(Origin::root()), "Already initialized");
+            assert_noop!(
+                initialize_relaychain(Origin::root()),
+                "chain_id already initialized"
+            );
         })
     }
 
@@ -1485,7 +1424,7 @@ mod tests {
             let mut range: Vec<TestHeader> = headers[6..10].to_vec();
             range[1] = range[2].clone();
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
@@ -1513,7 +1452,7 @@ mod tests {
             // one header is missing -> Grandpa linkage invalid
             let range: Vec<TestHeader> = headers[6..9].to_vec();
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
@@ -1543,7 +1482,7 @@ mod tests {
             };
             let justification = make_justification_for_header(params);
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
@@ -1571,7 +1510,7 @@ mod tests {
             justification.round = 42;
             let justification = justification;
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
@@ -1591,12 +1530,11 @@ mod tests {
             let genesis = test_header(0);
             let default_gateway: ChainId = *b"pdot";
             let different_authorities: Vec<AuthorityId> = vec![ALICE.into(), DAVE.into()];
-            let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: Some(different_authorities),
+            let init_data = RelaychainRegistrationData::<AccountId> {
+                authorities: different_authorities,
                 first_header: genesis.encode(),
-                authority_set_id: Some(1),
+                authority_set_id: 1,
                 owner: 1,
-                parachain: None,
             };
 
             assert_ok!(initialize_custom_relaychain(
@@ -1613,7 +1551,7 @@ mod tests {
             // this justification contains ALICE, BOB and CHARLIE, to it will be invalid
             let justification = make_default_justification(&signed_header.clone());
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
@@ -1657,7 +1595,7 @@ mod tests {
             signed_header.digest = change_log(0);
 
             let justification = make_default_justification(&signed_header);
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
@@ -1706,7 +1644,7 @@ mod tests {
             signed_header.digest = change_log(1);
 
             let justification = make_default_justification(&signed_header);
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header,
                 range,
                 justification,
@@ -1738,7 +1676,7 @@ mod tests {
 
             let justification = make_default_justification(&signed_header);
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header,
                 range,
                 justification,
