@@ -33,8 +33,6 @@ pub enum KnownPrecompile {
     ThreeVmDispatch,
 }
 
-
-// impl<R> PrecompileSet for LocalNetworkPrecompiles<R>
 impl<T> PrecompileSet for Precompiles<T> where
 T: pallet_evm::Config,
 {
@@ -43,17 +41,17 @@ T: pallet_evm::Config,
         let address = handle.code_address();
         match address {
             // Ethereum:
-            a if a == hash(&0) => Some(ECRecover::execute(handle)),
-            a if a == hash(&1) => Some(Sha256::execute(handle)),
-            a if a == hash(&2) => Some(Ripemd160::execute(handle)),
-            a if a == hash(&3) => Some(Identity::execute(handle)),
-            a if a == hash(&4) => Some(Modexp::execute(handle)),
+            address if address == hash(&0) => Some(ECRecover::execute(handle)),
+            address if address == hash(&1) => Some(Sha256::execute(handle)),
+            address if address == hash(&2) => Some(Ripemd160::execute(handle)),
+            address if address == hash(&3) => Some(Identity::execute(handle)),
+            address if address == hash(&4) => Some(Modexp::execute(handle)),
             // Non-Frontier specific nor Ethereum:
-            a if a == hash(&5) => Some(Sha3FIPS256::execute(handle)),
-            a if a == hash(&6) => Some(Sha3FIPS512::execute(handle)),
-            a if a == hash(&7) => Some(ECRecoverPublicKey::execute(handle)),
+            address if address == hash(&5) => Some(Sha3FIPS256::execute(handle)),
+            address if address == hash(&6) => Some(Sha3FIPS512::execute(handle)),
+            address if address == hash(&7) => Some(ECRecoverPublicKey::execute(handle)),
             // 3VM
-            a if a == hash(&8) => Some(ThreeVmDispatch::<T>::execute(handle)),
+            address if address == hash(&8) => Some(ThreeVmDispatch::<T>::execute(handle)),
             _ => None,
             
         }
