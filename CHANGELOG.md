@@ -1,3 +1,31 @@
+# [1.4.0](https://github.com/t3rn/t3rn/compare/v1.3.0-rc.0...v1.4.0) (2023-03-14)
+
+### Bug Fixes
+
+* cli type error ([90fda5f](https://github.com/t3rn/t3rn/commit/90fda5fcf7f0033cb44a666218241595fbfb7a69))
+* refactor(API)!: sfx action field renamed and type updated ([1c5d335](https://github.com/t3rn/t3rn/commit/1c5d33553229d05a1810c0319c6184f3528d9e8c))
+
+### Features
+
+* install xbi 0.9.37 ([b1cd339](https://github.com/t3rn/t3rn/commit/b1cd3394657fba3db99580c7788d1db869f7e6e5))
+
+### BREAKING CHANGES
+
+* renamed encoded_action to action and updated type to [u8; 4]
+
+### Other changes
+
+* test: add t0rn back to zombienet ([4bf24d7](https://github.com/t3rn/t3rn/commit/4bf24d7))
+* test: migrate zombienet to scripts ([5d964d5](https://github.com/t3rn/t3rn/commit/5d964d5))
+* ci: disable pallet-executors tests ([cdcab3e](https://github.com/t3rn/t3rn/commit/cdcab3e))
+* ci: ranger deployment (#686) ([ed6a315](https://github.com/t3rn/t3rn/commit/ed6a315)), closes [#686](https://github.com/t3rn/t3rn/issues/686)
+* chore: bump dns-packet from 5.3.1 to 5.4.0 in /docs/main ([af87a71](https://github.com/t3rn/t3rn/commit/af87a71))
+* chore: bump madge from 3.12.0 to 4.0.1 in /client/packages/types ([2e4bdab](https://github.com/t3rn/t3rn/commit/2e4bdab))
+* chore: executors should connect to ws t0rn (#691) ([904a026](https://github.com/t3rn/t3rn/commit/904a026)), closes [#691](https://github.com/t3rn/t3rn/issues/691)
+* chore: revamp ts types package (#705) ([666aec5](https://github.com/t3rn/t3rn/commit/666aec5)), closes [#705](https://github.com/t3rn/t3rn/issues/705)
+* refactor: await wasm crypto ready ([9e7994e](https://github.com/t3rn/t3rn/commit/9e7994e))
+
+
 ## [1.3.0-rc.0](https://github.com/t3rn/t3rn/compare/1.2.0-rc.5...1.3.0-rc.0) (2023-02-22)
 
 
