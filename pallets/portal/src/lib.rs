@@ -109,45 +109,33 @@ pub mod pallet {
             allowed_side_effects: Vec<Sfx4bId>,
             encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
-            // ToDo xdns record is written also when the calls after this fail!!!
-            <T as Config>::Xdns::add_new_xdns_record(
-                origin.clone(),
-                url,
-                gateway_id,
-                None,
-                gateway_abi,
-                gateway_vendor.clone(),
-                gateway_type,
-                gateway_genesis,
-                gateway_sys_props,
-                vec![],
-                allowed_side_effects,
-            )?;
-
             let res = match gateway_vendor {
-                GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<
-                    T,
-                    RococoLightClient,
-                >::initialize(
-                    origin, gateway_id, encoded_registration_data
-                ),
-                GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<
-                    T,
-                    KusamaLightClient,
-                >::initialize(
-                    origin, gateway_id, encoded_registration_data
-                ),
-                GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<
-                    T,
-                    PolkadotLightClient,
-                >::initialize(
-                    origin, gateway_id, encoded_registration_data
-                ),
+                GatewayVendor::Rococo =>
+                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(
+                        origin.clone(),
+                        gateway_id,
+                        encoded_registration_data,
+                    ),
                 _ => return Err(Error::<T>::UnimplementedGatewayVendor.into()),
             };
 
             match res {
                 Ok(_) => {
+                    // write XDNS record if all else passed
+                    <T as Config>::Xdns::add_new_xdns_record(
+                        origin,
+                        url,
+                        gateway_id,
+                        None,
+                        gateway_abi,
+                        gateway_vendor,
+                        gateway_type,
+                        gateway_genesis,
+                        gateway_sys_props,
+                        vec![],
+                        allowed_side_effects,
+                    )?;
+
                     Self::deposit_event(Event::GatewayRegistered(gateway_id));
                     Ok(().into())
                 },
