@@ -32,18 +32,16 @@ pub struct GrandpaHeaderData<Header: sp_runtime::traits::Header> {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
-pub struct RelaychainInclusionProof<Header: sp_runtime::traits::Header> {
+pub struct RelaychainInclusionProof {
     /// this is the item we're proving to be included in a specfic block (e.g. event, storage entry, etc)
     pub encoded_payload: Vec<u8>,
-    pub proof: StorageProof,
-    pub block_hash: Header::Hash,
+    pub payload_proof: StorageProof,
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
-pub struct ParachainInclusionProof<Header: sp_runtime::traits::Header> {
+pub struct ParachainInclusionProof {
     /// this is the item we're proving to be included in a specfic block (e.g. event, storage entry, etc)
     pub encoded_payload: Vec<u8>,
     pub header_proof: StorageProof,
     pub payload_proof: StorageProof,
-    pub relaychain_block_hash: Header::Hash,
 }
