@@ -33,7 +33,7 @@ pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
-use crate::{BestFinalizedMap, Config, MultiImportedHeaders};
+use crate::{BestFinalizedHash, Config, ImportedHeaders};
 
 construct_runtime! {
     pub enum TestRuntime where
@@ -173,11 +173,7 @@ pub fn brute_seed_block_1(gateway_id: [u8; 4]) {
     let header_1 = crate::bridges::test_utils::test_header::<TestHeader>(1u64);
     let block_hash_1 = header_1.hash();
 
-    <MultiImportedHeaders<TestRuntime>>::insert::<[u8; 4], H256, TestHeader>(
-        gateway_id,
-        block_hash_1,
-        header_1,
-    );
+    <ImportedHeaders<TestRuntime>>::insert::<H256, TestHeader>(block_hash_1, header_1);
 
-    <BestFinalizedMap<TestRuntime>>::insert::<[u8; 4], H256>(gateway_id, block_hash_1);
+    <BestFinalizedHash<TestRuntime>>::put(block_hash_1);
 }
