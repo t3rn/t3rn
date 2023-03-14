@@ -72,7 +72,7 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
         );
         weights_consumed.push(Clock::check_bump_round(
             n,
-            BlockNumber::one() * 400,
+            BlockNumber::one(),
             Perbill::from_percent(BUMP_ROUND_SHARE) * on_init_weight_limit,
         ));
         log::debug!(

@@ -136,13 +136,17 @@ pub mod pallet {
                 head: n,
                 term,
             };
-            <CurrentRound<T>>::put(new_round);
-            Self::deposit_event(Event::NewRound {
-                index: new_round.index,
-                head: new_round.head,
-                term: new_round.term,
-            });
-            T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
+            if new_round.should_update(n) {
+                <CurrentRound<T>>::put(new_round);
+                Self::deposit_event(Event::NewRound {
+                    index: new_round.index,
+                    head: new_round.head,
+                    term: new_round.term,
+                });
+                T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
+            } else {
+                T::DbWeight::get().reads(KILL_READS)
+            }
         }
     }
 
