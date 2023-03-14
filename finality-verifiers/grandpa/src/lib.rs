@@ -730,30 +730,27 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
     pub fn confirm_event_inclusion_with_decode(
         gateway_id: ChainId,
-        encoded_relay_block_hash: Vec<u8>,
         encoded_inclusion_proof: Vec<u8>,
         submission_target_height: Vec<u8>,
         value_abi_unsigned_type: &[u8],
         side_effect_id: [u8; 4],
     ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
-        let relay_block_hash: BridgedBlockHash<T, I> =
-            Decode::decode(&mut &*encoded_relay_block_hash)
-                .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
-
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
         let (payload_proof, encoded_payload, header) = if is_relaychain {
-            let proof: RelaychainInclusionProof = Decode::decode(&mut &*encoded_inclusion_proof)
-                .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
+            let proof: RelaychainInclusionProof<BridgedHeader<T, I>> =
+                Decode::decode(&mut &*encoded_inclusion_proof)
+                    .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
 
-            let header = <ImportedHeaders<T, I>>::get(relay_block_hash)
+            let header = <ImportedHeaders<T, I>>::get(proof.block_hash)
                 .ok_or(Error::<T, I>::UnknownHeader)?;
             (proof.payload_proof, proof.encoded_payload, header)
         } else {
-            let proof: ParachainInclusionProof = Decode::decode(&mut &*encoded_inclusion_proof)
-                .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
+            let proof: ParachainInclusionProof<BridgedHeader<T, I>> =
+                Decode::decode(&mut &*encoded_inclusion_proof)
+                    .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
             let header = verify_header_storage_proof::<T, I>(
-                relay_block_hash,
+                proof.relay_block_hash,
                 proof.header_proof,
                 <ParachainIdMap<T, I>>::get(gateway_id)
                     .ok_or(Error::<T, I>::ParachainEntryNotFound)?,
