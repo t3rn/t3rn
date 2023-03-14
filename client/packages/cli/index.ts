@@ -155,7 +155,7 @@ class CircuitCLI {
     async submitHeaders(id: string, exportArgs: boolean, exportName: string) {
         const gatewayData = config.gateways.find(elem => elem.id === id)
         if(gatewayData) {
-            if(gatewayData.registrationData?.parachain !== null) {
+            if(gatewayData.registrationData?.parachain) {
                 // @ts-ignore
                 gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
             }
