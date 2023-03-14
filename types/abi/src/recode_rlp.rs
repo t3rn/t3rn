@@ -153,7 +153,7 @@ impl Abi {
                     "Value256InvalidInput size mismatches 32 bytes"
                 );
                 let trimmed_32b = take_last_n(input.as_slice(), 32usize)?;
-                let as_u256 = primitive_types::U256::from_big_endian(trimmed_32b);
+                let as_u256 = sp_core::U256::from_big_endian(trimmed_32b);
                 let as_val: u128 = as_u256.as_u128();
                 let recoded = rlp::encode(&as_val);
                 let _recoded_vec = recoded.to_vec();
@@ -166,7 +166,7 @@ impl Abi {
                     "Value64InvalidInput size mismatches 32 bytes"
                 );
                 let trimmed_32b = take_last_n(input.as_slice(), 32usize)?;
-                let as_u256 = primitive_types::U256::from_big_endian(trimmed_32b);
+                let as_u256 = sp_core::U256::from_big_endian(trimmed_32b);
                 let as_val: u64 = as_u256.as_u64();
                 let recoded = rlp::encode(&as_val);
                 Ok((FilledAbi::Value64(name.clone(), recoded.to_vec()), 32usize))
@@ -177,7 +177,7 @@ impl Abi {
                     "Value32InvalidInput size mismatches 32 bytes"
                 );
                 let trimmed_32b = take_last_n(input.as_slice(), 32usize)?;
-                let as_u256 = primitive_types::U256::from_big_endian(trimmed_32b);
+                let as_u256 = sp_core::U256::from_big_endian(trimmed_32b);
                 let as_val: u32 = as_u256.as_u32();
                 let recoded = rlp::encode(&as_val);
                 Ok((FilledAbi::Value64(name.clone(), recoded.to_vec()), 32usize))

@@ -174,7 +174,7 @@ impl TryFrom<Data> for Abi {
                         ),
                     ))
                 },
-                _ => Err("CrossCodec::failed to parse field descriptor".into()),
+                _ => Err(DispatchError::Other(Box::leak(format!("CrossCodec::failed to parse field descriptor - '{field_str}' field not recognized").into_boxed_str()))),
             }
         }
 

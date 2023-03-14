@@ -5,7 +5,7 @@ use crate::{
     types::{Data, Name},
 };
 use codec::{Decode, Encode};
-use primitive_types::U256;
+
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
@@ -37,95 +37,6 @@ impl SFXAbi {
         }
     }
 
-    pub fn check_args_equal(
-        ordered_arg: Data,
-        filled_abi: FilledAbi,
-        output_codec: &Codec,
-        in_codec: &Codec,
-    ) -> Result<bool, DispatchError> {
-        match filled_abi.clone() {
-            FilledAbi::Value256(_name, encoded_value) => {
-                let output_val_u256 = match output_codec {
-                    Codec::Scale => U256::from_little_endian(&encoded_value),
-                    Codec::Rlp => U256::from_big_endian(&encoded_value),
-                };
-                let input_val_u256 = match in_codec {
-                    Codec::Scale => U256::from_little_endian(ordered_arg.as_slice()),
-                    Codec::Rlp => U256::from_big_endian(ordered_arg.as_slice()),
-                };
-
-                Ok(output_val_u256 == input_val_u256)
-            },
-            FilledAbi::Value128(_name, encoded_value) => {
-                let output_val_u128: u128 = match output_codec {
-                    Codec::Scale => u128::decode(&mut &encoded_value[..]).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                    Codec::Rlp => rlp::decode(&encoded_value).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                }?;
-
-                let input_val_u128: u128 = match in_codec {
-                    Codec::Scale => u128::decode(&mut &ordered_arg[..]).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                    Codec::Rlp => rlp::decode(&ordered_arg).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                }?;
-
-                Ok(output_val_u128 == input_val_u128)
-            },
-            FilledAbi::Value64(_name, encoded_value) => {
-                let output_val_u64 = match output_codec {
-                    Codec::Scale => u64::decode(&mut &encoded_value[..]).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                    Codec::Rlp => rlp::decode(&encoded_value).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                }?;
-
-                let input_val_u64 = match in_codec {
-                    Codec::Scale => u64::decode(&mut &ordered_arg[..]).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                    Codec::Rlp => rlp::decode(&ordered_arg).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                }?;
-
-                Ok(output_val_u64 == input_val_u64)
-            },
-            FilledAbi::Value32(_name, encoded_value) => {
-                let output_val_u32: u32 = match output_codec {
-                    Codec::Scale => u32::decode(&mut &encoded_value[..]).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                    Codec::Rlp => rlp::decode(&encoded_value).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                }?;
-
-                let input_val_u32: u32 = match in_codec {
-                    Codec::Scale => u32::decode(&mut &ordered_arg[..]).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                    Codec::Rlp => rlp::decode(&ordered_arg).map_err(|_| {
-                        DispatchError::Other("SFXAbi::check args equal - Invalid output value")
-                    }),
-                }?;
-
-                Ok(output_val_u32 == input_val_u32)
-            },
-            _ => {
-                let received_arg = filled_abi.get_data();
-                Ok(received_arg == ordered_arg)
-            },
-        }
-    }
-
     pub fn ensure_arguments_order(&self, ordered_args: &Vec<Data>) -> Result<(), DispatchError> {
         if ordered_args.len() != self.args_names.len() {
             return Err(DispatchError::Other(
@@ -146,7 +57,8 @@ impl SFXAbi {
         &self,
         ordered_args: &Vec<Data>,
         received_payload: Data,
-        payload_codec: Codec,
+        ordered_args_codec: &Codec,
+        payload_codec: &Codec,
     ) -> Result<(), DispatchError> {
         self.ensure_arguments_order(ordered_args)?;
         let abi: Abi = self
@@ -160,23 +72,34 @@ impl SFXAbi {
             let (current_arg_name, is_to_verify) = self.args_names.get(i).ok_or(
                 DispatchError::Other("SFXAbi::Invalid argument - check ensure arguments order"),
             )?;
+
+            let current_arg_name_str = sp_std::str::from_utf8(current_arg_name.as_slice())
+                .map_err(|_e| "CrossCodec::failed to stringify current_arg_name_str, it's useful for debug message")?;
+
             if !is_to_verify {
                 continue
             }
+
             let filled_abi_matched_by_name =
                 filled_named_abi
                     .get_by_name(current_arg_name)
-                    .ok_or(DispatchError::Other(
-                        "SFXAbi::Cannot find payload argument by name {current_arg_name:?}",
-                    ))?;
+                    .ok_or(DispatchError::Other(Box::leak(
+                        format!(
+                            "SFXAbi::Cannot find payload argument by name {current_arg_name_str:?}"
+                        )
+                        .into_boxed_str(),
+                    )))?;
 
-            if !SFXAbi::check_args_equal(
-                ordered_arg.clone(),
-                filled_abi_matched_by_name,
-                &payload_codec,
-                &Codec::Scale,
-            )? {
-                return Err(DispatchError::Other("SFXAbi:: Invalid argument"))
+            // Check if arguments are equal after recoding to ordered_args_codec
+            let recoded_payload: Data =
+                filled_abi_matched_by_name.recode_as(payload_codec, ordered_args_codec)?;
+
+            match recoded_payload == *ordered_arg {
+                true => continue,
+                false =>
+                    return Err(DispatchError::Other(
+                        Box::leak(format!("SFXAbi::invalid payload argument for: '{current_arg_name_str:?}'; expected: {ordered_arg:?}; received and recoded: {recoded_payload:?}").into_boxed_str()),
+                    )),
             }
         }
 
