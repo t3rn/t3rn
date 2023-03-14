@@ -92,7 +92,7 @@ export class SideEffect extends EventEmitter {
     /** If the executor leading the bid changes, store the change */
     changedBidLeader: boolean = false
     /** Value of the last bid */
-    lastBids: number[]
+    lastBids: number[] = [];
 
     // SideEffect data
     id: string
@@ -280,6 +280,7 @@ export class SideEffect extends EventEmitter {
         const rewardValueUsd = this.rewardAssetPrice.getValue() * this.reward.getValue()
         this.rewardUsd = rewardValueUsd
         const maxProfitUsd = rewardValueUsd - txCostUsd - txOutputCostUsd
+        console.log("want to bid", maxProfitUsd !== this.maxProfitUsd.getValue())
         if (maxProfitUsd !== this.maxProfitUsd.getValue()) {
             this.maxProfitUsd.next(maxProfitUsd)
             this.triggerBid()

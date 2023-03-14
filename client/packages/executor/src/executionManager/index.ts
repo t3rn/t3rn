@@ -85,7 +85,7 @@ export class ExecutionManager {
     constructor(circuitClient: ApiPromise, sdk: Sdk, logger: any) {
         this.priceEngine = new PriceEngine()
         this.strategyEngine = new StrategyEngine()
-        this.biddingEngine = new BiddingEngine()
+        this.biddingEngine = new BiddingEngine(logger)
         this.circuitClient = circuitClient
         this.circuitListener = new CircuitListener(this.circuitClient)
         this.circuitRelayer = new CircuitRelayer(sdk)
