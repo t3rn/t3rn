@@ -81,7 +81,7 @@ impl<
     > Default for RoundInfo<B>
 {
     fn default() -> RoundInfo<B> {
-        RoundInfo::new(1u32, 1u32.into(), 20u32.into())
+        RoundInfo::new(1u32, 1u32.into(), 400u32.into())
     }
 }
 
@@ -148,5 +148,19 @@ impl<T: Ord> OrderedSet<T> {
 impl<T: Ord> From<Vec<T>> for OrderedSet<T> {
     fn from(v: Vec<T>) -> Self {
         Self::from(v)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_should_update() {
+        let mut r = RoundInfo::<u32>::new(1, 1, 400);
+        assert_eq!(r.should_update(402), true);
+        assert_eq!(r.should_update(401), true);
+        r.head = 50;
+        assert_eq!(r.should_update(50), false);
     }
 }
