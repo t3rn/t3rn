@@ -11,7 +11,8 @@ pub fn standard_sfx_abi() -> Vec<Vec<(Sfx4bId, SFXAbi)>> {
         vec![(*b"swap", get_swap_abi())],
         vec![(*b"aliq", get_add_liquidity_abi())],
         vec![(*b"rliq", get_remove_liquidity_abi())],
-        vec![(*b"call", get_call_contract_abi())],
+        vec![(*b"cevm", get_call_evm_contract_abi())],
+        vec![(*b"wasm", get_call_wasm_contract_abi())],
         vec![(*b"cgen", get_call_generic_abi())],
     ]
 }
@@ -50,10 +51,10 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
         ingress_abi_descriptors: IngressAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp:
-                b"Transfer:Log(asset_id+:Account20,from+:Account20,to+:Account20,amount+:Value128)"
+                b"Assets:Log(asset_id+:Account20,from+:Account20,to+:Account20,amount+:Value128)"
                     .to_vec(),
             for_scale:
-                b"Transfer:Enum(asset_id:Account32,from:Account32,to:Account32,amount:Value128)"
+                b"Assets:Enum(asset_id:Account32,from:Account32,to:Account32,amount:Value128)"
                     .to_vec(),
         },
     }
@@ -104,8 +105,8 @@ pub fn get_add_liquidity_abi() -> SFXAbi {
         ],
         ingress_abi_descriptors: IngressAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Swap:Log(from+:Account20,to+:Account20,amount_from+:Value128,amount_to+:Value128,asset_from+:Account20,asset_to+:Account20)".to_vec(),
-            for_scale: b"Swap:Enum(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
+            for_rlp: b"AddLiquidity:Log(from+:Account20,to+:Account20,amount_from+:Value128,amount_to+:Value128,asset_from+:Account20,asset_to+:Account20)".to_vec(),
+            for_scale: b"AddLiquidity:Enum(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
         },
     }
 }
@@ -125,13 +126,13 @@ pub fn get_remove_liquidity_abi() -> SFXAbi {
         ],
         ingress_abi_descriptors: IngressAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Swap:Log(from+:Account20,to+:Account20,amount_from+:Value128,amount_to+:Value128,asset_from+:Account20,asset_to+:Account20)".to_vec(),
-            for_scale: b"Swap:Enum(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
+            for_rlp: b"RemoveLiquidity:Log(from+:Account20,to+:Account20,amount_from+:Value128,amount_to+:Value128,asset_from+:Account20,asset_to+:Account20)".to_vec(),
+            for_scale: b"RemoveLiquidity:Enum(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
         },
     }
 }
 
-pub fn get_call_contract_abi() -> SFXAbi {
+pub fn get_call_evm_contract_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![
             (b"source".to_vec(), false),
@@ -147,8 +148,27 @@ pub fn get_call_contract_abi() -> SFXAbi {
         ],
         ingress_abi_descriptors: IngressAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Swap:Log(target+:Account20,source+:Account20,tx_hash+:H256,input-:Bytes)".to_vec(),
-            for_scale: b"Swap:Log(source+:Account32,target+:Account32,value+:Value128,input+:Bytes,gas_limit+:Value128)".to_vec(),
+            for_rlp: b"CallEvm:Log(target+:Account20,source+:Account20,tx_hash+:H256,input-:Bytes)"
+                .to_vec(),
+            for_scale: b"CallEvm:Log(source+:Account32,target+:Account32)".to_vec(),
+        },
+    }
+}
+
+pub fn get_call_wasm_contract_abi() -> SFXAbi {
+    SFXAbi {
+        args_names: vec![
+            (b"contract".to_vec(), true),
+            (b"value".to_vec(), false),
+            (b"gas_limit".to_vec(), false),
+            (b"storage_deposit_limit".to_vec(), false),
+            (b"input".to_vec(), false),
+            (b"insurance".to_vec(), false),
+        ],
+        ingress_abi_descriptors: IngressAbiDescriptors {
+            // assume all indexed in topics ("+")
+            for_rlp: b"CallWasm:Log(caller+:Account32,contract+:Account32)".to_vec(),
+            for_scale: b"CallWasm:Enum(caller:Account32,contract:Account32)".to_vec(),
         },
     }
 }
@@ -180,7 +200,7 @@ mod test_abi_standards {
 
     use crate::mini_mock::MiniRuntime;
     use hex_literal::hex;
-    use primitive_types::{H160, U256};
+    use sp_core::{H160, U256};
 
     use crate::to_filled_abi::EthIngressEventLog;
     use sp_core::H256;
@@ -205,7 +225,8 @@ mod test_abi_standards {
         let res = transfer_interface.validate_arguments_against_received(
             &ordered_args,
             scale_encoded_transfer_event,
-            Codec::Scale,
+            &Codec::Scale,
+            &Codec::Scale,
         );
 
         println!("{res:?}");
@@ -245,7 +266,8 @@ mod test_abi_standards {
         let res = transfer_interface.validate_arguments_against_received(
             &ordered_args,
             rlp_raw_log_bytes.encode(),
-            Codec::Rlp,
+            &Codec::Scale,
+            &Codec::Rlp,
         );
 
         println!("{res:?}");
@@ -254,7 +276,7 @@ mod test_abi_standards {
 
     #[test]
     fn test_call_validate_arguments_against_received_evm_call_contract_event() {
-        let call_interface = get_call_contract_abi();
+        let call_interface = get_call_evm_contract_abi();
         const HUNDRED: u128 = 100;
         const FIFTY: u128 = 50;
 
@@ -307,7 +329,60 @@ mod test_abi_standards {
         let res = call_interface.validate_arguments_against_received(
             &ordered_args,
             rlp_raw_log_bytes.encode(),
-            Codec::Rlp,
+            &Codec::Scale,
+            &Codec::Rlp,
+        );
+
+        println!("{res:?}");
+
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_call_validate_arguments_against_mocked_wasm_call_contract_event() {
+        let call_interface = get_call_wasm_contract_abi();
+        const HUNDRED: u128 = 100;
+        const FIFTY: u128 = 50;
+
+        let ordered_args = vec![
+            // contract
+            AccountId32::from(hex!(
+                "0000000000000000000000000000000000000000000000000000000000054321"
+            ))
+            .encode(),
+            // value
+            HUNDRED.encode(),
+            // gas_limit
+            FIFTY.encode(),
+            // storage_deposit_limit
+            FIFTY.encode(),
+            // input
+            H256::from([
+                0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+                0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 2u8, 3u8, 4u8, 5u8,
+            ])
+            .encode(),
+            // insurance
+            FIFTY.encode(),
+        ];
+
+        let wasm_contracts_called_event_mock =
+            crate::mini_mock::MockWasmContractsEvent::<MiniRuntime>::Called {
+                /// The account that called the `contract`.
+                caller: AccountId32::from(hex!(
+                    "0000000000000000000000000000000000000000000000000000000000012321"
+                )),
+                /// The contract that was called.
+                contract: AccountId32::from(hex!(
+                    "0000000000000000000000000000000000000000000000000000000000054321"
+                )),
+            };
+
+        let res = call_interface.validate_arguments_against_received(
+            &ordered_args,
+            wasm_contracts_called_event_mock.encode(),
+            &Codec::Scale,
+            &Codec::Scale,
         );
 
         println!("{res:?}");

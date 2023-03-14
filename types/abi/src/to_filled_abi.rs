@@ -5,10 +5,6 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use frame_support::ensure;
-
-use crate::recode::Recode;
-use primitive_types::H160;
-use sp_core::crypto::{AccountId32, ByteArray};
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
@@ -34,26 +30,6 @@ pub enum FilledAbi {
     Tuple(Option<Name>, (Box<FilledAbi>, Box<FilledAbi>)),
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
-pub enum IndexedAbi {
-    Struct(Option<Name>, Vec<Box<IndexedAbi>>, bool),
-    Enum(Option<Name>, Vec<Box<IndexedAbi>>, bool),
-    Log(Option<Name>, Vec<Box<IndexedAbi>>, bool),
-    Option(Option<Name>, Box<IndexedAbi>, bool),
-    Bytes(Option<Name>, bool),
-    Account20(Option<Name>, bool),
-    Account32(Option<Name>, bool),
-    H256(Option<Name>, bool),
-    Value256(Option<Name>, bool),
-    Value128(Option<Name>, bool),
-    Value64(Option<Name>, bool),
-    Value32(Option<Name>, bool),
-    Byte(Option<Name>, bool),
-    Bool(Option<Name>, bool),
-    Vec(Option<Name>, Box<Vec<IndexedAbi>>, u8),
-    Tuple(Option<Name>, (Box<IndexedAbi>, Box<IndexedAbi>)),
-}
-
 pub fn matches_name(field_name: Option<&Name>, by_name: &Name) -> bool {
     match field_name {
         Some(field_name) => {
@@ -74,6 +50,27 @@ pub fn matches_name(field_name: Option<&Name>, by_name: &Name) -> bool {
 }
 
 impl FilledAbi {
+    pub fn type_name(&self) -> &str {
+        match self {
+            FilledAbi::Struct(_name, _, _) => "Struct",
+            FilledAbi::Enum(_name, _, _) => "Enum",
+            FilledAbi::Log(_name, _, _) => "Log",
+            FilledAbi::Option(_name, _) => "Option",
+            FilledAbi::Bytes(_name, _) => "Bytes",
+            FilledAbi::Account20(_name, _) => "Account20",
+            FilledAbi::Account32(_name, _) => "Account32",
+            FilledAbi::H256(_name, _) => "H256",
+            FilledAbi::Value256(_name, _) => "Value256",
+            FilledAbi::Value128(_name, _) => "Value128",
+            FilledAbi::Value64(_name, _) => "Value64",
+            FilledAbi::Value32(_name, _) => "Value32",
+            FilledAbi::Byte(_name, _) => "Byte",
+            FilledAbi::Bool(_name, _) => "Bool",
+            FilledAbi::Vec(_name, _, _) => "Vec",
+            FilledAbi::Tuple(_name, _) => "Tuple",
+        }
+    }
+
     pub fn get_data(&self) -> Data {
         match self {
             FilledAbi::Struct(_, fields, prefix_memo)
@@ -285,159 +282,6 @@ pub fn ensure_vector_and_trim_prefix(
 }
 
 impl FilledAbi {
-    pub fn recode_as(&self, in_codec: &Codec, out_codec: &Codec) -> Result<Data, DispatchError> {
-        match self {
-            FilledAbi::Struct(_name, fields, struct_prefix_memo)
-            | FilledAbi::Enum(_name, fields, struct_prefix_memo)
-            | FilledAbi::Log(_name, fields, struct_prefix_memo) => {
-                // Remove and re-add the struct prefix at the end
-                let mut encoded_fields: Vec<u8> = vec![];
-                for field in fields {
-                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
-                }
-
-                match (in_codec, out_codec) {
-                    (Codec::Scale, Codec::Scale) => Ok(encoded_fields),
-                    (Codec::Rlp, Codec::Rlp) => Ok(encoded_fields),
-                    (Codec::Rlp, Codec::Scale) => Ok({
-                        let mut scale_encoded_struct = vec![*struct_prefix_memo]; // how to calculate the prefix for a struct in SCALE?
-                        scale_encoded_struct.extend_from_slice(&encoded_fields);
-                        scale_encoded_struct
-                    }),
-                    (Codec::Scale, Codec::Rlp) => {
-                        let mut rlp_encoded_struct = vec![*struct_prefix_memo]; // assume 0xc8 is the code for a struct
-                        rlp_encoded_struct.extend_from_slice(&encoded_fields);
-                        Ok(rlp_encoded_struct)
-                    },
-                }
-            },
-            FilledAbi::Option(_name, field) => {
-                // Option Prefix
-                let mut encoded_fields: Vec<u8> = vec![];
-                encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
-                match (in_codec, out_codec) {
-                    (_, Codec::Scale) => Ok({
-                        let mut scale_encoded_option = match encoded_fields.is_empty() {
-                            false => vec![0x01],
-                            true => vec![0x00],
-                        };
-                        scale_encoded_option.extend_from_slice(&encoded_fields);
-                        scale_encoded_option
-                    }),
-                    (_, Codec::Rlp) => Ok({
-                        let mut rlp_encoded_list = vec![0xc3]; // assume 0xc3 is the code for an option
-                        rlp_encoded_list.extend_from_slice(&encoded_fields);
-                        rlp_encoded_list
-                    }),
-                }
-            },
-            FilledAbi::Vec(_name, fields, _prefix_memo) => {
-                let mut encoded_fields: Vec<u8> = vec![];
-                let encoded_data: Data = fields
-                    .iter()
-                    .map(|field| field.recode_as(in_codec, out_codec))
-                    .collect::<Result<Vec<Data>, DispatchError>>()?
-                    .concat();
-                encoded_fields.extend_from_slice(&encoded_data);
-
-                match (in_codec, out_codec) {
-                    (_, Codec::Scale) => Ok(encoded_fields),
-                    (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
-                }
-            },
-            FilledAbi::Byte(_name, data) | FilledAbi::Bool(_name, data) => Ok(data.clone()),
-            FilledAbi::H256(_name, data) | FilledAbi::Account32(_name, data) =>
-                match (in_codec, out_codec) {
-                    (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
-                    (Codec::Scale, Codec::Rlp) => {
-                        let decoded_account: AccountId32 = AccountId32::decode(&mut &data[..])
-                            .map_err(|_e| "Account32 error at recoding back to Scale")?;
-
-                        Ok(rlp::encode(&decoded_account.to_raw_vec()).to_vec())
-                    },
-                    (Codec::Rlp, Codec::Scale) => {
-                        // In RLP the account is encoded as a list of 33 bytes.
-                        ensure!(
-                            data.len() == 33,
-                            "RLP encoded account should be 33 bytes long"
-                        );
-                        let no_prefix_data: [u8; 32] = data[1..33]
-                            .try_into()
-                            .map_err(|_e| "Account32 error at recoding back to [u8; 32]")?;
-
-                        let account_id = AccountId32::new(no_prefix_data);
-                        Ok(account_id.encode())
-                    },
-                },
-            FilledAbi::Account20(_name, data) => match (in_codec, out_codec) {
-                (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
-                (Codec::Scale, Codec::Rlp) => {
-                    let decoded_account: H160 = H160::decode(&mut &data[..])
-                        .map_err(|_e| "Account20 error at recoding back to Scale")?;
-
-                    Ok(rlp::encode(&decoded_account.as_bytes()).to_vec())
-                },
-                (Codec::Rlp, Codec::Scale) => {
-                    // In RLP the account is encoded as a list of 21 bytes.
-                    ensure!(
-                        data.len() == 21,
-                        "RLP encoded account should be 21 bytes long"
-                    );
-                    let account_id_20: H160 = H160::from_slice(&data[1..21]);
-                    Ok(account_id_20.encode())
-                },
-            },
-            FilledAbi::Value32(_name, data) => match (in_codec, out_codec) {
-                (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
-                (Codec::Scale, Codec::Rlp) => {
-                    let value: u32 = Decode::decode(&mut &data[..]).unwrap();
-                    Ok(rlp::encode(&value).to_vec())
-                },
-                (Codec::Rlp, Codec::Scale) => {
-                    let value: u32 = rlp::decode(&data[..]).unwrap();
-                    Ok(value.encode())
-                },
-            },
-            FilledAbi::Value64(_name, data) => match (in_codec, out_codec) {
-                (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
-                (Codec::Scale, Codec::Rlp) => {
-                    let value: u64 = Decode::decode(&mut &data[..]).unwrap();
-                    Ok(rlp::encode(&value).to_vec())
-                },
-                (Codec::Rlp, Codec::Scale) => {
-                    let value: u64 = rlp::decode(&data[..]).unwrap();
-                    Ok(value.encode())
-                },
-            },
-            FilledAbi::Value128(_name, data) => match (in_codec, out_codec) {
-                (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
-                (Codec::Scale, Codec::Rlp) => {
-                    let value: u128 = Decode::decode(&mut &data[..]).unwrap();
-                    Ok(rlp::encode(&value).to_vec())
-                },
-                (Codec::Rlp, Codec::Scale) => {
-                    let value: u128 = rlp::decode(&data[..]).unwrap();
-                    Ok(value.encode())
-                },
-            },
-            FilledAbi::Value256(_name, data) => match (in_codec, out_codec) {
-                (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
-                (Codec::Scale, Codec::Rlp) => {
-                    let value_256: sp_core::U256 = Decode::decode(&mut &data[..]).unwrap();
-                    //rlp doesn't recognize u256, so we convert to u128
-                    let value: u128 = value_256.low_u128();
-                    Ok(rlp::encode(&value).to_vec())
-                },
-                (Codec::Rlp, Codec::Scale) => {
-                    let value: u128 = rlp::decode(&data[..]).unwrap();
-                    let value_256: sp_core::U256 = value.into();
-                    Ok(value_256.encode())
-                },
-            },
-            _ => Err(DispatchError::Other("Not implemented yet")),
-        }
-    }
-
     pub fn recursive_fill_abi(
         abi: Abi,
         field_data: &[u8],
@@ -494,40 +338,35 @@ impl FilledAbi {
                 ))
             },
             Abi::Account20(name) => {
-                let len = match in_codec {
-                    Codec::Scale => 20usize,
-                    // Rlp encoding of AccountId20 is 21 bytes
-                    // since doesn't support the array encoding
-                    // and therefore encodes it as a list (+with the prefix)
-                    Codec::Rlp => 21usize,
+                // strip the prefix memo if present
+                let account_20_bytes = if field_data.len() == 21 {
+                    &field_data[1..]
+                } else {
+                    field_data
                 };
-
-                ensure!(
-                    field_data.len() == len,
-                    "Account20::InvalidDataSize: expected {len:?}",
-                );
+                let account_20: [u8; 20] = account_20_bytes
+                    .try_into()
+                    .map_err(|_| "Account20::InvalidDataSize: expected 20 bytes")?;
 
                 Ok((
-                    FilledAbi::Account20(name, field_data.to_vec()),
+                    FilledAbi::Account20(name, account_20.to_vec()),
                     field_data.len(),
                 ))
             },
             Abi::Account32(name) | Abi::H256(name) => {
-                let len = match in_codec {
-                    // Expect AccountId32 to be 32 bytes
-                    Codec::Scale => 32usize,
-                    // Rlp encoding of AccountId32 is 33 bytes
-                    // since doesn't support the array encoding
-                    // and therefore encodes it as a list (+with the prefix)
-                    Codec::Rlp => 33usize,
+                // strip the prefix memo if present
+                let data_maybe_stripped_prefix = if field_data.len() == 33 {
+                    &field_data[1..]
+                } else {
+                    field_data
                 };
-                ensure!(
-                    field_data.len() == len,
-                    "Account32::InvalidDataSize: expected {len:?}",
-                );
+
+                let data_32b: [u8; 32] = data_maybe_stripped_prefix
+                    .try_into()
+                    .map_err(|_| "Account20::InvalidDataSize: expected 20 bytes")?;
 
                 Ok((
-                    FilledAbi::Account32(name, field_data.to_vec()),
+                    FilledAbi::Account32(name, data_32b.to_vec()),
                     field_data.len(),
                 ))
             },
@@ -615,56 +454,6 @@ mod test_fill_abi {
 
     use rlp_derive::{RlpDecodable, RlpEncodable};
     use sp_core::{crypto::AccountId32, ByteArray};
-
-    #[test]
-    fn recodes_account32_from_scale_to_rlp() {
-        let abi = Abi::Account32(None);
-        let val: AccountId32 =
-            hex!("0909090909090909090909090909090906060606060606060606060606060606").into();
-
-        let scale_encoded = val.encode();
-
-        let filled_abi = FilledAbi::try_fill_abi(abi, scale_encoded.clone(), Codec::Scale).unwrap();
-
-        assert_eq!(filled_abi, FilledAbi::Account32(None, scale_encoded));
-
-        let rlp_encoded = filled_abi.recode_as(&Codec::Scale, &Codec::Rlp).unwrap();
-
-        assert_eq!(rlp_encoded, rlp::encode(&val.to_raw_vec()).to_vec());
-    }
-
-    #[test]
-    fn recodes_account32_from_rlp_to_scale() {
-        let abi = Abi::Account32(None);
-        let val: AccountId32 =
-            hex!("0909090909090909090909090909090906060606060606060606060606060606").into();
-
-        let rlp_encoded = rlp::encode(&val.to_raw_vec()).to_vec();
-
-        let filled_abi = FilledAbi::try_fill_abi(abi, rlp_encoded.clone(), Codec::Rlp).unwrap();
-
-        assert_eq!(filled_abi, FilledAbi::Account32(None, rlp_encoded));
-
-        let scale_encoded = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale).unwrap();
-
-        assert_eq!(scale_encoded, val.encode());
-    }
-
-    #[test]
-    fn recodes_value32_from_rlp_to_scale() {
-        let abi = Abi::Value32(None);
-        let val: u32 = 123;
-
-        let rlp_encoded = rlp::encode(&val).to_vec();
-
-        let filled_abi = FilledAbi::try_fill_abi(abi, rlp_encoded.clone(), Codec::Rlp).unwrap();
-
-        assert_eq!(filled_abi, FilledAbi::Value32(None, rlp_encoded));
-
-        let scale_encoded = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale).unwrap();
-
-        assert_eq!(scale_encoded, val.encode());
-    }
 
     #[test]
     fn fills_abi_for_bool_in_rlp() {
@@ -766,7 +555,7 @@ mod test_fill_abi {
             filled_abi,
             FilledAbi::Account32(
                 Some(b"address".to_vec()),
-                hex!("A00909090909090909090909090909090909090909090909090909090909090909").to_vec()
+                hex!("0909090909090909090909090909090909090909090909090909090909090909").to_vec()
             )
         )
     }
@@ -962,12 +751,12 @@ mod test_fill_abi {
                 vec![
                     Box::new(FilledAbi::Account32(
                         Some(b"from".to_vec()),
-                        hex!("E00909090909090909090909090909090909090909090909090909090909090909")
+                        hex!("0909090909090909090909090909090909090909090909090909090909090909")
                             .to_vec()
                     )),
                     Box::new(FilledAbi::Account32(
                         Some(b"to".to_vec()),
-                        hex!("E00606060606060606060606060606060606060606060606060606060606060606")
+                        hex!("0606060606060606060606060606060606060606060606060606060606060606")
                             .to_vec()
                     )),
                     Box::new(FilledAbi::Value128(
@@ -1106,7 +895,7 @@ mod test_fill_abi {
                         Box::new(FilledAbi::Account32(
                             Some(b"donor".to_vec()),
                             hex!(
-                                "E00606060606060606060606060606060606060606060606060606060606060606"
+                                "0606060606060606060606060606060606060606060606060606060606060606"
                             )
                             .to_vec()
                         )),
