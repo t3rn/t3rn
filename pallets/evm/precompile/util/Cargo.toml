@@ -21,6 +21,8 @@ pallet-evm-precompile-modexp       = { git = "https://github.com/paritytech/fron
 pallet-evm-precompile-sha3fips     = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false }
 pallet-evm-precompile-simple       = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false }
 
+pallet-evm = { version = "0.1.0", path = "../..", default-features = false }
+
 [features]
 default = [ "std" ]
 std = [
