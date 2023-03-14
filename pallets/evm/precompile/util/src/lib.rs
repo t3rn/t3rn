@@ -24,6 +24,7 @@ pub enum KnownPrecompile {
     Sha3FIPS512,
     ECRecoverPublicKey,
     // 3VM precompiles:
+    ThreeVmDispatch,
 }
 
 impl KnownPrecompile {
@@ -39,6 +40,9 @@ impl KnownPrecompile {
             KnownPrecompile::Sha3FIPS256 => Sha3FIPS256::execute(handle),
             KnownPrecompile::Sha3FIPS512 => Sha3FIPS512::execute(handle),
             KnownPrecompile::ECRecoverPublicKey => ECRecoverPublicKey::execute(handle),
+
+            KnownPrecompile::ThreeVmDispatch => ECRecoverPublicKey::execute(handle), // TODO: change to ThreeVmDispatch
+
         }
     }
 }

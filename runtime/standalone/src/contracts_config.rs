@@ -141,6 +141,7 @@ parameter_types! {
         (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
         (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
         (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
+        (8_u64, evm_precompile_util::KnownPrecompile::ThreeVmDispatch),
     ].into_iter().collect());
 }
 

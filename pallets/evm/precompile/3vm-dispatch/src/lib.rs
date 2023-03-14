@@ -21,10 +21,14 @@ where
 {
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();
+        let precompilePointer = handle.input();
+         // cut pointer from input // cut byte
         let _target_gas = handle.gas_limit();
         let _context = handle.context();
 
         let mut output = Vec::new();
+
+        // TODO;  here replace pointer with the one from handle.input()
         T::ThreeVm::invoke_raw(&55_u8, input, &mut output); // TODO: dummy ptr for now
 
         if !output.is_empty() {
