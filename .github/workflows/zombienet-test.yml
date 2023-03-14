@@ -15,7 +15,7 @@ on:
       - ".github/workflows/smoke-test.yml"
       - ".git/modules/*/HEAD"
   schedule:
-    - cron: '0,1 5 * * MON-FRI'
+    - cron: "0,1 5 * * MON-FRI"
 
 jobs:
   smoke-test:
@@ -42,7 +42,7 @@ jobs:
       - name: 📼 Run zombienet tests
         continue-on-error: false
         working-directory: tests/zombienet
-        run: make test
+        run: ./zombienet.sh smoke
 
       - name: Print sccache stats
         working-directory: tests/zombienet

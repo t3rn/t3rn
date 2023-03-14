@@ -185,3 +185,7 @@ jobs:
           asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
           asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm
           asset_content_type: text/plain
+      - name: 📼 Run zombienet runtime upgrade test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade t3rn
