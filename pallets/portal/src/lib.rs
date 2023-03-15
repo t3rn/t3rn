@@ -104,6 +104,8 @@ pub mod pallet {
             execution_layer: ExecutionLayer,
             encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
             let res = match gateway_vendor {
                 GatewayVendor::Rococo =>
                     pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(
