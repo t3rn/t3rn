@@ -83,21 +83,20 @@ frame_support::construct_runtime!(
     }
 );
 
-use t3rn_types::{
-    abi::{CryptoAlgo, HasherAlgo},
-    interface::SideEffectInterface,
-};
+use t3rn_types::gateway::{CryptoAlgo, HasherAlgo};
 
+use t3rn_abi::SFXAbi;
 use t3rn_primitives::{
     contracts_registry::RegistryContract,
     xdns::{Parachain, XdnsRecord},
-    GatewaySysProps, GatewayType, GatewayVendor,
+    GatewayType, GatewayVendor, TokenSysProps,
 };
+use t3rn_types::sfx::Sfx4bId;
 
 #[derive(Default)]
 pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
-    standard_side_effects: Vec<SideEffectInterface>,
+    standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     known_contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
 }
 
@@ -114,13 +113,13 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::OnCircuit(0),
             Default::default(),
-            GatewaySysProps {
+            TokenSysProps {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
-            t3rn_types::standard::standard_side_effects_ids(),
+            t3rn_abi::standard::standard_sfx_abi_ids(),
         );
 
         let polka_like_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -134,13 +133,13 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::OnCircuit(0),
             Default::default(),
-            GatewaySysProps {
+            TokenSysProps {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
-            t3rn_types::standard::standard_side_effects_ids(),
+            t3rn_abi::standard::standard_sfx_abi_ids(),
         );
 
         let evm_like_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -158,18 +157,17 @@ impl ExtBuilder {
                 address_length: 20,
                 value_type_size: 32,
                 decimals: 12,
-                structs: vec![],
             },
             GatewayVendor::Rococo,
             GatewayType::ProgrammableInternal(0),
             Default::default(),
-            GatewaySysProps {
+            TokenSysProps {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
-            t3rn_types::standard::standard_side_effects_ids(),
+            t3rn_abi::standard::standard_sfx_abi_ids(),
         );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -179,13 +177,13 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
-            GatewaySysProps {
+            TokenSysProps {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("ZERO"),
                 token_decimals: 0,
             },
             vec![],
-            t3rn_types::standard::standard_side_effects_ids(),
+            t3rn_abi::standard::standard_sfx_abi_ids(),
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -195,13 +193,13 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
-            GatewaySysProps {
+            TokenSysProps {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             },
             vec![],
-            t3rn_types::standard::standard_side_effects_ids(),
+            t3rn_abi::standard::standard_sfx_abi_ids(),
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -211,13 +209,13 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
-            GatewaySysProps {
+            TokenSysProps {
                 ss58_format: 0,
                 token_symbol: Encode::encode("DOT"),
                 token_decimals: 10,
             },
             vec![],
-            t3rn_types::standard::standard_side_effects_ids(),
+            t3rn_abi::standard::standard_sfx_abi_ids(),
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -227,13 +225,13 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
-            GatewaySysProps {
+            TokenSysProps {
                 ss58_format: 2,
                 token_symbol: Encode::encode("KSM"),
                 token_decimals: 12,
             },
             vec![],
-            t3rn_types::standard::standard_side_effects_ids(),
+            t3rn_abi::standard::standard_sfx_abi_ids(),
         );
         self.known_xdns_records = vec![
             zero_xdns_record,
@@ -247,9 +245,9 @@ impl ExtBuilder {
         self
     }
 
-    pub fn with_standard_side_effects(mut self) -> ExtBuilder {
+    pub fn with_standard_sfx_abi(mut self) -> ExtBuilder {
         // map side_effects to id, keeping lib.rs clean
-        self.standard_side_effects = t3rn_types::standard::standard_side_effects();
+        self.standard_sfx_abi = t3rn_abi::standard::standard_sfx_abi();
 
         self
     }
@@ -273,7 +271,7 @@ impl ExtBuilder {
 
         pallet_xdns::GenesisConfig::<Runtime> {
             known_xdns_records: self.known_xdns_records,
-            standard_side_effects: self.standard_side_effects,
+            standard_sfx_abi: self.standard_sfx_abi,
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");
