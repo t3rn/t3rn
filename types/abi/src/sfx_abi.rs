@@ -6,13 +6,13 @@ use crate::{
 };
 use codec::{Decode, Encode};
 
-use scale_info::TypeInfo;
+use scale_info::{prelude::format, TypeInfo};
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct IngressAbiDescriptors {
+pub struct PerCodecAbiDescriptors {
     pub for_rlp: Vec<u8>,
     pub for_scale: Vec<u8>,
 }
@@ -22,7 +22,8 @@ pub struct IngressAbiDescriptors {
 pub struct SFXAbi {
     // must match encoded args order. bool is for optional validation
     pub args_names: Vec<(Data, bool)>,
-    pub ingress_abi_descriptors: IngressAbiDescriptors,
+    pub egress_abi_descriptors: PerCodecAbiDescriptors,
+    pub ingress_abi_descriptors: PerCodecAbiDescriptors,
 }
 
 impl SFXAbi {
@@ -30,10 +31,17 @@ impl SFXAbi {
         self.args_names.clone()
     }
 
-    pub fn get_expected_optimistic_descriptor(&self, codec: Codec) -> Name {
+    pub fn get_expected_ingress_descriptor(&self, codec: Codec) -> Name {
         match codec {
             Codec::Scale => self.ingress_abi_descriptors.for_scale.clone(),
             Codec::Rlp => self.ingress_abi_descriptors.for_rlp.clone(),
+        }
+    }
+
+    pub fn get_expected_egress_descriptor(&self, codec: Codec) -> Name {
+        match codec {
+            Codec::Scale => self.egress_abi_descriptors.for_scale.clone(),
+            Codec::Rlp => self.egress_abi_descriptors.for_rlp.clone(),
         }
     }
 
@@ -53,6 +61,27 @@ impl SFXAbi {
         Ok(())
     }
 
+    pub fn validate_ordered_arguments(
+        &self,
+        ordered_args: &Vec<Data>,
+        ordered_args_codec: &Codec,
+    ) -> Result<(), DispatchError> {
+        self.ensure_arguments_order(ordered_args)?;
+
+        let abi: Abi = self
+            .get_expected_egress_descriptor(ordered_args_codec.clone())
+            .try_into()?;
+
+        let ordered_args_flatten: Data = ordered_args.iter().fold(Data::new(), |mut acc, arg| {
+            acc.append(&mut arg.clone());
+            acc
+        });
+
+        FilledAbi::try_fill_abi(abi, ordered_args_flatten, ordered_args_codec.clone())?;
+
+        Ok(())
+    }
+
     pub fn validate_arguments_against_received(
         &self,
         ordered_args: &Vec<Data>,
@@ -62,7 +91,7 @@ impl SFXAbi {
     ) -> Result<(), DispatchError> {
         self.ensure_arguments_order(ordered_args)?;
         let abi: Abi = self
-            .get_expected_optimistic_descriptor(payload_codec.clone())
+            .get_expected_ingress_descriptor(payload_codec.clone())
             .try_into()?;
 
         let filled_named_abi: FilledAbi =

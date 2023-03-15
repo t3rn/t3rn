@@ -9,3 +9,12 @@ pub mod standard;
 pub mod to_abi;
 pub mod to_filled_abi;
 pub mod types;
+
+// Export the public API
+pub use recode::{Codec, Recode};
+pub use recode_rlp::RecodeRlp;
+pub use recode_scale::RecodeScale;
+pub use sfx_abi::SFXAbi;
+pub use to_abi::Abi;
+pub use to_filled_abi::FilledAbi;
+pub use types::{Data, Name};

@@ -7,8 +7,11 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use frame_support::ensure;
-use scale_info::TypeInfo;
-use sp_core::{crypto::AccountId32, ByteArray, H160, U256};
+use scale_info::{prelude::format, TypeInfo};
+use sp_core::{
+    crypto::{AccountId32, ByteArray},
+    H160, U256,
+};
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
 
