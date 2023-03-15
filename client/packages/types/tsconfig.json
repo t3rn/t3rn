@@ -1,21 +1,17 @@
 {
   "compilerOptions": {
     "strict": true,
-    "noImplicitAny": true,
-    "noUnusedLocals": true,
     "noImplicitReturns": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true /* Allow default imports from modules with no default export. This does not affect code emit, just typechecking. */,
-    "esModuleInterop": true /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */,
-    "experimentalDecorators": true /* Enables experimental support for ES7 decorators. */,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
     "declaration": true,
-    "declarationDir": "lib",
-    "resolveJsonModule": true,
+    "declarationDir": "dist",
+    "emitDeclarationOnly": true,
     "skipLibCheck": true,
-    "types": ["node"],
-    "forceConsistentCasingInFileNames": true,
-    "baseUrl": "."
+    "allowJs": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "**/*.spec.ts", "**/*.d.ts"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }
