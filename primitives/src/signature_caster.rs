@@ -1,9 +1,9 @@
 use crate::{
-    abi::{GatewayABIConfig, Type},
+    gateway::GatewayABIConfig,
     match_format::{ensure_str_err, StrLike},
 };
 use codec::{Decode, Encode};
-use sp_std::{vec, vec::*};
+use sp_std::vec::*;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 pub struct Signature {
@@ -28,34 +28,34 @@ pub trait HasXDNSAccess {
     }
 }
 
-pub fn validate_next_arg(
-    input: &[u8],
-    abi_type: Type,
-    start_pos: usize,
-    end_pos: usize,
-) -> Result<Vec<u8>, &'static str> {
-    let next_arg_bytes: Vec<u8> = input[start_pos..end_pos].to_vec();
-    abi_type.eval(next_arg_bytes.clone())?;
-    Ok(next_arg_bytes)
-}
+// pub fn validate_next_arg(
+//     input: &[u8],
+//     abi_type: Type,
+//     start_pos: usize,
+//     end_pos: usize,
+// ) -> Result<Vec<u8>, &'static str> {
+//     let next_arg_bytes: Vec<u8> = input[start_pos..end_pos].to_vec();
+//     abi_type.eval(next_arg_bytes.clone())?;
+//     Ok(next_arg_bytes)
+// }
 
-pub fn validate_next_args(
-    input: &[u8],
-    args_abi: Vec<(Type, u16)>,
-) -> Result<Vec<Vec<u8>>, &'static str> {
-    let mut start_pos: usize = SIDE_EFFECT_HEADER_SIZE;
-    let mut end_pos: usize = SIDE_EFFECT_HEADER_SIZE;
-    let mut args_bytes: Vec<Vec<u8>> = vec![];
-
-    for (arg_type, arg_size) in args_abi {
-        // ToDo: Eliminate possible casting err since as takes only lower bytes - ABI should be in usize
-        end_pos += arg_size as usize;
-        args_bytes.push(validate_next_arg(input, arg_type, start_pos, end_pos)?);
-        start_pos = end_pos;
-    }
-
-    Ok(args_bytes)
-}
+// pub fn validate_next_args(
+//     input: &[u8],
+//     args_abi: Vec<(Type, u16)>,
+// ) -> Result<Vec<Vec<u8>>, &'static str> {
+//     let mut start_pos: usize = SIDE_EFFECT_HEADER_SIZE;
+//     let mut end_pos: usize = SIDE_EFFECT_HEADER_SIZE;
+//     let mut args_bytes: Vec<Vec<u8>> = vec![];
+//
+//     for (arg_type, arg_size) in args_abi {
+//         // ToDo: Eliminate possible casting err since as takes only lower bytes - ABI should be in usize
+//         end_pos += arg_size as usize;
+//         args_bytes.push(validate_next_arg(input, arg_type, start_pos, end_pos)?);
+//         start_pos = end_pos;
+//     }
+//
+//     Ok(args_bytes)
+// }
 
 pub const SIDE_EFFECT_HEADER_SIZE: usize = 12;
 pub const TARGET_ID_SIZE: usize = 4;

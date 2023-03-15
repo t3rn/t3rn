@@ -1,6 +1,6 @@
 use crate::{
-    abi::{GatewayABIConfig, Type},
-    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+    gateway::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
+    TokenSysProps,
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
@@ -10,8 +10,6 @@ use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::sfx_abi::SFXAbi;
 use t3rn_types::{fsx::SecurityLvl, sfx::Sfx4bId};
-
-pub type AllowedSideEffect = [u8; 4];
 
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId = [u8; 4];
@@ -58,7 +56,7 @@ pub struct XdnsRecord<AccountId> {
     pub parachain: Option<Parachain>,
 
     /// Gateway System Properties
-    pub gateway_sys_props: GatewaySysProps,
+    pub gateway_sys_props: TokenSysProps,
 
     pub registrant: Option<AccountId>,
 
@@ -68,7 +66,7 @@ pub struct XdnsRecord<AccountId> {
     pub last_finalized: Option<u64>,
 
     /// Methods enabled to be called on the remote target
-    pub allowed_side_effects: Vec<AllowedSideEffect>,
+    pub allowed_side_effects: Vec<Sfx4bId>,
 }
 
 impl<AccountId: Encode> XdnsRecord<AccountId> {
@@ -82,11 +80,11 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         parachain: Option<Parachain>,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
-        gateway_sys_props: GatewaySysProps,
+        gateway_sys_props: TokenSysProps,
         registrant: Option<AccountId>,
         security_coordinates: Vec<u8>,
         last_finalized: Option<u64>,
-        allowed_side_effects: Vec<AllowedSideEffect>,
+        allowed_side_effects: Vec<Sfx4bId>,
     ) -> Self {
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded,
@@ -118,9 +116,9 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
-        gateway_sys_props: GatewaySysProps,
+        gateway_sys_props: TokenSysProps,
         security_coordinates: Vec<u8>,
-        allowed_side_effects: Vec<AllowedSideEffect>,
+        allowed_side_effects: Vec<Sfx4bId>,
     ) -> Self {
         XdnsRecord {
             url,
@@ -165,27 +163,27 @@ pub trait Xdns<T: frame_system::Config> {
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
-        gateway_sys_props: GatewaySysProps,
+        gateway_sys_props: TokenSysProps,
         security_coordinates: Vec<u8>,
-        allowed_side_effects: Vec<AllowedSideEffect>,
+        allowed_side_effects: Vec<Sfx4bId>,
     ) -> DispatchResult;
 
-    fn extend_optimistic_sfx_abi(
+    fn extend_sfx_abi(
         origin: OriginFor<T>,
         gateway_id: ChainId,
         sfx_4b_id: Sfx4bId,
         sfx_expected_abi: SFXAbi,
     ) -> DispatchResult;
 
-    fn override_optimistic_sfx_abi(
+    fn override_sfx_abi(
         origin: OriginFor<T>,
         gateway_id: ChainId,
         new_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     ) -> DispatchResult;
 
-    fn get_optimistic_sfx_abis(gateway_id: &ChainId) -> Vec<(Sfx4bId, SFXAbi)>;
+    fn get_all_sfx_abi(gateway_id: &ChainId) -> Vec<(Sfx4bId, SFXAbi)>;
 
-    fn get_optimistic_sfx_abi(gateway_id: &ChainId, sfx_4b_id: Sfx4bId) -> Option<SFXAbi>;
+    fn get_sfx_abi(gateway_id: &ChainId, sfx_4b_id: Sfx4bId) -> Option<SFXAbi>;
 
     fn modify_security_level(
         origin: OriginFor<T>,
@@ -199,8 +197,6 @@ pub trait Xdns<T: frame_system::Config> {
     fn update_gateway_ttl(gateway_id: ChainId, last_finalized: u64) -> DispatchResultWithPostInfo;
 
     fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, DispatchError>;
-
-    fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type;
 
     fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
 
