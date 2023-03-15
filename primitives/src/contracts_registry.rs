@@ -1,6 +1,6 @@
 use crate::{
-    abi::ContractActionDesc,
     contract_metadata::{ContractMetadata, ContractType},
+    gateway::ContractActionDesc,
     storage::RawAliveContractInfo,
     transfers::CurrencyBalanceOf,
     ChainId, Compose,

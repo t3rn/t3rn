@@ -2,13 +2,14 @@ use codec::{Decode, Encode};
 use scale_info::prelude::string::String;
 // use frame_support::dispatch::DispatchResult;
 use crate::{
-    abi::GatewayABIConfig, xdns::AllowedSideEffect, ChainId, GatewayGenesisConfig, GatewaySysProps,
-    GatewayType, GatewayVendor,
+    gateway::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
+    TokenSysProps,
 };
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::recode::Codec;
+use t3rn_types::sfx::Sfx4bId;
 
 // #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 // #[derive(Clone, Eq, PartialEq, Debug, TypeInfo)]
@@ -27,8 +28,8 @@ pub struct RegistrationData {
     // Maps to FV
     pub gateway_type: GatewayType,
     pub gateway_genesis: GatewayGenesisConfig,
-    pub gateway_sys_props: GatewaySysProps,
-    pub allowed_side_effects: Vec<AllowedSideEffect>,
+    pub gateway_sys_props: TokenSysProps,
+    pub allowed_side_effects: Vec<Sfx4bId>,
     pub encoded_registration_data: Vec<u8>,
 }
 

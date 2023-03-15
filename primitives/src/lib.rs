@@ -27,7 +27,7 @@ use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
-pub use t3rn_types::{abi, types::Bytes};
+pub use t3rn_types::{gateway, types::Bytes};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -140,13 +140,13 @@ pub struct GatewayGenesisConfig {
 /// Represents assorted gateway system properties.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct GatewaySysProps {
+pub struct TokenSysProps {
     pub ss58_format: u16,
     pub token_symbol: Vec<u8>,
     pub token_decimals: u8,
 }
 
-impl TryFrom<&ChainId> for GatewaySysProps {
+impl TryFrom<&ChainId> for TokenSysProps {
     type Error = &'static str;
 
     /// Maps a chain id to its system properties.
@@ -156,77 +156,77 @@ impl TryFrom<&ChainId> for GatewaySysProps {
     /// https://polkadot.js.org/apps/?rpc=${PROVIDER}#/settings/metadata.
     fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
         match chain_id {
-            b"circ" => Ok(GatewaySysProps {
+            b"circ" => Ok(TokenSysProps {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             }),
-            b"gate" => Ok(GatewaySysProps {
+            b"gate" => Ok(TokenSysProps {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
             }),
-            &POLKADOT_CHAIN_ID => Ok(GatewaySysProps {
+            &POLKADOT_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 0,
                 token_symbol: Encode::encode("DOT"),
                 token_decimals: 10,
             }),
-            &KUSAMA_CHAIN_ID => Ok(GatewaySysProps {
+            &KUSAMA_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 2,
                 token_symbol: Encode::encode("KSM"),
                 token_decimals: 12,
             }),
-            &ROCOCO_CHAIN_ID => Ok(GatewaySysProps {
+            &ROCOCO_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 42,
                 token_symbol: Encode::encode("ROC"),
                 token_decimals: 12,
             }),
-            &ROCOCO_ENCOINTER_CHAIN_ID => Ok(GatewaySysProps {
+            &ROCOCO_ENCOINTER_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 2,
                 token_symbol: Encode::encode("ROC"), // notatypo
                 token_decimals: 12,
             }),
-            &BASILISK_CHAIN_ID => Ok(GatewaySysProps {
+            &BASILISK_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 10041,
                 token_symbol: Encode::encode("BSX"),
                 token_decimals: 12,
             }),
-            &CATALYST_CHAIN_ID => Ok(GatewaySysProps {
+            &CATALYST_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 36,
                 token_symbol: Encode::encode("NCFG"),
                 token_decimals: 18,
             }),
-            &DALI_CHAIN_ID => Ok(GatewaySysProps {
+            &DALI_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 49,
                 token_symbol: Encode::encode("DALI"),
                 token_decimals: 12,
             }),
-            &DOLPHIN_CHAIN_ID => Ok(GatewaySysProps {
+            &DOLPHIN_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 78,
                 token_symbol: Encode::encode("DOL"),
                 token_decimals: 18,
             }),
-            &ROCFINITY_CHAIN_ID => Ok(GatewaySysProps {
+            &ROCFINITY_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 195,
                 token_symbol: Encode::encode("RFI"),
                 token_decimals: 18,
             }),
-            &GENSHIRO_CHAIN_ID => Ok(GatewaySysProps {
+            &GENSHIRO_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 67,
                 token_symbol: Encode::encode("Token"),
                 token_decimals: 9,
             }),
-            &PANGOLIN_CHAIN_ID => Ok(GatewaySysProps {
+            &PANGOLIN_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 42,
                 token_symbol: Encode::encode("PRING"),
                 token_decimals: 18,
             }),
-            &SNOWBLINK_CHAIN_ID => Ok(GatewaySysProps {
+            &SNOWBLINK_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 42,
                 token_symbol: Encode::encode("SNO"),
                 token_decimals: 12,
             }),
-            &SOONSOCIAL_CHAIN_ID => Ok(GatewaySysProps {
+            &SOONSOCIAL_CHAIN_ID => Ok(TokenSysProps {
                 ss58_format: 28,
                 token_symbol: Encode::encode("SUB"),
                 token_decimals: 10,
@@ -236,7 +236,7 @@ impl TryFrom<&ChainId> for GatewaySysProps {
     }
 }
 
-impl Default for GatewaySysProps {
+impl Default for TokenSysProps {
     fn default() -> Self {
         Self {
             token_symbol: Encode::encode("TKN"),
