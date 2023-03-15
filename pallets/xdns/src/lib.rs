@@ -49,7 +49,7 @@ pub mod pallet {
         xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
         Bytes, ChainId, GatewaySysProps, GatewayType, GatewayVendor,
     };
-    use t3rn_types::interface::SideEffectInterface;
+    use t3rn_types::{abi::ExecutionLayer, interface::SideEffectInterface};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -199,6 +199,8 @@ pub mod pallet {
         SideEffectInterfaceNotFound,
         /// the xdns entry does not contain parachain information
         NoParachainInfoFound,
+        /// the parent gateway was not found
+        XdnsParentGatewayNotFound,
     }
 
     #[pallet::storage]
@@ -270,12 +272,22 @@ pub mod pallet {
             gateway_sys_props: GatewaySysProps,
             security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
+            parent_gateway_id: Option<ChainId>,
+            execution_layer: ExecutionLayer,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
             // early exit if record already exists in storage
             if <XDNSRegistry<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into())
+            }
+
+            if let Some(parent_id) = parent_gateway_id {
+                // check if parent gateway exists
+                if !<XDNSRegistry<T>>::contains_key(parent_id) {
+                    return Err(Error::<T>::XdnsParentGatewayNotFound.into())
+                }
+                // ToDo: maybe should check if vendor is the same also?
             }
 
             // TODO: check if side_effect exists
@@ -290,6 +302,8 @@ pub mod pallet {
                 gateway_sys_props,
                 security_coordinates,
                 allowed_side_effects,
+                parent_gateway_id,
+                execution_layer,
             );
 
             // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.

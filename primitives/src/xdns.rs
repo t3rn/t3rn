@@ -8,6 +8,7 @@ use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
+use t3rn_types::abi::ExecutionLayer;
 
 pub type AllowedSideEffect = [u8; 4];
 
@@ -44,9 +45,6 @@ pub struct XdnsRecord<AccountId> {
 
     pub gateway_genesis: GatewayGenesisConfig,
 
-    /// Gateway Vendor
-    pub gateway_vendor: GatewayVendor,
-
     /// Gateway Type
     pub gateway_type: GatewayType,
 
@@ -67,6 +65,15 @@ pub struct XdnsRecord<AccountId> {
 
     /// Methods enabled to be called on the remote target
     pub allowed_side_effects: Vec<AllowedSideEffect>,
+
+    /// Differentiate between the different consensus systems, e.g. Kusama & Polkadot
+    pub gateway_vendor: GatewayVendor,
+
+    /// Differentiate between the different execution layers, e.g. Substrate & Ethereum
+    pub execution_layer: ExecutionLayer,
+
+    /// Maps gateway to its parent chain. e.g. para -> relay
+    pub parent_gateway_id: Option<ChainId>,
 }
 
 impl<AccountId: Encode> XdnsRecord<AccountId> {
@@ -85,6 +92,8 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         security_coordinates: Vec<u8>,
         last_finalized: Option<u64>,
         allowed_side_effects: Vec<AllowedSideEffect>,
+        parent_gateway_id: Option<ChainId>,
+        execution_layer: ExecutionLayer,
     ) -> Self {
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded,
@@ -105,6 +114,8 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             security_coordinates,
             last_finalized,
             allowed_side_effects,
+            parent_gateway_id,
+            execution_layer,
         }
     }
 
@@ -119,6 +130,8 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_sys_props: GatewaySysProps,
         security_coordinates: Vec<u8>,
         allowed_side_effects: Vec<AllowedSideEffect>,
+        parent_gateway_id: Option<ChainId>,
+        execution_layer: ExecutionLayer,
     ) -> Self {
         XdnsRecord {
             url,
@@ -133,6 +146,8 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             security_coordinates,
             last_finalized: None,
             allowed_side_effects,
+            parent_gateway_id,
+            execution_layer,
         }
     }
 
@@ -166,6 +181,8 @@ pub trait Xdns<T: frame_system::Config> {
         gateway_sys_props: GatewaySysProps,
         security_coordinates: Vec<u8>,
         allowed_side_effects: Vec<AllowedSideEffect>,
+        parent_gateway_id: Option<ChainId>,
+        execution_layer: ExecutionLayer,
     ) -> DispatchResult;
 
     fn allowed_side_effects(gateway_id: &ChainId) -> Vec<[u8; 4]>;

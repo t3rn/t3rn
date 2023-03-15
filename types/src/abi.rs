@@ -67,6 +67,15 @@ pub enum CryptoAlgo {
 
 #[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
+pub enum ExecutionLayer {
+    #[default]
+    Substrate,
+    Evm,
+}
+
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Describe ABI configuration for a gateway so that it's possible to cast types
 /// of inbound and outbound messages to that gateway
 pub struct GatewayABIConfig {

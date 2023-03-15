@@ -83,7 +83,7 @@ frame_support::construct_runtime!(
 );
 
 use t3rn_types::{
-    abi::{CryptoAlgo, HasherAlgo},
+    abi::{CryptoAlgo, ExecutionLayer, HasherAlgo},
     interface::SideEffectInterface,
 };
 
@@ -120,6 +120,8 @@ impl ExtBuilder {
             },
             vec![],
             t3rn_types::standard::standard_side_effects_ids(),
+            None,
+            ExecutionLayer::Substrate,
         );
 
         let polka_like_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -140,6 +142,8 @@ impl ExtBuilder {
             },
             vec![],
             t3rn_types::standard::standard_side_effects_ids(),
+            None,
+            ExecutionLayer::Substrate,
         );
 
         let evm_like_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -169,6 +173,8 @@ impl ExtBuilder {
             },
             vec![],
             t3rn_types::standard::standard_side_effects_ids(),
+            None,
+            ExecutionLayer::Substrate,
         );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -185,6 +191,8 @@ impl ExtBuilder {
             },
             vec![],
             t3rn_types::standard::standard_side_effects_ids(),
+            None,
+            ExecutionLayer::Substrate,
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -201,6 +209,8 @@ impl ExtBuilder {
             },
             vec![],
             t3rn_types::standard::standard_side_effects_ids(),
+            None,
+            ExecutionLayer::Substrate,
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -217,6 +227,8 @@ impl ExtBuilder {
             },
             vec![],
             t3rn_types::standard::standard_side_effects_ids(),
+            None,
+            ExecutionLayer::Substrate,
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -233,6 +245,8 @@ impl ExtBuilder {
             },
             vec![],
             t3rn_types::standard::standard_side_effects_ids(),
+            None,
+            ExecutionLayer::Substrate,
         );
         self.known_xdns_records = vec![
             zero_xdns_record,

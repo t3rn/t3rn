@@ -23,7 +23,11 @@ use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
-use t3rn_primitives::{abi::Type, xdns::Xdns, GatewayType, GatewayVendor};
+use t3rn_primitives::{
+    abi::{ExecutionLayer, Type},
+    xdns::Xdns,
+    GatewayType, GatewayVendor,
+};
 
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 7;
 const STANDARD_SIDE_EFFECTS_COUNT: usize = 9;
@@ -52,7 +56,7 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
         assert_ok!(XDNS::add_new_xdns_record(
             Origin::<Runtime>::Root.into(),
             b"some_url".to_vec(),
-            *b"test",
+            *b"roco",
             None,
             Default::default(),
             GatewayVendor::Rococo,
@@ -61,9 +65,28 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
             Default::default(),
             vec![],
             vec![],
+            None,
+            ExecutionLayer::Substrate
         ));
         assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), 1);
-        assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"test").is_some());
+        assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"roco").is_some());
+        assert_ok!(XDNS::add_new_xdns_record(
+            Origin::<Runtime>::Root.into(),
+            b"some_url".to_vec(),
+            *b"para",
+            None,
+            Default::default(),
+            GatewayVendor::Rococo,
+            GatewayType::TxOnly(0),
+            Default::default(),
+            Default::default(),
+            vec![],
+            vec![],
+            Some(*b"roco"),
+            ExecutionLayer::Substrate
+        ));
+        assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), 2);
+        assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"para").is_some());
     });
 }
 
@@ -208,12 +231,42 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                     Default::default(),
                     vec![],
                     vec![],
+                    None,
+                    ExecutionLayer::Substrate,
                 ),
                 pallet_xdns::pallet::Error::<Runtime>::XdnsRecordAlreadyExists
             );
             assert_eq!(
                 pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+        });
+}
+
+#[test]
+fn should_not_add_a_new_xdns_record_if_parent_doesnt_exist() {
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                XDNS::add_new_xdns_record(
+                    Origin::<Runtime>::Root.into(),
+                    b"some_url".to_vec(),
+                    *b"bbbb",
+                    None,
+                    Default::default(),
+                    GatewayVendor::Rococo,
+                    GatewayType::TxOnly(0),
+                    Default::default(),
+                    Default::default(),
+                    vec![],
+                    vec![],
+                    Some(*b"aaaa"),
+                    ExecutionLayer::Substrate,
+                ),
+                pallet_xdns::pallet::Error::<Runtime>::XdnsParentGatewayNotFound
             );
         });
 }

@@ -23,7 +23,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_std::{vec, vec::Vec};
     use t3rn_primitives::{
-        abi::GatewayABIConfig,
+        abi::{ExecutionLayer, GatewayABIConfig},
         portal::RococoBridge,
         xdns::{AllowedSideEffect, Xdns},
         ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
@@ -100,27 +100,14 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
             allowed_side_effects: Vec<AllowedSideEffect>,
+            parent_gateway_id: Option<ChainId>,
+            execution_layer: ExecutionLayer,
             encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
-            // ToDo xdns record is written also when the calls after this fail!!!
-            <T as Config>::Xdns::add_new_xdns_record(
-                origin.clone(),
-                url,
-                gateway_id,
-                None,
-                gateway_abi,
-                gateway_vendor.clone(),
-                gateway_type,
-                gateway_genesis,
-                gateway_sys_props,
-                vec![],
-                allowed_side_effects,
-            )?;
-
             let res = match gateway_vendor {
                 GatewayVendor::Rococo =>
                     pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(
-                        origin,
+                        origin.clone(),
                         gateway_id,
                         encoded_registration_data,
                     ),
@@ -129,6 +116,23 @@ pub mod pallet {
 
             match res {
                 Ok(_) => {
+                    // write XDNS record if all else passed
+                    <T as Config>::Xdns::add_new_xdns_record(
+                        origin,
+                        url,
+                        gateway_id,
+                        None,
+                        gateway_abi,
+                        gateway_vendor,
+                        gateway_type,
+                        gateway_genesis,
+                        gateway_sys_props,
+                        vec![],
+                        allowed_side_effects,
+                        parent_gateway_id,
+                        execution_layer,
+                    )?;
+
                     Self::deposit_event(Event::GatewayRegistered(gateway_id));
                     Ok(().into())
                 },
