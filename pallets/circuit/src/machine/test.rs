@@ -19,7 +19,7 @@ pub mod test {
     #[test]
     fn machine_kills_from_allowed_states() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -60,7 +60,7 @@ pub mod test {
     #[test]
     fn machine_reverts_kill_for_empty_sfx_from_all_allowed_states() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -101,7 +101,7 @@ pub mod test {
     #[test]
     fn machine_reverts_single_step_xtx_from_ready() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -119,7 +119,7 @@ pub mod test {
     #[test]
     fn machine_reverts_single_step_xtx_from_pending_execution() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -139,7 +139,7 @@ pub mod test {
     #[test]
     fn machine_reverts_single_step_xtx_from_finished() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -159,7 +159,7 @@ pub mod test {
     #[test]
     fn machine_does_not_revert_single_step_xtx_when_finished_all_steps() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -181,7 +181,7 @@ pub mod test {
     #[test]
     fn machine_does_not_revert_single_step_xtx_when_committed() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -214,7 +214,7 @@ pub mod test {
     #[test]
     fn machine_traverses_single_step_xtx_from_requested_till_committed() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -243,7 +243,7 @@ pub mod test {
     #[test]
     fn machine_confirms_xtx_with_10_sfx() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -300,7 +300,7 @@ pub mod test {
     #[test]
     fn machine_kills_and_cleans_xtx_if_only_5_out_of_10_sfx_bid() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -347,7 +347,7 @@ pub mod test {
     #[test]
     fn machine_reverts_xtx_if_only_5_out_of_10_sfx_confirmed() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -409,7 +409,7 @@ pub mod test {
     #[test]
     fn machine_confirms_10_xtx_with_10_sfx_each() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {

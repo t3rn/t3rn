@@ -40,13 +40,12 @@ use sp_io::TestExternalities;
 use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs, str::FromStr};
-use t3rn_types::{abi::*, sfx::*};
+use t3rn_types::{gateway::*, sfx::*};
 
 use t3rn_primitives::{
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
     volatile::LocalState,
-    xdns::AllowedSideEffect,
-    Balance, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+    Balance, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenSysProps,
 };
 
 use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;
@@ -110,11 +109,11 @@ fn register(
         &mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let gateway_sys_props: GatewaySysProps = Decode::decode(
+    let gateway_sys_props: TokenSysProps = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(
+    let allowed_side_effects: Vec<Sfx4bId> = Decode::decode(
         &mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
@@ -354,7 +353,7 @@ fn run_mock_tests(path: &str) -> Result<(), DispatchErrorWithPostInfo<PostDispat
 #[ignore]
 fn runs_mock_tests() {
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -427,7 +426,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -448,13 +447,11 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
 fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A),
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -462,7 +459,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -588,13 +585,11 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A),
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -602,7 +597,7 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -624,13 +619,11 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A),
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
@@ -638,7 +631,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -727,13 +720,11 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A),
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -743,7 +734,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -837,13 +828,11 @@ fn circuit_handles_dropped_at_bidding() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A),
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -855,7 +844,7 @@ fn circuit_handles_dropped_at_bidding() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -923,7 +912,7 @@ const CLOCK_CALC_CLAIMABLE_WEIGHT: u64 = 150000000;
 #[test]
 fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -957,13 +946,11 @@ fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
 #[test]
 fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::C),
-        ],
+        *b"tran",
+        3, // insurance
+        3, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -986,7 +973,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
     let origin = Origin::signed(REQUESTER); // Only sudo access to register new gateways for now
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -1164,16 +1151,11 @@ fn circuit_handles_swap_with_insurance() {
     let ext = ExtBuilder::default();
 
     let valid_swap_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_swap_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),       // caller
-            (Type::Address(32), ArgVariant::B),       // to
-            (Type::Uint(128), ArgVariant::A),         // amount_from
-            (Type::Uint(128), ArgVariant::B),         // amount_to
-            (Type::Bytes(4), ArgVariant::A),          // asset_from
-            (Type::Bytes(4), ArgVariant::B),          // asset_to
-            (Type::OptionalInsurance, ArgVariant::A), // insurance
-        ],
+        *b"swap",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_swap_side_effect.clone()];
@@ -1181,7 +1163,7 @@ fn circuit_handles_swap_with_insurance() {
     let sequential = true;
 
     ext.with_default_xdns_records()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .build()
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
@@ -1259,18 +1241,11 @@ fn circuit_handles_add_liquidity_without_insurance() {
     let ext = ExtBuilder::default();
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_add_liquidity_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),       // argument_0: caller
-            (Type::Address(32), ArgVariant::B),       // argument_1: to
-            (Type::Bytes(4), ArgVariant::A),          // argument_2: asset_left
-            (Type::Bytes(4), ArgVariant::B),          // argument_3: asset_right
-            (Type::Bytes(4), ArgVariant::C),          // argument_4: liquidity_token
-            (Type::Uint(128), ArgVariant::A),         // argument_5: amount_left
-            (Type::Uint(128), ArgVariant::B),         // argument_6: amount_right
-            (Type::Uint(128), ArgVariant::A),         // argument_7: amount_liquidity_token
-            (Type::OptionalInsurance, ArgVariant::A), // argument_8: no insurance, empty bytes
-        ],
+        *b"aliq",
+        0, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
@@ -1278,7 +1253,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
     let sequential = true;
 
     ext.with_default_xdns_records()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .build()
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2);
@@ -1314,18 +1289,11 @@ fn circuit_handles_add_liquidity_with_insurance() {
     let ext = ExtBuilder::default();
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_add_liquidity_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),       // argument_0: caller
-            (Type::Address(32), ArgVariant::B),       // argument_1: to
-            (Type::Bytes(4), ArgVariant::A),          // argument_2: asset_left
-            (Type::Bytes(4), ArgVariant::B),          // argument_3: asset_right
-            (Type::Bytes(4), ArgVariant::A),          // argument_4: liquidity_token
-            (Type::Uint(128), ArgVariant::A),         // argument_5: amount_left
-            (Type::Uint(128), ArgVariant::B),         // argument_6: amount_right
-            (Type::Uint(128), ArgVariant::A),         // argument_7: amount_liquidity_token
-            (Type::OptionalInsurance, ArgVariant::A), // argument_8: Variant A insurance = 1, reward = 2
-        ],
+        *b"aliq",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_add_liquidity_side_effect.clone()];
@@ -1333,7 +1301,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
     let sequential = true;
 
     ext.with_default_xdns_records()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .build()
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
@@ -1490,23 +1458,19 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::B),
-            (Type::Address(32), ArgVariant::A),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::B,
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
@@ -1514,7 +1478,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -1539,23 +1503,19 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::B),
-            (Type::Address(32), ArgVariant::A),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::B,
     );
 
     let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
@@ -1563,7 +1523,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -1588,36 +1548,27 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 
     let _local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A),
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::B,
     );
 
     let valid_swap_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_swap_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),       // caller
-            (Type::Address(32), ArgVariant::B),       // to
-            (Type::Uint(128), ArgVariant::A),         // amount_from
-            (Type::Uint(128), ArgVariant::B),         // amount_to
-            (Type::Bytes(4), ArgVariant::A),          // asset_from
-            (Type::Bytes(4), ArgVariant::B),          // asset_to
-            (Type::OptionalInsurance, ArgVariant::A), // no insurance
-        ],
+        *b"swap",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![
@@ -1629,7 +1580,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -1651,13 +1602,11 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A),
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -1665,7 +1614,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
     let sequential = false;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -1761,13 +1710,11 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
 
     let _local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     const MAX_FEE: Balance = 1;
@@ -1777,7 +1724,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
     let sequential = false;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -1904,7 +1851,7 @@ fn uninsured_unrewarded_single_rococo_transfer() {
     // }
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -1983,7 +1930,7 @@ fn insured_unrewarded_single_rococo_transfer() {
     // await execute("submit-headers roco --export -o 5-headers-roco", 5);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -2154,7 +2101,7 @@ fn insured_rewarded_single_rococo_transfer() {
     // await execute("submit-headers roco --export -o 5-headers-roco", 5);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -2325,7 +2272,7 @@ fn insured_rewarded_multi_rococo_transfer() {
     // await execute("submit-headers roco --export -o 6-headers-roco", 5);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -2515,7 +2462,7 @@ fn insured_unrewarded_multi_rococo_transfer() {
     // await execute("submit-headers roco --export -o 6-headers-roco", 5);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -2719,7 +2666,7 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
     // await execute("submit-headers roco --export -o 6-headers-roco", 15);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -2948,7 +2895,7 @@ fn multi_mixed_rococo() {
     // await execute("submit-headers roco --export -o 22-headers-roco", 0);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -3459,7 +3406,7 @@ fn insured_multi_rococo_multiple_executors() {
     // await execute("submit-headers bslk --export -o 14-headers-bslk", 10);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -3767,7 +3714,7 @@ fn uninsured_unrewarded_parachain_transfer() {
     // await execute("submit-headers bslk --export -o 8-headers-bslk", 5);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -3862,7 +3809,7 @@ fn sdk_basic_success() {
     let origin = Origin::signed(ALICE);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -3916,7 +3863,7 @@ fn sdk_can_send_multiple_states() {
     let origin = Origin::signed(ALICE);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -3971,7 +3918,7 @@ fn transfer_is_validated_correctly() {
     let origin = Origin::signed(ALICE);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -4006,7 +3953,7 @@ fn swap_is_validated_correctly() {
     let origin = Origin::signed(ALICE);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -4044,7 +3991,7 @@ fn add_liquidity_is_validated_correctly() {
     let origin = Origin::signed(ALICE);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -4091,7 +4038,7 @@ fn call_to_vm_is_validated_correctly() {
     let origin = Origin::signed(ALICE);
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -4232,7 +4179,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //     const INSURANCE: Balance = 1;
 //
 //     ExtBuilder::default()
-//         .with_standard_side_effects()
+//         .with_standard_sfx_abi()
 //         .with_default_xdns_records()
 //         .build()
 //         .execute_with(|| {
@@ -4366,7 +4313,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //     const MAX_REWARD: Balance = 1;
 //
 //     ExtBuilder::default()
-//         .with_standard_side_effects()
+//         .with_standard_sfx_abi()
 //         .with_default_xdns_records()
 //         .build()
 //         .execute_with(|| {
@@ -4444,13 +4391,11 @@ fn no_duplicate_xtx_and_sfx_ids() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let valid_transfer_side_effect = produce_and_validate_side_effect(
-        t3rn_types::standard::get_transfer_interface(),
-        vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Address(32), ArgVariant::B),
-            (Type::Uint(128), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::C), // insurance = 3, max_reward/reward = 3
-        ],
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
     );
 
     let expected_xtx_id_1 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
@@ -4473,7 +4418,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
     let sequential = true;
 
     ExtBuilder::default()
-        .with_standard_side_effects()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {

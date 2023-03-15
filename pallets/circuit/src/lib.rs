@@ -52,12 +52,12 @@ pub use t3rn_types::{
 };
 
 pub use t3rn_primitives::{
-    abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     account_manager::{AccountManager, Outcome},
     circuit::{XExecSignalId, XExecStepSideEffectId},
     circuit_portal::CircuitPortal,
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
+    gateway::{GatewayABIConfig, HasherAlgo as HA},
     portal::Portal,
     volatile::LocalState,
     xdns::Xdns,
@@ -885,16 +885,18 @@ impl<T: Config> Pallet<T> {
         }
 
         for (index, sfx) in side_effects.iter().enumerate() {
-            let gateway_abi = <T as Config>::Xdns::get_abi(sfx.target)?;
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
 
-            let allowed_side_effects = <T as Config>::Xdns::allowed_side_effects(&sfx.target);
-            let decoded_sfx_type = sfx.validate(gateway_abi)?;
+            // todo: align SFX type to Sfx4bId across the codebase to avoid decoding
+            let sfx_4b_id: Sfx4bId = Decode::decode(&mut &sfx.encoded_action[..])
+                .map_err(|_| "SFX validate failed decoding SFX type to [u8; 4]")?;
 
-            allowed_side_effects
-                .iter()
-                .find(|&&x| x == decoded_sfx_type)
-                .ok_or("SFX not allowed on that target")?;
+            let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx_4b_id) {
+                Some(sfx_abi) => sfx_abi,
+                None => return Err("SFX not allowed/registered on requested target gateway"),
+            };
+            // todo: store the codec info in gateway's records and use it here
+            sfx.validate(sfx_abi, &Codec::Scale)?;
 
             if let Some(next) = side_effects.get(index + 1) {
                 if sfx.reward_asset_id != next.reward_asset_id {
@@ -1028,16 +1030,17 @@ impl<T: Config> Pallet<T> {
         // ToDo: handle misbehaviour
         log::debug!("SFX confirmation params: {:?}", encoded_event_params);
 
-        let sfx_abi: SFXAbi =
-            match <T as Config>::Xdns::get_optimistic_sfx_abi(&fsx.input.target, sfx_4b_id) {
-                Some(sfx_abi) => sfx_abi,
-                None => return Err("Unable to find matching Side Effect descriptor in XDNS"),
-            };
+        let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, sfx_4b_id) {
+            Some(sfx_abi) => sfx_abi,
+            None => return Err("Unable to find matching Side Effect descriptor in XDNS"),
+        };
 
-        sfx_abi.validate_arguments_against_received(
-            &fsx.input.encoded_args,
+        fsx.input.confirm(
+            sfx_abi,
             encoded_event_params,
-            Codec::Scale,
+            // todo: store the codec info in gateway's records and use it here
+            &Codec::Scale,
+            &Codec::Scale,
         )?;
 
         log::debug!("confirmation plug ok");
