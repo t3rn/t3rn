@@ -1,20 +1,32 @@
 use crate::{
-    sfx_abi::{IngressAbiDescriptors, SFXAbi},
+    sfx_abi::{PerCodecAbiDescriptors, SFXAbi},
     types::Sfx4bId,
 };
+use sp_std::prelude::*;
 
-pub fn standard_sfx_abi() -> Vec<Vec<(Sfx4bId, SFXAbi)>> {
+pub fn standard_sfx_abi() -> Vec<(Sfx4bId, SFXAbi)> {
     vec![
-        vec![(*b"data", get_data_abi())],
-        vec![(*b"tran", get_sfx_transfer_abi())],
-        vec![(*b"tass", get_sfx_transfer_asset_abi())],
-        vec![(*b"swap", get_swap_abi())],
-        vec![(*b"aliq", get_add_liquidity_abi())],
-        vec![(*b"rliq", get_remove_liquidity_abi())],
-        vec![(*b"cevm", get_call_evm_contract_abi())],
-        vec![(*b"wasm", get_call_wasm_contract_abi())],
-        vec![(*b"cgen", get_call_generic_abi())],
+        (*b"data", get_data_abi()),
+        (*b"tran", get_sfx_transfer_abi()),
+        (*b"tass", get_sfx_transfer_asset_abi()),
+        (*b"swap", get_swap_abi()),
+        (*b"aliq", get_add_liquidity_abi()),
+        (*b"rliq", get_remove_liquidity_abi()),
+        (*b"cevm", get_call_evm_contract_abi()),
+        (*b"wasm", get_call_wasm_contract_abi()),
+        (*b"cgen", get_call_generic_abi()),
     ]
+}
+
+impl SFXAbi {
+    pub fn get_standard_interface(sfx_4b_id: Sfx4bId) -> Option<SFXAbi> {
+        for (id, abi) in standard_sfx_abi() {
+            if id == sfx_4b_id {
+                return Some(abi)
+            }
+        }
+        None
+    }
 }
 
 pub fn standard_sfx_abi_ids() -> Vec<Sfx4bId> {
@@ -25,16 +37,16 @@ pub fn standard_sfx_abi_ids() -> Vec<Sfx4bId> {
 
 pub fn get_sfx_transfer_abi() -> SFXAbi {
     SFXAbi {
-        args_names: vec![
-            (b"from".to_vec(), false),
-            (b"to".to_vec(), true),
-            (b"amount".to_vec(), true),
-            (b"insurance".to_vec(), false),
-        ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        args_names: vec![(b"to".to_vec(), true), (b"amount".to_vec(), true)],
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount+:Value128)".to_vec(),
             for_scale: b"Transfer:Enum(from:Account32,to:Account32,amount:Value128)".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            // assume all indexed in topics ("+")
+            for_rlp: b"Transfer:Struct(to:Account20,amount:Value128)".to_vec(),
+            for_scale: b"Transfer:Struct(to:Account32,amount:Value128)".to_vec(),
         },
     }
 }
@@ -43,12 +55,10 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![
             (b"asset_id".to_vec(), true),
-            (b"from".to_vec(), false),
             (b"to".to_vec(), true),
             (b"amount".to_vec(), true),
-            (b"insurance".to_vec(), false),
         ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp:
                 b"Assets:Log(asset_id+:Account20,from+:Account20,to+:Account20,amount+:Value128)"
@@ -57,16 +67,26 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
                 b"Assets:Enum(asset_id:Account32,from:Account32,to:Account32,amount:Value128)"
                     .to_vec(),
         },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            // assume all indexed in topics ("+")
+            for_rlp: b"Assets:Struct(asset_id:u32,to:Account20,amount:Value128)".to_vec(),
+            for_scale: b"Assets:Struct(asset_id:u32,to:Account32,amount:Value128)".to_vec(),
+        },
     }
 }
 
 pub fn get_data_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![(b"key".to_vec(), true)],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"Tuple(key:Data,value:Data)".to_vec(),
             for_scale: b"Tuple(key:Data,value:Data)".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            // assume all indexed in topics ("+")
+            for_rlp: b"H256".to_vec(),
+            for_scale: b"H256".to_vec(),
         },
     }
 }
@@ -74,18 +94,21 @@ pub fn get_data_abi() -> SFXAbi {
 pub fn get_swap_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![
-            (b"from".to_vec(), false),
             (b"to".to_vec(), true),
             (b"amount_from".to_vec(), true),
             (b"amount_to".to_vec(), true),
             (b"asset_from".to_vec(), true),
             (b"asset_to".to_vec(), true),
-            (b"insurance".to_vec(), false),
         ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"Swap:Log(from+:Account20,to+:Account20,amount_from+:Value128,amount_to+:Value128,asset_from+:Account20,asset_to+:Account20)".to_vec(),
             for_scale: b"Swap:Enum(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            // assume all indexed in topics ("+")
+            for_rlp: b"Swap:Struct(to:Account20,amount_from:Value128,amount_to:Value128,asset_from:Account20,asset_to:Account20)".to_vec(),
+            for_scale: b"Swap:Struct(to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
         },
     }
 }
@@ -93,7 +116,6 @@ pub fn get_swap_abi() -> SFXAbi {
 pub fn get_add_liquidity_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![
-            (b"from".to_vec(), false),
             (b"to".to_vec(), true),
             (b"asset_left".to_vec(), true),
             (b"asset_right".to_vec(), true),
@@ -101,12 +123,15 @@ pub fn get_add_liquidity_abi() -> SFXAbi {
             (b"amount_left".to_vec(), true),
             (b"amount_right".to_vec(), true),
             (b"amount_liquidity_token".to_vec(), true),
-            (b"insurance".to_vec(), false),
         ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"AddLiquidity:Log(from+:Account20,to+:Account20,amount_from+:Value128,amount_to+:Value128,asset_from+:Account20,asset_to+:Account20)".to_vec(),
-            for_scale: b"AddLiquidity:Enum(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
+            for_rlp: b"AddLiquidity:Log(from+:Account20,to+:Account20,amount_left+:Value256,amount_right+:Value256,asset_right+:Account20,asset_left+:Account20,liquidity_token+:Account20,amount_liquidity_token+:Value256)".to_vec(),
+            for_scale: b"AddLiquidity:Enum(from:Account32,to:Account32,amount_left:Value128,amount_right:Value128,asset_right+:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128)".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            for_rlp: b"AddLiquidity:Struct(to:Account20,amount_left:Value256,amount_right:Value256,asset_right:Account20,asset_left:Account20,liquidity_token:Account20,amount_liquidity_token:Value256)".to_vec(),
+            for_scale: b"AddLiquidity:Struct(to:Account32,amount_left:Value128,amount_right:Value128,asset_right:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128)".to_vec(),
         },
     }
 }
@@ -114,7 +139,6 @@ pub fn get_add_liquidity_abi() -> SFXAbi {
 pub fn get_remove_liquidity_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![
-            (b"from".to_vec(), false),
             (b"to".to_vec(), true),
             (b"asset_left".to_vec(), true),
             (b"asset_right".to_vec(), true),
@@ -122,12 +146,15 @@ pub fn get_remove_liquidity_abi() -> SFXAbi {
             (b"amount_left".to_vec(), true),
             (b"amount_right".to_vec(), true),
             (b"amount_liquidity_token".to_vec(), true),
-            (b"insurance".to_vec(), false),
         ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"RemoveLiquidity:Log(from+:Account20,to+:Account20,amount_from+:Value128,amount_to+:Value128,asset_from+:Account20,asset_to+:Account20)".to_vec(),
-            for_scale: b"RemoveLiquidity:Enum(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
+            for_rlp: b"RemoveLiquidity:Log(from+:Account20,to+:Account20,amount_left+:Value256,amount_right+:Value256,asset_right+:Account20,asset_left+:Account20,liquidity_token+:Account20,amount_liquidity_token+:Value256)".to_vec(),
+            for_scale: b"RemoveLiquidity:Enum(from:Account32,to:Account32,amount_left:Value128,amount_right:Value128,asset_right+:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128)".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            for_rlp: b"RemoveLiquidity:Struct(to:Account20,amount_left:Value256,amount_right:Value256,asset_right:Account20,asset_left:Account20,liquidity_token:Account20,amount_liquidity_token:Value256)".to_vec(),
+            for_scale: b"RemoveLiquidity:Struct(to:Account32,amount_left:Value128,amount_right:Value128,asset_right:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128)".to_vec(),
         },
     }
 }
@@ -135,7 +162,6 @@ pub fn get_remove_liquidity_abi() -> SFXAbi {
 pub fn get_call_evm_contract_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![
-            (b"source".to_vec(), false),
             (b"target".to_vec(), true),
             (b"value".to_vec(), false),
             (b"input".to_vec(), true),
@@ -144,13 +170,18 @@ pub fn get_call_evm_contract_abi() -> SFXAbi {
             (b"max_priority_fee_per_gas".to_vec(), false),
             (b"nonce".to_vec(), false),
             (b"access_list".to_vec(), false),
-            (b"insurance".to_vec(), false),
         ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"CallEvm:Log(target+:Account20,source+:Account20,tx_hash+:H256,input-:Bytes)"
                 .to_vec(),
             for_scale: b"CallEvm:Log(source+:Account32,target+:Account32)".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            for_rlp: b"CallEvm:Struct(target:Account20,value:Value256,input:Bytes,gas_limit:Value256,max_fee_per_gas:Value256,max_priority_fee_per_gas:Value256,nonce:Value256,access_list:Bytes)"
+                .to_vec(),
+            for_scale: b"CallEvm:Struct(target:Account32,value:Value128,input:Bytes,gas_limit:Value128,max_fee_per_gas:Value128,max_priority_fee_per_gas:Value128,nonce:Value128,access_list:Bytes)"
+                .to_vec(),
         },
     }
 }
@@ -163,12 +194,17 @@ pub fn get_call_wasm_contract_abi() -> SFXAbi {
             (b"gas_limit".to_vec(), false),
             (b"storage_deposit_limit".to_vec(), false),
             (b"input".to_vec(), false),
-            (b"insurance".to_vec(), false),
         ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"CallWasm:Log(caller+:Account32,contract+:Account32)".to_vec(),
             for_scale: b"CallWasm:Enum(caller:Account32,contract:Account32)".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            for_rlp: b"CallWasm:Struct(contract:Account32,value:Value128,gas_limit:Value128,storage_deposit_limit:Value128,input:Bytes)"
+                .to_vec(),
+            for_scale: b"CallWasm:Struct(contract:Account32,value:Value128,gas_limit:Value128,storage_deposit_limit:Value128,input:Bytes)"
+                .to_vec(),
         },
     }
 }
@@ -176,18 +212,22 @@ pub fn get_call_wasm_contract_abi() -> SFXAbi {
 pub fn get_call_generic_abi() -> SFXAbi {
     SFXAbi {
         args_names: vec![
-            (b"source".to_vec(), true),
             (b"target".to_vec(), false),
             (b"value".to_vec(), false),
             (b"input".to_vec(), true),
             (b"limit".to_vec(), false),
             (b"additional_params".to_vec(), false),
-            (b"insurance".to_vec(), false),
         ],
-        ingress_abi_descriptors: IngressAbiDescriptors {
+        ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Swap:Log(source+:Account20,target+:Account20,value+:Value128,input-:Bytes)".to_vec(),
-            for_scale: b"Swap:Log(source+:Account32,target+:Account32,value+:Value128,input+:Bytes,limit+:Value128)".to_vec(),
+            for_rlp: b"Call:Log(source+:Account20,target+:Account20,value+:Value128,input-:Bytes)".to_vec(),
+            for_scale: b"Call:Log(source+:Account32,target+:Account32,value+:Value128,input+:Bytes,limit+:Value128)".to_vec(),
+        },
+        egress_abi_descriptors: PerCodecAbiDescriptors {
+            for_rlp: b"Call:Struct(target:Account20,value:Value128,input:Bytes,limit:Value128,additional_params:Bytes)"
+                .to_vec(),
+            for_scale: b"Call:Struct(target:Account32,value:Value128,input:Bytes,limit:Value128,additional_params:Bytes)"
+                .to_vec(),
         },
     }
 }
