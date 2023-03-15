@@ -15,15 +15,7 @@ use std::{
     time::Duration,
 };
 use t3rn_primitives::{
-    bridges::{
-        header_chain::InitializationData,
-        runtime::{
-            BASILISK_CHAIN_ID, CATALYST_CHAIN_ID, DALI_CHAIN_ID, DOLPHIN_CHAIN_ID,
-            GENSHIRO_CHAIN_ID, KUSAMA_CHAIN_ID, PANGOLIN_CHAIN_ID, POLKADOT_CHAIN_ID,
-            ROCFINITY_CHAIN_ID, ROCOCO_CHAIN_ID, ROCOCO_ENCOINTER_CHAIN_ID, SNOWBLINK_CHAIN_ID,
-            SOONSOCIAL_CHAIN_ID,
-        },
-    },
+    bridges::header_chain::InitializationData,
     monetary::TRN,
     xdns::{Parachain, XdnsRecord},
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
@@ -31,13 +23,6 @@ use t3rn_primitives::{
 
 use t3rn_types::interface::SideEffectInterface;
 const PARACHAIN_ID: u32 = 3333_u32;
-
-fn is_relaychain(chain_id: &ChainId) -> bool {
-    match *chain_id {
-        POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
-        _ => false,
-    }
-}
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
     t3rn_types::standard::standard_side_effects()
@@ -226,7 +211,6 @@ pub fn local_testnet_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                vec![],
                 standard_side_effects(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
@@ -297,7 +281,6 @@ pub fn rococo_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo
                 get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
-                vec![],
                 standard_side_effects(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
@@ -334,7 +317,6 @@ fn testnet_genesis(
     endowed_accounts: Vec<AccountId>,
     id: ParaId,
     root_key: AccountId,
-    xdns_records: Vec<XdnsRecord<AccountId>>,
     standard_side_effects: Vec<SideEffectInterface>,
     _initial_gateways: Vec<InitializationData<Header>>,
 ) -> circuit_parachain_runtime::GenesisConfig {

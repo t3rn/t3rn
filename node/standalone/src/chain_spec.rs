@@ -5,18 +5,11 @@ use circuit_standalone_runtime::{
 
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Encode, Pair, Public};
+use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use t3rn_primitives::{
-    bridges::{
-        header_chain::InitializationData,
-        runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
-    },
-    xdns::{Parachain, XdnsRecord},
-    ChainId, Header,
-};
-use t3rn_types::{abi::ExecutionLayer, interface::SideEffectInterface};
+use t3rn_primitives::{bridges::header_chain::InitializationData, Header};
+use t3rn_types::interface::SideEffectInterface;
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -44,13 +37,6 @@ where
 /// Generate an Aura authority key.
 pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
     (get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
-}
-
-fn is_relaychain(chain_id: &ChainId) -> bool {
-    match *chain_id {
-        POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
-        _ => false,
-    }
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
@@ -83,7 +69,6 @@ pub fn development_config() -> Result<ChainSpec, String> {
                     get_account_id_from_seed::<sr25519::Public>("Cli//default"),
                     get_account_id_from_seed::<sr25519::Public>("Ranger//default"),
                 ],
-                vec![],
                 standard_side_effects(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
@@ -139,7 +124,6 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                     get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
-                vec![],
                 standard_side_effects(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
@@ -173,7 +157,6 @@ fn testnet_genesis(
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
-    xdns_records: Vec<XdnsRecord<AccountId>>,
     standard_side_effects: Vec<SideEffectInterface>,
     _initial_gateways: Vec<InitializationData<Header>>,
     _enable_println: bool,
