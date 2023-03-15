@@ -28,7 +28,7 @@ use t3rn_primitives::{
     xdns::{Parachain, XdnsRecord},
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
-use t3rn_types::interface::SideEffectInterface;
+use t3rn_types::{abi::ExecutionLayer, interface::SideEffectInterface};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -118,6 +118,8 @@ async fn fetch_xdns_record_from_rpc(
         gateway_sys_props,
         vec![],
         vec![*b"tran"],
+        None,
+        ExecutionLayer::Substrate,
     ))
 }
 
