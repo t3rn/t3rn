@@ -131,6 +131,8 @@ fn register(
         gateway_genesis.clone(),
         gateway_sys_props.clone(),
         allowed_side_effects.clone(),
+        None,
+        ExecutionLayer::Substrate,
         encoded_registration_data,
     );
 

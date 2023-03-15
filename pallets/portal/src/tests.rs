@@ -7,8 +7,9 @@ use serde_json::Value;
 use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
 use std::fs;
 use t3rn_primitives::{
-    abi::GatewayABIConfig, xdns::AllowedSideEffect, ChainId, GatewayGenesisConfig, GatewaySysProps,
-    GatewayType, GatewayVendor,
+    abi::{ExecutionLayer, GatewayABIConfig},
+    xdns::AllowedSideEffect,
+    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 
 fn register_file(
@@ -66,6 +67,8 @@ fn register(
         gateway_genesis.clone(),
         gateway_sys_props.clone(),
         allowed_side_effects.clone(),
+        None,
+        ExecutionLayer::Substrate,
         encoded_registration_data,
     );
 
