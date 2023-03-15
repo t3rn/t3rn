@@ -14,9 +14,12 @@ metadata:
     chart: "{{ $chart_name }}-{{ $chart_version }}"
 spec:
   concurrencyPolicy: {{ $job.concurrencyPolicy | default "Forbid" }}
-  failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit | default 10 }}
+  failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit | default 3 }}
   jobTemplate:
     spec:
+      {{- if hasKey $job "activeDeadlineSeconds" }}
+      activeDeadlineSeconds: {{ $job.activeDeadlineSeconds }}
+      {{- end }}
       template:
         metadata:
           labels:

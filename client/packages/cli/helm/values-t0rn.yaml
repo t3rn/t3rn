@@ -9,3 +9,4 @@ jobs:
     args:
     - submit-headers
     - roco
+    activeDeadlineSeconds: 300
