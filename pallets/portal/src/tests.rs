@@ -7,9 +7,10 @@ use serde_json::Value;
 use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
 use std::fs;
 use t3rn_primitives::{
-    abi::GatewayABIConfig, xdns::AllowedSideEffect, ChainId, GatewayGenesisConfig, GatewaySysProps,
-    GatewayType, GatewayVendor,
+    gateway::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
+    TokenSysProps,
 };
+use t3rn_types::sfx::Sfx4bId;
 
 fn register_file(
     origin: OriginFor<Runtime>,
@@ -45,11 +46,11 @@ fn register(
         &mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let gateway_sys_props: GatewaySysProps = Decode::decode(
+    let gateway_sys_props: TokenSysProps = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(
+    let allowed_side_effects: Vec<Sfx4bId> = Decode::decode(
         &mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap(),
     )
     .unwrap();

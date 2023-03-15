@@ -7,10 +7,10 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
-use sp_runtime::traits::Hash;
+
 use sp_std::prelude::*;
 pub use t3rn_types::{
-    abi::{GatewayABIConfig, Type},
+    gateway::GatewayABIConfig,
     sfx::{EventSignature, SideEffectId, SideEffectName},
 };
 
@@ -47,12 +47,11 @@ pub mod pallet {
     use sp_std::convert::TryInto;
     use t3rn_abi::sfx_abi::SFXAbi;
     use t3rn_primitives::{
-        xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
-        Bytes, ChainId, GatewaySysProps, GatewayType, GatewayVendor,
+        xdns::{Parachain, Xdns, XdnsRecord},
+        Bytes, ChainId, GatewayType, GatewayVendor, TokenSysProps,
     };
     use t3rn_types::{
         fsx::{SecurityLvl, TargetId},
-        interface::SideEffectInterface,
         sfx::Sfx4bId,
     };
 
@@ -111,44 +110,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(< T as Config >::WeightInfo::add_new_xdns_record())]
-        pub fn add_side_effect(
-            origin: OriginFor<T>,
-            id: [u8; 4],
-            name: SideEffectName,
-            argument_abi: Vec<Type>,
-            argument_to_state_mapper: Vec<EventSignature>,
-            confirm_events: Vec<EventSignature>,
-            escrowed_events: Vec<EventSignature>,
-            commit_events: Vec<EventSignature>,
-            revert_events: Vec<EventSignature>,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            let side_effect_id: SideEffectId<T> = T::Hashing::hash(&id.encode());
-
-            if <CustomSideEffects<T>>::contains_key(side_effect_id)
-                | <StandardSideEffects<T>>::contains_key(id)
-            {
-                return Err(Error::<T>::SideEffectInterfaceAlreadyExists.into())
-            }
-
-            let side_effect = SideEffectInterface {
-                id,
-                name,
-                argument_abi,
-                argument_to_state_mapper,
-                confirm_events,
-                escrowed_events,
-                commit_events,
-                revert_events,
-            };
-
-            <CustomSideEffects<T>>::insert(side_effect_id, side_effect);
-
-            Ok(().into())
-        }
-
         /// Updates the last_finalized field for an xdns_record from the onchain registry. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::update_ttl())]
         pub fn update_ttl(
@@ -199,26 +160,19 @@ pub mod pallet {
         /// Xdns Record not found
         XdnsRecordNotFound,
         /// Xdns Record not found
-        SideEffectDescriptorAlreadyExists,
+        SideEffectABIAlreadyExists,
         /// SideEffect already stored
-        SideEffectInterfaceAlreadyExists,
-        /// SideEffect interface was not found in storage
-        SideEffectInterfaceNotFound,
+        SideEffectABINotFound,
         /// the xdns entry does not contain parachain information
         NoParachainInfoFound,
     }
 
     #[pallet::storage]
-    pub type StandardSideEffects<T: Config> =
-        StorageMap<_, Identity, TargetId, SideEffectInterface>;
+    pub type StandardSFXABIs<T: Config> = StorageMap<_, Identity, Sfx4bId, SFXAbi>;
 
     #[pallet::storage]
-    pub type SeenSideEffects<T: Config> =
+    pub type SFXABIRegistry<T: Config> =
         StorageDoubleMap<_, Identity, TargetId, Identity, Sfx4bId, SFXAbi>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn side_effect_registry)]
-    pub type CustomSideEffects<T> = StorageMap<_, Identity, SideEffectId<T>, SideEffectInterface>;
 
     /// The pre-validated composable xdns_records on-chain registry.
     #[pallet::storage]
@@ -230,7 +184,7 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub known_xdns_records: Vec<XdnsRecord<T::AccountId>>,
-        pub standard_side_effects: Vec<SideEffectInterface>,
+        pub standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     }
 
     /// The default value for the genesis config type.
@@ -239,7 +193,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 known_xdns_records: Default::default(),
-                standard_side_effects: Default::default(),
+                standard_sfx_abi: Default::default(),
             }
         }
     }
@@ -249,17 +203,13 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            let _standard_enabled_side_effects: Vec<AllowedSideEffect> = self
-                .standard_side_effects
-                .iter()
-                .map(|s| s.get_id())
-                .collect();
             for xdns_record in self.known_xdns_records.clone() {
                 <XDNSRegistry<T>>::insert(xdns_record.gateway_id, xdns_record);
             }
 
-            for side_effect in self.standard_side_effects.clone() {
-                <StandardSideEffects<T>>::insert(side_effect.get_id(), side_effect);
+            for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
+                log::info!("XDNS -- on-genesis: add standard SFX ABI: {:?}", sfx_4b_id);
+                <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
             }
         }
     }
@@ -267,7 +217,7 @@ pub mod pallet {
     impl<T: Config> Xdns<T> for Pallet<T> {
         /// Fetches all known XDNS records
         fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
-            pallet::XDNSRegistry::<T>::iter_values().collect()
+            XDNSRegistry::<T>::iter_values().collect()
         }
 
         fn add_new_xdns_record(
@@ -279,9 +229,9 @@ pub mod pallet {
             gateway_vendor: GatewayVendor,
             gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
-            gateway_sys_props: GatewaySysProps,
+            gateway_sys_props: TokenSysProps,
             security_coordinates: Vec<u8>,
-            allowed_side_effects: Vec<AllowedSideEffect>,
+            allowed_side_effects: Vec<Sfx4bId>,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
@@ -310,13 +260,22 @@ pub mod pallet {
                 .map_err(|_| "Unable to compute current timestamp")?;
 
             xdns_record.set_last_finalized(now);
-            <XDNSRegistry<T>>::insert(gateway_id, xdns_record);
+            <XDNSRegistry<T>>::insert(gateway_id, xdns_record.clone());
+
+            // Populate standard side effect ABI registry
+            for sfx_4b_id in xdns_record.allowed_side_effects.iter() {
+                match <StandardSFXABIs<T>>::get(sfx_4b_id) {
+                    Some(abi) => <SFXABIRegistry<T>>::insert(gateway_id, sfx_4b_id, abi),
+                    None => return Err(Error::<T>::SideEffectABINotFound.into()),
+                }
+            }
+
             Self::deposit_event(Event::<T>::XdnsRecordStored(gateway_id));
             Ok(())
         }
 
         /// returns a mapping of all allowed side_effects of a gateway.
-        fn allowed_side_effects(gateway_id: &ChainId) -> Vec<AllowedSideEffect> {
+        fn allowed_side_effects(gateway_id: &ChainId) -> Vec<Sfx4bId> {
             match <XDNSRegistry<T>>::get(gateway_id) {
                 Some(xdns_record) => xdns_record.allowed_side_effects,
                 None => Vec::new(),
@@ -351,22 +310,6 @@ pub mod pallet {
             Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi) //safe because checked
         }
 
-        fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {
-            Type::Uint(
-                if let Some(v) = <XDNSRegistry<T>>::get(chain_id)
-                    .unwrap()
-                    .gateway_abi
-                    .value_type_size
-                    .checked_mul(8)
-                {
-                    v
-                } else {
-                    // return default value
-                    0
-                },
-            )
-        }
-
         /// returns the gateway vendor of a gateway if its available
         fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
             match <XDNSRegistry<T>>::get(chain_id) {
@@ -396,7 +339,7 @@ pub mod pallet {
             <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
         }
 
-        fn extend_optimistic_sfx_abi(
+        fn extend_sfx_abi(
             origin: OriginFor<T>,
             gateway_id: ChainId,
             sfx_4b_id: Sfx4bId,
@@ -407,8 +350,8 @@ pub mod pallet {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
 
-            <SeenSideEffects<T>>::mutate(gateway_id, sfx_4b_id, |sfx_abi| match sfx_abi {
-                Some(_) => Err(Error::<T>::SideEffectDescriptorAlreadyExists),
+            <SFXABIRegistry<T>>::mutate(gateway_id, sfx_4b_id, |sfx_abi| match sfx_abi {
+                Some(_) => Err(Error::<T>::SideEffectABIAlreadyExists),
                 None => {
                     *sfx_abi = Some(sfx_expected_abi);
                     Ok(())
@@ -418,7 +361,7 @@ pub mod pallet {
             Ok(())
         }
 
-        fn override_optimistic_sfx_abi(
+        fn override_sfx_abi(
             origin: OriginFor<T>,
             gateway_id: ChainId,
             new_sfx_abis: Vec<(Sfx4bId, SFXAbi)>,
@@ -429,7 +372,7 @@ pub mod pallet {
             }
 
             for (sfx_4b_id, sfx_expected_abi) in new_sfx_abis {
-                <SeenSideEffects<T>>::mutate(gateway_id, sfx_4b_id, |sfx_abi| {
+                <SFXABIRegistry<T>>::mutate(gateway_id, sfx_4b_id, |sfx_abi| {
                     *sfx_abi = Some(sfx_expected_abi);
                 });
             }
@@ -437,14 +380,14 @@ pub mod pallet {
             Ok(())
         }
 
-        fn get_optimistic_sfx_abis(gateway_id: &ChainId) -> Vec<(Sfx4bId, SFXAbi)> {
-            <SeenSideEffects<T>>::iter_prefix(gateway_id)
+        fn get_all_sfx_abi(gateway_id: &ChainId) -> Vec<(Sfx4bId, SFXAbi)> {
+            <SFXABIRegistry<T>>::iter_prefix(gateway_id)
                 .map(|(sfx_4b_id, sfx_abi)| (sfx_4b_id, sfx_abi))
                 .collect()
         }
 
-        fn get_optimistic_sfx_abi(gateway_id: &ChainId, sfx_4b_id: Sfx4bId) -> Option<SFXAbi> {
-            <SeenSideEffects<T>>::get(gateway_id, sfx_4b_id)
+        fn get_sfx_abi(gateway_id: &ChainId, sfx_4b_id: Sfx4bId) -> Option<SFXAbi> {
+            <SFXABIRegistry<T>>::get(gateway_id, sfx_4b_id)
         }
 
         fn modify_security_level(

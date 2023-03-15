@@ -66,6 +66,7 @@ pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
 t3rn-primitives            = { path = "../../primitives" }
 t3rn-types                 = { path = "../../types" }
+t3rn-abi                 = { path = "../../types/abi" }
 
 pallet-3vm-contracts-rpc = { path = "../../pallets/contracts/rpc", package = "pallet-contracts-rpc" }
 pallet-3vm-evm-rpc       = { path = "../../pallets/evm/rpc", package = "pallet-evm-rpc" }

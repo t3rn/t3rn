@@ -25,11 +25,12 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_std::{vec, vec::Vec};
     use t3rn_primitives::{
-        abi::GatewayABIConfig,
+        gateway::GatewayABIConfig,
         portal::{KusamaLightClient, PolkadotLightClient, RococoLightClient},
-        xdns::{AllowedSideEffect, Xdns},
-        ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+        xdns::Xdns,
+        ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenSysProps,
     };
+    use t3rn_types::sfx::Sfx4bId;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -105,8 +106,8 @@ pub mod pallet {
             gateway_vendor: GatewayVendor,
             gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
-            gateway_sys_props: GatewaySysProps,
-            allowed_side_effects: Vec<AllowedSideEffect>,
+            gateway_sys_props: TokenSysProps,
+            allowed_side_effects: Vec<Sfx4bId>,
             encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // ToDo xdns record is written also when the calls after this fail!!!

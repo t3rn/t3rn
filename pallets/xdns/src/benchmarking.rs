@@ -5,7 +5,7 @@ use crate::Pallet as XDNS;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 use sp_std::prelude::*;
-use t3rn_primitives::{xdns::Xdns, GatewaySysProps};
+use t3rn_primitives::{xdns::Xdns, TokenSysProps};
 
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
@@ -37,7 +37,7 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
-        let gateway_sys_props = GatewaySysProps {
+        let gateway_sys_props = TokenSysProps {
             ss58_format: 0,
             token_symbol: Encode::encode(""),
             token_decimals: 0,
@@ -64,7 +64,7 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
-        let gateway_sys_props = GatewaySysProps {
+        let gateway_sys_props = TokenSysProps {
             ss58_format: 0,
             token_symbol: Encode::encode(""),
             token_decimals: 0,
@@ -110,7 +110,7 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
-        let gateway_sys_props = GatewaySysProps {
+        let gateway_sys_props = TokenSysProps {
             ss58_format: 0,
             token_symbol: Encode::encode(""),
             token_decimals: 0,
@@ -152,7 +152,7 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
-        let gateway_sys_props = GatewaySysProps {
+        let gateway_sys_props = TokenSysProps {
             ss58_format: 0,
             token_symbol: Encode::encode(""),
             token_decimals: 0,

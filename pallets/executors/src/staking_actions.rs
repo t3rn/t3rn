@@ -504,7 +504,7 @@ impl<T: Config> Pallet<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::{Executors, Runtime};
+    use crate::mock::Executors;
     use circuit_mock_runtime::pallet_executors::subject_metadata::StakerMetadata;
     use circuit_runtime_types::{AccountId, Balance};
     use sp_runtime::AccountId32;
