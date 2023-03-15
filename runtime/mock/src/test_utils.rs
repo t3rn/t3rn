@@ -146,14 +146,13 @@ use t3rn_abi::{Abi, SFXAbi};
 use t3rn_types::sfx::Sfx4bId;
 
 pub fn produce_and_validate_side_effect(
-    sfx_4b_id: Sfx4bId,
+    action: Sfx4bId,
     insurance: BalanceOf,
     max_reward: BalanceOf,
     codec: t3rn_abi::recode::Codec,
     args_variant: ArgVariant,
 ) -> SideEffect<AccountId, BalanceOf> {
-    let sfx_interface =
-        SFXAbi::get_standard_interface(sfx_4b_id).expect("SFX should be registered");
+    let sfx_interface = SFXAbi::get_standard_interface(action).expect("SFX should be registered");
 
     let abi: Abi = sfx_interface
         .get_expected_egress_descriptor(codec)
@@ -163,7 +162,7 @@ pub fn produce_and_validate_side_effect(
     SideEffect::<AccountId, BalanceOf> {
         target: [0, 0, 0, 0],
         max_reward,
-        encoded_action: sfx_4b_id.to_vec(),
+        action,
         encoded_args: recursive_produce_test_args_for_abi(abi, args_variant),
         signature: vec![],
         insurance,

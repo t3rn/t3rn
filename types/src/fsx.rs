@@ -4,10 +4,7 @@ use codec::{Decode, Encode};
 use num_traits::Zero;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-use sp_std::{
-    convert::{TryFrom, TryInto},
-    vec,
-};
+use sp_std::{convert::TryInto, vec};
 
 pub use crate::{
     bid::SFXBid,
@@ -111,7 +108,7 @@ where
         Ok(HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: self.input.target,
             prize: self.input.max_reward,
-            action: self.input.action.clone(),
+            action: self.input.action,
             encoded_args: self.input.encoded_args,
             encoded_args_abi: vec![],
             security_lvl: self.security_lvl,
