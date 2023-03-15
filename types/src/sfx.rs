@@ -1,21 +1,24 @@
-use crate::abi::{decode_buf2val, GatewayABIConfig, Type};
 pub use crate::{
     bid::SFXBid,
-    fsx::{FullSideEffect, SideEffectId, SideEffectInterface},
+    fsx::{FullSideEffect, SideEffectId},
+};
+use crate::{
+    gateway::{decode_buf2val},
+    types::Data,
 };
 use bytes::Buf;
 use codec::{Decode, Encode, MaxEncodedLen};
+#[cfg(feature = "runtime")]
+use num::Zero;
+#[cfg(feature = "runtime")]
+use scale_info::prelude::collections::VecDeque;
 use scale_info::{
     prelude::{fmt::Debug, vec, vec::Vec},
     TypeInfo,
 };
 use sp_runtime::DispatchError;
 use sp_std::borrow::ToOwned;
-
-#[cfg(feature = "runtime")]
-use num::Zero;
-#[cfg(feature = "runtime")]
-use scale_info::prelude::collections::VecDeque;
+use t3rn_abi::{Codec, SFXAbi};
 
 pub type TargetId = [u8; 4];
 pub type Sfx4bId = [u8; 4];
@@ -56,7 +59,7 @@ pub struct HardenedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub action: ActionId,
     pub prize: BalanceOf,
     pub encoded_args: Vec<Bytes>,
-    pub encoded_args_abi: Vec<Type>,
+    pub encoded_args_abi: Vec<u8>,
     pub security_lvl: SecurityLvl,
     pub confirmation_outcome: Option<ConfirmationOutcome>,
     pub confirmed_executioner: Option<AccountId>,
@@ -162,83 +165,27 @@ where
 
     pub fn match_event_property_name_with_input_argument_name(
         &self,
-        event_property_name: &Vec<u8>,
-        sfx_interface: &SideEffectInterface,
-    ) -> Result<Bytes, DispatchError> {
-        match sfx_interface.argument_to_state_mapper.iter().position(|arg_name| {
-            arg_name == event_property_name
-        }) {
-            Some(index) => {
-                match self.encoded_args.get(index) {
-                    Some(encoded_bytes) => Ok(encoded_bytes.to_owned()),
-                    _ => Err("SFX::match_event_property_name_with_input_argument_name - Invalid argument index".into()),
-                }
-            },
-            None => Err("SFX::match_event_property_name_with_input_argument_name - Argument name doesn't match input parameter".into()),
-        }
+        sfx_abi: SFXAbi,
+        egress_codec: &Codec,
+    ) -> Result<TargetId, DispatchError> {
+        sfx_abi.validate_ordered_arguments(&self.encoded_args, egress_codec)?;
+        let decoded_action: [u8; 4] = decode_buf2val(self.encoded_action.to_owned())?;
+        Ok(decoded_action)
     }
 
     pub fn confirm(
         &self,
-        output_payload_arguments: Vec<Vec<u8>>,
-        security_lvl: SecurityLvl,
-        security_coordinates: Bytes,
-        source: Bytes,
+        sfx_abi: SFXAbi,
+        ingress_payload: Data,
+        egress_codec: &Codec,
+        ingress_codec: &Codec,
     ) -> Result<(), DispatchError> {
-        let sfx_interface: SideEffectInterface = self.read_interface()?;
-
-        let mut was_source_validated: bool = false;
-        let expected_event_signature = &sfx_interface.get_confirming_events()[0];
-        // Handle special case for vec!["<InclusionOnly>"]
-        //  where the execution confirmation isn't required hence the side effect doesn't produce
-        //  any event or event's arguments can't be known beforehand - like GetDataSideEffect
-        if *expected_event_signature == b"<InclusionOnly>".encode() {
-            return Ok(())
-        }
-
-        let (_, property_names) = crate::abi::extract_property_names_from_signature_as_bytes(
-            expected_event_signature.encode(),
-        )?;
-
-        for (output_argument_index, property_name) in property_names.iter().enumerate() {
-            //  Check each argument of decoded "encoded_remote_events" against the values from State
-            //      Don't check arguments starts with "_" - (95u8). In case of dirty actions we don't know / care who the author is
-            if property_name.is_empty() || property_name[0] == 95u8 {
-                if property_name == b"_source" {
-                    if security_coordinates != source.clone() {
-                        return Err(
-                            "Confirmation Failed - received event confirmed by different entity than selected Executor".into(),
-                        )
-                    }
-                    was_source_validated = true;
-                }
-                continue
-            }
-
-            let encoded_input_argument = self.match_event_property_name_with_input_argument_name(
-                property_name,
-                &sfx_interface,
-            )?;
-
-            if *output_payload_arguments
-                .get(output_argument_index)
-                .ok_or("Confirmation Failed - expected payload args order not out of bounds")?
-                != encoded_input_argument
-            {
-                return Err(
-                    "Confirmation Failed - received event arguments differ from expected input"
-                        .into(),
-                )
-            }
-        }
-
-        if security_lvl == SecurityLvl::Escrow && !was_source_validated {
-            return Err(
-                "Confirmation Failed - Escrowed SFX require source to be correctly derived from incoming events".into(),
-            )
-        }
-
-        Ok(())
+        sfx_abi.validate_arguments_against_received(
+            &self.encoded_args,
+            ingress_payload,
+            egress_codec,
+            ingress_codec,
+        )
     }
 }
 
