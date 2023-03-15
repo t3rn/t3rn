@@ -1,11 +1,12 @@
+import { createType } from "@t3rn/types";
 import { EventEmitter } from "events"
-import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
-import { fetchNonce } from "../utils/"
+import { ApiPromise } from "@polkadot/api"
 import { SideEffect } from "../executionManager/sideEffect"
 import createDebug from "debug"
 import { BN } from "@polkadot/util"
 import { Sdk } from "@t3rn/sdk"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
+import { T3rnTypesSfxConfirmedSideEffect } from "@polkadot/types/lookup"
 const fs = require("fs")
 
 /**
@@ -49,7 +50,6 @@ export class CircuitRelayer extends EventEmitter {
      */
     async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
         const txs: SubmittableExtrinsic[] = sfxs.map((sfx) => this.createConfirmTx(sfx))
-        const nonce = await fetchNonce(this.api, this.sdk.signer.address)
         if (txs.length > 1) {
             // only batch if more than one tx
             return this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createBatch(txs))
@@ -64,17 +64,24 @@ export class CircuitRelayer extends EventEmitter {
      * @param sfx The SideEffect to confirm
      */
     createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
-        const inclusionData = this.api.createType("InclusionData", sfx.inclusionData)
-        const receivedAt = this.api.createType("BlockNumber", 0) // ToDo figure out what to do here
+        const inclusionData = this.api.createType("RelaychainInclusionProof", {
+                encoded_payload: sfx.inclusionData.encoded_payload,
+                payload_proof: sfx.inclusionData.payload_proof,
+                block_hash: sfx.inclusionData.block_hash,
+            })
 
-        const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
-            err: null,
-            output: null,
-            inclusion_data: inclusionData.toHex(),
-            executioner: sfx.executor,
-            receivedAt: receivedAt,
-            cost: null,
-        })
+        const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType(
+            "T3rnTypesSfxConfirmedSideEffect",
+            {
+                err: null,
+                output: null,
+                inclusionData: inclusionData.toHex(),
+                executioner: sfx.executor,
+                receivedAt: 0,
+                cost: null,
+            }
+        )
+
         return this.api.tx.circuit.confirmSideEffect(sfx.id, confirmedSideEffect.toJSON())
     }
 }

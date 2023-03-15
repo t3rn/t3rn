@@ -1,4 +1,4 @@
-import "@polkadot/api-augment"
+import "@t3rn/types"
 import { Sdk } from "@t3rn/sdk"
 import { Keyring } from "@polkadot/api"
 require("dotenv").config()

@@ -124,7 +124,7 @@ export class SubstrateRelayer extends EventEmitter {
         const inclusionProof = await getEventProofs(this.client, blockHash)
         const inclusionData: InclusionData = {
             encoded_payload: event.toHex(),
-            proof: {
+            payload_proof: {
                 // @ts-ignore
                 trieNodes: inclusionProof.toJSON().proof,
             },

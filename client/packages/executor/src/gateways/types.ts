@@ -19,7 +19,7 @@ export type RelayerEventData = {
  */
 export type InclusionData = {
     encoded_payload: string
-    proof: {
+    payload_proof: {
         trieNodes: string
     }
     block_hash: string

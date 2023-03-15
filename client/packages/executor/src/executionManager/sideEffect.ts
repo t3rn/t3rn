@@ -280,7 +280,6 @@ export class SideEffect extends EventEmitter {
         const rewardValueUsd = this.rewardAssetPrice.getValue() * this.reward.getValue()
         this.rewardUsd = rewardValueUsd
         const maxProfitUsd = rewardValueUsd - txCostUsd - txOutputCostUsd
-        console.log("want to bid", maxProfitUsd !== this.maxProfitUsd.getValue())
         if (maxProfitUsd !== this.maxProfitUsd.getValue()) {
             this.maxProfitUsd.next(maxProfitUsd)
             this.triggerBid()

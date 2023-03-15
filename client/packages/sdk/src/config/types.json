@@ -286,15 +286,15 @@
         "range": "Vec<Header>",
         "justification": "GrandpaJustification<Header>"
     },
-    "RelaychainInclusionData": {
-        "block_hash": "Header::Hash",
+    "RelaychainInclusionProof": {
         "encoded_payload": "Vec<u8>",
-        "payload_proof": "StorageProof"
+        "payload_proof": "StorageProof",
+        "block_hash": "Header::Hash"
     },
-    "ParachainInclusionData": {
-        "header_proof": "StorageProof",
-        "relay_block_hash": "Header::Hash",
+    "ParachainInclusionProof": {
         "encoded_payload": "Vec<u8>",
-        "payload_proof": "StorageProof"
+        "header_proof": "StorageProof",
+        "payload_proof": "StorageProof",
+        "relay_block_hash": "Header::Hash"
     }
 }
