@@ -296,5 +296,11 @@
         "encoded_payload": "Vec<u8>",
         "proof": "StorageProof",
         "block_hash": "Header::Hash"
+    },
+    "ExecutionLayer": {
+        "_enum": [
+            "Substrate",
+            "Evm"
+        ]
     }
 }

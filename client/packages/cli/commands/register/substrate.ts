@@ -13,7 +13,8 @@ export const registerSubstrate = async (circuit: ApiPromise, gatewayData: any, e
         provider: new WsProvider(gatewayData.rpc),
     })
 
-    if(gatewayData.registrationData.parachain === null) { // relaychain
+
+    if(gatewayData.registrationData.parentChainId === null) { // relaychain
         return registerRelaychain(circuit, target, gatewayData, epochsAgo)
     } else {
         return registerParachain(circuit, target, gatewayData)
@@ -32,6 +33,8 @@ const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatew
         gateway_genesis: await createGatewayGenesis(circuit, target),
         gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
+        parent_gateway_id: circuit.createType('Option<ChainId>', gatewayData.registrationData.parentChainId),
+        execution_layer: circuit.createType('ExecutionLayer', gatewayData.registrationData.executionLayer),
         registration_data: circuit.createType('GrandpaRegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
@@ -59,6 +62,8 @@ const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewa
         gateway_genesis: await createGatewayGenesis(circuit, target),
         gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
+        parent_gateway_id: circuit.createType('Option<ChainId>', gatewayData.registrationData.parentChainId),
+        execution_layer: circuit.createType('ExecutionLayer', gatewayData.registrationData.executionLayer),
         registration_data: circuit.createType('GrandpaRegistrationData', [
             parachainHeader.toJSON(),
             null,

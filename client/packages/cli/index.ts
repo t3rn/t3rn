@@ -61,7 +61,7 @@ class CircuitCLI {
     async register(id: string, teleport: number, exportArgs: boolean, exportName: string) {
         let data: any = config.gateways.find(elem => elem.id === id)
         if(data) {
-            if(data.registrationData?.parachain !== null) {
+            if(data.registrationData.parentChainId !== null) {
                 // @ts-ignore
                 data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
             }
@@ -76,6 +76,8 @@ class CircuitCLI {
                 registrationData[0].gateway_genesis,
                 registrationData[0].gateway_sys_props,
                 registrationData[0].allowed_side_effects,
+                registrationData[0].parent_gateway_id,
+                registrationData[0].execution_layer,
                 registrationData[0].registration_data.toHex()
             );
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createSudo(tx))
