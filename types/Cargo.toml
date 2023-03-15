@@ -26,6 +26,8 @@ sp-std          = { git = "https://github.com/paritytech/substrate.git", branch 
 
 frame-system    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false, optional = true  }
 
+t3rn-abi            = { path = "../types/abi", default-features = false, features = [ "runtime" ], optional = true }
+
 [dev-dependencies]
 hex         = "0.4"
 hex-literal = "0.3.1"
@@ -38,6 +40,6 @@ circuit-runtime-types = { path = "../runtime/common-types" }
 
 [features]
 default     = [ "std" ]
-runtime     = [ "sp-runtime", "sp-std", "sp-core", "sp-io", "frame-system" ]
-runtime-std = [ "sp-runtime/std", "sp-core/std", "sp-io/std", "frame-system/std" ]
-std         = [ "sp-std/std", "sp-runtime/std", "frame-system/std", "sp-core/std", "codec/std", "scale-info/std", "serde/std", "bytes/std", "num-traits/std" ]
+runtime     = [ "sp-runtime", "sp-std", "sp-core", "sp-io", "frame-system", "t3rn-abi" ]
+runtime-std = [ "sp-runtime/std", "sp-core/std", "sp-io/std", "frame-system/std", "t3rn-abi/std" ]
+std         = [ "t3rn-abi/std", "sp-std/std", "sp-runtime/std", "frame-system/std", "sp-core/std", "codec/std", "scale-info/std", "serde/std", "bytes/std", "num-traits/std" ]

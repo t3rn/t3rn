@@ -1,24 +1,11 @@
 use codec::{Decode, Encode};
 use scale_info::{
-    prelude::{boxed::Box, fmt::Debug, vec, vec::Vec},
+    prelude::{fmt::Debug, vec::Vec},
     TypeInfo,
 };
 
-#[cfg(feature = "runtime")]
-use scale_info::prelude::any::Any;
-
-#[cfg(feature = "runtime")]
-use primitive_types::U256;
-
-#[cfg(feature = "runtime")]
-use crate::types::Bytes;
-
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::DispatchError;
-
-#[cfg(feature = "runtime")]
-use sp_runtime::RuntimeString;
 
 #[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -85,7 +72,6 @@ impl Default for GatewayABIConfig {
             address_length: 32,  // 32 bytes : 32 * 8 = 256 bits
             value_type_size: 16, // u128 = 16 bytes = 128 bits.
             decimals: 8,
-            structs: vec![],
         }
     }
 }
@@ -96,4 +82,8 @@ pub struct ContractActionDesc<Hash, TargetId, AccountId> {
     pub action_id: Hash,
     pub target_id: Option<TargetId>,
     pub to: Option<AccountId>,
+}
+
+pub fn decode_buf2val<D: Decode>(buf: Vec<u8>) -> Result<D, &'static str> {
+    D::decode(&mut &buf[..]).map_err(|_| "Decoding error: decode_buf2val")
 }
