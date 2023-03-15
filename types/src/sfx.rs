@@ -1,3 +1,4 @@
+use crate::types::Data;
 pub use crate::{
     bid::SFXBid,
     fsx::{FullSideEffect, SideEffectId},
@@ -17,7 +18,7 @@ use scale_info::{
     TypeInfo,
 };
 use sp_runtime::DispatchError;
-use sp_std::borrow::ToOwned;
+
 use t3rn_abi::{Codec, SFXAbi};
 
 pub type TargetId = [u8; 4];

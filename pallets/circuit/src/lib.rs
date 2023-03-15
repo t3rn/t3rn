@@ -70,7 +70,6 @@ pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
-use t3rn_types::sfx::Sfx4bId;
 
 #[cfg(test)]
 pub mod tests;
@@ -1030,10 +1029,11 @@ impl<T: Config> Pallet<T> {
         // ToDo: handle misbehaviour
         log::debug!("SFX confirmation params: {:?}", encoded_event_params);
 
-        let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, sfx_4b_id) {
-            Some(sfx_abi) => sfx_abi,
-            None => return Err("Unable to find matching Side Effect descriptor in XDNS"),
-        };
+        let sfx_abi: SFXAbi =
+            match <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action) {
+                Some(sfx_abi) => sfx_abi,
+                None => return Err("Unable to find matching Side Effect descriptor in XDNS"),
+            };
 
         fsx.input.confirm(
             sfx_abi,
