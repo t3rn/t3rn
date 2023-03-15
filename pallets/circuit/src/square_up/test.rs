@@ -151,7 +151,7 @@ pub mod test {
     #[test]
     fn square_up_locks_up_requester_with_enough_native_currency() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -170,7 +170,7 @@ pub mod test {
     #[test]
     fn square_up_fails_lock_up_requester_without_enough_native_currency() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -197,7 +197,7 @@ pub mod test {
     #[test]
     fn square_up_locks_up_first_bidder_with_enough_native_currency() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -239,7 +239,7 @@ pub mod test {
     #[test]
     fn square_up_kills_xtx_with_its_all_bids() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -259,7 +259,7 @@ pub mod test {
     #[test]
     fn square_up_kills_xtx_with_its_all_bids_even_when_executor_assigned_to_request_charge() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -279,7 +279,7 @@ pub mod test {
     #[test]
     fn square_up_finalizes_and_successfully_commits_finished_fsx() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -330,7 +330,7 @@ pub mod test {
     #[test]
     fn square_up_finalize_reverts_xtx_if_some_fsx_are_unconfirmed() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -366,7 +366,7 @@ pub mod test {
     #[test]
     fn square_up_finalize_slashes_bidder_even_if_unassigned_to_request_charge() {
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {

@@ -178,7 +178,6 @@ pub mod test {
     use frame_system::{EventRecord, Phase};
 
     use circuit_mock_runtime::test_utils::*;
-    use t3rn_primitives::abi::Type;
 
     use crate::tests::brute_seed_block_1;
     use circuit_mock_runtime::*;
@@ -191,13 +190,11 @@ pub mod test {
         let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
         let mut valid_transfer_side_effect = produce_and_validate_side_effect(
-            t3rn_types::standard::get_transfer_interface(),
-            vec![
-                (Type::Address(32), ArgVariant::A),
-                (Type::Address(32), ArgVariant::B),
-                (Type::Uint(128), ArgVariant::A),
-                (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
-            ],
+            *b"tran",
+            1, // insurance
+            1, // max_reward
+            t3rn_abi::Codec::Scale,
+            ArgVariant::A,
         );
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];
@@ -206,7 +203,7 @@ pub mod test {
         let sequential = true;
 
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
@@ -267,13 +264,11 @@ pub mod test {
         let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
         let mut valid_transfer_side_effect = produce_and_validate_side_effect(
-            t3rn_types::standard::get_transfer_interface(),
-            vec![
-                (Type::Address(32), ArgVariant::A),
-                (Type::Address(32), ArgVariant::B),
-                (Type::Uint(128), ArgVariant::A),
-                (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
-            ],
+            *b"tran",
+            1, // insurance
+            1, // max_reward
+            t3rn_abi::Codec::Scale,
+            ArgVariant::A,
         );
 
         valid_transfer_side_effect.target = [3, 3, 3, 3];
@@ -282,7 +277,7 @@ pub mod test {
         let sequential = true;
 
         ExtBuilder::default()
-            .with_standard_side_effects()
+            .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
