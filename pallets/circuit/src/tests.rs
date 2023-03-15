@@ -916,7 +916,7 @@ fn circuit_handles_dropped_at_bidding() {
         })
 }
 
-const SINGLE_XTX_DEL_WEIGHT: u64 = 425000000;
+const SINGLE_XTX_DEL_WEIGHT: u64 = 325000000;
 const CLOCK_BUMP_ROUND_WEIGHT: u64 = 150000000;
 const CLOCK_CALC_CLAIMABLE_WEIGHT: u64 = 150000000;
 
