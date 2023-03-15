@@ -69,7 +69,7 @@ pub struct XdnsRecord<AccountId> {
     /// Differentiate between the different consensus systems, e.g. Kusama & Polkadot
     pub gateway_vendor: GatewayVendor,
 
-    /// Differentiate between the different execution layers, e.g. Substrate & Ethereum
+    /// Differentiate between the different execution layers, e.g. Substrate & EVM
     pub execution_layer: ExecutionLayer,
 
     /// Maps gateway to its parent chain. e.g. para -> relay
