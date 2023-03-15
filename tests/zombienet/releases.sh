@@ -16,6 +16,14 @@ if [[ $2 == "--latest" ]]; then
     only_latest_release=true
 fi
 
+# If the second argument is --upgrade, it will skip the first asset and get the second asset
+# This is useful for getting the previous binary so we can upgrade it with the latest wasm
+skip_first_asset=false
+has_skipped=false
+if [[ $2 == "--upgrade" ]]; then
+    skip_first_asset=true
+fi
+
 for release in $(echo "${releases}" | jq -r '.[] | @base64'); do
     release_json=$(echo "${release}" | base64 --decode | jq -r '.')
     tag=$(echo "${release_json}" | jq -r '.tag_name')
@@ -30,6 +38,12 @@ for release in $(echo "${releases}" | jq -r '.[] | @base64'); do
             if [[ "$asset_name" == *"$parachain"* ]]; then
                 echo $tag: $(echo "${asset_json}" | jq -r '.browser_download_url')
                 
+                if [[ $has_skipped == true ]]; then
+                    exit 0
+                fi
+                if [[ $skip_first_asset == true ]]; then
+                    has_skipped=true
+                fi
                 if [[ $only_latest_release == true ]]; then
                     exit 0
                 fi

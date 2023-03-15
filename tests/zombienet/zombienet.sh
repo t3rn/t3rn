@@ -158,7 +158,10 @@ case "$1" in
       smoke
       ;;
   "upgrade")
-      setup
+      make_bin_dir
+      fetch_zombienet
+      build_polkadot
+
       upgrade $@
       ;;
   "spawn")
