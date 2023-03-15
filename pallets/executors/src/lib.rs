@@ -35,16 +35,15 @@ pub mod pallet {
         traits::{tokens::WithdrawReasons, Currency, LockableCurrency, ReservableCurrency},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
-    use pallet_circuit::SideEffect;
-    use sabi::{Sabi, *};
+    use pallet_circuit::{state::LocalXtxCtx, XExecSignalId, Xdns};
+    // use pallet_xbi_portal::primitives::xbi::XBIPortal;
+    // use pallet_xbi_portal_enter::evm_precompile::XBIPortal;
     use sp_runtime::{
         traits::{One, Saturating, Zero},
         Percent,
     };
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
-        circuit::XExecSignalId,
-        // treasury::Treasury as TTreasury,
         clock::Clock,
         common::{OrderedSet, Range, RoundIndex},
         executors::{
@@ -59,11 +58,13 @@ pub mod pallet {
         fsx::FullSideEffect,
         sfx::{ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
     };
-    use xbi_channel_primitives::{
+    use xp_channel::{
         traits::{HandlerInfo, XbiInstructionHandler},
-        XbiInstruction,
+        Outcome::Error as XbiError,
     };
-    use xp_format::{xbi_codec::*, Fees, XbiError, XbiFormat, XbiMetadata, XbiResult};
+    use xp_format::{
+        Fees, Status as XbiStatus, Timeouts, XbiFormat, XbiInstruction, XbiMetadata, XbiResult,
+    };
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -998,6 +999,23 @@ pub mod pallet {
             let staker = ensure_signed(origin)?;
             Self::stake_cancel_request(candidate, staker)
         }
+
+        // Execute a side effect via XBI
+        // `xbi` could change to side effects and do the conversions into Xbi messages
+        // #[pallet::weight(10_000)]
+        // #[pallet::weight(<T as Config>::WeightInfo::execute_xbi())]
+        // #[pallet::call_index(50)]
+        // pub fn execute_xbi(
+        //     origin: OriginFor<T>,
+        //     xbi: &mut XbiFormat,
+        //     //     Result<
+        //     //     HandlerInfo<frame_support::weights::Weight>,
+        //     //     frame_support::dispatch::DispatchErrorWithPostInfo,
+        //     //     >
+        // ) -> DispatchResult {
+        //     T::InstructionHandler::handle(&origin, xbi);
+        //     Ok(().into())
+        // }
     }
 
     #[pallet::hooks]
@@ -1646,7 +1664,7 @@ pub mod pallet {
             side_effect: SideEffect<T::AccountId, BalanceOf<T>>,
             max_exec_cost: u128,
             max_notifications_cost: u128,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             // validate extrinsic origin is actually an executor in the active set
             let executor = ensure_signed(origin)?;
             let mut state =
@@ -1655,67 +1673,71 @@ pub mod pallet {
 
             let sfx_id = side_effect.generate_id(xtx_id.as_ref(), 0u32);
 
-            if T::XBIPortal::get_status(sfx_id) != T::XBIStatus::UnknownId {
+            if XBIPortal::get_status(sfx_id) != XbiStatus::UnknownId {
                 return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
             }
 
-            // Setup: retrieve local xtx context
-            let mut local_ctx: pallet_circuit::state::LocalXtxCtx<T> = Self::setup(
-                pallet_circuit::state::CircuitStatus::PendingExecution,
-                &executor,
-                Some(xtx_id),
-            )?;
-
-            let xbi =
-                Self::sfx_2_xbi(
-                    origin,
-                    &side_effect,
-                    XbiMetadata::new_with_default_timeouts(
-                        XbiId::<T>::local_hash_2_xbi_id(sfx_id)?,
-                        T::Xdns::get_gateway_para_id(&side_effect.target)?,
-                        T::SelfParaId::get(),
-                        Fees::new(sfx_id, Some(max_exec_cost), Some(max_notifications_cost)),
-                        Some(Sabi::account_bytes_2_account_32(executor.encode()).map_err(
-                            |_| Error::<T>::FailedToCreateXBIMetadataDueToWrongAccountConversion,
-                        )?),
+            let xbi = Self::sfx_2_xbi(
+                origin,
+                side_effect,
+                XbiMetadata::new(
+                    Xdns::get_gateway_para_id(&side_effect.target)?,
+                    Timeouts,
+                    None,
+                    Fees::new(
+                        Some(sfx_id),
+                        Some(max_exec_cost),
+                        Some(max_notifications_cost),
                     ),
-                )
-                .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
+                    None,
+                    0,
+                    None,
+                ),
+            )
+            .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
 
             Self::execute_xbi(&origin, &mut xbi)?;
 
-            // Use encoded XBI hash as ID for the executor's charge
-            let charge_id = T::Hashing::hash(&xbi.encode()[..]);
-            let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
+            // TODO: check
+            // // Use encoded XBI hash as ID for the executor's charge
+            // let charge_id = T::Hashing::hash(&xbi.encode()[..]);
+            // let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
 
-            // fixme: must be solved with charging and update status order if XBI is the first SFX
-            if local_ctx.xtx.status == pallet_circuit::state::CircuitStatus::Ready {
-                local_ctx.xtx.status = pallet_circuit::state::CircuitStatus::PendingExecution;
-            }
+            // TODO: check
+            // // Setup: retrieve local xtx context
+            // let mut local_ctx: LocalXtxCtx<T> = Self::setup(
+            //     pallet_circuit::state::CircuitStatus::PendingExecution,
+            //     &executor,
+            //     Some(xtx_id),
+            // )?;
+            // // fixme: must be solved with charging and update status order if XBI is the first SFX
+            // if local_ctx.xtx.status == pallet_circuit::state::CircuitStatus::Ready {
+            //     local_ctx.xtx.status = pallet_circuit::state::CircuitStatus::PendingExecution;
+            // }
 
-            Self::square_up(
-                &mut local_ctx,
-                Some((charge_id, executor, total_max_rewards)),
-            )?;
+            // TODO: check
+            // Self::square_up(
+            //     &mut local_ctx,
+            //     Some((charge_id, executor, total_max_rewards)),
+            // )?;
 
-            T::XBIPromise::then(xbi, Call::<T>::on_xbi_sfx_resolved { sfx_id }.into())?;
+            // T::XBIPromise::then(xbi, Call::<T>::on_xbi_sfx_resolved { sfx_id }.into())?;
+            // let status_change = Self::update(&mut local_ctx)?;
 
-            let status_change = Self::update(&mut local_ctx)?;
-
-            Self::apply(&mut local_ctx, status_change);
+            // TODO: port
+            // Self::apply(&mut local_ctx, status_change);
 
             Ok(().into())
         }
 
         pub fn sfx_2_xbi(
             origin: OriginFor<T>,
-            side_effect: SideEffect<T::AccountId, BalanceOf<T>>,
+            side_effect: SideEffect,
             metadata: XbiMetadata,
-            // Result<XbiFormat, frame_support::dispatch::DispatchErrorWithPostInfo>
-        ) -> Result<XbiFormat, XbiError> {
+        ) -> XbiFormat {
             match &side_effect.encoded_action[0..4] {
                 b"tran" => {
-                    Ok(XbiFormat {
+                    XbiFormat {
                         instr: XbiInstruction::Transfer {
                             // Get dest as argument_1 of SFX::Transfer of Type::DynamicAddress
                             dest: Decode::decode(&mut &side_effect.encoded_args[1][..])
@@ -1725,9 +1747,9 @@ pub mod pallet {
                                 .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
                         },
                         metadata,
-                    })
+                    }
                 },
-                b"mult" | b"tass" => Ok(XbiFormat {
+                b"mult" | b"tass" => XbiFormat {
                     instr: XbiInstruction::TransferAssets {
                         // Get dest as argument_0 of SFX::TransferAssets of Type::DynamicBytes
                         currency_id: Decode::decode(&mut &side_effect.encoded_args[0][..])
@@ -1740,8 +1762,8 @@ pub mod pallet {
                             .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
                     },
                     metadata,
-                }),
-                b"orml" => Ok(XbiFormat {
+                },
+                b"orml" => XbiFormat {
                     instr: XbiInstruction::TransferORML {
                         // Get dest as argument_0 of SFX::TransferOrml of Type::DynamicBytes
                         currency_id: Decode::decode(&mut &side_effect.encoded_args[0][..])
@@ -1754,10 +1776,9 @@ pub mod pallet {
                             .map_err(|_| XbiError::<T>::EnterSfxDecodingValueErr)?,
                     },
                     metadata,
-                }),
-                b"swap" => Err(XbiError::<T>::EnterSfxNotRecognized),
-                b"aliq" => Err(XbiError::<T>::EnterSfxNotRecognized),
-                b"cevm" => Ok(XbiFormat {
+                },
+                b"swap" | b"aliq" | b"comp" => {},
+                b"cevm" => XbiFormat {
                     instr: XbiInstruction::CallEvm {
                         // Get dest as argument_0 of SFX::CallEvm of Type::DynamicAddress
                         source: Decode::decode(&mut &side_effect.encoded_args[0][..])
@@ -1794,7 +1815,7 @@ pub mod pallet {
                             .map_err(|_| XbiError::<T>::EnterSfxDecodingDataErr)?,
                     },
                     metadata,
-                }),
+                },
                 b"wasm" => Ok(XbiFormat {
                     instr: XbiInstruction::CallWasm {
                         // Get dest as argument_0 of SFX::CallWasm of Type::DynamicAddress
@@ -1816,7 +1837,7 @@ pub mod pallet {
                     },
                     metadata,
                 }),
-                b"comp" => Err(XbiError::<T>::EnterSfxNotRecognized),
+                 => Err(XbiError::<T>::EnterSfxNotRecognized),
                 b"call" => Ok(XbiFormat {
                     instr: XbiInstruction::CallCustom {
                         // Get dest as argument_0 of SFX::CallWasm of Type::DynamicAddress
@@ -1842,25 +1863,6 @@ pub mod pallet {
                 }),
                 &_ => Err(Error::<T>::EnterSfxNotRecognized),
             }
-        }
-
-        /// Execute a side effect via XBI
-        /// `xbi` could change to side effects and do the conversions into Xbi messages
-        fn execute_xbi(origin: &T::Origin, xbi: &mut XbiFormat) -> Result {
-            T::InstructionHandler::handle(origin, xbi);
-            Ok(().into())
-        }
-
-        // #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
-        pub fn on_xbi_sfx_resolved(
-            _origin: OriginFor<T>,
-            sfx_id: T::Hash,
-        ) -> DispatchResultWithPostInfo {
-            Self::do_xbi_exit(
-                T::XBIPortal::get_check_in(sfx_id)?,
-                T::XBIPortal::get_check_out(sfx_id)?,
-            )?;
-            Ok(().into())
         }
     }
 }
