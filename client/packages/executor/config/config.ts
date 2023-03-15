@@ -166,7 +166,7 @@ export const config: Config = {
         {
             name: "Basilisk",
             id: "bslk",
-            rpc: "wss://rpc-01.basilisk-rococo.hydradx.io",
+            rpc: "wss://rococo-basilisk-rpc.hydration.dev",
             type: "Substrate",
         },
     ],
@@ -198,6 +198,17 @@ export const config: Config = {
     strategies: {
         roco: {
             supportedAssets: ["ROC"],
+            sfx: {
+                minProfitUsd: 3,
+                minYield: 0.05,
+            },
+            xtx: {
+                minInsuranceAmountUsd: 1,
+                minInsuranceShare: 0.1,
+            },
+        },
+        bslk: {
+            supportedAssets: ["BSX"],
             sfx: {
                 minProfitUsd: 3,
                 minYield: 0.05,

@@ -94,7 +94,7 @@ export class SubstrateRelayer extends EventEmitter {
                     this.nonce = await this.fetchNonce(this.client, this.signer.address)
                     reject(Error(dispatchError.toString()))
                 } else if (status.isFinalized) {
-                    const blockNumber = await this.generateInclusionProof(sfx, status.asFinalized, events)
+                    const blockNumber = await this.generateSfxInclusionProof(sfx, status.asFinalized, events, sfx.id)
                     this.logger.info(`Execution complete SFX:  ${sfx.humanId} - #${blockNumber} 🏁`)
                     this.emit("Event", <RelayerEventData>{
                         type: RelayerEvents.SfxExecutedOnTarget,
@@ -117,7 +117,7 @@ export class SubstrateRelayer extends EventEmitter {
      * @param events Events emitted by the transaction
      * @returns Block number in which the transaction was included
      */
-    async generateInclusionProof(sfx: SideEffect, blockHash: any, events: any[]): Promise<number> {
+    async generateSfxInclusionProof(sfx: SideEffect, blockHash: any, events: any[], target: string): Promise<number> {
         const blockNumber = await this.getBlockNumber(blockHash)
         const event = this.getEvent(sfx.action, events)
 
@@ -131,10 +131,49 @@ export class SubstrateRelayer extends EventEmitter {
             block_hash: blockHash,
         }
 
+
+        if(sfx.target !== "roco") {
+            let blockNumber = await this.fetchCorrespondingRelaychainHeaderNumber(blockHash)
+                .catch((err) => { // this should never happen
+                    console.log(err)
+                })
+
+            this.emit("Event", <RelayerEventData>{
+                type: RelayerEvents.HeaderInclusionProofRequest,
+                blockNumber,
+                target: "roco",
+                sfxId: sfx.id,
+                data: "",
+            })
+        }
         // Add the inclusion proof to the SFX object
         sfx.executedOnTarget(inclusionData, this.signer.addressRaw, blockNumber.toNumber())
 
         return blockNumber.toNumber()
+    }
+
+     /**
+     * Fetches the block number of the relaychain block, containing the parachain block
+     *
+     * @param parachainBlockHash block hash of the parachain
+     * @returns Block number of the relaychain block
+     */
+    async fetchCorrespondingRelaychainHeaderNumber(parachainBlockHash: any): Promise<number> {
+        const parachainBlock = await this.client.rpc.chain.getBlock(parachainBlockHash);
+
+        for(let i = 0; i < parachainBlock.block.extrinsics.length; i++) {
+            const extrinsic = parachainBlock.block.extrinsics[i]
+            if(extrinsic.method.method === "setValidationData" && extrinsic.method.section === "parachainSystem") {
+                // @ts-ignore
+                return extrinsic.method.args[0].validationData.relayParentNumber.toNumber()
+            }
+        }
+
+        throw Error("Could not find relaychain header number")
+    }
+
+    async generateParachainInclusionProof(parachainBlockNumber: any, target: string) {
+
     }
 
     /**

@@ -1,6 +1,7 @@
 export enum RelayerEvents {
     SfxExecutedOnTarget,
     SfxExecutionError,
+    HeaderInclusionProofRequest
 }
 
 export type RelayerEventData = {

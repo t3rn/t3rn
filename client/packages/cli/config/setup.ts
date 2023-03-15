@@ -72,7 +72,7 @@ export default {
         {
             name: "Basilisk",
             id: "bslk",
-            rpc: "wss://rpc-01.basilisk-rococo.hydradx.io",
+            rpc: "wss://rococo-basilisk-rpc.hydration.dev",
             subscan: "",
             transferData: {
                 receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
