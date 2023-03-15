@@ -29,6 +29,7 @@ export class Gateway {
   rpc: string;
   vendor: string;
   executionLayerType: ExecutionLayerType;
+  parentGatewayId: string;
   gatewayType: any;
   ticker: string;
   decimals: number;
@@ -43,13 +44,16 @@ export class Gateway {
    */
 
   constructor(xdnsEntry: T3rnPrimitivesXdnsXdnsRecord) {
+    console.log(xdnsEntry.toHuman());
     this.id = xdnsEntry.toHuman().gateway_id;
     this.rpc = xdnsEntry.url.toHuman();
     // @ts-ignore
     this.vendor = xdnsEntry.toHuman().gateway_vendor.toString();
     this.executionLayerType = this.getType(
-      xdnsEntry.toHuman().gateway_vendor.toString()
+      xdnsEntry.toHuman().execution_layer
     ) as unknown as ExecutionLayerType;
+    // @ts-ignore
+    this.parentGatewayId = xdnsEntry.toHuman().parent_gateway_id;
     // @ts-ignore
     this.ticker = xdnsEntry.toHuman().gateway_sys_props.token_symbol;
     // @ts-ignore
@@ -209,10 +213,10 @@ export class Gateway {
    * @param vendor - The vendor of the gateway
    */
 
-  getType(vendor: string) {
-    if (["Rococo", "Kusama", "Polkadot"].includes(vendor)) {
+  getType(executionLayer: string) {
+    if (executionLayer === "Substrate") {
       return GatewayType.Substrate;
-    } else if (vendor === "Ethereum") {
+    } else if (executionLayer === "Evm") {
       return GatewayType.Evm;
     }
   }

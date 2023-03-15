@@ -123,7 +123,9 @@
         "gateway_sys_props": "GatewaySysProps",
         "registrant": "Option<AccountId>",
         "last_finalized": "Option<u64>",
-        "allowed_side_effects": "Vec<AllowedSideEffect>"
+        "allowed_side_effects": "Vec<AllowedSideEffect>",
+        "execution_layer": "ExecutionLayer",
+        "parent_gateway_id": "Option<ChainId>"
     },
     "AllowedSideEffect": "[u8; 4]",
     "FetchXdnsRecordsResponse": {
