@@ -26,10 +26,12 @@ use t3rn_primitives::{
     },
     monetary::TRN,
     xdns::{Parachain, XdnsRecord},
-    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
+    ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, Header, TokenSysProps,
 };
 
-use t3rn_types::interface::SideEffectInterface;
+use t3rn_abi::sfx_abi::SFXAbi;
+use t3rn_types::sfx::Sfx4bId;
+
 const PARACHAIN_ID: u32 = 3333_u32;
 
 fn is_relaychain(chain_id: &ChainId) -> bool {
@@ -59,7 +61,7 @@ async fn fetch_xdns_record_from_rpc(
         .await
         .map_err(|err| Error::new(ErrorKind::Other, err))?;
 
-    let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
+    let gateway_sys_props = TokenSysProps::try_from(&chain_id)
         .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
 
     let mut modules_vec = vec![];
@@ -139,8 +141,8 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
     })
 }
 
-fn standard_side_effects() -> Vec<SideEffectInterface> {
-    t3rn_types::standard::standard_side_effects()
+fn standard_sfx_abi() -> Vec<(Sfx4bId, SFXAbi)> {
+    t3rn_abi::standard::standard_sfx_abi()
 }
 
 /// Fetches gateway initialization data by chain id.
@@ -313,7 +315,7 @@ pub fn development_config() -> ChainSpec {
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 vec![],
-                standard_side_effects(),
+                standard_sfx_abi(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
@@ -376,7 +378,7 @@ pub fn local_testnet_config() -> ChainSpec {
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 vec![],
-                standard_side_effects(),
+                standard_sfx_abi(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
@@ -447,7 +449,7 @@ pub fn rococo_config() -> ChainSpec {
                 // Sudo
                 get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
                 vec![],
-                standard_side_effects(),
+                standard_sfx_abi(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
@@ -484,7 +486,7 @@ fn testnet_genesis(
     id: ParaId,
     root_key: AccountId,
     xdns_records: Vec<XdnsRecord<AccountId>>,
-    standard_side_effects: Vec<SideEffectInterface>,
+    standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     _initial_gateways: Vec<InitializationData<Header>>,
 ) -> circuit_parachain_runtime::GenesisConfig {
     circuit_parachain_runtime::GenesisConfig {
@@ -535,7 +537,7 @@ fn testnet_genesis(
         },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
-            standard_side_effects,
+            standard_sfx_abi,
         },
         contracts_registry: Default::default(),
         account_manager: Default::default(),

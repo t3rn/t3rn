@@ -8,7 +8,7 @@ use crate::{
 use circuit_runtime_pallets::pallet_executors::{
     stakes::Stakes,
     subject_metadata::{CandidateMetadata, StakerMetadata},
-    BottomStakes, CandidateInfo, CandidatePool, Config, Error, Event, ExecutorConfig,
+    BottomStakes, CandidateInfo, CandidatePool, Error, Event, ExecutorConfig,
     ScheduledConfigurationRequests, StakerInfo, TopStakes, Total,
 };
 use frame_support::{assert_noop, assert_ok, traits::Currency};

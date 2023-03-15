@@ -12,13 +12,9 @@ pub use crate::pallet::*;
 use frame_support::{pallet_prelude::Weight, traits::Get};
 
 pub use t3rn_primitives::{
-    abi::{GatewayABIConfig, Type},
-    account_manager::AccountManager,
-    claimable::ClaimableArtifacts,
-    clock::Clock,
-    common::RoundInfo,
-    executors::Executors,
-    ChainId, EscrowTrait, GatewayGenesisConfig, GatewayType, GatewayVendor,
+    account_manager::AccountManager, claimable::ClaimableArtifacts, clock::Clock,
+    common::RoundInfo, executors::Executors, gateway::GatewayABIConfig, ChainId, EscrowTrait,
+    GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 
 use pallet_account_manager::BalanceOf;
