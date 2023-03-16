@@ -1,13 +1,13 @@
 use crate::{
-    recode::{split_bytes, Codec, Recode},
+    recode::{Codec, Recode},
     to_abi::Abi,
     to_filled_abi::FilledAbi,
     types::Name,
 };
 
+use bytes::{Buf, Bytes};
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
-
 pub struct RecodeScale;
 
 impl Recode for RecodeScale {
@@ -16,27 +16,22 @@ impl Recode for RecodeScale {
         field_data: &[u8],
         fields_iter_clone: IntoIter<Box<Abi>>,
     ) -> Result<(IntoIter<Vec<u8>>, u8), DispatchError> {
-        let (memo_prefix, right) = split_bytes(field_data, 1)?;
-        let mut no_strut_prefix_data = right;
-        let fields_iter = fields_iter_clone.peekable();
-        let chopped_field_data: Vec<Vec<u8>> =
-            // Make sure original fields iterator won't be consumed
-            // let fields_iter_clone = fields_descriptors.iter().cloned();
-            fields_iter
-                .map(|field_descriptor| {
-                    let field_size = field_descriptor.get_size();
-                    let (left, right) = split_bytes(no_strut_prefix_data, field_size)?;
-                    no_strut_prefix_data = right;
-                    Ok(left.to_vec())
-                })
-                .collect::<Result<Vec<Vec<u8>>, DispatchError>>()?;
+        let mut buf = Bytes::copy_from_slice(field_data);
+        let memo_prefix = buf.get_u8();
 
-        Ok((
-            chopped_field_data.into_iter(),
-            *memo_prefix
-                .first()
-                .expect("encoded_struct_chopper - Memo cannot be empty for structs"),
-        ))
+        let mut no_strut_prefix_data = buf;
+
+        let fields_iter = fields_iter_clone.peekable();
+        let chopped_field_data: Vec<Vec<u8>> = fields_iter
+            .map(|field_descriptor| {
+                let field_size = field_descriptor.get_size();
+                let mut field_bytes = vec![0; field_size];
+                no_strut_prefix_data.copy_to_slice(&mut field_bytes);
+                Ok(field_bytes)
+            })
+            .collect::<Result<Vec<Vec<u8>>, DispatchError>>()?;
+
+        Ok((chopped_field_data.into_iter(), memo_prefix))
     }
 
     fn event_to_filled(
