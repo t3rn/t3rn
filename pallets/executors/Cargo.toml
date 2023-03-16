@@ -26,15 +26,15 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "po
 sp-std     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27", default-features = false }
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
-t3rn-types = { path = "../../types", default-features = false }
+t3rn-types      = { path = "../../types", default-features = false }
 
-xp-channel = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false, features = [ "frame" ] }
-xp-format  = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false }
-xs-channel = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false }
+substrate-abi = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false }
+xp-channel    = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false, features = [ "frame" ] }
+xp-format     = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false }
+xs-channel    = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false }
 
 pallet-circuit = { path = "../circuit", default-features = true }
-# pallet-xbi-portal-enter = { git = "https://github.com/t3rn/xbi", version = "0.9.19", default-features = true }
-pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = true }
+# pallet-xbi-portal-enter = { git = "https://github.com/t3rn/xbi", version = "0.9.19", default-features = true 
 
 [dev-dependencies]
 similar-asserts = "1.1.0"
@@ -54,6 +54,7 @@ std = [
   "codec/std",
   "scale-info/std",
   "sp-runtime/std",
+  "substrate-abi/std",
   "sp-std/std",
   "t3rn-primitives/std",
   "frame-support/std",
