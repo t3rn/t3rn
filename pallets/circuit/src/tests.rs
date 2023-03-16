@@ -17,7 +17,7 @@
 
 //! Runtime utilities
 use circuit_mock_runtime::*;
-use circuit_runtime_pallets::pallet_circuit::state::*;
+use circuit_runtime_pallets::{pallet_circuit, pallet_circuit::state::*};
 
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, SignalKind},
@@ -4005,6 +4005,7 @@ use t3rn_sdk_primitives::{
     storage::BoundedVec,
     xc::{Call as CallVM, Operation},
 };
+use t3rn_types::migrations::v13::{FullSideEffectV13, SideEffectV13};
 
 // TODO: this fails because the side effect doesnt work for the gateway, will be fixed in the future
 #[ignore]
@@ -4507,5 +4508,103 @@ fn no_duplicate_xtx_and_sfx_ids() {
 
             assert_ne!(expected_xtx_id_1, expected_xtx_id_2);
             assert_ne!(expected_sfx_id_1, expected_sfx_id_2);
+        });
+}
+
+#[test]
+fn test_storage_migration_v130_to_v140_for_fsx_map_with_updated_encoded_action_field_to_action_4b()
+{
+    fn create_v13_side_effect() -> SideEffectV13<AccountId32, Balance> {
+        SideEffectV13 {
+            target: [1, 1, 1, 1],
+            max_reward: 100,
+            insurance: 50,
+            encoded_action: vec![1, 2, 3, 4],
+            encoded_args: vec![vec![5, 6], vec![7, 8]],
+            signature: vec![9, 10, 11],
+            enforce_executor: None,
+            reward_asset_id: Some(3),
+        }
+    }
+
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // Insert old SideEffect into storage.
+            let sfx_v13 = create_v13_side_effect();
+            let fsx_v13 = FullSideEffectV13::<AccountId32, BlockNumber, Balance> {
+                input: sfx_v13.clone(),
+                confirmed: None,
+                security_lvl: SecurityLvl::Optimistic,
+                submission_target_height: vec![12, 13, 14],
+                best_bid: None,
+                index: 0,
+            };
+
+            let fsx_v14 = FullSideEffect::from(fsx_v13.clone());
+
+            assert_eq!(
+                fsx_v14,
+                FullSideEffect {
+                    input: SideEffect {
+                        target: [1, 1, 1, 1],
+                        max_reward: 100,
+                        insurance: 50,
+                        action: [1, 2, 3, 4],
+                        encoded_args: vec![vec![5, 6], vec![7, 8]],
+                        signature: vec![9, 10, 11],
+                        enforce_executor: None,
+                        reward_asset_id: Some(3),
+                    },
+                    confirmed: None,
+                    security_lvl: SecurityLvl::Optimistic,
+                    submission_target_height: vec![12, 13, 14],
+                    best_bid: None,
+                    index: 0,
+                }
+            );
+
+            // In this case encoded form of SFX v1.3.0 and v1.4.0 are not the same with the difference to the `action` field encoding.
+            // v14: `[... 1, 2, 3, 4, ...]`,
+            // v13: `[... 16, 1, 2, 3, 4, ...]`',
+            assert_ne!(fsx_v14.encode(), fsx_v13.encode());
+
+            pallet_circuit::FullSideEffects::<Runtime>::insert(
+                H256::repeat_byte(1),
+                // No clue how to insert old FSX into storage, checking migration mechanics only.
+                vec![vec![FullSideEffect::from(fsx_v13)]],
+            );
+
+            // Check that storage version has not yet been updated.
+            assert_eq!(pallet_circuit::StorageMigrations::<Runtime>::get(), 0);
+
+            // Perform the runtime upgrade (call the `on_runtime_upgrade` function)
+            let consumed_weight =
+                <Circuit as frame_support::traits::OnRuntimeUpgrade>::on_runtime_upgrade();
+            let max_weight =
+                <Runtime as frame_system::Config>::DbWeight::get().reads_writes(10, 10);
+            assert_eq!(consumed_weight, max_weight);
+
+            // Check that storage version has been updated.
+            assert_eq!(pallet_circuit::StorageMigrations::<Runtime>::get(), 1);
+
+            // Check if the migrated data is as expected.
+            let fsx =
+                pallet_circuit::FullSideEffects::<Runtime>::get(H256::repeat_byte(1)).unwrap();
+            for sub_list in fsx.iter() {
+                for full_side_effect in sub_list.iter() {
+                    let new_side_effect = &full_side_effect.input;
+                    assert_eq!(new_side_effect.target, sfx_v13.target);
+                    assert_eq!(new_side_effect.max_reward, sfx_v13.max_reward);
+                    assert_eq!(new_side_effect.insurance, sfx_v13.insurance);
+                    assert_eq!(new_side_effect.action, [1, 2, 3, 4]);
+                    assert_eq!(new_side_effect.encoded_args, sfx_v13.encoded_args);
+                    assert_eq!(new_side_effect.signature, sfx_v13.signature);
+                    assert_eq!(new_side_effect.enforce_executor, sfx_v13.enforce_executor);
+                    assert_eq!(new_side_effect.reward_asset_id, sfx_v13.reward_asset_id);
+                }
+            }
         });
 }
