@@ -744,6 +744,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
             let header = <ImportedHeaders<T, I>>::get(proof.block_hash)
                 .ok_or(Error::<T, I>::UnknownHeader)?;
+
+            // ensures old equal side_effects can't be replayed
+            executed_after_creation::<T, I>(submission_target_height, &header)?;
+
             (proof.payload_proof, proof.encoded_payload, header)
         } else {
             let proof: ParachainInclusionProof<BridgedHeader<T, I>> =
@@ -754,12 +758,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 proof.header_proof,
                 <ParachainIdMap<T, I>>::get(gateway_id)
                     .ok_or(Error::<T, I>::ParachainEntryNotFound)?,
+                submission_target_height,
             )?;
             (proof.payload_proof, proof.encoded_payload, header)
         };
-
-        // ensures old equal side_effects can't be replayed
-        executed_after_creation::<T, I>(submission_target_height, &header)?;
 
         match &side_effect_id {
             b"tran" => verify_event_storage_proof::<T, I>(
@@ -942,9 +944,14 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
     parachain: ParachainRegistrationData,
+    submission_target_height: Vec<u8>,
 ) -> Result<BridgedHeader<T, I>, DispatchError> {
     let relay_header =
         <ImportedHeaders<T, I>>::get(relay_block_hash).ok_or(Error::<T, I>::UnknownHeader)?;
+
+    // this needs to be checked via relaychain header, which is why its here
+    executed_after_creation::<T, I>(submission_target_height, &relay_header)?;
+
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
     let mut key: Vec<u8> = [
