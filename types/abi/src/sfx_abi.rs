@@ -73,10 +73,12 @@ impl SFXAbi {
             .get_expected_egress_descriptor(ordered_args_codec.clone())
             .try_into()?;
 
-        let ordered_args_flatten: Data = ordered_args.iter().fold(Data::new(), |mut acc, arg| {
-            acc.append(&mut arg.clone());
-            acc
-        });
+        let ordered_args_flatten: Data =
+            // Extend with 0u8 assumed as prefix memo for struct Codec
+            ordered_args.iter().fold(vec![0u8], |mut acc, arg| {
+                acc.append(&mut arg.clone());
+                acc
+            });
 
         FilledAbi::try_fill_abi(abi, ordered_args_flatten, ordered_args_codec.clone())?;
 
