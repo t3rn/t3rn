@@ -1,7 +1,6 @@
 import { u8aConcat, u8aToU8a, u8aToHex } from "@polkadot/util"
 import { xxhashAsU8a } from "@polkadot/util-crypto"
 import BN from "bn.js"
-import { ApiPromise } from "@polkadot/api";
 const generateArgumentKey = (module: string, variableName: string, arg?: number | string | Uint8Array | Buffer ) => {
     // lets prepare the storage key for system events.
     let module_hash = xxhashAsU8a(module, 128)
@@ -34,7 +33,7 @@ const generateArgumentKey = (module: string, variableName: string, arg?: number 
 	}
 }
 
-export const getStorageProof = async (client: ApiPromise, module: string, variableName: string, arg?: number | string | Uint8Array | Buffer) => {
+export const getStorageProof = async (client: any, blockHash: any, module: string, variableName: string, arg?: number | string | Uint8Array | Buffer) => {
 	const key = generateArgumentKey(module, variableName, arg)
     // @ts-ignore
     return client.rpc.state.getReadProof([key], blockHash)

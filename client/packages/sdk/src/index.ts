@@ -5,7 +5,7 @@ import { cryptoWaitReady } from '@polkadot/util-crypto';
 import types from "./config/types.json";
 import rpc from "./config/rpc.json";
 import { Gateway, initGateways } from "./gateways";
-
+import * as Utils from "./utils";
 import * as Types from "./types";
 
 // @ts-ignore
@@ -59,4 +59,4 @@ export class Sdk {
   }
 }
 
-export { Encodings, Converters, Types, Gateway, Circuit, Tx };
+export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils};
