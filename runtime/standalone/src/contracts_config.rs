@@ -132,7 +132,7 @@ impl FeeCalculator for FixedGasPrice {
 parameter_types! {
     pub const ChainId: u64 = 42;
     pub BlockGasLimit: U256 = U256::from(u32::max_value());
-    pub PrecompilesValue: evm_precompile_util::Precompiles = evm_precompile_util::Precompiles::new(sp_std::vec![
+    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::new(sp_std::vec![
         (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
         (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
         (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
@@ -159,7 +159,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasWeightMapping = FixedGasWeightMapping;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
-    type PrecompilesType = evm_precompile_util::Precompiles;
+    type PrecompilesType = evm_precompile_util::Precompiles<Self>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type ThreeVm = ThreeVm;
