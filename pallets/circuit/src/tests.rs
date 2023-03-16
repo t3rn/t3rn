@@ -398,18 +398,10 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
         action: [116, 114, 97, 110],
         encoded_args: vec![
             vec![
-                212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44,
-                133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125,
-            ],
-            vec![
                 42, 246, 86, 215, 84, 26, 25, 17, 173, 225, 126, 30, 234, 99, 78, 169, 50, 247, 0,
                 118, 125, 167, 191, 15, 94, 94, 97, 126, 250, 236, 22, 62,
             ],
             vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            vec![
-                3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0,
-            ],
         ],
         signature: vec![],
         enforce_executor: Some(
@@ -503,15 +495,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                         9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                                         9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9
                                     ],
-                                    vec![
-                                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
-                                    ],
                                     vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                    vec![
-                                        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                                    ]
                                 ],
                                 signature: vec![],
                                 enforce_executor: None,
@@ -676,16 +660,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                         9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                                         9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9
                                     ],
-                                    vec![
-                                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
-                                    ],
                                     vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                    // Insurance goes here
-                                    vec![
-                                        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                                    ]
                                 ],
                                 signature: vec![],
                                 enforce_executor: None,
@@ -4417,12 +4392,16 @@ fn no_duplicate_xtx_and_sfx_ids() {
 
     let sequential = true;
 
+    const BID_AMOUNT: Balance = 1;
+    const INSURANCE: Balance = 1;
+    const ENDOWMENT: Balance = 6;
+
     ExtBuilder::default()
         .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, 6 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
+            let _ = Balances::deposit_creating(&ALICE, ENDOWMENT + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
 
             System::set_block_number(1);
             brute_seed_block_1([0, 0, 0, 0]);
@@ -4447,21 +4426,21 @@ fn no_duplicate_xtx_and_sfx_ids() {
 
             assert_eq!(next_events, vec![
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
-                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Deposit { who: ALICE, amount: 6 + ED }), topics: vec![]
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Deposit { who: ALICE, amount: ENDOWMENT + ED }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::System(
                     circuit_runtime_pallets::frame_system::Event::<Runtime>::NewAccount { account: ALICE }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
-                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: 6  + ED }), topics: vec![]
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: ENDOWMENT  + ED }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
-                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: 3 }), topics: vec![]
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: BID_AMOUNT }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
                     circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
                         charge_id: expected_sfx_id_1,
-                        payee: ALICE, recipient: None, amount: 3
+                        payee: ALICE, recipient: None, amount: BID_AMOUNT
                     }), topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::Circuit(
@@ -4471,14 +4450,12 @@ fn no_duplicate_xtx_and_sfx_ids() {
                         vec![
                             SideEffect {
                                 target: [0, 0, 0, 0],
-                                max_reward: 3,
-                                insurance: 3,
+                                max_reward: BID_AMOUNT,
+                                insurance: INSURANCE,
                                 action: [116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
-                                    vec![6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
                                     vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                    vec![3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                                 ],
                                 signature: vec![],
                                 enforce_executor: None,
@@ -4494,11 +4471,11 @@ fn no_duplicate_xtx_and_sfx_ids() {
                     topics: vec![]
                 },
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
-                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: 3 }), topics: vec![] },
+                    circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: BID_AMOUNT }), topics: vec![] },
                 EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
                     circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
                         charge_id: expected_sfx_id_2,
-                        payee: ALICE, recipient: None, amount: 3 }), topics: vec![] },
+                        payee: ALICE, recipient: None, amount: BID_AMOUNT }), topics: vec![] },
                 EventRecord { phase: Phase::Initialization, event: Event::Circuit(
                     circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::NewSideEffectsAvailable(
                         ALICE,
@@ -4506,14 +4483,12 @@ fn no_duplicate_xtx_and_sfx_ids() {
                         vec![
                             SideEffect {
                                 target: [0, 0, 0, 0],
-                                max_reward: 3,
-                                insurance: 3,
+                                max_reward: BID_AMOUNT,
+                                insurance: INSURANCE,
                                 action: [116, 114, 97, 110],
                                 encoded_args: vec![
                                     vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
-                                    vec![6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
                                     vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                    vec![3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                                 ],
                                 signature: vec![],
                                 enforce_executor: None,

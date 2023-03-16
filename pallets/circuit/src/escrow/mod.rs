@@ -14,17 +14,17 @@ trait EscrowExec<T: Config> {
     fn exec(
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str>;
     fn revert(
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str>;
     fn commit(
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str>;
 }
 
@@ -33,17 +33,17 @@ impl<T: Config> Escrow<T> {
         encoded_type: &[u8; 4],
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str> {
         match encoded_type {
-            b"tran" => Transfer::<T>::exec(encoded_args, escrow_account, executioner),
-            // b"mult" => TransferMulti::exec(encoded_args, escrow_account, executioner),
-            // b"swap" => Swap::exec(encoded_args, escrow_account, executioner),
-            // b"aliq" => AddLiquidity::exec(encoded_args, escrow_account, executioner),
-            // b"call" => Call::exec(encoded_args, escrow_account, executioner),
-            // b"wasm" => CallWasm::exec(encoded_args, escrow_account, executioner),
-            // b"cevm" => CallEvm::exec(encoded_args, escrow_account, executioner),
-            // b"comp" => CallComposable::exec(encoded_args, escrow_account, executioner),
+            b"tran" => Transfer::<T>::exec(encoded_args, escrow_account, executor),
+            // b"mult" => TransferMulti::exec(encoded_args, escrow_account, executor),
+            // b"swap" => Swap::exec(encoded_args, escrow_account, executor),
+            // b"aliq" => AddLiquidity::exec(encoded_args, escrow_account, executor),
+            // b"call" => Call::exec(encoded_args, escrow_account, executor),
+            // b"wasm" => CallWasm::exec(encoded_args, escrow_account, executor),
+            // b"cevm" => CallEvm::exec(encoded_args, escrow_account, executor),
+            // b"comp" => CallComposable::exec(encoded_args, escrow_account, executor),
             &_ => Err("Can't match escrow exec with any side effect id"),
         }
     }
@@ -52,17 +52,17 @@ impl<T: Config> Escrow<T> {
         encoded_type: &[u8; 4],
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str> {
         match encoded_type {
-            b"tran" => Transfer::<T>::commit(encoded_args, escrow_account, executioner),
-            // b"mult" => TransferMulti::commit(encoded_args, escrow_account, executioner),
-            // b"swap" => Swap::commit(encoded_args, escrow_account, executioner),
-            // b"aliq" => AddLiquidity::commit(encoded_args, escrow_account, executioner),
-            // b"call" => Call::commit(encoded_args, escrow_account, executioner),
-            // b"wasm" => CallWasm::commit(encoded_args, escrow_account, executioner),
-            // b"cevm" => CallEvm::commit(encoded_args, escrow_account, executioner),
-            // b"comp" => CallComposable::commit(encoded_args, escrow_account, executioner),
+            b"tran" => Transfer::<T>::commit(encoded_args, escrow_account, executor),
+            // b"mult" => TransferMulti::commit(encoded_args, escrow_account, executor),
+            // b"swap" => Swap::commit(encoded_args, escrow_account, executor),
+            // b"aliq" => AddLiquidity::commit(encoded_args, escrow_account, executor),
+            // b"call" => Call::commit(encoded_args, escrow_account, executor),
+            // b"wasm" => CallWasm::commit(encoded_args, escrow_account, executor),
+            // b"cevm" => CallEvm::commit(encoded_args, escrow_account, executor),
+            // b"comp" => CallComposable::commit(encoded_args, escrow_account, executor),
             &_ => Err("Can't match escrow exec with any side effect id"),
         }
     }
@@ -71,17 +71,17 @@ impl<T: Config> Escrow<T> {
         encoded_type: &[u8; 4],
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str> {
         match encoded_type {
-            b"tran" => Transfer::<T>::revert(encoded_args, escrow_account, executioner),
-            // b"mult" => TransferMulti::revert(encoded_args, escrow_account, executioner),
-            // b"swap" => Swap::revert(encoded_args, escrow_account, executioner),
-            // b"aliq" => AddLiquidity::revert(encoded_args, escrow_account, executioner),
-            // b"call" => Call::revert(encoded_args, escrow_account, executioner),
-            // b"wasm" => CallWasm::revert(encoded_args, escrow_account, executioner),
-            // b"cevm" => CallEvm::revert(encoded_args, escrow_account, executioner),
-            // b"comp" => CallComposable::revert(encoded_args, escrow_account, executioner),
+            b"tran" => Transfer::<T>::revert(encoded_args, escrow_account, executor),
+            // b"mult" => TransferMulti::revert(encoded_args, escrow_account, executor),
+            // b"swap" => Swap::revert(encoded_args, escrow_account, executor),
+            // b"aliq" => AddLiquidity::revert(encoded_args, escrow_account, executor),
+            // b"call" => Call::revert(encoded_args, escrow_account, executor),
+            // b"wasm" => CallWasm::revert(encoded_args, escrow_account, executor),
+            // b"cevm" => CallEvm::revert(encoded_args, escrow_account, executor),
+            // b"comp" => CallComposable::revert(encoded_args, escrow_account, executor),
             &_ => Err("Can't match escrow exec with any side effect id"),
         }
     }
@@ -95,27 +95,21 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
     fn exec(
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str> {
-        let _dest: T::AccountId =
-            Decode::decode(&mut encoded_args[1].as_ref()).map_err(|_e| "Decoding err")?;
         let value: BalanceOf<T> =
-            Decode::decode(&mut encoded_args[2].as_ref()).map_err(|_e| "Decoding err")?;
+            Decode::decode(&mut encoded_args[1].as_ref()).map_err(|_e| "Decoding err")?;
 
         log::debug!(
             "escrow exec transfer from {:?} to {:?} value {:?}",
-            executioner,
+            executor,
             escrow_account,
             value
         );
-        CurrencyOf::<T>::transfer(&executioner, &escrow_account, value, AllowDeath)
+        CurrencyOf::<T>::transfer(&executor, &escrow_account, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
 
-        <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(
-            executioner,
-            escrow_account,
-            value,
-        ));
+        <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(executor, escrow_account, value));
 
         Ok(())
     }
@@ -123,26 +117,22 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
     fn revert(
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str> {
         let value: BalanceOf<T> =
-            Decode::decode(&mut encoded_args[2].as_ref()).map_err(|_e| "Decoding err")?;
+            Decode::decode(&mut encoded_args[1].as_ref()).map_err(|_e| "Decoding err")?;
 
-        CurrencyOf::<T>::transfer(&escrow_account, &executioner, value, AllowDeath)
+        CurrencyOf::<T>::transfer(&escrow_account, &executor, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
 
         log::debug!(
             "escrow revert transfer from {:?} to {:?} value {:?}",
             escrow_account,
-            executioner,
+            executor,
             value
         );
 
-        <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(
-            escrow_account,
-            executioner,
-            value,
-        ));
+        <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(escrow_account, executor, value));
 
         Ok(())
     }
@@ -150,22 +140,20 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
     fn commit(
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
-        _executioner: T::AccountId,
+        executor: T::AccountId,
     ) -> Result<(), &'static str> {
         let value: BalanceOf<T> =
-            Decode::decode(&mut encoded_args[2].as_ref()).map_err(|_e| "Decoding err")?;
-        let dest: T::AccountId =
             Decode::decode(&mut encoded_args[1].as_ref()).map_err(|_e| "Decoding err")?;
 
         log::debug!(
             "escrow commit from {:?} to {:?} value {:?}",
             escrow_account,
-            dest,
+            executor,
             value
         );
-        CurrencyOf::<T>::transfer(&escrow_account, &dest, value, AllowDeath)
+        CurrencyOf::<T>::transfer(&escrow_account, &executor, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
-        <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(escrow_account, dest, value));
+        <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(escrow_account, executor, value));
 
         Ok(())
     }
@@ -207,7 +195,7 @@ pub mod test {
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
-                let _ = Balances::deposit_creating(&ALICE, 1 + 2 + 1); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+                let _ = Balances::deposit_creating(&ALICE, 1 + 1 + 30000); // Alice should have at least: max_reward (1) + insurance (1) + transferred amount (30000)(for VariantA)
                 System::set_block_number(1);
                 brute_seed_block_1([3, 3, 3, 3]);
                 // Submit for execution first
@@ -281,7 +269,7 @@ pub mod test {
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
-                let _ = Balances::deposit_creating(&ALICE, 1 + 2 + 1); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+                let _ = Balances::deposit_creating(&ALICE, 1 + 1 + 30000); // Alice should have at least: max_reward (1) + insurance (1) + transferred amount (30000)(for VariantA)
                 System::set_block_number(1);
                 brute_seed_block_1([3, 3, 3, 3]);
 
