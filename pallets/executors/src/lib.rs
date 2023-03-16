@@ -1002,9 +1002,24 @@ pub mod pallet {
 
         // Execute a side effect via XBI
         // `xbi` could change to side effects and do the conversions into Xbi messages
-        // #[pallet::weight(10_000)]
-        // #[pallet::weight(<T as Config>::WeightInfo::execute_xbi())]
-        // #[pallet::call_index(50)]
+        #[pallet::weight(1_000_000_000)]
+        // #[pallet::weight(<T as Config>::WeightInfo::execute_xbi())] TODO: benchmark me pls
+        #[pallet::call_index(50)]
+        pub fn execute_xbi(
+            origin: OriginFor<T>, // Active relayer
+            xtx_id: XExecSignalId<T>,
+            side_effect: SideEffect<T::AccountId, BalanceOf<T>>,
+            max_exec_cost: u128,
+            max_notifications_cost: u128,
+        ) -> DispatchResultWithPostInfo {
+            Self::execute_side_effects_with_xbi(
+                origin,
+                xtx_id,
+                side_effect,
+                max_exec_cost,
+                max_notifications_cost,
+            )
+        }
     }
 
     #[pallet::hooks]
@@ -1686,42 +1701,7 @@ pub mod pallet {
                 ),
             )?;
 
-            match T::InstructionHandler::handle(&origin, &mut xbi) {
-                Ok(handler) => {
-                    // TODO: check
-                    // // Use encoded XBI hash as ID for the executor's charge
-                    // let charge_id = T::Hashing::hash(&xbi.encode()[..]);
-                    // let total_max_rewards = xbi.metadata.total_max_costs_in_local_currency()?;
-
-                    // TODO: check
-                    // // Setup: retrieve local xtx context
-                    // let mut local_ctx: LocalXtxCtx<T> = Self::setup(
-                    //     pallet_circuit::state::CircuitStatus::PendingExecution,
-                    //     &executor,
-                    //     Some(xtx_id),
-                    // )?;
-                    // // fixme: must be solved with charging and update status order if XBI is the first SFX
-                    // if local_ctx.xtx.status == pallet_circuit::state::CircuitStatus::Ready {
-                    //     local_ctx.xtx.status = pallet_circuit::state::CircuitStatus::PendingExecution;
-                    // }
-
-                    // TODO: check
-                    // Self::square_up(
-                    //     &mut local_ctx,
-                    //     Some((charge_id, executor, total_max_rewards)),
-                    // )?;
-
-                    // T::XBIPromise::then(xbi, Call::<T>::on_xbi_sfx_resolved { sfx_id }.into())?;
-                    // let status_change = Self::update(&mut local_ctx)?;
-
-                    // TODO: port
-                    // Self::apply(&mut local_ctx, status_change);
-
-                    // FIXME: DONT FORGET TO ADD WEIGHTS FROM ABOVE PARTS TO DISPATCH WEIGHT HERE
-                    Ok(handler.into())
-                },
-                Err(_) => todo!(),
-            }
+            T::InstructionHandler::handle(&origin, &mut xbi).map(Into::into)
         }
 
         //TODO: refactor to tryinto
