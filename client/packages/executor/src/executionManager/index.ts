@@ -138,14 +138,16 @@ export class ExecutionManager {
                 relayer.on("Event", async (eventData: RelayerEventData) => {
                     switch (eventData.type) {
                         case RelayerEvents.SfxExecutedOnTarget:
-                            this.removeFromQueue("isExecuting", eventData.sfxId, eventData.target)
+                            // @ts-ignore
+                            const consensusGatewayId = this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects.get(eventData.sfxId).consensusGatewayId
+                            this.removeFromQueue("isExecuting", eventData.sfxId, consensusGatewayId)
 
                             // create array if first for block
-                            if (!this.queue[eventData.target].isConfirming[eventData.blockNumber]) {
-                                this.queue[eventData.target].isConfirming[eventData.blockNumber] = []
+                            if (!this.queue[consensusGatewayId].isConfirming[eventData.blockNumber]) {
+                                this.queue[consensusGatewayId].isConfirming[eventData.blockNumber] = []
                             }
                             // adds to queue
-                            this.queue[eventData.target].isConfirming[eventData.blockNumber].push(eventData.sfxId)
+                            this.queue[consensusGatewayId].isConfirming[eventData.blockNumber].push(eventData.sfxId)
 
                             this.addLog({
                                 msg: "moved sfx from isExecuting to isConfirming",
@@ -154,6 +156,16 @@ export class ExecutionManager {
                             })
 
                             break
+                        case RelayerEvents.HeaderInclusionProofRequest:
+                            console.log(eventData)
+                            const proof = await this.relayers[eventData.target].generateHeaderInclusionProof(
+                                eventData.blockNumber,
+                                parseInt(eventData.data)
+                            )
+
+                            const blockHash = await this.relayers[eventData.target].getBlockHash(eventData.blockNumber)
+
+                            this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects.get(eventData.sfxId)?.addHeaderProof(proof.toJSON().proof, blockHash)
                         case RelayerEvents.SfxExecutionError:
                             // ToDo figure out how to handle this
                             break
@@ -230,7 +242,7 @@ export class ExecutionManager {
         for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
             this.initSfxListeners(sfx)
             this.sfxToXtx[sfxId] = xtx.id
-            this.queue[sfx.target].isBidding.push(sfxId)
+            this.queue[sfx.consensusGatewayId].isBidding.push(sfxId)
             await this.addRiskRewardParameters(sfx)
         }
         this.addLog({ msg: "XTX initialized", xtxId: xtx.id })
@@ -272,8 +284,8 @@ export class ExecutionManager {
             }
             for (const sfx of ready) {
                 // move on the queue
-                this.removeFromQueue("isBidding", sfx.id, sfx.target)
-                this.queue[sfx.target].isExecuting.push(sfx.id)
+                this.removeFromQueue("isBidding", sfx.id, sfx.consensusGatewayId)
+                this.queue[sfx.consensusGatewayId].isExecuting.push(sfx.id)
                 // execute
                 this.relayers[sfx.target].executeTx(sfx).then()
             }
@@ -296,7 +308,7 @@ export class ExecutionManager {
             blockHeight: blockHeight,
         })
         this.logger.info(`Gateway height updated: ${gatewayId} #${blockHeight} 🧱`)
-
+        console.log(this.queue)
         if (this.queue[gatewayId]) {
             this.queue[gatewayId].blockHeight = blockHeight
             this.executeConfirmationQueue(gatewayId)
@@ -441,8 +453,8 @@ export class ExecutionManager {
         if (xtx && !(xtx.status === XtxStatus.DroppedAtBidding)) {
             xtx.droppedAtBidding()
             for (const sfx of xtx.sideEffects.values()) {
-                this.removeFromQueue("isBidding", sfx.id, sfx.target)
-                this.queue[sfx.target].dropped.push(sfx.id)
+                this.removeFromQueue("isBidding", sfx.id, sfx.consensusGatewayId)
+                this.queue[sfx.consensusGatewayId].dropped.push(sfx.id)
             }
         }
     }
@@ -457,8 +469,8 @@ export class ExecutionManager {
         if (xtx) {
             for (const sfx of xtx.sideEffects.values()) {
                 // sfx could either be in isExecuting or isConfirming
-                this.removeFromQueue("isExecuting", sfx.id, sfx.target)
-                let confirmBatch = this.queue[sfx.target].isConfirming[sfx.targetInclusionHeight.toString()]
+                this.removeFromQueue("isExecuting", sfx.id, sfx.consensusGatewayId)
+                let confirmBatch = this.queue[sfx.consensusGatewayId].isConfirming[sfx.targetInclusionHeight.toString()]
                 if (!confirmBatch) confirmBatch = []
                 if (confirmBatch.includes(sfx.id)) {
                     const index = confirmBatch.indexOf(sfx.id)
@@ -466,7 +478,7 @@ export class ExecutionManager {
                 }
 
                 // add to reverted queue
-                this.queue[sfx.target].reverted.push(sfx.id)
+                this.queue[sfx.consensusGatewayId].reverted.push(sfx.id)
             }
             this.xtx[xtxId].revertTimeout()
         }

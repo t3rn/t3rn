@@ -64,11 +64,22 @@ export class CircuitRelayer extends EventEmitter {
      * @param sfx The SideEffect to confirm
      */
     createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
-        const inclusionData = this.api.createType("RelaychainInclusionProof", {
-                encoded_payload: sfx.inclusionData.encoded_payload,
-                payload_proof: sfx.inclusionData.payload_proof,
-                block_hash: sfx.inclusionData.block_hash,
+        let inclusionData;
+
+        if(sfx.target === "roco") {
+            inclusionData = this.api.createType("RelaychainInclusionProof", {
+                encoded_payload: sfx.inclusionProof.encoded_payload,
+                payload_proof: sfx.inclusionProof.payload_proof,
+                block_hash: sfx.inclusionProof.block_hash,
             })
+        } else {
+            inclusionData = this.api.createType("ParachainInclusionProof", {
+                encoded_payload: sfx.inclusionProof.encoded_payload,
+                payload_proof: sfx.inclusionProof.payload_proof,
+                header_proof: sfx.inclusionProof.header_proof,
+                relay_block_hash: sfx.inclusionProof.block_hash,
+            })
+        }
 
         const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType(
             "T3rnTypesSfxConfirmedSideEffect",
