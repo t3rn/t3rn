@@ -1,8 +1,5 @@
-use crate::{
-    recode::{trim_bytes, Codec},
-    to_abi::Abi,
-    types::*,
-};
+use crate::{recode::Codec, to_abi::Abi, types::*};
+use bytes::{Buf, Bytes};
 use codec::{Decode, Encode};
 use frame_support::ensure;
 use sp_runtime::DispatchError;
@@ -265,18 +262,24 @@ pub fn ensure_vector_and_trim_prefix(
 ) -> Result<Vec<u8>, DispatchError> {
     match in_codec {
         Codec::Scale => {
-            let vector_val: Vec<u8> = data.to_vec();
-            let _size_hint = vector_val.size_hint();
-            let val = trim_bytes(data, 1);
-            ensure!(!val.is_empty(), "recode_as_vector::Scale::InvalidDataSize");
-            Ok(val.to_vec())
+            let mut data_buf = Bytes::copy_from_slice(data);
+            data_buf.advance(1);
+            ensure!(
+                !data_buf.is_empty(),
+                "recode_as_vector::Scale::InvalidDataSize"
+            );
+            Ok(data_buf.to_vec())
         },
         Codec::Rlp => {
             let rlp = rlp::Rlp::new(data);
             let rlp_encoded = rlp.as_raw();
-            let val = trim_bytes(rlp_encoded, 1);
-            ensure!(!val.is_empty(), "recode_as_vector::Rlp::InvalidDataSize");
-            Ok(val.to_vec())
+            let mut rlp_buf = Bytes::copy_from_slice(rlp_encoded);
+            rlp_buf.advance(1);
+            ensure!(
+                !rlp_buf.is_empty(),
+                "recode_as_vector::Rlp::InvalidDataSize"
+            );
+            Ok(rlp_buf.to_vec())
         },
     }
 }
@@ -325,9 +328,11 @@ impl FilledAbi {
                 ))
             },
             Abi::Option(name, field_descriptor) => {
-                let no_option_prefix_data = trim_bytes(field_data, 1);
+                let mut data_buf = Bytes::copy_from_slice(field_data);
+                data_buf.advance(1);
+                let no_option_prefix_data = data_buf;
                 let (field, size) =
-                    Self::recursive_fill_abi(*field_descriptor, no_option_prefix_data, in_codec)?;
+                    Self::recursive_fill_abi(*field_descriptor, &no_option_prefix_data, in_codec)?;
                 Ok((FilledAbi::Option(name, Box::new(field)), size + 1))
             },
             Abi::Bytes(name) => {
