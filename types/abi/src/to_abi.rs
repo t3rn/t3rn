@@ -161,10 +161,14 @@ impl TryFrom<Data> for Abi {
                     Ok(Abi::Vec(maybe_name, Box::new(next_field_descriptor)))
                 },
                 "Tuple" => {
-                    let _next_field = fields_iter.next().unwrap();
+                    let _next_field = fields_iter.next().ok_or(DispatchError::Other(
+                        "Abi::try_from(Bytes) -- Tuple missing tuple field1",
+                    ))?;
                     let next_field_descriptor =
                         from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
-                    let _next_field = fields_iter.next().unwrap();
+                    let _next_field = fields_iter.next().ok_or(DispatchError::Other(
+                        "Abi::try_from(Bytes) -- Tuple missing tuple field2",
+                    ))?;
                     let next_field_descriptor_2 =
                         from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
                     Ok(Abi::Tuple(

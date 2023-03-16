@@ -178,8 +178,13 @@ impl FilledAbi {
 
                     None
                 },
-                FilledAbi::Vec(_name, field, _) =>
-                    recursive_get_by_name(field.get(0).unwrap(), by_name),
+                FilledAbi::Vec(_name, field, _) => {
+                    let vec_abi_content = match field.get(0) {
+                        Some(vec_abi_content) => vec_abi_content,
+                        None => return None,
+                    };
+                    recursive_get_by_name(vec_abi_content, by_name)
+                },
                 FilledAbi::Tuple(_name, (field1, field2)) => {
                     if let Some(data) = recursive_get_by_name(field1, by_name) {
                         return Some(data)
@@ -240,8 +245,13 @@ impl FilledAbi {
 
                     None
                 },
-                FilledAbi::Vec(_name, field, _) =>
-                    recursive_get_data_by_name(field.get(0).unwrap(), by_name),
+                FilledAbi::Vec(_name, field, _) => {
+                    let vec_abi_content = match field.get(0) {
+                        Some(vec_abi_content) => vec_abi_content,
+                        None => return None,
+                    };
+                    recursive_get_data_by_name(vec_abi_content, by_name)
+                },
                 FilledAbi::Tuple(_name, (field1, field2)) => {
                     if let Some(data) = recursive_get_data_by_name(field1, by_name) {
                         return Some(data)
