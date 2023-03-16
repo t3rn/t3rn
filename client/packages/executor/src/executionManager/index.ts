@@ -1,18 +1,18 @@
-import { Execution } from "./execution"
-import { Notification, NotificationType, SideEffect } from "./sideEffect"
+import {Execution} from "./execution"
+import {Notification, NotificationType, SideEffect} from "./sideEffect"
 import Estimator from "../gateways/substrate/estimator"
-import { SubstrateRelayer } from "../gateways/substrate/relayer"
-import { PriceEngine } from "../pricing"
-import { StrategyEngine } from "../strategy"
-import { Sdk } from "@t3rn/sdk"
-import { BiddingEngine } from "../bidding"
-import { CircuitListener, ListenerEventData, ListenerEvents } from "../circuit/listener"
-import { ApiPromise } from "@polkadot/api"
-import { CircuitRelayer } from "../circuit/relayer"
-import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types"
-import { RelayerEventData, RelayerEvents } from "../gateways/types"
-import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
-import { Gateway } from "../../config/config"
+import {SubstrateRelayer} from "../gateways/substrate/relayer"
+import {PriceEngine} from "../pricing"
+import {StrategyEngine} from "../strategy"
+import {Sdk} from "@t3rn/sdk"
+import {BiddingEngine} from "../bidding"
+import {CircuitListener, ListenerEventData, ListenerEvents} from "../circuit/listener"
+import {ApiPromise} from "@polkadot/api"
+import {CircuitRelayer} from "../circuit/relayer"
+import {ExecutionLayerType} from "@t3rn/sdk/dist/src/gateways/types"
+import {RelayerEventData, RelayerEvents} from "../gateways/types"
+import {XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types"
+import {Gateway} from "../../config/config"
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -122,23 +122,22 @@ export class ExecutionManager {
         for (let i = 0; i < gatewayKeys.length; i++) {
             const entry = this.sdk.gateways[gatewayKeys[i]]
 
+            const config = gatewayConfig.find((g) => g.id === entry.id)
+
+            if(!config) { // skip over gateways we have no configs for
+                continue;
+            }
             if (entry.executionLayerType === ExecutionLayerType.Substrate) {
                 // initialize gateway relayer
                 const relayer = new SubstrateRelayer()
 
-                const config = gatewayConfig.find((g) => g.id === entry.id)
 
-                if (config) {
-                    await relayer.setup(config.rpc, config.signerKey, entry.id, this.logger)
-                } else {
-                    await relayer.setup(entry.rpc, undefined, entry.id, this.logger)
-                }
+                await relayer.setup(config, this.logger)
 
                 this.relayers[entry.id] = relayer
 
                 // initialize gateway estimator
-                const estimator = new Estimator(relayer)
-                this.targetEstimator[entry.id] = estimator
+                this.targetEstimator[entry.id] = new Estimator(relayer)
 
                 relayer.on("Event", async (eventData: RelayerEventData) => {
                     switch (eventData.type) {
@@ -162,7 +161,6 @@ export class ExecutionManager {
 
                             break
                         case RelayerEvents.HeaderInclusionProofRequest:
-                            console.log(eventData)
                             const proof = await this.relayers[eventData.target].generateHeaderInclusionProof(
                                 eventData.blockNumber,
                                 parseInt(eventData.data)
@@ -171,6 +169,7 @@ export class ExecutionManager {
                             const blockHash = await this.relayers[eventData.target].getBlockHash(eventData.blockNumber)
 
                             this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects.get(eventData.sfxId)?.addHeaderProof(proof.toJSON().proof, blockHash)
+                            break;
                         case RelayerEvents.SfxExecutionError:
                             // ToDo figure out how to handle this
                             break

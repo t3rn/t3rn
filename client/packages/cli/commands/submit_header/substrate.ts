@@ -51,53 +51,6 @@ const generateBatchProof = async (circuit: any, target: any, gatewayId: string, 
     return transactionArguments;
 }
 
-// const generateParachainProof = async (circuit: any, target: any, gatewayData: any, logger: any) => {
-//     const latestRelayChainHeader = await fetchBestFinalizedHash(circuit, gatewayData.registrationData.parachain.relayChainId)
-//     const parachainHeader: any = await fetchLatestPossibleParachainHeader(
-//         gatewayData.relaychainRpc,
-//         latestRelayChainHeader.toJSON(),
-//         gatewayData.registrationData.parachain.id
-//     )
-//     const decodedParachainHeader = Encodings.Substrate.Decoders.headerDecode(parachainHeader.toJSON())
-//     const parachainHeightCircuit = await fetchGatewayHeight(gatewayData.id, circuit)
-//     let logMsg = {
-//         type: "PARACHAIN",
-//         gatewayId: gatewayData.id,
-//         latesteCircuit: parachainHeightCircuit,
-//         latestTarget: decodedParachainHeader.number.toNumber(),
-//     };
-//
-//     let headers = await collectHeaderRange(target, parachainHeightCircuit + 1, decodedParachainHeader.number.toNumber() - 1) // the new highest header is in the proof
-//
-//     const proof = await getStorageProof(gatewayData.relaychainRpc, latestRelayChainHeader.toJSON(), gatewayData.registrationData.parachain.id)
-//
-//     logMsg["targetFrom"] = parachainHeightCircuit + 1;
-//     logMsg["targetTo"] = decodedParachainHeader.number.toNumber() - 1;
-//
-//     const parachainHeaderData = circuit.createType("ParachainHeaderData<Header>", {
-//         relay_block_hash: latestRelayChainHeader.toJSON(),
-//         range: headers,
-//         proof: {
-//             trieNodes: proof.toJSON().proof
-//         }
-//     })
-//     logger.debug(logMsg)
-//     return [{gatewayId: circuit.createType("ChainId", gatewayData.id), data: parachainHeaderData}]
-// }
-
-// const collectHeaderRange = async (target: any, from: number, to: number) => {
-//     let headers: any[] = [];
-//     while(from <= to) {
-//         headers.push(
-//             (await target.rpc.chain.getHeader(
-//                 await target.rpc.chain.getBlockHash(from)
-//             )).toJSON()
-//         )
-//         from += 1
-//     }
-//     return headers;
-// }
-
 // ToDo this should be replaced for portal RPC call once #380 is closed
 const fetchGatewayHeight = async (gatewayId: any, circuit: any) =>  {
     const hash = await circuit.query.rococoBridge.bestFinalizedHash();
@@ -123,21 +76,3 @@ const getHeader = async (target: any, height: number) => {
         await target.rpc.chain.getBlockHash(height)
     )).toJSON()
 }
-
-// //for registrations we want to get the justification cotaining the latest authoritySetUpdate, as we can be sure that all authorties are included.
-// const fetchHeaders = async (gatewayData: any, page: number) => {
-//     return axios.post(gatewayData.subscan + '/api/scan/blocks', {
-//             row: 100,
-//             page,
-//         },
-//         {
-//             headers: {
-//                 'content-type': 'text/json'
-//             }
-//         }
-//     )
-//     .then(function (response) {
-//         console.log(response.data.data)
-//         // return response.data.data.events.map(entry => entry.block_num)
-//     })
-// }

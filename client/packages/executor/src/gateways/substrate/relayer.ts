@@ -8,6 +8,7 @@ import { InclusionProof, RelayerEventData, RelayerEvents } from "../types"
 import Estimator from "./estimator"
 import { CostEstimator, Estimate } from "./estimator/cost"
 import { Utils } from "@t3rn/sdk";
+import {Gateway} from "../../../config/config";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -29,18 +30,22 @@ export class SubstrateRelayer extends EventEmitter {
     /** Name of the target */
     name: string
     logger: any
+    nativeId: string
 
-    async setup(rpc: string, signer: string | undefined, name: string, logger: any) {
+    async setup(config: Gateway, logger: any) {
         this.client = await ApiPromise.create({
-            provider: new WsProvider(rpc),
+            provider: new WsProvider(config.rpc),
         })
-        const keyring = new Keyring({ type: "sr25519" })
+        this.logger = logger
+        this.name = config.name
 
-        this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default")
+        const keyring = new Keyring({ type: "sr25519" })
+        this.signer = config.signerKey ? keyring.addFromMnemonic(config.signerKey) : keyring.addFromUri("//Executor//default")
+
+        if(config.nativeId) this.nativeId = config.nativeId;
 
         this.nonce = await this.fetchNonce(this.client, this.signer.address)
-        this.name = name
-        this.logger = logger
+
     }
 
     /**
@@ -143,7 +148,7 @@ export class SubstrateRelayer extends EventEmitter {
                 blockNumber,
                 target: "roco",
                 sfxId: sfx.id,
-                data: "2090",
+                data: this.nativeId,
             })
 
               // Add the inclusion proof to the SFX object
