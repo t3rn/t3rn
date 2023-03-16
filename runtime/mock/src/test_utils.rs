@@ -110,22 +110,22 @@ pub fn recursive_produce_test_args_for_abi(abi: Abi, args_variant: ArgVariant) -
                 ],
         },
         Abi::Value256(_) => match args_variant {
-            ArgVariant::A => vec![U256::from(30000).encode()],
+            ArgVariant::A => vec![U256::from(1).encode()],
             ArgVariant::B => vec![U256::from(40000000).encode()],
             ArgVariant::C => vec![U256::from(0).encode()],
         },
         Abi::Value128(_) => match args_variant {
-            ArgVariant::A => vec![30000u128.encode()],
+            ArgVariant::A => vec![1u128.encode()],
             ArgVariant::B => vec![40000000u128.encode()],
             ArgVariant::C => vec![0u128.encode()],
         },
         Abi::Value64(_) => match args_variant {
-            ArgVariant::A => vec![30000u64.encode()],
+            ArgVariant::A => vec![1u64.encode()],
             ArgVariant::B => vec![40000000u64.encode()],
             ArgVariant::C => vec![0u64.encode()],
         },
         Abi::Value32(_) => match args_variant {
-            ArgVariant::A => vec![30000u32.encode()],
+            ArgVariant::A => vec![1u32.encode()],
             ArgVariant::B => vec![40000000u32.encode()],
             ArgVariant::C => vec![0u32.encode()],
         },
@@ -158,6 +158,12 @@ pub fn produce_and_validate_side_effect(
         .get_expected_egress_descriptor(codec)
         .try_into()
         .expect("ABI should be valid for standard registered SFX");
+
+    println!("produce_and_validate_side_effect -- ABI: {abi:?}");
+    println!(
+        "produce_and_validate_side_effect -- test args: {:?}",
+        recursive_produce_test_args_for_abi(abi.clone(), args_variant.clone())
+    );
 
     SideEffect::<AccountId, BalanceOf> {
         target: [0, 0, 0, 0],
