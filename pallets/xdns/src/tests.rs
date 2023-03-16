@@ -302,7 +302,7 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
 #[test]
 fn test_storage_migration_v140_to_v150_for_standard_side_effects_to_standard_sfx_abi() {
     type EventSignature = Vec<u8>;
-    use t3rn_abi::{types::Sfx4bId, SFXAbi};
+    use t3rn_abi::SFXAbi;
     use t3rn_types::gateway::{CryptoAlgo, HasherAlgo};
 
     #[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
@@ -440,7 +440,7 @@ fn test_storage_migration_v140_to_v150_for_standard_side_effects_to_standard_sfx
 
             // Ensure the new storage entries are created
             for (key, _value) in old_entries.iter() {
-                let sfx4b_id = Sfx4bId::from(*key);
+                let sfx4b_id = *key;
                 assert_eq!(
                     pallet_xdns::StandardSFXABIs::<Runtime>::get(sfx4b_id),
                     SFXAbi::get_standard_interface(sfx4b_id)

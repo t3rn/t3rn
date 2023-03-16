@@ -110,37 +110,42 @@ pub mod pallet {
         fn on_runtime_upgrade() -> Weight {
             // Define the maximum weight of this migration.
             let max_weight = T::DbWeight::get().reads_writes(10, 10);
-
+            // Define the current storage migration version.
+            const CURRENT_STORAGE_VERSION: u32 = 1;
             // Migrate the storage entries.
-            StorageMigrations::<T>::try_mutate(|migrations_done| {
-                if *migrations_done {
-                    // Migration is already done, return early.
-                    return Ok::<Weight, DispatchError>(0 as Weight)
-                }
-
-                // Storage Migration: StandardSideEffects -> StandardSFXABIs
-                // Storage Migration Details: 16-03-2023; v1.4.0-rc -> v1.5.0-rc
-                // Iterate through the old storage entries and migrate them.
-                for (key, _value) in StandardSideEffects::<T>::drain() {
-                    let sfx4b_id = key;
-                    match SFXAbi::get_standard_interface(sfx4b_id) {
-                        Some(sfx_abi) => {
-                            StandardSFXABIs::<T>::insert(sfx4b_id, sfx_abi);
-                        }
-                        None => {
-                            log::error!(
+            StorageMigrations::<T>::try_mutate(|current_version| {
+                match *current_version {
+                    0 => {
+                        // Storage Migration: StandardSideEffects -> StandardSFXABIs
+                        // Storage Migration Details: 16-03-2023; v1.4.0-rc -> v1.5.0-rc
+                        // Iterate through the old storage entries and migrate them.
+                        for (key, _value) in StandardSideEffects::<T>::drain() {
+                            let sfx4b_id = key;
+                            match SFXAbi::get_standard_interface(sfx4b_id) {
+                                Some(sfx_abi) => {
+                                    StandardSFXABIs::<T>::insert(sfx4b_id, sfx_abi);
+                                }
+                                None => {
+                                    log::error!(
                                 "Failed to migrate StandardSideEffects to StandardSFXABIs for sfx4b_id: {:?}",
                                 sfx4b_id
                             );
+                                }
+                            }
                         }
+
+                        // Set migrations_done to true
+                        *current_version = CURRENT_STORAGE_VERSION;
+
+                        // Return the weight consumed by the migration.
+                        Ok::<Weight, DispatchError>(max_weight)
+                    }
+                    // Add more migration cases here, if needed in the future
+                    _ => {
+                        // No migration needed.
+                        Ok::<Weight, DispatchError>(0 as Weight)
                     }
                 }
-
-                // Set migrations_done to true
-                *migrations_done = true;
-
-                // Return the weight consumed by the migration.
-                Ok::<Weight, DispatchError>(max_weight)
             })
             .unwrap_or(0)
         }
@@ -219,7 +224,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn storage_migrations_done)]
-    pub type StorageMigrations<T: Config> = StorageValue<_, bool, ValueQuery>;
+    pub type StorageMigrations<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     #[pallet::storage]
     pub type StandardSFXABIs<T: Config> = StorageMap<_, Identity, Sfx4bId, SFXAbi>;
