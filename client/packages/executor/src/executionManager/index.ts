@@ -312,7 +312,6 @@ export class ExecutionManager {
             blockHeight: blockHeight,
         })
         this.logger.info(`Gateway height updated: ${vendor} #${blockHeight} 🧱`)
-        console.log(this.queue)
         if (this.queue[vendor]) {
             this.queue[vendor].blockHeight = blockHeight
             this.executeConfirmationQueue(vendor)

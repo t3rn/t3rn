@@ -151,18 +151,6 @@ pub mod pallet {
     pub(super) type ImportedHeaders<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, BridgedBlockHash<T, I>, BridgedHeader<T, I>>;
 
-    // /// Roots (ExtrinsicsRoot + StateRoot) which have been imported into the pallet for a given gateway.
-    // #[pallet::storage]
-    // #[pallet::getter(fn get_imported_roots)]
-    // pub(super) type MultiImportedRoots<T: Config<I>, I: 'static = ()> = StorageMap<
-    //     _,
-    //     Blake2_256,
-    //     ChainId,
-    //     Identity,
-    //     BridgedBlockHash<T, I>,
-    //     (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>),
-    // >;
-
     #[pallet::storage]
     pub(super) type RelayChainId<T: Config<I>, I: 'static = ()> =
         StorageValue<_, ChainId, OptionQuery>;
@@ -190,16 +178,6 @@ pub mod pallet {
     /// If true, all pallet transactions are failed immediately.
     #[pallet::storage]
     pub(super) type IsHalted<T: Config<I>, I: 'static = ()> = StorageValue<_, bool, ValueQuery>;
-
-    // /// If true, all pallet transactions are failed immediately.
-    // #[pallet::storage]
-    // pub(super) type IsHaltedMap<T: Config<I>, I: 'static = ()> =
-    //     StorageMap<_, Blake2_256, ChainId, bool>;
-
-    // /// Map of instance ids of gateways which are active
-    // #[pallet::storage]
-    // pub(super) type InstantiatedGatewaysMap<T: Config<I>, I: 'static = ()> =
-    //     StorageValue<_, Vec<ChainId>, ValueQuery>;
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
@@ -344,97 +322,6 @@ pub mod pallet {
             _ => Err(Error::<T, I>::BlockHeightConversionError.into()),
         }
     }
-
-    // /// Verify a target parachain header can be verified with its relaychains storage_proof
-    // ///
-    // /// It will use the underlying storage pallet to fetch the relaychains header, which is then used to verify the storage_proof
-    // ///
-    // /// If successful in verification, it will write the target header to the underlying storage
-    // /// pallet.
-    // ///
-    // pub(crate) fn submit_parachain_header<T: Config<I>, I>(
-    //     gateway_id: ChainId,
-    //     relay_block_hash: BridgedBlockHash<T, I>,
-    //     range: Vec<BridgedHeader<T, I>>,
-    //     proof: StorageProof,
-    // ) -> Result<Vec<u8>, DispatchError> {
-    //     ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
-    //     ensure!(
-    //         range.len() < T::HeadersToStore::get().try_into().unwrap(),
-    //         Error::<T, I>::RangeToLarge
-    //     ); // this should be safe to do, as u32
-    //
-    //     let mut best_finalized = <ImportedHeaders<T, I>>::get(
-    //         gateway_id,
-    //         // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-    //         // `ImportedHeaders` must contain an entry for `BestFinalized`.
-    //         <BestFinalizedHash<T, I>>::get(gateway_id).ok_or(Error::<T, I>::NoFinalizedHeader)?,
-    //     )
-    //     .ok_or(Error::<T, I>::NoFinalizedHeader)?;
-    //
-    //     // °°°°° Explaination °°°°°
-    //     // To be able to submit ranges of headers, we need to ensure a number of things.
-    //     // 1. Ensure the highest submitted header is verified in a Relaychain block
-    //     // 2. Ensure correct header linkage. All submitted headers must follow the linkage rule.
-    //     // 3. The highest submitted header follows the linkage rule of the range
-    //
-    //     let parachain = <ParachainIdMap<T, I>>::try_get(gateway_id)
-    //         .map_err(|_| Error::<T, I>::ParachainEntryNotFound)?;
-    //
-    //     // °°°°° Begin Check: #1 °°°°°
-    //     let signed_header: BridgedHeader<T, I> =
-    //         verify_header_storage_proof::<T, I>(relay_block_hash, proof, parachain)?;
-    //     // °°°°° Check Success: #1 °°°°°
-    //
-    //     // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
-    //     let mut buffer_index =
-    //         <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-    //
-    //     // °°°°° Begin Check: #2 °°°°°
-    //     for header in range {
-    //         if best_finalized.hash() == *header.parent_hash() {
-    //             // write header to storage if correct
-    //             write_and_clean_header_data::<T, I>(
-    //                 gateway_id,
-    //                 &mut buffer_index,
-    //                 &header,
-    //                 header.hash(),
-    //                 false,
-    //             )?;
-    //
-    //             best_finalized = header;
-    //         } else {
-    //             // if anything fails here, noop!
-    //             return Err(Error::<T, I>::InvalidRangeLinkage.into())
-    //         }
-    //     }
-    //     // °°°°° Check Success: #2 °°°°°
-    //
-    //     // °°°°° Begin Check: #3 °°°°°
-    //     if best_finalized.hash() == *signed_header.parent_hash() {
-    //         // write header to storage if correct
-    //         write_and_clean_header_data::<T, I>(
-    //             gateway_id,
-    //             &mut buffer_index,
-    //             &signed_header,
-    //             signed_header.hash(),
-    //             true,
-    //         )?;
-    //     } else {
-    //         return Err(Error::<T, I>::InvalidJustificationLinkage.into())
-    //     }
-    //     // °°°°° Check Success: #3 °°°°°
-    //     // Proof success! Submitted header range valid
-    //
-    //     // Update pointer
-    //     <MultiImportedHashesPointer<T, I>>::insert(gateway_id, buffer_index);
-    //
-    //     let height: usize = signed_header.number().as_();
-    //     match u32::try_from(height) {
-    //         Ok(number) => Ok(number.to_be_bytes().to_vec()),
-    //         _ => Err(Error::<T, I>::BlockHeightConversionError.into()),
-    //     }
-    // }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
     /// is found it will be enacted immediately.
@@ -775,28 +662,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
     }
 
-    pub fn confirm_event_inclusion(
-        gateway_id: ChainId,
-        encoded_inclusion_data: Vec<u8>,
-        submission_target_height: Vec<u8>,
-    ) -> Result<Vec<u8>, DispatchError> {
-        let inclusion_data: InclusionData<BridgedHeader<T, I>> =
-            Decode::decode(&mut &*encoded_inclusion_data)
-                .map_err(|_| Error::<T, I>::InclusionDataDecodeError)?;
-
-        // ensures old equal side_effects can't be replayed
-        executed_after_creation::<T, I>(gateway_id, submission_target_height)?;
-        verify_event_storage_proof::<T, I>(gateway_id, inclusion_data)
-    }
-
-    pub fn get_latest_finalized_header(gateway_id: ChainId) -> Option<Vec<u8>> {
+    pub fn get_latest_finalized_header(_gateway_id: ChainId) -> Option<Vec<u8>> {
         if let Some(header_hash) = <BestFinalizedHash<T, I>>::get() {
             return Some(header_hash.encode())
         }
         None
     }
 
-    pub fn get_latest_finalized_height(gateway_id: ChainId) -> Option<Vec<u8>> {
+    pub fn get_latest_finalized_height(_gateway_id: ChainId) -> Option<Vec<u8>> {
         if let Some(header_hash) = <BestFinalizedHash<T, I>>::get() {
             if let Some(header) = <ImportedHeaders<T, I>>::get(header_hash) {
                 return Some(header.number().encode())
@@ -858,7 +731,7 @@ pub(crate) fn find_scheduled_change<H: HeaderT>(
 /// Ensure that the origin is either root, or `PalletOwner`.
 fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
     origin: T::Origin,
-    gateway_id: ChainId,
+    _gateway_id: ChainId,
 ) -> Result<(), &'static str> {
     match origin.into() {
         Ok(RawOrigin::Root) => Ok(()),
