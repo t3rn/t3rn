@@ -119,7 +119,9 @@ parameter_types! {
 #[derive(Debug)]
 pub struct Blake2ValU32Chain;
 
-use t3rn_primitives::portal::{KusamaLightClient, PolkadotLightClient, RococoLightClient};
+pub type RococoLightClient = ();
+pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
+pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 
 impl pallet_grandpa_finality_verifier::bridges::runtime::Chain for Blake2ValU32Chain {
     type BlockNumber = u32;

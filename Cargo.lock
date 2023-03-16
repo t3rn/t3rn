@@ -13705,7 +13705,6 @@ dependencies = [
  "hex-literal 0.3.4",
  "log",
  "num-traits",
- "pallet-grandpa-finality-verifier",
  "pallet-sudo",
  "parity-scale-codec",
  "scale-info",

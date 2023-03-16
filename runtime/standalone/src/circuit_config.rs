@@ -9,7 +9,10 @@ use sp_runtime::{
     traits::{BlakeTwo256, Convert, One},
     Perbill,
 };
-use t3rn_primitives::portal::{KusamaLightClient, PolkadotLightClient, RococoLightClient};
+
+pub type RococoLightClient = ();
+pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
+pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;

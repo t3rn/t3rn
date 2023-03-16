@@ -33,10 +33,6 @@ pub struct RegistrationData {
     pub encoded_registration_data: Vec<u8>,
 }
 
-pub type RococoLightClient = ();
-pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
-pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
-
 pub trait Portal<T: frame_system::Config> {
     fn get_latest_finalized_header(chain_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError>;
 

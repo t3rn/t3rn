@@ -14,7 +14,7 @@ pub mod v13 {
     use codec::{Decode, Encode};
     use scale_info::TypeInfo;
     use sp_runtime::RuntimeDebug;
-    
+    use sp_std::prelude::*;
 
     // Deprecated versions of SideEffects and migrations to the latest SideEffect version
     #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]

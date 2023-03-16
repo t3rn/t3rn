@@ -24,7 +24,10 @@ mod contracts_config;
 mod system_no_version_config;
 pub mod test_utils;
 mod xbi_config;
-use t3rn_primitives::portal::{KusamaLightClient, PolkadotLightClient, RococoLightClient};
+
+pub type RococoLightClient = ();
+pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
+pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 
 frame_support::construct_runtime!(
     pub enum Runtime where
