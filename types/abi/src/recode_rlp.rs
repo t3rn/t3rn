@@ -124,15 +124,15 @@ impl Abi {
 
                 let filled_abi = match self {
                     Abi::Value128(_) => {
-                        let as_val: u128 = as_u256.as_u128();
+                        let as_val: u128 = as_u256.try_into()?;
                         FilledAbi::Value128(name.clone(), rlp::encode(&as_val).to_vec())
                     },
                     Abi::Value64(_) => {
-                        let as_val: u64 = as_u256.as_u64();
+                        let as_val: u64 = as_u256.try_into()?;
                         FilledAbi::Value64(name.clone(), rlp::encode(&as_val).to_vec())
                     },
                     _ => {
-                        let as_val: u32 = as_u256.as_u32();
+                        let as_val: u32 = as_u256.try_into()?;
                         FilledAbi::Value32(name.clone(), rlp::encode(&as_val).to_vec())
                     },
                 };
@@ -199,6 +199,166 @@ impl Abi {
             _ => {
                 unreachable!("decode_topics_as_rlp -- Invalid type")
             },
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_recode_rlp {
+    use super::*;
+    use frame_support::assert_err;
+    use hex_literal::hex;
+
+    #[test]
+    fn test_decode_topics_as_rlp_account20() {
+        let abi = Abi::Account20(Some(b"address".to_vec()));
+        let input = hex!("000000000000000000000000000102030405060708090A0B0C0D0E0F10111213");
+        let result = abi.decode_topics_as_rlp(input.to_vec()).unwrap();
+        let expected_output = (
+            FilledAbi::Account20(
+                Some(b"address".to_vec()),
+                hex!("000102030405060708090A0B0C0D0E0F10111213").to_vec(),
+            ),
+            32,
+        );
+        assert_eq!(result, expected_output);
+    }
+
+    #[test]
+    fn test_decode_topics_as_rlp_h256() {
+        let abi = Abi::H256(Some(b"hash".to_vec()));
+        let input = hex!("AABBCCDDEEFF00112233445566778899AABBCCDDEEFF00112233445566778899");
+        let result = abi.decode_topics_as_rlp(input.to_vec()).unwrap();
+        let expected_output = (
+            FilledAbi::H256(
+                Some(b"hash".to_vec()),
+                hex!("AABBCCDDEEFF00112233445566778899AABBCCDDEEFF00112233445566778899").to_vec(),
+            ),
+            32,
+        );
+        assert_eq!(result, expected_output);
+    }
+
+    #[test]
+    fn test_decode_topics_as_rlp_value256() {
+        let abi = Abi::Value256(Some(b"value256".to_vec()));
+        let input = hex!("0000000000000000000000000000000000000000000000000A0B0C0D0E0F1011");
+        let result = abi.decode_topics_as_rlp(input.to_vec()).unwrap();
+        let expected_output = (
+            FilledAbi::Value256(
+                Some(b"value256".to_vec()),
+                hex!("0000000000000000000000000000000000000000000000000A0B0C0D0E0F1011").to_vec(),
+            ),
+            32,
+        );
+        assert_eq!(result, expected_output);
+    }
+
+    #[test]
+    fn test_decode_topics_as_rlp_value128() {
+        let abi = Abi::Value128(Some(b"value128".to_vec()));
+        let input = hex!("0000000000000000000000000000000000000000000000000A0B0C0D0E0F1011");
+        let result = abi.decode_topics_as_rlp(input.to_vec()).unwrap();
+        let expected_output = (
+            FilledAbi::Value128(
+                Some(b"value128".to_vec()),
+                vec![136, 10, 11, 12, 13, 14, 15, 16, 17],
+            ),
+            32,
+        );
+        assert_eq!(result, expected_output);
+    }
+
+    #[test]
+    fn test_decode_topics_as_rlp_value64() {
+        let abi = Abi::Value64(Some(b"value64".to_vec()));
+        let input = hex!("0000000000000000000000000000000000000000000000000A0B0C0D0E0F1011");
+        let result = abi.decode_topics_as_rlp(input.to_vec()).unwrap();
+        let expected_output = (
+            FilledAbi::Value64(
+                Some(b"value64".to_vec()),
+                vec![136, 10, 11, 12, 13, 14, 15, 16, 17],
+            ),
+            32,
+        );
+        assert_eq!(result, expected_output);
+    }
+
+    #[test]
+    fn test_decode_topics_as_rlp_value32_throw_overflow() {
+        let abi = Abi::Value32(Some(b"value32".to_vec()));
+        let input = hex!("0000000000000000000000000000000000000000000000000A0B0C0D0E0F1011");
+        assert_err!(
+            abi.decode_topics_as_rlp(input.to_vec()),
+            "integer overflow when casting to u32"
+        );
+    }
+
+    // Helper function for H256 data
+    fn h256_data(input: &[u8; 32]) -> Vec<u8> {
+        let mut data = vec![0; 32];
+        data.copy_from_slice(input);
+        data
+    }
+
+    #[test]
+    fn test_decode_topics_as_rlp_h256_tuple() {
+        let abi = Abi::Tuple(
+            Some(b"tuple".to_vec()),
+            (
+                Box::new(Abi::H256(Some(b"h256_1".to_vec()))),
+                Box::new(Abi::H256(Some(b"h256_2".to_vec()))),
+            ),
+        );
+        let input1 = h256_data(&[1; 32]);
+        let input2 = h256_data(&[2; 32]);
+        let input = [&input1[..], &input2[..]].concat();
+
+        let result = abi.decode_topics_as_rlp(input).unwrap();
+        match result.0 {
+            FilledAbi::Tuple(_, (field1, field2)) => {
+                assert_eq!(field1.get_name(), Some(b"h256_1".to_vec()));
+                assert_eq!(field2.get_name(), Some(b"h256_2".to_vec()));
+            },
+            _ => panic!("Unexpected result"),
+        }
+    }
+
+    #[test]
+    fn test_decode_topics_as_rlp_h256_option() {
+        let abi = Abi::Option(
+            Some(b"option".to_vec()),
+            Box::new(Abi::H256(Some(b"h256".to_vec()))),
+        );
+        let input = h256_data(&[1; 32]);
+
+        let result = abi.decode_topics_as_rlp(input).unwrap();
+        match result.0 {
+            FilledAbi::Option(_, inner) => {
+                assert_eq!(inner.get_name(), Some(b"h256".to_vec()));
+            },
+            _ => panic!("Unexpected result"),
+        }
+    }
+
+    #[test]
+    fn test_decode_topics_as_rlp_h256_vector() {
+        let abi = Abi::Vec(
+            Some(b"vector".to_vec()),
+            Box::new(Abi::H256(Some(b"h256".to_vec()))),
+        );
+        let input1 = h256_data(&[1; 32]);
+        let input2 = h256_data(&[2; 32]);
+        let input = [&input1[..], &input2[..]].concat();
+
+        let result = abi.decode_topics_as_rlp(input).unwrap();
+        match result.0 {
+            FilledAbi::Vec(_, inner, _) => {
+                assert_eq!(inner.len(), 2);
+                assert_eq!(inner[0].get_name(), Some(b"h256".to_vec()));
+                assert_eq!(inner[1].get_name(), Some(b"h256".to_vec()));
+            },
+            _ => panic!("Unexpected result"),
         }
     }
 }
