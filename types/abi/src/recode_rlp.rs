@@ -1,5 +1,5 @@
 use crate::{
-    recode::{split_bytes, take_last_n, Recode},
+    recode::{take_last_n, Recode},
     to_abi::Abi,
     to_filled_abi::FilledAbi,
     types::Name,
@@ -12,7 +12,7 @@ use sp_std::{prelude::*, vec::IntoIter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub struct EthIngressEventLog(pub Vec<H256>, pub Vec<u8>);
-
+use bytes::{Buf, Bytes};
 pub struct RecodeRlp;
 
 impl Recode for RecodeRlp {
@@ -21,17 +21,17 @@ impl Recode for RecodeRlp {
         field_data: &[u8],
         _fields_iter_clone: IntoIter<Box<Abi>>,
     ) -> Result<(IntoIter<Vec<u8>>, u8), DispatchError> {
-        let (memo_prefix, _right) = split_bytes(field_data, 1)?;
+        let memo_prefix = field_data.first().copied().ok_or_else(|| {
+            DispatchError::from(
+                "RecodeRlp::chop_encoded - memo byte cannot be empty for RLP structs",
+            )
+        })?;
+
         let rlp = rlp::Rlp::new(field_data);
         let chopped_field_data: Vec<Vec<u8>> =
             rlp.into_iter().map(|rlp| rlp.as_raw().to_vec()).collect();
 
-        Ok((
-            chopped_field_data.into_iter(),
-            *memo_prefix
-                .first()
-                .expect("chop_encoded - memo byte cannot be empty for RLP structs"),
-        ))
+        Ok((chopped_field_data.into_iter(), memo_prefix))
     }
 
     fn event_to_filled(
@@ -43,40 +43,32 @@ impl Recode for RecodeRlp {
             EthIngressEventLog::decode(&mut &field_data[..])
                 .map_err(|_e| "EthIngressEventLog::decode can't be derived with provided data")?;
 
-        let (topics, mut data) = (eth_ingress_event_log.0, eth_ingress_event_log.1);
+        let (topics, data) = (eth_ingress_event_log.0, eth_ingress_event_log.1);
 
         let mut flat_topics: Vec<u8> = topics
             .into_iter()
-            // skip the first topic, which is the event signature - we use the custom ABI
             .skip(1)
             .flat_map(|t| t.as_ref().to_vec())
             .collect::<Vec<u8>>();
 
         let mut total_size = 0usize;
-        // Make sure original fields iterator won't be consumed
-        // let fields_iter_clone = fields_descriptors.iter().cloned();
         let fields_iter = fields_iter_clone.peekable();
+        let mut data_buf = Bytes::copy_from_slice(&data);
+
         let filled_abi_content = fields_iter
-            // start from the last field, and continue trimming the data from the end
             .rev()
             .map(|field_descriptor| {
-                // Use the last byte being either "+" or "-" to determine if the field is a topic or data.
-                //   this is a convention of Indexed = true/false of Eth event fields
                 let name = field_descriptor.get_name().unwrap_or(b"+".to_vec());
                 let next_filled_abi = if name.last() == Some(&b'+') {
                     let (filled_abi, chopped_size) =
                         field_descriptor.decode_topics_as_rlp(flat_topics.clone())?;
-                    let (remaining_topics, _read_topic) =
-                        split_bytes(&flat_topics, flat_topics.len() - chopped_size)?;
-                    flat_topics = remaining_topics.to_vec();
+                    flat_topics.truncate(flat_topics.len() - chopped_size);
                     total_size += chopped_size;
                     filled_abi
                 } else {
                     let (filled_abi, chopped_size) =
-                        field_descriptor.decode_topics_as_rlp(data.clone())?;
-                    let (remaining_data, _read_topic) =
-                        split_bytes(&data, data.len() - chopped_size)?;
-                    data = remaining_data.to_vec();
+                        field_descriptor.decode_topics_as_rlp(data_buf.to_vec())?;
+                    data_buf.advance(chopped_size);
                     total_size += chopped_size;
 
                     filled_abi
