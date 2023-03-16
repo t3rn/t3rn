@@ -6,8 +6,8 @@ use crate::{
     types::{Data, Name},
 };
 use codec::{Decode, Encode};
-use frame_support::ensure;
-use scale_info::{prelude::format, TypeInfo};
+use frame_support::{ensure, log};
+use scale_info::TypeInfo;
 use sp_core::{
     crypto::{AccountId32, ByteArray},
     H160, U256,
@@ -277,10 +277,13 @@ impl FilledAbi {
                 },
             },
             _ => {
-                let type_name = self.type_name();
-                Err(DispatchError::Other(Box::leak(
-                    format!("Filled ABI not implemented for type: {type_name}").into_boxed_str(),
-                )))
+                log::error!(
+                    "Filled ABI not implemented for type: {:?}",
+                    self.type_name()
+                );
+                Err(DispatchError::Other(
+                    "Filled ABI not implemented for type: {type_name}",
+                ))
             },
         }
     }

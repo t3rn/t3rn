@@ -5,8 +5,9 @@ use crate::{
     types::{Data, Name},
 };
 use codec::{Decode, Encode};
+use frame_support::log;
 
-use scale_info::{prelude::format, TypeInfo};
+use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 
@@ -109,15 +110,15 @@ impl SFXAbi {
                 continue
             }
 
-            let filled_abi_matched_by_name =
-                filled_named_abi
-                    .get_by_name(current_arg_name)
-                    .ok_or(DispatchError::Other(Box::leak(
-                        format!(
-                            "SFXAbi::Cannot find payload argument by name {current_arg_name_str:?}"
-                        )
-                        .into_boxed_str(),
-                    )))?;
+            let filled_abi_matched_by_name = filled_named_abi
+                .get_by_name(current_arg_name)
+                .ok_or_else(|| {
+                    log::error!(
+                        "SFXAbi::Cannot find payload argument by name {:?}",
+                        current_arg_name_str
+                    );
+                    DispatchError::Other("SFXAbi::Cannot find payload argument by name")
+                })?;
 
             // Check if arguments are equal after recoding to ordered_args_codec
             let recoded_payload: Data =
@@ -125,10 +126,14 @@ impl SFXAbi {
 
             match recoded_payload == *ordered_arg {
                 true => continue,
-                false =>
+                false => {
+                    log::error!(
+                        "SFXAbi::invalid payload argument for: '{:?}'; expected: {:?}; received and recoded: {:?}", current_arg_name_str, ordered_arg, recoded_payload
+                    );
                     return Err(DispatchError::Other(
-                        Box::leak(format!("SFXAbi::invalid payload argument for: '{current_arg_name_str:?}'; expected: {ordered_arg:?}; received and recoded: {recoded_payload:?}").into_boxed_str()),
-                    )),
+                        "SFXAbi::invalid payload argument for -- expected: doesn't match received and recoded",
+                    ));
+                },
             }
         }
 

@@ -250,10 +250,8 @@ mod test_abi_standards {
     fn test_transfer_validate_arguments_against_received_substrate_balances_event() {
         let transfer_interface = get_sfx_transfer_abi();
         let ordered_args = vec![
-            AccountId32::new([2; 32]).encode(),
-            AccountId32::new([1; 32]).encode(),
-            100u128.encode(),
-            50u128.encode(),
+            AccountId32::new([1; 32]).encode(), // to
+            100u128.encode(),                   // amount
         ];
         let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
             from: AccountId32::new([2; 32]),
@@ -277,13 +275,10 @@ mod test_abi_standards {
     fn test_transfer_validate_arguments_against_received_evm_balances_event() {
         let transfer_interface = get_sfx_transfer_abi();
         const HUNDRED: u128 = 100;
-        const FIFTY: u128 = 50;
 
         let ordered_args = vec![
-            H160::from(hex!("0000000000000000000000000000000000012321")).encode(),
-            H160::from(hex!("0000000000000000000000000000000000054321")).encode(),
-            HUNDRED.encode(),
-            FIFTY.encode(),
+            H160::from(hex!("0000000000000000000000000000000000054321")).encode(), // to
+            HUNDRED.encode(),                                                      // amount
         ];
 
         let hundred_u256: U256 = U256::from(HUNDRED);
@@ -318,11 +313,8 @@ mod test_abi_standards {
     fn test_call_validate_arguments_against_received_evm_call_contract_event() {
         let call_interface = get_call_evm_contract_abi();
         const HUNDRED: u128 = 100;
-        const FIFTY: u128 = 50;
 
         let ordered_args = vec![
-            // source
-            H160::from(hex!("0000000000000000000000000000000000012321")).encode(),
             // target
             H160::from(hex!("0000000000000000000000000000000000054321")).encode(),
             // value
@@ -343,8 +335,6 @@ mod test_abi_standards {
             1u128.encode(),
             // access_list
             vec![],
-            // insurance
-            FIFTY.encode(),
         ];
 
         let rlp_raw_log_bytes = EthIngressEventLog(
@@ -402,8 +392,6 @@ mod test_abi_standards {
                 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 2u8, 3u8, 4u8, 5u8,
             ])
             .encode(),
-            // insurance
-            FIFTY.encode(),
         ];
 
         let wasm_contracts_called_event_mock =
