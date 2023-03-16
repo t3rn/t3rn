@@ -62,15 +62,6 @@ impl CrossRecode {
     }
 }
 
-pub fn trim_bytes(input: &[u8], n: usize) -> &[u8] {
-    let len = input.len();
-    if n >= len {
-        &[]
-    } else {
-        &input[n..]
-    }
-}
-
 pub fn take_last_n(input: &[u8], n: usize) -> Result<&[u8], DispatchError> {
     let len = input.len();
     if n > len {
