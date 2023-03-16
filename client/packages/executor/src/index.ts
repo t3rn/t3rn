@@ -53,7 +53,7 @@ class InstanceManager {
         this.circuitClient = await this.sdk.init()
 
         this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
-        await this.executionManager.setup(config.gateways)
+        await this.executionManager.setup(config.gateways, config.vendors)
 
         logger.info("Executor: setup complete")
     }

@@ -63,7 +63,7 @@ pub mod pallet {
         /// Gateway was set operational. [ChainId, bool]
         SetOperational(ChainId, bool),
         /// Header was successfully added
-        HeaderSubmitted(ChainId, Vec<u8>),
+        HeaderSubmitted(GatewayVendor, Vec<u8>),
     }
 
     // Errors inform users that something went wrong.
@@ -247,11 +247,11 @@ pub mod pallet {
 
             match res {
                 Ok(height) => {
-                    Self::deposit_event(Event::HeaderSubmitted(gateway_id, height));
+                    Self::deposit_event(Event::HeaderSubmitted(vendor, height));
                     Ok(())
                 },
                 Err(msg) => {
-                    log::info!("{:?}", msg);
+                    log::error!("{:?}", msg);
                     Err(Error::<T>::SubmitHeaderError.into())
                 },
             }

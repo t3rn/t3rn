@@ -79,7 +79,7 @@ export class SideEffect extends EventEmitter {
     /** Target gateway of the SFX */
     target: string
     /** The id of the gateway running the targets consensus, e.g. roco for bslk tx */
-    consensusGatewayId: string
+    vendor: string
     /** Gateway helper instance */
     gateway: Gateway
     /** Security Level, e.g. Escrow or Optimistic */
@@ -181,7 +181,7 @@ export class SideEffect extends EventEmitter {
             this.biddingEngine = biddingEngine
             this.circuitSignerAddress = circuitSignerAddress
             this.logger = logger
-            this.consensusGatewayId = "roco"
+            this.vendor = this.gateway.vendor;
         }
     }
 

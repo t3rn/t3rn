@@ -68,7 +68,7 @@ export class CircuitListener extends EventEmitter {
                     })
                 } else if (notifications[i].event.method === "HeaderSubmitted") {
                     const data = {
-                        gatewayId: new TextDecoder().decode(notifications[i].event.data[0].toU8a()),
+                        vendor: notifications[i].event.data[0].toString(),
                         height: parseInt(notifications[i].event.data[1].toString(), 16),
                     }
                     this.emit("Event", <ListenerEventData>{
