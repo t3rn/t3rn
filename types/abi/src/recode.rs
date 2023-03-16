@@ -174,33 +174,55 @@ impl FilledAbi {
             FilledAbi::Value32(_name, data) => match (in_codec, out_codec) {
                 (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
                 (Codec::Scale, Codec::Rlp) => {
-                    let value: u32 = Decode::decode(&mut &data[..]).unwrap();
+                    let value: u32 = Decode::decode(&mut &data[..]).map_err(|_| {
+                        DispatchError::Other(
+                            "Recode::recode_as failed to decode Value32 from Scale",
+                        )
+                    })?;
                     Ok(rlp::encode(&value).to_vec())
                 },
                 (Codec::Rlp, Codec::Scale) => {
-                    let value: u32 = rlp::decode(&data[..]).unwrap();
+                    let value: u32 = rlp::decode(&data[..]).map_err(|_| {
+                        DispatchError::Other(
+                            "Recode::recode_as failed to decode Value32 from Scale",
+                        )
+                    })?;
                     Ok(value.encode())
                 },
             },
             FilledAbi::Value64(_name, data) => match (in_codec, out_codec) {
                 (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
                 (Codec::Scale, Codec::Rlp) => {
-                    let value: u64 = Decode::decode(&mut &data[..]).unwrap();
+                    let value: u64 = Decode::decode(&mut &data[..]).map_err(|_| {
+                        DispatchError::Other(
+                            "Recode::recode_as failed to decode Value64 from Scale",
+                        )
+                    })?;
                     Ok(rlp::encode(&value).to_vec())
                 },
                 (Codec::Rlp, Codec::Scale) => {
-                    let value: u64 = rlp::decode(&data[..]).unwrap();
+                    let value: u64 = rlp::decode(&data[..]).map_err(|_| {
+                        DispatchError::Other("Recode::recode_as failed to decode Value64 from Rlp")
+                    })?;
                     Ok(value.encode())
                 },
             },
             FilledAbi::Value128(_name, data) => match (in_codec, out_codec) {
                 (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
                 (Codec::Scale, Codec::Rlp) => {
-                    let value: u128 = Decode::decode(&mut &data[..]).unwrap();
+                    let value: u128 = Decode::decode(&mut &data[..]).map_err(|_| {
+                        DispatchError::Other(
+                            "Recode::recode_as failed to decode Value128 from Scale",
+                        )
+                    })?;
                     Ok(rlp::encode(&value).to_vec())
                 },
                 (Codec::Rlp, Codec::Scale) => {
-                    let value: u128 = rlp::decode(&data[..]).unwrap();
+                    let value: u128 = rlp::decode(&data[..]).map_err(|_| {
+                        DispatchError::Other(
+                            "Recode::recode_as failed to decode Value128 Scale from Rlp",
+                        )
+                    })?;
                     Ok(value.encode())
                 },
             },

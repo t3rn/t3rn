@@ -361,4 +361,40 @@ mod test_recode_rlp {
             _ => panic!("Unexpected result"),
         }
     }
+
+    #[test]
+    #[ignore] // investigate input 1 vs input 2 order
+    fn test_decode_topics_as_rlp_struct() {
+        let field1 = Box::new(Abi::H256(Some(b"field1".to_vec())));
+        let field2 = Box::new(Abi::H256(Some(b"field2".to_vec())));
+        let struct_abi = Abi::Struct(Some(b"test_struct".to_vec()), vec![field1, field2]);
+
+        let input1 = hex!("1111111111111111111111111111111111111111111111111111111111111111");
+        let input2 = hex!("2222222222222222222222222222222222222222222222222222222222222222");
+        let combined_input = [&input1[..], &input2[..]].concat();
+
+        let (filled_abi, consumed) = struct_abi.decode_topics_as_rlp(combined_input).unwrap();
+
+        assert_eq!(consumed, 64);
+        if let FilledAbi::Struct(name, fields, _) = filled_abi {
+            assert_eq!(name, Some(b"test_struct".to_vec()));
+            assert_eq!(fields.len(), 2);
+
+            if let FilledAbi::H256(field_name, data) = &*fields[0] {
+                assert_eq!(field_name, &Some(b"field1".to_vec()));
+                assert_eq!(data, &input1);
+            } else {
+                panic!("Unexpected FilledAbi variant for field1");
+            }
+
+            if let FilledAbi::H256(field_name, data) = &*fields[1] {
+                assert_eq!(field_name, &Some(b"field2".to_vec()));
+                assert_eq!(data, &input2);
+            } else {
+                panic!("Unexpected FilledAbi variant for field2");
+            }
+        } else {
+            panic!("Unexpected FilledAbi variant");
+        }
+    }
 }
