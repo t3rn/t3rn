@@ -1741,18 +1741,33 @@ pub mod pallet {
                     },
                     metadata,
                 }),
-                // b"swap" => Ok(XbiInstruction::AddLiquidity {
-                //     asset_a: (),
-                //     asset_b: (),
-                //     amount_a: (),
-                //     amount_b_max_limit: (),
-                // }),
-                // b"aliq" => Ok(XbiInstruction::AddLiquidity {
-                //     asset_a: (),
-                //     asset_b: (),
-                //     amount_a: (),
-                //     amount_b_max_limit: (),
-                // }),
+                b"aliq" => Ok(XbiFormat {
+                    instr: XbiInstruction::AddLiquidity {
+                        asset_a: Decode::decode(&mut &side_effect.encoded_args[2][..])
+                            .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
+                        asset_b: Decode::decode(&mut &side_effect.encoded_args[3][..])
+                            .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
+                        amount_a: Decode::decode(&mut &side_effect.encoded_args[5][..])
+                            .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
+                        amount_b_max_limit: Decode::decode(&mut &side_effect.encoded_args[6][..])
+                            .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
+                    },
+                    metadata,
+                }),
+                b"swap" => Ok(XbiFormat {
+                    instr: XbiInstruction::Swap {
+                        asset_out: Decode::decode(&mut &side_effect.encoded_args[4][..])
+                            .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
+                        asset_in: Decode::decode(&mut &side_effect.encoded_args[5][..])
+                            .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
+                        amount: Decode::decode(&mut &side_effect.encoded_args[2][..])
+                            .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
+                        max_limit: Decode::decode(&mut &side_effect.encoded_args[3][..])
+                            .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
+                        discount: Default::default(),
+                    },
+                    metadata,
+                }),
                 b"cevm" => Ok(XbiFormat {
                     instr: XbiInstruction::CallEvm {
                         // Get dest as argument_0 of SFX::CallEvm of Type::DynamicAddress
