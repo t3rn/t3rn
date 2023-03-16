@@ -215,7 +215,7 @@ pub mod pallet {
     // Storage Migration: CustomSideEffects -> !dropped and replaced by SFXABIRegistry
     // Storage Migration Details: 16-03-2023; v1.4.0-rc -> v1.5.0-rc
     #[pallet::storage]
-    pub type CustomSideEffects<T> = StorageMap<_, Identity, SideEffectId<T>, Vec<u8>>;
+    pub type CustomSideEffects<T: Config> = StorageMap<_, Identity, SideEffectId<T>, Vec<u8>>;
 
     #[pallet::storage]
     #[pallet::getter(fn storage_migrations_done)]

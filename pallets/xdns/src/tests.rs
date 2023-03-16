@@ -298,3 +298,153 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
             assert_ok!(actual, GatewayVendor::Rococo);
         });
 }
+
+#[test]
+fn test_storage_migration_v140_to_v150_for_standard_side_effects_to_standard_sfx_abi() {
+    type EventSignature = Vec<u8>;
+    use t3rn_abi::{types::Sfx4bId, SFXAbi};
+    use t3rn_types::gateway::{CryptoAlgo, HasherAlgo};
+
+    #[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+    #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+    pub enum Type {
+        Address(u16),
+        DynamicAddress,
+        Bool,
+        Int(u16),
+        Uint(u16),
+        /// where u8 is bytes length
+        Bytes(u8),
+        DynamicBytes,
+        String,
+        Enum(u8),
+        Struct(u8),
+        Mapping(Box<Type>, Box<Type>),
+        Contract,
+        Ref(Box<Type>),
+        Option(Box<Type>),
+        OptionalInsurance,
+        OptionalReward,
+        StorageRef(Box<Type>),
+        /// There is no way to declare value in Solidity (should there be?)
+        Value,
+        /// DynamicBytes and String are lowered to a vector.
+        Slice,
+        Hasher(HasherAlgo, u16),
+        Crypto(CryptoAlgo),
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, Default)]
+    #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+    pub struct SideEffectInterface {
+        pub id: [u8; 4],
+        pub name: SideEffectName,
+        pub argument_abi: Vec<Type>,
+        pub argument_to_state_mapper: Vec<EventSignature>,
+        pub confirm_events: Vec<EventSignature>,
+        pub escrowed_events: Vec<EventSignature>,
+        pub commit_events: Vec<EventSignature>,
+        pub revert_events: Vec<EventSignature>,
+    }
+
+    fn get_transfer_interface() -> SideEffectInterface {
+        SideEffectInterface {
+            id: *b"tran",
+            name: b"transfer".to_vec(),
+            argument_abi: vec![
+                Type::DynamicAddress,    // argument_0: from
+                Type::DynamicAddress,    // argument_1: to
+                Type::Value,             // argument_2: value
+                Type::OptionalInsurance, // argument_3: insurance
+            ],
+            argument_to_state_mapper: vec![
+                b"from".to_vec(),
+                b"to".to_vec(),
+                b"value".to_vec(),
+                b"insurance".to_vec(),
+            ],
+            confirm_events: vec![b"Transfer(_executor,to,value)".to_vec()],
+            escrowed_events: vec![b"Transfer(_source,_executor,to,value)".to_vec()],
+            commit_events: vec![b"Transfer(_executor,to,value)".to_vec()],
+            revert_events: vec![b"Transfer(_executor,from,value)".to_vec()],
+        }
+    }
+
+    fn get_swap_interface() -> SideEffectInterface {
+        SideEffectInterface {
+            id: *b"swap",
+            name: b"swap".to_vec(),
+            argument_abi: vec![
+                Type::DynamicAddress,    // argument_0: caller
+                Type::DynamicAddress,    // argument_1: to
+                Type::Value,             // argument_2: amount_from
+                Type::Value,             // argument_3: amount_to
+                Type::DynamicBytes,      // argument_4: asset_from
+                Type::DynamicBytes,      // argument_5: asset_to
+                Type::OptionalInsurance, // argument_6: insurance
+            ],
+            argument_to_state_mapper: vec![
+                b"caller".to_vec(),
+                b"to".to_vec(),
+                b"amount_from".to_vec(),
+                b"amount_to".to_vec(),
+                b"asset_from".to_vec(),
+                b"asset_to".to_vec(),
+                b"insurance".to_vec(),
+            ],
+            confirm_events: vec![b"MultiTransfer(_executor,to,asset_to,amount_to)".to_vec()],
+            escrowed_events: vec![
+                b"MultiTransfer(_source,_executor,to,asset_to,amount_to)".to_vec()
+            ],
+            commit_events: vec![b"MultiTransfer(_executor,to,asset_to,amount_to)".to_vec()],
+            revert_events: vec![b"MultiTransfer(_executor,caller,asset_from,amount_from)".to_vec()],
+        }
+    }
+
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // Insert some old storage entries
+            let old_entries = vec![
+                (*b"tran", get_transfer_interface()),
+                (*b"swap", get_swap_interface()),
+            ];
+
+            for (key, value) in old_entries.clone() {
+                // pallet_contracts_registry::ContractsRegistry::<Runtime>::
+                // assume encoded form will be the same as the old storage
+                pallet_xdns::StandardSideEffects::<Runtime>::insert(key, value.encode());
+            }
+
+            // Ensure the old storage entries are present
+            for (key, value) in old_entries.iter() {
+                assert_eq!(
+                    pallet_xdns::StandardSideEffects::<Runtime>::get(key),
+                    Some(value.encode())
+                );
+            }
+
+            // Perform the runtime upgrade (call the `on_runtime_upgrade` function)
+            let consumed_weight =
+                <XDNS as frame_support::traits::OnRuntimeUpgrade>::on_runtime_upgrade();
+            let max_weight =
+                <Runtime as frame_system::Config>::DbWeight::get().reads_writes(10, 10);
+            assert_eq!(consumed_weight, max_weight);
+
+            // Ensure the old storage entries are removed
+            for (key, _) in old_entries.iter() {
+                assert!(pallet_xdns::StandardSideEffects::<Runtime>::get(key).is_none());
+            }
+
+            // Ensure the new storage entries are created
+            for (key, _value) in old_entries.iter() {
+                let sfx4b_id = Sfx4bId::from(*key);
+                assert_eq!(
+                    pallet_xdns::StandardSFXABIs::<Runtime>::get(sfx4b_id),
+                    SFXAbi::get_standard_interface(sfx4b_id)
+                );
+            }
+        });
+}
