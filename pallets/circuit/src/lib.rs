@@ -118,10 +118,15 @@ pub mod pallet {
         portal::Portal,
         xdns::Xdns,
     };
+    use t3rn_types::migrations::v13::FullSideEffectV13;
 
     pub use crate::weights::WeightInfo;
 
     pub type EscrowBalance<T> = BalanceOf<T>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn storage_migrations_done)]
+    pub type StorageMigrations<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     /// Links mapping SFX 2 XTX
     ///
@@ -321,6 +326,48 @@ pub mod pallet {
         }
 
         fn offchain_worker(_n: T::BlockNumber) {}
+
+        fn on_runtime_upgrade() -> Weight {
+            // Define the maximum weight of this migration.
+            let max_weight = T::DbWeight::get().reads_writes(10, 10);
+            // Define the current storage migration version.
+            const CURRENT_STORAGE_VERSION: u32 = 1;
+            // Migrate the storage entries.
+            StorageMigrations::<T>::try_mutate(|current_version| {
+                match *current_version {
+                    0 => {
+                        // Storage Migration: FSX::SFX updates field "encoded_action: Vec<u8>" to "action: Action: [u8; 4]"
+                        // Storage Migration Details: 16-03-2023; v1.3.0-rc -> v1.4.0-rc
+                        // Iterate through the old storage entries and migrate them.
+                        FullSideEffects::<T>::translate(
+                            |_,
+                             value: Vec<
+                                Vec<FullSideEffectV13<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                            >| {
+                                Some(
+                                    value
+                                        .into_iter()
+                                        .map(|v| v.into_iter().map(FullSideEffect::from).collect())
+                                        .collect(),
+                                )
+                            },
+                        );
+
+                        // Set migrations_done to true
+                        *current_version = CURRENT_STORAGE_VERSION;
+
+                        // Return the weight consumed by the migration.
+                        Ok::<Weight, DispatchError>(max_weight)
+                    },
+                    // Add more migration cases here, if needed in the future
+                    _ => {
+                        // No migration needed.
+                        Ok::<Weight, DispatchError>(0 as Weight)
+                    },
+                }
+            })
+            .unwrap_or(0)
+        }
     }
 
     impl<T: Config> OnLocalTrigger<T, BalanceOf<T>> for Pallet<T> {
