@@ -203,13 +203,24 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            for xdns_record in self.known_xdns_records.clone() {
-                <XDNSRegistry<T>>::insert(xdns_record.gateway_id, xdns_record);
-            }
-
             for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
                 log::info!("XDNS -- on-genesis: add standard SFX ABI: {:?}", sfx_4b_id);
                 <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
+            }
+
+            for xdns_record in self.known_xdns_records.clone() {
+                <XDNSRegistry<T>>::insert(xdns_record.gateway_id, xdns_record.clone());
+                // Populate standard side effect ABI registry
+                for sfx_4b_id in xdns_record.allowed_side_effects.iter() {
+                    match <StandardSFXABIs<T>>::get(sfx_4b_id) {
+                        Some(abi) =>
+                            <SFXABIRegistry<T>>::insert(xdns_record.gateway_id, sfx_4b_id, abi),
+                        None => log::error!(
+                            "XDNS -- on-genesis: standard SFX ABI not found: {:?}",
+                            sfx_4b_id
+                        ),
+                    }
+                }
             }
         }
     }
