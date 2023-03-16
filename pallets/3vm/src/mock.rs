@@ -216,7 +216,9 @@ parameter_types! {
     pub const HeadersToStore: u32 = 100;
 }
 
-use t3rn_primitives::portal::{KusamaLightClient, PolkadotLightClient, RococoLightClient};
+pub type RococoLightClient = ();
+pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
+pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 
 #[derive(Debug)]
 pub struct Blake2ValU32Chain;

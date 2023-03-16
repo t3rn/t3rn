@@ -9,26 +9,25 @@ use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
 mod tests;
 
 use sp_std::vec::Vec;
-use t3rn_primitives::{
-    portal::{KusamaLightClient, PolkadotLightClient, Portal, RococoLightClient},
-    xdns::Xdns,
-    ChainId, GatewayVendor,
-};
+use t3rn_primitives::{portal::Portal, xdns::Xdns, ChainId, GatewayVendor};
+
+pub type RococoLightClient = ();
+pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
+pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
 
 pub mod weights;
 
 // use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
+    use super::*;
     use core::convert::TryInto;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::{vec, vec::Vec};
     use t3rn_primitives::{
-        gateway::GatewayABIConfig,
-        portal::{KusamaLightClient, PolkadotLightClient, RococoLightClient},
-        xdns::Xdns,
-        ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenSysProps,
+        gateway::GatewayABIConfig, xdns::Xdns, ChainId, GatewayGenesisConfig, GatewayType,
+        GatewayVendor, TokenSysProps,
     };
     use t3rn_types::sfx::Sfx4bId;
 
