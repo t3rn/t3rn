@@ -106,6 +106,44 @@ pub mod pallet {
             // To see example on offchain worker, please refer to example-offchain-worker pallet
             // accompanied in this repository.
         }
+
+        fn on_runtime_upgrade() -> Weight {
+            // Define the maximum weight of this migration.
+            let max_weight = T::DbWeight::get().reads_writes(10, 10);
+
+            // Migrate the storage entries.
+            StorageMigrations::<T>::try_mutate(|migrations_done| {
+                if *migrations_done {
+                    // Migration is already done, return early.
+                    return Ok::<Weight, DispatchError>(0 as Weight)
+                }
+
+                // Storage Migration: StandardSideEffects -> StandardSFXABIs
+                // Storage Migration Details: 16-03-2023; v1.4.0-rc -> v1.5.0-rc
+                // Iterate through the old storage entries and migrate them.
+                for (key, _value) in StandardSideEffects::<T>::drain() {
+                    let sfx4b_id = key;
+                    match SFXAbi::get_standard_interface(sfx4b_id) {
+                        Some(sfx_abi) => {
+                            StandardSFXABIs::<T>::insert(sfx4b_id, sfx_abi);
+                        }
+                        None => {
+                            log::error!(
+                                "Failed to migrate StandardSideEffects to StandardSFXABIs for sfx4b_id: {:?}",
+                                sfx4b_id
+                            );
+                        }
+                    }
+                }
+
+                // Set migrations_done to true
+                *migrations_done = true;
+
+                // Return the weight consumed by the migration.
+                Ok::<Weight, DispatchError>(max_weight)
+            })
+            .unwrap_or(0)
+        }
     }
 
     #[pallet::call]
@@ -159,13 +197,29 @@ pub mod pallet {
         UnknownXdnsRecord,
         /// Xdns Record not found
         XdnsRecordNotFound,
-        /// Xdns Record not found
+        /// SideEffectABI already exists
         SideEffectABIAlreadyExists,
-        /// SideEffect already stored
+        /// SideEffectABI not found
         SideEffectABINotFound,
         /// the xdns entry does not contain parachain information
         NoParachainInfoFound,
     }
+
+    // Deprecated storage entry -- StandardSideEffects
+    // Storage Migration: StandardSideEffects -> StandardSFXABIs
+    // Storage Migration Details: 16-03-2023; v1.4.0-rc -> v1.5.0-rc
+    #[pallet::storage]
+    pub type StandardSideEffects<T: Config> = StorageMap<_, Identity, [u8; 4], Vec<u8>>; // SideEffectInterface
+
+    // Deprecated storage entry -- CustomSideEffects
+    // Storage Migration: CustomSideEffects -> !dropped and replaced by SFXABIRegistry
+    // Storage Migration Details: 16-03-2023; v1.4.0-rc -> v1.5.0-rc
+    #[pallet::storage]
+    pub type CustomSideEffects<T> = StorageMap<_, Identity, SideEffectId<T>, Vec<u8>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn storage_migrations_done)]
+    pub type StorageMigrations<T: Config> = StorageValue<_, bool, ValueQuery>;
 
     #[pallet::storage]
     pub type StandardSFXABIs<T: Config> = StorageMap<_, Identity, Sfx4bId, SFXAbi>;
