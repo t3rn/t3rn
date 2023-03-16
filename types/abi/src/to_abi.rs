@@ -1,9 +1,11 @@
 use crate::types::*;
 use codec::{Decode, Encode};
 
-use scale_info::prelude::{format, string::String};
+use frame_support::log;
+use scale_info::prelude::string::String;
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
 pub enum Abi {
     Struct(Option<Name>, Vec<Box<Abi>>),
@@ -173,7 +175,12 @@ impl TryFrom<Data> for Abi {
                         ),
                     ))
                 },
-                _ => Err(DispatchError::Other(Box::leak(format!("CrossCodec::failed to parse field descriptor - '{field_str}' field not recognized").into_boxed_str()))),
+                _ => {
+                    log::error!("CrossCodec::failed to parse field descriptor - '{:?}' field not recognized", field_str);
+                    Err(DispatchError::Other(
+                        "CrossCodec::failed to parse field descriptor - field not recognized",
+                    ))
+                },
             }
         }
 
