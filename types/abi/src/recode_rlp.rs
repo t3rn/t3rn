@@ -1,9 +1,4 @@
-use crate::{
-    recode::{take_last_n, Recode},
-    to_abi::Abi,
-    to_filled_abi::FilledAbi,
-    types::Name,
-};
+use crate::{recode::Recode, to_abi::Abi, to_filled_abi::FilledAbi, types::Name};
 use codec::{Decode, Encode};
 
 use sp_core::{H160, H256};
@@ -90,117 +85,88 @@ impl Abi {
         &self,
         input: Vec<u8>,
     ) -> Result<(FilledAbi, usize), DispatchError> {
+        const MINIMUM_INPUT_LENGTH: usize = 32;
         frame_support::ensure!(
-            input.len() >= 32,
+            input.len() >= MINIMUM_INPUT_LENGTH,
             "decode_topics_as_rlp -- Invalid input length lesser than 32"
         );
         match self {
             Abi::Account20(name) => {
-                frame_support::ensure!(input.len() >= 20, "Decode Abi::Account20 too short");
-                let data_buf = Bytes::copy_from_slice(&input);
-                let data: H160 = H160::from_slice(&data_buf.slice(data_buf.len() - 20..));
+                const ACCOUNT20_SIZE: usize = 20;
+                frame_support::ensure!(
+                    input.len() >= ACCOUNT20_SIZE,
+                    "Decode Abi::Account20 too short"
+                );
+                let data: H160 = H160::from_slice(&input[input.len() - ACCOUNT20_SIZE..]);
                 Ok((
                     FilledAbi::Account20(name.clone(), data.as_bytes().to_vec()),
-                    32usize,
+                    MINIMUM_INPUT_LENGTH,
                 ))
             },
-            Abi::H256(name) => {
-                frame_support::ensure!(
-                    input.len() >= 32,
-                    "Decode Abi::H256 size mismatches 32 bytes"
-                );
-                let data_buf = Bytes::copy_from_slice(&input);
-                let trimmed_32b = data_buf.slice(data_buf.len() - 32..);
-                let data: H256 = H256::from_slice(&trimmed_32b);
+            Abi::H256(name) | Abi::Account32(name) => {
+                let data: H256 = H256::from_slice(&input[input.len() - MINIMUM_INPUT_LENGTH..]);
                 Ok((
                     FilledAbi::H256(name.clone(), data.as_bytes().to_vec()),
-                    32usize,
+                    MINIMUM_INPUT_LENGTH,
                 ))
             },
-            Abi::Account32(name) => {
-                frame_support::ensure!(
-                    input.len() >= 32,
-                    "Decode Abi::Account32 size mismatches 32 bytes"
-                );
-                let data_buf = Bytes::copy_from_slice(&input);
-                let data: H256 = H256::from_slice(&data_buf.slice(data_buf.len() - 32..));
-                Ok((
-                    FilledAbi::H256(name.clone(), data.as_bytes().to_vec()),
-                    32usize,
-                ))
-            },
-            Abi::Bytes(name) => Ok((FilledAbi::Bytes(name.clone(), input), 32usize)),
+            Abi::Bytes(name) => Ok((FilledAbi::Bytes(name.clone(), input), MINIMUM_INPUT_LENGTH)),
             Abi::Value256(name) => {
-                frame_support::ensure!(
-                    input.len() >= 32,
-                    "Value256InvalidInput size mismatches 32 bytes"
-                );
-                let data_buf = Bytes::copy_from_slice(&input);
-                let data = data_buf.slice(data_buf.len() - 32..);
-                Ok((FilledAbi::Value256(name.clone(), data.to_vec()), 32usize))
+                let data = input[input.len() - MINIMUM_INPUT_LENGTH..].to_vec();
+                Ok((
+                    FilledAbi::Value256(name.clone(), data),
+                    MINIMUM_INPUT_LENGTH,
+                ))
             },
-            Abi::Value128(name) => {
-                frame_support::ensure!(
-                    input.len() >= 32,
-                    "Value256InvalidInput size mismatches 32 bytes"
-                );
-                let trimmed_32b = &input[input.len() - 32..];
+            Abi::Value128(name) | Abi::Value64(name) | Abi::Value32(name) => {
+                let trimmed_32b = &input[input.len() - MINIMUM_INPUT_LENGTH..];
                 let as_u256 = sp_core::U256::from_big_endian(trimmed_32b);
-                let as_val: u128 = as_u256.as_u128();
-                let recoded = rlp::encode(&as_val);
 
-                Ok((FilledAbi::Value128(name.clone(), recoded.to_vec()), 32usize))
-            },
-            Abi::Value64(name) => {
-                frame_support::ensure!(
-                    input.len() >= 32,
-                    "Value64InvalidInput size mismatches 32 bytes"
-                );
-                let trimmed_32b = &input[input.len() - 32..];
-                let as_u256 = sp_core::U256::from_big_endian(trimmed_32b);
-                let as_val: u64 = as_u256.as_u64();
-                let recoded = rlp::encode(&as_val);
-                Ok((FilledAbi::Value64(name.clone(), recoded.to_vec()), 32usize))
-            },
-            Abi::Value32(name) => {
-                frame_support::ensure!(
-                    input.len() >= 32,
-                    "Value32InvalidInput size mismatches 32 bytes"
-                );
-                let trimmed_32b = &input[input.len() - 32..];
-                let as_u256 = sp_core::U256::from_big_endian(trimmed_32b);
-                let as_val: u32 = as_u256.as_u32();
-                let recoded = rlp::encode(&as_val);
-                Ok((FilledAbi::Value64(name.clone(), recoded.to_vec()), 32usize))
+                let filled_abi = match self {
+                    Abi::Value128(_) => {
+                        let as_val: u128 = as_u256.as_u128();
+                        FilledAbi::Value128(name.clone(), rlp::encode(&as_val).to_vec())
+                    },
+                    Abi::Value64(_) => {
+                        let as_val: u64 = as_u256.as_u64();
+                        FilledAbi::Value64(name.clone(), rlp::encode(&as_val).to_vec())
+                    },
+                    _ => {
+                        let as_val: u32 = as_u256.as_u32();
+                        FilledAbi::Value32(name.clone(), rlp::encode(&as_val).to_vec())
+                    },
+                };
+
+                Ok((filled_abi, MINIMUM_INPUT_LENGTH))
             },
             Abi::Byte(name) | Abi::Bool(name) => {
-                frame_support::ensure!(
-                    input.len() == 32,
-                    "Decode Abi::Byte size mismatches 1 byte"
-                );
-                Ok((FilledAbi::Byte(name.clone(), vec![input[31]]), 32usize))
+                const BYTE_INDEX: usize = 31;
+                Ok((
+                    FilledAbi::Byte(name.clone(), vec![input[BYTE_INDEX]]),
+                    MINIMUM_INPUT_LENGTH,
+                ))
             },
             Abi::Tuple(name, (field1, field2)) => {
                 let filled_1 = field1.decode_topics_as_rlp(input.clone())?;
-                let filled_2 = field2.decode_topics_as_rlp(input[32..].to_vec())?;
+                let filled_2 =
+                    field2.decode_topics_as_rlp(input[MINIMUM_INPUT_LENGTH..].to_vec())?;
                 Ok((
                     FilledAbi::Tuple(name.clone(), (Box::new(filled_1.0), Box::new(filled_2.0))),
-                    64usize,
+                    MINIMUM_INPUT_LENGTH * 2,
                 ))
             },
             Abi::Vec(name, field) => {
                 let mut filled_vec = Vec::new();
                 let mut input = input;
                 let mut consumed = 0usize;
-                loop {
-                    if input.is_empty() {
-                        break
-                    }
+
+                while !input.is_empty() {
                     let filled = field.decode_topics_as_rlp(input.clone())?;
                     filled_vec.push(filled.0);
                     consumed += filled.1;
-                    input = input[32..].to_vec();
+                    input = input[MINIMUM_INPUT_LENGTH..].to_vec();
                 }
+
                 Ok((
                     FilledAbi::Vec(name.clone(), Box::new(filled_vec), 0u8),
                     consumed,
@@ -208,18 +174,23 @@ impl Abi {
             },
             Abi::Option(name, field) => {
                 let filled = field.decode_topics_as_rlp(input)?;
-                Ok((FilledAbi::Option(name.clone(), Box::new(filled.0)), 33usize))
+                Ok((
+                    FilledAbi::Option(name.clone(), Box::new(filled.0)),
+                    MINIMUM_INPUT_LENGTH + 1,
+                ))
             },
             Abi::Struct(name, fields) => {
                 let mut filled_fields = Vec::new();
                 let mut input = input;
                 let mut consumed = 0usize;
+
                 for field in fields {
                     let filled = field.decode_topics_as_rlp(input.clone())?;
                     filled_fields.push(Box::new(filled.0));
                     consumed += filled.1;
-                    input = input[32..].to_vec();
+                    input = input[MINIMUM_INPUT_LENGTH..].to_vec();
                 }
+
                 Ok((
                     FilledAbi::Struct(name.clone(), filled_fields, 0u8),
                     consumed,

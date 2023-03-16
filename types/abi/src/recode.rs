@@ -62,15 +62,6 @@ impl CrossRecode {
     }
 }
 
-pub fn take_last_n(input: &[u8], n: usize) -> Result<&[u8], DispatchError> {
-    let len = input.len();
-    if n > len {
-        Err(DispatchError::Other("take_last_n::Invalid size of input"))
-    } else {
-        Ok(&input[(len - n)..len])
-    }
-}
-
 pub fn recode_bytes_with_descriptor(
     encoded_bytes: Vec<u8>,
     abi_descriptor: Vec<u8>,
