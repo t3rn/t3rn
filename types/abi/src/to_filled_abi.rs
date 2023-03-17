@@ -661,7 +661,7 @@ mod test_fill_abi {
                         Box::new(Abi::Account20(Some(b"B-".to_vec()))),
                     ),
                 )),
-                Box::new(Abi::Account20(Some(b"C+".to_vec()))),
+                Box::new(Abi::Account20(Some(b"A+".to_vec()))),
             ],
         );
 
@@ -688,7 +688,7 @@ mod test_fill_abi {
         let rlp_raw_log_bytes = EthIngressEventLog(
             vec![
                 hex!("cf74b4e62f836eeedcd6f92120ffb5afea90e6fa490d36f8b81075e2a7de0cf7").into(),
-                hex!("0000000000000000000000000000000000000000000000000000000000012321").into(),
+                hex!("0000000000000000000000000000000000000000000000000000000000012345").into(),
             ],
             hex!(
                 "
@@ -712,7 +712,7 @@ mod test_fill_abi {
                         (
                             Box::new(FilledAbi::Account20(
                                 Some(b"A-".to_vec()),
-                                vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 67, 33]
+                                vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 35, 69]
                             )),
                             Box::new(FilledAbi::Account20(
                                 Some(b"B-".to_vec()),
@@ -721,8 +721,8 @@ mod test_fill_abi {
                         ),
                     )),
                     Box::new(FilledAbi::Account20(
-                        Some(b"C+".to_vec()),
-                        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 35, 33]
+                        Some(b"A+".to_vec()),
+                        vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 35, 69]
                     )),
                 ],
                 0
