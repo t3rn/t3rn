@@ -195,7 +195,6 @@ std = [
   "pallet-randomness-collective-flip/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
-  "t3rn-abi/std",
   # t3rn pallets
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
@@ -273,5 +272,4 @@ try-runtime = [
   "pallet-utility/try-runtime",
   "pallet-xdns/try-runtime",
   "polkadot-runtime-common/try-runtime",
-  "t3rn-abi/try-runtime",
 ]

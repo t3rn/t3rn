@@ -933,11 +933,7 @@ impl<T: Config> Pallet<T> {
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
 
-            // todo: align SFX type to Sfx4bId across the codebase to avoid decoding
-            let sfx_4b_id: Sfx4bId = Decode::decode(&mut &sfx.encoded_action[..])
-                .map_err(|_| "SFX validate failed decoding SFX type to [u8; 4]")?;
-
-            let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx_4b_id) {
+            let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
                 None => return Err("SFX not allowed/registered on requested target gateway"),
             };
@@ -1069,7 +1065,6 @@ impl<T: Config> Pallet<T> {
             fsx.input.target,
             fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
-            fsx.input.action,
         )
         .map_err(|_| "SideEffect confirmation of inclusion failed")?;
 

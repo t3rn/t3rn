@@ -3,10 +3,6 @@ pub use crate::{
     bid::SFXBid,
     fsx::{FullSideEffect, SideEffectId},
 };
-use crate::{
-    gateway::{decode_buf2val},
-    types::Data,
-};
 use bytes::Buf;
 use codec::{Decode, Encode, MaxEncodedLen};
 #[cfg(feature = "runtime")]
@@ -28,7 +24,6 @@ pub type EventSignature = Bytes;
 pub type SfxExpectedDescriptor = EventSignature;
 
 pub type SideEffectName = Bytes;
-pub type ActionId = [u8; 4];
 
 pub const COMPOSABLE_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"comp";
 pub const WASM_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"wasm";
@@ -45,9 +40,9 @@ pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 pub struct SideEffect<AccountId, BalanceOf> {
     pub target: TargetId,
-    pub action: ActionId,
     pub max_reward: BalanceOf,
     pub insurance: BalanceOf,
+    pub action: Sfx4bId,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
     pub enforce_executor: Option<AccountId>,
@@ -57,8 +52,8 @@ pub struct SideEffect<AccountId, BalanceOf> {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 pub struct HardenedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
-    pub action: ActionId,
     pub prize: BalanceOf,
+    pub action: Sfx4bId,
     pub encoded_args: Vec<Bytes>,
     pub encoded_args_abi: Vec<u8>,
     pub security_lvl: SecurityLvl,
@@ -114,64 +109,8 @@ where
         id.as_ref().to_vec()
     }
 
-    pub fn read_interface(&self) -> Result<SideEffectInterface, DispatchError> {
-        let sfx_interface: SideEffectInterface = match &self.action {
-            DATA_SIDE_EFFECT_ID => crate::standard::get_data_interface(),
-            TRANSFER_SIDE_EFFECT_ID => crate::standard::get_transfer_interface(),
-            ORML_TRANSFER_SIDE_EFFECT_ID
-            | ASSETS_TRANSFER_SIDE_EFFECT_ID
-            | MULTI_TRANSFER_SIDE_EFFECT_ID => crate::standard::get_transfer_assets_interface(),
-            SWAP_SIDE_EFFECT_ID => crate::standard::get_swap_interface(),
-            // todo: add remove liquidity interface
-            ADD_LIQUIDITY_SIDE_EFFECT_ID => crate::standard::get_add_liquidity_interface(),
-            EVM_CALL_SIDE_EFFECT_ID => crate::standard::get_call_evm_interface(),
-            WASM_CALL_SIDE_EFFECT_ID => crate::standard::get_call_wasm_interface(),
-            COMPOSABLE_CALL_SIDE_EFFECT_ID | CALL_SIDE_EFFECT_ID =>
-                crate::standard::get_call_composable_interface(),
-            &_ => return Err("SFX::validate - type not recognized".into()),
-        };
-
-        Ok(sfx_interface)
-    }
-
-    pub fn validate(&self, abi: GatewayABIConfig) -> Result<TargetId, DispatchError> {
-        // Validate optional insurance as the required last encoded argument for each SFX
-        let last_arg = self
-            .encoded_args
-            .last()
-            .ok_or("SFX::validate - Empty encoded args")?;
-
-        let arg_insurance_and_reward: [u128; 2] = decode_buf2val(last_arg.to_owned())?;
-
-        if arg_insurance_and_reward[0].encode() != self.insurance.encode() {
-            return Err("SFX::validate - Invalid insurance".into())
-        }
-        if arg_insurance_and_reward[1].encode() != self.max_reward.encode() {
-            return Err("SFX::validate - Invalid reward".into())
-        }
-
-        let sfx_interface: SideEffectInterface = self.read_interface()?;
-
-        // Validate the encoded args against the ABI
-        for (index, arg) in self.encoded_args.iter().enumerate() {
-            let abi_type: &Type = sfx_interface
-                .argument_abi
-                .get(index)
-                .ok_or("SFX::validate - Invalid number of encoded args")?;
-            abi_type.eval_abi(arg.to_owned(), &abi)?;
-        }
-
-        Ok(self.action)
-    }
-
-    pub fn match_event_property_name_with_input_argument_name(
-        &self,
-        sfx_abi: SFXAbi,
-        egress_codec: &Codec,
-    ) -> Result<TargetId, DispatchError> {
-        sfx_abi.validate_ordered_arguments(&self.encoded_args, egress_codec)?;
-        let decoded_action: [u8; 4] = decode_buf2val(self.encoded_action.to_owned())?;
-        Ok(decoded_action)
+    pub fn validate(&self, sfx_abi: SFXAbi, egress_codec: &Codec) -> Result<(), DispatchError> {
+        sfx_abi.validate_ordered_arguments(&self.encoded_args, egress_codec)
     }
 
     pub fn confirm(
