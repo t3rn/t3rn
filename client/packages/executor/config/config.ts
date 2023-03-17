@@ -130,7 +130,8 @@ export type Config = {
     /** The price sources that are being used */
     pricing: {
         [source: string]: {
-            [key: string]: string
+            endpoint: string,
+            frequency: number
         }
     }
     /** Assets prices that should be tracked */
@@ -180,6 +181,7 @@ export const config: Config = {
     pricing: {
         coingecko: {
             endpoint: "https://api.coingecko.com/api/v3/coins/",
+            frequency: 30000,
         },
     },
     assets: {
