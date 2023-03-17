@@ -8,6 +8,8 @@ use sp_std::{prelude::*, vec::IntoIter};
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub struct EthIngressEventLog(pub Vec<H256>, pub Vec<u8>);
 use bytes::{Buf, Bytes};
+use frame_support::ensure;
+
 pub struct RecodeRlp;
 
 impl Recode for RecodeRlp {
@@ -86,42 +88,41 @@ impl Abi {
         input: Vec<u8>,
     ) -> Result<(FilledAbi, usize), DispatchError> {
         const MINIMUM_INPUT_LENGTH: usize = 32;
-        frame_support::ensure!(
+        ensure!(
             input.len() >= MINIMUM_INPUT_LENGTH,
             "decode_topics_as_rlp -- Invalid input length lesser than 32"
         );
+        let input = Bytes::from(input);
+        let input_len = input.len();
+        let last_32b = &input[input_len - MINIMUM_INPUT_LENGTH..];
+
         match self {
             Abi::Account20(name) => {
                 const ACCOUNT20_SIZE: usize = 20;
-                frame_support::ensure!(
-                    input.len() >= ACCOUNT20_SIZE,
-                    "Decode Abi::Account20 too short"
-                );
-                let data: H160 = H160::from_slice(&input[input.len() - ACCOUNT20_SIZE..]);
+                let data: H160 =
+                    H160::from_slice(&last_32b[MINIMUM_INPUT_LENGTH - ACCOUNT20_SIZE..]);
                 Ok((
                     FilledAbi::Account20(name.clone(), data.as_bytes().to_vec()),
                     MINIMUM_INPUT_LENGTH,
                 ))
             },
             Abi::H256(name) | Abi::Account32(name) => {
-                let data: H256 = H256::from_slice(&input[input.len() - MINIMUM_INPUT_LENGTH..]);
+                let data: H256 = H256::from_slice(last_32b);
                 Ok((
                     FilledAbi::H256(name.clone(), data.as_bytes().to_vec()),
                     MINIMUM_INPUT_LENGTH,
                 ))
             },
-            Abi::Bytes(name) => Ok((FilledAbi::Bytes(name.clone(), input), MINIMUM_INPUT_LENGTH)),
-            Abi::Value256(name) => {
-                let data = input[input.len() - MINIMUM_INPUT_LENGTH..].to_vec();
-                Ok((
-                    FilledAbi::Value256(name.clone(), data),
-                    MINIMUM_INPUT_LENGTH,
-                ))
-            },
+            Abi::Bytes(name) => Ok((
+                FilledAbi::Bytes(name.clone(), input.to_vec()),
+                MINIMUM_INPUT_LENGTH,
+            )),
+            Abi::Value256(name) => Ok((
+                FilledAbi::Value256(name.clone(), last_32b.to_vec()),
+                MINIMUM_INPUT_LENGTH,
+            )),
             Abi::Value128(name) | Abi::Value64(name) | Abi::Value32(name) => {
-                let trimmed_32b = &input[input.len() - MINIMUM_INPUT_LENGTH..];
-                let as_u256 = sp_core::U256::from_big_endian(trimmed_32b);
-
+                let as_u256 = sp_core::U256::from_big_endian(last_32b);
                 let filled_abi = match self {
                     Abi::Value128(_) => {
                         let as_val: u128 = as_u256.try_into()?;
@@ -142,17 +143,22 @@ impl Abi {
             Abi::Byte(name) | Abi::Bool(name) => {
                 const BYTE_INDEX: usize = 31;
                 Ok((
-                    FilledAbi::Byte(name.clone(), vec![input[BYTE_INDEX]]),
+                    FilledAbi::Byte(name.clone(), vec![last_32b[BYTE_INDEX]]),
                     MINIMUM_INPUT_LENGTH,
                 ))
             },
             Abi::Tuple(name, (field1, field2)) => {
-                let filled_1 = field1.decode_topics_as_rlp(input.clone())?;
-                let filled_2 =
-                    field2.decode_topics_as_rlp(input[MINIMUM_INPUT_LENGTH..].to_vec())?;
+                let mut input = input;
+                let (filled_2, filled_2_size) = field2.decode_topics_as_rlp(input.to_vec())?;
+                ensure!(
+                    filled_2_size <= input.len(),
+                    "decode_topics_as_rlp -- Invalid input length for Tuple"
+                );
+                let input1 = input.split_to(filled_2_size);
+                let (filled_1, filled_1_size) = field1.decode_topics_as_rlp(input1.to_vec())?;
                 Ok((
-                    FilledAbi::Tuple(name.clone(), (Box::new(filled_1.0), Box::new(filled_2.0))),
-                    MINIMUM_INPUT_LENGTH * 2,
+                    FilledAbi::Tuple(name.clone(), (Box::new(filled_1), Box::new(filled_2))),
+                    filled_2_size + filled_1_size,
                 ))
             },
             Abi::Vec(name, field) => {
@@ -161,22 +167,21 @@ impl Abi {
                 let mut consumed = 0usize;
 
                 while !input.is_empty() {
-                    let filled = field.decode_topics_as_rlp(input.clone())?;
+                    let filled = field.decode_topics_as_rlp(input.to_vec())?;
                     filled_vec.push(filled.0);
-                    consumed += filled.1;
-                    input = input[MINIMUM_INPUT_LENGTH..].to_vec();
+                    consumed += MINIMUM_INPUT_LENGTH;
+                    input = input.split_to(input.len() - MINIMUM_INPUT_LENGTH);
                 }
-
                 Ok((
                     FilledAbi::Vec(name.clone(), Box::new(filled_vec), 0u8),
                     consumed,
                 ))
             },
             Abi::Option(name, field) => {
-                let filled = field.decode_topics_as_rlp(input)?;
+                let filled = field.decode_topics_as_rlp(input.to_vec())?;
                 Ok((
                     FilledAbi::Option(name.clone(), Box::new(filled.0)),
-                    MINIMUM_INPUT_LENGTH + 1,
+                    MINIMUM_INPUT_LENGTH,
                 ))
             },
             Abi::Struct(name, fields) => {
@@ -185,12 +190,11 @@ impl Abi {
                 let mut consumed = 0usize;
 
                 for field in fields {
-                    let filled = field.decode_topics_as_rlp(input.clone())?;
+                    let filled = field.decode_topics_as_rlp(input.to_vec())?;
                     filled_fields.push(Box::new(filled.0));
-                    consumed += filled.1;
-                    input = input[MINIMUM_INPUT_LENGTH..].to_vec();
+                    consumed += MINIMUM_INPUT_LENGTH;
+                    input = input.split_to(input.len() - MINIMUM_INPUT_LENGTH);
                 }
-
                 Ok((
                     FilledAbi::Struct(name.clone(), filled_fields, 0u8),
                     consumed,
@@ -363,7 +367,6 @@ mod test_recode_rlp {
     }
 
     #[test]
-    #[ignore] // investigate input 1 vs input 2 order
     fn test_decode_topics_as_rlp_struct() {
         let field1 = Box::new(Abi::H256(Some(b"field1".to_vec())));
         let field2 = Box::new(Abi::H256(Some(b"field2".to_vec())));
@@ -371,7 +374,7 @@ mod test_recode_rlp {
 
         let input1 = hex!("1111111111111111111111111111111111111111111111111111111111111111");
         let input2 = hex!("2222222222222222222222222222222222222222222222222222222222222222");
-        let combined_input = [&input1[..], &input2[..]].concat();
+        let combined_input = [&input2[..], &input1[..]].concat();
 
         let (filled_abi, consumed) = struct_abi.decode_topics_as_rlp(combined_input).unwrap();
 
