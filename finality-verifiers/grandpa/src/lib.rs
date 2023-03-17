@@ -952,7 +952,6 @@ mod tests {
         origin: Origin,
         gateway_id: ChainId,
     ) -> Result<ParachainRegistrationData, &'static str> {
-        let genesis = test_header(0);
         let init_data = ParachainRegistrationData {
             relay_gateway_id: *b"pdot",
             id: 0,
@@ -975,7 +974,6 @@ mod tests {
         let justification = make_default_justification(&signed_header.clone());
         let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec();
 
-        let default_gateway: ChainId = *b"pdot";
         let data = GrandpaHeaderData::<TestHeader> {
             signed_header: signed_header.clone(),
             range,
@@ -1031,8 +1029,6 @@ mod tests {
 
     #[test]
     fn init_root_or_owner_origin_can_initialize_pallet() {
-        let default_gateway: ChainId = *b"pdot";
-
         run_test(|| {
             assert_noop!(initialize_relaychain(Origin::signed(1)), "Bad origin");
             assert_ok!(initialize_relaychain(Origin::root()));
@@ -1106,7 +1102,6 @@ mod tests {
 
     #[test]
     fn init_storage_entries_are_correctly_initialized() {
-        let default_gateway: ChainId = *b"pdot";
         let header = test_header(0);
         run_test(|| {
             assert_eq!(BestFinalizedHash::<TestRuntime>::get(), None);
@@ -1251,7 +1246,6 @@ mod tests {
 
     #[test]
     fn succesfully_imports_headers_with_valid_finality() {
-        let default_gateway: ChainId = *b"pdot";
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
             let data = submit_headers(1, 3).unwrap();
@@ -1291,7 +1285,6 @@ mod tests {
 
     #[test]
     fn reject_range_with_invalid_range_linkage() {
-        let default_gateway: ChainId = *b"pdot";
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
 
@@ -1318,7 +1311,6 @@ mod tests {
 
     #[test]
     fn reject_range_with_invalid_grandpa_linkage() {
-        let default_gateway: ChainId = *b"pdot";
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
 
@@ -1367,8 +1359,6 @@ mod tests {
                 justification,
             };
 
-            let default_gateway: ChainId = *b"pdot";
-
             assert_err!(
                 Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
@@ -1394,7 +1384,6 @@ mod tests {
                 range,
                 justification,
             };
-            let default_gateway: ChainId = *b"pdot";
 
             assert_err!(
                 Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
@@ -1480,8 +1469,6 @@ mod tests {
                 justification,
             };
 
-            let default_gateway: ChainId = *b"pdot";
-
             // Let's import our test header
             assert_ok!(Pallet::<TestRuntime>::submit_headers(
                 Origin::signed(1),
@@ -1529,8 +1516,6 @@ mod tests {
                 justification,
             };
 
-            let default_gateway: ChainId = *b"pdot";
-
             // Should not be allowed to import this header
             assert_err!(
                 Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
@@ -1561,8 +1546,6 @@ mod tests {
                 justification,
             };
 
-            let default_gateway: ChainId = *b"pdot";
-
             // Should not be allowed to import this header
             assert_err!(
                 Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
@@ -1573,8 +1556,6 @@ mod tests {
 
     #[test]
     fn parse_finalized_storage_proof_rejects_proof_on_unknown_header() {
-        let default_gateway: ChainId = *b"pdot";
-
         run_test(|| {
             assert_noop!(
                 Pallet::<TestRuntime>::parse_finalized_storage_proof(
@@ -1589,8 +1570,6 @@ mod tests {
 
     #[test]
     fn parse_finalized_storage_accepts_valid_proof() {
-        let default_gateway: ChainId = *b"pdot";
-
         run_test(|| {
             let (state_root, storage_proof) = bp_runtime::craft_valid_storage_proof();
 
@@ -1610,8 +1589,6 @@ mod tests {
 
     #[test]
     fn should_prune_headers_over_headers_to_keep_parameter() {
-        let default_gateway: ChainId = *b"pdot";
-
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
             let headers = test_header_range(111u64);

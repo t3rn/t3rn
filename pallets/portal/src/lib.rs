@@ -109,10 +109,27 @@ pub mod pallet {
             allowed_side_effects: Vec<Sfx4bId>,
             encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
+            // write XDNS record if all else passed
+            <T as Config>::Xdns::add_new_xdns_record(
+                origin.clone(),
+                url,
+                gateway_id,
+                None,
+                gateway_abi,
+                gateway_vendor.clone(),
+                gateway_type,
+                gateway_genesis,
+                gateway_sys_props,
+                vec![],
+                allowed_side_effects,
+            )?;
+
             let res = match gateway_vendor {
                 GatewayVendor::Rococo =>
                     pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(
-                        origin.clone(),
+                        origin,
                         gateway_id,
                         encoded_registration_data,
                     ),
@@ -121,21 +138,6 @@ pub mod pallet {
 
             match res {
                 Ok(_) => {
-                    // write XDNS record if all else passed
-                    <T as Config>::Xdns::add_new_xdns_record(
-                        origin,
-                        url,
-                        gateway_id,
-                        None,
-                        gateway_abi,
-                        gateway_vendor,
-                        gateway_type,
-                        gateway_genesis,
-                        gateway_sys_props,
-                        vec![],
-                        allowed_side_effects,
-                    )?;
-
                     Self::deposit_event(Event::GatewayRegistered(gateway_id));
                     Ok(().into())
                 },
