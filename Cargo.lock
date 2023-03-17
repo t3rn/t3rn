@@ -13521,7 +13521,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types 0.0.1-rc.3",
  "xcm",

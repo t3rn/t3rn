@@ -10,31 +10,7 @@ pub type Hashing = sp_runtime::traits::BlakeTwo256;
 
 pub const FIRST_REQUESTER_NONCE: u32 = 0;
 
-/// Assumes BlockNumber, BalanceOf = u64, AccountId = AccountId32
-pub fn produce_test_side_effect(
-    name: [u8; 4],
-    arguments: Arguments,
-    signature: Vec<u8>,
-) -> SideEffect<AccountId, BalanceOf> {
-    let last_arg = arguments
-        .last()
-        .expect("there always should be at least one arg ");
-
-    let insurance_and_reward_u128: [u128; 2] = codec::Decode::decode(&mut &last_arg.to_vec()[..])
-        .expect("Each SDX should have its insurance and max_fee which always decode to [u128; 2]");
-
-    SideEffect::<AccountId, BalanceOf> {
-        target: [0, 0, 0, 0],
-        max_reward: insurance_and_reward_u128[0],
-        action: name,
-        encoded_args: arguments,
-        signature,
-        insurance: insurance_and_reward_u128[1],
-        enforce_executor: None,
-        reward_asset_id: None,
-    }
-}
-
+#[derive(Clone)]
 pub enum ArgVariant {
     A,
     B,
