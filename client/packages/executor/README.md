@@ -35,8 +35,12 @@ The bidding engine is responsible for generating the bidding amount for a specif
 To execute transactions on other blockchains, a custom relayer class is needed. These classes need to be able to execute a certain set of transactions and generate an inclusion proof for said transaction. Currently, a substrate based version is implmented.
 
 ## Getting Started:
-The first thing to setup is the config file.
 
-- in packages directory, run `make` to build the local dependencies (types & sdk)
-- run `yarn`
+- in the parent `packages` directory, run `make` to build the local dependencies (`types` & `sdk`)
+- run `yarn install`
+- configure your executor by editing `config.json`
+- run `export CIRCUIT_SIGNER_KEY=0xdeadbeefdeadbeefdeadbeefdeadbeef`
+- run `export GATEWAY_SIGNER_KEY=0xdeadbeefdeadbeefdeadbeefdeadbeef`
 - run `yarn start`
+
+To facilitate easy finetuning the executor will read changes to `config.json` and apply them to the effective configuration during runtime.
