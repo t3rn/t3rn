@@ -35,15 +35,13 @@ pub mod pallet {
         traits::{tokens::WithdrawReasons, Currency, LockableCurrency, ReservableCurrency},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
-    use pallet_circuit::{state::LocalXtxCtx, XExecSignalId, Xdns};
-    use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, Value256, ValueMorphism};
-    // use pallet_xbi_portal::primitives::xbi::XBIPortal;
-    // use pallet_xbi_portal_enter::evm_precompile::XBIPortal;
+    use pallet_circuit::XExecSignalId;
     use sp_runtime::{
         traits::{One, Saturating, Zero},
         AccountId32, Percent,
     };
     use sp_std::collections::btree_map::BTreeMap;
+    use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, Value256, ValueMorphism};
     use t3rn_primitives::{
         clock::Clock,
         common::{OrderedSet, Range, RoundIndex},
@@ -54,23 +52,12 @@ pub mod pallet {
         },
         monetary::DECIMALS,
     };
-    use t3rn_types::{
-        bid::SFXBid,
-        fsx::FullSideEffect,
-        sfx::{
-            self, ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId,
-        },
-    };
-    use xp_channel::traits::{HandlerInfo, XbiInstructionHandler};
-    use xp_format::{
-        Fees, Status as XbiStatus, Timeouts, XbiFormat, XbiInstruction, XbiMetadata, XbiResult,
-    };
+    use t3rn_types::sfx::SideEffect;
+    use xp_channel::traits::XbiInstructionHandler;
+    use xp_format::{Fees, XbiFormat, XbiInstruction, XbiMetadata};
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
-    // pub const EXECUTOR_LOCK_ID: LockIdentifier = *b"execstkl";
-    // pub const STAKER_LOCK_ID: LockIdentifier = *b"stkrstkl";
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
