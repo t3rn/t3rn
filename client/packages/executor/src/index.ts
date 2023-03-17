@@ -1,4 +1,5 @@
-import "@t3rn/types"
+import "@polkadot/api-augment"
+// @ts-ignore  
 import { Sdk } from "@t3rn/sdk"
 import { Keyring } from "@polkadot/api"
 require("dotenv").config()
@@ -6,7 +7,7 @@ import "@t3rn/types"
 import { SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionProof } from "./gateways/substrate/relayer"
 import { ExecutionManager, Queue } from "./executionManager"
 import { ApiPromise } from "@polkadot/api"
-import { config, Config, Gateway, Circuit, Strategy } from "../config/config"
+import { Config, Gateway, Circuit, Strategy } from "../config/config"
 import { BiddingEngine, BiddingStrategy } from "./bidding"
 import { PriceEngine, CoingeckoPricing } from "./pricing"
 import { StrategyEngine, SfxStrategy, XtxStrategy } from "./strategy"
@@ -15,8 +16,18 @@ import { Execution } from "./executionManager/execution"
 import { CircuitListener, ListenerEvents, ListenerEventData } from "./circuit/listener"
 import { CircuitRelayer } from "./circuit/relayer"
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import pino from "pino"
+import * as config from "../config.json"
 
+if (!process.env.CIRCUIT_SIGNER_KEY || !process.env.GATEWAY_SIGNER_KEY) {
+    throw Error("missing env vars CIRCUIT_SIGNER_KEY,GATEWAY_SIGNER_KEY")
+}
+
+config.circuit.signerKey = process.env.CIRCUIT_SIGNER_KEY as string
+config.gateways.forEach(gateway => {
+    gateway.signerKey = process.env.GATEWAY_SIGNER_KEY as string
+})
+
+const pino = require("pino")
 const logger = pino(
     {
         level: process.env.LOG_LEVEL || "info",
@@ -44,7 +55,7 @@ class InstanceManager {
     async setup(signer: string | undefined) {
         await cryptoWaitReady()
         const keyring = new Keyring({ type: "sr25519" })
-        this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default")
+         this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default")
 
         this.sdk = new Sdk(config.circuit.rpc, this.signer)
 
