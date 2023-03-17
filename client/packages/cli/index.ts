@@ -159,7 +159,13 @@ class CircuitCLI {
                 // @ts-ignore
                 gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
             }
-            const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id, logger)
+            let transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id, logger)
+
+            // limit to 10 batches per tx
+            if(transactionArgs.length > 10) {
+                transactionArgs = transactionArgs.slice(0, 10);
+            }
+
             let tx = this.sdk.circuit.tx.createBatch(transactionArgs.map(args => {
                 return this.circuit.tx.portal.submitHeaders(
                     args.gatewayId,
