@@ -8,18 +8,26 @@ const axios = require("axios")
  * @group Pricing
  */
 export class CoingeckoPricing {
+    /** Where to get the prices from */
     endpoint: string
     /** Maps ticker to coingecko ID */
     assets: {
         [assetTicker: string]: string
     } = {}
-
+    /** How often to update the values. 0 disables updating */
+    updateFrequency: number = 0
     /** Stores price in USD as a subject */
     prices: {
         [assetTicker: string]: BehaviorSubject<number>
     } = {}
 
-    constructor() {
+    constructor(updateFrequency?: number) {
+        // Get the frequency when instantiating the class
+        if (updateFrequency) {
+            this.updateFrequency = updateFrequency
+        } else {
+            this.updateFrequency = config.pricing.coingecko.frequency || 0
+        }
         this.endpoint = config.pricing.coingecko.endpoint
         this.getTrackingAssets()
         // This cannot be called here if we want to test it (it doesn't finish)
@@ -60,6 +68,6 @@ export class CoingeckoPricing {
                     console.log("Failed fetching prices:", err.toString())
                 })
         }
-        setTimeout(this.updateAssetPrices.bind(this), 30000)
+        setTimeout(this.updateAssetPrices.bind(this), this.updateFrequency)
     }
 }
