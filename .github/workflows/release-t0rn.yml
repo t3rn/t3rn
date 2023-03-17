@@ -11,6 +11,7 @@ env:
   PARACHAIN_NAME: t0rn
   RUST_BACKTRACE: full
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
 
 jobs:
   build-release:
