@@ -1,10 +1,11 @@
+// use crate as pallet_executors;
 use crate::{
     assert_last_event, assert_last_n_events,
     mock::{
         fast_forward_to, frame_system::ensure_signed, new_test_ext, Balance, Balances, Clock,
         Event as MockEvent, Executors, Origin, Runtime, System,
     },
-    CandidateInfo,
+    CandidateInfo as OtherCandidateInfo,
 };
 use circuit_mock_runtime::test_utils::generate_xtx_id;
 use circuit_runtime_pallets::pallet_executors::{
@@ -13,14 +14,12 @@ use circuit_runtime_pallets::pallet_executors::{
     BottomStakes, CandidateInfo, CandidatePool, Error, Event, ExecutorConfig,
     ScheduledConfigurationRequests, StakerInfo, TopStakes, Total,
 };
-use codec::Decode;
+use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, ensure, traits::Currency};
 use pallet_circuit::{
     bridges::{polkadot_core::Hashing, runtime::Chain},
-    tests::FIRST_REQUESTER_NONCE,
     SideEffect,
 };
-use parity_scale_codec::Encode;
 use sp_runtime::{AccountId32, Percent};
 use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, ValueMorphism};
 use t3rn_primitives::{
@@ -32,13 +31,13 @@ use t3rn_primitives::{
     },
     monetary::DECIMALS,
 };
-use t3rn_sdk_primitives::xc::Operation;
 use xp_channel::{XbiFormat, XbiMetadata};
 use xp_format::{Fees, XbiInstruction};
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
+pub const FIRST_REQUESTER_NONCE: u32 = 0;
 
 /*
         pub fn set_fixtures(
@@ -2747,26 +2746,41 @@ fn cancel_leave_stakers_successfully() {
 }
 
 #[test]
-fn check_proper_conversion_from_sfx_2_xbi() {
+fn check_proper_conversion_from_sfx_2_xbi_for_tran() {
     new_test_ext().execute_with(|| {
         let origin = Origin::signed(ALICE);
-        let ch = Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
-            caller: ALICE,
-            to: CHARLIE,
-            amount: 50,
-            insurance: None,
-        })
-        .encode();
-        let se = SideEffect::<[u8; 32], u128>::try_from(ch).unwrap();
+
+        let se = SideEffect {
+            target: [0u8, 0u8, 0u8, 0u8],
+            max_reward: 2,
+            action: [116, 114, 97, 110],
+            encoded_args: vec![
+                vec![
+                    42, 246, 86, 215, 84, 26, 25, 17, 173, 225, 126, 30, 234, 99, 78, 169, 50, 247,
+                    0, 118, 125, 167, 191, 15, 94, 94, 97, 126, 250, 236, 22, 62,
+                ],
+                vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ],
+            signature: vec![],
+            enforce_executor: Some(
+                [
+                    53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85,
+                    53, 110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121,
+                ]
+                .into(),
+            ),
+            insurance: 3,
+            reward_asset_id: None,
+        };
 
         let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
-        let executor = ensure_signed(origin.clone());
+        let executor = ensure_signed(origin.clone()).unwrap();
         let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
 
         let nonce_always_0_because_we_use_seed = 0;
         let bypass_most_metadata_checks_default_para_id = Default::default();
 
-        let sfx_id = se.generate_id(xtx_id.as_ref(), 0u32);
+        let sfx_id = se.generate_id::<Hashing>(xtx_id.as_ref(), 0u32);
 
         let max_exec_cost = 10;
         let max_notifications_cost = 20;
@@ -2780,15 +2794,13 @@ fn check_proper_conversion_from_sfx_2_xbi() {
             Some(&sfx_id.encode()),
         );
 
-        let xbi = sfx_2_xbi(se, metadata)?;
+        let xbi = sfx_2_xbi(se, metadata);
 
         assert_eq!(
-            xbi,
+            xbi.unwrap(),
             Ok(XbiFormat {
                 instr: XbiInstruction::Transfer {
-                    // Get dest as argument_1 of SFX::Transfer of Type::DynamicAddress
                     dest: Decode::decode(&mut &se.encoded_args[1][..]).unwrap(),
-                    // Get dest as argument_2 of SFX::Transfer of Type::Value
                     value: Sabi::try_convert(ValueMorphism::<_, u128>::new(
                         &mut &se.encoded_args[2][..],
                     ))
