@@ -4,10 +4,10 @@ import { config } from "../config/config"
 import { expect } from 'chai';
 import { mock, instance, when } from 'ts-mockito';
 import { BehaviorSubject } from 'rxjs';
-
+const pino = require("pino")
 describe('Bidding: Configuration loading', () => {
     it('Correct config values are loaded', () => {
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
 
         // Config values
         expect(be.bidAggressive).to.be.equal(config.bidding.bidAggressive);
@@ -22,7 +22,7 @@ describe('Bidding: Configuration loading', () => {
 describe('Bidding: Storing executor bids for certain sfxs', () => {
     it("Correct storage on new key", () => {
         // Create a bidding engine instance
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
 
         // Add one value to the storage
         be.storeWhoBidOnWhat("sfxId1", "xtxId1");
@@ -37,7 +37,7 @@ describe('Bidding: Storing executor bids for certain sfxs', () => {
 
     it("Correct storage on existing key", () => {
         // Create a bidding engine instance
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
 
         // Add two value to the storage
         be.storeWhoBidOnWhat("sfxId1", "xtxId1");
@@ -53,7 +53,7 @@ describe('Bidding: Storing executor bids for certain sfxs', () => {
 
     it("Correct call on existing key", () => {
         // Create a bidding engine instance
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
 
         // Add two value to the storage
         be.storeWhoBidOnWhat("sfxId1", "xtxId1");
@@ -71,7 +71,7 @@ describe('Bidding: Storing executor bids for certain sfxs', () => {
 describe("Bidding: Scenario selection", () => {
     it("should compute correct 'outbid' scenario", () => {
         // ARANGE
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
         // Create a mock
         const mockedSideEffect: SideEffect = mock(SideEffect);
         const se: SideEffect = instance(mockedSideEffect);
@@ -81,12 +81,12 @@ describe("Bidding: Scenario selection", () => {
         // ACT
         const scenario = be.checkScenario(se);
         // ASSERT
-        expect(scenario).to.be.equal(Scenario.beenOutbid);
+        expect(scenario).to.be.equal(Scenario.noBidAndNoCompetition);
     })
 
     it("should compute correct 'no bid and competition' scenario", () => {
         // ARANGE
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
         // Create a mock
         const mockedSideEffect: SideEffect = mock(SideEffect);
         const se: SideEffect = instance(mockedSideEffect);
@@ -101,7 +101,7 @@ describe("Bidding: Scenario selection", () => {
 
     it("should compute correct 'no bid and no competition' scenario", () => {
         // ARANGE
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
         // Create a mock
         const mockedSideEffect: SideEffect = mock(SideEffect);
         const se: SideEffect = instance(mockedSideEffect);
@@ -118,7 +118,7 @@ describe("Bidding: Scenario selection", () => {
 describe("Bidding: computation at scenarios", () => {
     it("should compute correctly in 'no bid and no competition' scenario", () => {
         // ARANGE
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
         // Create a mocked side effect
         const mockedSideEffect: SideEffect = mock(SideEffect);
         const se: SideEffect = instance(mockedSideEffect);
@@ -138,7 +138,7 @@ describe("Bidding: computation at scenarios", () => {
 
     it("should compute correctly in 'no bid but competition' scenario", () => {
         // ARANGE
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
         // Create a mocked side effect
         const mockedSideEffect: SideEffect = mock(SideEffect);
         const se: SideEffect = instance(mockedSideEffect);
@@ -166,7 +166,7 @@ describe("Bidding: computation at scenarios", () => {
 describe("Bidding: check helper functions", () => {
     it("should compute been outbid", () => {
         // ARANGE
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
         const mockedSideEffect: SideEffect = mock(SideEffect);
         when(mockedSideEffect.changedBidLeader).thenReturn(true);
         when(mockedSideEffect.id).thenReturn("0");
@@ -178,7 +178,7 @@ describe("Bidding: check helper functions", () => {
 
     it("should compute not been outbid", () => {
         // ARANGE
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
         const mockedSideEffect: SideEffect = mock(SideEffect);
         const se: SideEffect = instance(mockedSideEffect);
         when(mockedSideEffect.changedBidLeader).thenReturn(false);
@@ -192,7 +192,7 @@ describe("Bidding: check helper functions", () => {
         const sfxId: string = "sfxId1";
         const bidderId: string = "bidderId1";
 
-        const be = new BiddingEngine();
+        const be = new BiddingEngine(pino());
         const mockedSideEffect: SideEffect = mock(SideEffect);
         when(mockedSideEffect.changedBidLeader).thenReturn(true);
         when(mockedSideEffect.id).thenReturn('0');

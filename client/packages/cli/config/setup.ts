@@ -33,14 +33,12 @@ export default {
                     ss58Format: 42
                 },
                 allowedSideEffects: ["tran"],
-                parachain: null
             }
         },
         {
-            name: "Pangolin",
-            id: "pang",
-            rpc: "wss://pangolin-parachain-rpc.darwinia.network",
-            subscan: "https://pangolin-parachain.api.subscan.io",
+            name: "Rockmine",
+            id: "mine",
+            rpc: "wss://rococo-rockmine-rpc.polkadot.io",
             transferData: {
                 receiver: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
                 fee: 0,
@@ -49,7 +47,7 @@ export default {
                 owner: "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
                 parachain: {
                     relayChainId: "roco",
-                    id: 2105
+                    id: 1000
                 },
                 gatewayConfig: {
                     blockNumberTypeSize: 32,
@@ -64,7 +62,7 @@ export default {
                 gatewayVendor: "Rococo",
                 gatewayType: { ProgrammableExternal: 1 },
                 gatewaySysProps: {
-                    tokenSymbol: "PRING",
+                    tokenSymbol: "ROC",
                     tokenDecimals: 12,
                     ss58Format: 42
                 },
@@ -74,7 +72,7 @@ export default {
         {
             name: "Basilisk",
             id: "bslk",
-            rpc: "wss://rpc-01.basilisk-rococo.hydradx.io",
+            rpc: "wss://rococo-basilisk-rpc.hydration.dev",
             subscan: "",
             transferData: {
                 receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",

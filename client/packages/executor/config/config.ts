@@ -17,6 +17,8 @@ export type Gateway = {
     rpc: string
     /** Gateway type, currently only Substrate */
     type: string
+    /** The native ID of the gateway within its consensus system. e.g. paraId in polkadot */
+    nativeId?: any
     /** The assets the executor is willing to execute on the target. Matches the key used in assets */
     signerKey?: string
 }
@@ -71,8 +73,9 @@ export type Strategy = {
  *         {
  *             name: "Basilisk",
  *             id: "bslk",
- *             rpc: "wss://rpc-01.basilisk-rococo.hydradx.io",
+ *             rpc: "wss://rococo-basilisk-rpc.hydration.dev",
  *             type: "Substrate",
+ *             nativeId: 2090,
  *         },
  *     ],
  *     pricing: {
@@ -122,6 +125,8 @@ export type Config = {
     circuit: Circuit
     /** The gateways that are being tracked */
     gateways: Gateway[]
+
+    vendors: string[],
     /** The price sources that are being used */
     pricing: {
         [source: string]: {
@@ -155,6 +160,7 @@ export const config: Config = {
         decimals: 12,
         signerKey: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561",
     },
+    vendors: ["Rococo"],
     gateways: [
         {
             name: "Rococo",
@@ -166,8 +172,9 @@ export const config: Config = {
         {
             name: "Basilisk",
             id: "bslk",
-            rpc: "wss://rpc-01.basilisk-rococo.hydradx.io",
+            rpc: "wss://rococo-basilisk-rpc.hydration.dev",
             type: "Substrate",
+            nativeId: 2090,
         },
     ],
     pricing: {
@@ -198,6 +205,17 @@ export const config: Config = {
     strategies: {
         roco: {
             supportedAssets: ["ROC"],
+            sfx: {
+                minProfitUsd: 3,
+                minYield: 0.05,
+            },
+            xtx: {
+                minInsuranceAmountUsd: 1,
+                minInsuranceShare: 0.1,
+            },
+        },
+        bslk: {
+            supportedAssets: ["BSX"],
             sfx: {
                 minProfitUsd: 3,
                 minYield: 0.05,

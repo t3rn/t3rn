@@ -55,7 +55,6 @@ use sp_std::{vec, vec::Vec};
 mod types;
 
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
-use types::GrandpaRegistrationData;
 
 #[cfg(feature = "testing")]
 pub mod mock;
@@ -86,7 +85,10 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 use crate::{
     side_effects::decode_event,
-    types::{InclusionData, Parachain, ParachainHeaderData, RelaychainHeaderData},
+    types::{
+        GrandpaHeaderData, ParachainInclusionProof, ParachainRegistrationData,
+        RelaychainInclusionProof, RelaychainRegistrationData,
+    },
 };
 use frame_system::pallet_prelude::*;
 
@@ -121,51 +123,33 @@ pub mod pallet {
 
     /// Hash of the header used to bootstrap the pallet.
     #[pallet::storage]
-    #[pallet::getter(fn get_initial_hash_map)]
-    pub(super) type InitialHashMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, BridgedBlockHash<T, I>>;
+    #[pallet::getter(fn get_initial_hash)]
+    pub(super) type InitialHash<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, BridgedBlockHash<T, I>, OptionQuery>;
 
-    /// Map of hashes of the best finalized header.
+    /// Hash of the best finalized header.
     #[pallet::storage]
-    #[pallet::getter(fn get_bridged_block_hash)]
-    pub type BestFinalizedMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, BridgedBlockHash<T, I>>;
+    #[pallet::getter(fn get_best_block_hash)]
+    pub(super) type BestFinalizedHash<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, BridgedBlockHash<T, I>, OptionQuery>;
 
     /// A ring buffer of imported hashes. Ordered by the insertion time.
     #[pallet::storage]
-    #[pallet::getter(fn get_multi_imported_hashes)]
-    pub(super) type MultiImportedHashes<T: Config<I>, I: 'static = ()> =
-        StorageDoubleMap<_, Blake2_256, ChainId, Identity, u32, BridgedBlockHash<T, I>>;
+    #[pallet::getter(fn get_imported_hashes)]
+    pub(super) type ImportedHashes<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Blake2_256, u32, BridgedBlockHash<T, I>>;
 
     /// Current ring buffer position.
     #[pallet::storage]
-    #[pallet::getter(fn get_multi_imported_hashes_pointer)]
-    pub(super) type MultiImportedHashesPointer<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, u32>;
+    #[pallet::getter(fn get_imported_hashes_pointer)]
+    pub(super) type ImportedHashesPointer<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, u32, OptionQuery>;
 
     /// Headers which have been imported into the pallet.
     #[pallet::storage]
-    #[pallet::getter(fn get_multi_imported_headers)]
-    pub type MultiImportedHeaders<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-        _,
-        Blake2_256,
-        ChainId,
-        Identity,
-        BridgedBlockHash<T, I>,
-        BridgedHeader<T, I>,
-    >;
-
-    /// Roots (ExtrinsicsRoot + StateRoot) which have been imported into the pallet for a given gateway.
-    #[pallet::storage]
-    #[pallet::getter(fn get_imported_roots)]
-    pub(super) type MultiImportedRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-        _,
-        Blake2_256,
-        ChainId,
-        Identity,
-        BridgedBlockHash<T, I>,
-        (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>),
-    >;
+    #[pallet::getter(fn get_imported_headers)]
+    pub(super) type ImportedHeaders<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Blake2_256, BridgedBlockHash<T, I>, BridgedHeader<T, I>>;
 
     #[pallet::storage]
     pub(super) type RelayChainId<T: Config<I>, I: 'static = ()> =
@@ -176,10 +160,10 @@ pub mod pallet {
     pub(super) type CurrentAuthoritySet<T: Config<I>, I: 'static = ()> =
         StorageValue<_, bp_header_chain::AuthoritySet, OptionQuery>;
 
-    /// The current GRANDPA Authority set.
+    /// Maps a parachain chain_id to the corresponding chain ID.
     #[pallet::storage]
     pub(super) type ParachainIdMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, Parachain>;
+        StorageMap<_, Blake2_256, ChainId, ParachainRegistrationData>;
 
     /// Optional pallet owner.
     ///
@@ -188,22 +172,12 @@ pub mod pallet {
     /// runtime methods may still be used to do that (i.e. democracy::referendum to update halt
     /// flag directly or call the `halt_operations`).
     #[pallet::storage]
-    pub(super) type PalletOwnerMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, T::AccountId>;
+    pub(super) type PalletOwner<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, T::AccountId, OptionQuery>;
 
     /// If true, all pallet transactions are failed immediately.
     #[pallet::storage]
     pub(super) type IsHalted<T: Config<I>, I: 'static = ()> = StorageValue<_, bool, ValueQuery>;
-
-    /// If true, all pallet transactions are failed immediately.
-    #[pallet::storage]
-    pub(super) type IsHaltedMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, bool>;
-
-    /// Map of instance ids of gateways which are active
-    #[pallet::storage]
-    pub(super) type InstantiatedGatewaysMap<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, Vec<ChainId>, ValueQuery>;
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
@@ -260,7 +234,7 @@ pub mod pallet {
     /// If successful in verification, it will write the target range to the underlying storage
     /// pallet.
     pub(crate) fn submit_relaychain_headers<T: pallet::Config<I>, I>(
-        gateway_id: ChainId,
+        // gateway_id: ChainId,
         // seq vector of headers to be added.
         range: Vec<BridgedHeader<T, I>>,
         // The header with the highest height, signed in the justification
@@ -275,15 +249,10 @@ pub mod pallet {
         // Since polkadot updates its authority set every 24h, this is implicitly ensured => Justification check would fail after 1/7th of max len
 
         // we get the latest header from storage
-        let mut best_finalized = <MultiImportedHeaders<T, I>>::get(
-            gateway_id,
-            // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-            // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or(Error::<T, I>::NoFinalizedHeader)?,
-        )
-        .ok_or(Error::<T, I>::NoFinalizedHeader)?;
+        let mut best_finalized_hash =
+            <BestFinalizedHash<T, I>>::get().ok_or(Error::<T, I>::NoFinalizedHeader)?;
 
-        // °°°°° Explaination °°°°°
+        // °°°°° Explanation °°°°°
         // To be able to submit ranges of headers, we need to ensure a number of things.
         // 1. Ensure correct header linkage. All submitted headers must follow the linkage rule.
         // 2. As this is not PoW, we must ensure there is a valid GrandpaJustification for the last header of what we're submitting. This can be seen as ensuring the correct fork is selected
@@ -301,31 +270,27 @@ pub mod pallet {
             signed_hash,
             *signed_number,
             authority_set,
-            gateway_id,
         )?;
         // °°°°° Checked: #2 °°°°°°
 
         // check for authority set update and enact if available.
-        let _enacted =
-            try_enact_authority_change_single::<T, I>(&signed_header, set_id, gateway_id)?;
+        let _enacted = try_enact_authority_change_single::<T, I>(&signed_header, set_id)?;
 
         // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
-        let mut buffer_index =
-            <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+        let mut buffer_index = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
 
         // °°°°° Begin Check: #1 °°°°°
         for header in range {
-            if best_finalized.hash() == *header.parent_hash() {
+            if best_finalized_hash == *header.parent_hash() {
                 // write header to storage if correct
                 write_and_clean_header_data::<T, I>(
-                    gateway_id,
                     &mut buffer_index,
                     &header,
                     header.hash(),
                     false,
                 )?;
 
-                best_finalized = header;
+                best_finalized_hash = header.hash();
             } else {
                 // if anything fails here, noop!
                 return Err(Error::<T, I>::InvalidRangeLinkage.into())
@@ -334,10 +299,9 @@ pub mod pallet {
         // °°°°° Check Success: #1 °°°°°
 
         // °°°°° Begin Check: #3 °°°°°
-        if best_finalized.hash() == *signed_header.parent_hash() {
+        if best_finalized_hash == *signed_header.parent_hash() {
             // write header to storage if correct
             write_and_clean_header_data::<T, I>(
-                gateway_id,
                 &mut buffer_index,
                 &signed_header,
                 signed_hash,
@@ -350,100 +314,9 @@ pub mod pallet {
         // Proof success! Submitted header range valid
 
         // Update pointer
-        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, buffer_index);
+        <ImportedHashesPointer<T, I>>::set(Some(buffer_index));
 
         let height: usize = signed_number.as_();
-        match u32::try_from(height) {
-            Ok(number) => Ok(number.to_be_bytes().to_vec()),
-            _ => Err(Error::<T, I>::BlockHeightConversionError.into()),
-        }
-    }
-
-    /// Verify a target parachain header can be verified with its relaychains storage_proof
-    ///
-    /// It will use the underlying storage pallet to fetch the relaychains header, which is then used to verify the storage_proof
-    ///
-    /// If successful in verification, it will write the target header to the underlying storage
-    /// pallet.
-    ///
-    pub(crate) fn submit_parachain_header<T: Config<I>, I>(
-        gateway_id: ChainId,
-        relay_block_hash: BridgedBlockHash<T, I>,
-        range: Vec<BridgedHeader<T, I>>,
-        proof: StorageProof,
-    ) -> Result<Vec<u8>, DispatchError> {
-        ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
-        ensure!(
-            range.len() < T::HeadersToStore::get().try_into().unwrap(),
-            Error::<T, I>::RangeToLarge
-        ); // this should be safe to do, as u32
-
-        let mut best_finalized = <MultiImportedHeaders<T, I>>::get(
-            gateway_id,
-            // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-            // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or(Error::<T, I>::NoFinalizedHeader)?,
-        )
-        .ok_or(Error::<T, I>::NoFinalizedHeader)?;
-
-        // °°°°° Explaination °°°°°
-        // To be able to submit ranges of headers, we need to ensure a number of things.
-        // 1. Ensure the highest submitted header is verified in a Relaychain block
-        // 2. Ensure correct header linkage. All submitted headers must follow the linkage rule.
-        // 3. The highest submitted header follows the linkage rule of the range
-
-        let parachain = <ParachainIdMap<T, I>>::try_get(gateway_id)
-            .map_err(|_| Error::<T, I>::ParachainEntryNotFound)?;
-
-        // °°°°° Begin Check: #1 °°°°°
-        let signed_header: BridgedHeader<T, I> =
-            verify_header_storage_proof::<T, I>(relay_block_hash, proof, parachain)?;
-        // °°°°° Check Success: #1 °°°°°
-
-        // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
-        let mut buffer_index =
-            <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-
-        // °°°°° Begin Check: #2 °°°°°
-        for header in range {
-            if best_finalized.hash() == *header.parent_hash() {
-                // write header to storage if correct
-                write_and_clean_header_data::<T, I>(
-                    gateway_id,
-                    &mut buffer_index,
-                    &header,
-                    header.hash(),
-                    false,
-                )?;
-
-                best_finalized = header;
-            } else {
-                // if anything fails here, noop!
-                return Err(Error::<T, I>::InvalidRangeLinkage.into())
-            }
-        }
-        // °°°°° Check Success: #2 °°°°°
-
-        // °°°°° Begin Check: #3 °°°°°
-        if best_finalized.hash() == *signed_header.parent_hash() {
-            // write header to storage if correct
-            write_and_clean_header_data::<T, I>(
-                gateway_id,
-                &mut buffer_index,
-                &signed_header,
-                signed_header.hash(),
-                true,
-            )?;
-        } else {
-            return Err(Error::<T, I>::InvalidJustificationLinkage.into())
-        }
-        // °°°°° Check Success: #3 °°°°°
-        // Proof success! Submitted header range valid
-
-        // Update pointer
-        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, buffer_index);
-
-        let height: usize = signed_header.number().as_();
         match u32::try_from(height) {
             Ok(number) => Ok(number.to_be_bytes().to_vec()),
             _ => Err(Error::<T, I>::BlockHeightConversionError.into()),
@@ -458,7 +331,6 @@ pub mod pallet {
     pub(crate) fn try_enact_authority_change_single<T: Config<I>, I: 'static>(
         header: &BridgedHeader<T, I>,
         current_set_id: sp_finality_grandpa::SetId,
-        gateway_id: ChainId,
     ) -> Result<bool, sp_runtime::DispatchError> {
         let mut change_enacted = false;
 
@@ -468,7 +340,7 @@ pub mod pallet {
             <Error<T, I>>::UnsupportedScheduledChange
         );
 
-        if let Some(change) = super::find_scheduled_change(header) {
+        if let Some(change) = find_scheduled_change(header) {
             // GRANDPA only includes a `delay` for forced changes, so this isn't valid.
             ensure!(
                 change.delay == Zero::zero(),
@@ -487,12 +359,11 @@ pub mod pallet {
             change_enacted = true;
 
             log::info!(
-				"Transitioned from authority set {} to {}! New authorities are: {:?} for gateway: {:?}",
-				current_set_id,
-				current_set_id + 1,
-				next_authorities,
-				gateway_id,
-			);
+                "Transitioned from authority set {} to {}! New authorities are: {:?}",
+                current_set_id,
+                current_set_id + 1,
+                next_authorities,
+            );
         };
 
         Ok(change_enacted)
@@ -509,7 +380,6 @@ pub mod pallet {
         hash: BridgedBlockHash<T, I>,
         number: BridgedBlockNumber<T, I>,
         authority_set: bp_header_chain::AuthoritySet,
-        _gateway_id: ChainId,
     ) -> Result<(), Error<T, I>> {
         use bp_header_chain::justification::verify_justification;
 
@@ -532,96 +402,57 @@ pub mod pallet {
     /// Since this writes to storage with no real checks this should only be used in functions that
     /// were called by a trusted origin.
     pub(crate) fn initialize_relay_chain<T: Config<I>, I: 'static>(
-        init_params: super::InitializationData<BridgedHeader<T, I>>,
+        init_params: InitializationData<BridgedHeader<T, I>>,
         owner: T::AccountId,
     ) -> Result<(), &'static str> {
         can_init_relay_chain::<T, I>()?;
 
-        let super::InitializationData {
+        let InitializationData {
             header,
             authority_list,
             set_id,
             is_halted,
-            gateway_id,
+            gateway_id, // ToDo: can be removed
         } = init_params;
 
         let initial_hash = header.hash();
         // Store header stuff
-        <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
-        <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
-        <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, 0); // one ahead of first value
+        <InitialHash<T, I>>::put(initial_hash);
+        <BestFinalizedHash<T, I>>::put(initial_hash);
+        <ImportedHeaders<T, I>>::insert(initial_hash, header);
+        <ImportedHashesPointer<T, I>>::put(0); // one ahead of first value
         <RelayChainId<T, I>>::put(gateway_id);
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySet<T, I>>::put(authority_set);
 
         // Other configs
-        <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
-        <PalletOwnerMap<T, I>>::insert(gateway_id, owner);
-        <InstantiatedGatewaysMap<T, I>>::mutate(|gateways| {
-            gateways.push(gateway_id);
-            gateways.len() + 1
-        });
-
-        Ok(())
-    }
-
-    /// Since this writes to storage with no real checks this should only be used in functions that
-    /// were called by a trusted origin.
-    pub(crate) fn initialize_para_chain<T: Config<I>, I: 'static>(
-        header: BridgedHeader<T, I>,
-        is_halted: bool,
-        gateway_id: ChainId,
-        owner: T::AccountId,
-        parachain: Parachain,
-    ) -> Result<(), &'static str> {
-        can_init_para_chain::<T, I>(&parachain)?;
-        let initial_hash = header.hash();
-        <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
-        <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
-        <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, 1u32);
-
-        <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
-        <ParachainIdMap<T, I>>::insert(gateway_id, parachain);
-        <PalletOwnerMap<T, I>>::insert(gateway_id, owner);
-        <InstantiatedGatewaysMap<T, I>>::mutate(|gateways| {
-            gateways.push(gateway_id);
-            gateways.len() + 1
-        });
+        <IsHalted<T, I>>::put(is_halted);
+        <PalletOwner<T, I>>::put(owner);
 
         Ok(())
     }
 
     /// removes old header data based on ring buffer logic. Adds new header data, updates the ring buffer entry and increments buffer index
     pub(crate) fn write_and_clean_header_data<T: Config<I>, I: 'static>(
-        gateway_id: ChainId,
         buffer_index: &mut u32,
         header: &BridgedHeader<T, I>,
         hash: BridgedBlockHash<T, I>,
         is_signed_header: bool,
     ) -> Result<(), &'static str> {
         // If we find an entry to overwrite, do so.
-        if let Ok(hash) = <MultiImportedHashes<T, I>>::try_get(
-            gateway_id,
+        if let Ok(hash) = <ImportedHashes<T, I>>::try_get(
             *buffer_index, // can't overflow because of incrementation logic
         ) {
-            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+            <ImportedHeaders<T, I>>::remove(hash);
         }
 
         // Once deleted, we add the new header
-        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
-        <MultiImportedHashes<T, I>>::insert(gateway_id, *buffer_index, hash);
-        <MultiImportedRoots<T, I>>::insert(
-            gateway_id,
-            hash,
-            (header.extrinsics_root(), header.state_root()),
-        );
+        <ImportedHeaders<T, I>>::insert(hash, header.clone());
+        <ImportedHashes<T, I>>::insert(*buffer_index, hash);
 
         // if this is the signed header, we set best finalized
         if is_signed_header {
-            <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+            <BestFinalizedHash<T, I>>::put(hash);
         }
 
         *buffer_index = (*buffer_index + 1) % T::HeadersToStore::get(); // prevents overflows
@@ -629,12 +460,8 @@ pub mod pallet {
     }
 
     /// Ensure that the pallet is in operational mode (not halted).
-    pub fn ensure_operational_single<T: Config<I>, I: 'static>(
-        gateway_id: ChainId,
-    ) -> Result<(), Error<T, I>> {
-        if <IsHaltedMap<T, I>>::get(gateway_id)
-            .expect("Is halted prop is should have been set before during initialize")
-        {
+    pub fn ensure_operational_single<T: Config<I>, I: 'static>() -> Result<(), Error<T, I>> {
+        if <IsHalted<T, I>>::get() {
             Err(<Error<T, I>>::Halted)
         } else {
             Ok(())
@@ -647,9 +474,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     // ///
     // /// Returns a dummy header if there is no best header. This can only happen
     // /// if the pallet has not been initialized yet.
-    pub fn best_finalized_map(gateway_id: ChainId) -> BridgedHeader<T, I> {
-        let hash = <BestFinalizedMap<T, I>>::get(gateway_id).unwrap_or_default();
-        <MultiImportedHeaders<T, I>>::get(gateway_id, hash).unwrap_or_else(|| {
+    pub fn best_finalized_map() -> BridgedHeader<T, I> {
+        let hash = <BestFinalizedHash<T, I>>::get().unwrap_or_default();
+        <ImportedHeaders<T, I>>::get(hash).unwrap_or_else(|| {
             <BridgedHeader<T, I>>::new(
                 Default::default(),
                 Default::default(),
@@ -661,8 +488,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     }
 
     /// Check if a particular header is known to the bridge pallet.
-    pub fn is_known_header(hash: BridgedBlockHash<T, I>, gateway_id: ChainId) -> bool {
-        <MultiImportedHeaders<T, I>>::contains_key(gateway_id, hash)
+    pub fn is_known_header(hash: BridgedBlockHash<T, I>) -> bool {
+        <ImportedHeaders<T, I>>::contains_key(hash)
     }
 
     /// Verify that the passed storage proof is valid, given it is crafted using
@@ -672,10 +499,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         hash: BridgedBlockHash<T, I>,
         storage_proof: sp_trie::StorageProof,
         parse: impl FnOnce(bp_runtime::StorageProofChecker<BridgedBlockHasher<T, I>>) -> R,
-        gateway_id: ChainId,
     ) -> Result<R, DispatchError> {
-        let header = <MultiImportedHeaders<T, I>>::get(gateway_id, hash)
-            .ok_or(Error::<T, I>::UnknownHeader)?;
+        let header = <ImportedHeaders<T, I>>::get(hash).ok_or(Error::<T, I>::UnknownHeader)?;
         let storage_proof_checker =
             bp_runtime::StorageProofChecker::new(*header.state_root(), storage_proof)
                 .map_err(|_| Error::<T, I>::StorageRootMismatch)?;
@@ -689,43 +514,49 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-        let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(gateway_id);
-        ensure!(init_allowed, "Already initialized");
-        let registration_data: GrandpaRegistrationData<T::AccountId> =
-            Decode::decode(&mut &*encoded_registration_data)
-                .map_err(|_| "Registration data decoding error!")?;
-        let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
-            .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
-        match registration_data.parachain {
-            Some(parachain) => initialize_para_chain::<T, I>(
-                header,
-                false,
-                gateway_id,
-                registration_data.owner,
-                parachain,
-            ),
-            None => {
+
+        match <RelayChainId<T, I>>::get() {
+            Some(relay_chain_id) => {
+                // Register parachain
+                ensure!(relay_chain_id != gateway_id, "chain_id already initialized");
+                let parachain_registration_data: ParachainRegistrationData =
+                    Decode::decode(&mut &*encoded_registration_data)
+                        .map_err(|_| "Parachain registration decoding error")?;
+
                 ensure!(
-                    registration_data.authorities.is_some()
-                        && registration_data.authority_set_id.is_some(),
-                    "Relaychain parameters missing"
+                    parachain_registration_data.relay_gateway_id == relay_chain_id,
+                    "Invalid relay chain id"
                 );
 
-                let init_data = bp_header_chain::InitializationData {
+                <ParachainIdMap<T, I>>::insert(gateway_id, parachain_registration_data);
+
+                return Ok(())
+            },
+            None => {
+                // register relaychain
+                let registration_data: RelaychainRegistrationData<T::AccountId> =
+                    Decode::decode(&mut &*encoded_registration_data)
+                        .map_err(|_| "Decoding Error")?;
+
+                let header: BridgedHeader<T, I> =
+                    Decode::decode(&mut &registration_data.first_header[..])
+                        .map_err(|_| "header decoding error")?;
+
+                let init_data = InitializationData {
                     header,
                     authority_list: registration_data
                         .authorities
-                        .unwrap()
                         .iter()
                         .map(|id| {
                             sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap()
                         }) // not sure why this is still needed
                         .map(|authority| (authority, 1))
                         .collect::<Vec<_>>(),
-                    set_id: registration_data.authority_set_id.unwrap(),
+                    set_id: registration_data.authority_set_id,
                     is_halted: false,
                     gateway_id,
                 };
+
                 initialize_relay_chain::<T, I>(init_data, registration_data.owner)
             },
         }
@@ -745,11 +576,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
         match new_owner {
             Some(new_owner) => {
-                PalletOwnerMap::<T, I>::insert(gateway_id, &new_owner);
+                PalletOwner::<T, I>::put(&new_owner);
                 log::info!("Setting pallet Owner to: {:?}", new_owner);
             },
             None => {
-                PalletOwnerMap::<T, I>::remove(gateway_id);
+                PalletOwner::<T, I>::set(None);
                 log::info!("Removed Owner of pallet.");
             },
         }
@@ -766,69 +597,64 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         gateway_id: ChainId,
     ) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-        <IsHaltedMap<T, I>>::insert(gateway_id, !operational);
-
-        if operational {
-            // If a gateway shall be operational the pallet must be too.
-            <IsHalted<T, I>>::put(false);
-            log::info!("Resuming pallet operations.");
-        } else {
-            log::info!("Stopping pallet operations.");
-        }
+        <IsHalted<T, I>>::put(!operational); // inverted because operational vs halted are opposite
 
         Ok(())
     }
 
     pub fn submit_headers(
         origin: OriginFor<T>,
-        gateway_id: ChainId,
         encoded_header_data: Vec<u8>,
     ) -> Result<Vec<u8>, DispatchError> {
-        ensure_operational_single::<T, I>(gateway_id)?;
+        ensure_operational_single::<T, I>()?;
         ensure_signed(origin)?;
-        if Some(gateway_id) == <RelayChainId<T, I>>::get() {
-            let data: RelaychainHeaderData<BridgedHeader<T, I>> =
-                Decode::decode(&mut &*encoded_header_data)
-                    .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
+        let data: GrandpaHeaderData<BridgedHeader<T, I>> =
+            Decode::decode(&mut &*encoded_header_data)
+                .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
 
-            submit_relaychain_headers::<T, I>(
-                gateway_id,
-                data.range,
-                data.signed_header,
-                data.justification,
-            )
-        } else {
-            let data: ParachainHeaderData<BridgedHeader<T, I>> =
-                Decode::decode(&mut &*encoded_header_data)
-                    .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
-
-            submit_parachain_header::<T, I>(
-                gateway_id,
-                data.relay_block_hash,
-                data.range,
-                data.proof,
-            )
-        }
+        submit_relaychain_headers::<T, I>(data.range, data.signed_header, data.justification)
     }
 
     pub fn confirm_event_inclusion_with_decode(
         gateway_id: ChainId,
-        encoded_inclusion_data: Vec<u8>,
+        encoded_inclusion_proof: Vec<u8>,
         submission_target_height: Vec<u8>,
         value_abi_unsigned_type: &[u8],
         side_effect_id: [u8; 4],
     ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
-        let inclusion_data: InclusionData<BridgedHeader<T, I>> =
-            Decode::decode(&mut &*encoded_inclusion_data)
-                .map_err(|_| Error::<T, I>::InclusionDataDecodeError)?;
+        let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
-        // ensures old equal side_effects can't be replayed
-        executed_after_creation::<T, I>(gateway_id, submission_target_height)?;
+        let (payload_proof, encoded_payload, header) = if is_relaychain {
+            let proof: RelaychainInclusionProof<BridgedHeader<T, I>> =
+                Decode::decode(&mut &*encoded_inclusion_proof)
+                    .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
+
+            let header = <ImportedHeaders<T, I>>::get(proof.block_hash)
+                .ok_or(Error::<T, I>::UnknownHeader)?;
+
+            // ensures old equal side_effects can't be replayed
+            executed_after_creation::<T, I>(submission_target_height, &header)?;
+
+            (proof.payload_proof, proof.encoded_payload, header)
+        } else {
+            let proof: ParachainInclusionProof<BridgedHeader<T, I>> =
+                Decode::decode(&mut &*encoded_inclusion_proof)
+                    .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
+            let header = verify_header_storage_proof::<T, I>(
+                proof.relay_block_hash,
+                proof.header_proof,
+                <ParachainIdMap<T, I>>::get(gateway_id)
+                    .ok_or(Error::<T, I>::ParachainEntryNotFound)?,
+                submission_target_height,
+            )?;
+            (proof.payload_proof, proof.encoded_payload, header)
+        };
 
         match &side_effect_id {
             b"tran" => verify_event_storage_proof_with_decode::<T, I>(
-                gateway_id,
-                inclusion_data,
+                payload_proof,
+                header,
+                encoded_payload,
                 value_abi_unsigned_type,
                 side_effect_id,
             ),
@@ -836,30 +662,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
     }
 
-    pub fn confirm_event_inclusion(
-        gateway_id: ChainId,
-        encoded_inclusion_data: Vec<u8>,
-        submission_target_height: Vec<u8>,
-    ) -> Result<Vec<u8>, DispatchError> {
-        let inclusion_data: InclusionData<BridgedHeader<T, I>> =
-            Decode::decode(&mut &*encoded_inclusion_data)
-                .map_err(|_| Error::<T, I>::InclusionDataDecodeError)?;
-
-        // ensures old equal side_effects can't be replayed
-        executed_after_creation::<T, I>(gateway_id, submission_target_height)?;
-        verify_event_storage_proof::<T, I>(gateway_id, inclusion_data)
-    }
-
-    pub fn get_latest_finalized_header(gateway_id: ChainId) -> Option<Vec<u8>> {
-        if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
+    pub fn get_latest_finalized_header(_gateway_id: ChainId) -> Option<Vec<u8>> {
+        if let Some(header_hash) = <BestFinalizedHash<T, I>>::get() {
             return Some(header_hash.encode())
         }
         None
     }
 
-    pub fn get_latest_finalized_height(gateway_id: ChainId) -> Option<Vec<u8>> {
-        if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
-            if let Some(header) = <MultiImportedHeaders<T, I>>::get(gateway_id, header_hash) {
+    pub fn get_latest_finalized_height(_gateway_id: ChainId) -> Option<Vec<u8>> {
+        if let Some(header_hash) = <BestFinalizedHash<T, I>>::get() {
+            if let Some(header) = <ImportedHeaders<T, I>>::get(header_hash) {
                 return Some(header.number().encode())
             } else {
                 None
@@ -872,13 +684,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 /// Verifies a given storage proof. Returns the encoded entry that is proven
 pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
-    gateway_id: ChainId,
-    block_hash: BridgedBlockHash<T, I>,
+    header: BridgedHeader<T, I>,
     key: Vec<u8>,
     proof: StorageProof,
     trie_type: ProofTriePointer,
 ) -> Result<Vec<u8>, &'static str> {
-    let root = get_header_roots::<T, I>(block_hash, gateway_id, trie_type)?;
+    let root = get_header_roots::<T, I>(header, trie_type)?;
     let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
     match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &root, key.as_ref()) {
         Ok(Some(value)) => Ok(value),
@@ -888,17 +699,13 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
 
 /// returns the specified header root from a specific header
 pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
-    block_hash: BridgedBlockHash<T, I>,
-    gateway_id: ChainId,
+    header: BridgedHeader<T, I>,
     trie_type: ProofTriePointer,
 ) -> Result<BridgedBlockHash<T, I>, DispatchError> {
-    let (extrinsics_root, storage_root): (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>) =
-        <MultiImportedRoots<T, I>>::get(gateway_id, block_hash)
-            .ok_or(Error::<T, I>::StorageRootNotFound)?;
     match trie_type {
-        ProofTriePointer::State => Ok(storage_root),
-        ProofTriePointer::Transaction => Ok(extrinsics_root),
-        ProofTriePointer::Receipts => Ok(storage_root),
+        ProofTriePointer::State => Ok(*header.state_root()),
+        ProofTriePointer::Transaction => Ok(*header.extrinsics_root()),
+        ProofTriePointer::Receipts => Ok(*header.state_root()),
     }
 }
 
@@ -924,13 +731,13 @@ pub(crate) fn find_scheduled_change<H: HeaderT>(
 /// Ensure that the origin is either root, or `PalletOwner`.
 fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
     origin: T::Origin,
-    gateway_id: ChainId,
+    _gateway_id: ChainId,
 ) -> Result<(), &'static str> {
     match origin.into() {
         Ok(RawOrigin::Root) => Ok(()),
         Ok(RawOrigin::Signed(ref signer))
-            if <PalletOwnerMap<T, I>>::contains_key(gateway_id)
-                && Some(signer) == <PalletOwnerMap<T, I>>::get(gateway_id).as_ref() =>
+            if <PalletOwner<T, I>>::exists()
+                && Some(signer) == <PalletOwner<T, I>>::get().as_ref() =>
             Ok(()),
         _ => Err(BadOrigin.into()),
     }
@@ -938,47 +745,25 @@ fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
 
 /// Ensure that no relaychain has been set so far. Relaychains are unique
 fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> {
-    match <RelayChainId<T, I>>::exists() {
+    match <BestFinalizedHash<T, I>>::exists() {
         true => Err("Duplicate relaychain"), // we have a relaychain registered already
         false => Ok(()),                     // is first relaychain
     }
 }
 
-/// Ensure that no relaychain has been set so far. Relaychains are unique
-fn can_init_para_chain<T: Config<I>, I: 'static>(
-    parachain: &Parachain,
-) -> Result<(), &'static str> {
-    match <RelayChainId<T, I>>::get() {
-        Some(relay_chain_id) => {
-            // we have a relaychain setup
-            match relay_chain_id == parachain.relay_chain_id {
-                true => Ok(()), // registering relachchain_id matches the stored one
-                false => Err("Invalid relaychainId"), // wrong relaychain_id was passed
-            }
-        },
-        None => Err("No relaychain"), // we have no relaychain setup
-    }
-}
-
 /// Ensure that the SideEffect was executed after it was created.
 fn executed_after_creation<T: Config<I>, I: 'static>(
-    gateway_id: ChainId,
     submission_target_height: Vec<u8>,
+    header: &BridgedHeader<T, I>,
 ) -> Result<(), &'static str> {
     let submission_target: BridgedBlockNumber<T, I> =
-        Decode::decode(&mut &*submission_target_height).unwrap();
-    if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
-        if let Some(header) = <MultiImportedHeaders<T, I>>::get(gateway_id, header_hash) {
-            if submission_target < *header.number() {
-                return Ok(())
-            }
-            Err("Transaction executed before SideEffect creation")
-        } else {
-            Err("No gateway header found") // this shouldn't be possible tom happen
-        }
-    } else {
-        Err("No gateway header found") // this shouldn't be possible tom happen
-    }
+        Decode::decode(&mut &*submission_target_height).map_err(|_| "Invalid block number")?;
+
+    ensure!(
+        submission_target < *header.number(),
+        "Transaction executed before SideEffect creation"
+    );
+    Ok(())
 }
 
 /// Checks the given header for a consensus digest signalling a **forced** scheduled change and
@@ -1002,20 +787,24 @@ pub(crate) fn find_forced_change<H: HeaderT>(
         .convert_first(|l| l.try_to(id).and_then(filter_log))
 }
 
-pub(crate) fn verify_event_storage_proof_with_decode<T: Config<I>, I: 'static>(
-    gateway_id: ChainId,
-    inclusion_data: InclusionData<BridgedHeader<T, I>>,
-    value_abi_unsigned_type: &[u8],
-    side_effect_id: [u8; 4],
-) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
-    let encoded_payload = verify_event_storage_proof::<T, I>(gateway_id, inclusion_data)?;
-
-    decode_event::<T, I>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
-}
+// pub(crate) fn verify_event_storage_proof_with_decode<T: Config<I>, I: 'static>(
+//     storage_proof: StorageProof,
+//     header: BridgedHeader<T, I>,
+//     encoded_payload: Vec<u8>,
+//     value_abi_unsigned_type: &[u8],
+//     side_effect_id: [u8; 4],
+// ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
+//     let encoded_payload = verify_event_storage_proof::<T, I>(gateway_id, inclusion_data)?;
+//
+//     decode_event::<T, I>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
+// }
 
 pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
-    gateway_id: ChainId,
-    inclusion_data: InclusionData<BridgedHeader<T, I>>,
+    storage_proof: StorageProof,
+    header: BridgedHeader<T, I>,
+    encoded_payload: Vec<u8>,
+    value_abi_unsigned_type: &[u8],
+    side_effect_id: [u8; 4],
 ) -> Result<Vec<u8>, DispatchError> {
     let InclusionData {
         encoded_payload,
@@ -1029,13 +818,8 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
         22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215,
     ]
     .to_vec();
-    let verified_block_events = verify_storage_proof::<T, I>(
-        gateway_id,
-        block_hash,
-        key,
-        proof,
-        ProofTriePointer::Receipts,
-    )?;
+    let verified_block_events =
+        verify_storage_proof::<T, I>(header, key, storage_proof, ProofTriePointer::Receipts)?;
 
     // the problem here is that in substrates current design its not possible to prove the inclusion of a single event, only all events of a block
     // https://github.com/paritytech/substrate/issues/11216
@@ -1050,8 +834,15 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
 pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
-    parachain: Parachain,
+    parachain: ParachainRegistrationData,
+    submission_target_height: Vec<u8>,
 ) -> Result<BridgedHeader<T, I>, DispatchError> {
+    let relay_header =
+        <ImportedHeaders<T, I>>::get(relay_block_hash).ok_or(Error::<T, I>::UnknownHeader)?;
+
+    // this needs to be checked via relaychain header, which is why its here
+    executed_after_creation::<T, I>(submission_target_height, &relay_header)?;
+
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
     let mut key: Vec<u8> = [
@@ -1063,13 +854,9 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     key.append(&mut arg); // complete storage key
 
     // ToDo not very concise
-    let encoded_header_vec = verify_storage_proof::<T, I>(
-        parachain.relay_chain_id,
-        relay_block_hash,
-        key,
-        proof,
-        ProofTriePointer::State,
-    )?;
+    let encoded_header_vec =
+        verify_storage_proof::<T, I>(relay_header, key, proof, ProofTriePointer::State)?;
+
     let encoded_header: Vec<u8> = Decode::decode(&mut &encoded_header_vec[..])
         .map_err(|_| Error::<T, I>::HeaderDecodingError)?;
     let header: BridgedHeader<T, I> =
@@ -1130,18 +917,17 @@ mod tests {
     use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
-    use crate::types::RelaychainHeaderData;
+    use crate::types::GrandpaHeaderData;
 
     fn initialize_relaychain(
         origin: Origin,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
         let genesis = test_header_with_correct_parent(0, None);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: Some(authorities()),
+        let init_data = RelaychainRegistrationData::<AccountId> {
+            authorities: authorities(),
             first_header: genesis.encode(),
-            authority_set_id: Some(1),
+            authority_set_id: 1,
             owner: 1u64,
-            parachain: None,
         };
 
         initialize_custom_relaychain(origin, *b"pdot", init_data)
@@ -1150,14 +936,13 @@ mod tests {
     fn initialize_named_relaychain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
         let genesis = test_header(0);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: Some(authorities()),
+        let init_data = RelaychainRegistrationData::<AccountId> {
+            authorities: authorities(),
             first_header: genesis.encode(),
-            authority_set_id: Some(1),
+            authority_set_id: 1,
             owner: 1u64,
-            parachain: None,
         };
 
         initialize_custom_relaychain(origin, gateway_id, init_data)
@@ -1166,24 +951,16 @@ mod tests {
     fn initialize_custom_relaychain(
         origin: Origin,
         gateway_id: ChainId,
-        init_data: GrandpaRegistrationData<AccountId>,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+        init_data: RelaychainRegistrationData<AccountId>,
+    ) -> Result<RelaychainRegistrationData<AccountId>, &'static str> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn initialize_parachain(
-        origin: Origin,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+    fn initialize_parachain(origin: Origin) -> Result<ParachainRegistrationData, &'static str> {
         let genesis = test_header(0);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: None,
-            first_header: genesis.encode(),
-            authority_set_id: None,
-            owner: 1u64,
-            parachain: Some(Parachain {
-                relay_chain_id: *b"pdot",
-                id: 0,
-            }),
+        let init_data = ParachainRegistrationData {
+            relay_gateway_id: *b"pdot",
+            id: 0,
         };
 
         initialize_custom_parachain(origin, *b"moon", init_data)
@@ -1192,17 +969,10 @@ mod tests {
     fn initialize_named_parachain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
-        let genesis = test_header(0);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: None,
-            first_header: genesis.encode(),
-            authority_set_id: None,
-            owner: 1u64,
-            parachain: Some(Parachain {
-                relay_chain_id: *b"pdot",
-                id: 0,
-            }),
+    ) -> Result<ParachainRegistrationData, &'static str> {
+        let init_data = ParachainRegistrationData {
+            relay_gateway_id: *b"pdot",
+            id: 0,
         };
 
         initialize_custom_parachain(origin, gateway_id, init_data)
@@ -1211,25 +981,24 @@ mod tests {
     fn initialize_custom_parachain(
         origin: Origin,
         gateway_id: ChainId,
-        init_data: GrandpaRegistrationData<AccountId>,
-    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+        init_data: ParachainRegistrationData,
+    ) -> Result<ParachainRegistrationData, &'static str> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn submit_headers(from: u8, to: u8) -> Result<RelaychainHeaderData<TestHeader>, &'static str> {
+    fn submit_headers(from: u8, to: u8) -> Result<GrandpaHeaderData<TestHeader>, &'static str> {
         let headers: Vec<TestHeader> = test_header_range(to.into());
         let signed_header: &TestHeader = headers.last().unwrap();
         let justification = make_default_justification(&signed_header.clone());
         let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec();
 
-        let default_gateway: ChainId = *b"pdot";
-        let data = RelaychainHeaderData::<TestHeader> {
+        let data = GrandpaHeaderData::<TestHeader> {
             signed_header: signed_header.clone(),
             range,
             justification,
         };
 
-        Pallet::<TestRuntime>::submit_headers(Origin::signed(1), default_gateway, data.encode())?;
+        Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode())?;
 
         Ok(data)
     }
@@ -1278,16 +1047,14 @@ mod tests {
 
     #[test]
     fn init_root_or_owner_origin_can_initialize_pallet() {
-        let default_gateway: ChainId = *b"pdot";
-
         run_test(|| {
             assert_noop!(initialize_relaychain(Origin::signed(1)), "Bad origin");
             assert_ok!(initialize_relaychain(Origin::root()));
 
             // Reset storage so we can initialize the pallet again
-            BestFinalizedMap::<TestRuntime>::remove(default_gateway);
-            RelayChainId::<TestRuntime>::kill();
-            PalletOwnerMap::<TestRuntime>::insert(default_gateway, 2);
+            BestFinalizedHash::<TestRuntime>::set(None);
+            PalletOwner::<TestRuntime>::put(2);
+            RelayChainId::<TestRuntime>::set(None);
             assert_ok!(initialize_relaychain(Origin::signed(2)));
         })
     }
@@ -1304,21 +1071,9 @@ mod tests {
     fn cant_register_duplicate_gateway_ids() {
         run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
-            assert_err!(initialize_relaychain(Origin::root()), "Already initialized");
             assert_err!(
-                initialize_named_parachain(Origin::root(), *b"pdot"),
-                "Already initialized"
-            );
-        })
-    }
-
-    #[test]
-    fn cant_register_duplicate_parachain() {
-        run_test(|| {
-            assert_ok!(initialize_relaychain(Origin::root()));
-            assert_noop!(
-                initialize_named_relaychain(Origin::root(), *b"roco"),
-                "Duplicate relaychain"
+                initialize_relaychain(Origin::root()),
+                "chain_id already initialized"
             );
         })
     }
@@ -1326,29 +1081,24 @@ mod tests {
     #[test]
     fn cant_register_parachain_without_relaychain() {
         run_test(|| {
-            assert_noop!(initialize_parachain(Origin::root()), "No relaychain");
+            assert_noop!(initialize_parachain(Origin::root()), "Decoding Error");
         })
     }
 
     #[test]
-    fn cant_register_parachain_without_wrong_relaychain_id() {
+    fn cant_register_parachain_with_wrong_relaychain_id() {
         run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
 
             let genesis = test_header(0);
-            let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: None,
-                first_header: genesis.encode(),
-                authority_set_id: None,
-                owner: 1,
-                parachain: Some(Parachain {
-                    relay_chain_id: *b"roco",
-                    id: 0,
-                }),
+            let init_data = ParachainRegistrationData {
+                relay_gateway_id: *b"roco",
+                id: 0,
             };
+
             assert_noop!(
                 initialize_custom_parachain(Origin::root(), *b"moon", init_data),
-                "Invalid relaychainId"
+                "Invalid relay chain id"
             );
         })
     }
@@ -1361,80 +1111,31 @@ mod tests {
     }
 
     #[test]
-    fn cant_register_relaychain_with_missing_authorities() {
-        run_test(|| {
-            let genesis = test_header(0);
-            let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: None,
-                first_header: genesis.encode(),
-                authority_set_id: Some(1),
-                owner: 1,
-                parachain: None,
-            };
-            assert_noop!(
-                initialize_custom_relaychain(Origin::root(), *b"pdot", init_data),
-                "Relaychain parameters missing"
-            );
-        })
-    }
-
-    #[test]
-    fn cant_register_relaychain_with_missing_authority_set_id() {
-        run_test(|| {
-            let genesis = test_header(0);
-            let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: Some(authorities()),
-                first_header: genesis.encode(),
-                authority_set_id: None,
-                owner: 1,
-                parachain: None,
-            };
-            assert_noop!(
-                initialize_custom_relaychain(Origin::root(), *b"pdot", init_data),
-                "Relaychain parameters missing"
-            );
-        })
-    }
-
-    #[test]
     fn cant_register_parachain_as_non_root() {
         run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
-            assert_noop!(initialize_parachain(Origin::signed(1)), "Bad origin");
+            assert_noop!(initialize_parachain(Origin::signed(0)), "Bad origin");
         })
     }
 
     #[test]
     fn init_storage_entries_are_correctly_initialized() {
-        let default_gateway: ChainId = *b"pdot";
         let header = test_header(0);
         run_test(|| {
-            assert_eq!(BestFinalizedMap::<TestRuntime>::get(default_gateway), None,);
-            assert_eq!(
-                Pallet::<TestRuntime>::best_finalized_map(default_gateway),
-                test_header(0)
-            );
+            assert_eq!(BestFinalizedHash::<TestRuntime>::get(), None);
+            assert_eq!(BestFinalizedHash::<TestRuntime>::get(), None);
 
             let _init_data = initialize_relaychain(Origin::root()).unwrap();
 
-            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
-                default_gateway,
-                header.hash()
-            ));
-            assert_eq!(
-                BestFinalizedMap::<TestRuntime>::get(default_gateway),
-                Some(header.hash())
-            );
+            assert!(<ImportedHeaders<TestRuntime>>::contains_key(header.hash()));
+            assert_eq!(BestFinalizedHash::<TestRuntime>::get(), Some(header.hash()));
             assert_eq!(
                 CurrentAuthoritySet::<TestRuntime>::get()
                     .unwrap()
                     .authorities,
                 authority_list()
             );
-            assert_eq!(
-                IsHaltedMap::<TestRuntime>::get(default_gateway),
-                Some(false)
-            );
+            assert_eq!(IsHalted::<TestRuntime>::get(), false);
         })
     }
 
@@ -1442,7 +1143,10 @@ mod tests {
     fn init_can_only_initialize_pallet_once() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
-            assert_noop!(initialize_relaychain(Origin::root()), "Already initialized");
+            assert_noop!(
+                initialize_relaychain(Origin::root()),
+                "chain_id already initialized"
+            );
         })
     }
 
@@ -1513,7 +1217,7 @@ mod tests {
         let default_gateway: ChainId = *b"pdot";
 
         run_test(|| {
-            PalletOwnerMap::<TestRuntime>::insert(default_gateway, 2);
+            PalletOwner::<TestRuntime>::put(2);
 
             assert_ok!(Pallet::<TestRuntime>::set_operational(
                 Origin::signed(2),
@@ -1552,7 +1256,7 @@ mod tests {
         run_test(|| {
             let gateway_a: ChainId = *b"pdot";
             let _ = initialize_relaychain(Origin::root());
-            <IsHaltedMap<TestRuntime>>::insert(gateway_a, true);
+            <IsHalted<TestRuntime>>::put(true);
 
             assert_noop!(submit_headers(1, 3), "Halted",);
         })
@@ -1560,25 +1264,21 @@ mod tests {
 
     #[test]
     fn succesfully_imports_headers_with_valid_finality() {
-        let default_gateway: ChainId = *b"pdot";
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
             let data = submit_headers(1, 3).unwrap();
 
             assert_eq!(
-                <BestFinalizedMap<TestRuntime>>::get(default_gateway),
+                <BestFinalizedHash<TestRuntime>>::get(),
                 Some(data.signed_header.hash())
             );
-            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
-                default_gateway,
+            assert!(<ImportedHeaders<TestRuntime>>::contains_key(
                 data.signed_header.hash()
             ));
-            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
-                default_gateway,
+            assert!(<ImportedHeaders<TestRuntime>>::contains_key(
                 data.range[0].hash()
             ));
-            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
-                default_gateway,
+            assert!(<ImportedHeaders<TestRuntime>>::contains_key(
                 data.range[1].hash()
             ));
         })
@@ -1603,7 +1303,6 @@ mod tests {
 
     #[test]
     fn reject_range_with_invalid_range_linkage() {
-        let default_gateway: ChainId = *b"pdot";
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
 
@@ -1615,18 +1314,14 @@ mod tests {
             let mut range: Vec<TestHeader> = headers[6..10].to_vec();
             range[1] = range[2].clone();
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
             };
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(
-                    Origin::signed(1),
-                    default_gateway,
-                    data.encode()
-                ),
+                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
                 Error::<TestRuntime>::InvalidRangeLinkage
             );
         })
@@ -1634,7 +1329,6 @@ mod tests {
 
     #[test]
     fn reject_range_with_invalid_grandpa_linkage() {
-        let default_gateway: ChainId = *b"pdot";
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
 
@@ -1647,18 +1341,14 @@ mod tests {
             // one header is missing -> Grandpa linkage invalid
             let range: Vec<TestHeader> = headers[6..9].to_vec();
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
             };
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(
-                    Origin::signed(1),
-                    default_gateway,
-                    data.encode()
-                ),
+                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
                 Error::<TestRuntime>::InvalidJustificationLinkage
             );
         })
@@ -1681,20 +1371,14 @@ mod tests {
             };
             let justification = make_justification_for_header(params);
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
             };
 
-            let default_gateway: ChainId = *b"pdot";
-
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(
-                    Origin::signed(1),
-                    default_gateway,
-                    data.encode()
-                ),
+                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
@@ -1713,19 +1397,14 @@ mod tests {
             justification.round = 42;
             let justification = justification;
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
             };
-            let default_gateway: ChainId = *b"pdot";
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(
-                    Origin::signed(1),
-                    default_gateway,
-                    data.encode()
-                ),
+                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
@@ -1737,12 +1416,11 @@ mod tests {
             let genesis = test_header(0);
             let default_gateway: ChainId = *b"pdot";
             let different_authorities: Vec<AuthorityId> = vec![ALICE.into(), DAVE.into()];
-            let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: Some(different_authorities),
+            let init_data = RelaychainRegistrationData::<AccountId> {
+                authorities: different_authorities,
                 first_header: genesis.encode(),
-                authority_set_id: Some(1),
+                authority_set_id: 1,
                 owner: 1,
-                parachain: None,
             };
 
             assert_ok!(initialize_custom_relaychain(
@@ -1759,18 +1437,14 @@ mod tests {
             // this justification contains ALICE, BOB and CHARLIE, to it will be invalid
             let justification = make_default_justification(&signed_header.clone());
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
             };
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(
-                    Origin::signed(1),
-                    default_gateway,
-                    data.encode()
-                ),
+                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
@@ -1807,28 +1481,24 @@ mod tests {
             signed_header.digest = change_log(0);
 
             let justification = make_default_justification(&signed_header);
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
                 justification,
             };
 
-            let default_gateway: ChainId = *b"pdot";
-
             // Let's import our test header
             assert_ok!(Pallet::<TestRuntime>::submit_headers(
                 Origin::signed(1),
-                default_gateway,
                 data.encode()
             ));
 
             // Make sure that our header is the best finalized
             assert_eq!(
-                <BestFinalizedMap<TestRuntime>>::get(default_gateway),
+                <BestFinalizedHash<TestRuntime>>::get(),
                 Some(signed_header.hash())
             );
-            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
-                default_gateway,
+            assert!(<ImportedHeaders<TestRuntime>>::contains_key(
                 signed_header.hash()
             ));
 
@@ -1858,21 +1528,15 @@ mod tests {
             signed_header.digest = change_log(1);
 
             let justification = make_default_justification(&signed_header);
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header,
                 range,
                 justification,
             };
 
-            let default_gateway: ChainId = *b"pdot";
-
             // Should not be allowed to import this header
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(
-                    Origin::signed(1),
-                    default_gateway,
-                    data.encode()
-                ),
+                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
         })
@@ -1894,21 +1558,15 @@ mod tests {
 
             let justification = make_default_justification(&signed_header);
 
-            let data = RelaychainHeaderData::<TestHeader> {
+            let data = GrandpaHeaderData::<TestHeader> {
                 signed_header,
                 range,
                 justification,
             };
 
-            let default_gateway: ChainId = *b"pdot";
-
             // Should not be allowed to import this header
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(
-                    Origin::signed(1),
-                    default_gateway,
-                    data.encode()
-                ),
+                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
         })
@@ -1916,15 +1574,12 @@ mod tests {
 
     #[test]
     fn parse_finalized_storage_proof_rejects_proof_on_unknown_header() {
-        let default_gateway: ChainId = *b"pdot";
-
         run_test(|| {
             assert_noop!(
                 Pallet::<TestRuntime>::parse_finalized_storage_proof(
                     Default::default(),
                     sp_trie::StorageProof::new(vec![]),
                     |_| (),
-                    default_gateway,
                 ),
                 Error::<TestRuntime>::UnknownHeader,
             );
@@ -1933,8 +1588,6 @@ mod tests {
 
     #[test]
     fn parse_finalized_storage_accepts_valid_proof() {
-        let default_gateway: ChainId = *b"pdot";
-
         run_test(|| {
             let (state_root, storage_proof) = bp_runtime::craft_valid_storage_proof();
 
@@ -1942,16 +1595,11 @@ mod tests {
             header.set_state_root(state_root);
 
             let hash = header.hash();
-            <BestFinalizedMap<TestRuntime>>::insert(default_gateway, hash);
-            <MultiImportedHeaders<TestRuntime>>::insert(default_gateway, hash, header);
+            <BestFinalizedHash<TestRuntime>>::put(hash);
+            <ImportedHeaders<TestRuntime>>::insert(hash, header);
 
             assert_ok!(
-                Pallet::<TestRuntime>::parse_finalized_storage_proof(
-                    hash,
-                    storage_proof,
-                    |_| (),
-                    default_gateway
-                ),
+                Pallet::<TestRuntime>::parse_finalized_storage_proof(hash, storage_proof, |_| (),),
                 (),
             );
         });
@@ -1959,8 +1607,6 @@ mod tests {
 
     #[test]
     fn should_prune_headers_over_headers_to_keep_parameter() {
-        let default_gateway: ChainId = *b"pdot";
-
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
             let headers = test_header_range(111u64);
@@ -1970,10 +1616,7 @@ mod tests {
             // MultiImportedHashes: [1, 2, 3, 4, 5] in MultiImportedHashes
             // Pointer               ^
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[1].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[1].hash(),),
                 true
             );
             // contains added header
@@ -1982,26 +1625,17 @@ mod tests {
             //        ^
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[3].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[3].hash(),),
                 true
             ); // still available
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[2].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[2].hash(),),
                 false
             ); // overwritten by buffer
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[1].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[1].hash(),),
                 false
             ); // overwritten by buffer
 
@@ -2010,59 +1644,38 @@ mod tests {
             //  ^
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[5].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[5].hash(),),
                 false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[4].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[4].hash(),),
                 false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[3].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[3].hash(),),
                 false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[6].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[6].hash(),),
                 true
             );
 
             assert_ok!(submit_headers(11, 15));
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[10].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[10].hash(),),
                 false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[11].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[11].hash(),),
                 true
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(
-                    default_gateway,
-                    headers[12].hash(),
-                ),
+                <ImportedHeaders<TestRuntime>>::contains_key(headers[12].hash(),),
                 true
             );
         })

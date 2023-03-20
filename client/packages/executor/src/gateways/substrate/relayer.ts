@@ -4,9 +4,11 @@ import { EventMapper, SideEffect } from "../../executionManager/sideEffect"
 import { getEventProofs } from "../../utils"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
-import { InclusionData, RelayerEventData, RelayerEvents } from "../types"
+import { InclusionProof, RelayerEventData, RelayerEvents } from "../types"
 import Estimator from "./estimator"
 import { CostEstimator, Estimate } from "./estimator/cost"
+import { Utils } from "@t3rn/sdk";
+import {Gateway} from "../../../config/config";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -28,18 +30,22 @@ export class SubstrateRelayer extends EventEmitter {
     /** Name of the target */
     name: string
     logger: any
+    nativeId: string
 
-    async setup(rpc: string, signer: string | undefined, name: string, logger: any) {
+    async setup(config: Gateway, logger: any) {
         this.client = await ApiPromise.create({
-            provider: new WsProvider(rpc),
+            provider: new WsProvider(config.rpc),
         })
-        const keyring = new Keyring({ type: "sr25519" })
+        this.logger = logger
+        this.name = config.name
 
-        this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default")
+        const keyring = new Keyring({ type: "sr25519" })
+        this.signer = config.signerKey ? keyring.addFromMnemonic(config.signerKey) : keyring.addFromUri("//Executor//default")
+
+        if(config.nativeId) this.nativeId = config.nativeId;
 
         this.nonce = await this.fetchNonce(this.client, this.signer.address)
-        this.name = name
-        this.logger = logger
+
     }
 
     /**
@@ -94,7 +100,7 @@ export class SubstrateRelayer extends EventEmitter {
                     this.nonce = await this.fetchNonce(this.client, this.signer.address)
                     reject(Error(dispatchError.toString()))
                 } else if (status.isFinalized) {
-                    const blockNumber = await this.generateInclusionProof(sfx, status.asFinalized, events)
+                    const blockNumber = await this.generateSfxInclusionProof(sfx, status.asFinalized, events)
                     this.logger.info(`Execution complete SFX:  ${sfx.humanId} - #${blockNumber} 🏁`)
                     this.emit("Event", <RelayerEventData>{
                         type: RelayerEvents.SfxExecutedOnTarget,
@@ -117,24 +123,75 @@ export class SubstrateRelayer extends EventEmitter {
      * @param events Events emitted by the transaction
      * @returns Block number in which the transaction was included
      */
-    async generateInclusionProof(sfx: SideEffect, blockHash: any, events: any[]): Promise<number> {
+    async generateSfxInclusionProof(sfx: SideEffect, blockHash: any, events: any[]): Promise<number> {
         const blockNumber = await this.getBlockNumber(blockHash)
         const event = this.getEvent(sfx.action, events)
 
         const inclusionProof = await getEventProofs(this.client, blockHash)
-        const inclusionData: InclusionData = {
+        const inclusionData: InclusionProof = {
             encoded_payload: event.toHex(),
-            proof: {
+            payload_proof: {
                 // @ts-ignore
                 trieNodes: inclusionProof.toJSON().proof,
             },
             block_hash: blockHash,
         }
 
+        if(sfx.target !== "roco") {
+            let blockNumber = await this.fetchCorrespondingRelaychainHeaderNumber(blockHash)
+                .catch((err) => { // this should never happen
+                    console.log(err)
+                })
+
+            this.emit("Event", <RelayerEventData>{
+                type: RelayerEvents.HeaderInclusionProofRequest,
+                blockNumber,
+                target: "roco",
+                sfxId: sfx.id,
+                data: this.nativeId,
+            })
+
+              // Add the inclusion proof to the SFX object
+            sfx.executedOnTarget(inclusionData, this.signer.addressRaw, blockNumber as number)
+            // if we have a parachain SFX we need to submit on the relaychain block height
+            return blockNumber as number;
+        }
+
         // Add the inclusion proof to the SFX object
         sfx.executedOnTarget(inclusionData, this.signer.addressRaw, blockNumber.toNumber())
 
         return blockNumber.toNumber()
+    }
+
+     /**
+     * Fetches the block number of the relaychain block, containing the parachain block
+     *
+     * @param parachainBlockHash block hash of the parachain
+     * @returns Block number of the relaychain block
+     */
+    async fetchCorrespondingRelaychainHeaderNumber(parachainBlockHash: any): Promise<number> {
+        const parachainBlock = await this.client.rpc.chain.getBlock(parachainBlockHash);
+
+        // ToDo: we should verify that this block is correct. Could be done by running a state query on the relaychain, decoding the block and ensuring the height is correct
+        for(let i = 0; i < parachainBlock.block.extrinsics.length; i++) {
+            const extrinsic = parachainBlock.block.extrinsics[i]
+            if(extrinsic.method.method === "setValidationData" && extrinsic.method.section === "parachainSystem") {
+                // @ts-ignore
+                return extrinsic.method.args[0].validationData.relayParentNumber.toNumber() + 2; // im not exactly sure why we need to add 2 here, +1 makes sense as its parent.
+            }
+        }
+
+        throw Error("Could not find relaychain header number")
+    }
+
+    async generateHeaderInclusionProof(relaychainBlockNumber: number, parachainId: number) {
+        const blockHash = await this.client.rpc.chain.getBlockHash(relaychainBlockNumber)
+
+        return Utils.Substrate.getStorageProof(this.client, blockHash, "Paras", "Heads", parachainId)
+    }
+
+    async getBlockHash(blockNumber: number) {
+        return this.client.rpc.chain.getBlockHash(blockNumber)
     }
 
     /**
@@ -179,4 +236,4 @@ export class SubstrateRelayer extends EventEmitter {
     }
 }
 
-export { Estimator, CostEstimator, Estimate, InclusionData }
+export { Estimator, CostEstimator, Estimate, InclusionProof }

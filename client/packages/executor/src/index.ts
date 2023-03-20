@@ -1,9 +1,9 @@
-import "@polkadot/api-augment"
+import "@t3rn/types"
 import { Sdk } from "@t3rn/sdk"
 import { Keyring } from "@polkadot/api"
 require("dotenv").config()
 import "@t3rn/types"
-import { SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionData } from "./gateways/substrate/relayer"
+import { SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionProof } from "./gateways/substrate/relayer"
 import { ExecutionManager, Queue } from "./executionManager"
 import { ApiPromise } from "@polkadot/api"
 import { config, Config, Gateway, Circuit, Strategy } from "../config/config"
@@ -53,7 +53,7 @@ class InstanceManager {
         this.circuitClient = await this.sdk.init()
 
         this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
-        await this.executionManager.setup(config.gateways)
+        await this.executionManager.setup(config.gateways, config.vendors)
 
         logger.info("Executor: setup complete")
     }
@@ -73,7 +73,7 @@ export {
     Estimator,
     CostEstimator,
     Estimate,
-    InclusionData,
+    InclusionProof,
     BiddingEngine,
     StrategyEngine,
     SfxStrategy,

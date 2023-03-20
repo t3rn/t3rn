@@ -63,7 +63,7 @@ pub mod pallet {
         /// Gateway was set operational. [ChainId, bool]
         SetOperational(ChainId, bool),
         /// Header was successfully added
-        HeaderSubmitted(ChainId, Vec<u8>),
+        HeaderSubmitted(GatewayVendor, Vec<u8>),
     }
 
     // Errors inform users that something went wrong.
@@ -109,7 +109,9 @@ pub mod pallet {
             allowed_side_effects: Vec<Sfx4bId>,
             encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
-            // ToDo xdns record is written also when the calls after this fail!!!
+            ensure_root(origin.clone())?;
+
+            // write XDNS record if all else passed
             <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
                 url,
@@ -249,34 +251,32 @@ pub mod pallet {
             let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)?;
 
             let res = match vendor {
-                GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<
-                    T,
-                    RococoLightClient,
-                >::submit_headers(
-                    origin, gateway_id, encoded_header_data
-                ),
-                GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<
-                    T,
-                    KusamaLightClient,
-                >::submit_headers(
-                    origin, gateway_id, encoded_header_data
-                ),
+                GatewayVendor::Rococo =>
+                    pallet_grandpa_finality_verifier::Pallet::<T, RococoLightClient>::submit_headers(
+                        origin,
+                        encoded_header_data,
+                    ),
+                GatewayVendor::Kusama =>
+                    pallet_grandpa_finality_verifier::Pallet::<T, KusamaLightClient>::submit_headers(
+                        origin,
+                        encoded_header_data,
+                    ),
                 GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<
                     T,
                     PolkadotLightClient,
                 >::submit_headers(
-                    origin, gateway_id, encoded_header_data
+                    origin, encoded_header_data
                 ),
                 _ => return Err(Error::<T>::UnimplementedGatewayVendor.into()),
             };
 
             match res {
                 Ok(height) => {
-                    Self::deposit_event(Event::HeaderSubmitted(gateway_id, height));
+                    Self::deposit_event(Event::HeaderSubmitted(vendor, height));
                     Ok(())
                 },
                 Err(msg) => {
-                    log::info!("{:?}", msg);
+                    log::error!("{:?}", msg);
                     Err(Error::<T>::SubmitHeaderError.into())
                 },
             }
@@ -284,6 +284,7 @@ pub mod pallet {
     }
 }
 
+// ToDo: this should come from XDNS
 pub fn match_vendor_with_codec(vendor: GatewayVendor) -> Codec {
     match vendor {
         GatewayVendor::Rococo => Codec::Scale,
@@ -402,7 +403,8 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn verify_state_inclusion(
         gateway_id: [u8; 4],
         submission_target_height: Vec<u8>,
-        encoded_inclusion_data: Vec<u8>,
+        encoded_inclusion_proof: Vec<u8>,
+        side_effect_id: [u8; 4],
     ) -> Result<Vec<u8>, DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
@@ -410,17 +412,17 @@ impl<T: Config> Portal<T> for Pallet<T> {
         match vendor {
             GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoLightClient>::confirm_event_inclusion(
                 gateway_id,
-                encoded_inclusion_data,
+                encoded_inclusion_proof,
                 submission_target_height,
             ),
             GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<T, KusamaLightClient>::confirm_event_inclusion(
                 gateway_id,
-                encoded_inclusion_data,
+                encoded_inclusion_proof,
                 submission_target_height,
             ),
             GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<T, PolkadotLightClient>::confirm_event_inclusion(
                 gateway_id,
-                encoded_inclusion_data,
+                encoded_inclusion_proof,
                 submission_target_height,
             ),
             _ => Err(Error::<T>::GatewayVendorNotFound.into()),

@@ -1,18 +1,18 @@
-import { Execution } from "./execution"
-import { Notification, NotificationType, SideEffect } from "./sideEffect"
+import {Execution} from "./execution"
+import {Notification, NotificationType, SideEffect} from "./sideEffect"
 import Estimator from "../gateways/substrate/estimator"
-import { SubstrateRelayer } from "../gateways/substrate/relayer"
-import { PriceEngine } from "../pricing"
-import { StrategyEngine } from "../strategy"
-import { Sdk } from "@t3rn/sdk"
-import { BiddingEngine } from "../bidding"
-import { CircuitListener, ListenerEventData, ListenerEvents } from "../circuit/listener"
-import { ApiPromise } from "@polkadot/api"
-import { CircuitRelayer } from "../circuit/relayer"
-import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types"
-import { RelayerEventData, RelayerEvents } from "../gateways/types"
-import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
-import { Gateway } from "../../config/config"
+import {SubstrateRelayer} from "../gateways/substrate/relayer"
+import {PriceEngine} from "../pricing"
+import {StrategyEngine} from "../strategy"
+import {Sdk} from "@t3rn/sdk"
+import {BiddingEngine} from "../bidding"
+import {CircuitListener, ListenerEventData, ListenerEvents} from "../circuit/listener"
+import {ApiPromise} from "@polkadot/api"
+import {CircuitRelayer} from "../circuit/relayer"
+import {ExecutionLayerType} from "@t3rn/sdk/dist/src/gateways/types"
+import {RelayerEventData, RelayerEvents} from "../gateways/types"
+import {XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types"
+import {Gateway} from "../../config/config"
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -85,7 +85,7 @@ export class ExecutionManager {
     constructor(circuitClient: ApiPromise, sdk: Sdk, logger: any) {
         this.priceEngine = new PriceEngine()
         this.strategyEngine = new StrategyEngine()
-        this.biddingEngine = new BiddingEngine()
+        this.biddingEngine = new BiddingEngine(logger)
         this.circuitClient = circuitClient
         this.circuitListener = new CircuitListener(this.circuitClient)
         this.circuitRelayer = new CircuitRelayer(sdk)
@@ -94,11 +94,26 @@ export class ExecutionManager {
     }
 
     /** Setup all instances and listeners for the execution manager */
-    async setup(gatewayConfig: Gateway[]) {
+    async setup(gatewayConfig: Gateway[], vendors: string[]) {
+        this.initializeVendors(vendors)
         await this.initializeGateways(gatewayConfig)
         await this.circuitListener.start()
         await this.initializeEventListeners()
         this.addLog({ msg: "Setup Successful" })
+    }
+
+    initializeVendors(vendors: string[]) {
+        for(let i = 0; i < vendors.length; i++) {
+            this.queue[vendors[i]] = {
+                blockHeight: 0,
+                isBidding: [],
+                isExecuting: [],
+                isConfirming: {},
+                completed: [],
+                dropped: [],
+                reverted: [],
+            }
+        }
     }
 
     /** Initialize all gateways and their corresponding relayers, event listeners and estimators */
@@ -107,45 +122,36 @@ export class ExecutionManager {
         for (let i = 0; i < gatewayKeys.length; i++) {
             const entry = this.sdk.gateways[gatewayKeys[i]]
 
+            const config = gatewayConfig.find((g) => g.id === entry.id)
+
+            if(!config) { // skip over gateways we have no configs for
+                continue;
+            }
             if (entry.executionLayerType === ExecutionLayerType.Substrate) {
                 // initialize gateway relayer
                 const relayer = new SubstrateRelayer()
 
-                const config = gatewayConfig.find((g) => g.id === entry.id)
 
-                if (config) {
-                    await relayer.setup(config.rpc, config.signerKey, entry.id, this.logger)
-                } else {
-                    await relayer.setup(entry.rpc, undefined, entry.id, this.logger)
-                }
+                await relayer.setup(config, this.logger)
 
                 this.relayers[entry.id] = relayer
 
                 // initialize gateway estimator
-                const estimator = new Estimator(relayer)
-                this.targetEstimator[entry.id] = estimator
-
-                this.queue[entry.id] = {
-                    blockHeight: 0,
-                    isBidding: [],
-                    isExecuting: [],
-                    isConfirming: {},
-                    completed: [],
-                    dropped: [],
-                    reverted: [],
-                }
+                this.targetEstimator[entry.id] = new Estimator(relayer)
 
                 relayer.on("Event", async (eventData: RelayerEventData) => {
                     switch (eventData.type) {
                         case RelayerEvents.SfxExecutedOnTarget:
-                            this.removeFromQueue("isExecuting", eventData.sfxId, eventData.target)
+                            // @ts-ignore
+                            const vendor = this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects.get(eventData.sfxId).vendor
+                            this.removeFromQueue("isExecuting", eventData.sfxId, vendor)
 
                             // create array if first for block
-                            if (!this.queue[eventData.target].isConfirming[eventData.blockNumber]) {
-                                this.queue[eventData.target].isConfirming[eventData.blockNumber] = []
+                            if (!this.queue[vendor].isConfirming[eventData.blockNumber]) {
+                                this.queue[vendor].isConfirming[eventData.blockNumber] = []
                             }
                             // adds to queue
-                            this.queue[eventData.target].isConfirming[eventData.blockNumber].push(eventData.sfxId)
+                            this.queue[vendor].isConfirming[eventData.blockNumber].push(eventData.sfxId)
 
                             this.addLog({
                                 msg: "moved sfx from isExecuting to isConfirming",
@@ -154,6 +160,16 @@ export class ExecutionManager {
                             })
 
                             break
+                        case RelayerEvents.HeaderInclusionProofRequest:
+                            const proof = await this.relayers[eventData.target].generateHeaderInclusionProof(
+                                eventData.blockNumber,
+                                parseInt(eventData.data)
+                            )
+
+                            const blockHash = await this.relayers[eventData.target].getBlockHash(eventData.blockNumber)
+
+                            this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects.get(eventData.sfxId)?.addHeaderProof(proof.toJSON().proof, blockHash)
+                            break;
                         case RelayerEvents.SfxExecutionError:
                             // ToDo figure out how to handle this
                             break
@@ -178,7 +194,7 @@ export class ExecutionManager {
                     this.xtxReadyForExec(eventData.data[0].toString())
                     break
                 case ListenerEvents.HeaderSubmitted:
-                    this.updateGatewayHeight(eventData.data.gatewayId, eventData.data.height)
+                    this.updateGatewayHeight(eventData.data.vendor, eventData.data.height)
                     break
                 case ListenerEvents.SideEffectConfirmed:
                     const sfxId = eventData.data[0].toString()
@@ -230,7 +246,7 @@ export class ExecutionManager {
         for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
             this.initSfxListeners(sfx)
             this.sfxToXtx[sfxId] = xtx.id
-            this.queue[sfx.target].isBidding.push(sfxId)
+            this.queue[sfx.vendor].isBidding.push(sfxId)
             await this.addRiskRewardParameters(sfx)
         }
         this.addLog({ msg: "XTX initialized", xtxId: xtx.id })
@@ -272,8 +288,8 @@ export class ExecutionManager {
             }
             for (const sfx of ready) {
                 // move on the queue
-                this.removeFromQueue("isBidding", sfx.id, sfx.target)
-                this.queue[sfx.target].isExecuting.push(sfx.id)
+                this.removeFromQueue("isBidding", sfx.id, sfx.vendor)
+                this.queue[sfx.vendor].isExecuting.push(sfx.id)
                 // execute
                 this.relayers[sfx.target].executeTx(sfx).then()
             }
@@ -283,23 +299,22 @@ export class ExecutionManager {
     // New header range was submitted on circuit
     // update local params and check which SideEffects can be confirmed
     /**
-     * Update the gateway height in the queue. This is triggered by an incoming circuit event. Next, this will trigger the confirmation of
+     * Update the vendor height in the queue. This is triggered by an incoming circuit event. Next, this will trigger the confirmation of
      * SFX that have been executed.
      *
-     * @param gatewayId Id of the gateway
+     * @param vendor Id of the gateway
      * @param blockHeight The latest block height
      */
-    updateGatewayHeight(gatewayId: string, blockHeight: number) {
+    updateGatewayHeight(vendor: string, blockHeight: number) {
         this.addLog({
             msg: "Update Gateway Height",
-            gatewayId: gatewayId,
+            vendor: vendor,
             blockHeight: blockHeight,
         })
-        this.logger.info(`Gateway height updated: ${gatewayId} #${blockHeight} 🧱`)
-
-        if (this.queue[gatewayId]) {
-            this.queue[gatewayId].blockHeight = blockHeight
-            this.executeConfirmationQueue(gatewayId)
+        this.logger.info(`Gateway height updated: ${vendor} #${blockHeight} 🧱`)
+        if (this.queue[vendor]) {
+            this.queue[vendor].blockHeight = blockHeight
+            this.executeConfirmationQueue(vendor)
         }
     }
 
@@ -311,17 +326,17 @@ export class ExecutionManager {
      *
      * @param gatewayId Of the updated gateway
      */
-    async executeConfirmationQueue(gatewayId: string) {
+    async executeConfirmationQueue(vendor: string) {
         // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
         let readyByHeight: string[] = []
         // stores the block height of the SideEffects that are ready to be confirmed. Needed for clearing the queue
         let batchBlocks: string[] = []
-        const queuedBlocks = Object.keys(this.queue[gatewayId].isConfirming)
+        const queuedBlocks = Object.keys(this.queue[vendor].isConfirming)
         // we check which headers are available and collect the SFX ids
         for (let i = 0; i < queuedBlocks.length; i++) {
-            if (parseInt(queuedBlocks[i]) <= this.queue[gatewayId].blockHeight) {
+            if (parseInt(queuedBlocks[i]) <= this.queue[vendor].blockHeight) {
                 batchBlocks.push(queuedBlocks[i])
-                readyByHeight = readyByHeight.concat(this.queue[gatewayId].isConfirming[queuedBlocks[i]])
+                readyByHeight = readyByHeight.concat(this.queue[vendor].isConfirming[queuedBlocks[i]])
             }
         }
 
@@ -339,7 +354,7 @@ export class ExecutionManager {
         if (readyByStep.length > 0) {
             this.addLog({
                 msg: "Execute confirmation queue",
-                gatewayId: gatewayId,
+                gatewayId: vendor,
                 sfxIds: readyByStep.map((sfx) => sfx.id),
             })
             this.circuitRelayer
@@ -347,17 +362,17 @@ export class ExecutionManager {
                 .then((res: any) => {
                     // remove from queue and update status
                     this.logger.info(`Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`)
-                    this.processConfirmationBatch(readyByStep, batchBlocks, gatewayId)
+                    this.processConfirmationBatch(readyByStep, batchBlocks, vendor)
                     this.addLog({
                         msg: "Confirmation batch successful",
-                        gatewayId: gatewayId,
+                        vendor: vendor,
                     })
                 })
                 .catch((err: any) => {
                     this.addLog(
                         {
                             msg: "Error confirming side effects",
-                            gatewayId: gatewayId,
+                            vendor: vendor,
                             sfxIds: readyByStep.map((sfx) => sfx.id),
                             error: err,
                         },
@@ -441,8 +456,8 @@ export class ExecutionManager {
         if (xtx && !(xtx.status === XtxStatus.DroppedAtBidding)) {
             xtx.droppedAtBidding()
             for (const sfx of xtx.sideEffects.values()) {
-                this.removeFromQueue("isBidding", sfx.id, sfx.target)
-                this.queue[sfx.target].dropped.push(sfx.id)
+                this.removeFromQueue("isBidding", sfx.id, sfx.vendor)
+                this.queue[sfx.vendor].dropped.push(sfx.id)
             }
         }
     }
@@ -457,8 +472,8 @@ export class ExecutionManager {
         if (xtx) {
             for (const sfx of xtx.sideEffects.values()) {
                 // sfx could either be in isExecuting or isConfirming
-                this.removeFromQueue("isExecuting", sfx.id, sfx.target)
-                let confirmBatch = this.queue[sfx.target].isConfirming[sfx.targetInclusionHeight.toString()]
+                this.removeFromQueue("isExecuting", sfx.id, sfx.vendor)
+                let confirmBatch = this.queue[sfx.vendor].isConfirming[sfx.targetInclusionHeight.toString()]
                 if (!confirmBatch) confirmBatch = []
                 if (confirmBatch.includes(sfx.id)) {
                     const index = confirmBatch.indexOf(sfx.id)
@@ -466,7 +481,7 @@ export class ExecutionManager {
                 }
 
                 // add to reverted queue
-                this.queue[sfx.target].reverted.push(sfx.id)
+                this.queue[sfx.vendor].reverted.push(sfx.id)
             }
             this.xtx[xtxId].revertTimeout()
         }

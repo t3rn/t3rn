@@ -61,7 +61,7 @@ class CircuitCLI {
     async register(id: string, teleport: number, exportArgs: boolean, exportName: string) {
         let data: any = config.gateways.find(elem => elem.id === id)
         if(data) {
-            if(data.registrationData?.parachain !== null) {
+            if(data.registrationData?.parachain) {
                 // @ts-ignore
                 data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
             }
@@ -155,7 +155,7 @@ class CircuitCLI {
     async submitHeaders(id: string, exportArgs: boolean, exportName: string) {
         const gatewayData = config.gateways.find(elem => elem.id === id)
         if(gatewayData) {
-            if(gatewayData.registrationData?.parachain !== null) {
+            if(gatewayData.registrationData?.parachain) {
                 // @ts-ignore
                 gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
             }
