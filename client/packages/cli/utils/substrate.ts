@@ -17,8 +17,6 @@ export const fetchLatestPossibleParachainHeader = async (relaychainRpc: string, 
 export const getStorageProof = async (rpc: string, blockHash: any, parachainId: number) => {
     const client = await getClient(rpc);
     const key = generateArgumentKey("Paras", "Heads", parachainId)
-    console.log("StorageKey:", key)
-    console.log("RlayChain At:", blockHash)
     // @ts-ignore
     return client.rpc.state.getReadProof([key], blockHash)
 }

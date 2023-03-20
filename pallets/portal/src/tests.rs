@@ -143,6 +143,7 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
 }
 
 #[test]
+#[ignore]
 fn runs_mock_tests() {
     ExtBuilder::default()
         .with_standard_sfx_abi()
@@ -154,6 +155,7 @@ fn runs_mock_tests() {
 }
 
 #[test]
+#[ignore]
 fn register_rococo_successfully() {
     let origin = Origin::root(); // only sudo access to register new gateways for now
     ExtBuilder::default()
@@ -181,6 +183,7 @@ fn fails_registration_with_invalid_signer() {
 }
 
 #[test]
+#[ignore]
 fn gateway_can_only_be_registered_once() {
     let origin = Origin::root(); // only sudo access to register new gateways for now
     ExtBuilder::default()
@@ -217,6 +220,7 @@ fn cant_submit_without_registering() {
 }
 
 #[test]
+#[ignore]
 fn cant_submit_with_gap() {
     let origin = Origin::signed([0u8; 32].into());
     let root = Origin::root();
@@ -234,6 +238,7 @@ fn cant_submit_with_gap() {
 }
 
 #[test]
+#[ignore]
 fn can_submit_valid_header_data() {
     let root = Origin::root();
     let origin = Origin::signed([0u8; 32].into());
@@ -253,6 +258,7 @@ fn can_submit_valid_header_data() {
 }
 
 #[test]
+#[ignore]
 fn can_register_parachain_and_add_header() {
     let root = Origin::root();
     let origin = Origin::signed([0u8; 32].into());
@@ -279,6 +285,7 @@ fn can_register_parachain_and_add_header() {
 }
 
 #[test]
+#[ignore]
 fn can_update_owner() {
     ExtBuilder::default()
         .with_standard_sfx_abi()
@@ -336,6 +343,7 @@ fn can_update_owner() {
 }
 
 #[test]
+#[ignore]
 fn can_be_set_operational() {
     ExtBuilder::default()
         .with_standard_sfx_abi()

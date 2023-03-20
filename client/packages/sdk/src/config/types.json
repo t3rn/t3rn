@@ -260,16 +260,15 @@
         "fields": "Vec<Parameter>",
         "offsets": "Vec<u16>"
     },
-    "Parachain": {
+    "ParachainRegistrationData": {
         "relay_chain_id": "ChainId",
         "id": "u32"
     },
-    "GrandpaRegistrationData": {
+    "RelaychainRegistrationData": {
         "first_header": "Vec<u8>",
-        "authorities": "Option<Vec<AuthorityId>>",
-        "authority_set_id": "Option<SetId>",
-        "owner": "AccountId",
-        "parachain": "Option<Parachain>"
+        "authorities": "Vec<AuthorityId>",
+        "authority_set_id": "SetId",
+        "owner": "AccountId"
     },
     "RegistrationData": {
         "url": "Vec<u8>",
@@ -282,19 +281,20 @@
         "allowed_side_effects": "Vec<AllowedSideEffect>",
         "encoded_registration_data": "Vec<u8>"
     },
-    "RelaychainHeaderData": {
+    "GrandpaHeaderData": {
         "signed_header": "Header",
         "range": "Vec<Header>",
         "justification": "GrandpaJustification<Header>"
     },
-    "ParachainHeaderData": {
-        "relay_block_hash": "H256",
-        "range": "Vec<Header>",
-        "proof": "StorageProof"
-    },
-    "InclusionData": {
+    "RelaychainInclusionProof": {
         "encoded_payload": "Vec<u8>",
-        "proof": "StorageProof",
+        "payload_proof": "StorageProof",
         "block_hash": "Header::Hash"
+    },
+    "ParachainInclusionProof": {
+        "encoded_payload": "Vec<u8>",
+        "header_proof": "StorageProof",
+        "payload_proof": "StorageProof",
+        "relay_block_hash": "Header::Hash"
     }
 }

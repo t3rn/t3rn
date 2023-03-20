@@ -34,6 +34,10 @@ export class BiddingEngine {
     /** Which executors are bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
     whoBidsOnWhat = new Map<string, string[]>();
 
+    constructor(logger: any) {
+        this.logger = logger;
+    }
+
     /**
      * Computes the bidding amount for a given SFX for a certain scenario.
      *
@@ -46,19 +50,20 @@ export class BiddingEngine {
         switch (scenario) {
             case Scenario.noBidAndNoCompetition:
                 bid = this.computeNoBidAndNoCompetition(sfx)
+                break;
             case Scenario.noBidButCompetition:
                 bid = this.computeNoBidButCompetition(sfx)
+                break;
             case Scenario.beenOutbid:
                 bid = this.computeBeenOutbid(sfx)
-            default:
-                this.logger.error("Cannot find the scenario for the bidding engine")
+                break;
         }
         return bid
     }
 
     /**
      * When there are no other bids, the executor maximizes the profit or gets the execution.
-     * 
+     *
      * @param sfx The side effect to bid on
      * @returns The bidding amount in USD
      */
@@ -82,7 +87,7 @@ export class BiddingEngine {
      *      - Get the max profit
      * The last two options suppose that executors can exit the
      * bidding process, so someone bidding less would still win it.
-     * 
+     *
      * @param sfx The side effect to bid on
      * @returns The bidding amount in USD
      */
@@ -106,8 +111,8 @@ export class BiddingEngine {
      *      - Undercut again
      *      - Keep the previous bid
      *      - Exit the bidding process
-     * 
-     * @param sfx 
+     *
+     * @param sfx
      * @returns The bidding amount in USD
      */
     computeBeenOutbid(sfx: SideEffect): number {
@@ -135,22 +140,20 @@ export class BiddingEngine {
     /**
      * Check the scenario the executor+sfx are in
      * to select which behavior to apply.
-     * 
+     *
      * @param sfx The SFX object
-     * @returns The situation to choose the action 
+     * @returns The situation to choose the action
      */
     checkScenario(sfx: SideEffect): Scenario {
         const executorIsTopBidder = sfx.isBidder
         const otherBidsOnSFX: boolean = sfx.lastBids.length > 0 ? true : false
 
-        if (!executorIsTopBidder) {
+        if(!otherBidsOnSFX) { // No other, so we should be first
+            return Scenario.noBidAndNoCompetition
+        } else if(!executorIsTopBidder) { // Othes, but we're not top bidder
             return Scenario.beenOutbid
-        } else {
-            if (otherBidsOnSFX) {
-                return Scenario.noBidButCompetition
-            } else {
-                return Scenario.noBidAndNoCompetition
-            }
+        } else { // ToDo: This is probably incorrect, because there should be 4 scenarios
+            return Scenario.noBidButCompetition
         }
     }
 

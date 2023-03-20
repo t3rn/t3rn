@@ -1,6 +1,7 @@
 export enum RelayerEvents {
     SfxExecutedOnTarget,
     SfxExecutionError,
+    HeaderInclusionProofRequest
 }
 
 export type RelayerEventData = {
@@ -17,9 +18,12 @@ export type RelayerEventData = {
  * @category Substrate
  * @group Gateways
  */
-export type InclusionData = {
+export type InclusionProof = {
     encoded_payload: string
-    proof: {
+    payload_proof: {
+        trieNodes: string
+    }
+    header_proof?: {
         trieNodes: string
     }
     block_hash: string

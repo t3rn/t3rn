@@ -291,7 +291,7 @@ pub mod pallet {
         }
 
         fn add_new_xdns_record(
-            origin: OriginFor<T>,
+            _origin: OriginFor<T>,
             url: Vec<u8>,
             gateway_id: ChainId,
             parachain: Option<Parachain>,
@@ -303,8 +303,6 @@ pub mod pallet {
             security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<Sfx4bId>,
         ) -> DispatchResult {
-            ensure_root(origin)?;
-
             // early exit if record already exists in storage
             if <XDNSRegistry<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into())

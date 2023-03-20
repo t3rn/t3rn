@@ -1,4 +1,4 @@
-import { submitRelaychainHeaders, submitParachainHeaders } from "./substrate";
+import { submitRelaychainHeaders } from "./substrate";
 import{ ApiPromise, WsProvider } from'@polkadot/api';
 
 export const submitHeader = async (circuitApi: any, gatewayData: any, gatewayId: string, logger: any) => {
@@ -7,11 +7,12 @@ export const submitHeader = async (circuitApi: any, gatewayData: any, gatewayId:
             const targetApi = await ApiPromise.create({
                 provider: new WsProvider(gatewayData.rpc),
             });
-            if(gatewayData.registrationData.parachain == null) { // null or undefined
+            if(!gatewayData.registrationData.parachain) { // null or undefined
                 return submitRelaychainHeaders(circuitApi, targetApi, gatewayId, logger)
             }
             else {
-                return submitParachainHeaders(circuitApi, targetApi, gatewayData, logger)
+                console.log("Headers can only be submitted for the relaychain, not for parachains");
+                process.exit(1);
             }
             break;
         }

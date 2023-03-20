@@ -11,7 +11,7 @@ import { BiddingEngine } from "../bidding"
 import { EventEmitter } from "events"
 import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
 import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
-import { InclusionData } from "../gateways/types"
+import {InclusionProof} from "../gateways/types"
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"]
@@ -78,6 +78,8 @@ export class SideEffect extends EventEmitter {
     txStatus: TxStatus = TxStatus.Ready
     /** Target gateway of the SFX */
     target: string
+    /** The id of the gateway running the targets consensus, e.g. roco for bslk tx */
+    vendor: string
     /** Gateway helper instance */
     gateway: Gateway
     /** Security Level, e.g. Escrow or Optimistic */
@@ -92,7 +94,7 @@ export class SideEffect extends EventEmitter {
     /** If the executor leading the bid changes, store the change */
     changedBidLeader: boolean = false
     /** Value of the last bid */
-    lastBids: number[]
+    lastBids: number[] = [];
 
     // SideEffect data
     id: string
@@ -109,7 +111,7 @@ export class SideEffect extends EventEmitter {
 
     // TargetConfirmation
     /** Required data for confirming the inclusion on circuit. contains encoded payload, inclusionProof, and blockHash */
-    inclusionData: any
+    inclusionProof: InclusionProof
     /** The block number in which the SFX was included on the target */
     targetInclusionHeight: number = 0
     /** The address of this SFXs executor */
@@ -179,6 +181,7 @@ export class SideEffect extends EventEmitter {
             this.biddingEngine = biddingEngine
             this.circuitSignerAddress = circuitSignerAddress
             this.logger = logger
+            this.vendor = this.gateway.vendor;
         }
     }
 
@@ -431,19 +434,24 @@ export class SideEffect extends EventEmitter {
         this.status = SfxStatus.ReadyToExecute
     }
 
-    // sfx was successfully executed on target and has the inclusion proof data
     /**
      * SFX was successfully executed and the required proof data generated
      *
-     * @param inclusionData Inclusion proof data
+     * @param inclusionProof Inclusion proof data
      * @param executor Address of the executor on target
      * @param targetInclusionHeight Block height on target where transaction was included
      */
-    executedOnTarget(inclusionData: InclusionData, executor: string, targetInclusionHeight: number) {
-        this.inclusionData = inclusionData
+    executedOnTarget(inclusionProof: InclusionProof, executor: string, targetInclusionHeight: number) {
+        this.inclusionProof = inclusionProof
         this.executor = executor
         this.targetInclusionHeight = targetInclusionHeight
         this.status = SfxStatus.ExecutedOnTarget
+    }
+
+    /** If the SFX required  */
+    addHeaderProof(headerProof: string, blockHash: any) {
+        this.inclusionProof.header_proof = {trieNodes: headerProof}
+        this.inclusionProof.block_hash = blockHash
     }
 
     /** SFX is confirmed, so wecan update the status and emit an event */

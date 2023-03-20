@@ -54,6 +54,10 @@ export class CoingeckoPricing {
                     if (price !== this.prices[ids[i]].getValue()) {
                         this.prices[ids[i]].next(price)
                     }
+                    return new Promise((resolve) => setTimeout(resolve, 2000));
+                })
+                .catch((err) => {
+                    console.log("Failed fetching prices:", err.toString())
                 })
         }
         setTimeout(this.updateAssetPrices.bind(this), 30000)
