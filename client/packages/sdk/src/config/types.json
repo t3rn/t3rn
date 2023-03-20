@@ -92,7 +92,7 @@
         "target": "TargetId",
         "prize": "BalanceOf",
         "ordered_at": "BlockNumber",
-        "encoded_action": "Bytes",
+        "action": "[u8; 4]",
         "encoded_args": "Vec<Bytes>",
         "signature": "Bytes",
         "enforce_executioner": "Option<AccountId>",
@@ -120,7 +120,7 @@
         "gateway_vendor": "GatewayVendor",
         "gateway_type": "GatewayType",
         "gateway_id": "ChainId",
-        "gateway_sys_props": "GatewaySysProps",
+        "gateway_sys_props": "TokenSysProps",
         "registrant": "Option<AccountId>",
         "last_finalized": "Option<u64>",
         "allowed_side_effects": "Vec<AllowedSideEffect>"
@@ -239,7 +239,7 @@
         "crypto": "CryptoAlgo",
         "address_length": "u16",
         "value_type_size": "u16",
-        "decimals": "u16",
+        "decimals": "u16"
     },
     "HasherAlgo": {
         "_enum": [
@@ -276,7 +276,7 @@
         "gateway_vendor": "GatewayVendor",
         "gateway_type": "GatewayType",
         "gateway_genesis": "GatewayGenesisConfig",
-        "gateway_sys_props": "GatewaySysProps",
+        "gateway_sys_props": "TokenSysProps",
         "allowed_side_effects": "Vec<AllowedSideEffect>",
         "encoded_registration_data": "Vec<u8>"
     },

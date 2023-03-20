@@ -166,7 +166,7 @@ export class SideEffect extends EventEmitter {
         logger: any
     ) {
         super()
-        if (this.decodeAction(sideEffect.encodedAction)) {
+        if (this.decodeAction(sideEffect.action)) {
             this.raw = sideEffect
             this.id = id
             this.humanId = id.substring(0, 8)
@@ -475,8 +475,8 @@ export class SideEffect extends EventEmitter {
     }
 
     /** Maps action to enum */
-    private decodeAction(encodedAction: any): boolean {
-        switch (encodedAction.toHuman()) {
+    private decodeAction(action: any): boolean {
+        switch (action.toHuman()) {
             case "tran": {
                 this.action = SfxType.Transfer
                 return true
@@ -490,7 +490,7 @@ export class SideEffect extends EventEmitter {
 
     // returns the arguments
     private getTransferArguments(): any[] {
-        return [this.arguments[1], this.gateway.parseLe(this.arguments[2]).toNumber()]
+        return [this.arguments[0], this.gateway.parseLe(this.arguments[1]).toNumber()]
     }
 
     private unsubscribe() {

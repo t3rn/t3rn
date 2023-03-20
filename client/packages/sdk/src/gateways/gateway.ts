@@ -5,7 +5,7 @@ import {
   T3rnTypesSideEffect,
 } from "@polkadot/types/lookup";
 import * as BN from "bn.js";
-import { AmountConverter, optionalInsurance } from "../converters/amounts";
+import { AmountConverter } from "../converters/amounts";
 import * as Address from "../converters/address";
 import { toU8aId } from "../converters/utils";
 import { createSfx } from "../side-effects";
@@ -109,7 +109,7 @@ export class Gateway {
       maxReward,
       insurance,
       encodedArgs,
-      encodedAction: "tran",
+      action: "tran",
       signature: args.signature,
       enforceExecutioner: args.enforceExecutioner,
     });
@@ -134,7 +134,6 @@ export class Gateway {
     if (!this.allowedSideEffects.includes("tran"))
       throw new Error(`Transfer Sfx not supported for ${this.id}`);
     // ensure we pass the correct address encoding (e.g. pub key for substrate)
-    from = this.validateAddress(from);
     to = this.validateAddress(to);
 
     // convert value to LittleEndian
@@ -144,9 +143,7 @@ export class Gateway {
       valueTypeSize: this.valueTypeSize,
     }).toLeHex();
 
-    // generate optionalInsurance
-    const encodedOptionalInsurance = optionalInsurance(insurance, reward);
-    return [from, to, encodedAmount, encodedOptionalInsurance];
+    return [to, encodedAmount];
   }
 
   /**
