@@ -2,7 +2,7 @@ import{ ApiPromise, Keyring, WsProvider } from'@polkadot/api';
 import { Encodings } from "@t3rn/sdk"
 import "@t3rn/types"
 // @ts-ignore
-import { GatewayGenesisConfig, GatewayABIConfig, GatewaySysProps } from '@polkadot/types/lookup'
+import { GatewayGenesisConfig, GatewayABIConfig, TokenSysProps } from '@polkadot/types/lookup'
 import { fetchBestFinalizedHash, fetchLatestPossibleParachainHeader } from "../../utils/substrate";
 import {Codec} from "@polkadot/types-codec/types";
 
@@ -30,8 +30,8 @@ const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatew
         gateway_vendor: circuit.createType('GatewayVendor', 'Rococo'),
         gateway_type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
         gateway_genesis: await createGatewayGenesis(circuit, target),
-        gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
-        allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
+        token_sys_props: createTokenSysProps(circuit, gatewayData.registrationData.gatewaySysProps),
+        allowed_side_effects: circuit.createType('Vec<Sfx4bId>', gatewayData.registrationData.allowedSideEffects),
         registration_data: circuit.createType('RelaychainRegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
@@ -49,9 +49,9 @@ const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewa
         gateway_vendor: circuit.createType('GatewayVendor', 'Rococo'),
         gateway_type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
         gateway_genesis: await createGatewayGenesis(circuit, target),
-        gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
+        token_sys_props: createTokenSysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
-        registration_data: circuit.createType("ParachainRegistrationData", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
+        registration_data: circuit.createType("ParachainRegistrationData", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id]).toHex()
     }]
 }
 
@@ -78,18 +78,17 @@ const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any) => {
         address_length: gatewayConfig.addressLength,
         value_type_size: gatewayConfig.valueTypeSize,
         decimals: gatewayConfig.decimals,
-        structs: gatewayConfig.structs
     }
     return circuiApi.createType('GatewayABIConfig', config);
 }
 
-const createGatewaySysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
-    const props: GatewaySysProps = {
+const createTokenSysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
+    const props: TokenSysProps = {
         ss58_format: gatewaySysProps.ss58Format,
         token_symbol: gatewaySysProps.tokenSymbol,
         token_decimals: gatewaySysProps.tokenDecimals
     }
-    return circuiApi.createType('GatewaySysProps', props);
+    return circuiApi.createType('TokenSysProps', props);
 }
 
 const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {
