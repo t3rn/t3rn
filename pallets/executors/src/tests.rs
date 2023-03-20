@@ -1,18 +1,28 @@
 use crate::{
     assert_last_event, assert_last_n_events,
     mock::{
-        fast_forward_to, new_test_ext, Balance, Balances, Clock, Event as MockEvent, Executors,
-        Origin, Runtime, System,
+        fast_forward_to, frame_system::ensure_signed, new_test_ext, Balance, Balances, Clock,
+        Event as MockEvent, Executors, Origin, Runtime, System,
     },
+    CandidateInfo,
 };
+use circuit_mock_runtime::test_utils::generate_xtx_id;
 use circuit_runtime_pallets::pallet_executors::{
     stakes::Stakes,
     subject_metadata::{CandidateMetadata, StakerMetadata},
     BottomStakes, CandidateInfo, CandidatePool, Error, Event, ExecutorConfig,
     ScheduledConfigurationRequests, StakerInfo, TopStakes, Total,
 };
-use frame_support::{assert_noop, assert_ok, traits::Currency};
+use codec::Decode;
+use frame_support::{assert_noop, assert_ok, ensure, traits::Currency};
+use pallet_circuit::{
+    bridges::{polkadot_core::Hashing, runtime::Chain},
+    tests::FIRST_REQUESTER_NONCE,
+    SideEffect,
+};
+use parity_scale_codec::Encode;
 use sp_runtime::{AccountId32, Percent};
+use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, ValueMorphism};
 use t3rn_primitives::{
     common::{OrderedSet, Range, DEFAULT_ROUND_TERM},
     executors::{
@@ -22,6 +32,13 @@ use t3rn_primitives::{
     },
     monetary::DECIMALS,
 };
+use t3rn_sdk_primitives::xc::Operation;
+use xp_channel::{XbiFormat, XbiMetadata};
+use xp_format::{Fees, XbiInstruction};
+
+pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
+pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
+pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
 
 /*
         pub fn set_fixtures(
@@ -2726,5 +2743,59 @@ fn cancel_leave_stakers_successfully() {
         assert_eq!(Executors::staker_info(staker.clone()).is_some(), true);
 
         assert_last_event!(MockEvent::Executors(Event::StakerExitCancelled { staker }));
+    });
+}
+
+#[test]
+fn check_proper_conversion_from_sfx_2_xbi() {
+    new_test_ext().execute_with(|| {
+        let origin = Origin::signed(ALICE);
+        let ch = Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+            caller: ALICE,
+            to: CHARLIE,
+            amount: 50,
+            insurance: None,
+        })
+        .encode();
+        let se = SideEffect::<[u8; 32], u128>::try_from(ch).unwrap();
+
+        let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+        let executor = ensure_signed(origin.clone());
+        let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
+
+        let nonce_always_0_because_we_use_seed = 0;
+        let bypass_most_metadata_checks_default_para_id = Default::default();
+
+        let sfx_id = se.generate_id(xtx_id.as_ref(), 0u32);
+
+        let max_exec_cost = 10;
+        let max_notifications_cost = 20;
+        let metadata = XbiMetadata::new(
+            bypass_most_metadata_checks_default_para_id,
+            bypass_most_metadata_checks_default_para_id,
+            Default::default(),
+            Fees::new(None, Some(max_exec_cost), Some(max_notifications_cost)),
+            Some(account_to_32),
+            nonce_always_0_because_we_use_seed,
+            Some(&sfx_id.encode()),
+        );
+
+        let xbi = sfx_2_xbi(se, metadata)?;
+
+        assert_eq!(
+            xbi,
+            Ok(XbiFormat {
+                instr: XbiInstruction::Transfer {
+                    // Get dest as argument_1 of SFX::Transfer of Type::DynamicAddress
+                    dest: Decode::decode(&mut &se.encoded_args[1][..]).unwrap(),
+                    // Get dest as argument_2 of SFX::Transfer of Type::Value
+                    value: Sabi::try_convert(ValueMorphism::<_, u128>::new(
+                        &mut &se.encoded_args[2][..],
+                    ))
+                    .unwrap(),
+                },
+                metadata,
+            })
+        );
     });
 }

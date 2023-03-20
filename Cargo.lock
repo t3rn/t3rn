@@ -7331,6 +7331,7 @@ dependencies = [
  "sp-std",
  "substrate-abi",
  "t3rn-primitives",
+ "t3rn-sdk-primitives",
  "t3rn-types 0.0.1-rc.3",
  "xp-channel",
  "xp-format",
