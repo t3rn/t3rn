@@ -41,7 +41,9 @@ pub fn get_sfx_transfer_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount+:Value128)".to_vec(),
-            for_scale: b"Transfer:Enum(from:Account32,to:Account32,amount:Value128)".to_vec(),
+            for_scale:
+                b"Transfer:Enum(palletIndex:Byte,from:Account32,to:Account32,amount:Value128)"
+                    .to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
