@@ -74,7 +74,7 @@ class CircuitCLI {
                 registrationData[0].gateway_vendor,
                 registrationData[0].gateway_type,
                 registrationData[0].gateway_genesis,
-                registrationData[0].gateway_sys_props,
+                registrationData[0].token_sys_props,
                 registrationData[0].allowed_side_effects,
                 registrationData[0].registration_data.toHex()
             );

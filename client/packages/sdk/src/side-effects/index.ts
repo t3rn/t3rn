@@ -3,7 +3,7 @@ import {
   // @ts-ignore
   T3rnPrimitivesXdnsXdnsRecord,
   // @ts-ignore
-  T3rnTypesSideEffect,
+  T3rnTypesSfxSideEffect,
   // @ts-ignore
   u128,
 } from "@polkadot/types/lookup";
@@ -19,7 +19,7 @@ import * as BN from "bn.js";
  * @param args.maxReward - The maximum reward for the side effect
  * @param args.insurance - The insurance for the side effect
  * @param args.encodedArgs - The encoded arguments for the side effect
- * @param args.encodedAction - The encoded action for the side effect
+ * @param args.action - The encoded action for the side effect
  * @returns The side effect
  */
 
@@ -31,13 +31,13 @@ export const createSfx = (args: {
   maxReward: BN;
   insurance: BN;
   encodedArgs: string[];
-  encodedAction: string;
-}): T3rnTypesSideEffect => {
-  const sfx: T3rnTypesSideEffect = {
+  action: string;
+}): T3rnTypesSfxSideEffect => {
+  const sfx: T3rnTypesSfxSideEffect = {
     target: args.target,
     maxReward: args.maxReward,
     insurance: args.insurance,
-    encodedAction: args.encodedAction,
+    action: args.action,
     encodedArgs: args.encodedArgs,
     signature: args.signature,
     nonce: args.nonce,
