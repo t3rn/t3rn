@@ -40,7 +40,7 @@ pub trait Portal<T: frame_system::Config> {
 
     fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],
-        submission_target_height: Vec<u8>,
+        submission_target_height: Option<Vec<u8>>,
         encoded_inclusion_data: Vec<u8>,
         abi_descriptor: Vec<u8>,
         out_codec: Codec,
@@ -48,13 +48,13 @@ pub trait Portal<T: frame_system::Config> {
 
     fn verify_state_inclusion(
         gateway_id: [u8; 4],
-        submission_target_height: Vec<u8>,
+        submission_target_height: Option<Vec<u8>>,
         encoded_inclusion_data: Vec<u8>,
     ) -> Result<Vec<u8>, DispatchError>;
 
     fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
-        submission_target_height: Vec<u8>,
+        submission_target_height: Option<Vec<u8>>,
         encoded_inclusion_data: Vec<u8>,
         abi_descriptor: Vec<u8>,
         out_codec: Codec,
@@ -62,13 +62,13 @@ pub trait Portal<T: frame_system::Config> {
 
     fn verify_tx_inclusion(
         gateway_id: [u8; 4],
-        submission_target_height: Vec<u8>,
+        submission_target_height: Option<Vec<u8>>,
         encoded_inclusion_data: Vec<u8>,
     ) -> Result<Vec<u8>, DispatchError>;
 
     fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
-        submission_target_height: Vec<u8>,
+        submission_target_height: Option<Vec<u8>>,
         encoded_inclusion_data: Vec<u8>,
         abi_descriptor: Vec<u8>,
         out_codec: Codec,
@@ -76,7 +76,7 @@ pub trait Portal<T: frame_system::Config> {
 
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
-        submission_target_height: Vec<u8>,
+        submission_target_height: Option<Vec<u8>>,
         encoded_inclusion_data: Vec<u8>,
     ) -> Result<Vec<u8>, DispatchError>;
 }

@@ -615,13 +615,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         submit_relaychain_headers::<T, I>(data.range, data.signed_header, data.justification)
     }
 
-    pub fn confirm_event_inclusion_with_decode(
+    pub fn confirm_event_inclusion(
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
-        submission_target_height: Vec<u8>,
-        value_abi_unsigned_type: &[u8],
-        side_effect_id: [u8; 4],
-    ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
+        submission_target_height: Option<Vec<u8>>,
+    ) -> Result<Vec<u8>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
         let (payload_proof, encoded_payload, header) = if is_relaychain {
@@ -632,8 +630,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             let header = <ImportedHeaders<T, I>>::get(proof.block_hash)
                 .ok_or(Error::<T, I>::UnknownHeader)?;
 
-            // ensures old equal side_effects can't be replayed
-            executed_after_creation::<T, I>(submission_target_height, &header)?;
+            if let Some(submission_target_height) = submission_target_height {
+                // ensures old equal side_effects can't be replayed
+                executed_after_creation::<T, I>(submission_target_height, &header)?;
+            }
 
             (proof.payload_proof, proof.encoded_payload, header)
         } else {
@@ -650,16 +650,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             (proof.payload_proof, proof.encoded_payload, header)
         };
 
-        match &side_effect_id {
-            b"tran" => verify_event_storage_proof_with_decode::<T, I>(
-                payload_proof,
-                header,
-                encoded_payload,
-                value_abi_unsigned_type,
-                side_effect_id,
-            ),
-            _ => unimplemented!(),
-        }
+        verify_event_storage_proof::<T, I>(payload_proof, header, encoded_payload)
     }
 
     pub fn get_latest_finalized_header(_gateway_id: ChainId) -> Option<Vec<u8>> {
@@ -787,31 +778,11 @@ pub(crate) fn find_forced_change<H: HeaderT>(
         .convert_first(|l| l.try_to(id).and_then(filter_log))
 }
 
-// pub(crate) fn verify_event_storage_proof_with_decode<T: Config<I>, I: 'static>(
-//     storage_proof: StorageProof,
-//     header: BridgedHeader<T, I>,
-//     encoded_payload: Vec<u8>,
-//     value_abi_unsigned_type: &[u8],
-//     side_effect_id: [u8; 4],
-// ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
-//     let encoded_payload = verify_event_storage_proof::<T, I>(gateway_id, inclusion_data)?;
-//
-//     decode_event::<T, I>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
-// }
-
 pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     storage_proof: StorageProof,
     header: BridgedHeader<T, I>,
     encoded_payload: Vec<u8>,
-    value_abi_unsigned_type: &[u8],
-    side_effect_id: [u8; 4],
 ) -> Result<Vec<u8>, DispatchError> {
-    let InclusionData {
-        encoded_payload,
-        proof,
-        block_hash,
-    } = inclusion_data;
-
     // storage key for System_Events
     let key: Vec<u8> = [
         38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128, 212, 30, 94,
@@ -824,7 +795,10 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     // the problem here is that in substrates current design its not possible to prove the inclusion of a single event, only all events of a block
     // https://github.com/paritytech/substrate/issues/11216
     ensure!(
-        is_sub(verified_block_events.as_slice(), encoded_payload.as_slice()),
+        is_sub(
+            verified_block_events.as_slice(),
+            &encoded_payload.as_slice()
+        ),
         Error::<T, I>::EventNotIncluded
     );
 
@@ -835,13 +809,14 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
     parachain: ParachainRegistrationData,
-    submission_target_height: Vec<u8>,
+    submission_target_height: Option<Vec<u8>>,
 ) -> Result<BridgedHeader<T, I>, DispatchError> {
     let relay_header =
         <ImportedHeaders<T, I>>::get(relay_block_hash).ok_or(Error::<T, I>::UnknownHeader)?;
 
-    // this needs to be checked via relaychain header, which is why its here
-    executed_after_creation::<T, I>(submission_target_height, &relay_header)?;
+    if let Some(submission_target_height) = submission_target_height {
+        executed_after_creation::<T, I>(submission_target_height, &relay_header)?;
+    }
 
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
