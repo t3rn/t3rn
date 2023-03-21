@@ -1,5 +1,5 @@
 use crate::{recode::Recode, to_abi::Abi, to_filled_abi::FilledAbi, types::Name};
-use codec::{Decode, Encode, KeyedVec};
+use codec::{Decode, Encode};
 
 use sp_core::{H160, H256};
 use sp_runtime::DispatchError;
@@ -7,7 +7,7 @@ use sp_std::{prelude::*, vec::IntoIter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub struct EthIngressEventLog(pub Vec<H256>, pub Vec<u8>);
-use bytes::{Buf, Bytes, BytesMut};
+use bytes::{Buf, Bytes};
 use frame_support::ensure;
 
 pub struct RecodeRlp;
