@@ -45,9 +45,9 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_abi::sfx_abi::SFXAbi;
+    use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
-        xdns::{Parachain, Xdns, XdnsRecord},
+        xdns::{GatewayRecord, Parachain, TokenRecord, Xdns, XdnsRecord},
         Bytes, ChainId, GatewayType, GatewayVendor, TokenSysProps,
     };
     use t3rn_types::{
@@ -185,6 +185,10 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// \[gateway_4b_id\]
+        GatewayRecordStored([u8; 4]),
+        /// \[token_4b_id, gateway_4b_id\]
+        TokenRecordStored([u8; 4], [u8; 4]),
         /// \[xdns_record_id\]
         XdnsRecordStored([u8; 4]),
         /// \[requester, xdns_record_id\]
@@ -196,6 +200,10 @@ pub mod pallet {
     // Errors inform users that something went wrong.
     #[pallet::error]
     pub enum Error<T> {
+        /// Stored gateway has already been added before
+        GatewayRecordAlreadyExists,
+        /// Stored token has already been added before
+        TokenRecordAlreadyExists,
         /// Stored xdns_record has already been added before
         XdnsRecordAlreadyExists,
         /// Access of unknown xdns_record
@@ -238,6 +246,15 @@ pub mod pallet {
     #[pallet::getter(fn xdns_registry)]
     pub type XDNSRegistry<T: Config> =
         StorageMap<_, Identity, [u8; 4], XdnsRecord<T::AccountId>, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn gateways)]
+    pub type Gateways<T: Config> =
+        StorageMap<_, Identity, [u8; 4], GatewayRecord<T::AccountId>, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn tokens)]
+    pub type Tokens<T: Config> = StorageMap<_, Identity, [u8; 4], TokenRecord, OptionQuery>;
 
     // The genesis config type.
     #[pallet::genesis_config]
@@ -290,55 +307,95 @@ pub mod pallet {
             XDNSRegistry::<T>::iter_values().collect()
         }
 
-        fn add_new_xdns_record(
-            url: Vec<u8>,
-            gateway_id: ChainId,
-            parachain: Option<Parachain>,
+        fn add_new_gateway(
+            gateway_id: [u8; 4],
             gateway_abi: GatewayABIConfig,
-            gateway_vendor: GatewayVendor,
-            gateway_type: GatewayType,
-            gateway_genesis: GatewayGenesisConfig,
-            gateway_sys_props: TokenSysProps,
-            security_coordinates: Vec<u8>,
-            allowed_side_effects: Vec<Sfx4bId>,
+            verification_vendor: GatewayVendor,
+            codec: Codec,
+            registrant: Option<T::AccountId>,
+            escrow_account: Option<T::AccountId>,
+            allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
         ) -> DispatchResult {
             // early exit if record already exists in storage
-            if <XDNSRegistry<T>>::contains_key(gateway_id) {
-                return Err(Error::<T>::XdnsRecordAlreadyExists.into())
+            if <Gateways<T>>::contains_key(gateway_id) {
+                return Err(Error::<T>::GatewayRecordAlreadyExists.into())
             }
 
-            // TODO: check if side_effect exists
-            let mut xdns_record = XdnsRecord::<T::AccountId>::new(
-                url,
+            Self::override_gateway(
                 gateway_id,
-                parachain,
                 gateway_abi,
-                gateway_vendor,
-                gateway_type,
-                gateway_genesis,
-                gateway_sys_props,
-                security_coordinates,
+                verification_vendor,
+                codec,
+                registrant,
+                escrow_account,
                 allowed_side_effects,
-            );
+            )
+        }
 
-            // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
-            // xdns_record.assign_registrant(registrant.clone());
-            let now = TryInto::<u64>::try_into(<T as Config>::Time::now())
-                .map_err(|_| "Unable to compute current timestamp")?;
-
-            xdns_record.set_last_finalized(now);
-            <XDNSRegistry<T>>::insert(gateway_id, xdns_record.clone());
-
+        fn override_gateway(
+            gateway_id: [u8; 4],
+            gateway_abi: GatewayABIConfig,
+            verification_vendor: GatewayVendor,
+            codec: Codec,
+            registrant: Option<T::AccountId>,
+            escrow_account: Option<T::AccountId>,
+            allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
+        ) -> DispatchResult {
             // Populate standard side effect ABI registry
-            for sfx_4b_id in xdns_record.allowed_side_effects.iter() {
+            for (sfx_4b_id, maybe_event_memo_prefix) in allowed_side_effects.iter() {
                 match <StandardSFXABIs<T>>::get(sfx_4b_id) {
-                    Some(abi) => <SFXABIRegistry<T>>::insert(gateway_id, sfx_4b_id, abi),
+                    Some(mut abi) => {
+                        abi.maybe_prefix_memo = *maybe_event_memo_prefix;
+                        <SFXABIRegistry<T>>::insert(gateway_id, sfx_4b_id, abi)
+                    },
                     None => return Err(Error::<T>::SideEffectABINotFound.into()),
                 }
             }
+            <Gateways<T>>::insert(
+                gateway_id,
+                GatewayRecord {
+                    gateway_id,
+                    gateway_abi,
+                    verification_vendor,
+                    codec,
+                    registrant,
+                    escrow_account,
+                    allowed_side_effects,
+                },
+            );
+            Self::deposit_event(Event::<T>::GatewayRecordStored(gateway_id));
 
-            Self::deposit_event(Event::<T>::XdnsRecordStored(gateway_id));
-            Ok(())
+            Ok(().into())
+        }
+
+        fn add_new_token(
+            token_id: [u8; 4],
+            gateway_id: [u8; 4],
+            token_props: TokenSysProps,
+        ) -> DispatchResult {
+            // early exit if record already exists in storage
+            if <Tokens<T>>::contains_key(token_id) {
+                return Err(Error::<T>::TokenRecordAlreadyExists.into())
+            }
+
+            Self::override_token(token_id, gateway_id, token_props)
+        }
+
+        fn override_token(
+            token_id: [u8; 4],
+            gateway_id: [u8; 4],
+            token_props: TokenSysProps,
+        ) -> DispatchResult {
+            <Tokens<T>>::insert(
+                token_id,
+                TokenRecord {
+                    token_id,
+                    gateway_id,
+                    token_props,
+                },
+            );
+            Self::deposit_event(Event::<T>::TokenRecordStored(token_id, gateway_id));
+            Ok(().into())
         }
 
         /// returns a mapping of all allowed side_effects of a gateway.
