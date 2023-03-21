@@ -41,9 +41,7 @@ pub fn get_sfx_transfer_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount+:Value128)".to_vec(),
-            for_scale:
-                b"Transfer:Enum(palletIndex:Byte,from:Account32,to:Account32,amount:Value128)"
-                    .to_vec(),
+            for_scale: b"Transfer:Enum(from:Account32,to:Account32,amount:Value128)".to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
@@ -257,15 +255,12 @@ mod test_abi_standards {
         ];
 
         // Pallet index byte
-        let mut scale_encoded_transfer_event = vec![0u8];
-        scale_encoded_transfer_event.append(
-            &mut pallet_balances::Event::<MiniRuntime>::Transfer {
-                from: AccountId32::new([2; 32]),
-                to: AccountId32::new([1; 32]),
-                amount: 100u128,
-            }
-            .encode(),
-        );
+        let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
+            from: AccountId32::new([2; 32]),
+            to: AccountId32::new([1; 32]),
+            amount: 100u128,
+        }
+        .encode();
 
         let res = transfer_interface.validate_arguments_against_received(
             &ordered_args,
