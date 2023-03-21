@@ -113,7 +113,7 @@ impl pallet_clock::Config for Runtime {
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
-    type RoundDuration = ConstU32<500u32>;
+    type RoundDuration = ConstU32<500>;
 }
 
 impl pallet_xdns::Config for Runtime {
