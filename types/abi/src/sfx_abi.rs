@@ -75,10 +75,7 @@ impl SFXAbi {
     ) -> Result<FilledAbi, DispatchError> {
         self.ensure_arguments_order(ordered_args)?;
 
-        let prefix_memo: u8 = match self.maybe_prefix_memo {
-            Some(prefix_memo) => prefix_memo,
-            None => 0u8,
-        };
+        let prefix_memo: u8 = self.maybe_prefix_memo.unwrap_or(0u8);
 
         let abi: Abi = self
             .get_expected_egress_descriptor(ordered_args_codec.clone())
@@ -111,18 +108,18 @@ impl SFXAbi {
 
         // Check prefix memo if it's set - it's optional since not required for any Event decoding besides Substrate Events
         // At the same time imposes security risk by attacker faking events sent out of unauthorized pallets
-        if self.maybe_prefix_memo.is_some() {
-            if filled_named_abi.get_prefix_memo() != self.maybe_prefix_memo {
-                log::error!(
-                    "SFXAbi::invalid prefix memo for: '{:?}'; expected: {:?}; received: {:?}",
-                    self.get_expected_ingress_descriptor(payload_codec.clone()),
-                    self.maybe_prefix_memo,
-                    filled_named_abi.get_prefix_memo()
-                );
-                return Err(DispatchError::Other(
-                    "SFXAbi::invalid prefix memo for -- expected: doesn't match received",
-                ))
-            }
+        if self.maybe_prefix_memo.is_some()
+            && filled_named_abi.get_prefix_memo() != self.maybe_prefix_memo
+        {
+            log::error!(
+                "SFXAbi::invalid prefix memo for: '{:?}'; expected: {:?}; received: {:?}",
+                self.get_expected_ingress_descriptor(payload_codec.clone()),
+                self.maybe_prefix_memo,
+                filled_named_abi.get_prefix_memo()
+            );
+            return Err(DispatchError::Other(
+                "SFXAbi::invalid prefix memo for -- expected: doesn't match received",
+            ))
         }
 
         for (i, ordered_arg) in ordered_args.iter().enumerate() {

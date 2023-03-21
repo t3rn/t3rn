@@ -107,7 +107,7 @@ impl Abi {
                 ))
             },
             Abi::H256(name) | Abi::Account32(name) => {
-                let data: H256 = H256::from_slice(&last_32b);
+                let data: H256 = H256::from_slice(last_32b);
                 Ok((
                     FilledAbi::H256(name.clone(), data.as_bytes().to_vec()),
                     MINIMUM_INPUT_LENGTH,
@@ -122,7 +122,7 @@ impl Abi {
                 MINIMUM_INPUT_LENGTH,
             )),
             Abi::Value128(name) | Abi::Value64(name) | Abi::Value32(name) => {
-                let as_u256 = sp_core::U256::from_big_endian(&last_32b);
+                let as_u256 = sp_core::U256::from_big_endian(last_32b);
                 let filled_abi = match self {
                     Abi::Value128(_) => {
                         let as_val: u128 = as_u256.try_into()?;
