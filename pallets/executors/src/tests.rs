@@ -1,11 +1,9 @@
-// use crate as pallet_executors;
 use crate::{
     assert_last_event, assert_last_n_events,
     mock::{
         fast_forward_to, frame_system::ensure_signed, new_test_ext, Balance, Balances, Clock,
         Event as MockEvent, Executors, Origin, Runtime, System,
     },
-    CandidateInfo as OtherCandidateInfo,
 };
 use circuit_mock_runtime::test_utils::generate_xtx_id;
 use circuit_runtime_pallets::pallet_executors::{
@@ -15,11 +13,8 @@ use circuit_runtime_pallets::pallet_executors::{
     ScheduledConfigurationRequests, StakerInfo, TopStakes, Total,
 };
 use codec::{Decode, Encode};
-use frame_support::{assert_noop, assert_ok, ensure, traits::Currency};
-use pallet_circuit::{
-    bridges::{polkadot_core::Hashing, runtime::Chain},
-    SideEffect,
-};
+use frame_support::{assert_noop, assert_ok, traits::Currency};
+use pallet_circuit::{bridges::polkadot_core::Hashing, SideEffect};
 use sp_runtime::{AccountId32, Percent};
 use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, ValueMorphism};
 use t3rn_primitives::{
