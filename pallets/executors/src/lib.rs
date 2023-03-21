@@ -1716,6 +1716,8 @@ impl<T: Config> SfxWithMetadataNewtype<T> {
     }
 }
 
+// Justification: We only need into for this, XBI doesn't need to know about SFX
+#[allow(clippy::from_over_into)]
 impl<T: Config> TryInto<XbiFormat> for SfxWithMetadataNewtype<T> {
     type Error = DispatchError;
 
