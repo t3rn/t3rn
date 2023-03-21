@@ -110,7 +110,8 @@ where
     }
 
     pub fn validate(&self, sfx_abi: SFXAbi, egress_codec: &Codec) -> Result<(), DispatchError> {
-        sfx_abi.validate_ordered_arguments(&self.encoded_args, egress_codec)
+        let _ = sfx_abi.validate_ordered_arguments(&self.encoded_args, egress_codec)?;
+        Ok(())
     }
 
     pub fn confirm(

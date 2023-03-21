@@ -23,11 +23,17 @@ pub struct PerCodecAbiDescriptors {
 pub struct SFXAbi {
     // must match encoded args order. bool is for optional validation
     pub args_names: Vec<(Data, bool)>,
+    // Must be set for secure decoding of ingress emitted by Substrate events
+    pub maybe_prefix_memo: Option<u8>,
     pub egress_abi_descriptors: PerCodecAbiDescriptors,
     pub ingress_abi_descriptors: PerCodecAbiDescriptors,
 }
 
 impl SFXAbi {
+    pub fn set_prefix_memo(&mut self, prefix_memo: u8) {
+        self.maybe_prefix_memo = Some(prefix_memo);
+    }
+
     pub fn get_args_names(&self) -> Vec<(Name, bool)> {
         self.args_names.clone()
     }
@@ -66,8 +72,13 @@ impl SFXAbi {
         &self,
         ordered_args: &Vec<Data>,
         ordered_args_codec: &Codec,
-    ) -> Result<(), DispatchError> {
+    ) -> Result<FilledAbi, DispatchError> {
         self.ensure_arguments_order(ordered_args)?;
+
+        let prefix_memo: u8 = match self.maybe_prefix_memo {
+            Some(prefix_memo) => prefix_memo,
+            None => 0u8,
+        };
 
         let abi: Abi = self
             .get_expected_egress_descriptor(ordered_args_codec.clone())
@@ -75,14 +86,12 @@ impl SFXAbi {
 
         let ordered_args_flatten: Data =
             // Extend with 0u8 assumed as prefix memo for struct Codec
-            ordered_args.iter().fold(vec![0u8], |mut acc, arg| {
+            ordered_args.iter().fold(vec![prefix_memo], |mut acc, arg| {
                 acc.append(&mut arg.clone());
                 acc
             });
 
-        FilledAbi::try_fill_abi(abi, ordered_args_flatten, ordered_args_codec.clone())?;
-
-        Ok(())
+        FilledAbi::try_fill_abi(abi, ordered_args_flatten, ordered_args_codec.clone())
     }
 
     pub fn validate_arguments_against_received(
@@ -99,6 +108,22 @@ impl SFXAbi {
 
         let filled_named_abi: FilledAbi =
             FilledAbi::try_fill_abi(abi, received_payload, payload_codec.clone())?;
+
+        // Check prefix memo if it's set - it's optional since not required for any Event decoding besides Substrate Events
+        // At the same time imposes security risk by attacker faking events sent out of unauthorized pallets
+        if self.maybe_prefix_memo.is_some() {
+            if filled_named_abi.get_prefix_memo() != self.maybe_prefix_memo {
+                log::error!(
+                    "SFXAbi::invalid prefix memo for: '{:?}'; expected: {:?}; received: {:?}",
+                    self.get_expected_ingress_descriptor(payload_codec.clone()),
+                    self.maybe_prefix_memo,
+                    filled_named_abi.get_prefix_memo()
+                );
+                return Err(DispatchError::Other(
+                    "SFXAbi::invalid prefix memo for -- expected: doesn't match received",
+                ))
+            }
+        }
 
         for (i, ordered_arg) in ordered_args.iter().enumerate() {
             let (current_arg_name, is_to_verify) = self.args_names.get(i).ok_or(

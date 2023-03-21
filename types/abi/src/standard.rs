@@ -45,9 +45,10 @@ pub fn get_sfx_transfer_abi() -> SFXAbi {
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Transfer:Struct(to:Account20,amount:Value128)".to_vec(),
+            for_rlp: b"Transfer:Struct(to:Account20,amount:Value256)".to_vec(),
             for_scale: b"Transfer:Struct(to:Account32,amount:Value128)".to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -69,9 +70,10 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
-            for_rlp: b"Assets:Struct(asset_id:u32,to:Account20,amount:Value128)".to_vec(),
+            for_rlp: b"Assets:Struct(asset_id:Account20,to:Account20,amount:Value128)".to_vec(),
             for_scale: b"Assets:Struct(asset_id:u32,to:Account32,amount:Value128)".to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -88,6 +90,7 @@ pub fn get_data_abi() -> SFXAbi {
             for_rlp: b"H256".to_vec(),
             for_scale: b"H256".to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -110,6 +113,7 @@ pub fn get_swap_abi() -> SFXAbi {
             for_rlp: b"Swap:Struct(to:Account20,amount_from:Value128,amount_to:Value128,asset_from:Account20,asset_to:Account20)".to_vec(),
             for_scale: b"Swap:Struct(to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -133,6 +137,7 @@ pub fn get_add_liquidity_abi() -> SFXAbi {
             for_rlp: b"AddLiquidity:Struct(to:Account20,amount_left:Value256,amount_right:Value256,asset_right:Account20,asset_left:Account20,liquidity_token:Account20,amount_liquidity_token:Value256)".to_vec(),
             for_scale: b"AddLiquidity:Struct(to:Account32,amount_left:Value128,amount_right:Value128,asset_right:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128)".to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -156,6 +161,7 @@ pub fn get_remove_liquidity_abi() -> SFXAbi {
             for_rlp: b"RemoveLiquidity:Struct(to:Account20,amount_left:Value256,amount_right:Value256,asset_right:Account20,asset_left:Account20,liquidity_token:Account20,amount_liquidity_token:Value256)".to_vec(),
             for_scale: b"RemoveLiquidity:Struct(to:Account32,amount_left:Value128,amount_right:Value128,asset_right:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128)".to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -183,6 +189,7 @@ pub fn get_call_evm_contract_abi() -> SFXAbi {
             for_scale: b"CallEvm:Struct(target:Account32,value:Value128,input:Bytes,gas_limit:Value128,max_fee_per_gas:Value128,max_priority_fee_per_gas:Value128,nonce:Value128,access_list:Bytes)"
                 .to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -206,6 +213,7 @@ pub fn get_call_wasm_contract_abi() -> SFXAbi {
             for_scale: b"CallWasm:Struct(contract:Account32,value:Value128,gas_limit:Value128,storage_deposit_limit:Value128,input:Bytes)"
                 .to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -229,6 +237,7 @@ pub fn get_call_generic_abi() -> SFXAbi {
             for_scale: b"Call:Struct(target:Account32,value:Value128,input:Bytes,limit:Value128,additional_params:Bytes)"
                 .to_vec(),
         },
+        maybe_prefix_memo: None,
     }
 }
 
@@ -237,12 +246,13 @@ mod test_abi_standards {
     use super::*;
     use crate::recode::Codec;
     use codec::Encode;
+    use frame_support::assert_err;
 
     use crate::mini_mock::MiniRuntime;
     use hex_literal::hex;
     use sp_core::{H160, U256};
 
-    use crate::to_filled_abi::EthIngressEventLog;
+    use crate::{to_filled_abi::EthIngressEventLog, Abi, FilledAbi};
     use sp_core::H256;
     use sp_runtime::AccountId32;
 
@@ -269,6 +279,88 @@ mod test_abi_standards {
 
         println!("{res:?}");
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_transfer_validate_arguments_against_received_substrate_balances_event_with_prefix_memo()
+    {
+        let mut transfer_interface = get_sfx_transfer_abi();
+        transfer_interface.set_prefix_memo(2u8);
+        assert_eq!(transfer_interface.maybe_prefix_memo, Some(2u8));
+
+        let ordered_args = vec![
+            AccountId32::new([1; 32]).encode(), // to
+            100u128.encode(),                   // amount
+        ];
+        let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
+            from: AccountId32::new([2; 32]),
+            to: AccountId32::new([1; 32]),
+            amount: 100u128,
+        }
+        .encode();
+
+        let abi: Abi = transfer_interface
+            .get_expected_ingress_descriptor(Codec::Scale)
+            .try_into()
+            .unwrap();
+
+        let filled_transfer_abi: FilledAbi =
+            FilledAbi::try_fill_abi(abi, scale_encoded_transfer_event.clone(), Codec::Scale)
+                .unwrap();
+
+        assert_eq!(filled_transfer_abi.get_prefix_memo(), Some(2u8));
+
+        let res = transfer_interface.validate_arguments_against_received(
+            &ordered_args,
+            scale_encoded_transfer_event,
+            &Codec::Scale,
+            &Codec::Scale,
+        );
+
+        println!("{res:?}");
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_transfer_rejects_arguments_against_received_substrate_balances_with_wrong_prefix_memo()
+    {
+        let mut transfer_interface = get_sfx_transfer_abi();
+        transfer_interface.set_prefix_memo(99u8);
+        assert_eq!(transfer_interface.maybe_prefix_memo, Some(99u8));
+
+        let ordered_args = vec![
+            AccountId32::new([1; 32]).encode(), // to
+            100u128.encode(),                   // amount
+        ];
+        let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
+            from: AccountId32::new([2; 32]),
+            to: AccountId32::new([1; 32]),
+            amount: 100u128,
+        }
+        .encode();
+
+        let abi: Abi = transfer_interface
+            .get_expected_ingress_descriptor(Codec::Scale)
+            .try_into()
+            .unwrap();
+
+        let filled_transfer_abi: FilledAbi =
+            FilledAbi::try_fill_abi(abi, scale_encoded_transfer_event.clone(), Codec::Scale)
+                .unwrap();
+
+        assert_eq!(filled_transfer_abi.get_prefix_memo(), Some(2u8));
+
+        let res = transfer_interface.validate_arguments_against_received(
+            &ordered_args,
+            scale_encoded_transfer_event,
+            &Codec::Scale,
+            &Codec::Scale,
+        );
+
+        assert_err!(
+            res,
+            "SFXAbi::invalid prefix memo for -- expected: doesn't match received"
+        );
     }
 
     #[test]

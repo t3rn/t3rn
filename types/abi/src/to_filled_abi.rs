@@ -47,6 +47,27 @@ pub fn matches_name(field_name: Option<&Name>, by_name: &Name) -> bool {
 }
 
 impl FilledAbi {
+    pub fn get_prefix_memo(&self) -> Option<u8> {
+        match self {
+            FilledAbi::Struct(_name, _, prefix_memo) => Some(*prefix_memo),
+            FilledAbi::Enum(_name, _, prefix_memo) => Some(*prefix_memo),
+            FilledAbi::Log(_name, _, prefix_memo) => Some(*prefix_memo),
+            FilledAbi::Option(_name, _) => None,
+            FilledAbi::Bytes(_name, _) => None,
+            FilledAbi::Account20(_name, _) => None,
+            FilledAbi::Account32(_name, _) => None,
+            FilledAbi::H256(_name, _) => None,
+            FilledAbi::Value256(_name, _) => None,
+            FilledAbi::Value128(_name, _) => None,
+            FilledAbi::Value64(_name, _) => None,
+            FilledAbi::Value32(_name, _) => None,
+            FilledAbi::Byte(_name, _) => None,
+            FilledAbi::Bool(_name, _) => None,
+            FilledAbi::Vec(_name, _, _) => None,
+            FilledAbi::Tuple(_name, _) => None,
+        }
+    }
+
     pub fn type_name(&self) -> &str {
         match self {
             FilledAbi::Struct(_name, _, _) => "Struct",
