@@ -155,7 +155,6 @@ pub trait Xdns<T: frame_system::Config> {
     fn fetch_records() -> Vec<XdnsRecord<T::AccountId>>;
 
     fn add_new_xdns_record(
-        origin: OriginFor<T>,
         url: Vec<u8>,
         gateway_id: ChainId,
         parachain: Option<Parachain>,

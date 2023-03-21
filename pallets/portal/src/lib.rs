@@ -113,7 +113,6 @@ pub mod pallet {
 
             // write XDNS record if all else passed
             <T as Config>::Xdns::add_new_xdns_record(
-                origin.clone(),
                 url,
                 gateway_id,
                 None,

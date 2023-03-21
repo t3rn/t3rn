@@ -291,7 +291,6 @@ pub mod pallet {
         }
 
         fn add_new_xdns_record(
-            _origin: OriginFor<T>,
             url: Vec<u8>,
             gateway_id: ChainId,
             parachain: Option<Parachain>,

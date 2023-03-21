@@ -50,7 +50,6 @@ fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
 fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(XDNS::add_new_xdns_record(
-            Origin::<Runtime>::Root.into(),
             b"some_url".to_vec(),
             *b"test",
             None,
@@ -87,7 +86,6 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
         .execute_with(|| {
             assert_noop!(
                 XDNS::add_new_xdns_record(
-                    Origin::<Runtime>::Root.into(),
                     b"some_url".to_vec(),
                     [3, 3, 3, 3],
                     None,
