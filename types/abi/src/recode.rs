@@ -16,6 +16,7 @@ use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum Codec {
     #[default]
     Scale,
