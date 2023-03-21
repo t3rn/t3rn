@@ -36,6 +36,46 @@ pub struct FetchXdnsRecordsResponse<AccountId> {
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct TokenRecord {
+    /// Its token 4b Id
+    pub token_id: [u8; 4],
+
+    /// Link to the gateway token is whitelisted on.
+    pub gateway_id: [u8; 4],
+
+    /// Token properties - decimals, symbol, name
+    pub token_props: TokenSysProps,
+}
+
+/// A preliminary representation of a xdns_record in the onchain registry.
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct GatewayRecord<AccountId> {
+    /// Gateway 4b Id
+    pub gateway_id: ChainId,
+
+    /// ABI configuration for the gateway
+    pub gateway_abi: GatewayABIConfig,
+
+    /// Verification Vendor / Light Client or internal (XCM/XBI)
+    pub verification_vendor: GatewayVendor,
+
+    /// Default encoding for the gateway
+    pub codec: t3rn_abi::Codec,
+
+    /// Optional owner
+    pub registrant: Option<AccountId>,
+
+    /// Leave empty if there's no escrow capabilities on the remote gateway
+    pub escrow_account: Option<AccountId>,
+
+    /// Methods enabled to be called on the remote target: (Sfx4bId, Option<PalletIndexMemo>)
+    pub allowed_side_effects: Vec<(Sfx4bId, Option<u8>)>,
+}
+
+/// A preliminary representation of a xdns_record in the onchain registry.
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct XdnsRecord<AccountId> {
     /// SCALE-encoded url string on where given Consensus System can be accessed
     pub url: Vec<u8>,
@@ -154,17 +194,36 @@ pub trait Xdns<T: frame_system::Config> {
     /// Fetches all known XDNS records
     fn fetch_records() -> Vec<XdnsRecord<T::AccountId>>;
 
-    fn add_new_xdns_record(
-        url: Vec<u8>,
-        gateway_id: ChainId,
-        parachain: Option<Parachain>,
+    fn add_new_token(
+        token_id: [u8; 4],
+        gateway_id: [u8; 4],
+        token_props: TokenSysProps,
+    ) -> DispatchResult;
+
+    fn override_token(
+        token_id: [u8; 4],
+        gateway_id: [u8; 4],
+        token_props: TokenSysProps,
+    ) -> DispatchResult;
+
+    fn add_new_gateway(
+        gateway_id: [u8; 4],
         gateway_abi: GatewayABIConfig,
-        gateway_vendor: GatewayVendor,
-        gateway_type: GatewayType,
-        gateway_genesis: GatewayGenesisConfig,
-        gateway_sys_props: TokenSysProps,
-        security_coordinates: Vec<u8>,
-        allowed_side_effects: Vec<Sfx4bId>,
+        verification_vendor: GatewayVendor,
+        codec: t3rn_abi::Codec,
+        registrant: Option<T::AccountId>,
+        escrow_account: Option<T::AccountId>,
+        allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
+    ) -> DispatchResult;
+
+    fn override_gateway(
+        gateway_id: [u8; 4],
+        gateway_abi: GatewayABIConfig,
+        verification_vendor: GatewayVendor,
+        codec: t3rn_abi::Codec,
+        registrant: Option<T::AccountId>,
+        escrow_account: Option<T::AccountId>,
+        allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
     ) -> DispatchResult;
 
     fn extend_sfx_abi(
