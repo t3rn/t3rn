@@ -4,6 +4,7 @@ use crate::{
         fast_forward_to, frame_system::ensure_signed, new_test_ext, Balance, Balances, Clock,
         Event as MockEvent, Executors, Origin, Runtime, System,
     },
+    Pallet,
 };
 use circuit_mock_runtime::test_utils::generate_xtx_id;
 use circuit_runtime_pallets::pallet_executors::{
@@ -2789,20 +2790,20 @@ fn check_proper_conversion_from_sfx_2_xbi_for_tran() {
             Some(&sfx_id.encode()),
         );
 
-        let xbi = sfx_2_xbi(se, metadata);
+        let xbi = Executors::sfx_2_xbi(se.clone(), metadata.clone()).unwrap();
 
         assert_eq!(
-            xbi.unwrap(),
-            Ok(XbiFormat {
+            xbi,
+            XbiFormat {
                 instr: XbiInstruction::Transfer {
-                    dest: Decode::decode(&mut &se.encoded_args[1][..]).unwrap(),
-                    value: Sabi::try_convert(ValueMorphism::<_, u128>::new(
-                        &mut &se.encoded_args[2][..],
-                    ))
-                    .unwrap(),
+                    dest: AccountId32::new([
+                        42, 246, 86, 215, 84, 26, 25, 17, 173, 225, 126, 30, 234, 99, 78, 169, 50,
+                        247, 0, 118, 125, 167, 191, 15, 94, 94, 97, 126, 250, 236, 22, 62
+                    ]),
+                    value: 1,
                 },
                 metadata,
-            })
+            }
         );
     });
 }
