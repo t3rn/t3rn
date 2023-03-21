@@ -255,12 +255,17 @@ mod test_abi_standards {
             AccountId32::new([1; 32]).encode(), // to
             100u128.encode(),                   // amount
         ];
-        let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
-            from: AccountId32::new([2; 32]),
-            to: AccountId32::new([1; 32]),
-            amount: 100u128,
-        }
-        .encode();
+
+        // Pallet index byte
+        let mut scale_encoded_transfer_event = vec![0u8];
+        scale_encoded_transfer_event.append(
+            &mut pallet_balances::Event::<MiniRuntime>::Transfer {
+                from: AccountId32::new([2; 32]),
+                to: AccountId32::new([1; 32]),
+                amount: 100u128,
+            }
+            .encode(),
+        );
 
         let res = transfer_interface.validate_arguments_against_received(
             &ordered_args,
