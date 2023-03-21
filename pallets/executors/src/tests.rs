@@ -4,14 +4,13 @@ use crate::{
         fast_forward_to, frame_system::ensure_signed, new_test_ext, Balance, Balances, Clock,
         Event as MockEvent, Executors, Origin, Runtime, System,
     },
-    Pallet,
 };
 use circuit_mock_runtime::test_utils::generate_xtx_id;
 use circuit_runtime_pallets::pallet_executors::{
     stakes::Stakes,
     subject_metadata::{CandidateMetadata, StakerMetadata},
-    BottomStakes, CandidateInfo, CandidatePool, Error, Event, ExecutorConfig,
-    ScheduledConfigurationRequests, StakerInfo, TopStakes, Total,
+    BottomStakes, CandidateInfo, CandidatePool, Error, Event, ExecutorConfig, Pallet,
+    ScheduledConfigurationRequests, SfxWithMetadataNewtype, StakerInfo, TopStakes, Total,
 };
 use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, traits::Currency};
@@ -2790,7 +2789,9 @@ fn check_proper_conversion_from_sfx_2_xbi_for_tran() {
             Some(&sfx_id.encode()),
         );
 
-        let xbi = Executors::sfx_2_xbi(se.clone(), metadata.clone()).unwrap();
+        let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
+            .try_into()
+            .unwrap();
 
         assert_eq!(
             xbi,
