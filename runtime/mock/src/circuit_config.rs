@@ -1,7 +1,5 @@
 use crate::*;
 
-use sp_std::vec;
-
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
@@ -9,6 +7,8 @@ use sp_runtime::{
     traits::{BlakeTwo256, Convert, One},
     Perbill,
 };
+use sp_std::vec;
+use t3rn_primitives::light_client::LightClient;
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
@@ -131,15 +131,28 @@ impl pallet_contracts_registry::Config for Runtime {
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const PortalPalletId: PalletId = PalletId(*b"pal/port");
+    pub const LightClients: Vec<(GatewayVendor, Box<dyn LightClient<Self>>)> = vec![
+        (
+            GatewayVendor::Polkadot, PolkadotBridge,
+        ),
+        (
+           GatewayVendor::Kusama, KusamaBridge,
+        ),
+        (
+           GatewayVendor::Rococo, RococoBridge,
+        ),
+    ];
+}
+
 impl pallet_portal::Config for Runtime {
     type Event = Event;
+    type LightClients = ();
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }
 
-parameter_types! {
-    pub const PortalPalletId: PalletId = PalletId(*b"pal/port");
-}
 pub struct AccountId32Converter;
 impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
     fn convert(account_id: AccountId) -> [u8; 32] {
@@ -189,19 +202,31 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
 
 impl pallet_grandpa_finality_verifier::Config<RococoLightClient> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<PolkadotLightClient> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<KusamaLightClient> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
 
