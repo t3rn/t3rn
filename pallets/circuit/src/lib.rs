@@ -1063,8 +1063,8 @@ impl<T: Config> Pallet<T> {
         // this could be multiple events!
         let encoded_event_params = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
-            Some(fsx.submission_target_height), // this enforces the submission height check!
             confirmation.inclusion_data.clone(),
+            Some(fsx.submission_target_height), // this enforces the submission height check!
         )
         .map_err(|_| "SideEffect confirmation of inclusion failed")?;
 
