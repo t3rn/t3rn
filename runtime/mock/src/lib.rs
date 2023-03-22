@@ -159,7 +159,6 @@ impl ExtBuilder {
                 crypto: CryptoAlgo::Ed25519,
                 address_length: 20,
                 value_type_size: 32,
-                decimals: 12,
             },
             GatewayVendor::Rococo,
             GatewayType::ProgrammableInternal(0),
