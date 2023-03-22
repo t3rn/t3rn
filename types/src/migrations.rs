@@ -11,7 +11,7 @@ pub mod v13 {
         },
     };
     use crate::{fsx::FullSideEffect, types::Bytes};
-    use codec::{Decode, Encode};
+    use codec::{Decode, Encode, Input};
     use scale_info::TypeInfo;
     use sp_runtime::RuntimeDebug;
     use sp_std::prelude::*;
@@ -61,7 +61,7 @@ pub mod v13 {
         pub index: u32,
     }
 
-    impl<AccountId, BlockNumber, BalanceOf>
+    impl<AccountId, BlockNumber: Encode + Clone + Decode + Default, BalanceOf>
         From<FullSideEffectV13<AccountId, BlockNumber, BalanceOf>>
         for FullSideEffect<AccountId, BlockNumber, BalanceOf>
     {
@@ -70,7 +70,10 @@ pub mod v13 {
                 input: SideEffect::from(old.input),
                 confirmed: old.confirmed,
                 security_lvl: old.security_lvl,
-                submission_target_height: old.submission_target_height,
+                submission_target_height: BlockNumber::decode(
+                    &mut &old.submission_target_height[..],
+                )
+                .unwrap_or_default(),
                 best_bid: old.best_bid,
                 index: old.index,
             }
