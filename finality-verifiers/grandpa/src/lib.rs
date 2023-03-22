@@ -44,12 +44,12 @@ use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 use sp_std::convert::TryInto;
 
 use finality_grandpa::voter_set::VoterSet;
-use frame_support::{ensure, pallet_prelude::*, StorageHasher};
+use frame_support::{ensure, pallet_prelude::*, traits::Instance, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
 use num_traits::cast::AsPrimitive;
 use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
-use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
+use sp_runtime::traits::{BadOrigin, Header as HeaderT, Header, Zero};
 use sp_std::{vec, vec::Vec};
 
 mod types;
@@ -60,6 +60,7 @@ use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 pub mod mock;
 
 pub mod bridges;
+pub mod light_clients;
 mod side_effects;
 /// Pallet containing weights for this pallet.
 pub mod weights;
@@ -83,6 +84,18 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
+pub fn to_local_block_number<T: Config<I>, I: Instance>(
+    block_number: BridgedBlockNumber<T, I>,
+) -> Result<T::BlockNumber, DispatchError> {
+    let local_block_number: T::BlockNumber = Decode::decode(&mut block_number.encode().as_slice())
+        .map_err(|e| {
+            DispatchError::Other(
+                "LightClient::Grandpa - failed to decode block number from bridged header",
+            )
+        })?;
+    Ok(local_block_number)
+}
+
 use crate::{
     side_effects::decode_event,
     types::{
@@ -91,6 +104,7 @@ use crate::{
     },
 };
 use frame_system::pallet_prelude::*;
+use sp_runtime::Digest;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -112,6 +126,14 @@ pub mod pallet {
 
         /// Weights gathered through benchmarking.
         type WeightInfo: WeightInfo;
+
+        type FastConfirmationOffset: Get<Self::BlockNumber>;
+
+        type RationalConfirmationOffset: Get<Self::BlockNumber>;
+
+        type FinalizedConfirmationOffset: Get<Self::BlockNumber>;
+
+        type EpochOffset: Get<Self::BlockNumber>;
     }
 
     #[pallet::pallet]
@@ -513,7 +535,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
-        ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
+        ensure_owner_or_root_single::<T, I>(origin)?;
 
         match <RelayChainId<T, I>>::get() {
             Some(relay_chain_id) => {
@@ -570,7 +592,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         gateway_id: ChainId,
         encoded_new_owner: Vec<u8>,
     ) -> Result<(), &'static str> {
-        ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
+        ensure_owner_or_root_single::<T, I>(origin)?;
         let new_owner: Option<T::AccountId> =
             Decode::decode(&mut &*encoded_new_owner).map_err(|_| "New Owner decoding error")?;
 
@@ -591,14 +613,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     /// Halt or resume all pallet operations.
     ///
     /// May only be called either by root, or by `PalletOwner`.
-    pub fn set_operational(
-        origin: T::Origin,
-        operational: bool,
-        gateway_id: ChainId,
-    ) -> Result<(), &'static str> {
-        ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
+    pub fn set_operational(origin: T::Origin, operational: bool) -> Result<(), &'static str> {
+        ensure_owner_or_root_single::<T, I>(origin)?;
         <IsHalted<T, I>>::put(!operational); // inverted because operational vs halted are opposite
-
         Ok(())
     }
 
@@ -618,7 +635,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     pub fn confirm_event_inclusion(
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
-        submission_target_height: Option<Vec<u8>>,
+        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Vec<u8>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
@@ -722,7 +739,6 @@ pub(crate) fn find_scheduled_change<H: HeaderT>(
 /// Ensure that the origin is either root, or `PalletOwner`.
 fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
     origin: T::Origin,
-    _gateway_id: ChainId,
 ) -> Result<(), &'static str> {
     match origin.into() {
         Ok(RawOrigin::Root) => Ok(()),
@@ -744,11 +760,12 @@ fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> 
 
 /// Ensure that the SideEffect was executed after it was created.
 fn executed_after_creation<T: Config<I>, I: 'static>(
-    submission_target_height: Vec<u8>,
+    submission_target_height: T::BlockNumber,
     header: &BridgedHeader<T, I>,
 ) -> Result<(), &'static str> {
     let submission_target: BridgedBlockNumber<T, I> =
-        Decode::decode(&mut &*submission_target_height).map_err(|_| "Invalid block number")?;
+        Decode::decode(&mut &*submission_target_height.encode())
+            .map_err(|_| "Invalid block number")?;
 
     ensure!(
         submission_target < *header.number(),
@@ -809,7 +826,7 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
     parachain: ParachainRegistrationData,
-    submission_target_height: Option<Vec<u8>>,
+    submission_target_height: Option<T::BlockNumber>,
 ) -> Result<BridgedHeader<T, I>, DispatchError> {
     let relay_header =
         <ImportedHeaders<T, I>>::get(relay_block_hash).ok_or(Error::<T, I>::UnknownHeader)?;
@@ -1136,7 +1153,7 @@ mod tests {
                 Some(1u64).encode(),
             ));
             assert_noop!(
-                Pallet::<TestRuntime>::set_operational(Origin::signed(2), false, default_gateway),
+                Pallet::<TestRuntime>::set_operational(Origin::signed(2), false),
                 DispatchError::BadOrigin,
             );
             assert_ok!(Pallet::<TestRuntime>::set_operational(
@@ -1152,18 +1169,14 @@ mod tests {
                 owner.encode(),
             ));
             assert_noop!(
-                Pallet::<TestRuntime>::set_operational(Origin::signed(1), true, default_gateway),
+                Pallet::<TestRuntime>::set_operational(Origin::signed(1), true),
                 DispatchError::BadOrigin,
             );
             assert_noop!(
-                Pallet::<TestRuntime>::set_operational(Origin::signed(2), true, default_gateway),
+                Pallet::<TestRuntime>::set_operational(Origin::signed(2), true),
                 DispatchError::BadOrigin,
             );
-            assert_ok!(Pallet::<TestRuntime>::set_operational(
-                Origin::root(),
-                true,
-                default_gateway
-            ));
+            assert_ok!(Pallet::<TestRuntime>::set_operational(Origin::root(), true,));
         });
     }
 
@@ -1176,14 +1189,9 @@ mod tests {
             assert_ok!(Pallet::<TestRuntime>::set_operational(
                 Origin::root(),
                 false,
-                default_gateway
             ));
             assert_noop!(submit_headers(1, 3), "Halted");
-            assert_ok!(Pallet::<TestRuntime>::set_operational(
-                Origin::root(),
-                true,
-                default_gateway
-            ));
+            assert_ok!(Pallet::<TestRuntime>::set_operational(Origin::root(), true,));
         });
     }
 
@@ -1197,30 +1205,27 @@ mod tests {
             assert_ok!(Pallet::<TestRuntime>::set_operational(
                 Origin::signed(2),
                 false,
-                default_gateway
             ));
             assert_ok!(Pallet::<TestRuntime>::set_operational(
                 Origin::signed(2),
                 true,
-                default_gateway
             ));
 
             assert_noop!(
-                Pallet::<TestRuntime>::set_operational(Origin::signed(1), false, default_gateway),
+                Pallet::<TestRuntime>::set_operational(Origin::signed(1), false),
                 DispatchError::BadOrigin,
             );
             assert_noop!(
-                Pallet::<TestRuntime>::set_operational(Origin::signed(1), true, default_gateway),
+                Pallet::<TestRuntime>::set_operational(Origin::signed(1), true),
                 DispatchError::BadOrigin,
             );
 
             assert_ok!(Pallet::<TestRuntime>::set_operational(
                 Origin::signed(2),
                 false,
-                default_gateway
             ));
             assert_noop!(
-                Pallet::<TestRuntime>::set_operational(Origin::signed(1), true, default_gateway),
+                Pallet::<TestRuntime>::set_operational(Origin::signed(1), true),
                 DispatchError::BadOrigin,
             );
         });
