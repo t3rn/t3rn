@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::sp_runtime::DispatchError;
+use frame_support::{sp_runtime::DispatchError, traits::Get};
+use frame_system::pallet_prelude::OriginFor;
 pub use pallet::*;
 
 use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
@@ -9,15 +10,13 @@ use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
 mod tests;
 
 use sp_std::vec::Vec;
-use t3rn_primitives::{portal::Portal, xdns::Xdns, ChainId, GatewayVendor};
-
-pub type RococoLightClient = ();
-pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
-pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
+use t3rn_abi::types::Bytes;
+use t3rn_primitives::{
+    light_client::LightClient, portal::Portal, xdns::Xdns, ChainId, GatewayVendor,
+};
 
 pub mod weights;
 
-// use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -33,14 +32,12 @@ pub mod pallet {
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
-    pub trait Config:
-        frame_system::Config
-        + pallet_grandpa_finality_verifier::Config<RococoLightClient>
-        + pallet_grandpa_finality_verifier::Config<KusamaLightClient>
-        + pallet_grandpa_finality_verifier::Config<PolkadotLightClient>
-    {
+    pub trait Config: frame_system::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type LightClients: Get<Vec<(GatewayVendor, Box<dyn LightClient<Self>>)>>;
+
         type Xdns: Xdns<Self>;
         /// Type representing the weight of this pallet
         type WeightInfo: crate::weights::WeightInfo;
@@ -102,38 +99,10 @@ pub mod pallet {
             gateway_id: ChainId,
             encoded_header_data: Vec<u8>,
         ) -> DispatchResult {
-            let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)?;
-
-            let res = match vendor {
-                GatewayVendor::Rococo =>
-                    pallet_grandpa_finality_verifier::Pallet::<T, RococoLightClient>::submit_headers(
-                        origin,
-                        encoded_header_data,
-                    ),
-                GatewayVendor::Kusama =>
-                    pallet_grandpa_finality_verifier::Pallet::<T, KusamaLightClient>::submit_headers(
-                        origin,
-                        encoded_header_data,
-                    ),
-                GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<
-                    T,
-                    PolkadotLightClient,
-                >::submit_headers(
-                    origin, encoded_header_data
-                ),
-                _ => return Err(Error::<T>::UnimplementedGatewayVendor.into()),
-            };
-
-            match res {
-                Ok(height) => {
-                    Self::deposit_event(Event::HeaderSubmitted(vendor, height));
-                    Ok(())
-                },
-                Err(msg) => {
-                    log::error!("{:?}", msg);
-                    Err(Error::<T>::SubmitHeaderError.into())
-                },
-            }
+            let _ = ensure_signed(origin.clone())?;
+            match_light_client_by_gateway_id::<T>(gateway_id)?
+                .submit_headers(origin, encoded_header_data)?;
+            Ok(())
         }
     }
 }
@@ -148,145 +117,168 @@ pub fn match_vendor_with_codec(vendor: GatewayVendor) -> Codec {
     }
 }
 
+pub fn match_light_client_by_gateway_id<T: Config>(
+    gateway_id: ChainId,
+) -> Result<Box<dyn LightClient<T>>, Error<T>> {
+    let vendor = <T as Config>::Xdns::get_verification_vendor(&gateway_id)
+        .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+    match_light_client_by_vendor(vendor)
+}
+
+pub fn match_light_client_by_vendor<T: Config>(
+    vendor: GatewayVendor,
+) -> Result<Box<dyn LightClient<T>>, Error<T>> {
+    let light_clients = <T as Config>::LightClients::get();
+    let light_client = light_clients
+        .into_iter()
+        .find(|(v, _)| *v == vendor)
+        .map(|(_, lc)| lc)
+        .ok_or(Error::<T>::UnimplementedGatewayVendor)?;
+    Ok(light_client)
+}
+
 impl<T: Config> Portal<T> for Pallet<T> {
-    fn get_latest_finalized_header(gateway_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError> {
-        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
-            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
-
-        match vendor {
-            GatewayVendor::Rococo => Ok(pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                RococoLightClient,
-            >::get_latest_finalized_header(gateway_id)),
-            GatewayVendor::Kusama => Ok(pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                KusamaLightClient,
-            >::get_latest_finalized_header(gateway_id)),
-            GatewayVendor::Polkadot => Ok(pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                PolkadotLightClient,
-            >::get_latest_finalized_header(gateway_id)),
-            _ => Err(Error::<T>::GatewayVendorNotFound.into()),
-        }
+    fn get_latest_finalized_header(gateway_id: ChainId) -> Result<Option<Bytes>, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_header()
     }
 
-    fn get_latest_finalized_height(gateway_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError> {
-        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
-            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
-
-        match vendor {
-            GatewayVendor::Rococo => Ok(pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                RococoLightClient,
-            >::get_latest_finalized_height(gateway_id)),
-            GatewayVendor::Kusama => Ok(pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                KusamaLightClient,
-            >::get_latest_finalized_height(gateway_id)),
-            GatewayVendor::Polkadot => Ok(pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                PolkadotLightClient,
-            >::get_latest_finalized_height(gateway_id)),
-            _ => Err(Error::<T>::GatewayVendorNotFound.into()),
-        }
+    fn get_latest_finalized_height(
+        gateway_id: ChainId,
+    ) -> Result<Option<T::BlockNumber>, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_height()
     }
 
-    fn verify_tx_inclusion_and_recode(
+    fn get_latest_updated_height(
+        gateway_id: ChainId,
+    ) -> Result<Option<T::BlockNumber>, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_updated_height()
+    }
+
+    fn get_current_epoch(gateway_id: ChainId) -> Result<Option<u32>, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.get_current_epoch()
+    }
+
+    fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.read_fast_confirmation_offset()
+    }
+
+    fn read_rational_confirmation_offset(
+        gateway_id: ChainId,
+    ) -> Result<T::BlockNumber, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.read_rational_confirmation_offset()
+    }
+
+    fn read_epoch_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.read_epoch_offset()
+    }
+
+    fn verify_event_inclusion(
         gateway_id: [u8; 4],
-        submission_target_height: Option<Vec<u8>>,
-        encoded_inclusion_data: Vec<u8>,
-        abi_descriptor: Vec<u8>,
-        out_codec: t3rn_abi::recode::Codec,
-    ) -> Result<Vec<u8>, DispatchError> {
-        unimplemented!()
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
+            gateway_id,
+            message,
+            submission_target_height,
+        )
+    }
+
+    fn verify_state_inclusion(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.verify_state_inclusion(
+            gateway_id,
+            message,
+            submission_target_height,
+        )
+    }
+
+    fn verify_tx_inclusion(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.verify_tx_inclusion(
+            gateway_id,
+            message,
+            submission_target_height,
+        )
     }
 
     fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],
-        submission_target_height: Option<Vec<u8>>,
-        encoded_inclusion_data: Vec<u8>,
-        abi_descriptor: Vec<u8>,
-        out_codec: t3rn_abi::recode::Codec,
-    ) -> Result<Vec<u8>, DispatchError> {
-        unimplemented!()
-    }
-
-    fn verify_event_inclusion_and_recode(
-        gateway_id: [u8; 4],
-        submission_target_height: Option<Vec<u8>>,
-        encoded_inclusion_data: Vec<u8>,
-        abi_descriptor: Vec<u8>,
-        out_codec: t3rn_abi::recode::Codec,
-    ) -> Result<Vec<u8>, DispatchError> {
-        let encoded_ingress = Self::verify_event_inclusion(
-            gateway_id,
-            submission_target_height,
-            encoded_inclusion_data,
-        )?;
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+        abi_descriptor: Bytes,
+        out_codec: Codec,
+    ) -> Result<Bytes, DispatchError> {
+        let encoded_ingress =
+            Self::verify_state_inclusion(gateway_id, message, submission_target_height)?;
 
         let in_codec = match_vendor_with_codec(
-            <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+            <T as Config>::Xdns::get_verification_vendor(&gateway_id)
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
         );
 
         recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
     }
 
-    fn verify_state_inclusion(
+    fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
-        _submission_target_height: Option<Vec<u8>>,
-        _encoded_inclusion_proof: Vec<u8>,
-    ) -> Result<Vec<u8>, DispatchError> {
-        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
-            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+        abi_descriptor: Bytes,
+        out_codec: Codec,
+    ) -> Result<Bytes, DispatchError> {
+        let encoded_ingress =
+            Self::verify_tx_inclusion(gateway_id, message, submission_target_height)?;
 
-        unimplemented!()
+        let in_codec = match_vendor_with_codec(
+            <T as Config>::Xdns::get_verification_vendor(&gateway_id)
+                .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
+        );
+
+        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
     }
 
-    fn verify_tx_inclusion(
+    fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
-        _submission_target_height: Option<Vec<u8>>,
-        _encoded_inclusion_data: Vec<u8>,
-    ) -> Result<Vec<u8>, DispatchError> {
-        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
-            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
-        unimplemented!()
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+        abi_descriptor: Bytes,
+        out_codec: Codec,
+    ) -> Result<Bytes, DispatchError> {
+        let encoded_ingress =
+            Self::verify_event_inclusion(gateway_id, message, submission_target_height)?;
+
+        let in_codec = match_vendor_with_codec(
+            <T as Config>::Xdns::get_verification_vendor(&gateway_id)
+                .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
+        );
+
+        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
     }
 
-    fn verify_event_inclusion(
+    fn initialize(
+        origin: OriginFor<T>,
         gateway_id: [u8; 4],
-        submission_target_height: Option<Vec<u8>>,
-        encoded_inclusion_data: Vec<u8>,
-    ) -> Result<Vec<u8>, DispatchError> {
-        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
-            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+        encoded_registration_data: Bytes,
+    ) -> Result<(), DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.initialize(
+            origin,
+            gateway_id,
+            encoded_registration_data,
+        )
+    }
 
-        match vendor {
-            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                RococoLightClient,
-            >::confirm_event_inclusion(
-                gateway_id,
-                encoded_inclusion_data,
-                submission_target_height,
-            ),
-            GatewayVendor::Kusama => pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                KusamaLightClient,
-            >::confirm_event_inclusion(
-                gateway_id,
-                encoded_inclusion_data,
-                submission_target_height,
-            ),
-            GatewayVendor::Polkadot => pallet_grandpa_finality_verifier::Pallet::<
-                T,
-                PolkadotLightClient,
-            >::confirm_event_inclusion(
-                gateway_id,
-                encoded_inclusion_data,
-                submission_target_height,
-            ),
-            _ => Err(Error::<T>::GatewayVendorNotFound.into()),
-        }
+    fn turn_on(origin: OriginFor<T>, gateway_id: [u8; 4]) -> Result<bool, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.turn_on(origin)
+    }
+
+    fn turn_off(origin: OriginFor<T>, gateway_id: [u8; 4]) -> Result<bool, DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?.turn_off(origin)
     }
 }
