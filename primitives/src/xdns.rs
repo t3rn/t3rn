@@ -258,7 +258,7 @@ pub trait Xdns<T: frame_system::Config> {
 
     fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
 
-    fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError>;
+    fn get_verification_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError>;
 
     fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Vec<u8>, DispatchError>;
 
