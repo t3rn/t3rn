@@ -435,7 +435,7 @@ pub mod pallet {
         }
 
         /// returns the gateway vendor of a gateway if its available
-        fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
+        fn get_verification_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
             match <XDNSRegistry<T>>::get(chain_id) {
                 Some(rec) => Ok(rec.gateway_vendor),
                 None => Err(Error::<T>::XdnsRecordNotFound.into()),
