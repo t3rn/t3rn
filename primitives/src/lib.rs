@@ -56,6 +56,7 @@ pub mod contract_metadata;
 pub mod contracts_registry;
 pub mod executors;
 pub mod gateway_inbound_protocol;
+pub mod light_client;
 pub mod match_format;
 pub mod monetary;
 pub mod portal;
