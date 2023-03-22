@@ -6,7 +6,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache 2.0"
 name       = "pallet-grandpa-finality-verifier"
 repository = "https://github.com/t3rn/t3rn/"
-version    = "1.0.0-alpha.0"
+version    = "1.5.0-rc.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -39,6 +39,9 @@ pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = '
 pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', optional = true }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', optional = true }
 
+t3rn-primitives = { path = "../../primitives", default-features = false }
+t3rn-abi        = { path = "../../types/abi", features = ["runtime"], default-features = false }
+
 [features]
 default = [ "std" ]
 runtime-benchmarks = [  ]
@@ -68,5 +71,8 @@ std = [
 
   "log/std",
   "serde/std",
+
+  "t3rn-primitives/std",
+  "t3rn-abi/std",
 ]
 testing = [ "ed25519-dalek", "pallet-balances", "pallet-sudo", "pallet-timestamp", "hex", "hex-literal" ]
