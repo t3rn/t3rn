@@ -24,7 +24,7 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub input: SideEffect<AccountId, BalanceOf>,
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
     pub security_lvl: SecurityLvl,
-    pub submission_target_height: Bytes,
+    pub submission_target_height: BlockNumber,
     pub best_bid: Option<SFXBid<AccountId, BalanceOf, u32>>,
     pub index: u32,
 }
