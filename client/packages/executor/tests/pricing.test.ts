@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { config } from "../config/config";
 
 describe("Basic PriceEngine setup", () => {
-    const pe = new PriceEngine();
+    const pe = new PriceEngine(0);
 
     it("should be a class", () => {
         expect(PriceEngine).to.be.a("function");
