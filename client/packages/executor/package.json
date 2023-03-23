@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src/index.ts | npx pino-pretty -c -S",
+    "start": "EXECUTOR=example ts-node src/index.ts | npx pino-pretty -c -S",
     "dev": "LOG_LEVEL=debug ts-node src/index.ts | npx pino-pretty -c -S",
     "export": "LOG_LEVEL=debug yarn start >> logger.log",
     "fmt": "npx prettier --no-semi --tab-width 4 --print-width 140 --write config/*.ts src/*.ts src/**/*.ts src/**/**/*.ts",
