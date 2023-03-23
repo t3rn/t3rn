@@ -41,6 +41,7 @@ export type ListenerEventData = {
 /** @group t3rn Circuit */
 export class CircuitListener extends EventEmitter {
     client: ApiPromise
+    stop: any
 
     constructor(client: ApiPromise) {
         super()
@@ -48,7 +49,7 @@ export class CircuitListener extends EventEmitter {
     }
 
     async start() {
-        this.client.query.system.events((notifications) => {
+        this.stop = this.client.query.system.events((notifications) => {
             for (let i = 0; i < notifications.length; i++) {
                 if (notifications[i].event.method === "NewSideEffectsAvailable") {
                     // receives new side effects

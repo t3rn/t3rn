@@ -101,6 +101,11 @@ export class ExecutionManager {
         this.addLog({ msg: "Setup Successful" })
     }
 
+    /** Initiates the shutdown sequence. */
+    async shutdown() {
+        await this.circuitListener.stop()
+    }
+
     initializeVendors(vendors: string[]) {
         for(let i = 0; i < vendors.length; i++) {
             this.queue[vendors[i]] = {

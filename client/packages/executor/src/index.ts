@@ -18,16 +18,9 @@ import { CircuitRelayer } from "./circuit/relayer"
 // @ts-ignore
 import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import * as config from "../config.json"
+import { readFile,writeFile} from "fs/promises"
+import * as defaultConfig from "../config.json"
 
-if (!process.env.CIRCUIT_SIGNER_KEY || !process.env.GATEWAY_SIGNER_KEY) {
-    throw Error("missing env vars CIRCUIT_SIGNER_KEY,GATEWAY_SIGNER_KEY")
-}
-
-config.circuit.signerKey = process.env.CIRCUIT_SIGNER_KEY as string
-config.gateways.forEach(gateway => {
-    gateway.signerKey = process.env.GATEWAY_SIGNER_KEY as string
-})
 
 const pino = require("pino")
 const logger = pino(
@@ -54,10 +47,41 @@ class InstanceManager {
     sdk: Sdk
     signer: any
 
-    async setup(signer: string | undefined) {
+    async setup(name: string = "example") {
+        const configFile = `~/.t3rn-executor-${name}/config.json`
+        const persistedConfig = await readFile(configFile).then(buf => {
+            try {
+                return JSON.parse(buf.toString())
+            }catch (_err) {
+                console.warn(`could not load persisted config from ${configFile}`)
+                return {}
+            }
+        })
+  
+        const config = { ...defaultConfig, ...persistedConfig }
+        if (!config.circuit.signerKey) {
+            config.circuit.signerKey = process.env.CIRCUIT_SIGNER_KEY as string
+        }
+        
+        config.gateways.forEach(gateway => {
+            if (!gateway.signerKey) {
+                gateway.signerKey = process.env[`${gateway.name.toUpperCase()}_GATEWAY_SIGNER_KEY`] as string
+            }
+        })
+
+        await writeFile(configFile, JSON.stringify(config))
+        
+        if (!config.circuit.signerKey || !config.gateways.every(gtwy => !!gtwy.signerKey)) {
+            throw Error("InstanceManager::setup: missing signer keys")
+        }
+
+        // register keypress listener 4 ctrl+k (kill) wich would init the shutdown process:
+        // print "shutting down" - don't take new executions - finish pending - then die
+
         await cryptoWaitReady()
         const keyring = new Keyring({ type: "sr25519" })
-         this.signer = signer ? keyring.addFromMnemonic(signer) : keyring.addFromUri("//Executor//default")
+
+         this.signer = config.circuit.signerKey ? keyring.addFromMnemonic(config.circuit.signerKey) : keyring.addFromUri("//Executor//default")
 
         this.sdk = new Sdk(config.circuit.rpc, this.signer)
 
@@ -105,7 +129,7 @@ export {
 
 async function main() {
     const instanceManager = new InstanceManager()
-    await instanceManager.setup(config.circuit.signerKey)
+    await instanceManager.setup(process.env.EXECUTOR)
 }
 
 main()
