@@ -4,14 +4,12 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
-    "ci": "rm -rf node_modules && rm yarn.lock && yarn",
+    "start": "EXECUTOR=example ts-node src/index.ts | npx pino-pretty -c -S",
     "dev": "LOG_LEVEL=debug ts-node src/index.ts | npx pino-pretty -c -S",
     "export": "LOG_LEVEL=debug yarn start >> logger.log",
     "fmt": "npx prettier --no-semi --tab-width 4 --print-width 140 --write config/*.ts src/*.ts src/**/*.ts src/**/**/*.ts",
     "lint": "eslint . --ext .ts",
     "lint:report": "eslint . --ext .ts --output-file eslint_report.json --format json",
-    "start": "ts-node src/index.ts | npx pino-pretty -c -S",
     "test": "mocha -r ts-node/register 'tests/**/*.ts'",
     "test-single": "mocha -r ts-node/register"
   },

@@ -39,8 +39,6 @@ To execute transactions on other blockchains, a custom relayer class is needed. 
 - in the parent `packages` directory, run `make` to build the local dependencies (`types` & `sdk`)
 - run `yarn install`
 - configure your executor by editing `config.json`
-- run `export CIRCUIT_SIGNER_KEY=0xdeadbeefdeadbeefdeadbeefdeadbeef`
-- run `export GATEWAY_SIGNER_KEY=0xdeadbeefdeadbeefdeadbeefdeadbeef`
-- run `yarn start`
+- run `EXECUTOR=myexec yarn start`
 
-To facilitate easy finetuning the executor will read changes to `config.json` and apply them to the effective configuration during runtime.
+The `EXECUTOR` env var passed to the `start` command determines the config file location for given executor instance. The [default config](./config.json) can be overridden by a custom config file that is located at `~/.t3rn-executor-$EXECUTOR/config.json`. Those custom named config files allow running multiple executors on a single machine.
