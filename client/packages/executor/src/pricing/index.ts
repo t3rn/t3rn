@@ -10,8 +10,8 @@ import { BehaviorSubject } from "rxjs"
 export class PriceEngine {
     coingecko: CoingeckoPricing
 
-    constructor(updateFrequency?: number) {
-        this.coingecko = new CoingeckoPricing(updateFrequency || 0)
+    constructor(updateFrequency?: number, debugFlag: boolean = false) {
+        this.coingecko = new CoingeckoPricing(updateFrequency || 0, debugFlag)
     }
 
     /**
