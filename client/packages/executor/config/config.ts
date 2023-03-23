@@ -131,6 +131,7 @@ export type Config = {
     pricing: {
         [source: string]: {
             endpoint: string,
+            endpointDefaults: string,
             frequency: number
         }
     }
@@ -181,6 +182,7 @@ export const config: Config = {
     pricing: {
         coingecko: {
             endpoint: "https://api.coingecko.com/api/v3/coins/",
+            endpointDefaults: "?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false",
             frequency: 30000,
         },
     },

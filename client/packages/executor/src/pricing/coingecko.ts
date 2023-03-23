@@ -55,7 +55,7 @@ export class CoingeckoPricing {
                 .get(
                     config.pricing.coingecko.endpoint +
                     this.assets[ids[i]] +
-                    "?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false"
+                    config.pricing.coingecko.endpointDefaults
                 )
                 .then((res) => {
                     const price = parseFloat(res.data.market_data.current_price["usd"])
@@ -65,7 +65,7 @@ export class CoingeckoPricing {
                     return new Promise((resolve) => setTimeout(resolve, 2000));
                 })
                 .catch((err) => {
-                    console.log("Failed fetching prices:", err.toString())
+                    console.log("Failed fetching prices due to ->", err.toString())
                 })
         }
         setTimeout(this.updateAssetPrices.bind(this), this.updateFrequency)
