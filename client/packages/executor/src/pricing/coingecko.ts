@@ -15,23 +15,28 @@ export class CoingeckoPricing {
         [assetTicker: string]: string
     } = {}
     /** How often to update the values. 0 disables updating */
-    updateFrequency: number = 0
+    updateFrequency: number
     /** Stores price in USD as a subject */
     prices: {
         [assetTicker: string]: BehaviorSubject<number>
     } = {}
+    /** Flag for finishing tests when debuging */
+    debugFlag: boolean
 
-    constructor(updateFrequency?: number) {
+    constructor(updateFrequency?: number, debugFlag: boolean = false) {
         // Get the frequency when instantiating the class
         if (updateFrequency) {
             this.updateFrequency = updateFrequency
         } else {
             this.updateFrequency = config.pricing.coingecko.frequency || 0
         }
+        this.debugFlag = debugFlag
         this.endpoint = config.pricing.coingecko.endpoint
         this.getTrackingAssets()
-        // This cannot be called here if we want to test it (it doesn't finish)
-        this.updateAssetPrices()
+        // If testing, don't update the prices since they will never finish
+        if (!this.debugFlag) {
+            this.updateAssetPrices()
+        }
     }
 
     /** Read the config file to initialize the list of assets we want to track */
