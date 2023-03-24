@@ -55,9 +55,9 @@ impl system::Config for Test {
     type AccountData = pallet_balances::AccountData<u64>;
     type AccountId = u64;
     type BaseCallFilter = frame_support::traits::Everything;
-    type BlockHashCount = ConstU64<250>;
+    type BlockHashCount = ConstU32<250>;
     type BlockLength = ();
-    type BlockNumber = u64;
+    type BlockNumber = u32;
     type BlockWeights = ();
     type Call = Call;
     type DbWeight = ();
