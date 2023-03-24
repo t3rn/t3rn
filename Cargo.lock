@@ -7330,6 +7330,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "substrate-abi",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
  "t3rn-types 0.0.1-rc.3",
