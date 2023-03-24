@@ -32,7 +32,7 @@ use t3rn_primitives::EscrowTrait;
 
 pub type AccountId = u64;
 type Balance = u64;
-type BlockNumber = u64;
+type BlockNumber = u32;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -53,7 +53,7 @@ construct_runtime!(
 );
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: u32 = 250;
     pub const MaximumBlockWeight: Weight = 1024;
     pub const MaximumBlockLength: u32 = 2 * 1024;
 }

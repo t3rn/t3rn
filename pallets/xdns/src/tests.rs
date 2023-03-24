@@ -23,7 +23,7 @@ use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
-use t3rn_primitives::{xdns::Xdns, GatewayType, GatewayVendor};
+use t3rn_primitives::{xdns::Xdns, GatewayVendor};
 
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 7;
 const STANDARD_SFX_ABI_COUNT: usize = 9;
@@ -51,7 +51,6 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(XDNS::add_new_gateway(
             *b"test",
-            Default::default(),
             GatewayVendor::Rococo,
             t3rn_abi::Codec::Scale,
             None,   // registrant
@@ -84,14 +83,13 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
             assert_noop!(
                 XDNS::add_new_gateway(
                     [3, 3, 3, 3],
-                    Default::default(),
                     GatewayVendor::Rococo,
                     t3rn_abi::Codec::Scale,
                     None,   // registrant
                     None,   // escrow_account
                     vec![], // allowed_side_effects
                 ),
-                pallet_xdns::pallet::Error::<Runtime>::XdnsRecordAlreadyExists
+                pallet_xdns::pallet::Error::<Runtime>::GatewayRecordAlreadyExists
             );
             assert_eq!(
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
@@ -101,7 +99,7 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
 }
 
 #[test]
-fn should_purge_a_xdns_record_successfully() {
+fn should_purge_a_gateway_record_successfully() {
     ExtBuilder::default()
         .with_standard_sfx_abi()
         .with_default_xdns_records()
@@ -111,7 +109,7 @@ fn should_purge_a_xdns_record_successfully() {
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT
             );
-            assert_ok!(XDNS::purge_xdns_record(
+            assert_ok!(XDNS::purge_gateway_record(
                 Origin::<Runtime>::Root.into(),
                 ALICE,
                 *b"gate"
@@ -196,30 +194,6 @@ fn should_error_when_trying_to_update_ttl_as_non_root() {
 }
 
 #[test]
-fn fetch_abi_should_return_abi_for_a_known_xdns_record() {
-    ExtBuilder::default()
-        .with_standard_sfx_abi()
-        .with_default_xdns_records()
-        .build()
-        .execute_with(|| {
-            let actual = XDNS::get_abi(*b"pdot");
-            assert_ok!(actual);
-        });
-}
-
-#[test]
-fn fetch_abi_should_error_for_unknown_xdns_record() {
-    ExtBuilder::default()
-        .with_standard_sfx_abi()
-        .with_default_xdns_records()
-        .build()
-        .execute_with(|| {
-            let actual = XDNS::get_abi(*b"rand");
-            assert_err!(actual, pallet_xdns::Error::<Runtime>::XdnsRecordNotFound);
-        });
-}
-
-#[test]
 fn gate_gateway_vendor_returns_error_for_unknown_record() {
     ExtBuilder::default()
         .with_default_xdns_records()
@@ -237,7 +211,7 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
         .build()
         .execute_with(|| {
             let actual = XDNS::get_verification_vendor(b"pdot");
-            assert_ok!(actual, GatewayVendor::Rococo);
+            assert_ok!(actual, GatewayVendor::Polkadot);
         });
 }
 

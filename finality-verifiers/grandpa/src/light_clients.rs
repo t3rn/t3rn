@@ -262,7 +262,6 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
     }
 
     fn get_latest_updated_height(&self) -> Result<Option<T::BlockNumber>, DispatchError> {
-        // todo: rework to use best_updated_map
         let header = Pallet::<T, I>::best_finalized_map();
         Ok(Some(to_local_block_number::<T, I>(*header.number())?))
     }
@@ -305,11 +304,6 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         gateway_id: [u8; 4],
         encoded_registration_data: Bytes,
     ) -> Result<(), DispatchError> {
-        println!(
-            "before ever init {:?}",
-            crate::EverInitialized::<T, I>::get()
-        );
-
         Pallet::<T, I>::initialize(origin, gateway_id, encoded_registration_data)
             .map_err(|str_err| str_err.into())
     }
@@ -408,7 +402,7 @@ pub mod grandpa_light_clients_test {
             let BLOCK_ZERO: T::BlockNumber = T::BlockNumber::from(0u8);
             let BLOCK_ONE: T::BlockNumber = T::BlockNumber::from(1u8);
 
-            frame_system::Pallet::<T>::set_block_number(T::BlockNumber::from(BLOCK_ONE));
+            frame_system::Pallet::<T>::set_block_number(BLOCK_ONE);
             let lc_instance = select_grandpa_light_client_instance::<T, I>(vendor).expect(
                 "GatewayVendor::Rococo must be covered by select_grandpa_light_client_instance",
             );

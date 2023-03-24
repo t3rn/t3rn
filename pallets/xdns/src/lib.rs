@@ -47,7 +47,7 @@ pub mod pallet {
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
-        xdns::{GatewayRecord, Parachain, TokenRecord, Xdns, XdnsRecord},
+        xdns::{GatewayRecord, TokenRecord, Xdns, XdnsRecord},
         Bytes, ChainId, GatewayType, GatewayVendor, TokenSysProps,
     };
     use t3rn_types::{
@@ -166,6 +166,23 @@ pub mod pallet {
 
         /// Removes a xdns_record from the onchain registry. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::purge_xdns_record())]
+        pub fn purge_gateway_record(
+            origin: OriginFor<T>,
+            requester: T::AccountId,
+            xdns_record_id: [u8; 4],
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            if !<Gateways<T>>::contains_key(xdns_record_id) {
+                Err(Error::<T>::UnknownXdnsRecord.into())
+            } else {
+                <Gateways<T>>::remove(xdns_record_id);
+                Self::deposit_event(Event::<T>::GatewayRecordPurged(requester, xdns_record_id));
+                Ok(().into())
+            }
+        }
+
+        /// Removes a xdns_record from the onchain registry. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::purge_xdns_record())]
         pub fn purge_xdns_record(
             origin: OriginFor<T>,
             requester: T::AccountId,
@@ -191,6 +208,8 @@ pub mod pallet {
         TokenRecordStored([u8; 4], [u8; 4]),
         /// \[xdns_record_id\]
         XdnsRecordStored([u8; 4]),
+        /// \[requester, gateway_record_id\]
+        GatewayRecordPurged(T::AccountId, [u8; 4]),
         /// \[requester, xdns_record_id\]
         XdnsRecordPurged(T::AccountId, [u8; 4]),
         /// \[xdns_record_id\]
@@ -260,6 +279,7 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub known_xdns_records: Vec<XdnsRecord<T::AccountId>>,
+        pub known_gateway_records: Vec<GatewayRecord<T::AccountId>>,
         pub standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     }
 
@@ -269,6 +289,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 known_xdns_records: Default::default(),
+                known_gateway_records: Default::default(),
                 standard_sfx_abi: Default::default(),
             }
         }
@@ -284,13 +305,15 @@ pub mod pallet {
                 <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
             }
 
-            for xdns_record in self.known_xdns_records.clone() {
-                <XDNSRegistry<T>>::insert(xdns_record.gateway_id, xdns_record.clone());
+            for gateway_record in self.known_gateway_records.clone() {
+                <Gateways<T>>::insert(gateway_record.gateway_id, gateway_record.clone());
                 // Populate standard side effect ABI registry
-                for sfx_4b_id in xdns_record.allowed_side_effects.iter() {
+                for (sfx_4b_id, memo_prefix) in gateway_record.allowed_side_effects.iter() {
                     match <StandardSFXABIs<T>>::get(sfx_4b_id) {
-                        Some(abi) =>
-                            <SFXABIRegistry<T>>::insert(xdns_record.gateway_id, sfx_4b_id, abi),
+                        Some(mut abi) => {
+                            abi.maybe_prefix_memo = *memo_prefix;
+                            <SFXABIRegistry<T>>::insert(gateway_record.gateway_id, sfx_4b_id, abi)
+                        },
                         None => log::error!(
                             "XDNS -- on-genesis: standard SFX ABI not found: {:?}",
                             sfx_4b_id
@@ -307,9 +330,13 @@ pub mod pallet {
             XDNSRegistry::<T>::iter_values().collect()
         }
 
+        /// Fetches all known Gateway records
+        fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>> {
+            Gateways::<T>::iter_values().collect()
+        }
+
         fn add_new_gateway(
             gateway_id: [u8; 4],
-            gateway_abi: GatewayABIConfig,
             verification_vendor: GatewayVendor,
             codec: Codec,
             registrant: Option<T::AccountId>,
@@ -323,7 +350,6 @@ pub mod pallet {
 
             Self::override_gateway(
                 gateway_id,
-                gateway_abi,
                 verification_vendor,
                 codec,
                 registrant,
@@ -334,7 +360,6 @@ pub mod pallet {
 
         fn override_gateway(
             gateway_id: [u8; 4],
-            gateway_abi: GatewayABIConfig,
             verification_vendor: GatewayVendor,
             codec: Codec,
             registrant: Option<T::AccountId>,
@@ -355,7 +380,6 @@ pub mod pallet {
                 gateway_id,
                 GatewayRecord {
                     gateway_id,
-                    gateway_abi,
                     verification_vendor,
                     codec,
                     registrant,
@@ -365,7 +389,7 @@ pub mod pallet {
             );
             Self::deposit_event(Event::<T>::GatewayRecordStored(gateway_id));
 
-            Ok(().into())
+            Ok(())
         }
 
         fn add_new_token(
@@ -395,7 +419,7 @@ pub mod pallet {
                 },
             );
             Self::deposit_event(Event::<T>::TokenRecordStored(token_id, gateway_id));
-            Ok(().into())
+            Ok(())
         }
 
         /// returns a mapping of all allowed side_effects of a gateway.
@@ -426,41 +450,33 @@ pub mod pallet {
             }
         }
 
-        // Fetches the GatewayABIConfig for a given XDNS record
-        fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, DispatchError> {
-            if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err(Error::<T>::XdnsRecordNotFound.into())
-            }
-            Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi) //safe because checked
-        }
-
         /// returns the gateway vendor of a gateway if its available
         fn get_verification_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
-            match <XDNSRegistry<T>>::get(chain_id) {
-                Some(rec) => Ok(rec.gateway_vendor),
+            match <Gateways<T>>::get(chain_id) {
+                Some(rec) => Ok(rec.verification_vendor),
                 None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
         }
 
-        fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
-            match <XDNSRegistry<T>>::get(chain_id) {
-                Some(rec) => Ok(rec.security_coordinates),
+        fn get_escrow_account(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
+            match <Gateways<T>>::get(chain_id) {
+                Some(rec) => Ok(rec.escrow_account.encode()),
                 None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
         }
 
-        fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, DispatchError> {
-            match <XDNSRegistry<T>>::get(chain_id) {
-                Some(rec) => match rec.parachain {
-                    Some(entry) => Ok(entry.id),
-                    None => Err(Error::<T>::NoParachainInfoFound.into()),
-                },
-                None => Err(Error::<T>::XdnsRecordNotFound.into()),
-            }
-        }
-
+        // todo: this must be removed and functionality replaced
         fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
-            <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
+            if chain_id == &[3u8; 4] {
+                return GatewayType::OnCircuit(0)
+            }
+            match <Gateways<T>>::get(chain_id) {
+                Some(rec) => match rec.escrow_account {
+                    Some(_) => GatewayType::ProgrammableExternal(0),
+                    None => GatewayType::TxOnly(0),
+                },
+                None => panic!("Gateway record not found"),
+            }
         }
 
         fn extend_sfx_abi(
