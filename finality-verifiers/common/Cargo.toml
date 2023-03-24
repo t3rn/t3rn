@@ -8,15 +8,6 @@ name       = "t3rn-light-client-commons"
 repository = "https://github.com/t3rn/t3rn/"
 version    = "1.5.0-rc.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-
-#// use codec::{Decode, Encode};
-#use frame_system::pallet_prelude::OriginFor;
-#use scale_info::TypeInfo;
-#use sp_runtime::DispatchError;
-#
-#use t3rn_abi::types::Bytes;
 [dependencies]
 codec            = { package = "parity-scale-codec", version = "3", default-features = false }
 scale-info       = { version = "2", default-features = false, features = [ "derive" ] }
@@ -30,7 +21,6 @@ sp-core             = { git = "https://github.com/paritytech/substrate", branch 
 sp-runtime          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 sp-std              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 
-# These are the testing dependencies that we are now selecting via future flag
 t3rn-abi        = { path = "../../types/abi", features = ["runtime"], default-features = false }
 
 [features]
