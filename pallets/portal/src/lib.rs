@@ -9,11 +9,13 @@ use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
 #[cfg(test)]
 mod tests;
 
-use sp_std::vec::Vec;
-use t3rn_abi::types::Bytes;
-use t3rn_primitives::{
-    light_client::LightClient, portal::Portal, xdns::Xdns, ChainId, GatewayVendor,
+use pallet_grandpa_finality_verifier::light_clients::{
+    select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
+    RococoInstance,
 };
+
+use t3rn_abi::types::Bytes;
+use t3rn_primitives::{self, portal::Portal, xdns::Xdns, ChainId, GatewayVendor};
 
 pub mod weights;
 
@@ -23,21 +25,21 @@ pub mod pallet {
     use core::convert::TryInto;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use sp_std::{vec, vec::Vec};
-    use t3rn_primitives::{
-        gateway::GatewayABIConfig, xdns::Xdns, ChainId, GatewayGenesisConfig, GatewayType,
-        GatewayVendor, TokenSysProps,
-    };
-    use t3rn_types::sfx::Sfx4bId;
+
+    use sp_std::vec::Vec;
+    use t3rn_primitives::{xdns::Xdns, ChainId, GatewayVendor};
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config:
+        frame_system::Config
+        + pallet_grandpa_finality_verifier::Config<RococoInstance>
+        + pallet_grandpa_finality_verifier::Config<KusamaInstance>
+        + pallet_grandpa_finality_verifier::Config<PolkadotInstance>
+    {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
-        type LightClients: Get<Vec<(GatewayVendor, Box<dyn LightClient<Self>>)>>;
-
+        /// Access to XDNS pallet
         type Xdns: Xdns<Self>;
         /// Type representing the weight of this pallet
         type WeightInfo: crate::weights::WeightInfo;
@@ -70,6 +72,8 @@ pub mod pallet {
         XdnsRecordCreationFailed,
         ///Specified Vendor is not implemented
         UnimplementedGatewayVendor,
+        /// The light client could not be found
+        LightClientNotFoundByVendor,
         /// Gateway registration failed
         RegistrationError,
         /// The gateways vendor is not available, which is a result of a missing XDNS record.
@@ -128,13 +132,19 @@ pub fn match_light_client_by_gateway_id<T: Config>(
 pub fn match_light_client_by_vendor<T: Config>(
     vendor: GatewayVendor,
 ) -> Result<Box<dyn LightClient<T>>, Error<T>> {
-    let light_clients = <T as Config>::LightClients::get();
-    let light_client = light_clients
-        .into_iter()
-        .find(|(v, _)| *v == vendor)
-        .map(|(_, lc)| lc)
-        .ok_or(Error::<T>::UnimplementedGatewayVendor)?;
-    Ok(light_client)
+    match vendor {
+        GatewayVendor::Rococo => select_grandpa_light_client_instance::<T, RococoInstance>(vendor)
+            .ok_or(Error::<T>::LightClientNotFoundByVendor)
+            .map(|lc| Box::new(lc) as Box<dyn LightClient<T>>),
+        GatewayVendor::Kusama => select_grandpa_light_client_instance::<T, KusamaInstance>(vendor)
+            .ok_or(Error::<T>::LightClientNotFoundByVendor)
+            .map(|lc| Box::new(lc) as Box<dyn LightClient<T>>),
+        GatewayVendor::Polkadot =>
+            select_grandpa_light_client_instance::<T, PolkadotInstance>(vendor)
+                .ok_or(Error::<T>::LightClientNotFoundByVendor)
+                .map(|lc| Box::new(lc) as Box<dyn LightClient<T>>),
+        _ => Err(Error::<T>::UnimplementedGatewayVendor),
+    }
 }
 
 impl<T: Config> Portal<T> for Pallet<T> {
