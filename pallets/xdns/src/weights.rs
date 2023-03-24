@@ -37,7 +37,7 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_xdns.
 pub trait WeightInfo {
-    fn add_new_xdns_record() -> Weight;
+    fn add_new_gateway() -> Weight;
     fn update_ttl() -> Weight;
     fn purge_xdns_record() -> Weight;
     fn best_available() -> Weight;
@@ -46,7 +46,7 @@ pub trait WeightInfo {
 /// Weights for pallet_xdns using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-    fn add_new_xdns_record() -> Weight {
+    fn add_new_gateway() -> Weight {
         72_795_000_u64
             .saturating_add(T::DbWeight::get().reads(2_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
@@ -71,7 +71,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-    fn add_new_xdns_record() -> Weight {
+    fn add_new_gateway() -> Weight {
         72_795_000_u64
             .saturating_add(RocksDbWeight::get().reads(2_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
