@@ -44,12 +44,12 @@ use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 use sp_std::convert::TryInto;
 
 use finality_grandpa::voter_set::VoterSet;
-use frame_support::{ensure, pallet_prelude::*, traits::Instance, StorageHasher};
+use frame_support::{ensure, pallet_prelude::*, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
 use num_traits::cast::AsPrimitive;
 use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
-use sp_runtime::traits::{BadOrigin, Header as HeaderT, Header, Zero};
+use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::{vec, vec::Vec};
 
 mod types;
@@ -84,11 +84,11 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
-pub fn to_local_block_number<T: Config<I>, I: Instance>(
+pub fn to_local_block_number<T: Config<I>, I: 'static>(
     block_number: BridgedBlockNumber<T, I>,
 ) -> Result<T::BlockNumber, DispatchError> {
     let local_block_number: T::BlockNumber = Decode::decode(&mut block_number.encode().as_slice())
-        .map_err(|e| {
+        .map_err(|_e| {
             DispatchError::Other(
                 "LightClient::Grandpa - failed to decode block number from bridged header",
             )
@@ -96,15 +96,11 @@ pub fn to_local_block_number<T: Config<I>, I: Instance>(
     Ok(local_block_number)
 }
 
-use crate::{
-    side_effects::decode_event,
-    types::{
-        GrandpaHeaderData, ParachainInclusionProof, ParachainRegistrationData,
-        RelaychainInclusionProof, RelaychainRegistrationData,
-    },
+use crate::types::{
+    GrandpaHeaderData, ParachainInclusionProof, ParachainRegistrationData,
+    RelaychainInclusionProof, RelaychainRegistrationData,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::Digest;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -138,7 +134,7 @@ pub mod pallet {
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
-    pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
+    pub struct Pallet<T, I = ()>(pub PhantomData<(T, I)>);
 
     #[pallet::hooks]
     impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
@@ -199,7 +195,14 @@ pub mod pallet {
 
     /// If true, all pallet transactions are failed immediately.
     #[pallet::storage]
+    #[pallet::getter(fn is_halted)]
     pub(super) type IsHalted<T: Config<I>, I: 'static = ()> = StorageValue<_, bool, ValueQuery>;
+
+    /// If true, all pallet transactions are failed immediately.
+    #[pallet::storage]
+    #[pallet::getter(fn ever_initialized)]
+    pub(super) type EverInitialized<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, bool, ValueQuery>;
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
@@ -447,9 +450,17 @@ pub mod pallet {
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySet<T, I>>::put(authority_set);
 
+        println!("Initialized relay chain with hash {initial_hash:?}");
+
         // Other configs
         <IsHalted<T, I>>::put(is_halted);
+        <EverInitialized<T, I>>::put(true);
         <PalletOwner<T, I>>::put(owner);
+
+        println!(
+            "Initialized relay EverInitialized {:?}",
+            <EverInitialized<T, I>>::get()
+        );
 
         Ok(())
     }
@@ -478,6 +489,10 @@ pub mod pallet {
         }
 
         *buffer_index = (*buffer_index + 1) % T::HeadersToStore::get(); // prevents overflows
+        println!(
+            "write_and_clean_header_data -- buffer index: {}",
+            *buffer_index
+        );
         Ok(())
     }
 
@@ -531,7 +546,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     }
 
     pub fn initialize(
-        origin: T::Origin,
+        origin: OriginFor<T>,
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
@@ -552,7 +567,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
                 <ParachainIdMap<T, I>>::insert(gateway_id, parachain_registration_data);
 
-                return Ok(())
+                Ok(())
             },
             None => {
                 // register relaychain
@@ -588,8 +603,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ///
     /// May only be called either by root, or by `PalletOwner`.
     pub fn set_owner(
-        origin: T::Origin,
-        gateway_id: ChainId,
+        origin: OriginFor<T>,
+        _gateway_id: ChainId,
         encoded_new_owner: Vec<u8>,
     ) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin)?;
@@ -613,7 +628,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     /// Halt or resume all pallet operations.
     ///
     /// May only be called either by root, or by `PalletOwner`.
-    pub fn set_operational(origin: T::Origin, operational: bool) -> Result<(), &'static str> {
+    pub fn set_operational(origin: OriginFor<T>, operational: bool) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin)?;
         <IsHalted<T, I>>::put(!operational); // inverted because operational vs halted are opposite
         Ok(())
@@ -670,14 +685,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         verify_event_storage_proof::<T, I>(payload_proof, header, encoded_payload)
     }
 
-    pub fn get_latest_finalized_header(_gateway_id: ChainId) -> Option<Vec<u8>> {
+    pub fn get_latest_finalized_header() -> Option<Vec<u8>> {
         if let Some(header_hash) = <BestFinalizedHash<T, I>>::get() {
             return Some(header_hash.encode())
         }
         None
     }
 
-    pub fn get_latest_finalized_height(_gateway_id: ChainId) -> Option<Vec<u8>> {
+    pub fn get_latest_finalized_height() -> Option<Vec<u8>> {
         if let Some(header_hash) = <BestFinalizedHash<T, I>>::get() {
             if let Some(header) = <ImportedHeaders<T, I>>::get(header_hash) {
                 return Some(header.number().encode())
@@ -738,7 +753,7 @@ pub(crate) fn find_scheduled_change<H: HeaderT>(
 
 /// Ensure that the origin is either root, or `PalletOwner`.
 fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
-    origin: T::Origin,
+    origin: OriginFor<T>,
 ) -> Result<(), &'static str> {
     match origin.into() {
         Ok(RawOrigin::Root) => Ok(()),
@@ -812,10 +827,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     // the problem here is that in substrates current design its not possible to prove the inclusion of a single event, only all events of a block
     // https://github.com/paritytech/substrate/issues/11216
     ensure!(
-        is_sub(
-            verified_block_events.as_slice(),
-            &encoded_payload.as_slice()
-        ),
+        is_sub(verified_block_events.as_slice(), encoded_payload.as_slice()),
         Error::<T, I>::EventNotIncluded
     );
 
@@ -978,20 +990,22 @@ mod tests {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn submit_headers(from: u8, to: u8) -> Result<GrandpaHeaderData<TestHeader>, &'static str> {
+    pub fn produce_mock_headers_range(from: u8, to: u8) -> GrandpaHeaderData<TestHeader> {
         let headers: Vec<TestHeader> = test_header_range(to.into());
         let signed_header: &TestHeader = headers.last().unwrap();
         let justification = make_default_justification(&signed_header.clone());
         let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec();
 
-        let data = GrandpaHeaderData::<TestHeader> {
+        GrandpaHeaderData::<TestHeader> {
             signed_header: signed_header.clone(),
             range,
             justification,
-        };
+        }
+    }
 
+    pub fn submit_headers(from: u8, to: u8) -> Result<GrandpaHeaderData<TestHeader>, &'static str> {
+        let data = produce_mock_headers_range(from, to);
         Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode())?;
-
         Ok(data)
     }
 
@@ -1005,7 +1019,7 @@ mod tests {
         >>::on_initialize(current_number);
     }
 
-    fn change_log(delay: u64) -> Digest {
+    fn change_log(delay: u32) -> Digest {
         let consensus_log =
             ConsensusLog::<TestNumber>::ScheduledChange(sp_finality_grandpa::ScheduledChange {
                 next_authorities: vec![(ALICE.into(), 1), (BOB.into(), 1)],
@@ -1020,7 +1034,7 @@ mod tests {
         }
     }
 
-    fn forced_change_log(delay: u64) -> Digest {
+    fn forced_change_log(delay: u32) -> Digest {
         let consensus_log = ConsensusLog::<TestNumber>::ForcedChange(
             delay,
             sp_finality_grandpa::ScheduledChange {
@@ -1159,7 +1173,6 @@ mod tests {
             assert_ok!(Pallet::<TestRuntime>::set_operational(
                 Origin::root(),
                 false,
-                default_gateway
             ));
 
             let owner: Option<AccountId> = None;
@@ -1589,7 +1602,7 @@ mod tests {
     fn should_prune_headers_over_headers_to_keep_parameter() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
-            let headers = test_header_range(111u64);
+            let headers = test_header_range(111);
 
             //°°°°°°°°°°°ACHTUNG!!!°°°°°°°°°°°°
             assert_ok!(submit_headers(1, 5));

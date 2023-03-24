@@ -121,20 +121,21 @@ pub mod tests {
     use codec::Encode;
     use frame_support::parameter_types;
     use sp_std::convert::{TryFrom, TryInto};
-    // use crate::TestRuntime;
 
     use hex_literal::hex;
     use sp_runtime::{
-        testing::{Header, H256},
-        traits::{BlakeTwo256, IdentityLookup},
+        generic,
+        testing::H256,
+        traits::{BlakeTwo256, ConstU32, IdentityLookup},
         AccountId32,
     };
 
-    use crate::{decode_event, side_effects::*};
+    use crate::side_effects::{decode_event, *};
 
     type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
     type Block = frame_system::mocking::MockBlock<TestRuntime>;
     type Balance = u64;
+    type Header = generic::Header<u32, BlakeTwo256>;
 
     frame_support::construct_runtime!(
         pub enum TestRuntime where
@@ -148,20 +149,24 @@ pub mod tests {
     );
 
     parameter_types! {
-        pub const BlockHashCount: u64 = 250;
+        pub const BlockHashCount: u32 = 250;
         pub BlockWeights: frame_system::limits::BlockWeights =
             frame_system::limits::BlockWeights::simple_max(1024);
     }
 
     parameter_types! {
         pub const HeadersToStore: u32 = 5;
-        pub const SessionLength: u64 = 5;
+        pub const SessionLength: u32 = 5;
         pub const NumValidators: u32 = 5;
     }
 
     impl Config for TestRuntime {
         type BridgedChain = TestCircuitLikeChain;
+        type EpochOffset = ConstU32<2_400u32>;
+        type FastConfirmationOffset = ConstU32<3u32>;
+        type FinalizedConfirmationOffset = ConstU32<10u32>;
         type HeadersToStore = HeadersToStore;
+        type RationalConfirmationOffset = ConstU32<10u32>;
         type WeightInfo = ();
     }
 
@@ -181,7 +186,7 @@ pub mod tests {
         type BaseCallFilter = frame_support::traits::Everything;
         type BlockHashCount = BlockHashCount;
         type BlockLength = ();
-        type BlockNumber = u64;
+        type BlockNumber = u32;
         type BlockWeights = ();
         type Call = Call;
         type DbWeight = ();

@@ -19,10 +19,13 @@
 
 use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
 use sp_runtime::{
-    testing::{Header, H256},
-    traits::{BlakeTwo256, IdentityLookup},
+    generic,
+    testing::H256,
+    traits::{BlakeTwo256, ConstU32, IdentityLookup},
     Perbill,
 };
+
+type Header = generic::Header<u32, BlakeTwo256>;
 use sp_std::convert::{TryFrom, TryInto};
 
 use crate::bridges::runtime::Chain;
@@ -33,7 +36,10 @@ pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
-use crate::{BestFinalizedHash, Config, ImportedHeaders};
+use crate::{
+    light_clients::{KusamaInstance, PolkadotInstance, RococoInstance},
+    BestFinalizedHash, Config, ImportedHeaders,
+};
 
 construct_runtime! {
     pub enum TestRuntime where
@@ -42,7 +48,9 @@ construct_runtime! {
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        GrandpaFinalityVerifier: crate::{Pallet, Storage},
+        GrandpaFinalityVerifier: crate,
+        PolkadotBridge: crate::<Instance1>,
+        KusamaBridge: crate::<Instance2>,
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -50,7 +58,7 @@ construct_runtime! {
 }
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: u32 = 250;
     pub const MaximumBlockWeight: Weight = 1024;
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
@@ -62,7 +70,7 @@ impl frame_system::Config for TestRuntime {
     type BaseCallFilter = Everything;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type BlockNumber = u64;
+    type BlockNumber = u32;
     type BlockWeights = ();
     type Call = Call;
     type DbWeight = ();
@@ -123,9 +131,32 @@ impl pallet_balances::Config for TestRuntime {
     type WeightInfo = ();
 }
 
-impl Config for TestRuntime {
+impl Config<RococoInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type WeightInfo = ();
+}
+
+impl Config<KusamaInstance> for TestRuntime {
+    type BridgedChain = TestCircuitLikeChain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type WeightInfo = ();
+}
+impl Config<PolkadotInstance> for TestRuntime {
+    type BridgedChain = TestCircuitLikeChain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
 
@@ -155,7 +186,7 @@ pub fn test_header_with_correct_parent(num: TestNumber, parent_hash: Option<H256
 }
 
 #[cfg(all(feature = "testing", test))]
-pub fn test_header_range(to: u64) -> Vec<TestHeader> {
+pub fn test_header_range(to: u32) -> Vec<TestHeader> {
     let mut headers: Vec<TestHeader> = vec![];
     let mut parent_hash = None;
     for (i, block) in (0..=to).enumerate() {
@@ -167,10 +198,10 @@ pub fn test_header_range(to: u64) -> Vec<TestHeader> {
 }
 
 #[cfg(feature = "testing")]
-pub fn brute_seed_block_1(gateway_id: [u8; 4]) {
+pub fn brute_seed_block_1(_gateway_id: [u8; 4]) {
     // Brute update storage of MFV::MultiImportedHeaders to blockA = 1 and BestAvailable -> blockA
 
-    let header_1 = crate::bridges::test_utils::test_header::<TestHeader>(1u64);
+    let header_1 = crate::bridges::test_utils::test_header::<TestHeader>(1);
     let block_hash_1 = header_1.hash();
 
     <ImportedHeaders<TestRuntime>>::insert::<H256, TestHeader>(block_hash_1, header_1);
