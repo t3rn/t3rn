@@ -19,6 +19,10 @@ use t3rn_primitives::{self, portal::Portal, xdns::Xdns, ChainId, GatewayVendor};
 
 pub mod weights;
 
+pub trait SelectLightClient<T: frame_system::Config> {
+    fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -31,18 +35,15 @@ pub mod pallet {
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
-    pub trait Config:
-        frame_system::Config
-        + pallet_grandpa_finality_verifier::Config<RococoInstance>
-        + pallet_grandpa_finality_verifier::Config<KusamaInstance>
-        + pallet_grandpa_finality_verifier::Config<PolkadotInstance>
-    {
+    pub trait Config: frame_system::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// Access to XDNS pallet
         type Xdns: Xdns<Self>;
         /// Type representing the weight of this pallet
         type WeightInfo: crate::weights::WeightInfo;
+
+        type SelectLightClient: SelectLightClient<Self>;
     }
 
     #[pallet::pallet]
@@ -126,25 +127,7 @@ pub fn match_light_client_by_gateway_id<T: Config>(
 ) -> Result<Box<dyn LightClient<T>>, Error<T>> {
     let vendor = <T as Config>::Xdns::get_verification_vendor(&gateway_id)
         .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
-    match_light_client_by_vendor(vendor)
-}
-
-pub fn match_light_client_by_vendor<T: Config>(
-    vendor: GatewayVendor,
-) -> Result<Box<dyn LightClient<T>>, Error<T>> {
-    match vendor {
-        GatewayVendor::Rococo => select_grandpa_light_client_instance::<T, RococoInstance>(vendor)
-            .ok_or(Error::<T>::LightClientNotFoundByVendor)
-            .map(|lc| Box::new(lc) as Box<dyn LightClient<T>>),
-        GatewayVendor::Kusama => select_grandpa_light_client_instance::<T, KusamaInstance>(vendor)
-            .ok_or(Error::<T>::LightClientNotFoundByVendor)
-            .map(|lc| Box::new(lc) as Box<dyn LightClient<T>>),
-        GatewayVendor::Polkadot =>
-            select_grandpa_light_client_instance::<T, PolkadotInstance>(vendor)
-                .ok_or(Error::<T>::LightClientNotFoundByVendor)
-                .map(|lc| Box::new(lc) as Box<dyn LightClient<T>>),
-        _ => Err(Error::<T>::UnimplementedGatewayVendor),
-    }
+    T::SelectLightClient::select(vendor)
 }
 
 impl<T: Config> Portal<T> for Pallet<T> {
