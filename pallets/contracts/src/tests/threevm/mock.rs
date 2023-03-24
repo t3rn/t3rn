@@ -1,6 +1,9 @@
 mod threevm_mock {
     use crate::tests::*;
     use frame_support::parameter_types;
+    use pallet_grandpa_finality_verifier::light_clients::{
+        KusamaInstance, PolkadotInstance, RococoInstance,
+    };
     use sp_runtime::traits::{BlakeTwo256, ConvertInto};
 
     parameter_types! {
@@ -119,10 +122,6 @@ mod threevm_mock {
     #[derive(Debug)]
     pub struct Blake2ValU32Chain;
 
-    pub type RococoLightClient = ();
-    pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
-    pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
-
     impl pallet_grandpa_finality_verifier::bridges::runtime::Chain for Blake2ValU32Chain {
         type BlockNumber = u32;
         type Hash = H256;
@@ -130,21 +129,33 @@ mod threevm_mock {
         type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
     }
 
-    impl pallet_grandpa_finality_verifier::Config<RococoLightClient> for Test {
+    impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Test {
         type BridgedChain = Blake2ValU32Chain;
+        type EpochOffset = ConstU32<2_400u32>;
+        type FastConfirmationOffset = ConstU32<3u32>;
+        type FinalizedConfirmationOffset = ConstU32<10u32>;
         type HeadersToStore = HeadersToStore;
+        type RationalConfirmationOffset = ConstU32<10u32>;
         type WeightInfo = ();
     }
 
-    impl pallet_grandpa_finality_verifier::Config<PolkadotLightClient> for Test {
+    impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Test {
         type BridgedChain = Blake2ValU32Chain;
+        type EpochOffset = ConstU32<2_400u32>;
+        type FastConfirmationOffset = ConstU32<3u32>;
+        type FinalizedConfirmationOffset = ConstU32<10u32>;
         type HeadersToStore = HeadersToStore;
+        type RationalConfirmationOffset = ConstU32<10u32>;
         type WeightInfo = ();
     }
 
-    impl pallet_grandpa_finality_verifier::Config<KusamaLightClient> for Test {
+    impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Test {
         type BridgedChain = Blake2ValU32Chain;
+        type EpochOffset = ConstU32<2_400u32>;
+        type FastConfirmationOffset = ConstU32<3u32>;
+        type FinalizedConfirmationOffset = ConstU32<10u32>;
         type HeadersToStore = HeadersToStore;
+        type RationalConfirmationOffset = ConstU32<10u32>;
         type WeightInfo = ();
     }
 
