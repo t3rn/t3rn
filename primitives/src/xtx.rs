@@ -156,7 +156,7 @@ impl<
 mod tests {
     use super::*;
 
-    type BlockNumber = u64;
+    type BlockNumber = u32;
     type BalanceOf = u64;
     type AccountId = u64;
     type Hashing = sp_runtime::traits::BlakeTwo256;
@@ -221,7 +221,7 @@ mod tests {
                 input: input_side_effect_1.clone(),
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 0,
             }]],
@@ -246,7 +246,7 @@ mod tests {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 0
             }
@@ -309,7 +309,7 @@ mod tests {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    submission_target_height: 1,
                     best_bid: None,
                     index: 0,
                 },
@@ -317,7 +317,7 @@ mod tests {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    submission_target_height: 1,
                     best_bid: None,
                     index: 1,
                 },
@@ -341,7 +341,7 @@ mod tests {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 0
             }
@@ -354,7 +354,7 @@ mod tests {
                 input: input_side_effect_2.clone(),
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 1
             }
@@ -380,7 +380,7 @@ mod tests {
                 input: input_side_effect_2,
                 confirmed: Some(completing_side_effect_2),
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 1
             }
@@ -443,7 +443,7 @@ mod tests {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    submission_target_height: 1,
                     best_bid: None,
                     index: 0,
                 }],
@@ -451,7 +451,7 @@ mod tests {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    submission_target_height: 1,
                     best_bid: None,
                     index: 1,
                 }],
@@ -475,7 +475,7 @@ mod tests {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 0
             }
@@ -488,7 +488,7 @@ mod tests {
                 input: input_side_effect_2.clone(),
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 1
             }
@@ -512,7 +512,7 @@ mod tests {
                 input: input_side_effect_2,
                 confirmed: Some(completing_side_effect_2),
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 1
             }
@@ -575,7 +575,7 @@ mod tests {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    submission_target_height: 1,
                     best_bid: None,
                     index: 0,
                 }],
@@ -583,7 +583,7 @@ mod tests {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                    submission_target_height: 1,
                     best_bid: None,
                     index: 1,
                 }],
@@ -606,7 +606,7 @@ mod tests {
                 input: input_side_effect_1,
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 0
             }
@@ -618,7 +618,7 @@ mod tests {
                 input: input_side_effect_2,
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                submission_target_height: 1,
                 best_bid: None,
                 index: 1
             }
