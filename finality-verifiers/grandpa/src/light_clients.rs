@@ -433,7 +433,6 @@ pub mod grandpa_light_clients_test {
 
             let latest_finalized = lc_instance.get_latest_finalized_header().unwrap();
 
-            println!("DDEEDD latest finalized: {:?}", latest_finalized);
             assert_eq!(
                 latest_finalized,
                 Some(
@@ -629,14 +628,12 @@ pub mod grandpa_light_clients_test {
 
             let heartbeat = rococo_light_client.get_latest_heartbeat().unwrap();
 
-            println!("heartbeat: {:?}", heartbeat);
             assert_eq!(heartbeat.is_halted, false);
 
             Pallet::<TestRuntime, ()>::set_operational(Origin::root(), false);
 
             let heartbeat = rococo_light_client.get_latest_heartbeat().unwrap();
 
-            println!("heartbeat2: {:?}", heartbeat);
             assert_eq!(heartbeat.is_halted, true);
         });
     }

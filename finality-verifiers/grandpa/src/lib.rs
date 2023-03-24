@@ -450,17 +450,10 @@ pub mod pallet {
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySet<T, I>>::put(authority_set);
 
-        println!("Initialized relay chain with hash {initial_hash:?}");
-
         // Other configs
         <IsHalted<T, I>>::put(is_halted);
         <EverInitialized<T, I>>::put(true);
         <PalletOwner<T, I>>::put(owner);
-
-        println!(
-            "Initialized relay EverInitialized {:?}",
-            <EverInitialized<T, I>>::get()
-        );
 
         Ok(())
     }
@@ -489,10 +482,6 @@ pub mod pallet {
         }
 
         *buffer_index = (*buffer_index + 1) % T::HeadersToStore::get(); // prevents overflows
-        println!(
-            "write_and_clean_header_data -- buffer index: {}",
-            *buffer_index
-        );
         Ok(())
     }
 
