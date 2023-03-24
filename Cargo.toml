@@ -38,6 +38,7 @@ members = [
   'types',
   'types/abi',
   'finality-verifiers/grandpa',
+  'finality-verifiers/common',
 ]
 
 [patch."https://github.com/t3rn/t3rn"]
