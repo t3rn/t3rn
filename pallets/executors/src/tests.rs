@@ -7,7 +7,9 @@ use crate::{
     },
 };
 
-use circuit_mock_runtime::test_utils::generate_xtx_id;
+use circuit_mock_runtime::test_utils::{
+    generate_xtx_id, produce_and_validate_side_effect, ArgVariant,
+};
 // Import them here >.>
 use circuit_runtime_pallets::pallet_executors::{
     stakes::Stakes,
@@ -19,7 +21,6 @@ use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, traits::Currency};
 use pallet_circuit::{bridges::polkadot_core::Hashing, SideEffect};
 use sp_runtime::{AccountId32, Percent};
-use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, ValueMorphism};
 use t3rn_primitives::{
     common::{OrderedSet, Range, DEFAULT_ROUND_TERM},
     executors::{
@@ -33,8 +34,6 @@ use xp_channel::{XbiFormat, XbiMetadata};
 use xp_format::{Fees, XbiInstruction};
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
-pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
-pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
 pub const FIRST_REQUESTER_NONCE: u32 = 0;
 
 /*
@@ -2809,5 +2808,256 @@ fn check_proper_conversion_from_sfx_2_xbi_for_tran() {
                 metadata,
             }
         );
+    });
+}
+
+#[test]
+fn check_proper_conversion_from_sfx_to_xbi_for_aliq() {
+    new_test_ext().execute_with(|| {
+        let origin = Origin::signed(ALICE);
+
+        let se =
+            produce_and_validate_side_effect(*b"aliq", 0, 1, t3rn_abi::Codec::Scale, ArgVariant::A);
+
+        let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+        let executor = ensure_signed(origin.clone()).unwrap();
+        let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
+
+        let nonce_always_0_because_we_use_seed = 0;
+        let bypass_most_metadata_checks_default_para_id = Default::default();
+
+        let sfx_id = se.generate_id::<Hashing>(xtx_id.as_ref(), 0u32);
+
+        let max_exec_cost = 10;
+        let max_notifications_cost = 20;
+        let metadata = XbiMetadata::new(
+            bypass_most_metadata_checks_default_para_id,
+            bypass_most_metadata_checks_default_para_id,
+            Default::default(),
+            Fees::new(None, Some(max_exec_cost), Some(max_notifications_cost)),
+            Some(account_to_32),
+            nonce_always_0_because_we_use_seed,
+            Some(&sfx_id.encode()),
+        );
+
+        let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
+            .try_into()
+            .unwrap();
+        println!("{:?}", xbi);
+
+        assert_eq!(
+            xbi,
+            XbiFormat {
+                instr: XbiInstruction::AddLiquidity {
+                    asset_a: 1,
+                    asset_b: 151587081,
+                    amount_a: 12009965891327239886942633203474172169,
+                    amount_b_max_limit: 1,
+                },
+                metadata,
+            }
+        );
+    });
+}
+
+#[test]
+fn check_proper_conversion_from_sfx_to_xbi_for_swap() {
+    new_test_ext().execute_with(|| {
+        let origin = Origin::signed(ALICE);
+
+        let se =
+            produce_and_validate_side_effect(*b"swap", 1, 1, t3rn_abi::Codec::Scale, ArgVariant::A);
+
+        let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+        let executor = ensure_signed(origin.clone()).unwrap();
+        let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
+
+        let nonce_always_0_because_we_use_seed = 0;
+        let bypass_most_metadata_checks_default_para_id = Default::default();
+
+        let sfx_id = se.generate_id::<Hashing>(xtx_id.as_ref(), 0u32);
+
+        let max_exec_cost = 10;
+        let max_notifications_cost = 20;
+        let metadata = XbiMetadata::new(
+            bypass_most_metadata_checks_default_para_id,
+            bypass_most_metadata_checks_default_para_id,
+            Default::default(),
+            Fees::new(None, Some(max_exec_cost), Some(max_notifications_cost)),
+            Some(account_to_32),
+            nonce_always_0_because_we_use_seed,
+            Some(&sfx_id.encode()),
+        );
+
+        let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
+            .try_into()
+            .unwrap();
+        println!("{:?}", xbi);
+
+        assert_eq!(
+            xbi,
+            XbiFormat {
+                instr: XbiInstruction::Swap {
+                    asset_out: 151587081,
+                    asset_in: 151587081,
+                    amount: 1,
+                    max_limit: 1,
+                    discount: Default::default()
+                },
+                metadata,
+            }
+        );
+    });
+}
+
+#[test]
+fn check_proper_conversion_from_sfx_to_xbi_for_cevm() {
+    new_test_ext().execute_with(|| {
+        let origin = Origin::signed(ALICE);
+
+        let se =
+            produce_and_validate_side_effect(*b"cevm", 1, 1, t3rn_abi::Codec::Rlp, ArgVariant::A);
+        println!("{:?}", se);
+
+        let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+        let executor = ensure_signed(origin.clone()).unwrap();
+        let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
+
+        let nonce_always_0_because_we_use_seed = 0;
+        let bypass_most_metadata_checks_default_para_id = Default::default();
+
+        let sfx_id = se.generate_id::<Hashing>(xtx_id.as_ref(), 0u32);
+
+        let max_exec_cost = 10;
+        let max_notifications_cost = 20;
+        let metadata = XbiMetadata::new(
+            bypass_most_metadata_checks_default_para_id,
+            bypass_most_metadata_checks_default_para_id,
+            Default::default(),
+            Fees::new(None, Some(max_exec_cost), Some(max_notifications_cost)),
+            Some(account_to_32),
+            nonce_always_0_because_we_use_seed,
+            Some(&sfx_id.encode()),
+        );
+
+        let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
+            .try_into()
+            .unwrap();
+
+        println!("{:?}", xbi);
+
+        // assert_eq!(
+        //     xbi,
+        //     XbiFormat {
+        //         instr: XbiInstruction::T {
+        //             asset_out: 151587081,
+        //             asset_in: 151587081,
+        //             amount: 1,
+        //             max_limit: 1,
+        //             discount: Default::default()
+        //         },
+        //         metadata,
+        //     }
+        // );
+    });
+}
+
+#[test]
+fn check_proper_conversion_from_sfx_to_xbi_for_wasm() {
+    new_test_ext().execute_with(|| {
+        let origin = Origin::signed(ALICE);
+
+        let se =
+            produce_and_validate_side_effect(*b"wasm", 1, 1, t3rn_abi::Codec::Scale, ArgVariant::A);
+
+        let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+        let executor = ensure_signed(origin.clone()).unwrap();
+        let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
+
+        let nonce_always_0_because_we_use_seed = 0;
+        let bypass_most_metadata_checks_default_para_id = Default::default();
+
+        let sfx_id = se.generate_id::<Hashing>(xtx_id.as_ref(), 0u32);
+
+        let max_exec_cost = 10;
+        let max_notifications_cost = 20;
+        let metadata = XbiMetadata::new(
+            bypass_most_metadata_checks_default_para_id,
+            bypass_most_metadata_checks_default_para_id,
+            Default::default(),
+            Fees::new(None, Some(max_exec_cost), Some(max_notifications_cost)),
+            Some(account_to_32),
+            nonce_always_0_because_we_use_seed,
+            Some(&sfx_id.encode()),
+        );
+
+        let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
+            .try_into()
+            .unwrap();
+        println!("{:?}", xbi);
+
+        // assert_eq!(
+        //     xbi,
+        //     XbiFormat {
+        //         instr: XbiInstruction::T {
+        //             asset_out: 151587081,
+        //             asset_in: 151587081,
+        //             amount: 1,
+        //             max_limit: 1,
+        //             discount: Default::default()
+        //         },
+        //         metadata,
+        //     }
+        // );
+    });
+}
+
+#[test]
+fn check_proper_conversion_from_sfx_to_xbi_for_call() {
+    new_test_ext().execute_with(|| {
+        let origin = Origin::signed(ALICE);
+
+        let se =
+            produce_and_validate_side_effect(*b"cgen", 1, 1, t3rn_abi::Codec::Scale, ArgVariant::A);
+
+        let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+        let executor = ensure_signed(origin.clone()).unwrap();
+        let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
+
+        let nonce_always_0_because_we_use_seed = 0;
+        let bypass_most_metadata_checks_default_para_id = Default::default();
+
+        let sfx_id = se.generate_id::<Hashing>(xtx_id.as_ref(), 0u32);
+
+        let max_exec_cost = 10;
+        let max_notifications_cost = 20;
+        let metadata = XbiMetadata::new(
+            bypass_most_metadata_checks_default_para_id,
+            bypass_most_metadata_checks_default_para_id,
+            Default::default(),
+            Fees::new(None, Some(max_exec_cost), Some(max_notifications_cost)),
+            Some(account_to_32),
+            nonce_always_0_because_we_use_seed,
+            Some(&sfx_id.encode()),
+        );
+
+        let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
+            .try_into()
+            .unwrap();
+        println!("{:?}", xbi);
+
+        // assert_eq!(
+        //     xbi,
+        //     XbiFormat {
+        //         instr: XbiInstruction::T {
+        //             asset_out: 151587081,
+        //             asset_in: 151587081,
+        //             amount: 1,
+        //             max_limit: 1,
+        //             discount: Default::default()
+        //         },
+        //         metadata,
+        //     }
+        // );
     });
 }

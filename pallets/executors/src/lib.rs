@@ -1249,6 +1249,8 @@ pub mod pallet {
         SfxDecodingValueErr,
         SfxDecodingAddressErr,
         SfxDecodingDataErr,
+        DecodingAddressTo32Err,
+        PablosCustomError,
     }
 
     #[pallet::genesis_config]
@@ -1664,23 +1666,17 @@ pub mod pallet {
             max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
             let executor = ensure_signed(origin.clone())?;
-            let state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
-            // validate extrinsic origin is actually an executor in the active set
-            ensure!(state.is_active(), Error::<T>::AlreadyActive);
-
             let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..])
-                .map_err(|_| Error::<T>::AlreadyActive)?;
-
+                .map_err(|_| Error::<T>::DecodingAddressTo32Err)?;
             let nonce_always_0_because_we_use_seed = 0;
             let bypass_most_metadata_checks_default_para_id = Default::default();
-
             let sfx_id = side_effect.generate_id::<T::Hashing>(xtx_id.as_ref(), 0u32); // FIXME: index needs to be passed from
 
             let mut xbi: XbiFormat = SfxWithMetadataNewtype::<T>::new(
                 side_effect,
                 XbiMetadata::new(
-                    bypass_most_metadata_checks_default_para_id,
-                    bypass_most_metadata_checks_default_para_id,
+                    bypass_most_metadata_checks_default_para_id, // pallet_circuit::bridges::chain_circuit::Circuit::self_para_id,
+                    bypass_most_metadata_checks_default_para_id, // side_effect.target
                     Default::default(), // Since we are outside of the scope of XBI we dont need a timeout
                     Fees::new(
                         None, // TODO: although we can pay in non-native another time
@@ -1772,13 +1768,13 @@ impl<T: Config> TryInto<XbiFormat> for SfxWithMetadataNewtype<T> {
             }),
             b"swap" => Ok(XbiFormat {
                 instr: XbiInstruction::Swap {
-                    asset_out: Decode::decode(&mut &side_effect.encoded_args[4][..])
+                    asset_out: Decode::decode(&mut &side_effect.encoded_args[3][..])
                         .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
-                    asset_in: Decode::decode(&mut &side_effect.encoded_args[5][..])
+                    asset_in: Decode::decode(&mut &side_effect.encoded_args[4][..])
                         .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
-                    amount: Decode::decode(&mut &side_effect.encoded_args[2][..])
+                    amount: Decode::decode(&mut &side_effect.encoded_args[1][..])
                         .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
-                    max_limit: Decode::decode(&mut &side_effect.encoded_args[3][..])
+                    max_limit: Decode::decode(&mut &side_effect.encoded_args[2][..])
                         .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
                     discount: Default::default(),
                 },
@@ -1787,42 +1783,44 @@ impl<T: Config> TryInto<XbiFormat> for SfxWithMetadataNewtype<T> {
             b"cevm" => Ok(XbiFormat {
                 instr: XbiInstruction::CallEvm {
                     // Get dest as argument_0 of SFX::CallEvm of Type::DynamicAddress
-                    source: Decode::decode(&mut &side_effect.encoded_args[0][..])
+                    source: Decode::decode(&mut vec![0u8; 32].as_ref())
                         .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
+                    // source: Decode::decode(&mut &side_effect.encoded_args[0][..])
+                    //     .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
                     // Get dest as argument_1 of SFX::CallEvm of Type::DynamicAddress
-                    target: Decode::decode(&mut &side_effect.encoded_args[1][..])
+                    target: Decode::decode(&mut &side_effect.encoded_args[0][..])
                         .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
                     // Get dest as argument_2 of SFX::CallEvm of Type::Value
                     value: Sabi::try_convert(ValueMorphism::<_, Value256>::new(
-                        &mut &side_effect.encoded_args[2][..],
+                        &mut &side_effect.encoded_args[1][..],
                     ))
                     .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
                     // Get dest as argument_3 of SFX::CallEvm of Type::DynamicBytes
-                    input: side_effect.encoded_args[3].clone(),
+                    input: side_effect.encoded_args[2].clone(),
                     // Get dest as argument_4 of SFX::CallEvm of Type::Uint(64)
                     gas_limit: Sabi::try_convert(ValueMorphism::<_, u64>::new(
-                        &mut &side_effect.encoded_args[4][..],
+                        &mut &side_effect.encoded_args[3][..],
                     ))
                     .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
                     // Get dest as argument_5 of SFX::CallEvm of Type::Value
                     max_fee_per_gas: Sabi::try_convert(ValueMorphism::<_, Value256>::new(
-                        &mut &side_effect.encoded_args[5][..],
+                        &mut &side_effect.encoded_args[4][..],
                     ))
                     .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
                     // Get dest as argument_6 of SFX::CallEvm of Type::Option(Box::from(Type::Value))
                     max_priority_fee_per_gas: Sabi::try_convert(
                         ValueMorphism::<_, Option<Value256>>::new(
-                            &mut &side_effect.encoded_args[6][..],
+                            &mut &side_effect.encoded_args[5][..],
                         ),
                     )
                     .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
                     // Get dest as argument_7 of SFX::CallEvm of Type::Option(Box::from(Type::Value))
                     nonce: Sabi::try_convert(ValueMorphism::<_, Option<Value256>>::new(
-                        &mut &side_effect.encoded_args[7][..],
+                        &mut &side_effect.encoded_args[6][..],
                     ))
                     .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
                     // Get dest as argument_8 of SFX::CallEvm of Type::DynamicBytes
-                    access_list: Decode::decode(&mut &side_effect.encoded_args[8][..])
+                    access_list: Decode::decode(&mut &side_effect.encoded_args[7][..])
                         .map_err(|_| Error::<T>::SfxDecodingDataErr)?,
                 },
                 metadata,
