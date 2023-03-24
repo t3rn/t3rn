@@ -3,16 +3,16 @@ use crate::*;
 use sp_std::vec;
 
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
-use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, Convert, One},
     Perbill,
 };
 
-pub type RococoLightClient = ();
-pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
-pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
+use pallet_grandpa_finality_verifier::{
+    bridges::runtime as bp_runtime,
+    light_clients::{KusamaInstance, PolkadotInstance, RococoInstance},
+};
 
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
@@ -189,23 +189,35 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
     type BlockNumber = u32;
     type Hash = H256;
     type Hasher = BlakeTwo256;
-    type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
+    type Header = generic::Header<u32, BlakeTwo256>;
 }
 
-impl pallet_grandpa_finality_verifier::Config<RococoLightClient> for Runtime {
+impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
 
-impl pallet_grandpa_finality_verifier::Config<PolkadotLightClient> for Runtime {
+impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
 
-impl pallet_grandpa_finality_verifier::Config<KusamaLightClient> for Runtime {
+impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
+    type EpochOffset = ConstU32<2_400u32>;
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }

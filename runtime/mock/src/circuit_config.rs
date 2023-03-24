@@ -1,14 +1,18 @@
 use crate::*;
 
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
-use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
+use pallet_grandpa_finality_verifier::{
+    bridges::runtime as bp_runtime,
+    light_clients::{KusamaInstance, PolkadotInstance, RococoInstance},
+};
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, Convert, One},
+    traits::{BlakeTwo256, Convert, Get, One},
     Perbill,
 };
 use sp_std::vec;
 use t3rn_primitives::light_client::LightClient;
+
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
@@ -131,24 +135,8 @@ impl pallet_contracts_registry::Config for Runtime {
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    pub const PortalPalletId: PalletId = PalletId(*b"pal/port");
-    pub const LightClients: Vec<(GatewayVendor, Box<dyn LightClient<Self>>)> = vec![
-        (
-            GatewayVendor::Polkadot, PolkadotBridge,
-        ),
-        (
-           GatewayVendor::Kusama, KusamaBridge,
-        ),
-        (
-           GatewayVendor::Rococo, RococoBridge,
-        ),
-    ];
-}
-
 impl pallet_portal::Config for Runtime {
     type Event = Event;
-    type LightClients = ();
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }
@@ -200,7 +188,7 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
     type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
 }
 
-impl pallet_grandpa_finality_verifier::Config<RococoLightClient> for Runtime {
+impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
     type FastConfirmationOffset = ConstU32<3u32>;
@@ -210,7 +198,7 @@ impl pallet_grandpa_finality_verifier::Config<RococoLightClient> for Runtime {
     type WeightInfo = ();
 }
 
-impl pallet_grandpa_finality_verifier::Config<PolkadotLightClient> for Runtime {
+impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
     type FastConfirmationOffset = ConstU32<3u32>;
@@ -220,7 +208,7 @@ impl pallet_grandpa_finality_verifier::Config<PolkadotLightClient> for Runtime {
     type WeightInfo = ();
 }
 
-impl pallet_grandpa_finality_verifier::Config<KusamaLightClient> for Runtime {
+impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
     type FastConfirmationOffset = ConstU32<3u32>;
