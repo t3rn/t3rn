@@ -23,10 +23,9 @@ use crate as pallet_contracts_registry;
 use crate::types::RegistryContract;
 use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
 use sp_core::H256;
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-};
+use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+type Header = generic::Header<u32, BlakeTwo256>;
+
 use sp_std::convert::{TryFrom, TryInto};
 use t3rn_primitives::EscrowTrait;
 

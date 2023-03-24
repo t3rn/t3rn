@@ -10,11 +10,11 @@ use pallet_grandpa_finality_verifier::light_clients::{
 
 use sp_core::H256;
 use sp_runtime::{
-    testing::Header,
+    generic,
     traits::{BlakeTwo256, ConvertInto, IdentityLookup},
     AccountId32,
 };
-
+type Header = generic::Header<u32, BlakeTwo256>;
 pub type AccountId = u64;
 pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
@@ -192,15 +192,15 @@ impl pallet_circuit::Config for Test {
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = CircuitPortal;
-    type SFXBiddingPeriod = ConstU64<3>;
+    type SFXBiddingPeriod = ConstU32<3>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = CircuitTargetId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<4>;
     type WeightInfo = ();
     type Xdns = Xdns;
-    type XtxTimeoutCheckInterval = ConstU64<1024>;
-    type XtxTimeoutDefault = ConstU64<1024>;
+    type XtxTimeoutCheckInterval = ConstU32<1024>;
+    type XtxTimeoutDefault = ConstU32<1024>;
 }
 
 impl pallet_xdns::Config for Test {

@@ -1,6 +1,6 @@
 use crate::*;
 
-use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
+use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{KusamaInstance, PolkadotInstance, RococoInstance},
@@ -11,7 +11,6 @@ use sp_runtime::{
     Perbill,
 };
 use sp_std::vec;
-use t3rn_primitives::light_client::LightClient;
 
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;

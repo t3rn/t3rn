@@ -91,7 +91,7 @@ use t3rn_types::gateway::{CryptoAlgo, HasherAlgo};
 use t3rn_abi::SFXAbi;
 use t3rn_primitives::{
     contracts_registry::RegistryContract,
-    xdns::{Parachain, XdnsRecord},
+    xdns::{GatewayRecord, Parachain, XdnsRecord},
     GatewayType, GatewayVendor, TokenSysProps,
 };
 use t3rn_types::sfx::Sfx4bId;
@@ -99,6 +99,7 @@ use t3rn_types::sfx::Sfx4bId;
 #[derive(Default)]
 pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
+    known_gateway_records: Vec<GatewayRecord<AccountId>>,
     standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     known_contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
 }
@@ -244,6 +245,89 @@ impl ExtBuilder {
             polkadot_xdns_record,
             kusama_xdns_record,
         ];
+
+        self.known_gateway_records = vec![
+            GatewayRecord {
+                gateway_id: [3, 3, 3, 3],
+                verification_vendor: GatewayVendor::Polkadot,
+                codec: t3rn_abi::Codec::Scale,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![
+                    (*b"tran", Some(2)),
+                    (*b"tass", Some(4)),
+                    (*b"swap", Some(3)),
+                    (*b"aliq", Some(3)),
+                    (*b"cevm", Some(10)),
+                    (*b"wasm", Some(10)),
+                    (*b"call", Some(10)),
+                ],
+            },
+            GatewayRecord {
+                gateway_id: [1, 1, 1, 1],
+                verification_vendor: GatewayVendor::Polkadot,
+                codec: t3rn_abi::Codec::Scale,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![
+                    (*b"tran", Some(2)),
+                    (*b"tass", Some(4)),
+                    (*b"swap", Some(3)),
+                    (*b"aliq", Some(3)),
+                    (*b"cevm", Some(10)),
+                    (*b"wasm", Some(10)),
+                    (*b"call", Some(10)),
+                ],
+            },
+            GatewayRecord {
+                gateway_id: [5, 5, 5, 5],
+                verification_vendor: GatewayVendor::Polkadot,
+                codec: t3rn_abi::Codec::Scale,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![
+                    (*b"tran", Some(2)),
+                    (*b"tass", Some(4)),
+                    (*b"swap", Some(3)),
+                    (*b"aliq", Some(3)),
+                    (*b"cevm", Some(10)),
+                    (*b"wasm", Some(10)),
+                    (*b"call", Some(10)),
+                ],
+            },
+            GatewayRecord {
+                gateway_id: *b"ksma",
+                verification_vendor: GatewayVendor::Polkadot,
+                codec: t3rn_abi::Codec::Scale,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
+            },
+            GatewayRecord {
+                gateway_id: *b"pdot",
+                verification_vendor: GatewayVendor::Polkadot,
+                codec: t3rn_abi::Codec::Scale,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
+            },
+            GatewayRecord {
+                gateway_id: *b"gate",
+                verification_vendor: GatewayVendor::Rococo,
+                codec: t3rn_abi::Codec::Scale,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![(*b"tran", Some(2))],
+            },
+            GatewayRecord {
+                gateway_id: [0, 0, 0, 0],
+                verification_vendor: GatewayVendor::Rococo,
+                codec: t3rn_abi::Codec::Scale,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![(*b"tran", Some(2))],
+            },
+        ];
         self
     }
 
@@ -273,6 +357,7 @@ impl ExtBuilder {
 
         pallet_xdns::GenesisConfig::<Runtime> {
             known_xdns_records: self.known_xdns_records,
+            known_gateway_records: self.known_gateway_records,
             standard_sfx_abi: self.standard_sfx_abi,
         }
         .assimilate_storage(&mut t)
