@@ -1,5 +1,9 @@
 use crate::*;
 
+use circuit_runtime_pallets::{
+    pallet_grandpa_finality_verifier::light_clients::select_grandpa_light_client_instance,
+    pallet_portal::Error,
+};
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
@@ -11,6 +15,7 @@ use sp_runtime::{
     Perbill,
 };
 use sp_std::vec;
+use t3rn_primitives::light_client::LightClient;
 
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
@@ -134,8 +139,31 @@ impl pallet_contracts_registry::Config for Runtime {
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
+pub struct SelectLightClientRegistry;
+
+impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
+    fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<Runtime>>, Error<Runtime>> {
+        match vendor {
+            GatewayVendor::Rococo =>
+                select_grandpa_light_client_instance::<Runtime, RococoInstance>(vendor)
+                    .ok_or(Error::<Runtime>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
+            GatewayVendor::Kusama =>
+                select_grandpa_light_client_instance::<Runtime, KusamaInstance>(vendor)
+                    .ok_or(Error::<Runtime>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
+            GatewayVendor::Polkadot =>
+                select_grandpa_light_client_instance::<Runtime, PolkadotInstance>(vendor)
+                    .ok_or(Error::<Runtime>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
+            _ => Err(Error::<Runtime>::UnimplementedGatewayVendor),
+        }
+    }
+}
+
 impl pallet_portal::Config for Runtime {
     type Event = Event;
+    type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }
