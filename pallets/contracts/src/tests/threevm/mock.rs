@@ -90,15 +90,15 @@ mod threevm_mock {
         type Event = Event;
         type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
         type Portal = CircuitPortal;
-        type SFXBiddingPeriod = ConstU64<3>;
+        type SFXBiddingPeriod = ConstU32<3>;
         type SelfAccountId = CircuitAccountId;
         type SelfGatewayId = CircuitTargetId;
         type SelfParaId = ConstU32<3333u32>;
         type SignalQueueDepth = ConstU32<4>;
         type WeightInfo = ();
         type Xdns = Xdns;
-        type XtxTimeoutCheckInterval = ConstU64<1024>;
-        type XtxTimeoutDefault = ConstU64<1024>;
+        type XtxTimeoutCheckInterval = ConstU32<1024>;
+        type XtxTimeoutDefault = ConstU32<1024>;
     }
 
     impl pallet_xdns::Config for Test {

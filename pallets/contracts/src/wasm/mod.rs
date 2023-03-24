@@ -544,7 +544,7 @@ mod tests {
             self.events.push((topics, data))
         }
 
-        fn block_number(&self) -> u64 {
+        fn block_number(&self) -> u32 {
             121
         }
 

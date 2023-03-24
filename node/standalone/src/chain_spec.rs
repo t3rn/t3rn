@@ -365,6 +365,7 @@ fn testnet_genesis(
         assets: Default::default(),
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
+            known_gateway_records: vec![],
             standard_sfx_abi,
         },
         contracts_registry: Default::default(),

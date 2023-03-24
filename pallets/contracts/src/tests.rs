@@ -46,10 +46,13 @@ use sp_core::Bytes;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
 use sp_runtime::{
-    testing::{Header, H256},
+    generic,
+    testing::H256,
     traits::{BlakeTwo256, Convert, Hash, IdentityLookup},
     AccountId32,
 };
+type Header = generic::Header<u32, BlakeTwo256>;
+
 use std::{cell::RefCell, sync::Arc};
 
 mod threevm;
@@ -379,7 +382,7 @@ where
     Ok((wasm_binary, code_hash))
 }
 
-fn initialize_block(number: u64) {
+fn initialize_block(number: u32) {
     System::reset_events();
     System::initialize(&number, &[0u8; 32].into(), &Default::default());
 }
@@ -1766,7 +1769,7 @@ fn lazy_removal_works() {
             assert_matches!(child::get(trie, &[99]), Some(42));
 
             // Run the lazy removal
-            Contracts::on_initialize(Weight::max_value());
+            Contracts::on_initialize(u32::MAX);
 
             // Value should be gone now
             assert_matches!(child::get::<i32>(trie, &[99]), None);
@@ -1820,7 +1823,7 @@ fn lazy_batch_removal_works() {
             }
 
             // Run single lazy removal
-            Contracts::on_initialize(Weight::max_value());
+            Contracts::on_initialize(u32::MAX);
 
             // The single lazy removal should have removed all queued tries
             for trie in tries.iter() {
@@ -1986,7 +1989,7 @@ fn lazy_removal_does_no_run_on_full_block() {
 
             // Run the lazy removal without any limit so that all keys would be removed if there
             // had been some weight left in the block.
-            let weight_used = Contracts::on_initialize(Weight::max_value());
+            let weight_used = Contracts::on_initialize(u32::MAX);
             let base = <<Test as Config>::WeightInfo as WeightInfo>::on_initialize();
             assert_eq!(weight_used, base);
 

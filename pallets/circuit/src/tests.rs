@@ -28,8 +28,8 @@ use codec::{Decode, Encode};
 use frame_support::{
     assert_err, assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency,
 };
-
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
+use t3rn_primitives::xdns::Xdns;
 
 use circuit_mock_runtime::test_utils::*;
 use hex_literal::hex;
@@ -113,37 +113,29 @@ fn register(
         &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let allowed_side_effects: Vec<Sfx4bId> = Decode::decode(
+    let allowed_side_effects: Vec<(Sfx4bId, Option<u8>)> = Decode::decode(
         &mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
     let encoded_registration_data: Vec<u8> =
         hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
 
-    let res = Portal::register_gateway(
+    let res = XDNS::add_new_gateway(
         origin,
-        url,
         gateway_id,
-        gateway_abi.clone(),
         gateway_vendor.clone(),
-        gateway_type.clone(),
-        gateway_genesis.clone(),
-        gateway_sys_props.clone(),
+        None,
+        None,
         allowed_side_effects.clone(),
-        encoded_registration_data,
     );
 
     if valid {
-        let xdns_record = pallet_xdns::XDNSRegistry::<Runtime>::get(gateway_id).unwrap();
-        let stored_side_effects = xdns_record.allowed_side_effects;
+        let gateway_record = pallet_xdns::Gateways::<Runtime>::get(gateway_id).unwrap();
+        let stored_side_effects = gateway_record.allowed_side_effects;
 
         // ensure XDNS writes are correct
         assert_eq!(stored_side_effects, allowed_side_effects);
-        assert_eq!(xdns_record.gateway_vendor, gateway_vendor);
-        assert_eq!(xdns_record.gateway_abi, gateway_abi);
-        assert_eq!(xdns_record.gateway_type, gateway_type);
-        assert_eq!(xdns_record.gateway_sys_props, gateway_sys_props);
-        assert_eq!(xdns_record.gateway_genesis, gateway_genesis);
+        assert_eq!(gateway_record.verification_vendor, gateway_vendor);
     }
 
     res
@@ -557,7 +549,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -756,7 +748,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -992,7 +984,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -1181,7 +1173,7 @@ fn circuit_handles_swap_with_insurance() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -1319,7 +1311,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -4199,7 +4191,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //                     confirmed: None,
 //                     best_bid: None,
 //                     security_lvl: SecurityLvl::Escrow,
-//                     submission_target_height: vec![0],
+//                     submission_target_height: 0,
 //                     index: FIRST_SFX_INDEX,
 //                 }]]
 //             );
@@ -4327,7 +4319,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //                     confirmed: None,
 //                     best_bid: None,
 //                     security_lvl: SecurityLvl::Escrow,
-//                     submission_target_height: vec![0],
+//                     submission_target_height: 0,
 //                     index: FIRST_SFX_INDEX,
 //                 }]]
 //             );
@@ -4560,7 +4552,7 @@ fn test_storage_migration_v130_to_v140_for_fsx_map_with_updated_encoded_action_f
                     },
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![12, 13, 14],
+                    submission_target_height: 9999,
                     best_bid: None,
                     index: 0,
                 }

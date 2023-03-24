@@ -390,11 +390,9 @@ impl_runtime_apis! {
             }
         }
 
-        fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig> {
-            match <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::get_abi(chain_id) {
-                Ok(abi) => Some(abi),
-                Err(_) => None,
-            }
+        fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
+            // deprecated
+            None
         }
     }
 

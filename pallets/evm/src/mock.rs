@@ -78,7 +78,7 @@ impl frame_system::Config for Test {
     type Event = Event;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type Header = generic::Header<u64, BlakeTwo256>;
+    type Header = generic::Header<u32, BlakeTwo256>;
     type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = ConstU32<16>;

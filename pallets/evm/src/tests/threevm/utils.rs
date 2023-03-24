@@ -76,7 +76,7 @@ where
     (contract.bin.clone(), code_hash)
 }
 
-pub fn initialize_block(number: u64) {
+pub fn initialize_block(number: u32) {
     crate::tests::System::reset_events();
     crate::tests::System::initialize(&number, &[0u8; 32].into(), &Default::default());
 }
