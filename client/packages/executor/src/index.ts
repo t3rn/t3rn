@@ -23,6 +23,21 @@ import { dirname } from "path"
 import { homedir } from "os"
 import * as defaultConfig from "../config.json"
 
+// let readline = require('readline');
+
+// readline.emitKeypressEvents(process.stdin);
+
+// process.stdin.on('keypress', (ch, key) => {
+//   console.log('got "keypress"', ch, key);
+//   if (key && key.ctrl && key.name == 'c') {
+//     console.log('ctrl+c was pressed');
+//     // do something usefull
+//   }
+// });
+
+// process.stdin.setRawMode(true);
+// process.stdin.resume();
+
 const pino = require("pino")
 const logger = pino(
     {
@@ -84,9 +99,6 @@ class InstanceManager {
             throw Error("InstanceManager::setup: missing signer keys")
         }
 
-        // register keypress listener 4 ctrl+k (kill) wich would init the shutdown process:
-        // print "shutting down" - don't take new executions - finish pending - then die
-
         await cryptoWaitReady()
         const keyring = new Keyring({ type: "sr25519" })
 
@@ -101,6 +113,12 @@ class InstanceManager {
 
         this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
         await this.executionManager.setup(config.gateways, config.vendors)
+
+        // register keypress listener 4 ctrl+k (kill) wich would init the shutdown process:
+        // print "shutting down" - don't take new executions - finish pending - then die
+        console.log("shutting down...")
+        
+        // await this.executionManager.shutdown()
 
         logger.info("Executor: setup complete")
     }
