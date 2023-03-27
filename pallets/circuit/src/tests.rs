@@ -86,26 +86,26 @@ fn set_ids(
     (xtx_id, sfx_id)
 }
 
-fn register(origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchResult {
-    let url: Vec<u8> = hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
+fn register(_origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchResult {
+    let _url: Vec<u8> = hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
     let gateway_id: ChainId =
         Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap())
             .unwrap();
-    let gateway_abi: GatewayABIConfig =
+    let _gateway_abi: GatewayABIConfig =
         Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap())
             .unwrap();
     let gateway_vendor: GatewayVendor = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let gateway_type: GatewayType =
+    let _gateway_type: GatewayType =
         Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap())
             .unwrap();
-    let gateway_genesis: GatewayGenesisConfig = Decode::decode(
+    let _gateway_genesis: GatewayGenesisConfig = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let gateway_sys_props: TokenSysProps = Decode::decode(
+    let _gateway_sys_props: TokenSysProps = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
@@ -113,7 +113,7 @@ fn register(origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchRes
         &mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let encoded_registration_data: Vec<u8> =
+    let _encoded_registration_data: Vec<u8> =
         hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
 
     let res = XDNS::add_new_gateway(

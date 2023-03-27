@@ -375,14 +375,13 @@ pub mod grandpa_light_clients_test {
 
     fn prep_init_data() -> RelaychainRegistrationData<AccountId> {
         let genesis = test_header_with_correct_parent(0, None);
-        let init_data = RelaychainRegistrationData::<AccountId> {
+
+        RelaychainRegistrationData::<AccountId> {
             authorities: authorities(),
             first_header: genesis.encode(),
             authority_set_id: 1,
             owner: 1u64,
-        };
-
-        init_data
+        }
     }
 
     pub fn stage_test_and_init_instance<
@@ -593,7 +592,7 @@ pub mod grandpa_light_clients_test {
 
             assert_eq!(heartbeat_before.last_finalized_height, 0);
 
-            let rococo_initialization_result = Pallet::<TestRuntime, ()>::initialize(
+            Pallet::<TestRuntime, ()>::initialize(
                 Origin::root(),
                 [0, 0, 0, 0],
                 prep_init_data().encode(),

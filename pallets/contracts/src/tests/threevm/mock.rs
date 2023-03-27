@@ -3,12 +3,9 @@ mod threevm_mock {
     use frame_support::parameter_types;
     use sp_std::boxed::Box;
 
-    use pallet_grandpa_finality_verifier::{
-        bridges::runtime as bp_runtime,
-        light_clients::{
-            select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
-            RococoInstance,
-        },
+    use pallet_grandpa_finality_verifier::light_clients::{
+        select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
+        RococoInstance,
     };
     use pallet_portal::Error as PortalError;
     use t3rn_primitives::GatewayVendor;

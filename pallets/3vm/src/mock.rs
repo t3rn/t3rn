@@ -5,12 +5,9 @@ use frame_support::{
 };
 use frame_system as system;
 
-use pallet_grandpa_finality_verifier::{
-    bridges::runtime as bp_runtime,
-    light_clients::{
-        select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
-        RococoInstance,
-    },
+use pallet_grandpa_finality_verifier::light_clients::{
+    select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
+    RococoInstance,
 };
 use pallet_portal::Error as PortalError;
 use sp_std::boxed::Box;

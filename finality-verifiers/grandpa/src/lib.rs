@@ -950,7 +950,7 @@ mod tests {
     }
 
     fn initialize_parachain(origin: Origin) -> Result<ParachainRegistrationData, &'static str> {
-        let genesis = test_header(0);
+        let _genesis = test_header(0);
         let init_data = ParachainRegistrationData {
             relay_gateway_id: *b"pdot",
             id: 0,
@@ -1085,7 +1085,7 @@ mod tests {
         run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
 
-            let genesis = test_header(0);
+            let _genesis = test_header(0);
             let init_data = ParachainRegistrationData {
                 relay_gateway_id: *b"roco",
                 id: 0,
@@ -1184,7 +1184,7 @@ mod tests {
 
     #[test]
     fn pallet_may_be_halted_by_root() {
-        let default_gateway: ChainId = *b"pdot";
+        let _default_gateway: ChainId = *b"pdot";
 
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
@@ -1199,7 +1199,7 @@ mod tests {
 
     #[test]
     fn pallet_may_be_halted_by_owner() {
-        let default_gateway: ChainId = *b"pdot";
+        let _default_gateway: ChainId = *b"pdot";
 
         run_test(|| {
             PalletOwner::<TestRuntime>::put(2);
@@ -1236,7 +1236,7 @@ mod tests {
     #[test]
     fn pallet_rejects_transactions_if_halted() {
         run_test(|| {
-            let gateway_a: ChainId = *b"pdot";
+            let _gateway_a: ChainId = *b"pdot";
             let _ = initialize_relaychain(Origin::root());
             <IsHalted<TestRuntime>>::put(true);
 
