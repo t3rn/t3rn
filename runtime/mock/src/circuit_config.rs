@@ -2,7 +2,7 @@ use crate::*;
 
 use circuit_runtime_pallets::{
     pallet_grandpa_finality_verifier::light_clients::select_grandpa_light_client_instance,
-    pallet_portal::Error,
+    pallet_portal::Error as PortalError,
 };
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
 use pallet_grandpa_finality_verifier::{
@@ -142,21 +142,23 @@ impl pallet_contracts_registry::Config for Runtime {
 pub struct SelectLightClientRegistry;
 
 impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
-    fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<Runtime>>, Error<Runtime>> {
+    fn select(
+        vendor: GatewayVendor,
+    ) -> Result<Box<dyn LightClient<Runtime>>, PortalError<Runtime>> {
         match vendor {
             GatewayVendor::Rococo =>
                 select_grandpa_light_client_instance::<Runtime, RococoInstance>(vendor)
-                    .ok_or(Error::<Runtime>::LightClientNotFoundByVendor)
+                    .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
             GatewayVendor::Kusama =>
                 select_grandpa_light_client_instance::<Runtime, KusamaInstance>(vendor)
-                    .ok_or(Error::<Runtime>::LightClientNotFoundByVendor)
+                    .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
             GatewayVendor::Polkadot =>
                 select_grandpa_light_client_instance::<Runtime, PolkadotInstance>(vendor)
-                    .ok_or(Error::<Runtime>::LightClientNotFoundByVendor)
+                    .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
-            _ => Err(Error::<Runtime>::UnimplementedGatewayVendor),
+            _ => Err(PortalError::<Runtime>::UnimplementedGatewayVendor),
         }
     }
 }

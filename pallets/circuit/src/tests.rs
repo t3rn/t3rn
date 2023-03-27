@@ -37,7 +37,7 @@ pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
+use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo, DispatchResult};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs, str::FromStr};
 use t3rn_types::{gateway::*, sfx::*};
@@ -86,11 +86,7 @@ fn set_ids(
     (xtx_id, sfx_id)
 }
 
-fn register(
-    origin: OriginFor<Runtime>,
-    json: Value,
-    valid: bool,
-) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
+fn register(origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchResult {
     let url: Vec<u8> = hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
     let gateway_id: ChainId =
         Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap())
@@ -121,9 +117,9 @@ fn register(
         hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
 
     let res = XDNS::add_new_gateway(
-        origin,
         gateway_id,
         gateway_vendor.clone(),
+        t3rn_abi::Codec::Scale,
         None,
         None,
         allowed_side_effects.clone(),
@@ -4530,7 +4526,7 @@ fn test_storage_migration_v130_to_v140_for_fsx_map_with_updated_encoded_action_f
                 input: sfx_v13.clone(),
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![12, 13, 14],
+                submission_target_height: vec![12, 13, 14, 0, 0, 0, 0, 0],
                 best_bid: None,
                 index: 0,
             };
