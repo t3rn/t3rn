@@ -401,46 +401,29 @@ export class SideEffect extends EventEmitter {
     }
   }
 
-  /**
-   * Perform state updates if out bid has been rejected.
-   *
-   * @param error Error message used for logging
-   */
-  bidRejected(error: any) {
-    // a better bid was submitted before this one was accepted. A new eval will be triggered with the incoming bid event
-    this.txStatus = TxStatus.Ready; // open mutex lock
-    this.isBidder = false;
-    this.addLog({ msg: "Bid rejected", err: error.toString() });
-    this.triggerBid();
-  }
+      /**
+     * Process an incoming bid event. The bid amount is now the new reward amount and the SFX is evaluated again, potentially triggering a
+     * counter bid.
+     *
+     * @param signer Signer of the incoming bid
+     * @param bidAmount Amount of the incoming bid
+     */
+      processBid(signer: string, bidAmount: number) {
+        // Add the executor bid to the list
+        this.biddingEngine.storeWhoBidOnWhat(this.id, signer)
+        // Add how much it bid
+        this.lastBids.push(bidAmount)
 
-  /**
-   * Process an incoming bid event. The bid amount is now the new reward amount and the SFX is evaluated again, potentially triggering a
-   * counter bid.
-   *
-   * @param signer Signer of the incoming bid
-   * @param bidAmount Amount of the incoming bid
-   */
-  processBid(signer: string, bidAmount: number) {
-    // Add the executor bid to the list
-    this.biddingEngine.storeWhoBidOnWhat(this.id, signer);
-    // Add how much it bid
-    this.lastBids.push(bidAmount);
-
-    // if this is not own bid, update reward and isBidder
-    if (signer !== this.circuitSignerAddress) {
-      this.logger.info(
-        `Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(
-          bidAmount
-        )} TRN 🎰`
-      );
-      this.addLog({ msg: "Competing bid received", signer, bidAmount });
-      this.isBidder = false;
-      this.reward.next(this.gateway.toFloat(bidAmount)); // this will trigger the re-eval of submitting a new bid
-    } else {
-      this.addLog({ msg: "Own bid detected", signer, bidAmount });
+        // if this is not own bid, update reward and isBidder
+        if (signer !== this.circuitSignerAddress) {
+            this.logger.info(`Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(bidAmount)} TRN 🎰`)
+            this.addLog({ msg: "Competing bid received", signer, bidAmount })
+            this.isBidder = false
+            this.reward.next(this.gateway.toFloat(bidAmount)) // this will trigger the re-eval of submitting a new bid
+        } else {
+            this.addLog({ msg: "Own bid detected", signer, bidAmount })
+        }
     }
-  }
 
   /** Update the SFX status */
   readyToExecute() {
