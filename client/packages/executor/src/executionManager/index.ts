@@ -103,8 +103,22 @@ export class ExecutionManager {
 
     /** Initiates the shutdown sequence. */
     async shutdown() {
+        const self = this
         await this.circuitListener.stop()
-        //TODO resolve when all executions done TODO
+        return new Promise(resolve => {
+            function recheckQueue() {
+                const gtwyIds = Object.entries(self.sdk.gateways).map(([_, gtwy]) => gtwy.id)
+                const done = gtwyIds.every(gtwyId =>  self.queue[gtwyId].isBidding.length === 0 && 
+                    self.queue[gtwyId].isExecuting.length === 0 &&
+                    self.queue[gtwyId].isConfirming.length === 0)
+                if (done) {
+                    resolve(undefined)
+                } else {
+                    self.circuitListener.once("Event", recheckQueue)
+                }
+            }
+            this.circuitListener.once("Event", recheckQueue)
+        })
     }
 
     initializeVendors(vendors: string[]) {
