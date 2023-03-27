@@ -18,9 +18,10 @@ import { CircuitRelayer } from "./circuit/relayer"
 // @ts-ignore
 import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { readFile,writeFile} from "fs/promises"
+import { readFile,writeFile, mkdir} from "fs/promises"
+import { dirname } from "path"
+import { homedir } from "os"
 import * as defaultConfig from "../config.json"
-
 
 const pino = require("pino")
 const logger = pino(
@@ -48,30 +49,37 @@ class InstanceManager {
     signer: any
 
     async setup(name: string = "example") {
-        const configFile = `~/.t3rn-executor-${name}/config.json`
+        const configFile = `${homedir()}/.t3rn-executor-${name}/config.json`
+        const configDir = dirname(configFile)
+        await mkdir(configDir, { recursive: true, mode: 600 })
+
         const persistedConfig = await readFile(configFile).then(buf => {
             try {
                 return JSON.parse(buf.toString())
             }catch (_err) {
-                console.warn(`could not load persisted config from ${configFile}`)
+                console.warn(`${configFile} contains invalid JSON`)
                 return {}
             }
         })
+            .catch(_err => {
+                // if the persisted config file does not exist yet we wanna 
+                // handle it gracefully because it is probly an initial run
+                return {}
+            })
   
         const config = { ...defaultConfig, ...persistedConfig }
-        if (!config.circuit.signerKey) {
+        if (!config.circuit.signerKey.startsWith("0x")) {
             config.circuit.signerKey = process.env.CIRCUIT_SIGNER_KEY as string
         }
-        
         config.gateways.forEach(gateway => {
-            if (!gateway.signerKey) {
+            if (gateway.signerKey !== undefined && !gateway.signerKey.startsWith("0x")) {
                 gateway.signerKey = process.env[`${gateway.name.toUpperCase()}_GATEWAY_SIGNER_KEY`] as string
             }
         })
 
         await writeFile(configFile, JSON.stringify(config))
         
-        if (!config.circuit.signerKey || !config.gateways.every(gtwy => !!gtwy.signerKey)) {
+        if (!config.circuit.signerKey) {
             throw Error("InstanceManager::setup: missing signer keys")
         }
 
