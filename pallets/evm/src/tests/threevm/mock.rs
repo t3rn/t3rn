@@ -1,16 +1,10 @@
 use crate::tests::*;
-use frame_support::{
-    parameter_types,
-    traits::{ConstU32, ConstU64},
-};
+use frame_support::{parameter_types, traits::ConstU32};
 use sp_std::boxed::Box;
 
-use pallet_grandpa_finality_verifier::{
-    bridges::runtime as bp_runtime,
-    light_clients::{
-        select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
-        RococoInstance,
-    },
+use pallet_grandpa_finality_verifier::light_clients::{
+    select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
+    RococoInstance,
 };
 use t3rn_primitives::GatewayVendor;
 
