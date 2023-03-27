@@ -325,7 +325,15 @@ impl ExtBuilder {
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
-                allowed_side_effects: vec![(*b"tran", Some(2))],
+                allowed_side_effects: vec![
+                    (*b"tran", Some(2)),
+                    (*b"tass", Some(4)),
+                    (*b"swap", Some(3)),
+                    (*b"aliq", Some(3)),
+                    (*b"cevm", Some(10)),
+                    (*b"wasm", Some(10)),
+                    (*b"call", Some(10)),
+                ],
             },
         ];
         self

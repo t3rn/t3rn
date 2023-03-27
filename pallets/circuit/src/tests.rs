@@ -4548,7 +4548,7 @@ fn test_storage_migration_v130_to_v140_for_fsx_map_with_updated_encoded_action_f
                     },
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: 9999,
+                    submission_target_height: 920844,
                     best_bid: None,
                     index: 0,
                 }
