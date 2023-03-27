@@ -3,9 +3,18 @@ use frame_support::{
     parameter_types,
     traits::{ConstU32, ConstU64},
 };
-use pallet_grandpa_finality_verifier::light_clients::{
-    KusamaInstance, PolkadotInstance, RococoInstance,
+use sp_std::boxed::Box;
+
+use pallet_grandpa_finality_verifier::{
+    bridges::runtime as bp_runtime,
+    light_clients::{
+        select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
+        RococoInstance,
+    },
 };
+use t3rn_primitives::GatewayVendor;
+
+use pallet_portal::Error as PortalError;
 use sp_runtime::traits::{BlakeTwo256, ConvertInto};
 
 parameter_types! {
@@ -167,8 +176,31 @@ parameter_types! {
     pub const ExecPalletId: frame_support::PalletId = frame_support::PalletId(*b"pal/exec");
 }
 
+pub struct SelectLightClientRegistry;
+
+impl pallet_portal::SelectLightClient<Test> for SelectLightClientRegistry {
+    fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<Test>>, PortalError<Test>> {
+        match vendor {
+            GatewayVendor::Rococo =>
+                select_grandpa_light_client_instance::<Test, RococoInstance>(vendor)
+                    .ok_or(PortalError::<Test>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Test>>),
+            GatewayVendor::Kusama =>
+                select_grandpa_light_client_instance::<Test, KusamaInstance>(vendor)
+                    .ok_or(PortalError::<Test>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Test>>),
+            GatewayVendor::Polkadot =>
+                select_grandpa_light_client_instance::<Test, PolkadotInstance>(vendor)
+                    .ok_or(PortalError::<Test>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Test>>),
+            _ => Err(PortalError::<Test>::UnimplementedGatewayVendor),
+        }
+    }
+}
+
 impl pallet_portal::Config for Test {
     type Event = Event;
+    type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Test>;
     type Xdns = Xdns;
 }

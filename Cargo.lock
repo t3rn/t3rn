@@ -998,7 +998,7 @@ dependencies = [
  "substrate-wasm-builder",
  "t3rn-abi",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]
@@ -1086,7 +1086,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -1149,7 +1149,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "t3rn-abi",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]
@@ -1217,7 +1217,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]
@@ -6792,7 +6792,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]
@@ -7635,7 +7635,7 @@ dependencies = [
  "sp-version",
  "t3rn-abi",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]
@@ -8068,7 +8068,7 @@ dependencies = [
  "sp-version",
  "t3rn-abi",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]
@@ -13435,7 +13435,7 @@ dependencies = [
  "t0rn-parachain-runtime",
  "t3rn-abi",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
  "try-runtime-cli",
  "xcm",
 ]
@@ -13525,7 +13525,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -13741,7 +13741,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-light-client-commons",
  "t3rn-sdk-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]
@@ -13772,7 +13772,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-types"
-version = "0.0.1-rc.3"
+version = "1.5.0-rc.0"
 dependencies = [
  "bytes 1.4.0",
  "circuit-runtime-types",

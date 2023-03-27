@@ -3,17 +3,25 @@ use crate::{
     Timestamp, XDNS,
 };
 
-use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
-    light_clients::{KusamaInstance, PolkadotInstance, RococoInstance},
+    light_clients::{
+        select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
+        RococoInstance,
+    },
 };
+use pallet_portal::Error as PortalError;
+
+use sp_std::boxed::Box;
+
+use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, Convert, One},
     Perbill,
 };
 use sp_std::vec;
+use t3rn_primitives::GatewayVendor;
 
 pub type RococoLightClient = ();
 pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
@@ -141,8 +149,33 @@ impl pallet_contracts_registry::Config for Runtime {
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
+pub struct SelectLightClientRegistry;
+
+impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
+    fn select(
+        vendor: GatewayVendor,
+    ) -> Result<Box<dyn LightClient<Runtime>>, PortalError<Runtime>> {
+        match vendor {
+            GatewayVendor::Rococo =>
+                select_grandpa_light_client_instance::<Runtime, RococoInstance>(vendor)
+                    .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
+            GatewayVendor::Kusama =>
+                select_grandpa_light_client_instance::<Runtime, KusamaInstance>(vendor)
+                    .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
+            GatewayVendor::Polkadot =>
+                select_grandpa_light_client_instance::<Runtime, PolkadotInstance>(vendor)
+                    .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
+                    .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
+            _ => Err(PortalError::<Runtime>::UnimplementedGatewayVendor),
+        }
+    }
+}
+
 impl pallet_portal::Config for Runtime {
     type Event = Event;
+    type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }
