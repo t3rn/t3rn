@@ -105,7 +105,6 @@ export class ExecutionManager {
     async shutdown() {
         await this.circuitListener.stop()
         //TODO resolve when all executions done TODO
-
     }
 
     initializeVendors(vendors: string[]) {
