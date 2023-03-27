@@ -397,10 +397,10 @@ export class SideEffect extends EventEmitter {
      * @param bidAmount Amount of the incoming bid
      */
     processBid(signer: string, bidAmount: number) {
-        // Add the executor bid to the list 
-        this.biddingEngine.storeWhoBidOnWhat(this.id, signer);
+        // Add the executor bid to the list
+        this.biddingEngine.storeWhoBidOnWhat(this.id, signer)
         // Add how much it bid
-        this.lastBids.push(bidAmount);
+        this.lastBids.push(bidAmount)
 
         // if this is not own bid, update reward and isBidder
         if (signer !== this.circuitSignerAddress) {

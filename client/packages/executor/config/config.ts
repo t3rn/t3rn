@@ -1,7 +1,7 @@
-import { BiddingStrategy } from "src/bidding";
+import { BiddingStrategy } from "src/bidding"
 import { SfxStrategy, XtxStrategy } from "../src"
 
-const WS_CIRCUIT_ENDPOINT = process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944";
+const WS_CIRCUIT_ENDPOINT = process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944"
 
 /**
  * The gateway configuration for the executor.
