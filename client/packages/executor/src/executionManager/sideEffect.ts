@@ -1,21 +1,17 @@
 import "@t3rn/types";
 // @ts-ignore
-import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
-import { TextDecoder } from "util";
-import {
-  SecurityLevel,
-  SfxStatus,
-  SfxType,
-} from "@t3rn/sdk/dist/side-effects/types";
-import { Sdk } from "@t3rn/sdk";
-import { BehaviorSubject } from "rxjs";
-import { Gateway } from "@t3rn/sdk/dist/gateways";
-import { StrategyEngine } from "../strategy";
-import { BiddingEngine } from "../bidding";
-import { EventEmitter } from "events";
-import { floatToBn, toFloat } from "@t3rn/sdk/dist/circuit";
-import { bnToFloat } from "@t3rn/sdk/dist/converters/amounts";
-import { InclusionProof } from "../gateways/types";
+import { T3rnTypesSideEffect } from "@polkadot/types/lookup"
+import { TextDecoder } from "util"
+import { SecurityLevel, SfxStatus, SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
+import { Sdk } from "@t3rn/sdk"
+import { BehaviorSubject } from "rxjs"
+import { Gateway } from "@t3rn/sdk/dist/src/gateways"
+import { StrategyEngine } from "../strategy"
+import { BiddingEngine } from "../bidding"
+import { EventEmitter } from "events"
+import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
+import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
+import { InclusionProof } from "../gateways/types"
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];

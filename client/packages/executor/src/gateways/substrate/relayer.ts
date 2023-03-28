@@ -1,14 +1,14 @@
-import { EventEmitter } from "events";
-import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
-import { EventMapper, SideEffect } from "../../executionManager/sideEffect";
-import { getEventProofs } from "../../utils";
-import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import { SfxType } from "@t3rn/sdk/dist/side-effects/types";
-import { InclusionProof, RelayerEventData, RelayerEvents } from "../types";
-import Estimator from "./estimator";
-import { CostEstimator, Estimate } from "./estimator/cost";
-import { Utils } from "@t3rn/sdk";
-import { Gateway } from "../../../config/config";
+import { EventEmitter } from "events"
+import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
+import { EventMapper, SideEffect } from "../../executionManager/sideEffect"
+import { getEventProofs } from "../../utils"
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
+import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
+import { InclusionProof, RelayerEventData, RelayerEvents } from "../types"
+import Estimator from "./estimator"
+import { CostEstimator, Estimate } from "./estimator/cost"
+import { Utils } from "@t3rn/sdk"
+import { Gateway } from "../../../config/config"
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:

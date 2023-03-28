@@ -58,37 +58,37 @@ export class CircuitRelayer extends EventEmitter {
     }
   }
 
-  /**
-   * Builds the actual confirm tx for a given SideEffect
-   *
-   * @param sfx The SideEffect to confirm
-   */
-  createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
-    let inclusionData
+    /**
+     * Builds the actual confirm tx for a given SideEffect
+     *
+     * @param sfx The SideEffect to confirm
+     */
+    createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
+        let inclusionData
 
-    if (sfx.target === "roco") {
-      inclusionData = this.api.createType("RelaychainInclusionProof", {
-        encoded_payload: sfx.inclusionProof.encoded_payload,
-        payload_proof: sfx.inclusionProof.payload_proof,
-        block_hash: sfx.inclusionProof.block_hash,
-      })
-    } else {
-      inclusionData = this.api.createType("ParachainInclusionProof", {
-        encoded_payload: sfx.inclusionProof.encoded_payload,
-        payload_proof: sfx.inclusionProof.payload_proof,
-        header_proof: sfx.inclusionProof.header_proof,
-        relay_block_hash: sfx.inclusionProof.block_hash,
-      })
-    }
+        if (sfx.target === "roco") {
+            inclusionData = this.api.createType("RelaychainInclusionProof", {
+                encoded_payload: sfx.inclusionProof.encoded_payload,
+                payload_proof: sfx.inclusionProof.payload_proof,
+                block_hash: sfx.inclusionProof.block_hash,
+            })
+        } else {
+            inclusionData = this.api.createType("ParachainInclusionProof", {
+                encoded_payload: sfx.inclusionProof.encoded_payload,
+                payload_proof: sfx.inclusionProof.payload_proof,
+                header_proof: sfx.inclusionProof.header_proof,
+                relay_block_hash: sfx.inclusionProof.block_hash,
+            })
+        }
 
-    const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType("T3rnTypesSfxConfirmedSideEffect", {
-      err: null,
-      output: null,
-      inclusionData: inclusionData.toHex(),
-      executioner: sfx.executor,
-      receivedAt: 0,
-      cost: null,
-    })
+        const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType("T3rnTypesSfxConfirmedSideEffect", {
+            err: null,
+            output: null,
+            inclusionData: inclusionData.toHex(),
+            executioner: sfx.executor,
+            receivedAt: 0,
+            cost: null,
+        })
 
     return this.api.tx.circuit.confirmSideEffect(sfx.id, confirmedSideEffect.toJSON())
   }

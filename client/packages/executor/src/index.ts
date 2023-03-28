@@ -19,22 +19,9 @@ import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { readFile, writeFile, mkdir } from "fs/promises"
 import { dirname } from "path"
 import { homedir } from "os"
+import readline from "readline"
 import * as defaultConfig from "../config.json"
-
-// let readline = require('readline');
-
-// readline.emitKeypressEvents(process.stdin);
-
-// process.stdin.on('keypress', (ch, key) => {
-//   console.log('got "keypress"', ch, key);
-//   if (key && key.ctrl && key.name == 'c') {
-//     console.log('ctrl+c was pressed');
-//     // do something usefull
-//   }
-// });
-
-// process.stdin.setRawMode(true);
-// process.stdin.resume();
+import { problySubstrateSeed } from "./utils"
 
 const pino = require("pino")
 const logger = pino(
@@ -50,80 +37,98 @@ const logger = pino(
     // pino.destination(`${__dirname}/logger.log`) // remove comment to export to file
 )
 
-/**
- * Class used for initializing the executor
- *
- * @group Utils
- */
-class InstanceManager {
+/** An executor instance. */
+class Instance {
     circuitClient: ApiPromise
     executionManager: ExecutionManager
     sdk: Sdk
     signer: any
 
-    async setup(name: string = "example") {
+    /**
+     * Sets up and configures an executor instance.
+     *
+     * @param name Display name and config identifier for an instance
+     * @returns Instance
+     */
+    async setup(name: string = "example"): Promise<Instance> {
+        const config = await this.loadConfig(name)
+        await cryptoWaitReady()
+        this.signer = new Keyring({ type: "sr25519" })
+            // loadConfig asserts that config.circuit.signerKey is set
+            .addFromSeed(Buffer.from(config.circuit.signerKey!, "hex"))
+        this.sdk = new Sdk(config.circuit.rpc, this.signer)
+        // @ts-ignore
+        this.circuitClient = await this.sdk.init()
+        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
+        await this.executionManager.setup(config.gateways, config.vendors)
+        this.registerExitListener()
+        logger.info("Executor: setup complete")
+        return this
+    }
+
+    /**
+     * Loads an instance's config file thereby updating any config changes
+     * staged at ../config.json by persisting the effective instance config
+     * at ~/.t3rn-executor-${name}/config.json.
+     *
+     * @param name Executor instance name
+     * @returns Instance configuration
+     */
+    async loadConfig(name: string): Promise<Config> {
         const configFile = `${homedir()}/.t3rn-executor-${name}/config.json`
         const configDir = dirname(configFile)
         await mkdir(configDir, { recursive: true, mode: 600 })
-
         const persistedConfig = await readFile(configFile)
+            // if the persisted config file does not exist yet we wanna
+            // handle it gracefully because it is probly an initial run
             .then((buf) => {
                 try {
                     return JSON.parse(buf.toString())
-                } catch (_err) {
-                    console.warn(`${configFile} contains invalid JSON`)
+                } catch (err) {
+                    logger.warn(`failed reading ${configFile} ${err}`)
                     return {}
                 }
             })
-            .catch((_err) => {
-                // if the persisted config file does not exist yet we wanna
-                // handle it gracefully because it is probly an initial run
+            .catch((err) => {
+                logger.warn(`failed reading ${configFile} ${err}`)
                 return {}
             })
-
         const config = { ...defaultConfig, ...persistedConfig }
-        if (!config.circuit.signerKey.startsWith("0x")) {
+        await writeFile(configFile, JSON.stringify(config))
+        if (!config.circuit.signerKey?.startsWith("0x")) {
             config.circuit.signerKey = process.env.CIRCUIT_SIGNER_KEY as string
         }
         config.gateways.forEach((gateway) => {
-            if (gateway.signerKey !== undefined && !gateway.signerKey.startsWith("0x")) {
+            if (gateway.signerKey !== undefined && !problySubstrateSeed(gateway.signerKey)) {
                 gateway.signerKey = process.env[`${gateway.name.toUpperCase()}_GATEWAY_SIGNER_KEY`] as string
             }
         })
-
-        await writeFile(configFile, JSON.stringify(config))
-
-        if (!config.circuit.signerKey) {
-            throw Error("InstanceManager::setup: missing signer keys")
+        if (!problySubstrateSeed(config.circuit.signerKey)) {
+            throw Error("Instance::loadConfig: missing circuit signer key")
         }
+        if (!config.gateways.some((gateway) => problySubstrateSeed(gateway.signerKey))) {
+            throw Error("Instance::loadConfig: missing gateway signer key")
+        }
+        return config
+    }
 
-        await cryptoWaitReady()
-        const keyring = new Keyring({ type: "sr25519" })
-
-        this.signer = config.circuit.signerKey
-            ? keyring.addFromMnemonic(config.circuit.signerKey)
-            : keyring.addFromUri("//Executor//default")
-
-        this.sdk = new Sdk(config.circuit.rpc, this.signer)
-
-        // @ts-ignore
-        this.circuitClient = await this.sdk.init()
-
-        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
-        await this.executionManager.setup(config.gateways, config.vendors)
-
-        // register keypress listener 4 ctrl+k (kill) wich would init the shutdown process:
-        // print "shutting down" - don't take new executions - finish pending - then die
-        console.log("shutting down...")
-        
-        // await this.executionManager.shutdown()
-
-        logger.info("Executor: setup complete")
+    /** Registers a keypress listener for Ctrl+C that initates instance shutdown. */
+    private registerExitListener() {
+        readline.emitKeypressEvents(process.stdin)
+        process.stdin.on("keypress", async (_, { ctrl, name }) => {
+            if (ctrl && name === "c") {
+                console.log("shutting down...")
+                await this.executionManager.shutdown()
+                process.exit(0)
+            }
+        })
+        process.stdin.setRawMode(true)
+        process.stdin.resume()
     }
 }
 
 export {
-    InstanceManager,
+    Instance,
     ExecutionManager,
     Queue,
     Execution,
@@ -155,7 +160,7 @@ export {
 }
 
 async function main() {
-    const instanceManager = new InstanceManager()
+    const instanceManager = new Instance()
     await instanceManager.setup(process.env.EXECUTOR)
 }
 
