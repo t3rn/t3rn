@@ -108,6 +108,7 @@ class InstanceManager {
             if (key && key.ctrl && key.name == "k") {
                 console.log("shutting down...")
                 await this.executionManager.shutdown()
+                process.exit(0)
             }
         })
 
