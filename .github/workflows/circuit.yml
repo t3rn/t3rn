@@ -1,13 +1,14 @@
 name: Circuit Build & Test CI
 
 on:
-  pull_request:
-    paths:
-      - "**/*.rs"
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
-      - ".github/workflows/circuit.yml"
-      - ".git/modules/*/HEAD"
+  # TODO: uncomment this when release process is ready
+  # pull_request:
+  #   paths:
+  #     - "**/*.rs"
+  #     - "**/Cargo.toml"
+  #     - "**/Cargo.lock"
+  #     - ".github/workflows/circuit.yml"
+  #     - ".git/modules/*/HEAD"
   push:
     branches:
       - development
