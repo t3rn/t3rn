@@ -9,15 +9,8 @@ use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::{recode::Codec, types::Bytes};
+use t3rn_light_client_commons::traits::{BlockHeightResult, HeaderResult};
 use t3rn_types::sfx::Sfx4bId;
-
-// #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-// #[derive(Clone, Eq, PartialEq, Debug, TypeInfo)]
-pub struct ErrorMsg {
-    pub extrinsic: String,
-    pub msg: String,
-    pub gateway_id: ChainId,
-}
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub struct RegistrationData {
@@ -34,17 +27,19 @@ pub struct RegistrationData {
 }
 
 pub trait Portal<T: frame_system::Config> {
-    fn get_latest_finalized_header(gateway_id: ChainId) -> Result<Option<Bytes>, DispatchError>;
+    fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError>;
 
     fn get_latest_finalized_height(
         gateway_id: ChainId,
-    ) -> Result<Option<T::BlockNumber>, DispatchError>;
+    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
 
     fn get_latest_updated_height(
         gateway_id: ChainId,
-    ) -> Result<Option<T::BlockNumber>, DispatchError>;
+    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
 
-    fn get_current_epoch(gateway_id: ChainId) -> Result<Option<u32>, DispatchError>;
+    fn get_current_epoch(
+        gateway_id: ChainId,
+    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
 
     fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError>;
 

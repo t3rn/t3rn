@@ -6,6 +6,18 @@ use sp_runtime::DispatchError;
 use t3rn_abi::types::Bytes;
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
+pub enum BlockHeightResult<BlockNumber> {
+    Some(BlockNumber),
+    None,
+}
+
+#[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
+pub enum HeaderResult {
+    Some(Bytes),
+    None,
+}
+
+#[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub struct LightClientHeartbeat<T: frame_system::Config> {
     pub last_heartbeat: T::BlockNumber,
     pub last_finalized_height: T::BlockNumber,
@@ -15,11 +27,14 @@ pub struct LightClientHeartbeat<T: frame_system::Config> {
 }
 
 pub trait LightClient<T: frame_system::Config> {
-    fn get_latest_finalized_header(&self) -> Result<Option<Bytes>, DispatchError>;
+    fn get_latest_finalized_header(&self) -> Result<HeaderResult, DispatchError>;
 
-    fn get_latest_finalized_height(&self) -> Result<Option<T::BlockNumber>, DispatchError>;
+    fn get_latest_finalized_height(
+        &self,
+    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
 
-    fn get_latest_updated_height(&self) -> Result<Option<T::BlockNumber>, DispatchError>;
+    fn get_latest_updated_height(&self)
+        -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
 
     fn get_latest_heartbeat(&self) -> Result<LightClientHeartbeat<T>, DispatchError>;
 
@@ -29,7 +44,7 @@ pub trait LightClient<T: frame_system::Config> {
 
     fn read_finalized_confirmation_offset(&self) -> Result<T::BlockNumber, DispatchError>;
 
-    fn get_current_epoch(&self) -> Result<Option<u32>, DispatchError>;
+    fn get_current_epoch(&self) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
 
     fn read_epoch_offset(&self) -> Result<T::BlockNumber, DispatchError>;
 
