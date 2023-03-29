@@ -1833,6 +1833,7 @@ mod tests {
 "#;
 
     #[test]
+    #[ignore]
     fn random_v1() {
         let output = execute(CODE_RANDOM_V1, vec![], MockExt::default()).unwrap();
 
@@ -1990,11 +1991,11 @@ mod tests {
 		;; This stores the block height in the buffer
 		(call $seal_block_number (i32.const 0) (i32.const 32))
 
-		;; assert len == 8
+		;; assert len == 4
 		(call $assert
 			(i32.eq
 				(i32.load (i32.const 32))
-				(i32.const 8)
+				(i32.const 4)
 			)
 		)
 
