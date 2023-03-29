@@ -240,16 +240,13 @@ pub trait Xdns<T: frame_system::Config> {
 
     fn get_sfx_abi(gateway_id: &ChainId, sfx_4b_id: Sfx4bId) -> Option<SFXAbi>;
 
-    fn modify_security_level(
+    fn add_escrow_account(
         origin: OriginFor<T>,
         gateway_id: ChainId,
-        security_level: SecurityLvl,
-        security_coordinates: Vec<u8>,
+        escrow_account: T::AccountId,
     ) -> DispatchResult;
 
-    fn allowed_side_effects(gateway_id: &ChainId) -> Vec<[u8; 4]>;
-
-    fn update_gateway_ttl(gateway_id: ChainId, last_finalized: u64) -> DispatchResultWithPostInfo;
+    fn allowed_side_effects(gateway_id: &ChainId) -> Vec<([u8; 4], Option<u8>)>;
 
     fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
 

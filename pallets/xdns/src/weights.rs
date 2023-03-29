@@ -39,7 +39,7 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
     fn add_new_gateway() -> Weight;
     fn update_ttl() -> Weight;
-    fn purge_xdns_record() -> Weight;
+    fn purge_gateway() -> Weight;
     fn best_available() -> Weight;
 }
 
@@ -58,7 +58,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
-    fn purge_xdns_record() -> Weight {
+    fn purge_gateway() -> Weight {
         58_912_000_u64
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
@@ -83,7 +83,7 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
-    fn purge_xdns_record() -> Weight {
+    fn purge_gateway() -> Weight {
         58_912_000_u64
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
