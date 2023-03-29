@@ -153,47 +153,36 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Updates the last_finalized field for an xdns_record from the onchain registry. Root only access.
-        #[pallet::weight(< T as Config >::WeightInfo::update_ttl())]
-        pub fn update_ttl(
-            origin: OriginFor<T>,
-            gateway_id: ChainId,
-            last_finalized: u64,
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-            Self::update_gateway_ttl(gateway_id, last_finalized)
-        }
-
-        /// Removes a xdns_record from the onchain registry. Root only access.
-        #[pallet::weight(< T as Config >::WeightInfo::purge_xdns_record())]
+        /// Removes a gateway from the onchain registry. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
         pub fn purge_gateway_record(
             origin: OriginFor<T>,
             requester: T::AccountId,
-            xdns_record_id: [u8; 4],
+            gateway_id: [u8; 4],
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            if !<Gateways<T>>::contains_key(xdns_record_id) {
+            if !<Gateways<T>>::contains_key(gateway_id) {
                 Err(Error::<T>::UnknownXdnsRecord.into())
             } else {
-                <Gateways<T>>::remove(xdns_record_id);
-                Self::deposit_event(Event::<T>::GatewayRecordPurged(requester, xdns_record_id));
+                <Gateways<T>>::remove(gateway_id);
+                Self::deposit_event(Event::<T>::GatewayRecordPurged(requester, gateway_id));
                 Ok(().into())
             }
         }
 
-        /// Removes a xdns_record from the onchain registry. Root only access.
-        #[pallet::weight(< T as Config >::WeightInfo::purge_xdns_record())]
-        pub fn purge_xdns_record(
+        /// Removes a gateway from the onchain registry. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
+        pub fn purge_gateway(
             origin: OriginFor<T>,
             requester: T::AccountId,
-            xdns_record_id: [u8; 4],
+            gateway_id: [u8; 4],
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            if !<XDNSRegistry<T>>::contains_key(xdns_record_id) {
+            if !<XDNSRegistry<T>>::contains_key(gateway_id) {
                 Err(Error::<T>::UnknownXdnsRecord.into())
             } else {
-                <XDNSRegistry<T>>::remove(xdns_record_id);
-                Self::deposit_event(Event::<T>::XdnsRecordPurged(requester, xdns_record_id));
+                <XDNSRegistry<T>>::remove(gateway_id);
+                Self::deposit_event(Event::<T>::XdnsRecordPurged(requester, gateway_id));
                 Ok(().into())
             }
         }
@@ -206,7 +195,7 @@ pub mod pallet {
         GatewayRecordStored([u8; 4]),
         /// \[token_4b_id, gateway_4b_id\]
         TokenRecordStored([u8; 4], [u8; 4]),
-        /// \[xdns_record_id\]
+        /// \[gateway_id\]
         XdnsRecordStored([u8; 4]),
         /// \[requester, gateway_record_id\]
         GatewayRecordPurged(T::AccountId, [u8; 4]),
@@ -227,6 +216,8 @@ pub mod pallet {
         XdnsRecordAlreadyExists,
         /// Access of unknown xdns_record
         UnknownXdnsRecord,
+        /// Gateway Record not found
+        GatewayRecordNotFound,
         /// Xdns Record not found
         XdnsRecordNotFound,
         /// SideEffectABI already exists
@@ -423,30 +414,10 @@ pub mod pallet {
         }
 
         /// returns a mapping of all allowed side_effects of a gateway.
-        fn allowed_side_effects(gateway_id: &ChainId) -> Vec<Sfx4bId> {
-            match <XDNSRegistry<T>>::get(gateway_id) {
-                Some(xdns_record) => xdns_record.allowed_side_effects,
+        fn allowed_side_effects(gateway_id: &ChainId) -> Vec<(Sfx4bId, Option<u8>)> {
+            match <Gateways<T>>::get(gateway_id) {
+                Some(gateway) => gateway.allowed_side_effects,
                 None => Vec::new(),
-            }
-        }
-
-        fn update_gateway_ttl(
-            gateway_id: ChainId,
-            last_finalized: u64,
-        ) -> DispatchResultWithPostInfo {
-            if !XDNSRegistry::<T>::contains_key(gateway_id) {
-                Err(Error::<T>::XdnsRecordNotFound.into())
-            } else {
-                XDNSRegistry::<T>::mutate(gateway_id, |xdns_record| match xdns_record {
-                    None => Err(Error::<T>::XdnsRecordNotFound),
-                    Some(record) => {
-                        record.set_last_finalized(last_finalized);
-                        Ok(())
-                    },
-                })?;
-
-                Self::deposit_event(Event::<T>::XdnsRecordUpdated(gateway_id));
-                Ok(().into())
             }
         }
 
@@ -486,7 +457,7 @@ pub mod pallet {
             sfx_expected_abi: SFXAbi,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            if !<XDNSRegistry<T>>::contains_key(gateway_id) {
+            if !<Gateways<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
 
@@ -507,7 +478,7 @@ pub mod pallet {
             new_sfx_abis: Vec<(Sfx4bId, SFXAbi)>,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            if !<XDNSRegistry<T>>::contains_key(gateway_id) {
+            if !<Gateways<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
 
@@ -530,18 +501,17 @@ pub mod pallet {
             <SFXABIRegistry<T>>::get(gateway_id, sfx_4b_id)
         }
 
-        fn modify_security_level(
+        fn add_escrow_account(
             origin: OriginFor<T>,
             gateway_id: ChainId,
-            _security_level: SecurityLvl,
-            security_coordinates: Vec<u8>,
+            escrow_account: T::AccountId,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            XDNSRegistry::<T>::mutate(gateway_id, |xdns_record| match xdns_record {
-                None => Err(Error::<T>::XdnsRecordNotFound),
+            Gateways::<T>::mutate(gateway_id, |gateway| match gateway {
+                None => Err(Error::<T>::GatewayRecordNotFound),
                 Some(record) => {
-                    record.security_coordinates = security_coordinates;
+                    record.escrow_account = Some(escrow_account);
                     Ok(())
                 },
             })?;

@@ -26,7 +26,7 @@ use sp_runtime::DispatchError;
 use t3rn_primitives::{xdns::Xdns, GatewayVendor};
 
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 7;
-const STANDARD_SFX_ABI_COUNT: usize = 9;
+const STANDARD_SFX_ABI_COUNT: usize = 7;
 
 #[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
@@ -144,7 +144,7 @@ fn should_error_trying_to_purge_a_missing_xdns_record() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_xdns_record(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
+                XDNS::purge_gateway(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
                 pallet_xdns::pallet::Error::<Runtime>::UnknownXdnsRecord
             );
             assert_eq!(
@@ -162,7 +162,7 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_xdns_record(Origin::<Runtime>::Signed(ALICE).into(), ALICE, *b"gate"),
+                XDNS::purge_gateway(Origin::<Runtime>::Signed(ALICE).into(), ALICE, *b"gate"),
                 DispatchError::BadOrigin
             );
             assert_eq!(
@@ -171,26 +171,6 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
             );
             assert!(pallet_xdns::Gateways::<Runtime>::get(b"gate").is_some());
         });
-}
-
-#[test]
-fn should_error_when_trying_to_update_ttl_for_a_missing_xdns_record() {
-    ExtBuilder::default().build().execute_with(|| {
-        assert_noop!(
-            XDNS::update_ttl(Origin::<Runtime>::Root.into(), *b"miss", 2),
-            pallet_xdns::pallet::Error::<Runtime>::XdnsRecordNotFound
-        );
-    });
-}
-
-#[test]
-fn should_error_when_trying_to_update_ttl_as_non_root() {
-    ExtBuilder::default().build().execute_with(|| {
-        assert_noop!(
-            XDNS::update_ttl(Origin::<Runtime>::Signed(ALICE).into(), *b"gate", 2),
-            DispatchError::BadOrigin
-        );
-    });
 }
 
 #[test]
