@@ -1,14 +1,13 @@
 name: Circuit Build & Test CI
 
 on:
-  # TODO: uncomment this when release process is ready
-  # pull_request:
-  #   paths:
-  #     - "**/*.rs"
-  #     - "**/Cargo.toml"
-  #     - "**/Cargo.lock"
-  #     - ".github/workflows/circuit.yml"
-  #     - ".git/modules/*/HEAD"
+  pull_request:
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - ".github/workflows/circuit.yml"
+      - ".git/modules/*/HEAD"
   push:
     branches:
       - development
@@ -16,8 +15,6 @@ on:
       - "**/*.rs"
       - "**/Cargo.*"
       - .github/workflows/pull_request.yml
-  schedule:
-    - cron: "0,1 5 * * MON-FRI"
 
 env:
   RUST_BACKTRACE: 1
