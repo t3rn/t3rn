@@ -12,10 +12,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Calculate semantic version
+      - name: Calculate semantic version 
         id: version
-        uses: ./semantic-version
-        # uses: t3rn/semantic-version@increment-fix
+        uses: t3rn/semantic-version@v6.0.3
         with:
           tag_prefix: "v"
           major_pattern: "/^(feat|refactor)(\\([a-z]+\\))?!:/"
