@@ -24,10 +24,6 @@ import { homedir } from "os"
 import readline from "readline"
 import * as defaultConfig from "../config.json"
 
-readline.emitKeypressEvents(process.stdin)
-process.stdin.setRawMode(true)
-process.stdin.resume()
-
 const pino = require("pino")
 const logger = pino(
     {
@@ -130,6 +126,9 @@ class InstanceManager {
     }
 
     registerExitListener() {
+        readline.emitKeypressEvents(process.stdin)
+        process.stdin.setRawMode(true)
+        process.stdin.resume()
         process.stdin.on("keypress", async (_ch, key) => {
             if (key && key.ctrl && key.name == "k") {
                 console.log("shutting down...")
