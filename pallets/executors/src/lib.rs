@@ -1250,7 +1250,6 @@ pub mod pallet {
         SfxDecodingAddressErr,
         SfxDecodingDataErr,
         DecodingAddressTo32Err,
-        PablosCustomError,
     }
 
     #[pallet::genesis_config]

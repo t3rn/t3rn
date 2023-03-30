@@ -7334,7 +7334,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
- "t3rn-types 0.0.1-rc.3",
+ "t3rn-types 1.5.0-rc.0",
  "xp-channel",
  "xp-format",
  "xs-channel",
