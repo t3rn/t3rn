@@ -436,7 +436,7 @@ pub mod grandpa_light_clients_test {
 
             assert_eq!(
                 latest_finalized,
-                Some(
+                HeaderResult::Header(
                     hex!("dcdd89927d8a348e00257e1ecc8617f45edb5118efff3ea2f9961b2ad9b7690a").into()
                 )
             );
@@ -564,7 +564,8 @@ pub mod grandpa_light_clients_test {
 
                 assert_ok!(submit_res);
 
-                let expected_header = Some(headers_range.signed_header.hash().encode());
+                let expected_header =
+                    HeaderResult::Header(headers_range.signed_header.hash().encode());
 
                 assert_eq!(
                     roco_light_client.get_latest_heartbeat().unwrap(),
