@@ -127,15 +127,15 @@ class InstanceManager {
 
     registerExitListener() {
         readline.emitKeypressEvents(process.stdin)
-        process.stdin.setRawMode(true)
-        process.stdin.resume()
-        process.stdin.on("keypress", async (_ch, key) => {
-            if (key && key.ctrl && key.name == "k") {
+        process.stdin.on("keypress", async (_, { ctrl, name }) => {
+            if (ctrl && name === "c") {
                 console.log("shutting down...")
                 await this.executionManager.shutdown()
                 process.exit(0)
             }
         })
+        process.stdin.setRawMode(true)
+        process.stdin.resume()
     }
 }
 

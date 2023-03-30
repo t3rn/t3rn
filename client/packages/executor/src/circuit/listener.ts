@@ -49,7 +49,7 @@ export class CircuitListener extends EventEmitter {
     }
 
     async start() {
-        this.stop = this.client.query.system.events((notifications) => {
+        this.stop = await this.client.query.system.events((notifications) => {
             for (let i = 0; i < notifications.length; i++) {
                 if (notifications[i].event.method === "NewSideEffectsAvailable") {
                     // receives new side effects
