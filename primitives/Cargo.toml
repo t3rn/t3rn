@@ -32,10 +32,10 @@ sp-version            = { git = "https://github.com/paritytech/substrate.git", b
 finality-grandpa    = { version = "0.16", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
 num-traits          = { version = "0.2", default-features = false }
-sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.27' }
-sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-api              = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = 'polkadot-v0.9.27' }
+sp-state-machine    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
+sp-trie             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
 
 snowbridge-core = { path = "src/bridges/snowfork/core", default-features = false }
 

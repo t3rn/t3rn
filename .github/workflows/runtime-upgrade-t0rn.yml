@@ -1,0 +1,46 @@
+name: t0rn Runtime Upgrade
+
+on:
+  push:
+    tags:
+      # This is a GLOB not a regex. Don't add escape sequences to me
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+
+env:
+  APPROVERS: AwesomeIbex,MaciejBaj
+  PARACHAIN_NAME: t0rn
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    needs: run-smoke-tests
+    steps:
+      - name: 📥 Download runtime WASM
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
+          path: ./target/release/
+
+      - name: 📥 Download runtime WASM hash blake2_256
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
+          path: ./target/release/
+
+      - name: 🚀 t0rn Runtime Upgrade Dry Run
+        run: |
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ github.ref }} ${{ env.PARACHAIN_NAME }} --dry-run
+
+      - name: Approval
+        uses: trstringer/manual-approval@v1
+        timeout-minutes: 300
+        with:
+          secret: ${{ secrets.GH_PAT }}
+          approvers: ${{ env.APPROVERS }}
+          minimum-approvals: 1
+          issue-title: "Release ${{ env.PARACHAIN_NAME }} ${{ github.ref }}"
+          issue-body: "Please approve the release of ${{ env.PARACHAIN_NAME }} ${{ github.ref }}"
+
+      - name: 🚀 t0rn Runtime Upgrade
+        run: |
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ github.ref }} ${{ env.PARACHAIN_NAME }}
