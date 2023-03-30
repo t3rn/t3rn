@@ -44,6 +44,8 @@ similar-asserts = "1.1.0"
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
 sp-io   = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
 
+hex-literal = "0.3"
+
 circuit-mock-runtime    = { path = "../../runtime/mock" }
 circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
 circuit-runtime-types   = { path = "../../runtime/common-types" }

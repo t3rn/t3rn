@@ -1855,25 +1855,25 @@ impl<T: Config> TryInto<XbiFormat> for SfxWithMetadataNewtype<T> {
             b"call" => Ok(XbiFormat {
                 instr: XbiInstruction::CallCustom {
                     // Get dest as argument_0 of SFX::CallWasm of Type::DynamicAddress
-                    caller: Decode::decode(&mut &side_effect.encoded_args[0][..])
+                    caller: Decode::decode(&mut vec![0u8; 32].as_ref())
                         .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
                     // Get dest as argument_1 of SFX::CallWasm of Type::DynamicAddress
-                    dest: Decode::decode(&mut &side_effect.encoded_args[1][..])
+                    dest: Decode::decode(&mut &side_effect.encoded_args[0][..])
                         .map_err(|_| Error::<T>::SfxDecodingAddressErr)?,
                     // Get dest as argument_2 of SFX::CallWasm of Type::Value
                     value: Sabi::try_convert(ValueMorphism::<_, u128>::new(
-                        &mut &side_effect.encoded_args[2][..],
+                        &mut &side_effect.encoded_args[1][..],
                     ))
                     .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
                     // Get dest as argument_3 of SFX::CallEvm of Type::DynamicBytes
-                    input: side_effect.encoded_args[3].clone(),
+                    input: side_effect.encoded_args[2].clone(),
                     // Get dest as argument_4 of SFX::CallWasm of Type::Value
                     limit: Sabi::try_convert(ValueMorphism::<_, u64>::new(
-                        &mut &side_effect.encoded_args[4][..],
+                        &mut &side_effect.encoded_args[3][..],
                     ))
                     .map_err(|_| Error::<T>::SfxDecodingValueErr)?,
                     // Get dest as argument_5 of SFX::CallEvm of Type::DynamicBytes
-                    additional_params: side_effect.encoded_args[5].clone(),
+                    additional_params: side_effect.encoded_args[4].clone(),
                 },
                 metadata,
             }),

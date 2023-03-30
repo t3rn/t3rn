@@ -19,7 +19,9 @@ use circuit_runtime_pallets::pallet_executors::{
 };
 use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, traits::Currency};
+use hex_literal::hex;
 use pallet_circuit::{bridges::polkadot_core::Hashing, SideEffect};
+use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, ValueMorphism};
 use sp_runtime::{AccountId32, Percent};
 use t3rn_primitives::{
     common::{OrderedSet, Range, DEFAULT_ROUND_TERM},
@@ -2743,7 +2745,7 @@ fn cancel_leave_stakers_successfully() {
 }
 
 #[test]
-fn check_proper_conversion_from_sfx_2_xbi_for_tran() {
+fn check_proper_conversion_from_sfx_to_xbi_for_tran() {
     new_test_ext().execute_with(|| {
         let origin = Origin::signed(ALICE);
 
@@ -2843,7 +2845,6 @@ fn check_proper_conversion_from_sfx_to_xbi_for_aliq() {
         let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
             .try_into()
             .unwrap();
-        println!("{:?}", xbi);
 
         assert_eq!(
             xbi,
@@ -2892,7 +2893,6 @@ fn check_proper_conversion_from_sfx_to_xbi_for_swap() {
         let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
             .try_into()
             .unwrap();
-        println!("{:?}", xbi);
 
         assert_eq!(
             xbi,
@@ -2910,15 +2910,41 @@ fn check_proper_conversion_from_sfx_to_xbi_for_swap() {
     });
 }
 
+
 #[test]
 fn check_proper_conversion_from_sfx_to_xbi_for_cevm() {
     new_test_ext().execute_with(|| {
         let origin = Origin::signed(ALICE);
 
-        let se =
-            produce_and_validate_side_effect(*b"cevm", 1, 1, t3rn_abi::Codec::Rlp, ArgVariant::A);
-        println!("{:?}", se);
-
+        // This doesn't work for `cevm`:  produce_and_validate_side_effect(*b"cevm", 1, 1, t3rn_abi::Codec::Rlp, ArgVariant::B);
+        // Take the values produced by the function above and pad with a 1 in front of the Option args
+        let se = SideEffect {
+            target: [0u8, 0u8, 0u8, 0u8],
+            max_reward: 2,
+            action: [99, 101, 118, 109],
+            encoded_args: vec![
+                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![6, 6, 6, 6, 6, 6, 6, 6], 
+                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![1, 0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![1, 0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+            signature: vec![],
+            enforce_executor: Some(
+                [
+                    53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85,
+                    53, 110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121,
+                ]
+                .into(),
+            ),
+            insurance: 3,
+            reward_asset_id: None,
+        };
+        
+        
         let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
         let executor = ensure_signed(origin.clone()).unwrap();
         let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
@@ -2944,21 +2970,23 @@ fn check_proper_conversion_from_sfx_to_xbi_for_cevm() {
             .try_into()
             .unwrap();
 
-        println!("{:?}", xbi);
-
-        // assert_eq!(
-        //     xbi,
-        //     XbiFormat {
-        //         instr: XbiInstruction::T {
-        //             asset_out: 151587081,
-        //             asset_in: 151587081,
-        //             amount: 1,
-        //             max_limit: 1,
-        //             discount: Default::default()
-        //         },
-        //         metadata,
-        //     }
-        // );
+        assert_eq!(
+            xbi,
+            XbiFormat {
+                instr: XbiInstruction::CallEvm {
+                    source: hex!("0000000000000000000000000000000000000000").into(), 
+                    target: hex!("005a620200000000000000000000000000000000").into(), 
+                    value: 40000000.into(), 
+                    input: vec![6, 6, 6, 6, 6, 6, 6, 6], 
+                    gas_limit: 40000000, 
+                    max_fee_per_gas: 40000000.into(), 
+                    max_priority_fee_per_gas: Some(10240000001i64.into()), 
+                    nonce: Some(10240000001i64.into()), 
+                    access_list: vec![]
+                },
+                metadata,
+            }
+        );
     });
 }
 
@@ -2967,8 +2995,29 @@ fn check_proper_conversion_from_sfx_to_xbi_for_wasm() {
     new_test_ext().execute_with(|| {
         let origin = Origin::signed(ALICE);
 
-        let se =
-            produce_and_validate_side_effect(*b"wasm", 1, 1, t3rn_abi::Codec::Scale, ArgVariant::A);
+        // This doesn't work for `wasm`:  produce_and_validate_side_effect(*b"wasm", 1, 1, t3rn_abi::Codec::Scale, ArgVariant::B);
+        let se = SideEffect {
+            target: [0u8, 0u8, 0u8, 0u8],
+            max_reward: 2,
+            action: [119, 97, 115, 109],
+            encoded_args: vec![
+                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 
+                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+                ],
+            signature: vec![],
+            enforce_executor: Some(
+                [
+                    53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85,
+                    53, 110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121,
+                ]
+                .into(),
+            ),
+            insurance: 3,
+            reward_asset_id: None,
+        };
 
         let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
         let executor = ensure_signed(origin.clone()).unwrap();
@@ -2994,21 +3043,20 @@ fn check_proper_conversion_from_sfx_to_xbi_for_wasm() {
         let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
             .try_into()
             .unwrap();
-        println!("{:?}", xbi);
 
-        // assert_eq!(
-        //     xbi,
-        //     XbiFormat {
-        //         instr: XbiInstruction::T {
-        //             asset_out: 151587081,
-        //             asset_in: 151587081,
-        //             amount: 1,
-        //             max_limit: 1,
-        //             discount: Default::default()
-        //         },
-        //         metadata,
-        //     }
-        // );
+        assert_eq!(
+            xbi,
+            XbiFormat {
+                instr: XbiInstruction::CallWasm {
+                    dest: AccountId32::new([9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]), 
+                    value: 1, 
+                    gas_limit: 1, 
+                    storage_deposit_limit: Some(257), 
+                    data: vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+                },
+                metadata,
+            }
+        );
     });
 }
 
@@ -3017,8 +3065,29 @@ fn check_proper_conversion_from_sfx_to_xbi_for_call() {
     new_test_ext().execute_with(|| {
         let origin = Origin::signed(ALICE);
 
-        let se =
-            produce_and_validate_side_effect(*b"cgen", 1, 1, t3rn_abi::Codec::Scale, ArgVariant::A);
+        // This doesn't work for `cgen`:  produce_and_validate_side_effect(*b"cgen", 1, 1, t3rn_abi::Codec::Scale, ArgVariant::B);
+        let se = SideEffect {
+            target: [0u8, 0u8, 0u8, 0u8],
+            max_reward: 2,
+            action: [99, 97, 108, 108],
+            encoded_args: vec![
+                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 
+                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 
+                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+                ],
+            signature: vec![],
+            enforce_executor: Some(
+                [
+                    53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85,
+                    53, 110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121,
+                ]
+                .into(),
+            ),
+            insurance: 3,
+            reward_asset_id: None,
+        };
 
         let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
         let executor = ensure_signed(origin.clone()).unwrap();
@@ -3044,20 +3113,20 @@ fn check_proper_conversion_from_sfx_to_xbi_for_call() {
         let xbi: XbiFormat = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone())
             .try_into()
             .unwrap();
-        println!("{:?}", xbi);
 
-        // assert_eq!(
-        //     xbi,
-        //     XbiFormat {
-        //         instr: XbiInstruction::T {
-        //             asset_out: 151587081,
-        //             asset_in: 151587081,
-        //             amount: 1,
-        //             max_limit: 1,
-        //             discount: Default::default()
-        //         },
-        //         metadata,
-        //     }
-        // );
+        assert_eq!(
+            xbi,
+            XbiFormat {
+                instr: XbiInstruction::CallCustom {
+                    caller: AccountId32::new([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]), 
+                    dest: AccountId32::new([9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]), 
+                    value: 1, 
+                    input: vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 
+                    limit: 1, 
+                    additional_params: vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+                },
+                metadata,
+            }
+        );
     });
 }

@@ -40,6 +40,7 @@ pub fn recursive_produce_test_args_for_abi(abi: Abi, args_variant: ArgVariant) -
             unimplemented!("Vec is not supported yet")
         },
         Abi::Option(_, abi) => match args_variant {
+            // FIXME: for Option arguments, the values need one more element
             ArgVariant::A => vec![0u8.encode()],
             ArgVariant::B => recursive_produce_test_args_for_abi(*abi, args_variant),
             ArgVariant::C => recursive_produce_test_args_for_abi(*abi, args_variant),
