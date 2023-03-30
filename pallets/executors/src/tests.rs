@@ -21,8 +21,8 @@ use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, traits::Currency};
 use hex_literal::hex;
 use pallet_circuit::{bridges::polkadot_core::Hashing, SideEffect};
-use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, ValueMorphism};
 use sp_runtime::{AccountId32, Percent};
+use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, ValueMorphism};
 use t3rn_primitives::{
     common::{OrderedSet, Range, DEFAULT_ROUND_TERM},
     executors::{
@@ -2910,7 +2910,6 @@ fn check_proper_conversion_from_sfx_to_xbi_for_swap() {
     });
 }
 
-
 #[test]
 fn check_proper_conversion_from_sfx_to_xbi_for_cevm() {
     new_test_ext().execute_with(|| {
@@ -2923,15 +2922,36 @@ fn check_proper_conversion_from_sfx_to_xbi_for_cevm() {
             max_reward: 2,
             action: [99, 101, 118, 109],
             encoded_args: vec![
-                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![6, 6, 6, 6, 6, 6, 6, 6], 
-                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![1, 0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![1, 0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![
+                    0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
                 ],
+                vec![
+                    0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ],
+                vec![6, 6, 6, 6, 6, 6, 6, 6],
+                vec![
+                    0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ],
+                vec![
+                    0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ],
+                vec![
+                    1, 0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0,
+                ],
+                vec![
+                    1, 0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0,
+                ],
+                vec![
+                    0, 90, 98, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ],
+            ],
             signature: vec![],
             enforce_executor: Some(
                 [
@@ -2943,8 +2963,7 @@ fn check_proper_conversion_from_sfx_to_xbi_for_cevm() {
             insurance: 3,
             reward_asset_id: None,
         };
-        
-        
+
         let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
         let executor = ensure_signed(origin.clone()).unwrap();
         let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
@@ -2974,14 +2993,14 @@ fn check_proper_conversion_from_sfx_to_xbi_for_cevm() {
             xbi,
             XbiFormat {
                 instr: XbiInstruction::CallEvm {
-                    source: hex!("0000000000000000000000000000000000000000").into(), 
-                    target: hex!("005a620200000000000000000000000000000000").into(), 
-                    value: 40000000.into(), 
-                    input: vec![6, 6, 6, 6, 6, 6, 6, 6], 
-                    gas_limit: 40000000, 
-                    max_fee_per_gas: 40000000.into(), 
-                    max_priority_fee_per_gas: Some(10240000001i64.into()), 
-                    nonce: Some(10240000001i64.into()), 
+                    source: hex!("0000000000000000000000000000000000000000").into(),
+                    target: hex!("005a620200000000000000000000000000000000").into(),
+                    value: 40000000.into(),
+                    input: vec![6, 6, 6, 6, 6, 6, 6, 6],
+                    gas_limit: 40000000,
+                    max_fee_per_gas: 40000000.into(),
+                    max_priority_fee_per_gas: Some(10240000001i64.into()),
+                    nonce: Some(10240000001i64.into()),
                     access_list: vec![]
                 },
                 metadata,
@@ -3001,12 +3020,15 @@ fn check_proper_conversion_from_sfx_to_xbi_for_wasm() {
             max_reward: 2,
             action: [119, 97, 115, 109],
             encoded_args: vec![
-                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 
-                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+                vec![
+                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                    9, 9, 9, 9, 9, 9,
                 ],
+                vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+            ],
             signature: vec![],
             enforce_executor: Some(
                 [
@@ -3048,10 +3070,13 @@ fn check_proper_conversion_from_sfx_to_xbi_for_wasm() {
             xbi,
             XbiFormat {
                 instr: XbiInstruction::CallWasm {
-                    dest: AccountId32::new([9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]), 
-                    value: 1, 
-                    gas_limit: 1, 
-                    storage_deposit_limit: Some(257), 
+                    dest: AccountId32::new([
+                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                        9, 9, 9, 9, 9, 9, 9
+                    ]),
+                    value: 1,
+                    gas_limit: 1,
+                    storage_deposit_limit: Some(257),
                     data: vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
                 },
                 metadata,
@@ -3071,12 +3096,15 @@ fn check_proper_conversion_from_sfx_to_xbi_for_call() {
             max_reward: 2,
             action: [99, 97, 108, 108],
             encoded_args: vec![
-                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 
-                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 
-                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                    vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+                vec![
+                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                    9, 9, 9, 9, 9, 9,
                 ],
+                vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+                vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+            ],
             signature: vec![],
             enforce_executor: Some(
                 [
@@ -3118,11 +3146,17 @@ fn check_proper_conversion_from_sfx_to_xbi_for_call() {
             xbi,
             XbiFormat {
                 instr: XbiInstruction::CallCustom {
-                    caller: AccountId32::new([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]), 
-                    dest: AccountId32::new([9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]), 
-                    value: 1, 
-                    input: vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 
-                    limit: 1, 
+                    caller: AccountId32::new([
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0
+                    ]),
+                    dest: AccountId32::new([
+                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                        9, 9, 9, 9, 9, 9, 9
+                    ]),
+                    value: 1,
+                    input: vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+                    limit: 1,
                     additional_params: vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
                 },
                 metadata,
