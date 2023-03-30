@@ -4,7 +4,7 @@ use pallet_3vm_evm::AddressMapping;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
-use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
+use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
@@ -13,6 +13,7 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
+use t3rn_primitives::xdns::GatewayRecord;
 
 pub use frame_support::{
     construct_runtime, parameter_types,
@@ -293,10 +294,8 @@ impl_runtime_apis! {
     }
 
     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
-        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
-             FetchXdnsRecordsResponse {
-                xdns_records: <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_records()
-            }
+        fn fetch_records() -> Vec<GatewayRecord<AccountId>> {
+             <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_gateways()
         }
 
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
