@@ -19,7 +19,7 @@ pub use circuit_runtime_types::*;
 
 use frame_system::EnsureRoot;
 use pallet_3vm_evm::AddressMapping;
-use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
+use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
@@ -29,6 +29,7 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 use sp_std::{convert::TryInto, prelude::*};
+use t3rn_primitives::xdns::GatewayRecord;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -384,10 +385,8 @@ impl_runtime_apis! {
     }
 
     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
-        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
-             FetchXdnsRecordsResponse {
-                xdns_records: <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_records()
-            }
+        fn fetch_records() -> Vec<GatewayRecord<AccountId>> {
+             <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_gateways()
         }
 
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {

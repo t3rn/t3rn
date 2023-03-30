@@ -15,7 +15,7 @@ sp_api::decl_runtime_apis! {
         AccountId: Codec,
     {
         /// Returns metadata for all known Blockchains
-        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId>;
+        fn fetch_records() -> Vec<GatewayRecord<AccountId>>;
 
         /// Returns the GatewayABIConfig for a given ChainId
         fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig>;
