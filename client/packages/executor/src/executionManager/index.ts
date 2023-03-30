@@ -122,6 +122,7 @@ export class ExecutionManager {
                 }
             }
             this.circuitListener.once("Event", recheckQueue)
+            recheckQueue()
         })
     }
 
