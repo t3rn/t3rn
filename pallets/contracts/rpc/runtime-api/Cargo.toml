@@ -18,9 +18,9 @@ scale-info = { version = "2.0.0", default-features = false, features = [ "derive
 
 # Substrate Dependencies
 pallet-contracts-primitives = { version = "5.0.0", default-features = false, path = "../../primitives" }
-sp-api                      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-runtime                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-std                      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-api                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
+sp-runtime                  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
+sp-std                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
 
 [features]
 default = [ "std" ]
