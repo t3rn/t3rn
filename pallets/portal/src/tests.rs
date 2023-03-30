@@ -2,7 +2,10 @@
 mod tests {
     use circuit_mock_runtime::{ExtBuilder, Portal, *};
     use frame_support::assert_ok;
-    use t3rn_primitives::{portal::Portal as PortalT, GatewayVendor};
+    use t3rn_primitives::{
+        portal::{HeightResult, Portal as PortalT},
+        GatewayVendor,
+    };
 
     fn test_get_latest_finalized_header(vendor: GatewayVendor) {
         ExtBuilder::default()
@@ -49,8 +52,8 @@ mod tests {
                     _ => unreachable!(),
                 };
                 let result = Portal::get_latest_finalized_height(gateway_id);
-                assert_ok!(result);
-                assert_eq!(result.unwrap(), Some(0));
+                assert_ok!(result.clone());
+                assert_eq!(result.unwrap(), HeightResult::Height(0));
             });
     }
 
