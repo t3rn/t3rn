@@ -54,6 +54,29 @@ class InstanceManager {
     signer: any
 
     async setup(name: string = "example") {
+        await cryptoWaitReady()
+        const keyring = new Keyring({ type: "sr25519" })
+
+        const config = await this.loadConfig(name)
+
+        this.signer = config.circuit.signerKey
+            ? keyring.addFromMnemonic(config.circuit.signerKey)
+            : keyring.addFromUri("//Executor//default")
+
+        this.sdk = new Sdk(config.circuit.rpc, this.signer)
+
+        // @ts-ignore
+        this.circuitClient = await this.sdk.init()
+
+        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
+        await this.executionManager.setup(config.gateways, []) //TODO 2nd arg vendors
+
+        this.registerExitListener()
+
+        logger.info("Executor: setup complete")
+    }
+
+    async loadConfig(name: string) {
         const configFile = `${homedir()}/.t3rn-executor-${name}/config.json`
         const configDir = dirname(configFile)
         await mkdir(configDir, { recursive: true, mode: 600 })
@@ -86,7 +109,7 @@ class InstanceManager {
         await writeFile(configFile, JSON.stringify(config))
 
         if (!config.circuit.signerKey) {
-            throw Error("InstanceManager::setup: missing signer keys")
+            throw Error("InstanceManager::setup: missing circuit signer key")
         }
 
         await cryptoWaitReady()
@@ -103,16 +126,17 @@ class InstanceManager {
 
         this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
         await this.executionManager.setup(config.gateways, config.vendors)
+        return config
+    }
 
-        process.stdin.on("keypress", async (ch, key) => {
+    registerExitListener() {
+        process.stdin.on("keypress", async (_ch, key) => {
             if (key && key.ctrl && key.name == "k") {
                 console.log("shutting down...")
                 await this.executionManager.shutdown()
                 process.exit(0)
             }
         })
-
-        logger.info("Executor: setup complete")
     }
 }
 
