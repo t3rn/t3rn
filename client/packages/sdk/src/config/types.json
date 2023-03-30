@@ -13,6 +13,12 @@
             "TxOnly": "u32"
         }
     },
+    "RuntimeCodec": {
+         "_enum": [
+            "Scale",
+             "Rlp"
+        ]
+    },
     "GatewayGenesisConfig": {
         "modules_encoded": "Option<Bytes>",
         "extrinsics_version": "u8",

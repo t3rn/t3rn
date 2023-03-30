@@ -23,63 +23,36 @@ export const registerSubstrate = async (circuit: ApiPromise, gatewayData: any, e
 const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData, epochsAgo)
     console.log("Registering Block #", registrationHeader.number.toNumber());
-    return [{
-        url: circuit.createType("Vec<u8>", gatewayData.rpc),
+    return {
         gateway_id: circuit.createType("ChainId", gatewayData.id),
-        gateway_abi: createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig),
-        gateway_vendor: circuit.createType('GatewayVendor', 'Rococo'),
-        gateway_type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
-        gateway_genesis: await createGatewayGenesis(circuit, target),
+        token_id: circuit.createType("ChainId", gatewayData.tokenId),
+        verification_vendor: circuit.createType('GatewayVendor', 'Rococo'),
+        codec: circuit.createType('RuntimeCodec', 'Scale'),
+        registrant: null,
+        escrow_accounts: null,
+        allowed_side_effects: circuit.createType('Vec<([u8; 4], Option<u8>)>', gatewayData.registrationData.allowedSideEffects),
         token_sys_props: createTokenSysProps(circuit, gatewayData.registrationData.gatewaySysProps),
-        allowed_side_effects: circuit.createType('Vec<Sfx4bId>', gatewayData.registrationData.allowedSideEffects),
         registration_data: circuit.createType('RelaychainRegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
             authoritySetId,
             gatewayData.registrationData.owner
         ])
-    }]
+    }
 }
 
 const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
-    return [{
-        url: circuit.createType("Vec<u8>", gatewayData.rpc),
+    return {
         gateway_id: circuit.createType("ChainId", gatewayData.id),
-        gateway_abi: createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig),
-        gateway_vendor: circuit.createType('GatewayVendor', 'Rococo'),
-        gateway_type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
-        gateway_genesis: await createGatewayGenesis(circuit, target),
+        token_id: circuit.createType("ChainId", gatewayData.tokenId),
+        verification_vendor: circuit.createType('GatewayVendor', 'Rococo'),
+        codec: circuit.createType('RuntimeCodec', 'Scale'),
+        registrant: null,
+        escrow_accounts: null,
+        allowed_side_effects: circuit.createType('Vec<([u8; 4], Option<u8>)>', gatewayData.registrationData.allowedSideEffects),
         token_sys_props: createTokenSysProps(circuit, gatewayData.registrationData.gatewaySysProps),
-        allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
-        registration_data: circuit.createType("ParachainRegistrationData", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id]).toHex()
-    }]
-}
-
-const createGatewayGenesis = async (circuit: ApiPromise, target: ApiPromise) => {
-    const [metadata, genesisHash] = await Promise.all([
-          await target.runtimeMetadata,
-          await target.genesisHash,
-    ]);
-
-    const config: GatewayGenesisConfig = {
-        module_encoded: metadata.asV14.pallets,
-        extrinsics_version: metadata.asV14.extrinsic.version,
-        genesis_hash: genesisHash.toHex(),
+        registration_data: circuit.createType("ParachainRegistrationData", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
     }
-    return circuit.createType('GatewayGenesisConfig', config);
-}
-
-const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any) => {
-    const config: GatewayABIConfig = {
-        block_number_type_size: gatewayConfig.blockNumberTypeSize,
-        hash_size: gatewayConfig.hashSize,
-        hasher: gatewayConfig.hasher,
-        crypto: gatewayConfig.crypto,
-        address_length: gatewayConfig.addressLength,
-        value_type_size: gatewayConfig.valueTypeSize,
-        decimals: gatewayConfig.decimals,
-    }
-    return circuiApi.createType('GatewayABIConfig', config);
 }
 
 const createTokenSysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
