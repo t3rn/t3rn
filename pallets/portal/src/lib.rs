@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{sp_runtime::DispatchError, traits::Get};
-use frame_system::pallet_prelude::OriginFor;
+use frame_system::{ensure_root, pallet_prelude::OriginFor};
 pub use pallet::*;
 use sp_std::boxed::Box;
 use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
@@ -16,7 +16,7 @@ use t3rn_primitives::{
     self,
     portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
-    ChainId, GatewayVendor,
+    ChainId, GatewayVendor, TokenSysProps,
 };
 pub mod weights;
 
@@ -268,6 +268,33 @@ impl<T: Config> Portal<T> for Pallet<T> {
             gateway_id,
             encoded_registration_data,
         )
+    }
+
+    fn initialize_gateway_token(
+        origin: T::Origin,
+        gateway_id: [u8; 4],
+        token_id: [u8; 4],
+        verification_vendor: GatewayVendor,
+        codec: t3rn_abi::Codec,
+        registrant: Option<T::AccountId>,
+        escrow_account: Option<T::AccountId>,
+        allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
+        token_props: TokenSysProps,
+        encoded_registration_data: Bytes,
+    ) -> Result<(), DispatchError> {
+        let _ = ensure_root(origin.clone())?;
+        T::Xdns::add_new_gateway(
+            gateway_id,
+            verification_vendor,
+            codec,
+            registrant,
+            escrow_account,
+            allowed_side_effects,
+        )?;
+
+        T::Xdns::add_new_token(token_id, gateway_id, token_props)?;
+
+        Self::initialize(origin, gateway_id, encoded_registration_data)
     }
 
     fn turn_on(origin: OriginFor<T>, gateway_id: [u8; 4]) -> Result<bool, DispatchError> {
