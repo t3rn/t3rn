@@ -8,7 +8,7 @@ pub use t3rn_light_client_commons::traits::{LightClient, LightClientHeartbeat};
 use sp_runtime::{traits::Header, DispatchError};
 use sp_std::marker::PhantomData;
 use t3rn_abi::types::Bytes;
-use t3rn_light_client_commons::traits::{BlockHeightResult, HeaderResult};
+use t3rn_light_client_commons::traits::{HeaderResult, HeightResult};
 use t3rn_primitives::GatewayVendor;
 
 pub type RococoInstance = ();
@@ -64,9 +64,7 @@ where
         }
     }
 
-    fn get_latest_finalized_height(
-        &self,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
+    fn get_latest_finalized_height(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_latest_finalized_height(),
             PalletInstance::Kusama(pallet) => pallet.get_latest_finalized_height(),
@@ -75,9 +73,7 @@ where
         }
     }
 
-    fn get_latest_updated_height(
-        &self,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
+    fn get_latest_updated_height(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_latest_updated_height(),
             PalletInstance::Kusama(pallet) => pallet.get_latest_updated_height(),
@@ -122,7 +118,7 @@ where
         }
     }
 
-    fn get_current_epoch(&self) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
+    fn get_current_epoch(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_current_epoch(),
             PalletInstance::Kusama(pallet) => pallet.get_current_epoch(),
@@ -259,25 +255,21 @@ where
 impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
     fn get_latest_finalized_header(&self) -> Result<HeaderResult, DispatchError> {
         match Pallet::<T, I>::get_latest_finalized_header() {
-            Some(header) => Ok(HeaderResult::Some(header)),
-            None => Ok(HeaderResult::None),
+            Some(header) => Ok(HeaderResult::Header(header)),
+            None => Ok(HeaderResult::NotActive),
         }
     }
 
-    fn get_latest_finalized_height(
-        &self,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
+    fn get_latest_finalized_height(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         let header = Pallet::<T, I>::best_finalized_map();
-        Ok(BlockHeightResult::Some(to_local_block_number::<T, I>(
+        Ok(HeightResult::Height(to_local_block_number::<T, I>(
             *header.number(),
         )?))
     }
 
-    fn get_latest_updated_height(
-        &self,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
+    fn get_latest_updated_height(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         let header = Pallet::<T, I>::best_finalized_map();
-        Ok(BlockHeightResult::Some(to_local_block_number::<T, I>(
+        Ok(HeightResult::Height(to_local_block_number::<T, I>(
             *header.number(),
         )?))
     }
@@ -306,8 +298,8 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         Ok(T::FinalizedConfirmationOffset::get())
     }
 
-    fn get_current_epoch(&self) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
-        Ok(BlockHeightResult::None)
+    fn get_current_epoch(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+        Ok(HeightResult::NotActive)
     }
 
     fn read_epoch_offset(&self) -> Result<T::BlockNumber, DispatchError> {

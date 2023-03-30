@@ -58,7 +58,7 @@ pub use t3rn_primitives::{
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
     gateway::{GatewayABIConfig, HasherAlgo as HA},
-    portal::Portal,
+    portal::{HeightResult, Portal},
     volatile::LocalState,
     xdns::Xdns,
     xtx::{Xtx, XtxId},
@@ -948,8 +948,12 @@ impl<T: Config> Pallet<T> {
                 }
             }
 
-            let submission_target_height = T::Portal::get_latest_finalized_height(sfx.target)?
-                .ok_or("target height not found")?;
+            let submission_target_height = match T::Portal::get_latest_finalized_height(sfx.target)?
+            {
+                HeightResult::Height(block_numer) => block_numer,
+                HeightResult::NotActive =>
+                    return Err("SFX validate failed - get_latest_finalized_height returned None"),
+            };
 
             full_side_effects.push(FullSideEffect {
                 input: sfx.clone(),
