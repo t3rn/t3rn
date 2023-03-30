@@ -95,19 +95,6 @@ pub trait Portal<T: frame_system::Config> {
         encoded_registration_data: Bytes,
     ) -> Result<(), DispatchError>;
 
-    fn initialize_gateway_token(
-        origin: T::Origin,
-        gateway_id: [u8; 4],
-        token_id: [u8; 4],
-        verification_vendor: GatewayVendor,
-        codec: t3rn_abi::Codec,
-        registrant: Option<T::AccountId>,
-        escrow_account: Option<T::AccountId>,
-        allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
-        token_props: TokenSysProps,
-        encoded_registration_data: Bytes,
-    ) -> Result<(), DispatchError>;
-
     fn turn_on(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
 
     fn turn_off(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
