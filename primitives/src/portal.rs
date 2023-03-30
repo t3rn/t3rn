@@ -1,15 +1,13 @@
-use codec::{Decode, Encode};
-use scale_info::prelude::string::String;
-// use frame_support::dispatch::DispatchResult;
 use crate::{
     gateway::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
     TokenSysProps,
 };
-use scale_info::TypeInfo;
+use codec::{Decode, Encode};
+use scale_info::{prelude::string::String, TypeInfo};
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::{recode::Codec, types::Bytes};
-use t3rn_light_client_commons::traits::{BlockHeightResult, HeaderResult};
+pub use t3rn_light_client_commons::traits::{HeaderResult, HeightResult};
 use t3rn_types::sfx::Sfx4bId;
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
@@ -31,15 +29,15 @@ pub trait Portal<T: frame_system::Config> {
 
     fn get_latest_finalized_height(
         gateway_id: ChainId,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
 
     fn get_latest_updated_height(
         gateway_id: ChainId,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
 
     fn get_current_epoch(
         gateway_id: ChainId,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError>;
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
 
     fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError>;
 

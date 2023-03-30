@@ -12,8 +12,12 @@ mod tests;
 use pallet_grandpa_finality_verifier::light_clients::LightClient;
 
 use t3rn_abi::types::Bytes;
-use t3rn_primitives::{self, portal::Portal, xdns::Xdns, ChainId, GatewayVendor};
-
+use t3rn_primitives::{
+    self,
+    portal::{HeaderResult, HeightResult, Portal},
+    xdns::Xdns,
+    ChainId, GatewayVendor,
+};
 pub mod weights;
 
 pub trait SelectLightClient<T: frame_system::Config> {
@@ -134,19 +138,19 @@ impl<T: Config> Portal<T> for Pallet<T> {
 
     fn get_latest_finalized_height(
         gateway_id: ChainId,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_height()
     }
 
     fn get_latest_updated_height(
         gateway_id: ChainId,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_updated_height()
     }
 
     fn get_current_epoch(
         gateway_id: ChainId,
-    ) -> Result<BlockHeightResult<T::BlockNumber>, DispatchError> {
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.get_current_epoch()
     }
 
