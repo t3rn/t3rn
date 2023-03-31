@@ -250,23 +250,40 @@ pub mod pallet {
         BlockHeightConversionError,
     }
 
-    /// Add a header range for the relaychain
-    ///
-    /// It will use the underlying storage pallet to fetch information about the current
-    /// authorities and best finalized header in order to verify that the header is finalized,
-    /// and the corresponding range valid.
-    ///
-    /// If successful in verification, it will write the target range to the underlying storage
-    /// pallet.
-    pub(crate) fn submit_relaychain_headers<T: pallet::Config<I>, I>(
-        // gateway_id: ChainId,
+    #[pallet::call]
+    impl<T: Config<I>, I: 'static> Pallet<T, I> {
+        /// Add a header range for the relaychain
+        ///
+        /// It will use the underlying storage pallet to fetch information about the current
+        /// authorities and best finalized header in order to verify that the header is finalized,
+        /// and the corresponding range valid.
+        ///
+        /// If successful in verification, it will write the target range to the underlying storage
+        /// pallet.
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub fn submit_headers(
+            origin: OriginFor<T>,
+            // seq vector of headers to be added.
+            range: Vec<BridgedHeader<T, I>>,
+            // The header with the highest height, signed in the justification
+            signed_header: BridgedHeader<T, I>,
+            // GrandpaJustification for the signed_header
+            justification: GrandpaJustification<BridgedHeader<T, I>>,
+        ) -> DispatchResultWithPostInfo {
+            let _ = ensure_signed(origin.clone())?;
+            verify_and_store_headers::<T, I>(range, signed_header, justification)?;
+            Ok(().into())
+        }
+    }
+
+    pub(crate) fn verify_and_store_headers<T: Config<I>, I>(
         // seq vector of headers to be added.
         range: Vec<BridgedHeader<T, I>>,
         // The header with the highest height, signed in the justification
         signed_header: BridgedHeader<T, I>,
         // GrandpaJustification for the signed_header
         justification: GrandpaJustification<BridgedHeader<T, I>>,
-    ) -> Result<Vec<u8>, DispatchError> {
+    ) -> DispatchResult {
         ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
 
         // °°°°° Implicit Check: °°°°°
@@ -341,11 +358,7 @@ pub mod pallet {
         // Update pointer
         <ImportedHashesPointer<T, I>>::set(Some(buffer_index));
 
-        let height: usize = signed_number.as_();
-        match u32::try_from(height) {
-            Ok(number) => Ok(number.to_be_bytes().to_vec()),
-            _ => Err(Error::<T, I>::BlockHeightConversionError.into()),
-        }
+        Ok(().into())
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -623,17 +636,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         Ok(())
     }
 
-    pub fn submit_headers(
-        origin: OriginFor<T>,
-        encoded_header_data: Vec<u8>,
-    ) -> Result<Vec<u8>, DispatchError> {
+    pub fn submit_encoded_headers(encoded_header_data: Vec<u8>) -> Result<Vec<u8>, DispatchError> {
         ensure_operational_single::<T, I>()?;
-        ensure_signed(origin)?;
         let data: GrandpaHeaderData<BridgedHeader<T, I>> =
             Decode::decode(&mut &*encoded_header_data)
                 .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
 
-        submit_relaychain_headers::<T, I>(data.range, data.signed_header, data.justification)
+        verify_and_store_headers::<T, I>(data.range, data.signed_header, data.justification)?;
+        Ok(vec![])
     }
 
     pub fn confirm_event_inclusion(
@@ -994,7 +1004,7 @@ mod tests {
 
     pub fn submit_headers(from: u8, to: u8) -> Result<GrandpaHeaderData<TestHeader>, &'static str> {
         let data = produce_mock_headers_range(from, to);
-        Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode())?;
+        Pallet::<TestRuntime>::submit_encoded_headers(data.encode())?;
         Ok(data)
     }
 
@@ -1303,7 +1313,7 @@ mod tests {
             };
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
+                Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidRangeLinkage
             );
         })
@@ -1330,7 +1340,7 @@ mod tests {
             };
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
+                Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidJustificationLinkage
             );
         })
@@ -1360,7 +1370,7 @@ mod tests {
             };
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
+                Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
@@ -1386,7 +1396,7 @@ mod tests {
             };
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
+                Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
@@ -1426,7 +1436,7 @@ mod tests {
             };
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
+                Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
@@ -1470,10 +1480,7 @@ mod tests {
             };
 
             // Let's import our test header
-            assert_ok!(Pallet::<TestRuntime>::submit_headers(
-                Origin::signed(1),
-                data.encode()
-            ));
+            assert_ok!(Pallet::<TestRuntime>::submit_encoded_headers(data.encode()));
 
             // Make sure that our header is the best finalized
             assert_eq!(
@@ -1518,7 +1525,7 @@ mod tests {
 
             // Should not be allowed to import this header
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
+                Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
         })
@@ -1548,7 +1555,7 @@ mod tests {
 
             // Should not be allowed to import this header
             assert_err!(
-                Pallet::<TestRuntime>::submit_headers(Origin::signed(1), data.encode()),
+                Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
         })
