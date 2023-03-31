@@ -167,9 +167,10 @@ class CircuitCLI {
             }
 
             let tx = this.sdk.circuit.tx.createBatch(transactionArgs.map(args => {
-                return this.circuit.tx.portal.submitHeaders(
-                    args.gatewayId,
-                    args.data.toHex() // we submit in encoded form to portal
+                return this.circuit.tx.rococoBridge.submitHeaders(
+                    args.range,
+                    args.signed_header,
+                    args.justification
                 )
             }))
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)

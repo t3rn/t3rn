@@ -36,14 +36,10 @@ const generateBatchProof = async (circuit: any, target: any, gatewayId: string, 
             }
         )
 
-        const relaychainHeaderData = circuit.createType("GrandpaHeaderData<Header>", {
-            signed_header,
-            range,
-            justification: Encodings.Substrate.Decoders.justificationDecode(justification)
-        })
+        justification = Encodings.Substrate.Decoders.justificationDecode(justification);
 
         //push to transaction queue
-        transactionArguments.push({gatewayId: circuit.createType("ChainId", gatewayId), data: relaychainHeaderData})
+        transactionArguments.push({gatewayId: circuit.createType("ChainId", gatewayId), signed_header, range, justification})
         from = parseInt(signed_header.number.toJSON()) + 1
     }
 

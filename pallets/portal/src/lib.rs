@@ -100,18 +100,6 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-        pub fn submit_headers(
-            origin: OriginFor<T>,
-            gateway_id: ChainId,
-            encoded_header_data: Vec<u8>,
-        ) -> DispatchResult {
-            let _ = ensure_signed(origin.clone())?;
-            match_light_client_by_gateway_id::<T>(gateway_id)?
-                .submit_headers(origin, encoded_header_data)?;
-            Ok(())
-        }
-
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn register_gateway(
             origin: OriginFor<T>,
             gateway_id: [u8; 4],
@@ -296,6 +284,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
             gateway_id,
             encoded_registration_data,
         )
+    }
+
+    fn submit_encoded_headers(
+        gateway_id: ChainId,
+        encoded_header_data: Vec<u8>,
+    ) -> Result<(), DispatchError> {
+        match_light_client_by_gateway_id::<T>(gateway_id)?
+            .submit_encoded_headers(encoded_header_data)?;
+        Ok(())
     }
 
     fn turn_on(origin: OriginFor<T>, gateway_id: [u8; 4]) -> Result<bool, DispatchError> {
