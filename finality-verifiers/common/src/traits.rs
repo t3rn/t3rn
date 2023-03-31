@@ -56,11 +56,7 @@ pub trait LightClient<T: frame_system::Config> {
 
     fn turn_off(&self, origin: T::Origin) -> Result<bool, DispatchError>;
 
-    fn submit_headers(
-        &self,
-        origin: OriginFor<T>,
-        encoded_headers_data: Bytes,
-    ) -> Result<bool, DispatchError>;
+    fn submit_encoded_headers(&self, encoded_headers_data: Bytes) -> Result<bool, DispatchError>;
 
     fn submit_finality_header(
         &self,

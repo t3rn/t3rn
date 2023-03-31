@@ -95,6 +95,11 @@ pub trait Portal<T: frame_system::Config> {
         encoded_registration_data: Bytes,
     ) -> Result<(), DispatchError>;
 
+    fn submit_encoded_headers(
+        gateway_id: ChainId,
+        encoded_header_data: Vec<u8>,
+    ) -> Result<(), DispatchError>;
+
     fn turn_on(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
 
     fn turn_off(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;

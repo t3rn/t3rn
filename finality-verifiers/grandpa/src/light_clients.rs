@@ -171,15 +171,11 @@ where
         }
     }
 
-    fn submit_headers(
-        &self,
-        origin: OriginFor<T>,
-        encoded_headers_data: Bytes,
-    ) -> Result<bool, DispatchError> {
+    fn submit_encoded_headers(&self, encoded_headers_data: Bytes) -> Result<bool, DispatchError> {
         match self {
-            PalletInstance::Rococo(pallet) => pallet.submit_headers(origin, encoded_headers_data),
-            PalletInstance::Kusama(pallet) => pallet.submit_headers(origin, encoded_headers_data),
-            PalletInstance::Polkadot(pallet) => pallet.submit_headers(origin, encoded_headers_data),
+            PalletInstance::Rococo(pallet) => pallet.submit_encoded_headers(encoded_headers_data),
+            PalletInstance::Kusama(pallet) => pallet.submit_encoded_headers(encoded_headers_data),
+            PalletInstance::Polkadot(pallet) => pallet.submit_encoded_headers(encoded_headers_data),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -326,8 +322,8 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         Ok(!Pallet::<T, I>::is_halted())
     }
 
-    fn submit_headers(&self, origin: OriginFor<T>, headers: Bytes) -> Result<bool, DispatchError> {
-        Pallet::<T, I>::submit_headers(origin, headers)?;
+    fn submit_encoded_headers(&self, headers: Bytes) -> Result<bool, DispatchError> {
+        Pallet::<T, I>::submit_encoded_headers(headers)?;
         Ok(true)
     }
 
@@ -336,7 +332,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         origin: OriginFor<T>,
         encoded_header_data: Bytes,
     ) -> Result<bool, DispatchError> {
-        self.submit_headers(origin, encoded_header_data)
+        self.submit_encoded_headers(encoded_header_data)
     }
 
     fn verify_event_inclusion(
@@ -559,8 +555,7 @@ pub mod grandpa_light_clients_test {
 
                 let headers_range = produce_mock_headers_range(1, 5);
 
-                let submit_res =
-                    roco_light_client.submit_headers(Origin::signed(1u64), headers_range.encode());
+                let submit_res = roco_light_client.submit_encoded_headers(headers_range.encode());
 
                 assert_ok!(submit_res);
 
