@@ -50,10 +50,7 @@ pub mod pallet {
         xdns::{GatewayRecord, TokenRecord, Xdns, XdnsRecord},
         Bytes, ChainId, GatewayType, GatewayVendor, TokenSysProps,
     };
-    use t3rn_types::{
-        fsx::{TargetId},
-        sfx::Sfx4bId,
-    };
+    use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
