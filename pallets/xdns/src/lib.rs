@@ -289,7 +289,9 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
-                log::info!("XDNS -- on-genesis: add standard SFX ABI: {:?}", sfx_4b_id);
+                let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
+                    .unwrap_or("invalid utf8 4b sfx id format");
+                log::info!("XDNS -- on-genesis: add standard SFX ABI: {:?}", sfx_4b_str);
                 <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
             }
 
@@ -302,10 +304,14 @@ pub mod pallet {
                             abi.maybe_prefix_memo = *memo_prefix;
                             <SFXABIRegistry<T>>::insert(gateway_record.gateway_id, sfx_4b_id, abi)
                         },
-                        None => log::error!(
-                            "XDNS -- on-genesis: standard SFX ABI not found: {:?}",
-                            sfx_4b_id
-                        ),
+                        None => {
+                            let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
+                                .unwrap_or("invalid utf8 4b sfx id format");
+                            log::error!(
+                                "XDNS -- on-genesis: standard SFX ABI not found: {:?}",
+                                sfx_4b_str
+                            )
+                        },
                     }
                 }
             }

@@ -30,6 +30,7 @@ use t3rn_primitives::{
 };
 
 use t3rn_abi::sfx_abi::SFXAbi;
+use t3rn_primitives::xdns::GatewayRecord;
 use t3rn_types::sfx::Sfx4bId;
 
 const PARACHAIN_ID: u32 = 3333_u32;
@@ -314,7 +315,40 @@ pub fn development_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                vec![],
+                vec![
+                    GatewayRecord {
+                        gateway_id: [3, 3, 3, 3],
+                        verification_vendor: GatewayVendor::Polkadot,
+                        codec: t3rn_abi::Codec::Scale,
+                        registrant: None,
+                        escrow_account: None,
+                        allowed_side_effects: vec![
+                            (*b"tran", Some(2)),
+                            (*b"tass", Some(4)),
+                            (*b"swap", Some(3)),
+                            (*b"aliq", Some(3)),
+                            (*b"cevm", Some(10)),
+                            (*b"wasm", Some(10)),
+                            (*b"call", Some(10)),
+                        ],
+                    },
+                    GatewayRecord {
+                        gateway_id: [1, 1, 1, 1],
+                        verification_vendor: GatewayVendor::Rococo,
+                        codec: t3rn_abi::Codec::Scale,
+                        registrant: None,
+                        escrow_account: None,
+                        allowed_side_effects: vec![
+                            (*b"tran", Some(2)),
+                            (*b"tass", Some(4)),
+                            (*b"swap", Some(3)),
+                            (*b"aliq", Some(3)),
+                            (*b"cevm", Some(10)),
+                            (*b"wasm", Some(10)),
+                            (*b"call", Some(10)),
+                        ],
+                    },
+                ],
                 standard_sfx_abi(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
@@ -485,7 +519,7 @@ fn testnet_genesis(
     endowed_accounts: Vec<AccountId>,
     id: ParaId,
     root_key: AccountId,
-    xdns_records: Vec<XdnsRecord<AccountId>>,
+    gateway_records: Vec<GatewayRecord<AccountId>>,
     standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     _initial_gateways: Vec<InitializationData<Header>>,
 ) -> circuit_parachain_runtime::GenesisConfig {
@@ -536,8 +570,8 @@ fn testnet_genesis(
             key: Some(root_key),
         },
         xdns: XDNSConfig {
-            known_xdns_records: xdns_records,
-            known_gateway_records: vec![],
+            known_xdns_records: vec![],
+            known_gateway_records: gateway_records,
             standard_sfx_abi,
         },
         contracts_registry: Default::default(),
