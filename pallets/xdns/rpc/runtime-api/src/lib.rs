@@ -7,7 +7,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Codec;
-pub use t3rn_primitives::{gateway::GatewayABIConfig, xdns::FetchXdnsRecordsResponse, ChainId};
+use sp_runtime::sp_std;
+use sp_std::prelude::*;
+use t3rn_primitives::xdns::GatewayRecord;
+pub use t3rn_primitives::{gateway::GatewayABIConfig, ChainId};
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with pallet XDNS
