@@ -282,7 +282,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         token_props: TokenSysProps,
         encoded_registration_data: Bytes,
     ) -> Result<(), DispatchError> {
-        let _ = ensure_root(origin.clone())?;
+        ensure_root(origin.clone())?;
         T::Xdns::add_new_gateway(
             gateway_id,
             verification_vendor,

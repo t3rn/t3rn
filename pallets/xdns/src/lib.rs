@@ -51,7 +51,7 @@ pub mod pallet {
         Bytes, ChainId, GatewayType, GatewayVendor, TokenSysProps,
     };
     use t3rn_types::{
-        fsx::{SecurityLvl, TargetId},
+        fsx::{TargetId},
         sfx::Sfx4bId,
     };
 

@@ -3,7 +3,7 @@ use crate::{
     TokenSysProps,
 };
 use codec::{Decode, Encode};
-use scale_info::{prelude::string::String, TypeInfo};
+use scale_info::{TypeInfo};
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::{recode::Codec, types::Bytes};

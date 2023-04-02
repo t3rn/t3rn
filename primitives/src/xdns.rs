@@ -3,13 +3,13 @@ use crate::{
     TokenSysProps,
 };
 use codec::{Decode, Encode};
-use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
+use frame_support::dispatch::{DispatchResult};
 use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::sfx_abi::SFXAbi;
-use t3rn_types::{fsx::SecurityLvl, sfx::Sfx4bId};
+use t3rn_types::{sfx::Sfx4bId};
 
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId = [u8; 4];
