@@ -7,7 +7,7 @@ use jsonrpsee::{
     types::error::CallError,
 };
 pub use pallet_xdns_rpc_runtime_api::XdnsRuntimeApi;
-use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
+use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::sp_std;
@@ -25,7 +25,7 @@ const RUNTIME_ERROR: i64 = 1;
 pub trait XdnsApi<AccountId> {
     /// Returns all known XDNS records
     #[method(name = "xdns_fetchRecords")]
-    fn fetch_records(&self) -> RpcResult<Vec<GatewayRecord<T::AccountId>>>;
+    fn fetch_records(&self) -> RpcResult<Vec<GatewayRecord<AccountId>>>;
 
     #[method(name = "xdns_fetchAbi")]
     fn fetch_abi(&self, chain_id: ChainId) -> RpcResult<GatewayABIConfig>;
@@ -55,7 +55,7 @@ where
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
     C::Api: XdnsRuntimeApi<Block, AccountId>,
 {
-    fn fetch_records(&self) -> RpcResult<Vec<GatewayRecord<T::AccountId>>> {
+    fn fetch_records(&self) -> RpcResult<Vec<GatewayRecord<AccountId>>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().best_hash);
 
