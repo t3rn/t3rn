@@ -67,9 +67,14 @@ export class CircuitListener extends EventEmitter {
                         data: notifications[i].event.data,
                     })
                 } else if (notifications[i].event.method === "HeadersAdded") {
+                    console.log(notifications[i].toHuman())
+                    let vendor;
+                    if(notifications[i].event.section === "rococoBridge") {
+                        vendor = "Rococo"
+                    }
                     const data = {
-                        vendor: notifications[i].event.data[0].toString(),
-                        height: parseInt(notifications[i].event.data[1].toString(), 16),
+                        vendor,
+                        height: parseInt(notifications[i].event.data[0]),
                     }
                     this.emit("Event", <ListenerEventData>{
                         type: ListenerEvents.HeaderSubmitted,
