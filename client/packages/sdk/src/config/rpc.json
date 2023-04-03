@@ -9,7 +9,18 @@
           "isOptional": true
         }
       ],
-      "type": "FetchXdnsRecordsResponse"
+      "type": "Vec<GatewayRecord<AccountId>>"
+    },
+    "fetchFullRecords": {
+      "description": "Fetches all available Record, along with connected tokens",
+      "params": [
+        {
+          "name": "at",
+          "type": "Hash",
+          "isOptional": true
+        }
+      ],
+      "type": "Vec<FullGatewayRecord<AccountId>>"
     },
     "fetchAbi": {
       "description": "Fetches abi of a specific gateway",

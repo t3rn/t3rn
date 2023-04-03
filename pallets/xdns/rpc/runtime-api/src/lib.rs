@@ -9,7 +9,7 @@
 use codec::Codec;
 use sp_runtime::sp_std;
 use sp_std::prelude::*;
-use t3rn_primitives::xdns::GatewayRecord;
+use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
 pub use t3rn_primitives::{gateway::GatewayABIConfig, ChainId};
 
 sp_api::decl_runtime_apis! {
@@ -19,6 +19,8 @@ sp_api::decl_runtime_apis! {
     {
         /// Returns metadata for all known Blockchains
         fn fetch_records() -> Vec<GatewayRecord<AccountId>>;
+
+        fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<AccountId>>;
 
         /// Returns the GatewayABIConfig for a given ChainId
         fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig>;
