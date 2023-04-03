@@ -134,6 +134,7 @@ impl pallet_balances::Config for TestRuntime {
 impl Config<RococoInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
+    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
@@ -144,6 +145,7 @@ impl Config<RococoInstance> for TestRuntime {
 impl Config<KusamaInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
+    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
@@ -153,6 +155,7 @@ impl Config<KusamaInstance> for TestRuntime {
 impl Config<PolkadotInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
+    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
