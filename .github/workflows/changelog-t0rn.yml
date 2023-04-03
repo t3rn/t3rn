@@ -6,7 +6,7 @@ on:
     - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
 jobs:
-  deploy:
+  create:
     runs-on: self-hosted
     steps:
       - name: Checkout Code
@@ -28,6 +28,16 @@ jobs:
         uses: requarks/changelog-action@v1
         with:
           token: ${{ secrets.GH_PAT }}
+          tag: ${{ github.ref_name }}
+
+      - name: Update Release with Changelog
+        id: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          draft: false
+          body: ${{ steps.changelog.outputs.changes }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
 
       - name: Commit CHANGELOG.md

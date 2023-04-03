@@ -33,7 +33,7 @@ tag=$2
 parachain_name=$3
 ws_provider="wss://ws.${parachain_name}.io"
 http_provider="https://rpc.${parachain_name}.io"
-wasm_binary=./target/release/${parachain_name}_parachain_runtime.compact.compressed.wasm
+wasm_binary=./${parachain_name}-parachain-runtime-${tag}.compact.compressed.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry) || true
 
@@ -47,12 +47,12 @@ fi
 
 # Check if wasm exists
 if [[ ! -f $wasm_binary ]]; then
-  echo "🚨 $wasm_binary does not exist!" >&2
+  echo "🚨 $wasm_binary does not exist!"
   exit 1
 fi
 
 if ! git tag --list | grep -Fq $tag; then
-  echo -e "$tag is not a git tag\ntag and push the runtime for the upgrade" >&2
+  echo -e "$tag is not a git tag\ntag and push the runtime for the upgrade"
   exit 1
 fi
 
@@ -75,32 +75,29 @@ old_impl_version=$(jq -r .version.implVersion <<<"$runtime_version")
 old_tx_version=$(jq -r .version.transactionVersion <<<"$runtime_version")
 old_author_version=$(jq -r .version.authoringVersion <<<"$runtime_version")
 
-new_spec_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'spec_version: [0-9]*' | tail -1 | grep -o '[0-9]')
-new_impl_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'impl_version: [0-9]*' | tail -1 | grep -o '[0-9]')
-new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'transaction_version: [0-9]*' | tail -1 | grep -o '[0-9]')
-new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]')
+new_spec_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'spec_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
+new_impl_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'impl_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
+new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'transaction_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
+new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
 
-# Skip version tests when run with dryrun flag
-if [[ -z $dryrun ]]; then
-  if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
-    echo "runtime spec version not incremented" >&2
-    exit 1
-  fi
+if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
+  echo "runtime spec version not incremented"
+  exit 1
+fi
 
-  if [[ $new_impl_version != $((old_impl_version + 1)) ]]; then
-    echo "runtime impl version not incremented" >&2
-    exit 1
-  fi
+if [[ $new_impl_version != $((old_impl_version + 1)) ]]; then
+  echo "runtime impl version not incremented"
+  exit 1
+fi
 
-  if [[ $new_tx_version != $((old_tx_version + 1)) ]]; then
-    echo "runtime transaction version not incremented" >&2
-    exit 1
-  fi
+if [[ $new_tx_version != $((old_tx_version + 1)) ]]; then
+  echo "runtime transaction version not incremented"
+  exit 1
+fi
 
-  if [[ $new_author_version != $((old_author_version + 1)) ]]; then
-    echo "runtime authoring version not incremented" >&2
-    exit 1
-  fi
+if [[ $new_author_version != $((old_author_version + 1)) ]]; then
+  echo "runtime authoring version not incremented"
+  exit 1
 fi
 
 echo "🫧 Check WASM artifact..."
@@ -109,7 +106,7 @@ wasm_hash_fetched="$(cat ${wasm_binary}.blake2_256)"
 echo "🔢 calculated WASM blake2_256 hash is $wasm_hash_calculated"
 echo "🔢 fetched WASM blake2_256 hash from release is $wasm_hash_fetched"
 
-if [[ "$wasm_hash_calculated" -ne "$wasm_hash_fetched" ]]; then
+if [[ "$wasm_hash_calculated" != "$wasm_hash_fetched" ]]; then
   echo "🔴 WASM artifact blake2_256 hash is not matching"
   exit 1
 else
@@ -130,6 +127,7 @@ if [[ -z $dryrun ]]; then
   echo "✅ Converted WASM to hex"
 fi
 
+# Execute runtime upgrade if dryrun flag is not present
 if [[ -z $dryrun ]]; then
   npx --yes $POLKADOT_CLI_VERSION \
     --ws $ws_provider \
@@ -137,13 +135,4 @@ if [[ -z $dryrun ]]; then
     --seed "$sudo_secret" \
     --params $wasm_binary \
     tx.system.setCode
-else
-  echo "
-  npx --yes $POLKADOT_CLI_VERSION 
-    --ws $ws_provider
-    --sudoUncheckedWeight "100000"
-    --seed "$sudo_secret"
-    --params $wasm_binary
-    tx.system.setCode
-  "
 fi
