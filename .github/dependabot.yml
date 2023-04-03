@@ -5,7 +5,27 @@
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "cargo" 
+    directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+
+  - package-ecosystem: "npm" 
+    directory: "client/packages/cli"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm" 
+    directory: "client/packages/executor"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm" 
+    directory: "client/packages/sdk"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm" 
+    directory: "client/packages/types"
+    schedule:
+      interval: "daily"
