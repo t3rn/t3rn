@@ -63,6 +63,13 @@ pub struct GatewayRecord<AccountId> {
     pub allowed_side_effects: Vec<(Sfx4bId, Option<u8>)>,
 }
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct FullGatewayRecord<AccountId> {
+    pub gateway_record: GatewayRecord<AccountId>,
+    pub tokens: Vec<TokenRecord>,
+}
+
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
@@ -246,4 +253,6 @@ pub trait Xdns<T: frame_system::Config> {
     fn get_verification_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError>;
 
     fn get_escrow_account(chain_id: &ChainId) -> Result<Vec<u8>, DispatchError>;
+
+    fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>>;
 }

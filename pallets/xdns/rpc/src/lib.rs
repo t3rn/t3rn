@@ -17,7 +17,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 use std::sync::Arc;
-use t3rn_primitives::xdns::GatewayRecord;
+use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
 
 const RUNTIME_ERROR: i64 = 1;
 
@@ -29,6 +29,9 @@ pub trait XdnsApi<AccountId> {
 
     #[method(name = "xdns_fetchAbi")]
     fn fetch_abi(&self, chain_id: ChainId) -> RpcResult<GatewayABIConfig>;
+
+    #[method(name = "xdns_fetchFullRecords")]
+    fn fetch_full_gateway_records(&self) -> RpcResult<Vec<FullGatewayRecord<AccountId>>>;
 }
 
 /// A struct that implements the [`XdnsApiServer`].
@@ -60,6 +63,17 @@ where
         let at = BlockId::hash(self.client.info().best_hash);
 
         let result = api.fetch_records(&at).map_err(runtime_error_into_rpc_err)?;
+
+        Ok(result)
+    }
+
+    fn fetch_full_gateway_records(&self) -> RpcResult<Vec<FullGatewayRecord<AccountId>>> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(self.client.info().best_hash);
+
+        let result = api
+            .fetch_full_gateway_records(&at)
+            .map_err(runtime_error_into_rpc_err)?;
 
         Ok(result)
     }

@@ -13,7 +13,7 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
-use t3rn_primitives::xdns::GatewayRecord;
+use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
 
 pub use frame_support::{
     construct_runtime, parameter_types,
@@ -296,6 +296,10 @@ impl_runtime_apis! {
     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_records() -> Vec<GatewayRecord<AccountId>> {
              <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_gateways()
+        }
+
+        fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<AccountId>> {
+             <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_full_gateway_records()
         }
 
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {

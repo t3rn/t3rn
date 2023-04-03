@@ -47,7 +47,7 @@ pub mod pallet {
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
-        xdns::{GatewayRecord, TokenRecord, Xdns, XdnsRecord},
+        xdns::{FullGatewayRecord, GatewayRecord, TokenRecord, Xdns, XdnsRecord},
         Bytes, ChainId, GatewayType, GatewayVendor, TokenSysProps,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
@@ -327,6 +327,20 @@ pub mod pallet {
         /// Fetches all known Gateway records
         fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>> {
             Gateways::<T>::iter_values().collect()
+        }
+
+        fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>> {
+            Gateways::<T>::iter_values()
+                .map(|gateway| {
+                    let tokens = Tokens::<T>::iter_values()
+                        .filter(|token| token.gateway_id == gateway.gateway_id)
+                        .collect();
+                    FullGatewayRecord {
+                        gateway_record: gateway,
+                        tokens,
+                    }
+                })
+                .collect()
         }
 
         fn add_new_gateway(

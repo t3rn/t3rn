@@ -1,9 +1,10 @@
 {
     "GatewayVendor": {
         "_enum": [
-            "Substrate",
-            "Ethereum",
-            "Rococo"
+            "Polkadot",
+            "Kusama",
+            "Rococo",
+            "Ethereum"
         ]
     },
     "GatewayType": {
@@ -130,6 +131,23 @@
         "registrant": "Option<AccountId>",
         "last_finalized": "Option<u64>",
         "allowed_side_effects": "Vec<AllowedSideEffect>"
+    },
+    "GatewayRecord": {
+        "gateway_id": "ChainId",
+        "verification_vendor": "GatewayVendor",
+        "codec": "RuntimeCodec",
+        "registrant": "Option<AccountId>",
+        "escrow_account": "Option<AccountId>",
+        "allowed_side_effects": "Vec<(Sfx4bId, Option<u8>)>"
+    },
+    "TokenRecord": {
+        "token_id": "[u8; 4]",
+        "gateway_id": "[u8; 4]",
+        "token_props": "TokenSysProps"
+    },
+    "FullGatewayRecord": {
+        "gateway_record": "GatewayRecord",
+        "tokens": "Vec<TokenRecord>"
     },
     "Sfx4bId": "[u8; 4]",
     "FetchXdnsRecordsResponse": {
@@ -283,7 +301,7 @@
         "gateway_type": "GatewayType",
         "gateway_genesis": "GatewayGenesisConfig",
         "gateway_sys_props": "TokenSysProps",
-        "allowed_side_effects": "Vec<AllowedSideEffect>",
+        "allowed_side_effects": "Vec<(Sfx4bId, Option<u8>)>",
         "encoded_registration_data": "Vec<u8>"
     },
     "GrandpaHeaderData": {
@@ -301,5 +319,5 @@
         "header_proof": "StorageProof",
         "payload_proof": "StorageProof",
         "relay_block_hash": "Header::Hash"
-    }
+    },
 }

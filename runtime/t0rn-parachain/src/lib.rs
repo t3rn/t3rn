@@ -29,7 +29,7 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 use sp_std::{convert::TryInto, prelude::*};
-use t3rn_primitives::xdns::GatewayRecord;
+use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -387,6 +387,10 @@ impl_runtime_apis! {
     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_records() -> Vec<GatewayRecord<AccountId>> {
              <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_gateways()
+        }
+
+        fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<AccountId>> {
+             <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_full_gateway_records()
         }
 
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
