@@ -37,7 +37,7 @@
   "dependencies": {
     "@polkadot/api": "8.9.1",
     "@polkadot/keyring": "9.5.1",
-    "@polkadot/types": "8.9.1",
+    "@polkadot/types": "10.2.2",
     "@types/lodash": "^4.14.157",
     "@types/vfile": "^4.0.0",
     "ajv": "^6.11.0",
