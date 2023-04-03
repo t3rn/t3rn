@@ -4,6 +4,107 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.5.0-rc.0] - 2023-04-03
+### :sparkles: New Features
+- [`2277b41`](https://github.com/t3rn/t3rn/commit/2277b41cff515453329d40df26a73af5c6dd49b7) - extend XDNS with SeenSFX interface storing ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9b624a5`](https://github.com/t3rn/t3rn/commit/9b624a589463dd4097e3e0bbf5fd400f6bfcb595) - extend portal interfaces with no decode, Polkadot and Kusama *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`29148af`](https://github.com/t3rn/t3rn/commit/29148afa79a01e16919e241ae98e4558eed66623) - implement Kusama and Polkadot bridges to runtimes *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`15e24f2`](https://github.com/t3rn/t3rn/commit/15e24f20aa1372eab8516e4354df755e28f97475) - reintroduce SFXAbi with recoding between Scale and RLP *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`6190229`](https://github.com/t3rn/t3rn/commit/619022942933a7260bc4fd8e668c17c0bb379cfd) - add SFXAbi handles to XDNS to enable dynamic validation *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`ac16f89`](https://github.com/t3rn/t3rn/commit/ac16f89cf8a681d13312367551a07bf8e435206a) - update Portal interface to suppport ABI Recoding *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`5d4c5a0`](https://github.com/t3rn/t3rn/commit/5d4c5a0519f1215f2fa14327d35a5fd9761b4293) - extend ABI with ingress Eth events recoding *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`22ef71b`](https://github.com/t3rn/t3rn/commit/22ef71b565fd86cfa8b0452c084222f4914c8ca6) - SFX Abi validates ingress from Substrate and Eth *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`f77fa43`](https://github.com/t3rn/t3rn/commit/f77fa433d7e4c50c36d2d8a956ba50d656de30ec) - separate t3rn ABI to separate module, fix deps *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`70489dd`](https://github.com/t3rn/t3rn/commit/70489ddf846b56b1945b3a1b727a65863d7b7b8e) - standard SFX ABI use recode_as for payload validation *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`cf67b34`](https://github.com/t3rn/t3rn/commit/cf67b34663ad4a3df1f8cd3b5a3b7d0b6a756ba6) - add egress SFX Abi validation *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`ccd0a76`](https://github.com/t3rn/t3rn/commit/ccd0a76b9aa81dcb66fe7a083f4ad24673152cb6) - switch SFX validation + confirmation to use latest ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`463f9df`](https://github.com/t3rn/t3rn/commit/463f9df2f4a5b0501a574c34f84b730f05a2380d) - improve esm build *(commit by [@ahkohd](https://github.com/ahkohd))*
+- [`7d23d36`](https://github.com/t3rn/t3rn/commit/7d23d365f67d8d1bd2042e7167eaa9f2e72656bc) - enable optional submission height check *(commit by [@petscheit](https://github.com/petscheit))*
+- [`eb8ddd4`](https://github.com/t3rn/t3rn/commit/eb8ddd4e12d3fe2cef0ae41af5be9fcc66d04b05) - implement LightClient trait by Grandpa FV *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`d50f335`](https://github.com/t3rn/t3rn/commit/d50f335360165449e4d3efab451ee2aa8cfff9a1) - implement light client commons traits *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9e74479`](https://github.com/t3rn/t3rn/commit/9e74479737bff66756f536588d643b0af6ce6d4b) - implement LightClient trait for multiple GrandpaFV *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`fcb50ed`](https://github.com/t3rn/t3rn/commit/fcb50ed29fc6bd7c803c42ae028ca753005127e1) - remove deprecated XDNSRPCRecord field *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`b447384`](https://github.com/t3rn/t3rn/commit/b44738461a453ed507a1c139313e6be6f97bc85b) - limit ranger submission batch size to 10 *(commit by [@petscheit](https://github.com/petscheit))*
+- [`a3ed12c`](https://github.com/t3rn/t3rn/commit/a3ed12c4d2fc76a3b6b17e1046cfc2f110fdcd11) - add memo prefix before SFX ABI validation to args *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`19587eb`](https://github.com/t3rn/t3rn/commit/19587eb379c408504525173691e7f81e1bc7de4b) - fix rlp_topics decode for reversed tuple,vec,struct *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`b0a4f2a`](https://github.com/t3rn/t3rn/commit/b0a4f2a8590584a03c697f63ad1724003f57d0de) - commit remaining changes after rebase with origin *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`2395cd6`](https://github.com/t3rn/t3rn/commit/2395cd6e8a7f69ab2dfc4479d70079985db5f130) - extend SFXAbi with prefix_memo field check for Polka Events *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`6102a7f`](https://github.com/t3rn/t3rn/commit/6102a7fc6520c5a5dd0c96e98d671ade3d1c7b6b) - round information was never bumped *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`b90b4c4`](https://github.com/t3rn/t3rn/commit/b90b4c45fc9869132706939ba2b362d1786b5b3d) - add missing init value for update freq in price engine *(commit by [@palozano](https://github.com/palozano))*
+- [`288e0e9`](https://github.com/t3rn/t3rn/commit/288e0e9e171803be0c58a892a873172ee5c056dc) - add flag to not update prices *(commit by [@palozano](https://github.com/palozano))*
+
+### :recycle: Refactors
+- [`dcae08e`](https://github.com/t3rn/t3rn/commit/dcae08e1b948358c7ddbd4f4114ada357f78e6f5) - add and use dedicated SFX confirmation handle for Circuit Machine *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9e42f45`](https://github.com/t3rn/t3rn/commit/9e42f45c6c80667614613c998fa47c7ae00a093e) - use SFXAbi to confirm SFX exec in Circuit *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`8cdd510`](https://github.com/t3rn/t3rn/commit/8cdd510e6f5cb01a4ccc88fe4d533502ac688f2e) - separate recode for RLP and Scale to separate modules *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`ee0cc48`](https://github.com/t3rn/t3rn/commit/ee0cc48c03eabfae704b64cd9ffea3697c74eec4) - use lastest SFX Abi in primitives *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9514e69`](https://github.com/t3rn/t3rn/commit/9514e6951ffe79e2dd1a5baa127ff2e365e22dde) - align Circuit SFX tests and validation with latest ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`d0e5a50`](https://github.com/t3rn/t3rn/commit/d0e5a502f950ed3cfabdbb19d8b29270a7a511a2) - switch pallets, runtimes, nodes to latest SFX ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`0a92cd4`](https://github.com/t3rn/t3rn/commit/0a92cd4e4d9fd544264c711e541499e54016de78) - rely on bytes crate vs split_bytes in ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`0544df8`](https://github.com/t3rn/t3rn/commit/0544df88e9e2c92729e8c8dd02079db47a792bff) - remove the use of trim_bytes and rely on slicing in ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`19e2308`](https://github.com/t3rn/t3rn/commit/19e2308929dbf031e551a816d2f971a3eab895f9) - rewrite rlp topic decoding without take_last_n *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`1ba2963`](https://github.com/t3rn/t3rn/commit/1ba29634f034a8c007d69de86b8d6384b65941eb) - remove unsafe unwrap use in ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`b2e09f3`](https://github.com/t3rn/t3rn/commit/b2e09f371bad10b53abcdc6ef6079477397c6332) - introduce Tokens and Gateways to XDNS *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`595f152`](https://github.com/t3rn/t3rn/commit/595f1521b6a333ebc30e2581634478bbf8c29b04) - remove operational methods out of Portal *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`e141943`](https://github.com/t3rn/t3rn/commit/e1419438205164209168f83d1d94cde915066930) - introduce new LightClient trait to primitives *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`fb367de`](https://github.com/t3rn/t3rn/commit/fb367de9ea04aea338e04d8abe8160facb2c5c1d) - create new Token and Gateway entries to XDNS *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`617e95b`](https://github.com/t3rn/t3rn/commit/617e95b7f0c2d74e8d35a5b3650604bcdd0b15b0) - rewrite Portal to align with LightClient interface *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`bbf1d8a`](https://github.com/t3rn/t3rn/commit/bbf1d8a5559277e754b5607847d0c2dd3d948dea) - try implement new LightClient interface to mock *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`d1a7739`](https://github.com/t3rn/t3rn/commit/d1a77390392154b4e95d8eba92c1718db5d6a31b) - breaking! change FSX::submitted_at to blocknumber *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`c9bb2a0`](https://github.com/t3rn/t3rn/commit/c9bb2a0f11ed9c6fe48a432e7b47a162c1274bd3) - use grandpa in Portal via LightClient trait and test *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`07b1f35`](https://github.com/t3rn/t3rn/commit/07b1f350b6d7244b796b9478312096300fa5383c) - re-export LightClient trait out of primitives *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`d341e31`](https://github.com/t3rn/t3rn/commit/d341e31ce10930ae48c9d62ccbb6b5e94ec5b93b) - elevate LightClient selector from Portal to Runtime *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`64d6030`](https://github.com/t3rn/t3rn/commit/64d6030b066180cf100ad64f02a9d2a790084842) - change Portal to select Light Client from runtime *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`abd1754`](https://github.com/t3rn/t3rn/commit/abd1754386798e2cbe82b1e0c801b5b1307a39c1) - remove update_ttl and security_lvl from XDNS *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`98dfff3`](https://github.com/t3rn/t3rn/commit/98dfff389ab898d1c34f00baf4c30f6530300eb9) - update LightClient trait not to rely on Option *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`844ec84`](https://github.com/t3rn/t3rn/commit/844ec848b390344f0784b7768d00f83c7b4a6694) - rename options in Header and Height Results *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`99269a9`](https://github.com/t3rn/t3rn/commit/99269a97141cd52787d309394ee6050021df8d67) - add new initialize gateway token to Portal *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`d11844f`](https://github.com/t3rn/t3rn/commit/d11844f135973ba91b13a519f6e57ee4c64c3851) - xdns fetch_records reads gateway records *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :white_check_mark: Tests
+- [`57cc514`](https://github.com/t3rn/t3rn/commit/57cc514cb533fe3d08ba48e184f0d326bb00808f) - add Polka and Kusama LightClients to 3VM mock *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`aa72280`](https://github.com/t3rn/t3rn/commit/aa72280ea9dc4b453cebf1896f839e8aef0485e1) - add Polka and Kusama LightClients to EVM mock *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`c4a94da`](https://github.com/t3rn/t3rn/commit/c4a94dac63444b5ea37b1d0effce60f0e8ce3041) - rewrite prodice test sfx args in mock with latest ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9a5a8b7`](https://github.com/t3rn/t3rn/commit/9a5a8b798bc31baddf9032e69ab67a9ae24c7de2) - fix Circuit tests after using latest SFX ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`75a3f16`](https://github.com/t3rn/t3rn/commit/75a3f16d3f5415afc7833640db420d0edd945e41) - fix portal tests by adding default XDNS entries *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`46cbeb5`](https://github.com/t3rn/t3rn/commit/46cbeb5fd72d0803d7f17584549c079042d1e6a3) - test StandardSideEffects -> StandardSFXABIs storage migration *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`2639306`](https://github.com/t3rn/t3rn/commit/263930631b7c02d2fdc1d95fb049356ba9d67fbe) - cover ABI decode_topics_as_rlp with unit tests *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9017ca3`](https://github.com/t3rn/t3rn/commit/9017ca3e11366aabf8ba96bfa7caf8c6d1046dcc) - re-compile XDNS tests after API changes *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`b7d077a`](https://github.com/t3rn/t3rn/commit/b7d077a5323176bf64bf9480c4c3b06284afbc00) - convert primitives Xtx::FSX submission height to u32 *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`d2701c7`](https://github.com/t3rn/t3rn/commit/d2701c7e67418420f67cdf7f775eaa604cb367e7) - implement new traits for GrandpaFV to contracts *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`fe7798c`](https://github.com/t3rn/t3rn/commit/fe7798c708388cee8daacddda57701365a52bb38) - unify block_number in mocks to u32 *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`01b9414`](https://github.com/t3rn/t3rn/commit/01b9414277fac582ce7a4ac7c692974d695f5432) - unify all pallets test to use block_no as u32 *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`1a0ffa4`](https://github.com/t3rn/t3rn/commit/1a0ffa47002d60c65c56976d2eac270f3a7033a9) - add all allowed SFX to mock [0,0,0,0] gateway *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`a029bde`](https://github.com/t3rn/t3rn/commit/a029bde633a79ee5a15e55b35180405f330e4fea) - correct assertion to 4b length in 3vm wasm test *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`c4568e8`](https://github.com/t3rn/t3rn/commit/c4568e8eb08a2770703a2039fbd81a3835480681) - fix test expecting HeightResult enum *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`5777797`](https://github.com/t3rn/t3rn/commit/5777797678d7b098c79777bfb1bbdabf8203bcb4) - add codecov *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`352c6ba`](https://github.com/t3rn/t3rn/commit/352c6ba0ad375b6744aa2e29f0cd6bf048f70518) - remove unused files from types *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`5f8b416`](https://github.com/t3rn/t3rn/commit/5f8b41639cadb6f5bcc7f79073e9deb91bc182c1) - remove remaining SFX::encoded_action use *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`9108ede`](https://github.com/t3rn/t3rn/commit/9108ede046d5b3f6cdd57100a14f8ff6d158fd96) - remove Box::leak replaced with debug msg, fix std tests *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`ba1fc3f`](https://github.com/t3rn/t3rn/commit/ba1fc3f0703c9ee3db4bd99027465aef157e769b) - support multiple StorageMigrations in XDNS *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`494cebf`](https://github.com/t3rn/t3rn/commit/494cebf8e7b4f0cbb47e02599e4fe2ae7c84b7b5) - remove deps on grandpa_FV from primitives *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`5a2ef48`](https://github.com/t3rn/t3rn/commit/5a2ef48e21b10a6da59210dc6d7a8241e148df8f) - remove wrongly merged client types interfaces *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`3d64c4a`](https://github.com/t3rn/t3rn/commit/3d64c4a97a3f3e971c9dd7a7c9a770fc08ab56a1) - remove test package *(commit by [@ahkohd](https://github.com/ahkohd))*
+- [`e3dae36`](https://github.com/t3rn/t3rn/commit/e3dae36c543de6cb4bfea70920ddc5e4c9d425a3) - resolve merge conflicts *(commit by [@petscheit](https://github.com/petscheit))*
+- [`5613e45`](https://github.com/t3rn/t3rn/commit/5613e45e3ea8010c491b2ec34790d125c764ad34) - fix registration params *(commit by [@petscheit](https://github.com/petscheit))*
+- [`83200a3`](https://github.com/t3rn/t3rn/commit/83200a3f4a8ecd33425984bbf5f01d18f03a326b) - rm unused files *(commit by [@petscheit](https://github.com/petscheit))*
+- [`da5181d`](https://github.com/t3rn/t3rn/commit/da5181d8fdd7459ff2c54d263bb36c349b485ad1) - fix sfx types *(commit by [@petscheit](https://github.com/petscheit))*
+- [`a97166f`](https://github.com/t3rn/t3rn/commit/a97166f02e85202a8027a5f36941c791a089ed15) - adds palletIndex field to tran abi *(commit by [@petscheit](https://github.com/petscheit))*
+- [`ccee54a`](https://github.com/t3rn/t3rn/commit/ccee54a1f3f9aa93fe7079f94ec4bacbd0f0f088) - fix abi test *(commit by [@petscheit](https://github.com/petscheit))*
+- [`0f25382`](https://github.com/t3rn/t3rn/commit/0f2538266f4a20e08bcfd15415345a9210f41002) - update ranger update policy to release *(commit by [@petscheit](https://github.com/petscheit))*
+- [`a6d63d0`](https://github.com/t3rn/t3rn/commit/a6d63d0afcfd7118fc1241efdfa8519a5ddcb44d) - rm unneeded files *(commit by [@petscheit](https://github.com/petscheit))*
+- [`d3cf062`](https://github.com/t3rn/t3rn/commit/d3cf062ecfde6147d8f01298d2ba0dcbefdfc2a6) - cleanup *(commit by [@petscheit](https://github.com/petscheit))*
+- [`1ea99d6`](https://github.com/t3rn/t3rn/commit/1ea99d6c3ac410b648c0e022751184c740df4953) - rm prefix byte *(commit by [@petscheit](https://github.com/petscheit))*
+- [`534663a`](https://github.com/t3rn/t3rn/commit/534663a8490e8cbb63a7e0fe7f12b60168fd4a0f) - add a frequency to update the prices *(commit by [@palozano](https://github.com/palozano))*
+- [`7fa08ca`](https://github.com/t3rn/t3rn/commit/7fa08ca66d3c40c1277c38d380b8e66feae29685) - move endpoint args to config *(commit by [@palozano](https://github.com/palozano))*
+- [`990c352`](https://github.com/t3rn/t3rn/commit/990c352a1f0eb73c8b05c247d2acc3613622a0f3) - create .github/dependabot.yml *(commit by [@3h4x](https://github.com/3h4x))*
+- [`4cb46df`](https://github.com/t3rn/t3rn/commit/4cb46df97a15eaa09f813f9a89e6aaf51b5b3333) - stringify SFX ids in debug message and add 2 dev Gateways *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.4.0-rc.0] - 2023-03-29
 ### :boom: BREAKING CHANGES
 - due to [`1c5d335`](https://github.com/t3rn/t3rn/commit/1c5d33553229d05a1810c0319c6184f3528d9e8c) - sfx action field renamed and type updated *(commit by [@petscheit](https://github.com/petscheit))*:
@@ -707,3 +808,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.2.0-rc.4]: https://github.com/t3rn/t3rn/compare/v1.2.0-rc.3...v1.2.0-rc.4
 [v1.3.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.2.0-rc.4...v1.3.0-rc.0
 [v1.4.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.3.0-rc.0...v1.4.0-rc.0
+[v1.5.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.4.0-rc.0...v1.5.0-rc.0
