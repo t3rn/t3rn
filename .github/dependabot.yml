@@ -10,22 +10,23 @@ updates:
     schedule:
       interval: "daily"
 
-  - package-ecosystem: "npm" 
-    directory: "client/packages/cli"
-    schedule:
-      interval: "daily"
+  # TODO: uncomment when we have a proper tests for all node applications
+  # - package-ecosystem: "npm" 
+  #   directory: "client/packages/cli"
+  #   schedule:
+  #     interval: "daily"
 
-  - package-ecosystem: "npm" 
-    directory: "client/packages/executor"
-    schedule:
-      interval: "daily"
+  # - package-ecosystem: "npm" 
+  #   directory: "client/packages/executor"
+  #   schedule:
+  #     interval: "daily"
 
-  - package-ecosystem: "npm" 
-    directory: "client/packages/sdk"
-    schedule:
-      interval: "daily"
+  # - package-ecosystem: "npm" 
+  #   directory: "client/packages/sdk"
+  #   schedule:
+  #     interval: "daily"
 
-  - package-ecosystem: "npm" 
-    directory: "client/packages/types"
-    schedule:
-      interval: "daily"
+  # - package-ecosystem: "npm" 
+  #   directory: "client/packages/types"
+  #   schedule:
+  #     interval: "daily"
