@@ -66,7 +66,7 @@ export class CircuitListener extends EventEmitter {
                         type: ListenerEvents.XTransactionReadyForExec,
                         data: notifications[i].event.data,
                     })
-                } else if (notifications[i].event.method === "HeaderSubmitted") {
+                } else if (notifications[i].event.method === "HeadersAdded") {
                     const data = {
                         vendor: notifications[i].event.data[0].toString(),
                         height: parseInt(notifications[i].event.data[1].toString(), 16),

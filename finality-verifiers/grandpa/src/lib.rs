@@ -130,6 +130,9 @@ pub mod pallet {
         type FinalizedConfirmationOffset: Get<Self::BlockNumber>;
 
         type EpochOffset: Get<Self::BlockNumber>;
+
+        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
     }
 
     #[pallet::pallet]
@@ -204,6 +207,12 @@ pub mod pallet {
     pub(super) type EverInitialized<T: Config<I>, I: 'static = ()> =
         StorageValue<_, bool, ValueQuery>;
 
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config<I>, I: 'static = ()> {
+        HeadersAdded(BridgedBlockNumber<T, I>),
+    }
+
     #[pallet::error]
     pub enum Error<T, I = ()> {
         /// The submitted range is empty
@@ -271,94 +280,9 @@ pub mod pallet {
             justification: GrandpaJustification<BridgedHeader<T, I>>,
         ) -> DispatchResultWithPostInfo {
             let _ = ensure_signed(origin.clone())?;
-            verify_and_store_headers::<T, I>(range, signed_header, justification)?;
+            Pallet::<T, I>::verify_and_store_headers(range, signed_header, justification)?;
             Ok(().into())
         }
-    }
-
-    pub(crate) fn verify_and_store_headers<T: Config<I>, I>(
-        // seq vector of headers to be added.
-        range: Vec<BridgedHeader<T, I>>,
-        // The header with the highest height, signed in the justification
-        signed_header: BridgedHeader<T, I>,
-        // GrandpaJustification for the signed_header
-        justification: GrandpaJustification<BridgedHeader<T, I>>,
-    ) -> DispatchResult {
-        ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
-
-        // °°°°° Implicit Check: °°°°°
-        // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
-        // Since polkadot updates its authority set every 24h, this is implicitly ensured => Justification check would fail after 1/7th of max len
-
-        // we get the latest header from storage
-        let mut best_finalized_hash =
-            <BestFinalizedHash<T, I>>::get().ok_or(Error::<T, I>::NoFinalizedHeader)?;
-
-        // °°°°° Explanation °°°°°
-        // To be able to submit ranges of headers, we need to ensure a number of things.
-        // 1. Ensure correct header linkage. All submitted headers must follow the linkage rule.
-        // 2. As this is not PoW, we must ensure there is a valid GrandpaJustification for the last header of what we're submitting. This can be seen as ensuring the correct fork is selected
-        // 3. The justification verifies a header that follows the linkage rule of the range
-
-        // For efficiency we check the the justification first. If it's invalid, we can skip the rest
-        let (signed_hash, signed_number) = (signed_header.hash(), signed_header.number());
-        let authority_set =
-            <CurrentAuthoritySet<T, I>>::get().ok_or(Error::<T, I>::InvalidAuthoritySet)?;
-
-        let set_id = authority_set.set_id;
-        // °°°°° Begin Check: #2 °°°°°
-        verify_justification_single::<T, I>(
-            &justification,
-            signed_hash,
-            *signed_number,
-            authority_set,
-        )?;
-        // °°°°° Checked: #2 °°°°°°
-
-        // check for authority set update and enact if available.
-        let _enacted = try_enact_authority_change_single::<T, I>(&signed_header, set_id)?;
-
-        // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
-        let mut buffer_index = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
-
-        // °°°°° Begin Check: #1 °°°°°
-        for header in range {
-            if best_finalized_hash == *header.parent_hash() {
-                // write header to storage if correct
-                write_and_clean_header_data::<T, I>(
-                    &mut buffer_index,
-                    &header,
-                    header.hash(),
-                    false,
-                )?;
-
-                best_finalized_hash = header.hash();
-            } else {
-                // if anything fails here, noop!
-                return Err(Error::<T, I>::InvalidRangeLinkage.into())
-            }
-        }
-        // °°°°° Check Success: #1 °°°°°
-
-        // °°°°° Begin Check: #3 °°°°°
-        if best_finalized_hash == *signed_header.parent_hash() {
-            // write header to storage if correct
-            write_and_clean_header_data::<T, I>(
-                &mut buffer_index,
-                &signed_header,
-                signed_hash,
-                true,
-            )?;
-        } else {
-            return Err(Error::<T, I>::InvalidJustificationLinkage.into())
-        }
-        // °°°°° Check Success: #3 °°°°°
-        // Proof success! Submitted header range valid
-
-        // Update pointer
-        <ImportedHashesPointer<T, I>>::set(Some(buffer_index));
-
-        Ok(().into())
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -509,6 +433,92 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
+    pub(crate) fn verify_and_store_headers(
+        // seq vector of headers to be added.
+        range: Vec<BridgedHeader<T, I>>,
+        // The header with the highest height, signed in the justification
+        signed_header: BridgedHeader<T, I>,
+        // GrandpaJustification for the signed_header
+        justification: GrandpaJustification<BridgedHeader<T, I>>,
+    ) -> DispatchResult {
+        ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
+
+        // °°°°° Implicit Check: °°°°°
+        // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
+        // Since polkadot updates its authority set every 24h, this is implicitly ensured => Justification check would fail after 1/7th of max len
+
+        // we get the latest header from storage
+        let mut best_finalized_hash =
+            <BestFinalizedHash<T, I>>::get().ok_or(Error::<T, I>::NoFinalizedHeader)?;
+
+        // °°°°° Explanation °°°°°
+        // To be able to submit ranges of headers, we need to ensure a number of things.
+        // 1. Ensure correct header linkage. All submitted headers must follow the linkage rule.
+        // 2. As this is not PoW, we must ensure there is a valid GrandpaJustification for the last header of what we're submitting. This can be seen as ensuring the correct fork is selected
+        // 3. The justification verifies a header that follows the linkage rule of the range
+
+        // For efficiency we check the the justification first. If it's invalid, we can skip the rest
+        let (signed_hash, signed_number) = (signed_header.hash(), signed_header.number());
+        let authority_set =
+            <CurrentAuthoritySet<T, I>>::get().ok_or(Error::<T, I>::InvalidAuthoritySet)?;
+
+        let set_id = authority_set.set_id;
+        // °°°°° Begin Check: #2 °°°°°
+        verify_justification_single::<T, I>(
+            &justification,
+            signed_hash,
+            signed_number.clone(),
+            authority_set,
+        )?;
+        // °°°°° Checked: #2 °°°°°°
+
+        // check for authority set update and enact if available.
+        let _enacted = try_enact_authority_change_single::<T, I>(&signed_header, set_id)?;
+
+        // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
+        let mut buffer_index = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
+
+        // °°°°° Begin Check: #1 °°°°°
+        for header in range {
+            if best_finalized_hash == *header.parent_hash() {
+                // write header to storage if correct
+                write_and_clean_header_data::<T, I>(
+                    &mut buffer_index,
+                    &header,
+                    header.hash(),
+                    false,
+                )?;
+
+                best_finalized_hash = header.hash();
+            } else {
+                // if anything fails here, noop!
+                return Err(Error::<T, I>::InvalidRangeLinkage.into())
+            }
+        }
+        // °°°°° Check Success: #1 °°°°°
+
+        // °°°°° Begin Check: #3 °°°°°
+        if best_finalized_hash == *signed_header.parent_hash() {
+            // write header to storage if correct
+            write_and_clean_header_data::<T, I>(
+                &mut buffer_index,
+                &signed_header,
+                signed_hash,
+                true,
+            )?;
+        } else {
+            return Err(Error::<T, I>::InvalidJustificationLinkage.into())
+        }
+        // °°°°° Check Success: #3 °°°°°
+        // Proof success! Submitted header range valid
+
+        // Update pointer
+        <ImportedHashesPointer<T, I>>::set(Some(buffer_index));
+
+        Self::deposit_event(Event::HeadersAdded(*signed_number));
+        Ok(().into())
+    }
+
     // /// Get the best finalized header the pallet knows of.
     // ///
     // /// Returns a dummy header if there is no best header. This can only happen
@@ -642,7 +652,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             Decode::decode(&mut &*encoded_header_data)
                 .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
 
-        verify_and_store_headers::<T, I>(data.range, data.signed_header, data.justification)?;
+        Pallet::<T, I>::verify_and_store_headers(
+            data.range,
+            data.signed_header,
+            data.justification,
+        )?;
         Ok(vec![])
     }
 
