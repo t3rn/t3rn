@@ -17,9 +17,9 @@ codec     = { package = "parity-scale-codec", version = "3", default-features = 
 jsonrpsee = { version = "0.14.0", features = [ "server", "macros" ] }
 
 pallet-xdns-rpc-runtime-api = { path = "runtime-api" }
-sp-api                      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-blockchain               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-core                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-rpc                      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-runtime                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+sp-api                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+sp-blockchain               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+sp-core                     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+sp-rpc                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+sp-runtime                  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 t3rn-primitives             = { path = "../../../primitives" }

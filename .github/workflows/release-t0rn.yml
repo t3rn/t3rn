@@ -2,26 +2,75 @@ name: t0rn Rococo Release
 
 on:
   push:
-    tags:
-      # This is a GLOB not a regex. Don't add escape sequences to me
-      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+    branches:
+    - development
 
 env:
-  APPROVERS: AwesomeIbex,MaciejBaj
   PARACHAIN_NAME: t0rn
   RUST_BACKTRACE: full
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
 
 jobs:
-  build-release:
-    runs-on: ["self-hosted", "rust"]
+  release:
+    runs-on: [self-hosted, rust]
+    if: ${{ !contains(github.event.head_commit.message, 'build(release):') }}
+    concurrency: release
     steps:
-      - name: ☁ Checkout git repo
+      - name: Checkout
         uses: actions/checkout@v3
         with:
-          submodules: recursive
+          fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          gpg_private_key: ${{ secrets.T3RN_CI_GPG_PRIVATE_KEY }}
+
+      - name: Calculate semantic version
+        id: version
+        uses: t3rn/semantic-version@v6.0.3
+        with:
+          tag_prefix: "v"
+          major_pattern: "/^(feat|refactor)(\\([a-z]+\\))?!:/"
+          minor_pattern: "/^(feat|refactor)(\\([a-z]+\\))?:/"
+          version_format: "${major}.${minor}.${patch}-rc.${increment}"
+          bump_each_commit: false
+          search_commit_body: false
+          user_format_type: "json"
+          prerelease_name: "rc"
+
+      - name: Cargo Release
+        run: |
+          git config --global user.email "89840377+t3rn-ci@users.noreply.github.com"
+          git config --global user.name "t3rn-ci"
+          cargo release -c release.toml --execute --no-confirm -p ${{ env.PARACHAIN_NAME }}-parachain-runtime -p ${{ env.PARACHAIN_NAME }}-parachain-collator ${{ steps.version.outputs.version }}
+
+      - name: Push tag
+        run: |
+          git tag v${{ steps.version.outputs.version }}
+          git push origin v${{ steps.version.outputs.version }}
+
+      - name: Create Release
+        id: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          draft: false
+          name: v${{ steps.version.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ steps.version.outputs.version }}
+
+      - name: Set variables 
+        run: |
+          echo "CIRCUIT_BINARY=./target/release/${{ env.PARACHAIN_NAME }}-collator" >> $GITHUB_ENV
+          echo "CIRCUIT_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-collator-v${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.gz" >> $GITHUB_ENV
+          echo "WASM_BINARY=./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm" >> $GITHUB_ENV
+          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-v${{ steps.version.outputs.version }}.compact.compressed.wasm" >> $GITHUB_ENV
 
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
@@ -38,51 +87,9 @@ jobs:
           command: build
           args: --manifest-path ./node/${{ env.PARACHAIN_NAME }}-parachain/Cargo.toml --locked --release
 
-      - name: 📤 Upload collator binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
-          path: ./target/release/${{ env.PARACHAIN_NAME }}-collator
-          if-no-files-found: error
-          retention-days: 1
-
       - name: 🫧 Build runtime WASM
         run: |
-          ./scripts/build_wasm.sh ${{env.PARACHAIN_NAME}}
-
-      - name: 📤 Upload runtime WASM binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
-          path: ./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: 📤 Upload runtime WASM hash blake2_256
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
-          path: ./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
-          if-no-files-found: error
-          retention-days: 1
-
-  publish-docker-image:
-    runs-on: self-hosted
-    needs: build-release
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          token: ${{ secrets.GH_PAT }}
-
-      - name: 🏷️ Get the version tag
-        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-
-      - name: 📥 Download circuit collator
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
-          path: ./target/release/
+          ./scripts/build_wasm.sh ${{ env.PARACHAIN_NAME }}
 
       - name: 🐋 Login to the GitHub Container Registry
         uses: docker/login-action@v2
@@ -99,109 +106,49 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/t3rn/${{ env.PARACHAIN_NAME }}-collator:${{ env.PUSHED_TAG }}
+          tags: ghcr.io/t3rn/${{ env.PARACHAIN_NAME }}-collator:v${{ steps.version.outputs.version }}
           platforms: linux/amd64
           file: collator.${{ env.PARACHAIN_NAME }}.Dockerfile
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
-  release-on-github:
-    runs-on: self-hosted
-    needs: build-release
-    steps:
-      - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
-
-      - name: 🏷️ Get the version tag
-        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-
-      - name: 📥 Download circuit collator
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}-collator-release-artifacts
-          path: ./target/release/
-
       - name: 🎱 Gzip circuit collator
         run: |
-          gzip -c ./target/release/${{ env.PARACHAIN_NAME }}-collator \
-          > ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz
+          gzip -c ${{ env.CIRCUIT_BINARY }} > ${{ env.CIRCUIT_BINARY }}.gz
 
       - name: 🖐🏾 Fingerprint the gball
         run: |
-          sha256sum -b ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz \
+          sha256sum -b ${{ env.CIRCUIT_BINARY }}.gz \
           | grep -oE '^[a-f0-9]+' \
           | tr -d '\n' \
-          > ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz.sha256sum
-
-      - name: 📥 Download runtime WASM
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
-          path: ./target/release/
+          > ${{ env.CIRCUIT_BINARY }}.gz.sha256sum
 
       - name: 🖐🏾 Fingerprint the runtime WASM
         run: |
-          sha256sum -b ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm \
+          sha256sum -b ${{ env.WASM_BINARY }} \
           | grep -oE '^[a-f0-9]+' \
           | tr -d '\n' \
-          > ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.sha256sum
-
-      - name: 📥 Download runtime WASM hash blake2_256
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
-          path: ./target/release/
-
-      - name: 🐙 Create a GitHub release
-        id: create_release
-        uses: actions/create-release@v1.1.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-        with:
-          tag_name: ${{ env.PUSHED_TAG }}
-          release_name: ${{ env.PUSHED_TAG }}
-          draft: false
-          prerelease: true
-
-      - name: 🍔 Provide the circuit collator sha256sum as a release asset
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz.sha256sum
-          asset_name: ${{ env.PARACHAIN_NAME }}-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
-          asset_content_type: text/plain
+          > ${{ env.WASM_BINARY }}.sha256sum
 
       - name: 📦 Upload the circuit collator gball as a release asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}-collator.gz
-          asset_name: ${{ env.PARACHAIN_NAME }}-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.CIRCUIT_BINARY }}.gz
+          asset_name: ${{ env.CIRCUIT_RELEASE_ASSET }}
           asset_content_type: application/gzip
 
-      - name: 🍔 Provide the runtime WASM sha256sum as a release asset
+      - name: 🍔 Provide the circuit collator sha256sum as a release asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.sha256sum
-          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm.sha256sum
-          asset_content_type: text/plain
-
-      - name: 🍔 Provide the runtime WASM blake2_256 as a release asset
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
-          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm.blake2_256
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.CIRCUIT_BINARY }}.gz.sha256sum
+          asset_name: ${{ env.CIRCUIT_RELEASE_ASSET }}.gz.sha256sum
           asset_content_type: text/plain
 
       - name: 📦 Upload the runtime WASM as a release asset
@@ -209,65 +156,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/release/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
-          asset_name: ${{ env.PARACHAIN_NAME }}-parachain-runtime-${{ env.PUSHED_TAG }}.compact.compressed.wasm
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.WASM_BINARY }}
+          asset_name: ${{ env.WASM_RELEASE_ASSET }}
           asset_content_type: text/plain
 
-  run-smoke-tests:
-    runs-on: ["self-hosted", "rust"]
-    needs: release-on-github
-    steps:
-      - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
+      - name: 🍔 Provide the runtime WASM sha256sum as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          submodules: recursive
-          token: ${{ secrets.GH_PAT }}
-      - name: ⚙️ Get nightly rust toolchain with wasm target
-        uses: actions-rs/toolchain@v1
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.WASM_BINARY }}.sha256sum
+          asset_name: ${{ env.WASM_RELEASE_ASSET }}.sha256sum
+          asset_content_type: text/plain
+
+      - name: 🍔 Provide the runtime WASM blake2_256 as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          toolchain: nightly-2022-06-16
-          target: wasm32-unknown-unknown
-          components: rustfmt, clippy
-          override: true
-      - name: 📼 Run zombienet runtime upgrade test
-        continue-on-error: false
-        working-directory: tests/zombienet
-        run: ./zombienet.sh upgrade t0rn
-
-  deploy-to-rococo:
-    runs-on: self-hosted
-    needs: run-smoke-tests
-    steps:
-      - name: 🏷️ Get the version tag
-        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-
-      - name: 📥 Download runtime WASM
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm
-          path: ./target/release/
-
-      - name: 📥 Download runtime WASM hash blake2_256
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm.blake2_256
-          path: ./target/release/
-
-      - name: 🚀 t0rn Runtime Upgrade Dry Run
-        run: |
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run
-
-      - name: Approval
-        uses: trstringer/manual-approval@v1
-        timeout-minutes: 300
-        with:
-          secret: ${{ secrets.GH_PAT }}
-          approvers: ${{ env.APPROVERS }}
-          minimum-approvals: 1
-          issue-title: "Release ${{ env.PARACHAIN_NAME }} ${{ env.PUSHED_TAG }}"
-          issue-body: "Please approve the release of ${{ env.PARACHAIN_NAME }} ${{ env.PUSHED_TAG }}"
-
-      - name: 🚀 t0rn Runtime Upgrade
-        run: |
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ${{ env.WASM_BINARY }}.blake2_256
+          asset_name: ${{ env.WASM_RELEASE_ASSET }}.blake2_256
+          asset_content_type: text/plain

@@ -8,8 +8,8 @@ version    = "1.0.0"
 
 [dependencies]
 pallet-3vm-evm-primitives = { path = "../../primitives", default-features = false, package = "fp-evm" }
-sp-core                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-std                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-core                   = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
+sp-std                    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
 
 pallet-evm-precompile-3vm-dispatch = { path = "../3vm-dispatch", default-features = false }
 pallet-evm-precompile-blake2       = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false }

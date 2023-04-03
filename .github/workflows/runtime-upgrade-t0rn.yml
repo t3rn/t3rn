@@ -1,0 +1,88 @@
+name: t0rn Runtime Upgrade
+
+on:
+  push:
+    tags:
+      # This is a GLOB not a regex. Don't add escape sequences to me
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+
+env:
+  APPROVERS: AwesomeIbex,MaciejBaj
+  PARACHAIN_NAME: t0rn
+
+jobs:
+  run-smoke-tests:
+    runs-on: [self-hosted, rust]
+    concurrency: release
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - name: ⚙️ Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-06-16
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+
+      - name: 📼 Run zombienet runtime upgrade test
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: ./zombienet.sh upgrade ${{ env.PARACHAIN_NAME }}
+
+  deploy:
+    runs-on: self-hosted
+    needs: run-smoke-tests
+    steps:
+      - name: Set variables 
+        run: |
+          echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+          # PUSHED_TAG is not available yet in the env, so we need to use GITHUB_REF
+          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-${GITHUB_REF/refs\/tags\//}.compact.compressed.wasm" >> $GITHUB_ENV
+
+      - name: 📥 Download runtime WASM
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: t3rn/t3rn
+          version: "tags/${{ env.PUSHED_TAG }}"
+          file: ${{ env.WASM_RELEASE_ASSET }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📥 Download runtime WASM hash blake2_256
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: t3rn/t3rn
+          version: "tags/${{ env.PUSHED_TAG }}"
+          file: ${{ env.WASM_RELEASE_ASSET }}.blake2_256
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🚀 t0rn Runtime Upgrade Dry Run
+        run: |
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "RUNTIME_UPGRADE_OUTPUT<<$EOF" >> $GITHUB_ENV
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run >> $GITHUB_ENV
+          echo "$EOF" >> $GITHUB_ENV          
+
+      - name: Approval
+        uses: trstringer/manual-approval@v1
+        timeout-minutes: 300
+        with:
+          secret: ${{ secrets.GH_PAT }}
+          approvers: ${{ env.APPROVERS }}
+          minimum-approvals: 1
+          issue-title: "Release ${{ env.PARACHAIN_NAME }} ${{ github.ref }}"
+          issue-body: |            
+            Please approve runtime upgrade with github release [${{ env.PARACHAIN_NAME }} ${{ env.PUSHED_TAG}}](https://github.com/t3rn/t3rn-ci-playground/releases/tag/${{ env.PUSHED_TAG }})
+            
+            Runtime upgrade dry run output:
+            ```
+            ${{ env.RUNTIME_UPGRADE_OUTPUT }}
+            ```
+
+      - name: 🚀 t0rn Runtime Upgrade
+        run: |
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ github.ref }} ${{ env.PARACHAIN_NAME }}
