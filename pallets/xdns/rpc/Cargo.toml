@@ -22,3 +22,4 @@ sp-blockchain               = { git = "https://github.com/paritytech/substrate.g
 sp-core                     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 sp-rpc                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 sp-runtime                  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+t3rn-primitives             = { path = "../../../primitives" }
