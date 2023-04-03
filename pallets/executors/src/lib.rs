@@ -1694,6 +1694,7 @@ pub mod pallet {
     }
 }
 
+#[derive(PartialEq)]
 pub struct SfxWithMetadataNewtype<T: Config> {
     pub side_effect: t3rn_types::sfx::SideEffect<T::AccountId, BalanceOf<T>>,
     pub metadata: XbiMetadata,
