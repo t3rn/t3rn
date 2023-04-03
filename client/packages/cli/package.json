@@ -12,6 +12,6 @@
     "bn.js": "^5.2.1",
     "commander": "^9.4.0",
     "pino": "^8.10.0",
-    "pino-pretty": "^9.2.0"
+    "pino-pretty": "^10.0.0"
   }
 }
