@@ -3164,3 +3164,58 @@ fn check_proper_conversion_from_sfx_to_xbi_for_call() {
         );
     });
 }
+
+#[test]
+fn check_creation_sfx_with_metadata_new_type() {
+    new_test_ext().execute_with(|| {
+        let origin = Origin::signed(ALICE);
+        let se: SideEffect<AccountId32, u128> = SideEffect {
+            target: [0u8, 0u8, 0u8, 0u8],
+            max_reward: 2,
+            action: [116, 114, 97, 110],
+            encoded_args: vec![
+                vec![
+                    42, 246, 86, 215, 84, 26, 25, 17, 173, 225, 126, 30, 234, 99, 78, 169, 50, 247,
+                    0, 118, 125, 167, 191, 15, 94, 94, 97, 126, 250, 236, 22, 62,
+                ],
+                vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ],
+            signature: vec![],
+            enforce_executor: Some(
+                [
+                    53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85,
+                    53, 110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121,
+                ]
+                .into(),
+            ),
+            insurance: 3,
+            reward_asset_id: None,
+        };
+        let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+        let executor = ensure_signed(origin.clone()).unwrap();
+        let account_to_32: AccountId32 = Decode::decode(&mut &executor.encode()[..]).unwrap();
+        let nonce_always_0_because_we_use_seed = 0;
+        let bypass_most_metadata_checks_default_para_id = Default::default();
+        let sfx_id = se.generate_id::<Hashing>(xtx_id.as_ref(), 0u32);
+        let max_exec_cost = 10;
+        let max_notifications_cost = 20;
+        let metadata = XbiMetadata::new(
+            bypass_most_metadata_checks_default_para_id,
+            bypass_most_metadata_checks_default_para_id,
+            Default::default(),
+            Fees::new(None, Some(max_exec_cost), Some(max_notifications_cost)),
+            Some(account_to_32),
+            nonce_always_0_because_we_use_seed,
+            Some(&sfx_id.encode()),
+        );
+
+        let xbi = SfxWithMetadataNewtype::<Runtime>::new(se.clone(), metadata.clone());
+
+        assert!(
+            xbi == SfxWithMetadataNewtype {
+                side_effect: se,
+                metadata,
+            }
+        );
+    });
+}
