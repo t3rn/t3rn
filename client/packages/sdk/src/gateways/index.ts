@@ -16,8 +16,7 @@ export enum GatewayType {
 
 export const initGateways = async (api: ApiPromise) => {
   // @ts-ignore
-  const records = (await api.rpc.xdns.fetchRecords())["xdns_records"];
-
+  const records = (await api.rpc.xdns.fetchFullRecords());
   let res: Record<string, Gateway> = {};
 
   for (let i = 0; i < records.length; i++) {

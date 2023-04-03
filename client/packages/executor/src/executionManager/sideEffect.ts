@@ -174,7 +174,6 @@ export class SideEffect extends EventEmitter {
             this.arguments = sideEffect.encodedArgs.map((entry) => entry.toString())
             this.target = new TextDecoder().decode(sideEffect.target.toU8a())
             this.gateway = sdk.gateways[this.target]
-            this.securityLevel = this.evalSecurityLevel(this.gateway.gatewayType)
             this.reward = new BehaviorSubject(sdk.circuit.toFloat(sideEffect.maxReward)) // this is always in TRN (native asset)
             this.insurance = sdk.circuit.toFloat(sideEffect.insurance) // this is always in TRN (native asset)
             this.strategyEngine = strategyEngine
@@ -182,21 +181,6 @@ export class SideEffect extends EventEmitter {
             this.circuitSignerAddress = circuitSignerAddress
             this.logger = logger
             this.vendor = this.gateway.vendor;
-        }
-    }
-
-    /**
-     * Evaluates the security level of the SFX based on the target gateway type.
-     *
-     * @param gatewayType
-     * @returns SecurityLevel
-     */
-    //ToDo fix parameter type
-    evalSecurityLevel(gatewayType: any): SecurityLevel {
-        if (gatewayType.ProgrammableExternal === "0" || gatewayType.OnCircuit === "0") {
-            return SecurityLevel.Escrow
-        } else {
-            return SecurityLevel.Optimistic
         }
     }
 

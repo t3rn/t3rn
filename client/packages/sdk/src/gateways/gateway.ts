@@ -1,6 +1,6 @@
 import {
   // @ts-ignore
-  T3rnPrimitivesXdnsXdnsRecord,
+  T3rnPrimitivesXdnsFullGatewayRecord,
   // @ts-ignore
   T3rnTypesSideEffect,
 } from "@polkadot/types/lookup";
@@ -36,36 +36,29 @@ export class Gateway {
   valueTypeSize: number;
   allowedSideEffects: string[];
   createSfx: {} = {};
+  tokens: [] = [];
 
   /**
    * Create a Gateway instance
    * @param xdnsEntry - The xdns entry of the gateway
    */
 
-  constructor(xdnsEntry: T3rnPrimitivesXdnsXdnsRecord) {
-    this.id = xdnsEntry.toHuman().gateway_id;
-    this.rpc = xdnsEntry.url.toHuman();
-    // @ts-ignore
-    this.vendor = xdnsEntry.toHuman().gateway_vendor.toString();
+  constructor(record: T3rnPrimitivesXdnsFullGatewayRecord) {
+    this.id = record.gateway_record.gateway_id.toHuman();
+    this.vendor = record.gateway_record.verification_vendor.toHuman();
     this.executionLayerType = this.getType(
-      xdnsEntry.toHuman().gateway_vendor.toString()
+      record.gateway_record.verification_vendor.toHuman()
     ) as unknown as ExecutionLayerType;
-    // @ts-ignore
-    this.ticker = xdnsEntry.toHuman().gateway_sys_props.token_symbol;
-    // @ts-ignore
+    let tokens: any[] = record.tokens.map(token => token.toHuman())
+    let nativeToken = tokens.filter(token => token.gateway_id === this.id)[0];
+    this.ticker = nativeToken.token_props.token_symbol;
     this.decimals = parseInt(
-      xdnsEntry.toHuman().gateway_sys_props.token_decimals
+      nativeToken.token_props.token_decimals
     );
-    // @ts-ignore
     this.addressFormat = parseInt(
-      xdnsEntry.toHuman().gateway_sys_props.ss58_format
+       nativeToken.token_props.ss58_format
     );
-    // @ts-ignore
-    this.valueTypeSize = parseInt(
-      xdnsEntry.toHuman().gateway_abi.value_type_size
-    );
-    this.allowedSideEffects = xdnsEntry.toHuman().allowed_side_effects;
-    this.gatewayType = xdnsEntry.toHuman().gateway_type;
+    this.allowedSideEffects = record.gateway_record.allowed_side_effects.toHuman().map(entry => entry[0]);
     this.setSfxBindings();
   }
 
