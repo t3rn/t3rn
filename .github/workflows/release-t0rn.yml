@@ -68,7 +68,7 @@ jobs:
       - name: Set variables 
         run: |
           echo "CIRCUIT_BINARY=./target/release/${{ env.PARACHAIN_NAME }}-collator" >> $GITHUB_ENV
-          echo "CIRCUIT_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-collator-v${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.gz" >> $GITHUB_ENV
+          echo "CIRCUIT_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-collator-v${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu" >> $GITHUB_ENV
           echo "WASM_BINARY=./target/release/wbuild/${{ env.PARACHAIN_NAME }}-parachain-runtime/${{ env.PARACHAIN_NAME }}_parachain_runtime.compact.compressed.wasm" >> $GITHUB_ENV
           echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-v${{ steps.version.outputs.version }}.compact.compressed.wasm" >> $GITHUB_ENV
 
@@ -138,7 +138,7 @@ jobs:
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
           asset_path: ${{ env.CIRCUIT_BINARY }}.gz
-          asset_name: ${{ env.CIRCUIT_RELEASE_ASSET }}
+          asset_name: ${{ env.CIRCUIT_RELEASE_ASSET }}.gz
           asset_content_type: application/gzip
 
       - name: 🍔 Provide the circuit collator sha256sum as a release asset
