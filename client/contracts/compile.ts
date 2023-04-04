@@ -21,8 +21,12 @@ const compilationInput = {
 
 export const compile = () => {
     const compiledContract = solc.compile(JSON.stringify(compilationInput));
-    const contractBytecode = JSON.parse(compiledContract).contracts['MyContract.sol']['Counter'].evm.bytecode.object;
+    const contractBytecode = JSON.parse(compiledContract).contracts['MyContract.sol']['Ballot'].evm.bytecode.object;
     return contractBytecode;
-    // const contractAbi = JSON.parse(compiledContract).contracts['MyContract.sol']['Counter'].abi;
+}
 
+export const getAbi = () => {
+    const compiledContract = solc.compile(JSON.stringify(compilationInput));
+    const contractAbi = JSON.parse(compiledContract).contracts['MyContract.sol']['Ballot'].abi;
+    return contractAbi;
 }
