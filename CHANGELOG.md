@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.6.0-rc.0] - 2023-04-04
+### :sparkles: New Features
+- [`1ae8a3e`](https://github.com/t3rn/t3rn/commit/1ae8a3e0fdfbc83d76dc44cebdacf82763f3bc51) - re-expose register as extrinsic *(commit by [@petscheit](https://github.com/petscheit))*
+- [`04dca3b`](https://github.com/t3rn/t3rn/commit/04dca3bde029f86cd2d70d69329d7ab8facf1ec7) - move grandpa header submission extrinsic out of portal and expose in FV *(commit by [@petscheit](https://github.com/petscheit))*
+- [`6735beb`](https://github.com/t3rn/t3rn/commit/6735bebe77fdef4761d163c95b94d9e5ea93295c) - emit header add event from grandpa fv *(commit by [@petscheit](https://github.com/petscheit))*
+- [`c8765be`](https://github.com/t3rn/t3rn/commit/c8765be3f3d7e905bd99fc0ad1917cdd1c327384) - add full record endpoint to xdns, including token entries *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :bug: Bug Fixes
+- [`288f5a7`](https://github.com/t3rn/t3rn/commit/288f5a7120cce14923e6a094305f7cb5c0690dd5) - restore CLI registration *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :wrench: Chores
+- [`bb84147`](https://github.com/t3rn/t3rn/commit/bb841474fc87e972229e96926fcac4970c25a3b9) - impl event type to t0rn runtime *(commit by [@petscheit](https://github.com/petscheit))*
+- [`10f85f5`](https://github.com/t3rn/t3rn/commit/10f85f56e1bb2172e78808c1d2f9174217c49727) - remove seed gateways *(commit by [@petscheit](https://github.com/petscheit))*
+- [`e64a7a4`](https://github.com/t3rn/t3rn/commit/e64a7a4749ba52f3332ce531612548c74c3a7829) - restore header submission and sfx creation *(commit by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.5.0-rc.0] - 2023-04-03
 ### :sparkles: New Features
 - [`2277b41`](https://github.com/t3rn/t3rn/commit/2277b41cff515453329d40df26a73af5c6dd49b7) - extend XDNS with SeenSFX interface storing ABI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -809,3 +825,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.3.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.2.0-rc.4...v1.3.0-rc.0
 [v1.4.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.3.0-rc.0...v1.4.0-rc.0
 [v1.5.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.4.0-rc.0...v1.5.0-rc.0
+[v1.6.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.5.1-rc.0...v1.6.0-rc.0
