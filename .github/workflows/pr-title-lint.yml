@@ -16,6 +16,9 @@ on:
       - edited
       - synchronize
 
+permissions:
+  statuses: write
+
 jobs:
   lint:
     runs-on: ubuntu-latest

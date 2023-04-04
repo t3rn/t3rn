@@ -33,10 +33,13 @@ jobs:
         working-directory: tests/zombienet
         run: ./zombienet.sh upgrade ${{ env.PARACHAIN_NAME }}
 
-  deploy:
+  runtime-upgrade:
     runs-on: self-hosted
     needs: run-smoke-tests
     steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
       - name: Set variables 
         run: |
           echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
@@ -62,6 +65,10 @@ jobs:
 
       - name: 🚀 t0rn Runtime Upgrade Dry Run
         run: |
+          # We want to run it in case it fails because just multiline env variable would obscure that
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run
+
+          # This is a workaround for multiline env variable
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "RUNTIME_UPGRADE_OUTPUT<<$EOF" >> $GITHUB_ENV
           ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run >> $GITHUB_ENV
@@ -86,3 +93,48 @@ jobs:
       - name: 🚀 t0rn Runtime Upgrade
         run: |
           ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ github.ref }} ${{ env.PARACHAIN_NAME }}
+
+  ranger-deploy:
+    runs-on: self-hosted
+    needs: runtime-upgrade
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+  
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+  
+      - name: Build ranger
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: test-t0rn-ranger
+          IMAGE_TAG: ${{ github.sha }}
+        working-directory: ./client
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f cli.Dockerfile
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Install package
+        run: |
+          curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+          sudo apt-get install apt-transport-https --yes
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+
+          sudo apt-get update
+          sudo apt-get install helm
+          sudo apt-get install -y awscli
+        
+      - name: EKS
+        run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
+
+      - name: Helm Upgrade
+        working-directory: ./client/packages/cli
+        run: helm upgrade ranger helm -n ranger -f helm/values-t0rn.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-ranger"
