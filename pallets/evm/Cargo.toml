@@ -38,6 +38,8 @@ fp-evm = { version = "3.0.0-dev", path = "primitives", default-features = false 
 # t3rn dependencies
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
 t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
+t3rn-abi            = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
+
 #t3rn-sdk-primitives = { path = "../../../../sdk/crates/primitives", default-features = false }
 
 [dev-dependencies]
@@ -87,6 +89,7 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "pallet-timestamp/std",
+  "t3rn-abi/std",
   "t3rn-primitives/std",
   "t3rn-sdk-primitives/std",
   "fp-evm/std",
