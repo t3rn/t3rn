@@ -78,6 +78,7 @@ impl FilledAbi {
     pub fn recode_as(&self, in_codec: &Codec, out_codec: &Codec) -> Result<Data, DispatchError> {
         match self {
             FilledAbi::Struct(_name, fields, struct_prefix_memo)
+            | FilledAbi::Event(_name, fields, struct_prefix_memo)
             | FilledAbi::Enum(_name, fields, struct_prefix_memo)
             | FilledAbi::Log(_name, fields, struct_prefix_memo) => {
                 // Remove and re-add the struct prefix at the end
@@ -121,6 +122,16 @@ impl FilledAbi {
                     }),
                 }
             },
+            FilledAbi::Tuple(_name, (field1, field2)) => {
+                let mut encoded_fields: Vec<u8> = vec![];
+                for field in vec![field1, field2] {
+                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                }
+                match (in_codec, out_codec) {
+                    (_, Codec::Scale) => Ok(encoded_fields),
+                    (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
+                }
+            },
             // todo: consider converting between little vs big endian
             FilledAbi::Bytes(_name, data) => Ok(data.clone()),
             FilledAbi::Vec(_name, fields, _prefix_memo) => {
@@ -137,7 +148,10 @@ impl FilledAbi {
                     (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
                 }
             },
-            FilledAbi::Byte(_name, data) | FilledAbi::Bool(_name, data) => Ok(data.clone()),
+            FilledAbi::Bytes4(_name, data)
+            | FilledAbi::Codec(_name, data)
+            | FilledAbi::Byte(_name, data)
+            | FilledAbi::Bool(_name, data) => Ok(data.clone()),
             FilledAbi::H256(_name, data) | FilledAbi::Account32(_name, data) =>
                 match (in_codec, out_codec) {
                     (Codec::Scale, Codec::Scale) | (Codec::Rlp, Codec::Rlp) => Ok(data.clone()),
@@ -245,11 +259,11 @@ impl FilledAbi {
             },
             _ => {
                 log::error!(
-                    "Filled ABI not implemented for type: {:?}",
+                    "Recoding filled not implemented for type: {:?}",
                     self.type_name()
                 );
                 Err(DispatchError::Other(
-                    "Filled ABI not implemented for type: {type_name}",
+                    "Recoding filled ABI not implemented for this type",
                 ))
             },
         }
