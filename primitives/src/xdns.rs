@@ -1,5 +1,6 @@
 use crate::{
-    gateway::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
+    gateway::GatewayABIConfig, ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType,
+    GatewayVendor, TokenInfo,
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
@@ -48,6 +49,9 @@ pub struct GatewayRecord<AccountId> {
 
     /// Verification Vendor / Light Client or internal (XCM/XBI)
     pub verification_vendor: GatewayVendor,
+
+    /// Type of execution layer, e.g. EVM for polygon and ethereum
+    pub execution_vendor: ExecutionVendor,
 
     /// Default encoding for the gateway
     pub codec: t3rn_abi::Codec,
@@ -207,6 +211,7 @@ pub trait Xdns<T: frame_system::Config> {
     fn add_new_gateway(
         gateway_id: [u8; 4],
         verification_vendor: GatewayVendor,
+        execution_vendor: ExecutionVendor,
         codec: t3rn_abi::Codec,
         registrant: Option<T::AccountId>,
         escrow_account: Option<T::AccountId>,
@@ -216,6 +221,7 @@ pub trait Xdns<T: frame_system::Config> {
     fn override_gateway(
         gateway_id: [u8; 4],
         verification_vendor: GatewayVendor,
+        execution_vendor: ExecutionVendor,
         codec: t3rn_abi::Codec,
         registrant: Option<T::AccountId>,
         escrow_account: Option<T::AccountId>,

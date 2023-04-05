@@ -92,7 +92,7 @@ use t3rn_abi::SFXAbi;
 use t3rn_primitives::{
     contracts_registry::RegistryContract,
     xdns::{GatewayRecord, Parachain, XdnsRecord},
-    GatewayType, GatewayVendor, SubstrateToken, TokenInfo,
+    ExecutionVendor, GatewayType, GatewayVendor, SubstrateToken, TokenInfo,
 };
 use t3rn_types::sfx::Sfx4bId;
 
@@ -250,6 +250,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: [3, 3, 3, 3],
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -266,6 +267,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: [1, 1, 1, 1],
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -282,6 +284,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: [5, 5, 5, 5],
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -298,6 +301,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: *b"ksma",
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -306,6 +310,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: *b"pdot",
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -314,6 +319,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: *b"gate",
                 verification_vendor: GatewayVendor::Rococo,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -322,6 +328,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: [0, 0, 0, 0],
                 verification_vendor: GatewayVendor::Rococo,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,

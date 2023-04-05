@@ -45,7 +45,7 @@ use t3rn_types::{gateway::*, sfx::*};
 use t3rn_primitives::{
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
     volatile::LocalState,
-    Balance, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenSysProps,
+    Balance, ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
 };
 
 use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;
@@ -105,7 +105,7 @@ fn register(_origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchRe
         &mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let _gateway_sys_props: TokenSysProps = Decode::decode(
+    let _gateway_sys_props: TokenInfo = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
@@ -119,6 +119,7 @@ fn register(_origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchRe
     let res = XDNS::add_new_gateway(
         gateway_id,
         gateway_vendor.clone(),
+        ExecutionVendor::Substrate,
         t3rn_abi::Codec::Scale,
         None,
         None,

@@ -23,7 +23,7 @@ use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
-use t3rn_primitives::{xdns::Xdns, GatewayVendor};
+use t3rn_primitives::{xdns::Xdns, ExecutionVendor, GatewayVendor};
 
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 7;
 const STANDARD_SFX_ABI_COUNT: usize = 7;
@@ -52,6 +52,7 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
         assert_ok!(XDNS::add_new_gateway(
             *b"test",
             GatewayVendor::Rococo,
+            ExecutionVendor::Substrate,
             t3rn_abi::Codec::Scale,
             None,   // registrant
             None,   // escrow_account
@@ -84,6 +85,7 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                 XDNS::add_new_gateway(
                     [3, 3, 3, 3],
                     GatewayVendor::Rococo,
+                    ExecutionVendor::Substrate,
                     t3rn_abi::Codec::Scale,
                     None,   // registrant
                     None,   // escrow_account
