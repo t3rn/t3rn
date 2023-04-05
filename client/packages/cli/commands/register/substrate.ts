@@ -2,7 +2,7 @@ import{ ApiPromise, Keyring, WsProvider } from'@polkadot/api';
 import { Encodings } from "@t3rn/sdk"
 import "@t3rn/types"
 // @ts-ignore
-import { GatewayGenesisConfig, GatewayABIConfig, TokenSysProps } from '@polkadot/types/lookup'
+import { GatewayGenesisConfig, GatewayABIConfig, T3rnPrimitivesTokenInfo, T3rnPrimitivesSubstrateToken } from '@polkadot/types/lookup'
 import { fetchBestFinalizedHash, fetchLatestPossibleParachainHeader } from "../../utils/substrate";
 import {Codec} from "@polkadot/types-codec/types";
 
@@ -27,6 +27,7 @@ const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatew
         gateway_id: circuit.createType("ChainId", gatewayData.id),
         token_id: circuit.createType("ChainId", gatewayData.tokenId),
         verification_vendor: circuit.createType('GatewayVendor', 'Rococo'),
+        execution_vendor: circuit.createType('ExecutionVendor', 'Substrate'),
         codec: circuit.createType('RuntimeCodec', 'Scale'),
         registrant: null,
         escrow_accounts: null,
@@ -46,6 +47,7 @@ const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewa
         gateway_id: circuit.createType("ChainId", gatewayData.id),
         token_id: circuit.createType("ChainId", gatewayData.tokenId),
         verification_vendor: circuit.createType('GatewayVendor', 'Rococo'),
+        execution_vendor: circuit.createType('ExecutionVendor', 'Substrate'),
         codec: circuit.createType('RuntimeCodec', 'Scale'),
         registrant: null,
         escrow_accounts: null,
@@ -56,12 +58,12 @@ const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewa
 }
 
 const createTokenSysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
-    const props: TokenSysProps = {
+    const param = {
         ss58_format: gatewaySysProps.ss58Format,
         token_symbol: gatewaySysProps.tokenSymbol,
         token_decimals: gatewaySysProps.tokenDecimals
     }
-    return circuiApi.createType('TokenSysProps', props);
+    return circuiApi.createType('TokenInfo', {Substrate: param});
 }
 
 const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {

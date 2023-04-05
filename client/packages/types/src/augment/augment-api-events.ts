@@ -5,7 +5,7 @@ import type { ApiTypes } from '@polkadot/api-base/types';
 import type { Bytes, Null, Option, Result, U256, U8aFixed, Vec, bool, u128, u32, u64, u8 } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H160, H256 } from '@polkadot/types/interfaces/runtime';
-import type { EthereumLog, FrameSupportTokensMiscBalanceStatus, FrameSupportWeightsDispatchInfo, SpFinalityGrandpaAppPublic, SpRuntimeDispatchError, T3rnPrimitivesContractMetadataContractType, T3rnSdkPrimitivesSignalSignalKind, T3rnTypesFsxFullSideEffect, T3rnTypesSfxSideEffect, XbiFormatXbiCheckOutStatus } from '@polkadot/types/lookup';
+import type { EthereumLog, FrameSupportTokensMiscBalanceStatus, FrameSupportWeightsDispatchInfo, SpFinalityGrandpaAppPublic, SpRuntimeDispatchError, T3rnPrimitivesContractMetadataContractType, T3rnPrimitivesGatewayVendor, T3rnSdkPrimitivesSignalSignalKind, T3rnTypesFsxFullSideEffect, T3rnTypesSfxSideEffect, XpFormatXbiResult } from '@polkadot/types/lookup';
 
 declare module '@polkadot/api-base/types/events' {
   export interface AugmentedEvents<ApiType extends ApiTypes> {
@@ -142,7 +142,7 @@ declare module '@polkadot/api-base/types/events' {
       CancelledSideEffects: AugmentedEvent<ApiType, [AccountId32, H256, Vec<T3rnTypesSfxSideEffect>]>;
       EscrowTransfer: AugmentedEvent<ApiType, [AccountId32, AccountId32, u128]>;
       NewSideEffectsAvailable: AugmentedEvent<ApiType, [AccountId32, H256, Vec<T3rnTypesSfxSideEffect>, Vec<H256>]>;
-      Result: AugmentedEvent<ApiType, [AccountId32, AccountId32, XbiFormatXbiCheckOutStatus, Bytes, Bytes]>;
+      Result: AugmentedEvent<ApiType, [AccountId32, AccountId32, XpFormatXbiResult, Bytes, Bytes]>;
       SFXNewBidReceived: AugmentedEvent<ApiType, [H256, AccountId32, u128]>;
       SideEffectConfirmed: AugmentedEvent<ApiType, [H256]>;
       SideEffectsConfirmed: AugmentedEvent<ApiType, [H256, Vec<Vec<T3rnTypesFsxFullSideEffect>>]>;
@@ -289,6 +289,12 @@ declare module '@polkadot/api-base/types/events' {
        **/
       SubIdentityRevoked: AugmentedEvent<ApiType, [sub: AccountId32, main: AccountId32, deposit: u128], { sub: AccountId32, main: AccountId32, deposit: u128 }>;
     };
+    kusamaBridge: {
+      HeadersAdded: AugmentedEvent<ApiType, [u32]>;
+    };
+    polkadotBridge: {
+      HeadersAdded: AugmentedEvent<ApiType, [u32]>;
+    };
     portal: {
       /**
        * Event documentation should end with an array that provides descriptive names for event
@@ -298,7 +304,7 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * Header was successfully added
        **/
-      HeaderSubmitted: AugmentedEvent<ApiType, [U8aFixed, Bytes]>;
+      HeaderSubmitted: AugmentedEvent<ApiType, [T3rnPrimitivesGatewayVendor, Bytes]>;
       /**
        * Gateway was set operational. [ChainId, bool]
        **/
@@ -307,6 +313,9 @@ declare module '@polkadot/api-base/types/events' {
        * Gateway owner was set successfully. [ChainId, Vec<u8>]
        **/
       SetOwner: AugmentedEvent<ApiType, [U8aFixed, Bytes]>;
+    };
+    rococoBridge: {
+      HeadersAdded: AugmentedEvent<ApiType, [u32]>;
     };
     sudo: {
       /**
@@ -440,11 +449,23 @@ declare module '@polkadot/api-base/types/events' {
     };
     xdns: {
       /**
+       * \[requester, gateway_record_id\]
+       **/
+      GatewayRecordPurged: AugmentedEvent<ApiType, [AccountId32, U8aFixed]>;
+      /**
+       * \[gateway_4b_id\]
+       **/
+      GatewayRecordStored: AugmentedEvent<ApiType, [U8aFixed]>;
+      /**
+       * \[token_4b_id, gateway_4b_id\]
+       **/
+      TokenRecordStored: AugmentedEvent<ApiType, [U8aFixed, U8aFixed]>;
+      /**
        * \[requester, xdns_record_id\]
        **/
       XdnsRecordPurged: AugmentedEvent<ApiType, [AccountId32, U8aFixed]>;
       /**
-       * \[xdns_record_id\]
+       * \[gateway_id\]
        **/
       XdnsRecordStored: AugmentedEvent<ApiType, [U8aFixed]>;
       /**

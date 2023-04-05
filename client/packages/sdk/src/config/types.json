@@ -7,12 +7,34 @@
             "Ethereum"
         ]
     },
+    "ExecutionVendor": {
+        "_enum": [
+            "Substrate",
+            "EVM"
+        ]
+    },
     "GatewayType": {
         "_enum": {
             "ProgrammableInternal": "u32",
             "ProgrammableExternal": "u32",
             "TxOnly": "u32"
         }
+    },
+    "TokenInfo": {
+        "_enum": {
+            "Substrate": "SubstrateToken",
+            "Ethereum": "EthereumToken"
+        }
+    },
+    "SubstrateToken": {
+        "ss58_format": "u16",
+        "token_symbol": "Bytes",
+        "token_decimals": "u8"
+    },
+    "EthereumToken": {
+        "token_symbol": "Vec<u8>",
+        "token_decimals": "u8",
+        "address": "Option<[u8; 20]>"
     },
     "RuntimeCodec": {
          "_enum": [
@@ -25,11 +47,7 @@
         "extrinsics_version": "u8",
         "genesis_hash": "Bytes"
     },
-    "TokenSysProps": {
-        "ss58_format": "u16",
-        "token_symbol": "Bytes",
-        "token_decimals": "u8"
-    },
+
     "AllowedSideEffect": "[u8; 4]",
     "BlockNumber": "u64",
     "Compose": {
