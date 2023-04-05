@@ -81,9 +81,9 @@ frame_support::construct_runtime!(
         CircuitPortal: pallet_portal,
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
-        RococoBridge: pallet_grandpa_finality_verifier::{
-            Pallet, Storage
-        },
+        RococoBridge: pallet_grandpa_finality_verifier,
+        PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1>,
+        KusamaBridge: pallet_grandpa_finality_verifier::<Instance2>,
     }
 );
 

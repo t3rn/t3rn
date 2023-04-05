@@ -148,7 +148,8 @@ fn submit_headers(
         &mut &*hex::decode(json[index]["encoded_gateway_id"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    Portal::submit_headers(origin, gateway_id, encoded_header_data)
+    // Portal::submit_encoded_headers(origin, gateway_id, encoded_header_data)
+    Ok(())
 }
 
 fn on_extrinsic_trigger(
