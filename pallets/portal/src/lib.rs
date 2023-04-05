@@ -14,10 +14,11 @@ use pallet_grandpa_finality_verifier::light_clients::LightClient;
 use t3rn_abi::types::Bytes;
 use t3rn_primitives::{
     self,
-    portal::{HeaderResult, HeightResult, Portal},
+    portal::{HeaderResult, HeightResult, Portal, PortalPrecompileInterface},
     xdns::Xdns,
     ChainId, GatewayVendor, SpeedMode, TokenInfo,
 };
+
 pub mod weights;
 
 pub trait SelectLightClient<T: frame_system::Config> {
