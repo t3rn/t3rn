@@ -23,8 +23,10 @@ use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
-use t3rn_primitives::{xdns::Xdns, ExecutionVendor, GatewayVendor};
-
+use t3rn_primitives::{
+    xdns::Xdns, EthereumToken, ExecutionVendor, GatewayVendor, ReadLatestGatewayHeight::Error,
+    SubstrateToken, TokenInfo,
+};
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 7;
 const STANDARD_SFX_ABI_COUNT: usize = 7;
 
@@ -60,6 +62,83 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
         ));
         assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
         assert!(pallet_xdns::Gateways::<Runtime>::get(b"test").is_some());
+    });
+}
+
+#[test]
+fn should_add_a_new_xdns_and_token_record_if_it_doesnt_exist() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_ok!(XDNS::add_new_gateway(
+            *b"test",
+            GatewayVendor::Rococo,
+            ExecutionVendor::Substrate,
+            t3rn_abi::Codec::Scale,
+            None,   // registrant
+            None,   // escrow_account
+            vec![], // allowed_side_effects
+        ));
+
+        assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
+        assert!(pallet_xdns::Gateways::<Runtime>::get(b"test").is_some());
+
+        assert_ok!(XDNS::add_new_token(
+            *b"test",
+            *b"test",
+            TokenInfo::Substrate(SubstrateToken {
+                ss58_format: 1,
+                token_symbol: b"test".to_vec(),
+                token_decimals: 1,
+            })
+        ));
+
+        // no duplicates
+        assert_noop!(
+            XDNS::add_new_token(
+                *b"test",
+                *b"test",
+                TokenInfo::Substrate(SubstrateToken {
+                    token_decimals: 18,
+                    token_symbol: b"test".to_vec(),
+                    ss58_format: 5
+                })
+            ),
+            pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
+        );
+
+        // no mismatched execution vendor
+        assert_noop!(
+            XDNS::add_new_token(
+                *b"roco",
+                *b"test",
+                TokenInfo::Ethereum(EthereumToken {
+                    token_decimals: 18,
+                    token_symbol: b"test".to_vec(),
+                    address: Some([1; 20])
+                })
+            ),
+            pallet_xdns::pallet::Error::<Runtime>::TokenExecutionVendorMismatch
+        );
+
+        assert_eq!(pallet_xdns::Tokens::<Runtime>::iter().count(), 1);
+    });
+}
+
+#[test]
+fn shouldnt_add_new_token_without_gateway_record() {
+    ExtBuilder::default().build().execute_with(|| {
+        // no duplicates
+        assert_noop!(
+            XDNS::add_new_token(
+                *b"test",
+                *b"test",
+                TokenInfo::Substrate(SubstrateToken {
+                    token_decimals: 18,
+                    token_symbol: b"test".to_vec(),
+                    ss58_format: 5
+                })
+            ),
+            pallet_xdns::pallet::Error::<Runtime>::GatewayRecordNotFound
+        );
     });
 }
 
