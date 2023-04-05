@@ -1,5 +1,6 @@
 use crate::types::*;
 use codec::{Decode, Encode};
+use std::iter::Peekable;
 
 use frame_support::log;
 use scale_info::prelude::string::String;
@@ -10,20 +11,34 @@ use sp_std::{prelude::*, vec::IntoIter};
 pub enum Abi {
     Struct(Option<Name>, Vec<Box<Abi>>),
     Log(Option<Name>, Vec<Box<Abi>>),
+    Event(Option<Name>, Vec<Box<Abi>>),
     Enum(Option<Name>, Vec<Box<Abi>>),
     Option(Option<Name>, Box<Abi>),
     Account20(Option<Name>),
     Account32(Option<Name>),
     H256(Option<Name>),
     Bytes(Option<Name>),
+    Bytes4(Option<Name>),
     Value256(Option<Name>),
     Value128(Option<Name>),
     Value64(Option<Name>),
     Value32(Option<Name>),
     Byte(Option<Name>),
+    Codec(Option<Name>),
     Bool(Option<Name>),
     Vec(Option<Name>, Box<Abi>),
+    Uniple(Option<Name>, Box<Abi>),
     Tuple(Option<Name>, (Box<Abi>, Box<Abi>)),
+    Triple(Option<Name>, (Box<Abi>, Box<Abi>, Box<Abi>)),
+    Quadruple(Option<Name>, (Box<Abi>, Box<Abi>, Box<Abi>, Box<Abi>)),
+    Quintuple(
+        Option<Name>,
+        (Box<Abi>, Box<Abi>, Box<Abi>, Box<Abi>, Box<Abi>),
+    ),
+    Sextuple(
+        Option<Name>,
+        (Box<Abi>, Box<Abi>, Box<Abi>, Box<Abi>, Box<Abi>, Box<Abi>),
+    ),
 }
 
 impl Abi {
@@ -44,7 +59,15 @@ impl Abi {
             Abi::Byte(name) => name.clone(),
             Abi::Bool(name) => name.clone(),
             Abi::Vec(name, _) => name.clone(),
+            Abi::Uniple(name, _) => name.clone(),
             Abi::Tuple(name, _) => name.clone(),
+            Abi::Triple(name, _) => name.clone(),
+            Abi::Quadruple(name, _) => name.clone(),
+            Abi::Quintuple(name, _) => name.clone(),
+            Abi::Sextuple(name, _) => name.clone(),
+            Abi::Event(name, _) => name.clone(),
+            Abi::Bytes4(name) => name.clone(),
+            Abi::Codec(name) => name.clone(),
         }
     }
 
@@ -65,16 +88,24 @@ impl Abi {
             Abi::Byte(_) => 1,
             Abi::Bool(_) => 1,
             Abi::Vec(_, _field) => 1,
-            Abi::Tuple(_, (_field1, _field2)) => 1,
+            Abi::Tuple(_, (_field1, _field2)) => 0,
+            Abi::Event(_, _fields) => 1,
+            Abi::Bytes4(_) => 4,
+            Abi::Codec(_) => 1,
+            Abi::Uniple(_, _) => 0,
+            Abi::Triple(_, _) => 0,
+            Abi::Quadruple(_, _) => 0,
+            Abi::Quintuple(_, _) => 0,
+            Abi::Sextuple(_, _) => 0,
         }
     }
 
     pub fn get_size(&self) -> usize {
         match self {
-            Abi::Struct(_, fields) => fields.iter().map(|f| f.get_size()).sum::<usize>(),
-            Abi::Log(_, fields) => fields.iter().map(|f| f.get_size()).sum::<usize>(),
-            Abi::Enum(_, fields) => fields.iter().map(|f| f.get_size()).sum::<usize>(),
-            Abi::Option(_, field) => 1 + field.get_size(),
+            Abi::Struct(_, fields) => 1usize + fields.iter().map(|f| f.get_size()).sum::<usize>(),
+            Abi::Log(_, fields) => 1usize + fields.iter().map(|f| f.get_size()).sum::<usize>(),
+            Abi::Enum(_, fields) => 1usize + fields.iter().map(|f| f.get_size()).sum::<usize>(),
+            Abi::Option(_, field) => 1usize + field.get_size(),
             Abi::Account20(_) => 20,
             Abi::Account32(_) => 32,
             Abi::H256(_) => 32,
@@ -88,6 +119,27 @@ impl Abi {
             // this needs to be multiplied by the length of the vec
             Abi::Vec(_, field) => 1usize + field.get_size(),
             Abi::Tuple(_, (field1, field2)) => field1.get_size() + field2.get_size(),
+            Abi::Event(_, fields) => 1usize + fields.iter().map(|f| f.get_size()).sum::<usize>(),
+            Abi::Bytes4(_) => 4,
+            Abi::Codec(_) => 1,
+            Abi::Uniple(_, field1) => field1.get_size(),
+            Abi::Triple(_, (field1, field2, field3)) =>
+                field1.get_size() + field2.get_size() + field3.get_size(),
+            Abi::Quadruple(_, (field1, field2, field3, field4)) =>
+                field1.get_size() + field2.get_size() + field3.get_size() + field4.get_size(),
+            Abi::Quintuple(_, (field1, field2, field3, field4, field5)) =>
+                field1.get_size()
+                    + field2.get_size()
+                    + field3.get_size()
+                    + field4.get_size()
+                    + field5.get_size(),
+            Abi::Sextuple(_, (field1, field2, field3, field4, field5, field6)) =>
+                field1.get_size()
+                    + field2.get_size()
+                    + field3.get_size()
+                    + field4.get_size()
+                    + field5.get_size()
+                    + field6.get_size(),
         }
     }
 }
@@ -101,7 +153,7 @@ impl TryFrom<Data> for Abi {
 
         const MAX_DEPTH: usize = 10;
         fn from_parsed_descriptor_recursive(
-            fields_iter: &mut IntoIter<(Data, Option<Data>, usize)>,
+            mut fields_iter: &mut Peekable<IntoIter<(Data, Option<Data>, usize)>>,
             current_depth: usize,
         ) -> Result<Abi, DispatchError> {
             if current_depth > MAX_DEPTH {
@@ -124,23 +176,21 @@ impl TryFrom<Data> for Abi {
                         from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
                     Ok(Abi::Option(maybe_name, Box::new(next_field_descriptor)))
                 },
-                "Struct" | "Enum" | "Log" => {
+                "Struct" | "Enum" | "Event" | "Log" => {
                     let mut fields = Vec::new();
-                    let mut next_peek = fields_iter.clone().peekable();
-                    while let Some((_next_field_str, _maybe_next_name, lvl)) = next_peek.peek() {
+                    while let Some((_next_field_str, _maybe_next_name, lvl)) = fields_iter.peek() {
                         if lvl > &(current_depth + 1) {
                             break
                         }
                         fields.push(Box::new(from_parsed_descriptor_recursive(
-                            &mut fields_iter.clone(),
+                            &mut fields_iter,
                             current_depth + 1,
                         )?));
-                        fields_iter.next();
-                        next_peek.next();
                     }
                     match field_str {
                         "Struct" => Ok(Abi::Struct(maybe_name, fields)),
                         "Enum" => Ok(Abi::Enum(maybe_name, fields)),
+                        "Event" => Ok(Abi::Event(maybe_name, fields)),
                         "Log" => Ok(Abi::Log(maybe_name, fields)),
                         _ => unreachable!(),
                     }
@@ -154,28 +204,131 @@ impl TryFrom<Data> for Abi {
                 "Value64" => Ok(Abi::Value64(maybe_name)),
                 "Value32" => Ok(Abi::Value32(maybe_name)),
                 "Byte" => Ok(Abi::Byte(maybe_name)),
+                "Codec" => Ok(Abi::Codec(maybe_name)),
+                "Bytes4" => Ok(Abi::Bytes4(maybe_name)),
                 "Bool" => Ok(Abi::Bool(maybe_name)),
                 "Vec" => {
                     let next_field_descriptor =
                         from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
                     Ok(Abi::Vec(maybe_name, Box::new(next_field_descriptor)))
                 },
-                "Tuple" => {
-                    let _next_field = fields_iter.next().ok_or(DispatchError::Other(
-                        "Abi::try_from(Bytes) -- Tuple missing tuple field1",
-                    ))?;
+                "Uniple" => {
                     let next_field_descriptor =
                         from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
-                    let _next_field = fields_iter.next().ok_or(DispatchError::Other(
-                        "Abi::try_from(Bytes) -- Tuple missing tuple field2",
-                    ))?;
+                    Ok(Abi::Uniple(maybe_name, Box::new(next_field_descriptor)))
+                },
+                "Tuple" => {
+                    let next_field_descriptor =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
                     let next_field_descriptor_2 =
                         from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
                     Ok(Abi::Tuple(
                         maybe_name,
                         (
                             Box::new(next_field_descriptor),
                             Box::new(next_field_descriptor_2),
+                        ),
+                    ))
+                },
+                "Triple" => {
+                    let next_field_descriptor =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_2 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_3 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    Ok(Abi::Triple(
+                        maybe_name,
+                        (
+                            Box::new(next_field_descriptor),
+                            Box::new(next_field_descriptor_2),
+                            Box::new(next_field_descriptor_3),
+                        ),
+                    ))
+                },
+                "Quadruple" => {
+                    let next_field_descriptor =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_2 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_3 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_4 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    Ok(Abi::Quadruple(
+                        maybe_name,
+                        (
+                            Box::new(next_field_descriptor),
+                            Box::new(next_field_descriptor_2),
+                            Box::new(next_field_descriptor_3),
+                            Box::new(next_field_descriptor_4),
+                        ),
+                    ))
+                },
+                "Quintuple" => {
+                    let next_field_descriptor =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_2 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_3 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_4 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_5 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    Ok(Abi::Quintuple(
+                        maybe_name,
+                        (
+                            Box::new(next_field_descriptor),
+                            Box::new(next_field_descriptor_2),
+                            Box::new(next_field_descriptor_3),
+                            Box::new(next_field_descriptor_4),
+                            Box::new(next_field_descriptor_5),
+                        ),
+                    ))
+                },
+                "Sextuple" => {
+                    let next_field_descriptor =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_2 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_3 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_4 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_5 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    let next_field_descriptor_6 =
+                        from_parsed_descriptor_recursive(fields_iter, current_depth + 1)?;
+
+                    Ok(Abi::Sextuple(
+                        maybe_name,
+                        (
+                            Box::new(next_field_descriptor),
+                            Box::new(next_field_descriptor_2),
+                            Box::new(next_field_descriptor_3),
+                            Box::new(next_field_descriptor_4),
+                            Box::new(next_field_descriptor_5),
+                            Box::new(next_field_descriptor_6),
                         ),
                     ))
                 },
@@ -188,7 +341,8 @@ impl TryFrom<Data> for Abi {
             }
         }
 
-        from_parsed_descriptor_recursive(&mut parsed_descriptor.into_iter(), 0)
+        let mut parsed_descriptor_iter = parsed_descriptor.into_iter().peekable();
+        from_parsed_descriptor_recursive(&mut parsed_descriptor_iter, 0)
     }
 }
 
@@ -287,6 +441,8 @@ pub fn parse_descriptor_flat(
             Some(y) => (x.as_bytes().to_vec(), Some(y.as_bytes().to_vec()), lvl),
             None => (x.as_bytes().to_vec(), None, lvl),
         })
+        // remove empty fields
+        .filter(|(x, _y, _lvl)| !x.is_empty())
         .collect();
 
     Ok(res)

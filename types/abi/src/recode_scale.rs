@@ -6,6 +6,7 @@ use crate::{
 };
 
 use bytes::{Buf, Bytes};
+use frame_support::ensure;
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
 pub struct RecodeScale;
@@ -17,6 +18,10 @@ impl Recode for RecodeScale {
         fields_iter_clone: IntoIter<Box<Abi>>,
     ) -> Result<(IntoIter<Vec<u8>>, u8), DispatchError> {
         let mut buf = Bytes::copy_from_slice(field_data);
+        ensure!(
+            buf.len() > 0,
+            DispatchError::Other("RecodeScale::chop_encoded - no data to decode")
+        );
         let memo_prefix = buf.get_u8();
 
         let mut no_strut_prefix_data = buf;
@@ -25,8 +30,14 @@ impl Recode for RecodeScale {
         let chopped_field_data: Vec<Vec<u8>> = fields_iter
             .map(|field_descriptor| {
                 let field_size = field_descriptor.get_size();
+
                 let mut field_bytes = vec![0; field_size];
+                ensure!(
+                    no_strut_prefix_data.len() >= field_size,
+                    DispatchError::Other("RecodeScale::chop_encoded - not enough data to decode")
+                );
                 no_strut_prefix_data.copy_to_slice(&mut field_bytes);
+
                 Ok(field_bytes)
             })
             .collect::<Result<Vec<Vec<u8>>, DispatchError>>()?;
@@ -45,4 +56,11 @@ impl Recode for RecodeScale {
             Codec::Scale,
         )
     }
+}
+
+#[cfg(test)]
+pub mod recode_scale_test {
+
+    #[test]
+    fn chop_encoded() {}
 }

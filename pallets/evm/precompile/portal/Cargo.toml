@@ -1,0 +1,44 @@
+[package]
+authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+description = "t3rn portal's precompile for EVM smart contracts"
+edition     = "2018"
+homepage    = "https://t3rn.io"
+license     = "Apache 2.0"
+name        = "portal-precompile"
+readme      = "README.md"
+repository  = "https://github.com/t3rn/t3rn/"
+version     = "1.5.0-rc.0"
+
+
+[package.metadata.docs.rs]
+targets = [ "x86_64-unknown-linux-gnu" ]
+
+[dependencies]
+codec                        = { package = "parity-scale-codec", version = "3", default-features = false }
+
+sp-core                      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+sp-std                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+sp-runtime                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+t3rn-primitives              = { default-features = false, path = "../../../../primitives" }
+t3rn-abi                     = { default-features = false, path = "../../../../types/abi", features = [ "runtime" ] }
+pallet-3vm-evm               = {default-features = false, path = "../../../../pallets/evm"}
+fp-evm                       = { version = "3.0.0-dev", path = "../../../../primitives", default-features = false }
+frame-support                = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
+
+[dev-dependencies]
+hex                          = "0.4.2"
+hex-literal                  = "0.2.1"
+
+[features]
+default = [ "std" ]
+std = [
+    "codec/std",
+    "frame-support/std",
+    "sp-core/std",
+    "sp-std/std",
+    "sp-runtime/std",
+    "t3rn-primitives/std",
+    "t3rn-abi/std",
+    "pallet-3vm-evm/std",
+    "fp-evm/std",
+]
