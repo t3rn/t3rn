@@ -14,7 +14,7 @@ use pallet_grandpa_finality_verifier::light_clients::LightClient;
 use t3rn_abi::types::Bytes;
 use t3rn_primitives::{
     self,
-    portal::{HeaderResult, HeightResult, Portal, PortalPrecompileInterface},
+    portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
     ChainId, GatewayVendor, SpeedMode, TokenInfo,
 };
