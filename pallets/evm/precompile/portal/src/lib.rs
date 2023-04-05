@@ -1,16 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate fp_evm;
+extern crate t3rn_primitives;
+
 use codec::{Decode, Encode};
 use pallet_evm::LinearCostPrecompile;
 
 use fp_evm::{
-    ExitError, ExitSucceed, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
-    PrecompileOutput, PrecompileResult,
-};
-use sp_std::{marker::PhantomData, vec::Vec};
-use t3rn_primitives::{
-    threevm::{Precompile, PORTAL},
-    T3rnCodec,
+    ExitError, ExitRevert, ExitSucceed, Precompile as EvmPrecompile, Precompile, PrecompileFailure,
+    PrecompileHandle, PrecompileOutput, PrecompileResult,
 };
 
 use frame_support::pallet_prelude::DispatchError;
@@ -18,16 +16,17 @@ use sp_std::vec::Vec;
 use std::marker::PhantomData;
 use t3rn_abi::{types::Bytes, Abi, Codec, FilledAbi};
 use t3rn_primitives::portal::{
-    get_portal_interface_abi, Portal, PortalPrecompileInterfaceEnum,
+    get_portal_interface_abi, PortalPrecompileInterfaceEnum,
     PortalPrecompileInterfaceEnum::{
         GetCurrentEpoch, GetLatestFinalizedHeader, GetLatestFinalizedHeight,
         GetLatestUpdatedHeight, ReadEpochOffset, ReadFastConfirmationOffset,
         ReadRationalConfirmationOffset, VerifyEventInclusion, VerifyStateInclusion,
         VerifyTxInclusion,
     },
+    PortalReadApi,
 };
 
-pub struct PortalPrecompile<T>(PhantomData<T>);
+pub struct PortalPrecompile<T, BlockNumber>(PhantomData<(T, BlockNumber)>);
 
 pub fn recode_input_as_portal_api_enum(
     input: &[u8],
@@ -67,72 +66,69 @@ pub fn recode_input_as_portal_api_enum(
     Ok(recoded_call_as_enum)
 }
 
-impl<T: Portal<T> + frame_system::Config> PortalPrecompile<T> {
+impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> PortalPrecompile<T, BlockNumber> {
     pub fn call_portal(input: &[u8]) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
         match recode_input_as_portal_api_enum(input)? {
             GetLatestFinalizedHeader(chain_id) => {
-                let res =
-                    <T as Portal<T>>::get_latest_finalized_header(chain_id).map_err(|_| {
-                        ExitError::Other("Failed to get latest finalized header".into())
-                    })?;
+                let res = T::get_latest_finalized_header(chain_id).map_err(|_| {
+                    ExitError::Other("Failed to get latest finalized header".into())
+                })?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             GetLatestFinalizedHeight(chain_id) => {
-                let res =
-                    <T as Portal<T>>::get_latest_finalized_height(chain_id).map_err(|_| {
-                        ExitError::Other("Failed to get latest finalized height".into())
-                    })?;
+                let res = T::get_latest_finalized_height(chain_id).map_err(|_| {
+                    ExitError::Other("Failed to get latest finalized height".into())
+                })?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             GetLatestUpdatedHeight(chain_id) => {
-                let res = <T as Portal<T>>::get_latest_updated_height(chain_id)
+                let res = T::get_latest_updated_height(chain_id)
                     .map_err(|_| ExitError::Other("Failed to get latest updated height".into()))?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             GetCurrentEpoch(chain_id) => {
-                let res = <T as Portal<T>>::get_current_epoch(chain_id)
+                let res = T::get_current_epoch(chain_id)
                     .map_err(|_| ExitError::Other("Failed to get current epoch".into()))?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             ReadEpochOffset(chain_id) => {
-                let res = <T as Portal<T>>::read_epoch_offset(chain_id)
+                let res = T::read_epoch_offset(chain_id)
                     .map_err(|_| ExitError::Other("Failed to read epoch offset".into()))?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             ReadFastConfirmationOffset(chain_id) => {
-                let res =
-                    <T as Portal<T>>::read_fast_confirmation_offset(chain_id).map_err(|_| {
-                        ExitError::Other("Failed to read fast confirmation offset".into())
-                    })?;
+                let res = T::read_fast_confirmation_offset(chain_id).map_err(|_| {
+                    ExitError::Other("Failed to read fast confirmation offset".into())
+                })?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             ReadRationalConfirmationOffset(chain_id) => {
-                let res = <T as Portal<T>>::read_rational_confirmation_offset(chain_id).map_err(
-                    |_| ExitError::Other("Failed to read rational confirmation offset".into()),
-                )?;
+                let res = T::read_rational_confirmation_offset(chain_id).map_err(|_| {
+                    ExitError::Other("Failed to read rational confirmation offset".into())
+                })?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             VerifyEventInclusion(chain_id, event) => {
-                let res = <T as Portal<T>>::verify_event_inclusion(chain_id, event, None)
+                let res = T::verify_event_inclusion(chain_id, event, None)
                     .map_err(|_| ExitError::Other("Failed to verify event inclusion".into()))?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             VerifyStateInclusion(chain_id, event) => {
-                let res = <T as Portal<T>>::verify_state_inclusion(chain_id, event, None)
+                let res = T::verify_state_inclusion(chain_id, event, None)
                     .map_err(|_| ExitError::Other("Failed to verify state inclusion".into()))?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
             },
             VerifyTxInclusion(chain_id, event) => {
-                let res = <T as Portal<T>>::verify_tx_inclusion(chain_id, event, None)
+                let res = T::verify_tx_inclusion(chain_id, event, None)
                     .map_err(|_| ExitError::Other("Failed to verify tx inclusion".into()))?;
 
                 Ok((ExitSucceed::Returned, res.encode()))
@@ -141,7 +137,9 @@ impl<T: Portal<T> + frame_system::Config> PortalPrecompile<T> {
     }
 }
 
-impl<T: Portal<T> + frame_system::Config> LinearCostPrecompile for PortalPrecompile<T> {
+impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> LinearCostPrecompile
+    for PortalPrecompile<T, BlockNumber>
+{
     const BASE: u64 = 3000;
     const WORD: u64 = 200;
 
@@ -149,7 +147,7 @@ impl<T: Portal<T> + frame_system::Config> LinearCostPrecompile for PortalPrecomp
         input: &[u8],
         _max_linear_cost_based_on_input_size: u64,
     ) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
-        PortalPrecompile::<T>::call_portal(input)
+        PortalPrecompile::<T, BlockNumber>::call_portal(input)
     }
 }
 
