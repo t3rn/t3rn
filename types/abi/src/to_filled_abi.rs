@@ -11,9 +11,11 @@ pub use crate::recode_rlp::EthIngressEventLog;
 pub enum FilledAbi {
     Struct(Option<Name>, Vec<Box<FilledAbi>>, u8),
     Enum(Option<Name>, Vec<Box<FilledAbi>>, u8),
+    Event(Option<Name>, Vec<Box<FilledAbi>>, u8),
     Log(Option<Name>, Vec<Box<FilledAbi>>, u8),
     Option(Option<Name>, Box<FilledAbi>),
     Bytes(Option<Name>, Data),
+    Bytes4(Option<Name>, Data),
     Account20(Option<Name>, Data),
     Account32(Option<Name>, Data),
     H256(Option<Name>, Data),
@@ -22,9 +24,45 @@ pub enum FilledAbi {
     Value64(Option<Name>, Data),
     Value32(Option<Name>, Data),
     Byte(Option<Name>, Data),
+    Codec(Option<Name>, Data),
     Bool(Option<Name>, Data),
     Vec(Option<Name>, Box<Vec<FilledAbi>>, u8),
+    Uniple(Option<Name>, Box<FilledAbi>),
     Tuple(Option<Name>, (Box<FilledAbi>, Box<FilledAbi>)),
+    Triple(
+        Option<Name>,
+        (Box<FilledAbi>, Box<FilledAbi>, Box<FilledAbi>),
+    ),
+    Quadruple(
+        Option<Name>,
+        (
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+        ),
+    ),
+    Quintuple(
+        Option<Name>,
+        (
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+        ),
+    ),
+    Sextuple(
+        Option<Name>,
+        (
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+            Box<FilledAbi>,
+        ),
+    ),
 }
 
 pub fn matches_name(field_name: Option<&Name>, by_name: &Name) -> bool {
@@ -51,9 +89,12 @@ impl FilledAbi {
         match self {
             FilledAbi::Struct(_name, _, prefix_memo) => Some(*prefix_memo),
             FilledAbi::Enum(_name, _, prefix_memo) => Some(*prefix_memo),
+            FilledAbi::Event(_name, _, prefix_memo) => Some(*prefix_memo),
             FilledAbi::Log(_name, _, prefix_memo) => Some(*prefix_memo),
             FilledAbi::Option(_name, _) => None,
+            FilledAbi::Codec(_name, _) => None,
             FilledAbi::Bytes(_name, _) => None,
+            FilledAbi::Bytes4(_name, _) => None,
             FilledAbi::Account20(_name, _) => None,
             FilledAbi::Account32(_name, _) => None,
             FilledAbi::H256(_name, _) => None,
@@ -65,6 +106,11 @@ impl FilledAbi {
             FilledAbi::Bool(_name, _) => None,
             FilledAbi::Vec(_name, _, _) => None,
             FilledAbi::Tuple(_name, _) => None,
+            FilledAbi::Uniple(_name, _) => None,
+            FilledAbi::Triple(_name, _) => None,
+            FilledAbi::Quadruple(_name, _) => None,
+            FilledAbi::Quintuple(_name, _) => None,
+            FilledAbi::Sextuple(_name, _) => None,
         }
     }
 
@@ -86,6 +132,14 @@ impl FilledAbi {
             FilledAbi::Bool(_name, _) => "Bool",
             FilledAbi::Vec(_name, _, _) => "Vec",
             FilledAbi::Tuple(_name, _) => "Tuple",
+            FilledAbi::Event(_, _, _) => "Event",
+            FilledAbi::Bytes4(_, _) => "Bytes4",
+            FilledAbi::Codec(_, _) => "Codec",
+            FilledAbi::Uniple(_, _) => "Uniple",
+            FilledAbi::Triple(_, _) => "Triple",
+            FilledAbi::Quadruple(_, _) => "Quadruple",
+            FilledAbi::Quintuple(_, _) => "Quintuple",
+            FilledAbi::Sextuple(_, _) => "Sextuple",
         }
     }
 
@@ -93,6 +147,7 @@ impl FilledAbi {
         match self {
             FilledAbi::Struct(_, fields, prefix_memo)
             | FilledAbi::Enum(_, fields, prefix_memo)
+            | FilledAbi::Event(_, fields, prefix_memo)
             | FilledAbi::Log(_, fields, prefix_memo) => {
                 let mut data = vec![*prefix_memo];
                 for field in fields {
@@ -112,6 +167,7 @@ impl FilledAbi {
                 }
             },
             FilledAbi::Bytes(_, data) => data.clone(),
+            FilledAbi::Bytes4(_, data) => data.clone(),
             FilledAbi::Account20(_, data) => data.clone(),
             FilledAbi::Account32(_, data) => data.clone(),
             FilledAbi::H256(_, data) => data.clone(),
@@ -120,6 +176,7 @@ impl FilledAbi {
             FilledAbi::Value64(_, data) => data.clone(),
             FilledAbi::Value32(_, data) => data.clone(),
             FilledAbi::Byte(_, data) => data.clone(),
+            FilledAbi::Codec(_, data) => data.clone(),
             FilledAbi::Bool(_, data) => data.clone(),
             FilledAbi::Vec(_, fields, prefix_memo) => {
                 let mut data = vec![*prefix_memo];
@@ -128,10 +185,49 @@ impl FilledAbi {
                 }
                 data.clone()
             },
+            FilledAbi::Uniple(_, field1) => {
+                let mut data = vec![];
+                data.extend_from_slice(field1.get_data().as_slice());
+                data.clone()
+            },
             FilledAbi::Tuple(_, (field1, field2)) => {
                 let mut data = vec![];
                 data.extend_from_slice(field1.get_data().as_slice());
                 data.extend_from_slice(field2.get_data().as_slice());
+                data.clone()
+            },
+            FilledAbi::Triple(_, (field1, field2, field3)) => {
+                let mut data = vec![];
+                data.extend_from_slice(field1.get_data().as_slice());
+                data.extend_from_slice(field2.get_data().as_slice());
+                data.extend_from_slice(field3.get_data().as_slice());
+                data.clone()
+            },
+            FilledAbi::Quadruple(_, (field1, field2, field3, field4)) => {
+                let mut data = vec![];
+                data.extend_from_slice(field1.get_data().as_slice());
+                data.extend_from_slice(field2.get_data().as_slice());
+                data.extend_from_slice(field3.get_data().as_slice());
+                data.extend_from_slice(field4.get_data().as_slice());
+                data.clone()
+            },
+            FilledAbi::Quintuple(_, (field1, field2, field3, field4, field5)) => {
+                let mut data = vec![];
+                data.extend_from_slice(field1.get_data().as_slice());
+                data.extend_from_slice(field2.get_data().as_slice());
+                data.extend_from_slice(field3.get_data().as_slice());
+                data.extend_from_slice(field4.get_data().as_slice());
+                data.extend_from_slice(field5.get_data().as_slice());
+                data.clone()
+            },
+            FilledAbi::Sextuple(_, (field1, field2, field3, field4, field5, field6)) => {
+                let mut data = vec![];
+                data.extend_from_slice(field1.get_data().as_slice());
+                data.extend_from_slice(field2.get_data().as_slice());
+                data.extend_from_slice(field3.get_data().as_slice());
+                data.extend_from_slice(field4.get_data().as_slice());
+                data.extend_from_slice(field5.get_data().as_slice());
+                data.extend_from_slice(field6.get_data().as_slice());
                 data.clone()
             },
         }
@@ -141,9 +237,11 @@ impl FilledAbi {
         match self {
             FilledAbi::Struct(name, _, _)
             | FilledAbi::Enum(name, _, _)
+            | FilledAbi::Event(name, _, _)
             | FilledAbi::Log(name, _, _)
             | FilledAbi::Option(name, _)
             | FilledAbi::Bytes(name, _)
+            | FilledAbi::Bytes4(name, _)
             | FilledAbi::Account20(name, _)
             | FilledAbi::Account32(name, _)
             | FilledAbi::H256(name, _)
@@ -151,9 +249,15 @@ impl FilledAbi {
             | FilledAbi::Value128(name, _)
             | FilledAbi::Value64(name, _)
             | FilledAbi::Value32(name, _)
+            | FilledAbi::Codec(name, _)
             | FilledAbi::Byte(name, _)
             | FilledAbi::Bool(name, _)
             | FilledAbi::Vec(name, _, _)
+            | FilledAbi::Uniple(name, _)
+            | FilledAbi::Triple(name, _)
+            | FilledAbi::Quadruple(name, _)
+            | FilledAbi::Quintuple(name, _)
+            | FilledAbi::Sextuple(name, _)
             | FilledAbi::Tuple(name, _) => name.clone(),
         }
     }
@@ -162,6 +266,7 @@ impl FilledAbi {
         fn recursive_get_by_name(abi: &FilledAbi, by_name: &Name) -> Option<FilledAbi> {
             match abi {
                 FilledAbi::Struct(name, fields, _)
+                | FilledAbi::Event(name, fields, _)
                 | FilledAbi::Enum(name, fields, _)
                 | FilledAbi::Log(name, fields, _) => {
                     if matches_name(name.as_ref(), by_name) {
@@ -184,6 +289,8 @@ impl FilledAbi {
                     recursive_get_by_name(field, by_name)
                 },
                 | FilledAbi::Bytes(name, _data)
+                | FilledAbi::Bytes4(name, _data)
+                | FilledAbi::Codec(name, _data)
                 | FilledAbi::Account20(name, _data)
                 | FilledAbi::Account32(name, _data)
                 | FilledAbi::H256(name, _data)
@@ -213,6 +320,75 @@ impl FilledAbi {
 
                     recursive_get_by_name(field2, by_name)
                 },
+                FilledAbi::Uniple(_name, field) => recursive_get_by_name(field, by_name),
+                FilledAbi::Triple(_name, (field1, field2, field3)) => {
+                    if let Some(data) = recursive_get_by_name(field1, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field2, by_name) {
+                        return Some(data)
+                    }
+
+                    recursive_get_by_name(field3, by_name)
+                },
+                FilledAbi::Quadruple(_name, (field1, field2, field3, field4)) => {
+                    if let Some(data) = recursive_get_by_name(field1, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field2, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field3, by_name) {
+                        return Some(data)
+                    }
+
+                    recursive_get_by_name(field4, by_name)
+                },
+                FilledAbi::Quintuple(_name, (field1, field2, field3, field4, field5)) => {
+                    if let Some(data) = recursive_get_by_name(field1, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field2, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field3, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field4, by_name) {
+                        return Some(data)
+                    }
+
+                    recursive_get_by_name(field5, by_name)
+                },
+                FilledAbi::Sextuple(_name, (field1, field2, field3, field4, field5, field6)) => {
+                    if let Some(data) = recursive_get_by_name(field1, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field2, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field3, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field4, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_by_name(field5, by_name) {
+                        return Some(data)
+                    }
+
+                    recursive_get_by_name(field6, by_name)
+                },
             }
         }
 
@@ -223,10 +399,11 @@ impl FilledAbi {
         fn recursive_get_data_by_name(abi: &FilledAbi, by_name: &Name) -> Option<Data> {
             match abi {
                 FilledAbi::Struct(name, fields, _)
+                | FilledAbi::Event(name, fields, _)
                 | FilledAbi::Enum(name, fields, _)
                 | FilledAbi::Log(name, fields, _) => {
                     if matches_name(name.as_ref(), by_name) {
-                        return Some(abi.encode())
+                        return Some(abi.get_data())
                     }
 
                     for field in fields {
@@ -239,12 +416,14 @@ impl FilledAbi {
                 },
                 FilledAbi::Option(name, field) => {
                     if matches_name(name.as_ref(), by_name) {
-                        return Some(abi.encode())
+                        return Some(abi.get_data())
                     }
 
                     recursive_get_data_by_name(field, by_name)
                 },
                 | FilledAbi::Bytes(name, data)
+                | FilledAbi::Codec(name, data)
+                | FilledAbi::Bytes4(name, data)
                 | FilledAbi::Account20(name, data)
                 | FilledAbi::Account32(name, data)
                 | FilledAbi::H256(name, data)
@@ -273,12 +452,107 @@ impl FilledAbi {
                     };
                     recursive_get_data_by_name(vec_abi_content, by_name)
                 },
-                FilledAbi::Tuple(_name, (field1, field2)) => {
+                FilledAbi::Tuple(name, (field1, field2)) => {
+                    if matches_name(name.as_ref(), by_name) {
+                        return Some(abi.get_data())
+                    }
+
                     if let Some(data) = recursive_get_data_by_name(field1, by_name) {
                         return Some(data)
                     }
 
                     recursive_get_data_by_name(field2, by_name)
+                },
+                FilledAbi::Uniple(name, field1) => {
+                    if matches_name(name.as_ref(), by_name) {
+                        return Some(abi.get_data())
+                    }
+
+                    recursive_get_data_by_name(field1, by_name)
+                },
+                FilledAbi::Triple(name, (field1, field2, field3)) => {
+                    if matches_name(name.as_ref(), by_name) {
+                        return Some(abi.get_data())
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field1, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field2, by_name) {
+                        return Some(data)
+                    }
+
+                    recursive_get_data_by_name(field3, by_name)
+                },
+                FilledAbi::Quadruple(name, (field1, field2, field3, field4)) => {
+                    if matches_name(name.as_ref(), by_name) {
+                        return Some(abi.get_data())
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field1, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field2, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field3, by_name) {
+                        return Some(data)
+                    }
+
+                    recursive_get_data_by_name(field4, by_name)
+                },
+                FilledAbi::Quintuple(name, (field1, field2, field3, field4, field5)) => {
+                    if matches_name(name.as_ref(), by_name) {
+                        return Some(abi.get_data())
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field1, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field2, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field3, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field4, by_name) {
+                        return Some(data)
+                    }
+
+                    recursive_get_data_by_name(field5, by_name)
+                },
+                FilledAbi::Sextuple(name, (field1, field2, field3, field4, field5, field6)) => {
+                    if matches_name(name.as_ref(), by_name) {
+                        return Some(abi.get_data())
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field1, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field2, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field3, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field4, by_name) {
+                        return Some(data)
+                    }
+
+                    if let Some(data) = recursive_get_data_by_name(field5, by_name) {
+                        return Some(data)
+                    }
+
+                    recursive_get_data_by_name(field6, by_name)
                 },
             }
         }
@@ -328,7 +602,7 @@ impl FilledAbi {
                 name,
                 fields_descriptors.into_iter(),
             ),
-            Abi::Struct(name, fields_descriptors) | Abi::Enum(name, fields_descriptors) => {
+            Abi::Struct(name, fields_descriptors) | Abi::Event(name, fields_descriptors) => {
                 let mut fields = Vec::new();
 
                 let (mut chopped_field_data_iter, memo_prefix) =
@@ -357,6 +631,20 @@ impl FilledAbi {
                     FilledAbi::Struct(name, fields, memo_prefix),
                     total_struct_size,
                 ))
+            },
+            Abi::Enum(_name, field_descriptor) => {
+                let mut data_buf = Bytes::copy_from_slice(field_data);
+                let first_byte = data_buf
+                    .get(0)
+                    .ok_or::<DispatchError>("FilledAbi::Enum - Not enough data".into())?;
+
+                let selected_field_descriptor =
+                    field_descriptor
+                        .get(*first_byte as usize)
+                        .ok_or::<DispatchError>("FilledAbi::Enum - Invalid data".into())?;
+
+                data_buf.advance(1);
+                Self::recursive_fill_abi(*selected_field_descriptor.clone(), &data_buf, in_codec)
             },
             Abi::Option(name, field_descriptor) => {
                 let mut data_buf = Bytes::copy_from_slice(field_data);
@@ -422,13 +710,29 @@ impl FilledAbi {
                 FilledAbi::Value32(name, field_data.to_vec()),
                 field_data.len(),
             )),
+            Abi::Bytes4(name) => {
+                let bytes4: [u8; 4] = field_data[0..4]
+                    .try_into()
+                    .map_err(|_| "Bytes4::InvalidDataSize: expected 4 bytes")?;
+                Ok((FilledAbi::Bytes4(name, bytes4.to_vec()), 4))
+            },
             Abi::Byte(name) => {
-                ensure!(field_data.len() == 1, "Byte::InvalidDataSize");
-                Ok((FilledAbi::Byte(name, field_data.to_vec()), 1))
+                let byte = field_data
+                    .get(0)
+                    .ok_or::<DispatchError>("Byte::InvalidDataSize".into())?;
+                Ok((FilledAbi::Byte(name, vec![*byte]), 1))
             },
             Abi::Bool(name) => {
-                ensure!(field_data.len() == 1, "Bool::InvalidDataSize");
-                Ok((FilledAbi::Bool(name, field_data.to_vec()), 1))
+                let byte = field_data
+                    .get(0)
+                    .ok_or::<DispatchError>("Bool::InvalidDataSize".into())?;
+                Ok((FilledAbi::Bool(name, vec![*byte]), 1))
+            },
+            Abi::Codec(name) => {
+                let byte = field_data
+                    .get(0)
+                    .ok_or::<DispatchError>("Codec::InvalidDataSize".into())?;
+                Ok((FilledAbi::Codec(name, vec![*byte]), 1))
             },
             Abi::Vec(name, field_descriptor) => {
                 if in_codec == Codec::Rlp {
@@ -458,16 +762,167 @@ impl FilledAbi {
                     recoded_vector_data.len(),
                 ))
             },
+            Abi::Uniple(name, field1) => {
+                let (field1, size1) =
+                    Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
+
+                Ok((FilledAbi::Uniple(name, Box::new(field1)), size1))
+            },
             Abi::Tuple(name, (field1, field2)) => {
                 let (field1, size1) =
                     Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
 
                 let (field2, size2) =
                     Self::recursive_fill_abi(*field2, &field_data[size1..], in_codec)?;
+                println!("Tuple 2: {:?} {:?}", field2, size2);
 
                 Ok((
                     FilledAbi::Tuple(name, (Box::new(field1), Box::new(field2))),
                     size1 + size2,
+                ))
+            },
+            Abi::Triple(name, (field1, field2, field3)) => {
+                println!(
+                    "Triple: {:?} {:?} field 1 {:?}",
+                    field_data,
+                    field_data.len(),
+                    field1
+                );
+                let (field1, size1) =
+                    Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
+
+                println!("Triple 1: {:?} {:?}", field1, size1);
+
+                let (field2, size2) =
+                    Self::recursive_fill_abi(*field2, &field_data[size1..], in_codec.clone())?;
+
+                println!("Triple 2: {:?} {:?}", field2, size2);
+
+                let (field3, size3) =
+                    Self::recursive_fill_abi(*field3, &field_data[size1 + size2..], in_codec)?;
+
+                println!("Triple 3: {:?} {:?}", field3, size3);
+
+                Ok((
+                    FilledAbi::Triple(name, (Box::new(field1), Box::new(field2), Box::new(field3))),
+                    size1 + size2 + size3,
+                ))
+            },
+            Abi::Quadruple(name, (field1, field2, field3, field4)) => {
+                let (field1, size1) =
+                    Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
+
+                let (field2, size2) =
+                    Self::recursive_fill_abi(*field2, &field_data[size1..], in_codec.clone())?;
+
+                let (field3, size3) = Self::recursive_fill_abi(
+                    *field3,
+                    &field_data[size1 + size2..],
+                    in_codec.clone(),
+                )?;
+
+                let (field4, size4) = Self::recursive_fill_abi(
+                    *field4,
+                    &field_data[size1 + size2 + size3..],
+                    in_codec,
+                )?;
+
+                Ok((
+                    FilledAbi::Quadruple(
+                        name,
+                        (
+                            Box::new(field1),
+                            Box::new(field2),
+                            Box::new(field3),
+                            Box::new(field4),
+                        ),
+                    ),
+                    size1 + size2 + size3 + size4,
+                ))
+            },
+            Abi::Quintuple(name, (field1, field2, field3, field4, field5)) => {
+                let (field1, size1) =
+                    Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
+
+                let (field2, size2) =
+                    Self::recursive_fill_abi(*field2, &field_data[size1..], in_codec.clone())?;
+
+                let (field3, size3) = Self::recursive_fill_abi(
+                    *field3,
+                    &field_data[size1 + size2..],
+                    in_codec.clone(),
+                )?;
+
+                let (field4, size4) = Self::recursive_fill_abi(
+                    *field4,
+                    &field_data[size1 + size2 + size3..],
+                    in_codec.clone(),
+                )?;
+
+                let (field5, size5) = Self::recursive_fill_abi(
+                    *field5,
+                    &field_data[size1 + size2 + size3 + size4..],
+                    in_codec,
+                )?;
+
+                Ok((
+                    FilledAbi::Quintuple(
+                        name,
+                        (
+                            Box::new(field1),
+                            Box::new(field2),
+                            Box::new(field3),
+                            Box::new(field4),
+                            Box::new(field5),
+                        ),
+                    ),
+                    size1 + size2 + size3 + size4 + size5,
+                ))
+            },
+            Abi::Sextuple(name, (field1, field2, field3, field4, field5, field6)) => {
+                let (field1, size1) =
+                    Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
+
+                let (field2, size2) =
+                    Self::recursive_fill_abi(*field2, &field_data[size1..], in_codec.clone())?;
+
+                let (field3, size3) = Self::recursive_fill_abi(
+                    *field3,
+                    &field_data[size1 + size2..],
+                    in_codec.clone(),
+                )?;
+
+                let (field4, size4) = Self::recursive_fill_abi(
+                    *field4,
+                    &field_data[size1 + size2 + size3..],
+                    in_codec.clone(),
+                )?;
+
+                let (field5, size5) = Self::recursive_fill_abi(
+                    *field5,
+                    &field_data[size1 + size2 + size3 + size4..],
+                    in_codec.clone(),
+                )?;
+
+                let (field6, size6) = Self::recursive_fill_abi(
+                    *field6,
+                    &field_data[size1 + size2 + size3 + size4 + size5..],
+                    in_codec,
+                )?;
+
+                Ok((
+                    FilledAbi::Sextuple(
+                        name,
+                        (
+                            Box::new(field1),
+                            Box::new(field2),
+                            Box::new(field3),
+                            Box::new(field4),
+                            Box::new(field5),
+                            Box::new(field6),
+                        ),
+                    ),
+                    size1 + size2 + size3 + size4 + size5 + size6,
                 ))
             },
         }
@@ -627,6 +1082,25 @@ mod test_fill_abi {
                 ]),
                 0u8
             )
+        )
+    }
+
+    #[test]
+    fn fills_abi_enum_with_3_u8_options_no_args() {
+        let abi = Abi::Enum(
+            Some(b"address".to_vec()),
+            vec![
+                Box::new(Abi::Byte(Some(b"option_a".to_vec()))),
+                Box::new(Abi::Byte(Some(b"option_b".to_vec()))),
+                Box::new(Abi::Byte(Some(b"option_c".to_vec()))),
+            ],
+        );
+
+        let filled_abi = FilledAbi::try_fill_abi(abi, vec![1u8, 2u8], Codec::Scale).unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Byte(Some(b"option_b".to_vec()), vec![2u8])
         )
     }
 

@@ -41,7 +41,9 @@ pub fn get_sfx_transfer_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"Transfer:Log(from+:Account20,to+:Account20,amount+:Value128)".to_vec(),
-            for_scale: b"Transfer:Enum(from:Account32,to:Account32,amount:Value128)".to_vec(),
+            for_scale:
+                b"Balances:Struct(Transfer:Event(from:Account32,to:Account32,amount:Value128))"
+                    .to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
@@ -65,7 +67,7 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
                 b"Assets:Log(asset_id+:Account20,from+:Account20,to+:Account20,amount+:Value128)"
                     .to_vec(),
             for_scale:
-                b"Assets:Enum(asset_id:Account32,from:Account32,to:Account32,amount:Value128)"
+                b"Assets:Struct(Transfer:Event(asset_id:Account32,from:Account32,to:Account32,amount:Value128))"
                     .to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
@@ -106,7 +108,7 @@ pub fn get_swap_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"Swap:Log(from+:Account20,to+:Account20,amount_from+:Value128,amount_to+:Value128,asset_from+:Account20,asset_to+:Account20)".to_vec(),
-            for_scale: b"Swap:Enum(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32)".to_vec(),
+            for_scale: b"Assets:Struct(Swap:Event(from:Account32,to:Account32,amount_from:Value128,amount_to:Value128,asset_from:Account32,asset_to:Account32))".to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
@@ -131,7 +133,7 @@ pub fn get_add_liquidity_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"AddLiquidity:Log(from+:Account20,to+:Account20,amount_left+:Value256,amount_right+:Value256,asset_right+:Account20,asset_left+:Account20,liquidity_token+:Account20,amount_liquidity_token+:Value256)".to_vec(),
-            for_scale: b"AddLiquidity:Enum(from:Account32,to:Account32,amount_left:Value128,amount_right:Value128,asset_right+:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128)".to_vec(),
+            for_scale: b"Assets:Struct(AddLiquidity:Event(from:Account32,to:Account32,amount_left:Value128,amount_right:Value128,asset_right+:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128))".to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             for_rlp: b"AddLiquidity:Struct(to:Account20,amount_left:Value256,amount_right:Value256,asset_right:Account20,asset_left:Account20,liquidity_token:Account20,amount_liquidity_token:Value256)".to_vec(),
@@ -155,7 +157,7 @@ pub fn get_remove_liquidity_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"RemoveLiquidity:Log(from+:Account20,to+:Account20,amount_left+:Value256,amount_right+:Value256,asset_right+:Account20,asset_left+:Account20,liquidity_token+:Account20,amount_liquidity_token+:Value256)".to_vec(),
-            for_scale: b"RemoveLiquidity:Enum(from:Account32,to:Account32,amount_left:Value128,amount_right:Value128,asset_right+:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128)".to_vec(),
+            for_scale: b"Assets:Struct(RemoveLiquidity:Event(from:Account32,to:Account32,amount_left:Value128,amount_right:Value128,asset_right+:Account32,asset_left:Account32,liquidity_token:Account32,amount_liquidity_token:Value128))".to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             for_rlp: b"RemoveLiquidity:Struct(to:Account20,amount_left:Value256,amount_right:Value256,asset_right:Account20,asset_left:Account20,liquidity_token:Account20,amount_liquidity_token:Value256)".to_vec(),
@@ -181,7 +183,7 @@ pub fn get_call_evm_contract_abi() -> SFXAbi {
             // assume all indexed in topics ("+")
             for_rlp: b"CallEvm:Log(target+:Account20,source+:Account20,tx_hash+:H256,input-:Bytes)"
                 .to_vec(),
-            for_scale: b"CallEvm:Log(source+:Account32,target+:Account32)".to_vec(),
+            for_scale: b"Evm:Struct(Call:Event(source+:Account32,target+:Account32))".to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             for_rlp: b"CallEvm:Struct(target:Account20,value:Value256,input:Bytes,gas_limit:Value256,max_fee_per_gas:Value256,max_priority_fee_per_gas:Value256,nonce:Value256,access_list:Bytes)"
@@ -205,7 +207,7 @@ pub fn get_call_wasm_contract_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"CallWasm:Log(caller+:Account32,contract+:Account32)".to_vec(),
-            for_scale: b"CallWasm:Enum(caller:Account32,contract:Account32)".to_vec(),
+            for_scale: b"Contracts:Struct(Call:Event(caller:Account32,contract:Account32))".to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             for_rlp: b"CallWasm:Struct(contract:Account32,value:Value128,gas_limit:Value128,storage_deposit_limit:Value128,input:Bytes)"
@@ -229,7 +231,7 @@ pub fn get_call_generic_abi() -> SFXAbi {
         ingress_abi_descriptors: PerCodecAbiDescriptors {
             // assume all indexed in topics ("+")
             for_rlp: b"Call:Log(source+:Account20,target+:Account20,value+:Value128,input-:Bytes)".to_vec(),
-            for_scale: b"Call:Log(source+:Account32,target+:Account32,value+:Value128,input+:Bytes,limit+:Value128)".to_vec(),
+            for_scale: b"Pallet:Struct(Call:Event(source+:Account32,target+:Account32,value+:Value128,input+:Bytes,limit+:Value128))".to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
             for_rlp: b"Call:Struct(target:Account20,value:Value128,input:Bytes,limit:Value128,additional_params:Bytes)"
@@ -266,11 +268,15 @@ mod test_abi_standards {
 
         // Pallet index byte
         let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
-            from: AccountId32::new([2; 32]),
+            from: AccountId32::new([4; 32]),
             to: AccountId32::new([1; 32]),
             amount: 100u128,
         }
         .encode();
+
+        // append an extra pallet event index byte as the second byte
+        let mut scale_encoded_transfer_event = scale_encoded_transfer_event.clone();
+        scale_encoded_transfer_event.insert(1, 1u8);
 
         let res = transfer_interface.validate_arguments_against_received(
             &ordered_args,
@@ -294,12 +300,14 @@ mod test_abi_standards {
             AccountId32::new([1; 32]).encode(), // to
             100u128.encode(),                   // amount
         ];
-        let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
+        let mut scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
             from: AccountId32::new([2; 32]),
             to: AccountId32::new([1; 32]),
             amount: 100u128,
         }
         .encode();
+        // append an extra pallet event index byte as the second byte
+        scale_encoded_transfer_event.insert(1, 1u8);
 
         let abi: Abi = transfer_interface
             .get_expected_ingress_descriptor(Codec::Scale)
@@ -324,6 +332,37 @@ mod test_abi_standards {
     }
 
     #[test]
+    fn test_get_data_returns_scale_encoded_bytes_for_transfer() {
+        let mut transfer_interface = get_sfx_transfer_abi();
+        transfer_interface.set_prefix_memo(99u8);
+        assert_eq!(transfer_interface.maybe_prefix_memo, Some(99u8));
+
+        let _ordered_args = vec![
+            AccountId32::new([1; 32]).encode(), // to
+            100u128.encode(),                   // amount
+        ];
+        let mut scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
+            from: AccountId32::new([4; 32]),
+            to: AccountId32::new([1; 32]),
+            amount: 100u128,
+        }
+        .encode();
+
+        scale_encoded_transfer_event.insert(1, 1u8);
+
+        let abi: Abi = transfer_interface
+            .get_expected_ingress_descriptor(Codec::Scale)
+            .try_into()
+            .unwrap();
+
+        let filled_transfer_abi: FilledAbi =
+            FilledAbi::try_fill_abi(abi, scale_encoded_transfer_event.clone(), Codec::Scale)
+                .unwrap();
+
+        assert_eq!(filled_transfer_abi.get_data(), scale_encoded_transfer_event);
+    }
+
+    #[test]
     fn test_transfer_rejects_arguments_against_received_substrate_balances_with_wrong_prefix_memo()
     {
         let mut transfer_interface = get_sfx_transfer_abi();
@@ -334,12 +373,14 @@ mod test_abi_standards {
             AccountId32::new([1; 32]).encode(), // to
             100u128.encode(),                   // amount
         ];
-        let scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
+        let mut scale_encoded_transfer_event = pallet_balances::Event::<MiniRuntime>::Transfer {
             from: AccountId32::new([2; 32]),
             to: AccountId32::new([1; 32]),
             amount: 100u128,
         }
         .encode();
+
+        scale_encoded_transfer_event.insert(1, 1u8);
 
         let abi: Abi = transfer_interface
             .get_expected_ingress_descriptor(Codec::Scale)
@@ -500,9 +541,12 @@ mod test_abi_standards {
                 )),
             };
 
+        let mut wasm_contracts_called_event_encoded = wasm_contracts_called_event_mock.encode();
+        wasm_contracts_called_event_encoded.insert(1, 2);
+
         let res = call_interface.validate_arguments_against_received(
             &ordered_args,
-            wasm_contracts_called_event_mock.encode(),
+            wasm_contracts_called_event_encoded,
             &Codec::Scale,
             &Codec::Scale,
         );
