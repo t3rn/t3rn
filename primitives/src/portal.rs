@@ -1,6 +1,5 @@
 use crate::{
-    gateway::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
-    TokenSysProps,
+    gateway::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
 };
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -19,7 +18,7 @@ pub struct RegistrationData {
     // Maps to FV
     pub gateway_type: GatewayType,
     pub gateway_genesis: GatewayGenesisConfig,
-    pub gateway_sys_props: TokenSysProps,
+    pub gateway_sys_props: TokenInfo,
     pub allowed_side_effects: Vec<Sfx4bId>,
     pub encoded_registration_data: Bytes,
 }

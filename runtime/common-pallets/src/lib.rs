@@ -22,6 +22,7 @@ pub use pallet_account_manager;
 pub use pallet_circuit;
 pub use pallet_clock;
 pub use pallet_contracts_registry;
+// pub use pallet_eth2_finality_verifier;
 pub use pallet_executors;
 pub use pallet_grandpa_finality_verifier;
 pub use pallet_portal;

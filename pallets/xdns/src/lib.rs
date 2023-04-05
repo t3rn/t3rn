@@ -48,7 +48,7 @@ pub mod pallet {
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
         xdns::{FullGatewayRecord, GatewayRecord, TokenRecord, Xdns, XdnsRecord},
-        Bytes, ChainId, GatewayType, GatewayVendor, TokenSysProps,
+        Bytes, ChainId, GatewayType, GatewayVendor, TokenInfo,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -403,7 +403,7 @@ pub mod pallet {
         fn add_new_token(
             token_id: [u8; 4],
             gateway_id: [u8; 4],
-            token_props: TokenSysProps,
+            token_props: TokenInfo,
         ) -> DispatchResult {
             // early exit if record already exists in storage
             if <Tokens<T>>::contains_key(token_id) {
@@ -416,7 +416,7 @@ pub mod pallet {
         fn override_token(
             token_id: [u8; 4],
             gateway_id: [u8; 4],
-            token_props: TokenSysProps,
+            token_props: TokenInfo,
         ) -> DispatchResult {
             <Tokens<T>>::insert(
                 token_id,
