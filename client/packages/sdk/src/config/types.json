@@ -145,7 +145,7 @@
         "gateway_vendor": "GatewayVendor",
         "gateway_type": "GatewayType",
         "gateway_id": "ChainId",
-        "gateway_sys_props": "TokenSysProps",
+        "gateway_sys_props": "TokenInfo",
         "registrant": "Option<AccountId>",
         "last_finalized": "Option<u64>",
         "allowed_side_effects": "Vec<AllowedSideEffect>"
@@ -161,7 +161,7 @@
     "TokenRecord": {
         "token_id": "[u8; 4]",
         "gateway_id": "[u8; 4]",
-        "token_props": "TokenSysProps"
+        "token_props": "TokenInfo"
     },
     "FullGatewayRecord": {
         "gateway_record": "GatewayRecord",
