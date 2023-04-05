@@ -7164,6 +7164,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
 ]
@@ -7198,6 +7199,7 @@ version = "0.0.1"
 dependencies = [
  "fp-evm 3.0.0-dev",
  "frame-support",
+ "frame-system",
  "pallet-evm 0.1.0",
  "t3rn-primitives",
 ]
@@ -9665,6 +9667,21 @@ dependencies = [
  "cpufeatures",
  "opaque-debug 0.3.0",
  "universal-hash",
+]
+
+[[package]]
+name = "portal-precompile"
+version = "1.5.0-rc.0"
+dependencies = [
+ "fp-evm 3.0.0-dev",
+ "frame-support",
+ "frame-system",
+ "pallet-evm 0.1.0",
+ "parity-scale-codec",
+ "rlp",
+ "sp-std",
+ "t3rn-abi",
+ "t3rn-primitives",
 ]
 
 [[package]]
