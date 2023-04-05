@@ -71,6 +71,7 @@ class CircuitCLI {
                 registrationData.gateway_id,
                 registrationData.token_id,
                 registrationData.verification_vendor,
+                registrationData.execution_vendor,
                 registrationData.codec,
                 registrationData.registrant,
                 registrationData.escrow_accounts,

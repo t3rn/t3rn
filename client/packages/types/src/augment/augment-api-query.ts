@@ -6,7 +6,7 @@ import type { Data } from '@polkadot/types';
 import type { Bytes, Option, U8aFixed, Vec, bool, u128, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H160, H256 } from '@polkadot/types/interfaces/runtime';
-import type { FrameSupportWeightsPerDispatchClassU64, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, PalletAssetsApproval, PalletAssetsAssetAccount, PalletAssetsAssetDetails, PalletAssetsAssetMetadata, PalletAuthorshipUncleEntryItem, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReleases, PalletBalancesReserveData, PalletCircuitStateXExecSignal, PalletContractsStorageDeletedContract, PalletContractsStorageRawContractInfo, PalletContractsWasmOwnerInfo, PalletContractsWasmPrefabWasmModule, PalletEvmThreeVmInfo, PalletGrandpaFinalityVerifierBridgesHeaderChainAuthoritySet, PalletGrandpaFinalityVerifierParachain, PalletGrandpaStoredPendingChange, PalletGrandpaStoredState, PalletIdentityRegistrarInfo, PalletIdentityRegistration, PalletTransactionPaymentReleases, PalletTreasuryProposal, SpConsensusAuraSr25519AppSr25519Public, SpRuntimeDigest, SpRuntimeHeader, T3rnPrimitivesAccountManagerRequestCharge, T3rnPrimitivesAccountManagerSettlement, T3rnPrimitivesClaimableClaimableArtifacts, T3rnPrimitivesCommonRoundInfo, T3rnPrimitivesContractsRegistryRegistryContract, T3rnPrimitivesVolatileLocalState, T3rnPrimitivesXdnsXdnsRecord, T3rnSdkPrimitivesSignalExecutionSignal, T3rnTypesFsxFullSideEffect, T3rnTypesInterfaceSideEffectInterface } from '@polkadot/types/lookup';
+import type { FrameSupportWeightsPerDispatchClassU64, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, PalletAssetsApproval, PalletAssetsAssetAccount, PalletAssetsAssetDetails, PalletAssetsAssetMetadata, PalletAuthorshipUncleEntryItem, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReleases, PalletBalancesReserveData, PalletCircuitStateXExecSignal, PalletContractsStorageDeletedContract, PalletContractsStorageRawContractInfo, PalletContractsWasmOwnerInfo, PalletContractsWasmPrefabWasmModule, PalletEvmThreeVmInfo, PalletGrandpaFinalityVerifierBridgesHeaderChainAuthoritySet, PalletGrandpaFinalityVerifierParachainRegistrationData, PalletGrandpaStoredPendingChange, PalletGrandpaStoredState, PalletIdentityRegistrarInfo, PalletIdentityRegistration, PalletTransactionPaymentReleases, PalletTreasuryProposal, SpConsensusAuraSr25519AppSr25519Public, SpRuntimeDigest, SpRuntimeHeader, T3rnAbiSfxAbi, T3rnPrimitivesAccountManagerRequestCharge, T3rnPrimitivesAccountManagerSettlement, T3rnPrimitivesClaimableClaimableArtifacts, T3rnPrimitivesCommonRoundInfo, T3rnPrimitivesContractsRegistryRegistryContract, T3rnPrimitivesVolatileLocalState, T3rnPrimitivesXdnsGatewayRecord, T3rnPrimitivesXdnsTokenRecord, T3rnPrimitivesXdnsXdnsRecord, T3rnSdkPrimitivesSignalExecutionSignal, T3rnTypesFsxFullSideEffect } from '@polkadot/types/lookup';
 import type { Observable } from '@polkadot/types/types';
 
 declare module '@polkadot/api-base/types/storage' {
@@ -154,6 +154,7 @@ declare module '@polkadot/api-base/types/storage' {
        * This operation is performed lazily in `on_initialize`.
        **/
       signalQueue: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[AccountId32, T3rnSdkPrimitivesSignalExecutionSignal]>>>, []>;
+      storageMigrations: AugmentedQuery<ApiType, () => Observable<u32>, []>;
       /**
        * Current Circuit's context of all accepted for execution cross-chain transactions.
        * 
@@ -299,6 +300,102 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       superOf: AugmentedQuery<ApiType, (arg: AccountId32 | string | Uint8Array) => Observable<Option<ITuple<[AccountId32, Data]>>>, [AccountId32]>;
     };
+    kusamaBridge: {
+      /**
+       * Hash of the best finalized header.
+       **/
+      bestFinalizedHash: AugmentedQuery<ApiType, () => Observable<Option<H256>>, []>;
+      /**
+       * The current GRANDPA Authority set.
+       **/
+      currentAuthoritySet: AugmentedQuery<ApiType, () => Observable<Option<PalletGrandpaFinalityVerifierBridgesHeaderChainAuthoritySet>>, []>;
+      /**
+       * If true, all pallet transactions are failed immediately.
+       **/
+      everInitialized: AugmentedQuery<ApiType, () => Observable<bool>, []>;
+      /**
+       * A ring buffer of imported hashes. Ordered by the insertion time.
+       **/
+      importedHashes: AugmentedQuery<ApiType, (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<H256>>, [u32]>;
+      /**
+       * Current ring buffer position.
+       **/
+      importedHashesPointer: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
+      /**
+       * Headers which have been imported into the pallet.
+       **/
+      importedHeaders: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<SpRuntimeHeader>>, [H256]>;
+      /**
+       * Hash of the header used to bootstrap the pallet.
+       **/
+      initialHash: AugmentedQuery<ApiType, () => Observable<Option<H256>>, []>;
+      /**
+       * If true, all pallet transactions are failed immediately.
+       **/
+      isHalted: AugmentedQuery<ApiType, () => Observable<bool>, []>;
+      /**
+       * Optional pallet owner.
+       * 
+       * Pallet owner has a right to halt all pallet operations and then resume it. If it is
+       * `None`, then there are no direct ways to halt/resume pallet operations, but other
+       * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
+       * flag directly or call the `halt_operations`).
+       **/
+      palletOwner: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
+      /**
+       * Maps a parachain chain_id to the corresponding chain ID.
+       **/
+      parachainIdMap: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<PalletGrandpaFinalityVerifierParachainRegistrationData>>, [U8aFixed]>;
+      relayChainId: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
+    };
+    polkadotBridge: {
+      /**
+       * Hash of the best finalized header.
+       **/
+      bestFinalizedHash: AugmentedQuery<ApiType, () => Observable<Option<H256>>, []>;
+      /**
+       * The current GRANDPA Authority set.
+       **/
+      currentAuthoritySet: AugmentedQuery<ApiType, () => Observable<Option<PalletGrandpaFinalityVerifierBridgesHeaderChainAuthoritySet>>, []>;
+      /**
+       * If true, all pallet transactions are failed immediately.
+       **/
+      everInitialized: AugmentedQuery<ApiType, () => Observable<bool>, []>;
+      /**
+       * A ring buffer of imported hashes. Ordered by the insertion time.
+       **/
+      importedHashes: AugmentedQuery<ApiType, (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<H256>>, [u32]>;
+      /**
+       * Current ring buffer position.
+       **/
+      importedHashesPointer: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
+      /**
+       * Headers which have been imported into the pallet.
+       **/
+      importedHeaders: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<SpRuntimeHeader>>, [H256]>;
+      /**
+       * Hash of the header used to bootstrap the pallet.
+       **/
+      initialHash: AugmentedQuery<ApiType, () => Observable<Option<H256>>, []>;
+      /**
+       * If true, all pallet transactions are failed immediately.
+       **/
+      isHalted: AugmentedQuery<ApiType, () => Observable<bool>, []>;
+      /**
+       * Optional pallet owner.
+       * 
+       * Pallet owner has a right to halt all pallet operations and then resume it. If it is
+       * `None`, then there are no direct ways to halt/resume pallet operations, but other
+       * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
+       * flag directly or call the `halt_operations`).
+       **/
+      palletOwner: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
+      /**
+       * Maps a parachain chain_id to the corresponding chain ID.
+       **/
+      parachainIdMap: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<PalletGrandpaFinalityVerifierParachainRegistrationData>>, [U8aFixed]>;
+      relayChainId: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
+    };
     portal: {
     };
     randomnessCollectiveFlip: {
@@ -311,45 +408,37 @@ declare module '@polkadot/api-base/types/storage' {
     };
     rococoBridge: {
       /**
-       * Map of hashes of the best finalized header.
+       * Hash of the best finalized header.
        **/
-      bestFinalizedMap: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<H256>>, [U8aFixed]>;
+      bestFinalizedHash: AugmentedQuery<ApiType, () => Observable<Option<H256>>, []>;
       /**
        * The current GRANDPA Authority set.
        **/
       currentAuthoritySet: AugmentedQuery<ApiType, () => Observable<Option<PalletGrandpaFinalityVerifierBridgesHeaderChainAuthoritySet>>, []>;
       /**
+       * If true, all pallet transactions are failed immediately.
+       **/
+      everInitialized: AugmentedQuery<ApiType, () => Observable<bool>, []>;
+      /**
+       * A ring buffer of imported hashes. Ordered by the insertion time.
+       **/
+      importedHashes: AugmentedQuery<ApiType, (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<H256>>, [u32]>;
+      /**
+       * Current ring buffer position.
+       **/
+      importedHashesPointer: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
+      /**
+       * Headers which have been imported into the pallet.
+       **/
+      importedHeaders: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<SpRuntimeHeader>>, [H256]>;
+      /**
        * Hash of the header used to bootstrap the pallet.
        **/
-      initialHashMap: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<H256>>, [U8aFixed]>;
-      /**
-       * Map of instance ids of gateways which are active
-       **/
-      instantiatedGatewaysMap: AugmentedQuery<ApiType, () => Observable<Vec<U8aFixed>>, []>;
+      initialHash: AugmentedQuery<ApiType, () => Observable<Option<H256>>, []>;
       /**
        * If true, all pallet transactions are failed immediately.
        **/
       isHalted: AugmentedQuery<ApiType, () => Observable<bool>, []>;
-      /**
-       * If true, all pallet transactions are failed immediately.
-       **/
-      isHaltedMap: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<bool>>, [U8aFixed]>;
-      /**
-       * A ring buffer of imported hashes. Ordered by the insertion time.
-       **/
-      multiImportedHashes: AugmentedQuery<ApiType, (arg1: U8aFixed | string | Uint8Array, arg2: u32 | AnyNumber | Uint8Array) => Observable<Option<H256>>, [U8aFixed, u32]>;
-      /**
-       * Current ring buffer position.
-       **/
-      multiImportedHashesPointer: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<u32>>, [U8aFixed]>;
-      /**
-       * Headers which have been imported into the pallet.
-       **/
-      multiImportedHeaders: AugmentedQuery<ApiType, (arg1: U8aFixed | string | Uint8Array, arg2: H256 | string | Uint8Array) => Observable<Option<SpRuntimeHeader>>, [U8aFixed, H256]>;
-      /**
-       * Roots (ExtrinsicsRoot + StateRoot) which have been imported into the pallet for a given gateway.
-       **/
-      multiImportedRoots: AugmentedQuery<ApiType, (arg1: U8aFixed | string | Uint8Array, arg2: H256 | string | Uint8Array) => Observable<Option<ITuple<[H256, H256]>>>, [U8aFixed, H256]>;
       /**
        * Optional pallet owner.
        * 
@@ -358,11 +447,11 @@ declare module '@polkadot/api-base/types/storage' {
        * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
        * flag directly or call the `halt_operations`).
        **/
-      palletOwnerMap: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<AccountId32>>, [U8aFixed]>;
+      palletOwner: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
       /**
-       * The current GRANDPA Authority set.
+       * Maps a parachain chain_id to the corresponding chain ID.
        **/
-      parachainIdMap: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<PalletGrandpaFinalityVerifierParachain>>, [U8aFixed]>;
+      parachainIdMap: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<PalletGrandpaFinalityVerifierParachainRegistrationData>>, [U8aFixed]>;
       relayChainId: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
     };
     sudo: {
@@ -496,8 +585,13 @@ declare module '@polkadot/api-base/types/storage' {
       proposals: AugmentedQuery<ApiType, (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<PalletTreasuryProposal>>, [u32]>;
     };
     xdns: {
-      customSideEffects: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<T3rnTypesInterfaceSideEffectInterface>>, [H256]>;
-      standardSideEffects: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<T3rnTypesInterfaceSideEffectInterface>>, [U8aFixed]>;
+      customSideEffects: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<Bytes>>, [H256]>;
+      gateways: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<T3rnPrimitivesXdnsGatewayRecord>>, [U8aFixed]>;
+      sfxabiRegistry: AugmentedQuery<ApiType, (arg1: U8aFixed | string | Uint8Array, arg2: U8aFixed | string | Uint8Array) => Observable<Option<T3rnAbiSfxAbi>>, [U8aFixed, U8aFixed]>;
+      standardSFXABIs: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<T3rnAbiSfxAbi>>, [U8aFixed]>;
+      standardSideEffects: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<Bytes>>, [U8aFixed]>;
+      storageMigrations: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      tokens: AugmentedQuery<ApiType, (arg: U8aFixed | string | Uint8Array) => Observable<Option<T3rnPrimitivesXdnsTokenRecord>>, [U8aFixed]>;
       /**
        * The pre-validated composable xdns_records on-chain registry.
        **/
