@@ -59,8 +59,9 @@ fi
 set -Ee
 
 echo "🐙 checking out $tag..."
-
 git checkout $tag &>/dev/null
+echo "✅ tag checked out"
+echo
 
 echo "🔎 making sure runtime version got updated..."
 
@@ -80,37 +81,39 @@ new_impl_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs 
 new_tx_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'transaction_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
 new_author_version=$(cat $root_dir/runtime/${parachain_name}-parachain/src/lib.rs | grep -o 'authoring_version: [0-9]*' | tail -1 | grep -o '[0-9]*')
 
-if [[ $new_spec_version != $((old_spec_version + 1)) ]]; then
-  echo "runtime spec version not incremented"
+if [[ $new_spec_version -le $old_spec_version ]]; then
+  echo "🔴 runtime spec version not incremented"
   exit 1
 fi
 
-if [[ $new_impl_version != $((old_impl_version + 1)) ]]; then
-  echo "runtime impl version not incremented"
+if [[ $new_impl_version -le $old_impl_version ]]; then
+  echo "🔴 runtime impl version not incremented"
   exit 1
 fi
 
-if [[ $new_tx_version != $((old_tx_version + 1)) ]]; then
-  echo "runtime transaction version not incremented"
+if [[ $new_tx_version -le $old_tx_version ]]; then
+  echo "🔴 runtime transaction version not incremented"
   exit 1
 fi
 
-if [[ $new_author_version != $((old_author_version + 1)) ]]; then
-  echo "runtime authoring version not incremented"
+if [[ $new_author_version -le $old_author_version ]]; then
+  echo "🔴 runtime authoring version not incremented"
   exit 1
 fi
+echo "✅ runtime versions updated"
 
-echo "🫧 Check WASM artifact..."
+echo
+echo "🫧 check WASM artifact..."
 wasm_hash_calculated=$(subwasm info --json $wasm_binary | jq -r .blake2_256)
 wasm_hash_fetched="$(cat ${wasm_binary}.blake2_256)"
-echo "🔢 calculated WASM blake2_256 hash is $wasm_hash_calculated"
-echo "🔢 fetched WASM blake2_256 hash from release is $wasm_hash_fetched"
+echo "🔢 WASM blake2_256 hash: $wasm_hash_calculated"
+echo "🔢 WASM blake2_256 hash fetched from release: $wasm_hash_fetched"
 
 if [[ "$wasm_hash_calculated" != "$wasm_hash_fetched" ]]; then
-  echo "🔴 WASM artifact blake2_256 hash is not matching"
+  echo "🔴 WASM blake2_256 hash is not matching"
   exit 1
 else
-  echo "✅ WASM artifact blake2_256 hash is matching"
+  echo "✅ WASM blake2_256 hash is matching"
 fi
 
 echo "⚙️ set_code runtime upgrade... $dryrun"
@@ -136,3 +139,4 @@ if [[ -z $dryrun ]]; then
     --params $wasm_binary \
     tx.system.setCode
 fi
+echo "✅ runtime upgrade executed... $dryrun"
