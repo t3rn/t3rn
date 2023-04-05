@@ -58,10 +58,11 @@
 pub mod benchmarking;
 
 #[cfg(test)]
-mod mock;
+pub mod mock;
+
 pub mod runner;
 #[cfg(test)]
-mod tests;
+pub mod tests;
 
 use codec::{Decode, Encode};
 pub use evm::{

@@ -20,7 +20,7 @@
 mod threevm;
 
 use super::*;
-use crate::mock::*;
+pub use crate::mock::*;
 
 use fp_evm::{FeeCalculator, GenesisAccount};
 use frame_support::{
