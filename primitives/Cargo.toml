@@ -37,8 +37,6 @@ sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", def
 sp-state-machine    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
 sp-trie             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
 
-snowbridge-core = { path = "src/bridges/snowfork/core", default-features = false }
-
 t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
 t3rn-abi            = { path = "../types/abi", default-features = false, features = [ "runtime" ] }
@@ -57,7 +55,6 @@ std = [
   "log/std",
   "scale-info/std",
   "serde/std",
-  "snowbridge-core/std",
   "codec/std",
   "sp-api/std",
   "sp-application-crypto/std",
