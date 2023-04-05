@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.7.0-rc.0] - 2023-04-05
+### :sparkles: New Features
+- [`f2e523b`](https://github.com/t3rn/t3rn/commit/f2e523b40f7ddca78258f8c084451a28e9538962) - enable an extrinsic for executing SFX *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+
+### :wrench: Chores
+- [`74d45a0`](https://github.com/t3rn/t3rn/commit/74d45a0afab32f6ec8caccd1b3c6673f284e26a9) - add implementation for sfx2xbi *(commit by [@palozano](https://github.com/palozano))*
+- [`6854fb7`](https://github.com/t3rn/t3rn/commit/6854fb76e760e5cc700891f015e6c4677a6c916f) - move fns around *(commit by [@palozano](https://github.com/palozano))*
+- [`7616a65`](https://github.com/t3rn/t3rn/commit/7616a65b5204a3a05a38d3e2f93c29b6f77e1e4c) - make compileable *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`394d52f`](https://github.com/t3rn/t3rn/commit/394d52fae2cb5d97d42d5b951de8ac2f0d4cec40) - add aliq and swap *(commit by [@palozano](https://github.com/palozano))*
+- [`5dfa403`](https://github.com/t3rn/t3rn/commit/5dfa403770fa387869956a66bf4a2d2342ead8d4) - update all sfx xbi instrucs *(commit by [@palozano](https://github.com/palozano))*
+- [`41cb7c3`](https://github.com/t3rn/t3rn/commit/41cb7c31d6a7f4dcc461288fcbfdb3116346f18d) - add non passing test *(commit by [@palozano](https://github.com/palozano))*
+- [`20fcd81`](https://github.com/t3rn/t3rn/commit/20fcd8159ec0a1cc1a90311f164dfe9a29d786ed) - add test but missing import *(commit by [@palozano](https://github.com/palozano))*
+- [`1caccd7`](https://github.com/t3rn/t3rn/commit/1caccd7053be6a043ae00629ca9dae1a03f8b595) - remove unused imports *(commit by [@palozano](https://github.com/palozano))*
+- [`148d4d9`](https://github.com/t3rn/t3rn/commit/148d4d99ab9310d4dc97595d1398e838c3f7ef86) - fix test compilation and failing test *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`cc346f3`](https://github.com/t3rn/t3rn/commit/cc346f3d2800cd66d694bcd343c224b1353602e6) - stylistic changes to tryinto *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`0a51538`](https://github.com/t3rn/t3rn/commit/0a51538dc32ecdd621c2f5a2c333373e0b3dbd89) - add note on crazy imports *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`5c2311f`](https://github.com/t3rn/t3rn/commit/5c2311ffed3ab576ace7d69463032940d612925d) - writing tests for sfx abi conversion *(commit by [@palozano](https://github.com/palozano))*
+- [`50ab4fb`](https://github.com/t3rn/t3rn/commit/50ab4fb09f16063d2e4f13b546585e5a12e2a5fa) - add the lock file *(commit by [@palozano](https://github.com/palozano))*
+- [`2261139`](https://github.com/t3rn/t3rn/commit/226113914843105494c333ddd244b52dd551cd62) - add missing tests *(commit by [@palozano](https://github.com/palozano))*
+- [`064d65f`](https://github.com/t3rn/t3rn/commit/064d65f38481f6bb93dd0594a9b9500e1980496c) - fix formating *(commit by [@palozano](https://github.com/palozano))*
+- [`315c5d0`](https://github.com/t3rn/t3rn/commit/315c5d0b7eeecdbae676b9cf59841bb2fc0e86fa) - add missing std *(commit by [@palozano](https://github.com/palozano))*
+- [`7d9a0f1`](https://github.com/t3rn/t3rn/commit/7d9a0f1822365c0e1d606e977b92e43fd9257a10) - missing stds *(commit by [@palozano](https://github.com/palozano))*
+- [`868d2ea`](https://github.com/t3rn/t3rn/commit/868d2eabcd1618701370b403fe1e0e2ae4f35f8b) - clean debug error enum *(commit by [@palozano](https://github.com/palozano))*
+- [`43a828c`](https://github.com/t3rn/t3rn/commit/43a828c708932549121aaaee8f76996558e96a29) - add more tests *(commit by [@palozano](https://github.com/palozano))*
+
+
 ## [v1.6.0-rc.0] - 2023-04-04
 ### :sparkles: New Features
 - [`1ae8a3e`](https://github.com/t3rn/t3rn/commit/1ae8a3e0fdfbc83d76dc44cebdacf82763f3bc51) - re-expose register as extrinsic *(commit by [@petscheit](https://github.com/petscheit))*
@@ -826,3 +852,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.4.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.3.0-rc.0...v1.4.0-rc.0
 [v1.5.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.4.0-rc.0...v1.5.0-rc.0
 [v1.6.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.5.1-rc.0...v1.6.0-rc.0
+[v1.7.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.6.0-rc.0...v1.7.0-rc.0
