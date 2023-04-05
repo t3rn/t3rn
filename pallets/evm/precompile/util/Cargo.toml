@@ -7,11 +7,13 @@ repository = 'https://github.com/t3rn/3vm'
 version    = "1.0.0"
 
 [dependencies]
+codec                     = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 pallet-3vm-evm-primitives = { path = "../../primitives", default-features = false, package = "fp-evm" }
 sp-core                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 sp-std                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 
 pallet-evm-precompile-3vm-dispatch = { path = "../3vm-dispatch", default-features = false }
+portal-precompile                  = { path = "../portal", default-features = false }
 pallet-evm-precompile-blake2       = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false }
 pallet-evm-precompile-bn128        = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false }
 pallet-evm-precompile-curve25519   = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false }
@@ -21,13 +23,21 @@ pallet-evm-precompile-modexp       = { git = "https://github.com/paritytech/fron
 pallet-evm-precompile-sha3fips     = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false }
 pallet-evm-precompile-simple       = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false }
 
+frame-system                      = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
+t3rn-primitives                    = { default-features = false, path = "../../../../primitives" }
+
+
 [features]
 default = [ "std" ]
 std = [
+  "codec/std",
   "sp-core/std",
   "sp-std/std",
   "pallet-3vm-evm-primitives/std",
   "pallet-evm-precompile-3vm-dispatch/std",
+  "portal-precompile/std",
+  "frame-system/std",
+  "t3rn-primitives/std",
   "pallet-evm-precompile-blake2/std",
   "pallet-evm-precompile-bn128/std",
   "pallet-evm-precompile-curve25519/std",
