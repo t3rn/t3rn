@@ -34,7 +34,6 @@ pallet-3vm-evm-rpc       = { path = "../../pallets/evm/rpc", package = "pallet-e
 # Extras
 async-std              = { version = "1.10.0" }
 futures                = "0.3.21"
-jsonrpc-runtime-client = { version = "0.1.0", path = "../../relayers/jsonrpc-runtime-client" }
 jsonrpsee              = { version = "0.14.0", features = [ "server" ] }
 
 # Substrate

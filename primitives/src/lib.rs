@@ -48,7 +48,6 @@ use std::fmt::Debug;
 pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
-pub mod circuit_portal;
 pub mod claimable;
 pub mod clock;
 pub mod common;
