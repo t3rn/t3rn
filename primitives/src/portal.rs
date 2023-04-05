@@ -8,6 +8,7 @@ use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::{recode::Codec, types::Bytes};
+pub use t3rn_light_client_commons::traits::{HeaderResult, HeightResult};
 use t3rn_types::sfx::Sfx4bId;
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
@@ -16,7 +17,7 @@ pub struct RegistrationData {
     pub gateway_id: ChainId,
     pub gateway_abi: GatewayABIConfig,
     pub gateway_vendor: GatewayVendor,
-    execution_vendor: ExecutionVendor,
+    pub execution_vendor: ExecutionVendor,
     pub gateway_type: GatewayType,
     pub gateway_genesis: GatewayGenesisConfig,
     pub gateway_sys_props: TokenInfo,
@@ -113,4 +114,221 @@ pub trait Portal<T: frame_system::Config> {
     fn turn_on(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
 
     fn turn_off(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
+}
+
+#[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
+pub enum PortalPrecompileInterfaceEnum {
+    GetLatestFinalizedHeader(ChainId),
+    GetLatestFinalizedHeight(ChainId),
+    GetLatestUpdatedHeight(ChainId),
+    GetCurrentEpoch(ChainId),
+    ReadFastConfirmationOffset(ChainId),
+    ReadRationalConfirmationOffset(ChainId),
+    ReadEpochOffset(ChainId),
+    VerifyEventInclusion([u8; 4], Bytes),
+    VerifyStateInclusion([u8; 4], Bytes),
+    VerifyTxInclusion([u8; 4], Bytes),
+}
+
+pub fn get_portal_interface_abi() -> Abi {
+    Abi::try_from(PORTAL_INTERFACE_ABI_DESCRIPTOR.to_vec())
+        .expect("Expect parsing PORTAL_INTERFACE_ABI_DESCRIPTOR to succeed.")
+}
+
+pub const PORTAL_INTERFACE_ABI_DESCRIPTOR: &[u8] = b"PortalPrecompileInterface:Enum(\
+        GetLatestFinalizedHeader:Bytes4,\
+        GetLatestFinalizedHeight:Bytes4,\
+        GetLatestUpdatedHeight:Bytes4,\
+        GetCurrentEpoch:Bytes4,\
+        ReadFastConfirmationOffset:Bytes4,\
+        ReadRationalConfirmationOffset:Bytes4,\
+        ReadEpochOffset:Bytes4,\
+        VerifyEventInclusion:Tuple(Bytes4,Bytes),\
+        VerifyStateInclusion:Tuple(Bytes4,Bytes),\
+        VerifyTxInclusion:Tuple(Bytes4,Bytes),\
+    )";
+
+#[cfg(test)]
+pub mod portal_precompile_decode_test {
+    use super::*;
+    use t3rn_abi::{Abi, Codec, FilledAbi};
+
+    #[test]
+    fn portal_interface_abi_descriptor_parses() {
+        let portal_interface_abi = get_portal_interface_abi();
+        assert_eq!(
+            portal_interface_abi,
+            Abi::Enum(
+                Some(b"PortalPrecompileInterface".to_vec()),
+                vec![
+                    Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeader".to_vec()))),
+                    Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeight".to_vec()))),
+                    Box::new(Abi::Bytes4(Some(b"GetLatestUpdatedHeight".to_vec()))),
+                    Box::new(Abi::Bytes4(Some(b"GetCurrentEpoch".to_vec()))),
+                    Box::new(Abi::Bytes4(Some(b"ReadFastConfirmationOffset".to_vec()))),
+                    Box::new(Abi::Bytes4(Some(
+                        b"ReadRationalConfirmationOffset".to_vec()
+                    ))),
+                    Box::new(Abi::Bytes4(Some(b"ReadEpochOffset".to_vec()))),
+                    Box::new(Abi::Tuple(
+                        Some(b"VerifyEventInclusion".to_vec()),
+                        (Box::new(Abi::Bytes4(None)), Box::new(Abi::Bytes(None))),
+                    )),
+                    Box::new(Abi::Tuple(
+                        Some(b"VerifyStateInclusion".to_vec()),
+                        (Box::new(Abi::Bytes4(None)), Box::new(Abi::Bytes(None))),
+                    )),
+                    Box::new(Abi::Tuple(
+                        Some(b"VerifyTxInclusion".to_vec()),
+                        (Box::new(Abi::Bytes4(None)), Box::new(Abi::Bytes(None))),
+                    )),
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn portal_precompile_selects_enum_for_get_latest_finalized_header() {
+        let portal_precompile_interface = get_portal_interface_abi();
+
+        let filled_abi = FilledAbi::try_fill_abi(
+            portal_precompile_interface,
+            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeader([1u8; 4]).encode(),
+            Codec::Scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Bytes4(Some(b"GetLatestFinalizedHeader".to_vec()), vec![1u8; 4])
+        )
+    }
+
+    #[test]
+    fn portal_precompile_selects_enum_for_get_latest_finalized_height() {
+        let portal_precompile_interface = get_portal_interface_abi();
+
+        let filled_abi = FilledAbi::try_fill_abi(
+            portal_precompile_interface,
+            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeight([1u8; 4]).encode(),
+            Codec::Scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Bytes4(Some(b"GetLatestFinalizedHeight".to_vec()), vec![1u8; 4])
+        )
+    }
+
+    #[test]
+    fn portal_precompile_selects_enum_for_get_latest_updated_height() {
+        let portal_precompile_interface = get_portal_interface_abi();
+
+        let filled_abi = FilledAbi::try_fill_abi(
+            portal_precompile_interface,
+            PortalPrecompileInterfaceEnum::GetLatestUpdatedHeight([1u8; 4]).encode(),
+            Codec::Scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Bytes4(Some(b"GetLatestUpdatedHeight".to_vec()), vec![1u8; 4])
+        )
+    }
+
+    #[test]
+    fn portal_precompile_selects_enum_for_get_current_epoch() {
+        let portal_precompile_interface = get_portal_interface_abi();
+
+        let filled_abi = FilledAbi::try_fill_abi(
+            portal_precompile_interface,
+            PortalPrecompileInterfaceEnum::GetCurrentEpoch([1u8; 4]).encode(),
+            Codec::Scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Bytes4(Some(b"GetCurrentEpoch".to_vec()), vec![1u8; 4])
+        )
+    }
+
+    #[test]
+    fn portal_precompile_selects_enum_for_read_fast_confirmation_offset() {
+        let portal_precompile_interface = get_portal_interface_abi();
+
+        let filled_abi = FilledAbi::try_fill_abi(
+            portal_precompile_interface,
+            PortalPrecompileInterfaceEnum::ReadFastConfirmationOffset([1u8; 4]).encode(),
+            Codec::Scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Bytes4(Some(b"ReadFastConfirmationOffset".to_vec()), vec![1u8; 4])
+        )
+    }
+
+    #[test]
+    fn portal_precompile_selects_enum_for_read_rational_confirmation_offset() {
+        let portal_precompile_interface = get_portal_interface_abi();
+
+        let filled_abi = FilledAbi::try_fill_abi(
+            portal_precompile_interface,
+            PortalPrecompileInterfaceEnum::ReadRationalConfirmationOffset([1u8; 4]).encode(),
+            Codec::Scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Bytes4(
+                Some(b"ReadRationalConfirmationOffset".to_vec()),
+                vec![1u8; 4]
+            )
+        )
+    }
+
+    #[test]
+    fn portal_precompile_selects_enum_for_read_epoch_offset() {
+        let portal_precompile_interface = get_portal_interface_abi();
+
+        let filled_abi = FilledAbi::try_fill_abi(
+            portal_precompile_interface,
+            PortalPrecompileInterfaceEnum::ReadEpochOffset([1u8; 4]).encode(),
+            Codec::Scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Bytes4(Some(b"ReadEpochOffset".to_vec()), vec![1u8; 4])
+        )
+    }
+
+    #[test]
+    fn portal_precompile_selects_enum_for_verify_event_inclusion() {
+        let portal_precompile_interface = get_portal_interface_abi();
+
+        let filled_abi = FilledAbi::try_fill_abi(
+            portal_precompile_interface,
+            PortalPrecompileInterfaceEnum::VerifyEventInclusion([1u8; 4], vec![4u8; 32]).encode(),
+            Codec::Scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Tuple(
+                Some(b"VerifyEventInclusion".to_vec()),
+                (
+                    Box::new(FilledAbi::Bytes4(None, vec![1u8; 4])),
+                    Box::new(FilledAbi::Bytes(None, vec![4u8; 32].encode())),
+                ),
+            )
+        )
+    }
 }
