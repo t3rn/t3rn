@@ -50,13 +50,17 @@ export class Gateway {
       record.gateway_record.verification_vendor.toHuman()
     ) as unknown as ExecutionLayerType;
     let tokens: any[] = record.tokens.map(token => token.toHuman())
+
     let nativeToken = tokens.filter(token => token.gateway_id === this.id)[0];
-    this.ticker = nativeToken.token_props.token_symbol;
+    // @ts-ignore
+    this.ticker = Object.values(nativeToken.token_props)[0].token_symbol;
     this.decimals = parseInt(
-      nativeToken.token_props.token_decimals
+      // @ts-ignore
+      Object.values(nativeToken.token_props)[0].token_decimals
     );
     this.addressFormat = parseInt(
-       nativeToken.token_props.ss58_format
+       // @ts-ignore
+      Object.values(nativeToken.token_props)[0].ss58_format
     );
     this.allowedSideEffects = record.gateway_record.allowed_side_effects.toHuman().map(entry => entry[0]);
     this.setSfxBindings();
