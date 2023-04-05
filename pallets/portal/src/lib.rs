@@ -14,7 +14,7 @@ use pallet_grandpa_finality_verifier::light_clients::LightClient;
 use t3rn_abi::types::Bytes;
 use t3rn_primitives::{
     self,
-    portal::{HeaderResult, HeightResult, Portal},
+    portal::{HeaderResult, HeightResult, Portal, PortalReadApi},
     xdns::Xdns,
     ChainId, GatewayVendor, SpeedMode, TokenInfo,
 };
@@ -32,7 +32,6 @@ pub mod pallet {
     use super::*;
     use core::convert::TryInto;
     use frame_support::pallet_prelude::*;
-    
 
     use sp_std::vec::Vec;
     use t3rn_primitives::{xdns::Xdns, ChainId, ExecutionVendor, GatewayVendor};
@@ -130,7 +129,7 @@ pub mod pallet {
 
             <T as Config>::Xdns::add_new_token(token_id, gateway_id, token_props)?;
 
-            Self::initialize(origin, gateway_id, encoded_registration_data)
+            <Pallet<T> as Portal<T>>::initialize(origin, gateway_id, encoded_registration_data)
         }
     }
 }
@@ -346,5 +345,123 @@ impl<T: Config> Portal<T> for Pallet<T> {
 
     fn turn_off(origin: OriginFor<T>, gateway_id: [u8; 4]) -> Result<bool, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.turn_off(origin)
+    }
+}
+
+impl<T: Config> PortalReadApi<T::BlockNumber> for Pallet<T> {
+    fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError> {
+        <Pallet<T> as Portal<T>>::get_latest_finalized_header(gateway_id)
+    }
+
+    fn get_latest_finalized_height(
+        gateway_id: ChainId,
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+        <Pallet<T> as Portal<T>>::get_latest_finalized_height(gateway_id)
+    }
+
+    fn get_latest_updated_height(
+        gateway_id: ChainId,
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+        <Pallet<T> as Portal<T>>::get_latest_updated_height(gateway_id)
+    }
+
+    fn get_current_epoch(
+        gateway_id: ChainId,
+    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+        <Pallet<T> as Portal<T>>::get_current_epoch(gateway_id)
+    }
+
+    fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
+        <Pallet<T> as Portal<T>>::read_fast_confirmation_offset(gateway_id)
+    }
+
+    fn read_rational_confirmation_offset(
+        gateway_id: ChainId,
+    ) -> Result<T::BlockNumber, DispatchError> {
+        <Pallet<T> as Portal<T>>::read_rational_confirmation_offset(gateway_id)
+    }
+
+    fn read_epoch_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
+        <Pallet<T> as Portal<T>>::read_epoch_offset(gateway_id)
+    }
+
+    fn verify_event_inclusion(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        <Pallet<T> as Portal<T>>::verify_event_inclusion(
+            gateway_id,
+            message,
+            submission_target_height,
+        )
+    }
+
+    fn verify_state_inclusion(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        <Pallet<T> as Portal<T>>::verify_state_inclusion(
+            gateway_id,
+            message,
+            submission_target_height,
+        )
+    }
+
+    fn verify_tx_inclusion(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        <Pallet<T> as Portal<T>>::verify_tx_inclusion(gateway_id, message, submission_target_height)
+    }
+
+    fn verify_state_inclusion_and_recode(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+        abi_descriptor: Bytes,
+        out_codec: Codec,
+    ) -> Result<Bytes, DispatchError> {
+        <Pallet<T> as Portal<T>>::verify_state_inclusion_and_recode(
+            gateway_id,
+            message,
+            submission_target_height,
+            abi_descriptor,
+            out_codec,
+        )
+    }
+
+    fn verify_tx_inclusion_and_recode(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+        abi_descriptor: Bytes,
+        out_codec: Codec,
+    ) -> Result<Bytes, DispatchError> {
+        <Pallet<T> as Portal<T>>::verify_tx_inclusion_and_recode(
+            gateway_id,
+            message,
+            submission_target_height,
+            abi_descriptor,
+            out_codec,
+        )
+    }
+
+    fn verify_event_inclusion_and_recode(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+        abi_descriptor: Bytes,
+        out_codec: Codec,
+    ) -> Result<Bytes, DispatchError> {
+        <Pallet<T> as Portal<T>>::verify_event_inclusion_and_recode(
+            gateway_id,
+            message,
+            submission_target_height,
+            abi_descriptor,
+            out_codec,
+        )
     }
 }
