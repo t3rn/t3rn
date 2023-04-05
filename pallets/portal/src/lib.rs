@@ -16,7 +16,7 @@ use t3rn_primitives::{
     self,
     portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
-    ChainId, GatewayVendor, TokenSysProps,
+    ChainId, GatewayVendor, TokenInfo,
 };
 pub mod weights;
 
@@ -108,7 +108,7 @@ pub mod pallet {
             registrant: Option<T::AccountId>,
             escrow_account: Option<T::AccountId>,
             allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
-            token_props: TokenSysProps,
+            token_props: TokenInfo,
             encoded_registration_data: Bytes,
         ) -> DispatchResult {
             ensure_root(origin.clone())?;

@@ -138,112 +138,126 @@ pub struct GatewayGenesisConfig {
     pub genesis_hash: Vec<u8>,
 }
 
-/// Represents assorted gateway system properties.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct TokenSysProps {
+pub enum TokenInfo {
+    Substrate(SubstrateToken),
+    Ethereum(EthereumToken),
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct SubstrateToken {
     pub ss58_format: u16,
     pub token_symbol: Vec<u8>,
     pub token_decimals: u8,
 }
 
-impl TryFrom<&ChainId> for TokenSysProps {
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct EthereumToken {
+    pub token_symbol: Vec<u8>,
+    pub token_decimals: u8,
+    pub address: Option<[u8; 20]>,
+}
+
+impl TryFrom<&ChainId> for TokenInfo {
     type Error = &'static str;
 
     /// Maps a chain id to its system properties.
-    ///
+    //)/
     /// Source of truth for Substrate parachains system properties is the
     /// corresponding chain's metadata tab in the polkadot apps browser ui:
     /// https://polkadot.js.org/apps/?rpc=${PROVIDER}#/settings/metadata.
     fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
         match chain_id {
-            b"circ" => Ok(TokenSysProps {
+            b"circ" => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
-            }),
-            b"gate" => Ok(TokenSysProps {
+            })),
+            b"gate" => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("TRN"),
                 token_decimals: 12,
-            }),
-            &POLKADOT_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &POLKADOT_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 0,
                 token_symbol: Encode::encode("DOT"),
                 token_decimals: 10,
-            }),
-            &KUSAMA_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &KUSAMA_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 2,
                 token_symbol: Encode::encode("KSM"),
                 token_decimals: 12,
-            }),
-            &ROCOCO_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &ROCOCO_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 42,
                 token_symbol: Encode::encode("ROC"),
                 token_decimals: 12,
-            }),
-            &ROCOCO_ENCOINTER_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &ROCOCO_ENCOINTER_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 2,
                 token_symbol: Encode::encode("ROC"), // notatypo
                 token_decimals: 12,
-            }),
-            &BASILISK_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &BASILISK_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 10041,
                 token_symbol: Encode::encode("BSX"),
                 token_decimals: 12,
-            }),
-            &CATALYST_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &CATALYST_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 36,
                 token_symbol: Encode::encode("NCFG"),
                 token_decimals: 18,
-            }),
-            &DALI_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &DALI_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 49,
                 token_symbol: Encode::encode("DALI"),
                 token_decimals: 12,
-            }),
-            &DOLPHIN_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &DOLPHIN_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 78,
                 token_symbol: Encode::encode("DOL"),
                 token_decimals: 18,
-            }),
-            &ROCFINITY_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &ROCFINITY_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 195,
                 token_symbol: Encode::encode("RFI"),
                 token_decimals: 18,
-            }),
-            &GENSHIRO_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &GENSHIRO_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 67,
                 token_symbol: Encode::encode("Token"),
                 token_decimals: 9,
-            }),
-            &PANGOLIN_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &PANGOLIN_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 42,
                 token_symbol: Encode::encode("PRING"),
                 token_decimals: 18,
-            }),
-            &SNOWBLINK_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &SNOWBLINK_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 42,
                 token_symbol: Encode::encode("SNO"),
                 token_decimals: 12,
-            }),
-            &SOONSOCIAL_CHAIN_ID => Ok(TokenSysProps {
+            })),
+            &SOONSOCIAL_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
                 ss58_format: 28,
                 token_symbol: Encode::encode("SUB"),
                 token_decimals: 10,
-            }),
+            })),
             _ => Err("unknown chain id"),
         }
     }
 }
 
-impl Default for TokenSysProps {
+impl Default for TokenInfo {
     fn default() -> Self {
-        Self {
+        Self::Substrate(SubstrateToken {
             token_symbol: Encode::encode("TKN"),
             token_decimals: 9,
             ss58_format: 42,
-        }
+        })
     }
 }
 
