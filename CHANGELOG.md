@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.7.1-rc.0] - 2023-04-05
+### :bug: Bug Fixes
+- [`2bc23f4`](https://github.com/t3rn/t3rn/commit/2bc23f40775ae54d2602b675e24e4d263c4ac4ef) - 3vm mocks *(PR [#783](https://github.com/t3rn/t3rn/pull/783) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.7.0-rc.0] - 2023-04-05
 ### :sparkles: New Features
 - [`f2e523b`](https://github.com/t3rn/t3rn/commit/f2e523b40f7ddca78258f8c084451a28e9538962) - enable an extrinsic for executing SFX *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
@@ -853,3 +858,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.5.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.4.0-rc.0...v1.5.0-rc.0
 [v1.6.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.5.1-rc.0...v1.6.0-rc.0
 [v1.7.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.6.0-rc.0...v1.7.0-rc.0
+[v1.7.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.7.0-rc.0...v1.7.1-rc.0
