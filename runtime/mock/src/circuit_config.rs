@@ -220,6 +220,7 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
 impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
@@ -230,6 +231,7 @@ impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Runtime {
 impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
@@ -240,6 +242,7 @@ impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
 impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
