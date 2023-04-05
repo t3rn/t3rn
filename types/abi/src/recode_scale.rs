@@ -57,10 +57,3 @@ impl Recode for RecodeScale {
         )
     }
 }
-
-#[cfg(test)]
-pub mod recode_scale_test {
-
-    #[test]
-    fn chop_encoded() {}
-}
