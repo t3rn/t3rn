@@ -774,7 +774,6 @@ impl FilledAbi {
 
                 let (field2, size2) =
                     Self::recursive_fill_abi(*field2, &field_data[size1..], in_codec)?;
-                println!("Tuple 2: {:?} {:?}", field2, size2);
 
                 Ok((
                     FilledAbi::Tuple(name, (Box::new(field1), Box::new(field2))),
@@ -782,26 +781,14 @@ impl FilledAbi {
                 ))
             },
             Abi::Triple(name, (field1, field2, field3)) => {
-                println!(
-                    "Triple: {:?} {:?} field 1 {:?}",
-                    field_data,
-                    field_data.len(),
-                    field1
-                );
                 let (field1, size1) =
                     Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
-
-                println!("Triple 1: {:?} {:?}", field1, size1);
 
                 let (field2, size2) =
                     Self::recursive_fill_abi(*field2, &field_data[size1..], in_codec.clone())?;
 
-                println!("Triple 2: {:?} {:?}", field2, size2);
-
                 let (field3, size3) =
                     Self::recursive_fill_abi(*field3, &field_data[size1 + size2..], in_codec)?;
-
-                println!("Triple 3: {:?} {:?}", field3, size3);
 
                 Ok((
                     FilledAbi::Triple(name, (Box::new(field1), Box::new(field2), Box::new(field3))),

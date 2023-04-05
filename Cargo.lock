@@ -13540,7 +13540,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-abi"
-version = "1.0.0-rc.0"
+version = "1.5.0-rc.0"
 dependencies = [
  "bytes 1.4.0",
  "circuit-runtime-types",
