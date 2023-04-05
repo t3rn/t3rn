@@ -115,6 +115,15 @@ pub enum ExecutionVendor {
     EVM,
 }
 
+impl TokenInfo {
+    pub fn match_execution_vendor(&self) -> ExecutionVendor {
+        match self {
+            TokenInfo::Substrate(_) => ExecutionVendor::Substrate,
+            TokenInfo::Ethereum(_) => ExecutionVendor::EVM,
+        }
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Structure used at gateway registration as a starting point for multi-finality-verifier

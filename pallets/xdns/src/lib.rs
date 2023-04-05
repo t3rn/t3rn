@@ -223,6 +223,8 @@ pub mod pallet {
         SideEffectABINotFound,
         /// the xdns entry does not contain parachain information
         NoParachainInfoFound,
+        /// A token is not compatible with the gateways execution layer
+        TokenExecutionVendorMismatch,
     }
 
     // Deprecated storage entry -- StandardSideEffects
@@ -413,6 +415,15 @@ pub mod pallet {
             if <Tokens<T>>::contains_key(token_id) {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
             }
+
+            // fetch record and ensure it exists
+            let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
+
+            // ensure that the token's execution vendor matches the gateway's execution vendor
+            ensure!(
+                token_props.match_execution_vendor() == record.execution_vendor,
+                Error::<T>::TokenExecutionVendorMismatch
+            );
 
             Self::override_token(token_id, gateway_id, token_props)
         }
