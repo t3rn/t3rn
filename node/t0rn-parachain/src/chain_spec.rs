@@ -5,13 +5,8 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::{
-    str::FromStr,
-};
-use t3rn_primitives::{
-    bridges::header_chain::InitializationData,
-    monetary::TRN, Header,
-};
+use std::str::FromStr;
+use t3rn_primitives::{bridges::header_chain::InitializationData, monetary::TRN, Header};
 
 use t3rn_abi::sfx_abi::SFXAbi;
 use t3rn_primitives::xdns::GatewayRecord;
