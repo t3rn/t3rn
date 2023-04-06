@@ -106,7 +106,6 @@ use t3rn_primitives::light_client::InclusionReceipt;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {

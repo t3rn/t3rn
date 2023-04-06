@@ -22,6 +22,8 @@ use sp_runtime::{ConsensusEngineId, RuntimeAppPublic};
 
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
+use t3rn_abi::{types::Bytes, Codec};
+use t3rn_primitives::portal::{HeaderResult, PortalReadApi};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
