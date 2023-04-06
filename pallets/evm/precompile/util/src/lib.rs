@@ -61,8 +61,8 @@ impl KnownPrecompile {
 }
 
 pub struct Precompiles<T, BlockNumber> {
-    inner: BTreeMap<H160, KnownPrecompile>,
-    custom: BTreeMap<H160, CustomPrecompile<T, BlockNumber>>,
+    pub inner: BTreeMap<H160, KnownPrecompile>,
+    pub custom: BTreeMap<H160, CustomPrecompile<T, BlockNumber>>,
 }
 
 impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> Precompiles<T, BlockNumber> {
