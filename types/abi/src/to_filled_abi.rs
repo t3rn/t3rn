@@ -927,7 +927,9 @@ impl FilledAbi {
 mod test_fill_abi {
     use super::*;
     use crate::mini_mock::MiniRuntime;
+    use frame_support::assert_ok;
     use hex_literal::hex;
+    use std::vec;
 
     use rlp_derive::{RlpDecodable, RlpEncodable};
     use sp_core::{crypto::AccountId32, ByteArray};
@@ -1415,6 +1417,91 @@ mod test_fill_abi {
                 ))],
                 230u8 // saved prefix memo
             )
+        )
+    }
+
+    #[test]
+    fn fills_abi_for_32b_rlp_encoded_word_representing_bytes4() {
+        let abi = Abi::Bytes4(Some(b"word".to_vec()));
+
+        let rlp_encoded_work =
+            &hex!("0102030400000000000000000000000000000000000000000000000000000000");
+
+        let filled_abi =
+            FilledAbi::try_fill_abi(abi, rlp_encoded_work.to_vec(), Codec::Rlp).unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Bytes4(Some(b"word".to_vec()), hex!("01020304").to_vec())
+        )
+    }
+
+    #[test]
+    fn fills_abi_for_32b_rlp_encoded_word_representing_bytes4_and_recodes_to_scale_on_4_bytes() {
+        let abi = Abi::Bytes4(Some(b"word".to_vec()));
+
+        let rlp_encoded_work =
+            &hex!("0102030400000000000000000000000000000000000000000000000000000000");
+
+        let filled_abi =
+            FilledAbi::try_fill_abi(abi, rlp_encoded_work.to_vec(), Codec::Rlp).unwrap();
+
+        let recoded_bytes4 = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale);
+
+        assert_ok!(recoded_bytes4.clone());
+
+        assert_eq!(recoded_bytes4.unwrap(), hex!("01020304").to_vec())
+    }
+
+    #[test]
+    fn fills_abi_for_32b_rlp_encoded_word_representing_enum_with_bytes4_and_recodes_to_scale_on_4_bytes(
+    ) {
+        let abi = Abi::Enum(None, vec![Box::new(Abi::Bytes4(Some(b"word".to_vec())))]);
+
+        let rlp_encoded_work =
+            &hex!("0001020304000000000000000000000000000000000000000000000000000000");
+
+        let filled_abi =
+            FilledAbi::try_fill_abi(abi, rlp_encoded_work.to_vec(), Codec::Rlp).unwrap();
+
+        let recoded_bytes4 = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale);
+
+        assert_ok!(recoded_bytes4.clone());
+
+        assert_eq!(recoded_bytes4.unwrap(), hex!("01020304").to_vec())
+    }
+
+    #[test]
+    fn fills_abi_for_32b_rlp_encoded_word_representing_enum_with_bytes4_and_bytes_as_tuple_and_recodes_to_scale_on_4_bytes(
+    ) {
+        let abi = Abi::Enum(
+            None,
+            vec![Box::new(Abi::Tuple(
+                None,
+                (
+                    Box::new(Abi::Bytes4(Some(b"word1".to_vec()))),
+                    Box::new(Abi::Bytes(Some(b"word2".to_vec()))),
+                ),
+            ))],
+        );
+
+        let rlp_encoded_work =
+            &hex!("00010203040000000000000000000000000000000000000000000000000000003333333333333333333333333333333333333333333333333333333333333333");
+
+        let filled_abi =
+            FilledAbi::try_fill_abi(abi, rlp_encoded_work.to_vec(), Codec::Rlp).unwrap();
+
+        let recoded_2_words_tuple = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale);
+
+        assert_ok!(recoded_2_words_tuple.clone());
+
+        assert_eq!(
+            recoded_2_words_tuple.unwrap(),
+            vec![
+                1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
+                51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51
+            ]
         )
     }
 
