@@ -29,7 +29,6 @@ pub mod pallet {
     use super::*;
     use core::convert::TryInto;
     use frame_support::pallet_prelude::*;
-    use frame_system::pallet_prelude::*;
 
     use sp_std::vec::Vec;
     use t3rn_primitives::{xdns::Xdns, ChainId, GatewayVendor};
@@ -112,7 +111,7 @@ pub mod pallet {
             token_props: TokenSysProps,
             encoded_registration_data: Bytes,
         ) -> DispatchResult {
-            let _ = ensure_root(origin.clone())?;
+            ensure_root(origin.clone())?;
             <T as Config>::Xdns::add_new_gateway(
                 gateway_id,
                 verification_vendor,

@@ -46,7 +46,7 @@ use sp_std::convert::TryInto;
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
-use num_traits::cast::AsPrimitive;
+
 use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
@@ -105,7 +105,6 @@ use frame_system::pallet_prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use sp_std::convert::TryFrom;
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -279,7 +278,7 @@ pub mod pallet {
             // GrandpaJustification for the signed_header
             justification: GrandpaJustification<BridgedHeader<T, I>>,
         ) -> DispatchResultWithPostInfo {
-            let _ = ensure_signed(origin.clone())?;
+            let _ = ensure_signed(origin)?;
             Pallet::<T, I>::verify_and_store_headers(range, signed_header, justification)?;
             Ok(().into())
         }
@@ -467,7 +466,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         verify_justification_single::<T, I>(
             &justification,
             signed_hash,
-            signed_number.clone(),
+            *signed_number,
             authority_set,
         )?;
         // °°°°° Checked: #2 °°°°°°
@@ -516,7 +515,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         <ImportedHashesPointer<T, I>>::set(Some(buffer_index));
 
         Self::deposit_event(Event::HeadersAdded(*signed_number));
-        Ok(().into())
+        Ok(())
     }
 
     // /// Get the best finalized header the pallet knows of.

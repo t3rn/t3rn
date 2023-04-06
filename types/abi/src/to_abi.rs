@@ -153,7 +153,7 @@ impl TryFrom<Data> for Abi {
 
         const MAX_DEPTH: usize = 10;
         fn from_parsed_descriptor_recursive(
-            mut fields_iter: &mut Peekable<IntoIter<(Data, Option<Data>, usize)>>,
+            fields_iter: &mut Peekable<IntoIter<(Data, Option<Data>, usize)>>,
             current_depth: usize,
         ) -> Result<Abi, DispatchError> {
             if current_depth > MAX_DEPTH {
@@ -183,7 +183,7 @@ impl TryFrom<Data> for Abi {
                             break
                         }
                         fields.push(Box::new(from_parsed_descriptor_recursive(
-                            &mut fields_iter,
+                            fields_iter,
                             current_depth + 1,
                         )?));
                     }

@@ -275,7 +275,7 @@ mod test_abi_standards {
         .encode();
 
         // append an extra pallet event index byte as the second byte
-        let mut scale_encoded_transfer_event = scale_encoded_transfer_event.clone();
+        let mut scale_encoded_transfer_event = scale_encoded_transfer_event;
         scale_encoded_transfer_event.insert(1, 1u8);
 
         let res = transfer_interface.validate_arguments_against_received(

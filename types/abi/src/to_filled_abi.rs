@@ -635,7 +635,7 @@ impl FilledAbi {
             Abi::Enum(_name, field_descriptor) => {
                 let mut data_buf = Bytes::copy_from_slice(field_data);
                 let first_byte = data_buf
-                    .get(0)
+                    .first()
                     .ok_or::<DispatchError>("FilledAbi::Enum - Not enough data".into())?;
 
                 let selected_field_descriptor =
@@ -718,19 +718,19 @@ impl FilledAbi {
             },
             Abi::Byte(name) => {
                 let byte = field_data
-                    .get(0)
+                    .first()
                     .ok_or::<DispatchError>("Byte::InvalidDataSize".into())?;
                 Ok((FilledAbi::Byte(name, vec![*byte]), 1))
             },
             Abi::Bool(name) => {
                 let byte = field_data
-                    .get(0)
+                    .first()
                     .ok_or::<DispatchError>("Bool::InvalidDataSize".into())?;
                 Ok((FilledAbi::Bool(name, vec![*byte]), 1))
             },
             Abi::Codec(name) => {
                 let byte = field_data
-                    .get(0)
+                    .first()
                     .ok_or::<DispatchError>("Codec::InvalidDataSize".into())?;
                 Ok((FilledAbi::Codec(name, vec![*byte]), 1))
             },
@@ -763,8 +763,7 @@ impl FilledAbi {
                 ))
             },
             Abi::Uniple(name, field1) => {
-                let (field1, size1) =
-                    Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
+                let (field1, size1) = Self::recursive_fill_abi(*field1, field_data, in_codec)?;
 
                 Ok((FilledAbi::Uniple(name, Box::new(field1)), size1))
             },
