@@ -19,7 +19,7 @@ impl Recode for RecodeScale {
     ) -> Result<(IntoIter<Vec<u8>>, u8), DispatchError> {
         let mut buf = Bytes::copy_from_slice(field_data);
         ensure!(
-            !buf.is_empty()
+            !buf.is_empty(),
             DispatchError::Other("RecodeScale::chop_encoded - no data to decode")
         );
         let memo_prefix = buf.get_u8();

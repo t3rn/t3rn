@@ -329,7 +329,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
 
     fn submit_finality_header(
         &self,
-        origin: OriginFor<T>,
+        _origin: OriginFor<T>,
         encoded_header_data: Bytes,
     ) -> Result<bool, DispatchError> {
         self.submit_encoded_headers(encoded_header_data)

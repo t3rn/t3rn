@@ -138,13 +138,13 @@ fn register(_origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchRe
 }
 
 fn submit_headers(
-    origin: OriginFor<Runtime>,
+    _origin: OriginFor<Runtime>,
     json: Value,
     index: usize,
 ) -> Result<(), DispatchError> {
-    let encoded_header_data: Vec<u8> =
+    let _encoded_header_data: Vec<u8> =
         hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
-    let gateway_id: ChainId = Decode::decode(
+    let _gateway_id: ChainId = Decode::decode(
         &mut &*hex::decode(json[index]["encoded_gateway_id"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
