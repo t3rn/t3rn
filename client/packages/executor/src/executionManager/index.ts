@@ -9,7 +9,6 @@ import {BiddingEngine} from "../bidding"
 import {CircuitListener, ListenerEventData, ListenerEvents} from "../circuit/listener"
 import {ApiPromise} from "@polkadot/api"
 import {CircuitRelayer} from "../circuit/relayer"
-import {ExecutionLayerType} from "@t3rn/sdk/dist/src/gateways/types"
 import {RelayerEventData, RelayerEvents} from "../gateways/types"
 import {XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types"
 import {Gateway} from "../../config/config"
@@ -127,7 +126,7 @@ export class ExecutionManager {
             if(!config) { // skip over gateways we have no configs for
                 continue;
             }
-            if (entry.executionLayerType === ExecutionLayerType.Substrate) {
+            if (entry.executionVendor === "Substrate") {
                 // initialize gateway relayer
                 const relayer = new SubstrateRelayer()
 

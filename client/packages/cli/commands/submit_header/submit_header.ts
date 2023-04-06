@@ -2,7 +2,7 @@ import { submitRelaychainHeaders } from "./substrate";
 import{ ApiPromise, WsProvider } from'@polkadot/api';
 
 export const submitHeader = async (circuitApi: any, gatewayData: any, gatewayId: string, logger: any) => {
-    switch(gatewayData.registrationData.gatewayVendor) {
+    switch(gatewayData.registrationData.verificationVendor) {
         case "Rococo": {
             const targetApi = await ApiPromise.create({
                 provider: new WsProvider(gatewayData.rpc),

@@ -32,7 +32,7 @@ export default {
         {
             name: "Rockmine",
             id: "mine",
-            token_id: "mine",
+            tokenId: "mine",
             rpc: "wss://rococo-rockmine-rpc.polkadot.io",
             transferData: {
                 receiver: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
@@ -44,7 +44,7 @@ export default {
                     relayChainId: "roco",
                     id: 1000
                 },
-                gatewayVendor: "Rococo",
+                verificationVendor: "Rococo",
                 executionVendor: "Substrate",
                 runtimeCodec: "Scale",
                 tokenInfo: {
@@ -68,7 +68,7 @@ export default {
             },
             registrationData: {
                 owner: "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
-                gatewayVendor: "Ethereum",
+                verificationVendor: "Ethereum",
                 executionVendor: "EVM",
                 runtimeCodec: "RLP",
                 tokenInfo: {
