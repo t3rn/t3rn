@@ -1,7 +1,7 @@
 import { registerSubstrate} from "./substrate";
 
 export const register = async (circuitApi: any, gatewayData: any, epochsAgo: number) => {
-    switch(gatewayData.registrationData.gatewayVendor) {
+    switch(gatewayData.registrationData.verificationVendor) {
         case "Rococo": {
             return registerSubstrate(circuitApi, gatewayData, epochsAgo)
         }

@@ -17,11 +17,15 @@ export default {
             registrationData: {
                 owner: "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
                 allowedSideEffects: [["tran", 4]],
-                gatewayVendor: "Rococo",
-                gatewaySysProps: {
-                    tokenSymbol: "ROC",
-                    tokenDecimals: 12,
-                    ss58Format: 42
+                verificationVendor: "Rococo",
+                executionVendor: "Substrate",
+                runtimeCodec: "Scale",
+                tokenInfo: {
+                    Substrate: {
+                        tokenSymbol: "ROC",
+                        tokenDecimals: 12,
+                        id: 42
+                    }
                 },
             }
         },
@@ -41,10 +45,38 @@ export default {
                     id: 1000
                 },
                 gatewayVendor: "Rococo",
-                gatewaySysProps: {
-                    tokenSymbol: "ROC",
-                    tokenDecimals: 12,
-                    ss58Format: 42
+                executionVendor: "Substrate",
+                runtimeCodec: "Scale",
+                tokenInfo: {
+                    Substrate: {
+                        symbol: "ROC",
+                        decimals: 12,
+                        id: 42
+                    }
+                },
+                allowedSideEffects: [["tran", 4]],
+            }
+        },
+        {
+            name: "Ethereum",
+            id: "eth2",
+            token_id: "eth2",
+            // rpc: "wss://rococo-rockmine-rpc.polkadot.io",
+            transferData: {
+                receiver: "0x1234567890123456789012345678901234567890",
+                fee: 0,
+            },
+            registrationData: {
+                owner: "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+                gatewayVendor: "Ethereum",
+                executionVendor: "EVM",
+                runtimeCodec: "RLP",
+                tokenInfo: {
+                    Ethereum: {
+                        symbol: "eth",
+                        decimals: 18,
+                        address: null
+                    }
                 },
                 allowedSideEffects: [["tran", 4]],
             }
