@@ -1216,6 +1216,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types 1.5.0-rc.0",
 ]

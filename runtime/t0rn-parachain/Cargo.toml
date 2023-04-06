@@ -274,4 +274,5 @@ try-runtime = [
   "pallet-utility/try-runtime",
   "pallet-xdns/try-runtime",
   "polkadot-runtime-common/try-runtime",
+  "t3rn-abi/try-runtime",
 ]
