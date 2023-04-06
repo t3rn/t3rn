@@ -58,16 +58,14 @@ class CircuitCLI {
         process.exit(1);
     }
 
-    async register(id: string, teleport: number, exportArgs: boolean, exportName: string) {
+    async register(id: string, exportArgs: boolean, exportName: string) {
         let data: any = config.gateways.find(elem => elem.id === id)
         if(data) {
             if(data.registrationData?.parachain) {
                 // @ts-ignore
                 data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
             }
-            const registrationData: any = await register(this.circuit, data, teleport)
-
-            console.log(registrationData)
+            const registrationData: any = await register(this.circuit, data)
 
             const tx = this.circuit.tx.portal.registerGateway(
                 registrationData.gatewayId,
@@ -79,7 +77,7 @@ class CircuitCLI {
                 registrationData.escrowAccounts,
                 registrationData.allowedSideEffects,
                 registrationData.tokenInfo,
-                registrationData.registrationData.toHex()
+                registrationData.registrationData
             );
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createSudo(tx))
                 .then(() => {
@@ -337,13 +335,12 @@ class CircuitCLI {
 program.command('register')
       .description('Register a gateway on the t3rn blockchain')
       .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-      .option('-t, --teleport <number>', 'how many epochs the registration should go back.', "0")
       .option('-e, --export', 'export the transaction arguments as JSON', false)
       .option('-o, --output <string>', 'specify the filename of the export', "export")
       .action(async (id, options) => {
           let cli = new CircuitCLI();
           await cli.setup()
-          cli.register(id, parseInt(options.teleport), options.export, options.output)
+          cli.register(id, options.export, options.output)
       });
 
 program.command('set-operational')

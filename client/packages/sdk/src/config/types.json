@@ -153,6 +153,7 @@
     "GatewayRecord": {
         "gateway_id": "ChainId",
         "verification_vendor": "GatewayVendor",
+        "execution_vendor": "ExecutionVendor",
         "codec": "RuntimeCodec",
         "registrant": "Option<AccountId>",
         "escrow_account": "Option<AccountId>",
