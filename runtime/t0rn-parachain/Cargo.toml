@@ -90,6 +90,7 @@ parachains-common                   = { git = 'https://github.com/paritytech/cum
 # t3rn Deps
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { default-features = false, path = "../../types", features = [ "runtime" ] }
+t3rn-abi        = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 
 # t3rn pallets
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
@@ -197,6 +198,7 @@ std = [
   "pallet-randomness-collective-flip/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
+  "t3rn-abi/std",
   # t3rn pallets
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",

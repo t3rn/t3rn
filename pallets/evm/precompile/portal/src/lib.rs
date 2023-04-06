@@ -1,9 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate codec;
 extern crate fp_evm;
 extern crate t3rn_primitives;
 
-use codec::{Decode, Encode};
+use codec::{alloc, alloc::string::ToString, Decode, Encode};
 use pallet_evm::LinearCostPrecompile;
 
 use fp_evm::{
@@ -12,8 +13,7 @@ use fp_evm::{
 };
 
 use frame_support::pallet_prelude::DispatchError;
-use sp_std::vec::Vec;
-use std::marker::PhantomData;
+use sp_std::{marker::PhantomData, vec::Vec};
 use t3rn_abi::{types::Bytes, Abi, Codec, FilledAbi};
 use t3rn_primitives::portal::{
     get_portal_interface_abi, PortalPrecompileInterfaceEnum,
