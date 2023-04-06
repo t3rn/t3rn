@@ -116,6 +116,7 @@ pub fn recursive_produce_test_args_for_abi(abi: Abi, args_variant: ArgVariant) -
             ArgVariant::B => vec![false.encode()],
             ArgVariant::C => vec![0u8.encode()],
         },
+        _ => todo!("produce_test_args_for_abi: {:#?}", abi),
     }
 }
 
