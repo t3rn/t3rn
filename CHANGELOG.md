@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.8.0-rc.0] - 2023-04-06
+### :bug: Bug Fixes
+- [`105eb9b`](https://github.com/t3rn/t3rn/commit/105eb9befa144c962e837efe37136e6444a23415) - update SFX ABI Standards to encode ingress in 2 bytes + fix tuples *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :recycle: Refactors
+- [`43592f8`](https://github.com/t3rn/t3rn/commit/43592f8f84aa11490094f627901fe315409e743c) - remove unwanted files *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :white_check_mark: Tests
+- [`9d1cfbe`](https://github.com/t3rn/t3rn/commit/9d1cfbe1b2e856d55aba80c4a9aec0b275c0299d) - handle unimplemented Abi cases in produce mock sfx *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`d414887`](https://github.com/t3rn/t3rn/commit/d414887f53bfc27af8e2f1fba4feeae61efc3a6a) - lint types files and correct empty buf ensure *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.7.1-rc.0] - 2023-04-05
 ### :bug: Bug Fixes
 - [`2bc23f4`](https://github.com/t3rn/t3rn/commit/2bc23f40775ae54d2602b675e24e4d263c4ac4ef) - 3vm mocks *(PR [#783](https://github.com/t3rn/t3rn/pull/783) by [@petscheit](https://github.com/petscheit))*
@@ -859,3 +873,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.6.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.5.1-rc.0...v1.6.0-rc.0
 [v1.7.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.6.0-rc.0...v1.7.0-rc.0
 [v1.7.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.7.0-rc.0...v1.7.1-rc.0
+[v1.8.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.7.2-rc.0...v1.8.0-rc.0
