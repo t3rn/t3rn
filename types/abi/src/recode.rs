@@ -124,7 +124,7 @@ impl FilledAbi {
             },
             FilledAbi::Tuple(_name, (field1, field2)) => {
                 let mut encoded_fields: Vec<u8> = vec![];
-                for field in vec![field1, field2] {
+                for field in &[field1, field2] {
                     encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
                 }
                 match (in_codec, out_codec) {
