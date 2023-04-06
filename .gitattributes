@@ -3,3 +3,4 @@
 
 **/yarn.lock            binary linguist-generated
 **/package-lock.json    binary linguist-generated
+**/Cargo.lock binary linguist-generated
