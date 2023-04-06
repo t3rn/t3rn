@@ -105,6 +105,7 @@ use frame_system::pallet_prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
