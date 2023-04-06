@@ -1,8 +1,8 @@
 use super::{AccountId, Balance, RuntimeBlockWeights, Weight, AVERAGE_ON_INITIALIZE_RATIO};
 use crate::{
-    accounts_config::EscrowAccount, AccountManager, AssetId, Aura, Balances, BlockNumber,
-    BlockWeights, Call, Circuit, ContractsRegistry, Event, Portal, RandomnessCollectiveFlip,
-    Runtime, ThreeVm, Timestamp,
+    accounts_config::EscrowAccount, AccountManager, AssetId, Aura, Balances, BlockNumber, Call,
+    Circuit, ContractsRegistry, Event, Portal, RandomnessCollectiveFlip, Runtime, ThreeVm,
+    Timestamp,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 use pallet_3vm_contracts::weights::WeightInfo;
@@ -17,7 +17,7 @@ use sp_runtime::{ConsensusEngineId, DispatchError, RuntimeAppPublic};
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
 use t3rn_abi::{types::Bytes, Codec};
-use t3rn_primitives::portal::{HeaderResult, HeightResult, Portal as PortalTrait, PortalReadApi};
+use t3rn_primitives::portal::{HeaderResult, HeightResult, PortalReadApi};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
