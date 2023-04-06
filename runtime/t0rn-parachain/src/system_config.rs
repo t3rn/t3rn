@@ -3,7 +3,7 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU32, ConstU8,
+        ConstU32, ConstU8, Contains,
     },
     weights::IdentityFee,
 };
@@ -18,7 +18,7 @@ impl frame_system::Config for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = frame_support::traits::Everything;
+    type BaseCallFilter = BaseCallFilter;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
@@ -146,4 +146,86 @@ impl pallet_utility::Config for Runtime {
     type Event = Event;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
+// Check Moonbeam, and Akala runtime for references on MaintenanceFilter, NormalFilter
+// and for `impl pallet_evm_precompile_proxy::EvmProxyCallFilter for ProxyType`
+pub struct BaseCallFilter;
+impl Contains<Call> for BaseCallFilter {
+    fn contains(c: &Call) -> bool {
+        match c {
+            Call::XDNS(method) => match method {
+                pallet_xdns::Call::purge_gateway { .. } => true,
+                pallet_xdns::Call::purge_gateway_record { .. } => true,
+                _ => false,
+            },
+            Call::Portal(method) => match method {
+                pallet_portal::Call::register_gateway { .. } => true,
+                _ => false,
+            },
+            // Missing executors
+            Call::Evm(method) => match method {
+                pallet_evm::Call::withdraw { .. } => true,
+                pallet_evm::Call::call { .. } => true,
+                pallet_evm::Call::create { .. } => true,
+                pallet_evm::Call::create2 { .. } => true,
+                pallet_evm::Call::claim { .. } => true,
+                _ => false,
+            },
+            Call::ContractsRegistry(method) => match method {
+                pallet_contracts_registry::Call::add_new_contract { .. } => true,
+                pallet_contracts_registry::Call::purge { .. } => true,
+                _ => false,
+            },
+            Call::Contracts(method) => match method {
+                pallet_contracts::Call::call { .. } => true,
+                pallet_contracts::Call::instantiate_with_code { .. } => true,
+                pallet_contracts::Call::instantiate { .. } => true,
+                pallet_contracts::Call::upload_code { .. } => true,
+                pallet_contracts::Call::remove_code { .. } => true,
+                _ => false,
+            },
+            Call::Circuit(method) => match method {
+                pallet_circuit::Call::on_local_trigger { .. } => true,
+                pallet_circuit::Call::on_xcm_trigger { .. } => true,
+                pallet_circuit::Call::on_remote_gateway_trigger { .. } => true,
+                pallet_circuit::Call::cancel_xtx { .. } => true,
+                pallet_circuit::Call::revert { .. } => true,
+                pallet_circuit::Call::on_extrinsic_trigger { .. } => true,
+                pallet_circuit::Call::bid_sfx { .. } => true,
+                pallet_circuit::Call::confirm_side_effect { .. } => true,
+                pallet_circuit::Call::confirm_side_effect { .. } => true,
+                _ => false,
+            },
+            Call::AccountManager(method) => match method {
+                pallet_account_manager::Call::deposit { .. } => true,
+                pallet_account_manager::Call::finalize { .. } => true,
+                _ => false,
+            },
+            Call::ThreeVm(method) => match method {
+                _ => false,
+            },
+            Call::RococoBridge(method) => match method {
+                pallet_rococo_bridge::Call::submit_headers { .. } => true,
+                _ => false,
+            },
+            // Suggested by IDE, not sure where these come from and if they are needed
+            Call::Authorship(_) => true,
+            Call::Balances(_) => true,
+            Call::CollatorSelection(_) => true,
+            Call::DmpQueue(_) => true,
+            Call::ParachainSystem(_) => true,
+            Call::PolkadotXcm(_) => true,
+            Call::Preimage(_) => true,
+            Call::Scheduler(_) => true,
+            Call::Session(_) => true,
+            Call::Sudo(_) => true,
+            Call::System(_) => true,
+            Call::Timestamp(_) => true,
+            Call::Treasury(_) => true,
+            Call::Utility(_) => true,
+            Call::XcmpQueue(_) => true,
+            _ => false,
+        }
+    }
 }
