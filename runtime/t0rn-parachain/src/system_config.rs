@@ -165,11 +165,11 @@ impl Contains<Call> for BaseCallFilter {
             },
             // Missing executors
             Call::Evm(method) => match method {
-                pallet_evm::Call::withdraw { .. } => true,
-                pallet_evm::Call::call { .. } => true,
-                pallet_evm::Call::create { .. } => true,
-                pallet_evm::Call::create2 { .. } => true,
-                pallet_evm::Call::claim { .. } => true,
+                pallet_3vm_evm::Call::withdraw { .. } => true,
+                pallet_3vm_evm::Call::call { .. } => true,
+                pallet_3vm_evm::Call::create { .. } => true,
+                pallet_3vm_evm::Call::create2 { .. } => true,
+                pallet_3vm_evm::Call::claim { .. } => true,
                 _ => false,
             },
             Call::ContractsRegistry(method) => match method {
@@ -178,11 +178,11 @@ impl Contains<Call> for BaseCallFilter {
                 _ => false,
             },
             Call::Contracts(method) => match method {
-                pallet_contracts::Call::call { .. } => true,
-                pallet_contracts::Call::instantiate_with_code { .. } => true,
-                pallet_contracts::Call::instantiate { .. } => true,
-                pallet_contracts::Call::upload_code { .. } => true,
-                pallet_contracts::Call::remove_code { .. } => true,
+                pallet_3vm_contracts::Call::call { .. } => true,
+                pallet_3vm_contracts::Call::instantiate_with_code { .. } => true,
+                pallet_3vm_contracts::Call::instantiate { .. } => true,
+                pallet_3vm_contracts::Call::upload_code { .. } => true,
+                pallet_3vm_contracts::Call::remove_code { .. } => true,
                 _ => false,
             },
             Call::Circuit(method) => match method {
@@ -206,7 +206,7 @@ impl Contains<Call> for BaseCallFilter {
                 _ => false,
             },
             Call::RococoBridge(method) => match method {
-                pallet_rococo_bridge::Call::submit_headers { .. } => true,
+                pallet_grandpa_finality_verifier::Call::submit_headers { .. } => true,
                 _ => false,
             },
             // Suggested by IDE, not sure where these come from and if they are needed
