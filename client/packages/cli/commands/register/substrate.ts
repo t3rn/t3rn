@@ -24,16 +24,16 @@ const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatew
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData, epochsAgo)
     console.log("Registering Block #", registrationHeader.number.toNumber());
     return {
-        gateway_id: circuit.createType("ChainId", gatewayData.id),
-        token_id: circuit.createType("ChainId", gatewayData.tokenId),
-        verification_vendor: circuit.createType('GatewayVendor', 'Rococo'),
-        execution_vendor: circuit.createType('ExecutionVendor', 'Substrate'),
-        codec: circuit.createType('RuntimeCodec', 'Scale'),
+        gatewayId: circuit.createType("ChainId", gatewayData.id),
+        tokenId: circuit.createType("ChainId", gatewayData.tokenId),
+        verificationVendor: circuit.createType('GatewayVendor', gatewayData.registrationData.verificationVendor),
+        executionVendor: circuit.createType('ExecutionVendor', gatewayData.registrationData.executionVendor),
+        codec: circuit.createType('RuntimeCodec', gatewayData.registrationData.runtimeCodec),
         registrant: null,
-        escrow_accounts: null,
-        allowed_side_effects: circuit.createType('Vec<([u8; 4], Option<u8>)>', gatewayData.registrationData.allowedSideEffects),
-        token_sys_props: createTokenSysProps(circuit, gatewayData.registrationData.gatewaySysProps),
-        registration_data: circuit.createType('RelaychainRegistrationData', [
+        escrowAccounts: null,
+        allowedSideEffects: circuit.createType('Vec<([u8; 4], Option<u8>)>', gatewayData.registrationData.allowedSideEffects),
+        tokenInfo: circuit.createType('TokenInfo', gatewayData.registrationData.tokenInfo),
+        registrationData: circuit.createType('RelaychainRegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
             authoritySetId,
@@ -44,26 +44,17 @@ const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatew
 
 const registerParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
     return {
-        gateway_id: circuit.createType("ChainId", gatewayData.id),
-        token_id: circuit.createType("ChainId", gatewayData.tokenId),
-        verification_vendor: circuit.createType('GatewayVendor', 'Rococo'),
-        execution_vendor: circuit.createType('ExecutionVendor', 'Substrate'),
-        codec: circuit.createType('RuntimeCodec', 'Scale'),
+        gatewayId: circuit.createType("ChainId", gatewayData.id),
+        tokenId: circuit.createType("ChainId", gatewayData.tokenId),
+        verification_Vendor: circuit.createType('GatewayVendor', gatewayData.registrationData.verificationVendor),
+        executionVendor: circuit.createType('ExecutionVendor', gatewayData.registrationData.executionVendor),
+        codec: circuit.createType('RuntimeCodec', gatewayData.registrationData.runtimeCodec),
         registrant: null,
-        escrow_accounts: null,
-        allowed_side_effects: circuit.createType('Vec<([u8; 4], Option<u8>)>', gatewayData.registrationData.allowedSideEffects),
-        token_sys_props: createTokenSysProps(circuit, gatewayData.registrationData.gatewaySysProps),
-        registration_data: circuit.createType("ParachainRegistrationData", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
+        escrowAccounts: null,
+        allowedSideEffects: circuit.createType('Vec<([u8; 4], Option<u8>)>', gatewayData.registrationData.allowedSideEffects),
+        tokenInfo: circuit.createType('TokenInfo', gatewayData.registrationData.tokenInfo),
+        registrationData: circuit.createType("ParachainRegistrationData", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
     }
-}
-
-const createTokenSysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
-    const param = {
-        ss58_format: gatewaySysProps.ss58Format,
-        token_symbol: gatewaySysProps.tokenSymbol,
-        token_decimals: gatewaySysProps.tokenDecimals
-    }
-    return circuiApi.createType('TokenInfo', {Substrate: param});
 }
 
 const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {

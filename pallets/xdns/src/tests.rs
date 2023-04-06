@@ -66,7 +66,7 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
 }
 
 #[test]
-fn should_add_a_new_xdns_and_token_record_if_it_doesnt_exist() {
+fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(XDNS::add_new_gateway(
             *b"test",
@@ -85,9 +85,9 @@ fn should_add_a_new_xdns_and_token_record_if_it_doesnt_exist() {
             *b"test",
             *b"test",
             TokenInfo::Substrate(SubstrateToken {
-                ss58_format: 1,
-                token_symbol: b"test".to_vec(),
-                token_decimals: 1,
+                id: 1,
+                symbol: b"test".to_vec(),
+                decimals: 1,
             })
         ));
 
@@ -97,9 +97,9 @@ fn should_add_a_new_xdns_and_token_record_if_it_doesnt_exist() {
                 *b"test",
                 *b"test",
                 TokenInfo::Substrate(SubstrateToken {
-                    token_decimals: 18,
-                    token_symbol: b"test".to_vec(),
-                    ss58_format: 5
+                    decimals: 18,
+                    symbol: b"test".to_vec(),
+                    id: 5
                 })
             ),
             pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
@@ -111,8 +111,8 @@ fn should_add_a_new_xdns_and_token_record_if_it_doesnt_exist() {
                 *b"roco",
                 *b"test",
                 TokenInfo::Ethereum(EthereumToken {
-                    token_decimals: 18,
-                    token_symbol: b"test".to_vec(),
+                    decimals: 18,
+                    symbol: b"test".to_vec(),
                     address: Some([1; 20])
                 })
             ),
@@ -124,7 +124,7 @@ fn should_add_a_new_xdns_and_token_record_if_it_doesnt_exist() {
 }
 
 #[test]
-fn shouldnt_add_new_token_without_gateway_record() {
+fn shouldnt_add_new_without_gateway_record() {
     ExtBuilder::default().build().execute_with(|| {
         // no duplicates
         assert_noop!(
@@ -132,9 +132,9 @@ fn shouldnt_add_new_token_without_gateway_record() {
                 *b"test",
                 *b"test",
                 TokenInfo::Substrate(SubstrateToken {
-                    token_decimals: 18,
-                    token_symbol: b"test".to_vec(),
-                    ss58_format: 5
+                    decimals: 18,
+                    symbol: b"test".to_vec(),
+                    id: 5
                 })
             ),
             pallet_xdns::pallet::Error::<Runtime>::GatewayRecordNotFound

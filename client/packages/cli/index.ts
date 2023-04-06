@@ -67,25 +67,27 @@ class CircuitCLI {
             }
             const registrationData: any = await register(this.circuit, data, teleport)
 
+            console.log(registrationData)
+
             const tx = this.circuit.tx.portal.registerGateway(
-                registrationData.gateway_id,
-                registrationData.token_id,
-                registrationData.verification_vendor,
-                registrationData.execution_vendor,
+                registrationData.gatewayId,
+                registrationData.tokenId,
+                registrationData.verificationVendor,
+                registrationData.executionVendor,
                 registrationData.codec,
                 registrationData.registrant,
-                registrationData.escrow_accounts,
-                registrationData.allowed_side_effects,
-                registrationData.token_sys_props,
-                registrationData.registration_data.toHex()
+                registrationData.escrowAccounts,
+                registrationData.allowedSideEffects,
+                registrationData.tokenInfo,
+                registrationData.registrationData.toHex()
             );
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createSudo(tx))
                 .then(() => {
-                    logger.info("Success: Gateway registered! ID:", registrationData.gateway_id)
+                    logger.info("Success: Gateway registered! ID:", registrationData.gatewayId)
                     this.addLog({
                         success: true,
                         msg: "Gateway registered!",
-                        gatewayId: registrationData.gateway_id
+                        gatewayId: registrationData.gatewayId
                     })
                 })
                 .catch(err => {
@@ -95,7 +97,7 @@ class CircuitCLI {
                         success: false,
                         msg: "Registration failed!",
                         err,
-                        gatewayId: registrationData.gateway_id
+                        gatewayId: registrationData.gatewayId
                     })
                     this.error()
                 })
