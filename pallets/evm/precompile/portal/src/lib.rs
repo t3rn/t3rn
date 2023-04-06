@@ -4,17 +4,14 @@ extern crate codec;
 extern crate fp_evm;
 extern crate t3rn_primitives;
 
-use codec::{alloc, alloc::string::ToString, Decode, Encode};
+use codec::{alloc::string::ToString, Decode, Encode};
 use pallet_evm::LinearCostPrecompile;
 
-use fp_evm::{
-    ExitError, ExitRevert, ExitSucceed, Precompile as EvmPrecompile, Precompile, PrecompileFailure,
-    PrecompileHandle, PrecompileOutput, PrecompileResult,
-};
+use fp_evm::{ExitError, ExitSucceed, PrecompileFailure};
 
 use frame_support::pallet_prelude::DispatchError;
 use sp_std::{marker::PhantomData, vec::Vec};
-use t3rn_abi::{types::Bytes, Abi, Codec, FilledAbi};
+use t3rn_abi::{Codec, FilledAbi};
 use t3rn_primitives::portal::{
     get_portal_interface_abi, PortalPrecompileInterfaceEnum,
     PortalPrecompileInterfaceEnum::{
@@ -31,7 +28,7 @@ pub struct PortalPrecompile<T, BlockNumber>(PhantomData<(T, BlockNumber)>);
 pub fn recode_input_as_portal_api_enum(
     input: &[u8],
 ) -> Result<PortalPrecompileInterfaceEnum, PrecompileFailure> {
-    let enum_selector_byte: u8 = *input.get(0).ok_or(ExitError::Other(
+    let enum_selector_byte: u8 = *input.first().ok_or(ExitError::Other(
         "PortalPrecompile failed to derive PortalInterface enum option for provided input".into(),
     ))?;
 
@@ -154,10 +151,6 @@ impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> LinearCostPrecompile
 #[cfg(test)]
 pub mod test_portal_precompile {
     use super::*;
-    use frame_support::assert_ok;
-    use rlp::Encodable;
-    use t3rn_mini_mock_runtime::{MiniRuntime, Portal, System};
-    use t3rn_primitives::portal::{Portal as PortalT, PortalPrecompileInterfaceEnum};
 
     #[test]
     fn test_get_latest_finalized_header_recodes_correctly_to_scale() {
