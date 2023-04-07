@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.8.1-rc.0] - 2023-04-07
+### :wrench: Chores
+- [`b940d72`](https://github.com/t3rn/t3rn/commit/b940d7287599af8882b2af2b120ea9ca9808ba02) - extend GH linguist with package-lock and Cargo.lock *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.8.0-rc.0] - 2023-04-06
 ### :bug: Bug Fixes
 - [`105eb9b`](https://github.com/t3rn/t3rn/commit/105eb9befa144c962e837efe37136e6444a23415) - update SFX ABI Standards to encode ingress in 2 bytes + fix tuples *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -874,3 +879,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.7.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.6.0-rc.0...v1.7.0-rc.0
 [v1.7.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.7.0-rc.0...v1.7.1-rc.0
 [v1.8.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.7.2-rc.0...v1.8.0-rc.0
+[v1.8.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.8.0-rc.0...v1.8.1-rc.0
