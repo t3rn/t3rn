@@ -4,28 +4,46 @@ env:
   RUST_BACKTRACE: full
   RUSTC_WRAPPER: sccache
   parachain: t0rn # TODO: fix before merging master
+
 on:
   pull_request:
-    paths:
-      - "**/*.rs"
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
-      - "**/zombienet/*/*.feature"
-      - "**/zombienet/Makefile"
-      - ".github/workflows/smoke-test.yml"
-      - ".git/modules/*/HEAD"
-  schedule:
-    - cron: "0,1 5 * * MON-FRI"
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
+  # This job checks if zombienet files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without zombienet changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+              - "**/zombienet/**/*"
+              - ".github/workflows/zombienet-test.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
   smoke-test:
     runs-on: [self-hosted, rust]
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
     steps:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v2
-        with:
-          submodules: recursive
-          token: ${{ secrets.GH_PAT }}
 
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1

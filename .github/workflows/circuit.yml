@@ -2,19 +2,14 @@ name: Circuit Build & Test CI
 
 on:
   pull_request:
-    paths:
-      - "**/*.rs"
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
-      - ".github/workflows/circuit.yml"
-      - ".git/modules/*/HEAD"
   push:
     branches:
       - development
-    paths:
-      - "**/*.rs"
-      - "**/Cargo.*"
-      - .github/workflows/pull_request.yml
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 env:
   RUST_BACKTRACE: 1
@@ -22,13 +17,36 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
+  # This job checks if circuit files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without circuit changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+              - ".github/workflows/circuit.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
   build-test:
     runs-on: [self-hosted, rust]
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v2
         with:
-          submodules: recursive
           fetch-depth: 1
           token: ${{ secrets.GH_PAT }}
 

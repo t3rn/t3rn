@@ -83,7 +83,7 @@ jobs:
           minimum-approvals: 1
           issue-title: "Release ${{ env.PARACHAIN_NAME }} ${{ github.ref }}"
           issue-body: |            
-            Please approve runtime upgrade with github release [${{ env.PARACHAIN_NAME }} ${{ env.PUSHED_TAG}}](https://github.com/t3rn/t3rn-ci-playground/releases/tag/${{ env.PUSHED_TAG }})
+            Please approve runtime upgrade with github release [${{ env.PARACHAIN_NAME }} ${{ env.PUSHED_TAG}}](https://github.com/t3rn/t3rn/releases/tag/${{ env.PUSHED_TAG }})
             
             Runtime upgrade dry run output:
             ```

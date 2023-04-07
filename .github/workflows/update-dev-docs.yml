@@ -1,26 +1,21 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Deploy Documentation
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the development branch
+  # Triggers the workflow on push to the development branch
   push:
     branches: [ development ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+    
 jobs:
-  # This workflow contains a single job called "build"
   rust:
-    runs-on: self-hosted
+    runs-on: [self-hosted, rust]
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
-        with:
-          submodules: recursive
-          token: ${{ secrets.GH_PAT }}
+        
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -28,15 +23,7 @@ jobs:
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
-      - name: 🕒 Cache Rust binaries and packages
-        uses: actions/cache@v2
-        id: cache-rust
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+
       - name: Generate Rust Docs
         uses: actions-rs/cargo@v1
         continue-on-error: false
@@ -61,6 +48,7 @@ jobs:
             --exclude snowbridge-runtime-primitives
             --exclude snowbridge-testutils
             --exclude snowbridge-xcm-support
+
       - name: 👾 Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
@@ -72,6 +60,7 @@ jobs:
           scope: "t3rn"
           alias-domains: |
             docs.chain.t3rn.io
+
   main:
     runs-on: ubuntu-latest
     defaults:
@@ -83,7 +72,6 @@ jobs:
       - name: 🎞️ Checkout repo
         uses: actions/checkout@v3
         with:
-          repository: t3rn/t3rn
           fetch-depth: 1
       - name: 📦 Install packages
         run: yarn
@@ -99,6 +87,7 @@ jobs:
           scope: "t3rn"
           alias-domains: |
             docs.t3rn.io
+
   executor:
     runs-on: ubuntu-latest
     defaults:
@@ -110,7 +99,6 @@ jobs:
       - name: 🎞️ Checkout repo
         uses: actions/checkout@v3
         with:
-          repository: t3rn/t3rn
           fetch-depth: 1
       - name: Build local dependencies
         run: make
@@ -130,6 +118,7 @@ jobs:
           scope: "t3rn"
           alias-domains: |
             docs.executor.t3rn.io
+
   ts-sdk:
     runs-on: ubuntu-latest
     defaults:
@@ -141,7 +130,6 @@ jobs:
       - name: 🎞️ Checkout repo
         uses: actions/checkout@v3
         with:
-          repository: t3rn/t3rn
           fetch-depth: 1
       - name: Build local dependencies
         run: make
