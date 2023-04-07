@@ -198,7 +198,7 @@ impl Contains<Call> for BaseCallFilter {
                 pallet_account_manager::Call::deposit { .. }
                     | pallet_account_manager::Call::finalize { .. }
             ),
-            Call::ThreeVm() => false,
+            Call::ThreeVm(_) => false,
             Call::RococoBridge(method) => matches!(
                 method,
                 pallet_grandpa_finality_verifier::Call::submit_headers { .. }
@@ -209,7 +209,7 @@ impl Contains<Call> for BaseCallFilter {
             Call::CollatorSelection(_) => true,
             Call::DmpQueue(_) => true,
             Call::ParachainSystem(_) => true,
-            Call::PolkadotXcm(_) => true,
+            Call::PolkadotXcm(_) => false,
             Call::Preimage(_) => true,
             Call::Scheduler(_) => true,
             Call::Session(_) => true,
