@@ -158,15 +158,12 @@ impl Contains<Call> for BaseCallFilter {
             Call::System(_) => true,
             Call::ParachainSystem(_) => true,
             Call::Timestamp(_) => true,
-            Call::ParachainInfo(_) => true, //TODO: check
             Call::Preimage(_) => true,
             Call::Scheduler(_) => true,
             Call::Utility(_) => true,
             Call::Identity(_) => true,
-            Call::RandomnessCollectiveFlip(_) => true,
             // Monetary
             Call::Balances(_) => true,
-            Call::TransactionPayment(_) => true,
             Call::Assets(_) => true,
             Call::Treasury(_) => true,
             Call::AccountManager(method) => matches!(
@@ -174,17 +171,13 @@ impl Contains<Call> for BaseCallFilter {
                 pallet_account_manager::Call::deposit { .. }
                     | pallet_account_manager::Call::finalize { .. }
             ),
-            Call::AssetTxPayment(_) => true,
             // Collator support
             Call::Authorship(_) => true,
             Call::CollatorSelection(_) => true,
             Call::Session(_) => true,
-            Call::Aura(_) => true,
-            Call::AuraExt(_) => true,
             // XCM helpers
             Call::XcmpQueue(_) => true,
             Call::PolkadotXcm(_) => false,
-            Call::CumulusXcm(_) => false,
             Call::DmpQueue(_) => true,
             Call::XBIPortal(_) => true,
             Call::AssetRegistry(_) => true,
@@ -210,7 +203,6 @@ impl Contains<Call> for BaseCallFilter {
                     | pallet_circuit::Call::bid_sfx { .. }
                     | pallet_circuit::Call::confirm_side_effect { .. }
             ),
-            Call::Clock(_) => false,
             //3VM
             Call::ThreeVm(_) => false,
             Call::Contracts(method) => matches!(
