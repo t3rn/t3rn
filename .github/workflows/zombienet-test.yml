@@ -1,4 +1,4 @@
-name: Perform zombienet tests
+name: Zombienet 
 
 env:
   RUST_BACKTRACE: full
@@ -38,6 +38,7 @@ jobs:
           echo Detected changes: "${{ steps.changes.outputs.src }}"
 
   smoke-test:
+    name: Zombienet Smoke Test
     runs-on: [self-hosted, rust]
     needs: [changes]
     if: needs.changes.outputs.src == 'true'

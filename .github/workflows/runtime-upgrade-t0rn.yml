@@ -11,7 +11,7 @@ env:
   PARACHAIN_NAME: t0rn
 
 jobs:
-  run-smoke-tests:
+  runtime-upgrade-smoke-tests:
     runs-on: [self-hosted, rust]
     concurrency: release
     steps:
@@ -35,7 +35,7 @@ jobs:
 
   runtime-upgrade:
     runs-on: self-hosted
-    needs: run-smoke-tests
+    needs: runtime-upgrade-smoke-tests
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3

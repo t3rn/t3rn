@@ -1,6 +1,6 @@
 # https://github.com/hack-ink/subalfred
 # https://github.com/hack-ink/subalfred-check-features-action
-name: Subalfred Checks
+name: Subalfred
 
 on: [pull_request]
 
@@ -8,9 +8,34 @@ env:
   IGNORE_FALSE_POSITIVES_REGEX_PATTERN: "benchmarking|frame-try-runtime|frame-std"
 
 jobs:
+  # This job checks if files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+              - "**/zombienet/**/*"
+              - ".github/workflows/subalfred.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
   check:
-    name: Task check features
+    name: Subalfred Check Features
     runs-on: [self-hosted, rust]
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
 
     steps:
       - name: ☁️ Checkout git repo
