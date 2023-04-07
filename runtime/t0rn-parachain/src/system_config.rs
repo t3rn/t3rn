@@ -154,33 +154,50 @@ pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
     fn contains(c: &Call) -> bool {
         match c {
+            // System support
+            Call::System(_) => true,
+            Call::ParachainSystem(_) => true,
+            Call::Timestamp(_) => true,
+            Call::ParachainInfo(_) => true, //TODO: check
+            Call::Preimage(_) => true,
+            Call::Scheduler(_) => true,
+            Call::Utility(_) => true,
+            Call::Identity(_) => true,
+            Call::RandomnessCollectiveFlip(_) => true,
+            // Monetary
+            Call::Balances(_) => true,
+            Call::TransactionPayment(_) => true,
+            Call::Assets(_) => true,
+            Call::Treasury(_) => true,
+            Call::AccountManager(method) => matches!(
+                method,
+                pallet_account_manager::Call::deposit { .. }
+                    | pallet_account_manager::Call::finalize { .. }
+            ),
+            Call::AssetTxPayment(_) => true,
+            // Collator support
+            Call::Authorship(_) => true,
+            Call::CollatorSelection(_) => true,
+            Call::Session(_) => true,
+            Call::Aura(_) => true,
+            Call::AuraExt(_) => true,
+            // XCM helpers
+            Call::XcmpQueue(_) => true,
+            Call::PolkadotXcm(_) => false,
+            Call::CumulusXcm(_) => false,
+            Call::DmpQueue(_) => true,
+            Call::XBIPortal(_) => true,
+            Call::AssetRegistry(_) => true,
+            // t3rn pallets
             Call::XDNS(method) => matches!(
                 method,
                 pallet_xdns::Call::purge_gateway { .. }
                     | pallet_xdns::Call::purge_gateway_record { .. }
             ),
-            Call::Portal(method) => matches!(method, pallet_portal::Call::register_gateway { .. }),
-            // Missing executors
-            Call::Evm(method) => matches!(
-                method,
-                pallet_3vm_evm::Call::withdraw { .. }
-                    | pallet_3vm_evm::Call::call { .. }
-                    | pallet_3vm_evm::Call::create { .. }
-                    | pallet_3vm_evm::Call::create2 { .. }
-                    | pallet_3vm_evm::Call::claim { .. }
-            ),
             Call::ContractsRegistry(method) => matches!(
                 method,
                 pallet_contracts_registry::Call::add_new_contract { .. }
                     | pallet_contracts_registry::Call::purge { .. }
-            ),
-            Call::Contracts(method) => matches!(
-                method,
-                pallet_3vm_contracts::Call::call { .. }
-                    | pallet_3vm_contracts::Call::instantiate_with_code { .. }
-                    | pallet_3vm_contracts::Call::instantiate { .. }
-                    | pallet_3vm_contracts::Call::upload_code { .. }
-                    | pallet_3vm_contracts::Call::remove_code { .. }
             ),
             Call::Circuit(method) => matches!(
                 method,
@@ -193,32 +210,43 @@ impl Contains<Call> for BaseCallFilter {
                     | pallet_circuit::Call::bid_sfx { .. }
                     | pallet_circuit::Call::confirm_side_effect { .. }
             ),
-            Call::AccountManager(method) => matches!(
-                method,
-                pallet_account_manager::Call::deposit { .. }
-                    | pallet_account_manager::Call::finalize { .. }
-            ),
+            Call::Clock(_) => false,
+            //3VM
             Call::ThreeVm(_) => false,
+            Call::Contracts(method) => matches!(
+                method,
+                pallet_3vm_contracts::Call::call { .. }
+                    | pallet_3vm_contracts::Call::instantiate_with_code { .. }
+                    | pallet_3vm_contracts::Call::instantiate { .. }
+                    | pallet_3vm_contracts::Call::upload_code { .. }
+                    | pallet_3vm_contracts::Call::remove_code { .. }
+            ),
+            Call::Evm(method) => matches!(
+                method,
+                pallet_3vm_evm::Call::withdraw { .. }
+                    | pallet_3vm_evm::Call::call { .. }
+                    | pallet_3vm_evm::Call::create { .. }
+                    | pallet_3vm_evm::Call::create2 { .. }
+                    | pallet_3vm_evm::Call::claim { .. }
+            ),
+            // Portal
+            Call::Portal(method) => matches!(method, pallet_portal::Call::register_gateway { .. }),
             Call::RococoBridge(method) => matches!(
                 method,
                 pallet_grandpa_finality_verifier::Call::submit_headers { .. }
             ),
-            // Suggested by IDE, not sure where these come from and if they are needed
-            Call::Authorship(_) => true,
-            Call::Balances(_) => true,
-            Call::CollatorSelection(_) => true,
-            Call::DmpQueue(_) => true,
-            Call::ParachainSystem(_) => true,
-            Call::PolkadotXcm(_) => false,
-            Call::Preimage(_) => true,
-            Call::Scheduler(_) => true,
-            Call::Session(_) => true,
+            // TODO: check this one
+            Call::PolkadotBridge(method) => matches!(
+                method,
+                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
+            ),
+            // TODO: check this one
+            Call::KusamaBridge(method) => matches!(
+                method,
+                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
+            ),
+            // Admin
             Call::Sudo(_) => true,
-            Call::System(_) => true,
-            Call::Timestamp(_) => true,
-            Call::Treasury(_) => true,
-            Call::Utility(_) => true,
-            Call::XcmpQueue(_) => true,
             _ => false,
         }
     }
