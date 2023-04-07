@@ -65,12 +65,12 @@ jobs:
           args: --all -- --check
 
       - name: Install clippy-sarif
-        uses: baptiste0928/cargo-install@v1
+        uses: baptiste0928/cargo-install@v2
         with:
           crate: clippy-sarif
 
       - name: Install sarif-fmt
-        uses: baptiste0928/cargo-install@v1
+        uses: baptiste0928/cargo-install@v2
         with:
           crate: sarif-fmt
 
@@ -83,12 +83,12 @@ jobs:
           sarif_file: results.sarif
 
       - name: Install nextest
-        uses: baptiste0928/cargo-install@v1
+        uses: baptiste0928/cargo-install@v2
         with:
           crate: cargo-nextest
 
       - name: Install cargo-llvm-cov
-        uses: baptiste0928/cargo-install@v1
+        uses: baptiste0928/cargo-install@v2
         with:
           crate: cargo-llvm-cov
 
