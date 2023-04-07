@@ -154,61 +154,55 @@ pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
     fn contains(c: &Call) -> bool {
         match c {
-            Call::XDNS(method) => match method {
-                pallet_xdns::Call::purge_gateway { .. } => true,
-                pallet_xdns::Call::purge_gateway_record { .. } => true,
-                _ => false,
-            },
-            Call::Portal(method) => match method {
-                pallet_portal::Call::register_gateway { .. } => true,
-                _ => false,
-            },
+            Call::XDNS(method) => matches!(
+                method,
+                pallet_xdns::Call::purge_gateway { .. }
+                    | pallet_xdns::Call::purge_gateway_record { .. }
+            ),
+            Call::Portal(method) => matches!(method, pallet_portal::Call::register_gateway { .. }),
             // Missing executors
-            Call::Evm(method) => match method {
-                pallet_3vm_evm::Call::withdraw { .. } => true,
-                pallet_3vm_evm::Call::call { .. } => true,
-                pallet_3vm_evm::Call::create { .. } => true,
-                pallet_3vm_evm::Call::create2 { .. } => true,
-                pallet_3vm_evm::Call::claim { .. } => true,
-                _ => false,
-            },
-            Call::ContractsRegistry(method) => match method {
-                pallet_contracts_registry::Call::add_new_contract { .. } => true,
-                pallet_contracts_registry::Call::purge { .. } => true,
-                _ => false,
-            },
-            Call::Contracts(method) => match method {
-                pallet_3vm_contracts::Call::call { .. } => true,
-                pallet_3vm_contracts::Call::instantiate_with_code { .. } => true,
-                pallet_3vm_contracts::Call::instantiate { .. } => true,
-                pallet_3vm_contracts::Call::upload_code { .. } => true,
-                pallet_3vm_contracts::Call::remove_code { .. } => true,
-                _ => false,
-            },
-            Call::Circuit(method) => match method {
-                pallet_circuit::Call::on_local_trigger { .. } => true,
-                pallet_circuit::Call::on_xcm_trigger { .. } => true,
-                pallet_circuit::Call::on_remote_gateway_trigger { .. } => true,
-                pallet_circuit::Call::cancel_xtx { .. } => true,
-                pallet_circuit::Call::revert { .. } => true,
-                pallet_circuit::Call::on_extrinsic_trigger { .. } => true,
-                pallet_circuit::Call::bid_sfx { .. } => true,
-                pallet_circuit::Call::confirm_side_effect { .. } => true,
-                pallet_circuit::Call::confirm_side_effect { .. } => true,
-                _ => false,
-            },
-            Call::AccountManager(method) => match method {
-                pallet_account_manager::Call::deposit { .. } => true,
-                pallet_account_manager::Call::finalize { .. } => true,
-                _ => false,
-            },
-            Call::ThreeVm(method) => match method {
-                _ => false,
-            },
-            Call::RococoBridge(method) => match method {
-                pallet_grandpa_finality_verifier::Call::submit_headers { .. } => true,
-                _ => false,
-            },
+            Call::Evm(method) => matches!(
+                method,
+                pallet_3vm_evm::Call::withdraw { .. }
+                    | pallet_3vm_evm::Call::call { .. }
+                    | pallet_3vm_evm::Call::create { .. }
+                    | pallet_3vm_evm::Call::create2 { .. }
+                    | pallet_3vm_evm::Call::claim { .. }
+            ),
+            Call::ContractsRegistry(method) => matches!(
+                method,
+                pallet_contracts_registry::Call::add_new_contract { .. }
+                    | pallet_contracts_registry::Call::purge { .. }
+            ),
+            Call::Contracts(method) => matches!(
+                method,
+                pallet_3vm_contracts::Call::call { .. }
+                    | pallet_3vm_contracts::Call::instantiate_with_code { .. }
+                    | pallet_3vm_contracts::Call::instantiate { .. }
+                    | pallet_3vm_contracts::Call::upload_code { .. }
+                    | pallet_3vm_contracts::Call::remove_code { .. }
+            ),
+            Call::Circuit(method) => matches!(
+                method,
+                pallet_circuit::Call::on_local_trigger { .. }
+                    | pallet_circuit::Call::on_xcm_trigger { .. }
+                    | pallet_circuit::Call::on_remote_gateway_trigger { .. }
+                    | pallet_circuit::Call::cancel_xtx { .. }
+                    | pallet_circuit::Call::revert { .. }
+                    | pallet_circuit::Call::on_extrinsic_trigger { .. }
+                    | pallet_circuit::Call::bid_sfx { .. }
+                    | pallet_circuit::Call::confirm_side_effect { .. }
+            ),
+            Call::AccountManager(method) => matches!(
+                method,
+                pallet_account_manager::Call::deposit { .. }
+                    | pallet_account_manager::Call::finalize { .. }
+            ),
+            Call::ThreeVm() => false,
+            Call::RococoBridge(method) => matches!(
+                method,
+                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
+            ),
             // Suggested by IDE, not sure where these come from and if they are needed
             Call::Authorship(_) => true,
             Call::Balances(_) => true,
