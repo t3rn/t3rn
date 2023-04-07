@@ -60,7 +60,7 @@ export default {
         {
             name: "Ethereum",
             id: "eth2",
-            token_id: "eth2",
+            tokenId: "eth2",
             // rpc: "wss://rococo-rockmine-rpc.polkadot.io",
             transferData: {
                 receiver: "0x1234567890123456789012345678901234567890",

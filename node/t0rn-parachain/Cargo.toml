@@ -32,7 +32,6 @@ pallet-3vm-contracts-rpc = { path = "../../pallets/contracts/rpc", package = "pa
 pallet-3vm-evm-rpc       = { path = "../../pallets/evm/rpc", package = "pallet-evm-rpc" }
 
 # Extras
-async-std              = { version = "1.10.0" }
 futures                = "0.3.21"
 jsonrpsee              = { version = "0.14.0", features = [ "server" ] }
 
