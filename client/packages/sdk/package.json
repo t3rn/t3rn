@@ -18,7 +18,10 @@
   },
   "scripts": {
     "build": "tsc -b --verbose",
-    "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk"
+    "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk",
+    "test": "mocha",
+    "coverage": "nyc npm test",
+    "codecov": "nyc report --reporter=text-lcov | codecov"
   },
   "keywords": [
     "t3rn",
@@ -39,6 +42,9 @@
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "devDependencies": {
+    "codecov": "^3.8.3",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0",
     "typedoc": "^0.23.21",
     "typescript": "^4.9.4"
   }

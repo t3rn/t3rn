@@ -16,7 +16,7 @@ jobs:
       run:
         working-directory: client/packages/executor
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
 
@@ -31,7 +31,7 @@ jobs:
 
   deploy:
     name: Deploy Executor
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: test-executor
     if: github.ref == 'refs/heads/development'
     steps:

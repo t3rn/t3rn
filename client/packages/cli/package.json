@@ -13,5 +13,10 @@
     "commander": "^9.4.0",
     "pino": "^8.10.0",
     "pino-pretty": "^9.2.0"
+  },
+  "devDependencies": {
+    "codecov": "^3.8.3",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0"
   }
 }

@@ -32,7 +32,10 @@
     "load:meta": "curl -s -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://127.0.0.1:9933 > metadata-t3rn.json",
     "generate:interfaces": "yarn ts-node node_modules/.bin/polkadot-types-from-defs --package . --input ./src/augment --endpoint metadata-t3rn.json  && rm ./src/augment/index.ts ./src/augment/types.ts",
     "generate:meta": "yarn ts-node node_modules/.bin/polkadot-types-from-chain --package . --endpoint metadata-t3rn.json --output ./src/augment --strict",
-    "generate:all": "yarn generate:interfaces && yarn generate:meta"
+    "generate:all": "yarn generate:interfaces && yarn generate:meta",
+    "test": "mocha",
+    "coverage": "nyc npm test",
+    "codecov": "nyc report --reporter=text-lcov | codecov"
   },
   "dependencies": {
     "@polkadot/api": "8.9.1",
@@ -46,7 +49,10 @@
   },
   "devDependencies": {
     "@polkadot/typegen": "8.9.1",
+    "codecov": "^3.8.3",
     "madge": "^4.0.1",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0",
     "ts-node": "^10.2.1",
     "tsup": "6.6.3",
     "typescript": "4.4.3"

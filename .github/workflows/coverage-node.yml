@@ -1,0 +1,58 @@
+name: Coverage
+
+on:
+  pull_request:
+    paths:
+      - 'client/**'
+      - '.github/workflows/client-coverage.yml'
+  push:
+    branches:
+      - development
+
+jobs:
+  build-node-coverage:
+    name: Generate Coverage for NodeJS apps
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        app:
+          - client/grandpa-ranger
+          - client/xtx
+          - client/packages/cli
+          - client/packages/executor
+          - client/packages/sdk
+          - client/packages/types
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16
+
+    - name: Prerequisites
+      run: |
+        echo "/usr/local/bin" >> $GITHUB_PATH
+
+        cd client/packages
+        npm cache clean --force
+        make
+
+    - name: Install dependencies
+      run: |
+        cd ${{ matrix.app }}
+        npm ci
+
+    - name: Run tests and generate coverage
+      run: |
+        cd ${{ matrix.app }}
+        npm run coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ${{ matrix.app }}
+        fail_ci_if_error: true

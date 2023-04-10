@@ -1,9 +1,17 @@
 {
   "scripts": {
-    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./*.js"
+    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./*.js",
+    "test": "mocha",
+    "coverage": "nyc npm test",
+    "codecov": "nyc report --reporter=text-lcov | codecov"
   },
   "dependencies": {
     "@polkadot/api": "^8.5.1",
     "@polkadot/types": "^8.5.1"
+  },
+  "devDependencies": {
+    "codecov": "^3.8.3",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0"
   }
 }

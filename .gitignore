@@ -9,6 +9,7 @@ comms
 /build/local_beefy_spec.json
 *.iml
 client/**/node_modules
+**/.nyc_output
 
 # accound id info
 /.devkey
