@@ -1,0 +1,77 @@
+# This workflow is triggered by Dependabot PRs and updates the Cargo.lock file
+name: Dependabot
+
+on:
+  pull_request_target:
+  
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  update-cargo-lock:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          gpg_private_key: ${{ secrets.T3RN_CI_GPG_PRIVATE_KEY }}
+
+      - name: Update Cargo.lock
+        id: check
+        run: |
+          author="${{ github.event.pull_request.user.login }}"
+
+          # ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}"
+          echo "is dependabot: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}"
+
+          if [ "${author}" = "dependabot[bot]" ]; then
+            echo "Commit was made by Dependabot"
+            echo "DEPENDABOT=true" >> $GITHUB_ENV
+            cargo metadata
+            if [[ -n $(git status --porcelain) ]]; then
+              echo "GIT_DIRTY=true" >> $GITHUB_ENV
+            else
+              echo "GIT_DIRTY=false" >> $GITHUB_ENV
+            fi
+          else
+            echo "Commit was not made by Dependabot"
+          fi
+
+      - name: Commit Cargo.lock
+        uses: stefanzweifel/git-auto-commit-action@v4
+        if: ${{ env.GIT_DIRTY == 'true' && env.DEPENDABOT == 'true' }}
+        with:
+          commit_message: "build(lock): update Cargo.lock"
+          file_pattern: Cargo.lock
+          commit_user_name: t3rn-ci
+          commit_user_email: 89840377+t3rn-ci@users.noreply.github.com
+
+      - name: Comment on results
+        if: ${{ env.GIT_DIRTY == 'true' && env.DEPENDABOT == 'true' }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            :robot: I have updated the Cargo.lock file for you.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Comment on results
+        if: ${{ env.GIT_DIRTY == 'false' && env.DEPENDABOT == 'true' }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            :robot: Cargo.lock is already up to date.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

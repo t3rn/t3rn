@@ -1,4 +1,4 @@
-name: Circuit Build & Test CI
+name: Circuit
 
 on:
   pull_request:
@@ -40,6 +40,7 @@ jobs:
           echo Detected changes: "${{ steps.changes.outputs.src }}"
 
   build-test:
+    name: Build & Test Circuit
     runs-on: [self-hosted, rust]
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
@@ -48,7 +49,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
-          token: ${{ secrets.GH_PAT }}
 
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
