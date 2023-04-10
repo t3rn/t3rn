@@ -50,7 +50,7 @@ jobs:
             --exclude snowbridge-xcm-support
 
       - name: 👾 Deploy to Vercel
-        uses: amondnet/vercel-action@v20
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-args: '--force'
@@ -78,7 +78,7 @@ jobs:
       - name: 🏗 Build
         run: yarn build
       - name: 👾 Deploy to Vercel
-        uses: amondnet/vercel-action@v20
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-args: '--force'
@@ -109,7 +109,7 @@ jobs:
         run: yarn build-docs
         working-directory: client/packages/executor
       - name: 👾 Deploy to Vercel
-        uses: amondnet/vercel-action@v20
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-args: '--force'
@@ -140,7 +140,7 @@ jobs:
         run: yarn build:docs
         working-directory: client/packages/sdk
       - name: 👾 Deploy to Vercel
-        uses: amondnet/vercel-action@v20
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-args: '--force'
