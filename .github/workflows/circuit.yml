@@ -102,6 +102,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: lcov.info
+          fail_ci_if_error: true # we want to enforce coverage
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
