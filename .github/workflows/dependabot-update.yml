@@ -2,8 +2,7 @@
 name: Dependabot
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  pull_request_target:
   
 permissions:
   contents: read
