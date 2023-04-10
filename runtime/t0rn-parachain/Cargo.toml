@@ -192,6 +192,7 @@ std = [
   "xcm-builder/std",
   "xcm-executor/std",
   "xcm/std",
+  "finality-grandpa/std",
   # t3rn deps
   "pallet-randomness-collective-flip/std",
   "t3rn-primitives/std",
