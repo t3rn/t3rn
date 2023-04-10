@@ -15,6 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.event.pull_request.head.ref }} # checkout the branch of the PR because pull_request_target is on the base branch
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
 
@@ -26,8 +27,7 @@ jobs:
           git_commit_gpgsign: true
           gpg_private_key: ${{ secrets.T3RN_CI_GPG_PRIVATE_KEY }}
 
-      - name: Update Cargo.lock
-        id: check
+      - name: Check if commit was made by Dependabot
         run: |
           author="${{ github.event.pull_request.user.login }}"
 
@@ -37,14 +37,28 @@ jobs:
           if [ "${author}" = "dependabot[bot]" ]; then
             echo "Commit was made by Dependabot"
             echo "DEPENDABOT=true" >> $GITHUB_ENV
-            cargo metadata
-            if [[ -n $(git status --porcelain) ]]; then
-              echo "GIT_DIRTY=true" >> $GITHUB_ENV
-            else
-              echo "GIT_DIRTY=false" >> $GITHUB_ENV
-            fi
           else
             echo "Commit was not made by Dependabot"
+            echo "DEPENDABOT=false" >> $GITHUB_ENV
+          fi
+
+      - name: ⚙️ Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        if: ${{ env.DEPENDABOT == 'true' }}
+        with:
+          toolchain: nightly-2022-06-16
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+
+      - name: Update Cargo.lock
+        if: ${{ env.DEPENDABOT == 'true' }}
+        run: |
+          cargo metadata > /dev/null # output is too long for github actions
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "GIT_DIRTY=true" >> $GITHUB_ENV
+          else
+            echo "GIT_DIRTY=false" >> $GITHUB_ENV
           fi
 
       - name: Commit Cargo.lock
@@ -56,7 +70,7 @@ jobs:
           commit_user_name: t3rn-ci
           commit_user_email: 89840377+t3rn-ci@users.noreply.github.com
 
-      - name: Comment on results
+      - name: Comment on changes
         if: ${{ env.GIT_DIRTY == 'true' && env.DEPENDABOT == 'true' }}
         uses: mshick/add-pr-comment@v2
         with:
@@ -66,7 +80,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
-      - name: Comment on results
+      - name: Comment on no changes
         if: ${{ env.GIT_DIRTY == 'false' && env.DEPENDABOT == 'true' }}
         uses: mshick/add-pr-comment@v2
         with:
