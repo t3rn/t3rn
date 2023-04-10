@@ -47,7 +47,7 @@ t3rn-light-client-commons = { path = "../finality-verifiers/common", default-fea
 
 [dev-dependencies]
 hex         = "0.4"
-hex-literal = { version = '0.3.1' }
+hex-literal = { version = '0.4.1' }
 serde_json  = "1.0.41"
 
 [features]
