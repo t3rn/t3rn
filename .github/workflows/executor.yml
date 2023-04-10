@@ -1,16 +1,39 @@
-name: Executor Deploy
+name: Executor
 
 on:
+  pull_request:
+    paths:
+      - "client/packages/executor/**/*.ts"
+      - "client/packages/executor/**/*.json"
   push:
     branches:
       - development
 
-env:
-  RUST_BACKTRACE: 1
-
 jobs:
-  build:
+  test-executor:
+    name: Test Executor
+    defaults:
+      run:
+        working-directory: client/packages/executor
+
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: cd .. && make
+      - run: yarn
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    name: Deploy Executor
+    runs-on: ubuntu-latest
+    needs: test-executor
+    if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v2
