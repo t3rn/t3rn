@@ -66,3 +66,4 @@ jobs:
       - name: Print sccache stats
         working-directory: tests/zombienet
         run: sccache --show-stats
+

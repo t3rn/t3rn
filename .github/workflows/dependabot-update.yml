@@ -46,7 +46,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         if: ${{ env.DEPENDABOT == 'true' }}
         with:
-          toolchain: nightly-2022-06-16
+          toolchain: nightly-2023-01-24
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
