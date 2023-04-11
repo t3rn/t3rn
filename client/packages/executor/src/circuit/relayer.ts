@@ -88,7 +88,7 @@ export class CircuitRelayer extends EventEmitter {
             executioner: sfx.executor,
             receivedAt: 0,
             cost: null,
-        })
+        }) as T3rnTypesSfxConfirmedSideEffect
 
     return this.api.tx.circuit.confirmSideEffect(sfx.id, confirmedSideEffect.toJSON())
   }
