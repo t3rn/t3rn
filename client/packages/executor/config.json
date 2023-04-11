@@ -5,6 +5,7 @@
       "decimals":12,
       "signerKey":"process.env.CIRCUIT_SIGNER_KEY"
     },
+    "vendors": ["Rococo"],
     "gateways":[
       {
         "name":"Rococo",
