@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.9.1-rc.0] - 2023-04-11
+### :bug: Bug Fixes
+- [`87d9baf`](https://github.com/t3rn/t3rn/commit/87d9bafbcdb60302df2b97e5f9c75de11b0046d4) - update rust toolchain *(PR [#822](https://github.com/t3rn/t3rn/pull/822) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.9.0-rc.0] - 2023-04-11
 ### :sparkles: New Features
 - [`5b2c7bb`](https://github.com/t3rn/t3rn/commit/5b2c7bb32f961f7703d38567776b683180037502) - add base call filter for t0rn runtime *(commit by [@palozano](https://github.com/palozano))*
@@ -886,3 +891,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.8.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.7.2-rc.0...v1.8.0-rc.0
 [v1.8.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.8.0-rc.0...v1.8.1-rc.0
 [v1.9.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.8.2-rc.0...v1.9.0-rc.0
+[v1.9.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.9.0-rc.0...v1.9.1-rc.0
