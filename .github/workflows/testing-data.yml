@@ -1,0 +1,33 @@
+name: Testing Data
+
+on:
+  pull_request:
+
+env:
+  S3_BUCKET: test-data.t0rn.io
+
+jobs:
+  transfer:
+    runs-on: self-hosted
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+    - name: Fetch test data
+      run: |
+        mkdir -p ./test-data
+        echo "test1" > test1
+        echo "test2" > test2
+        aws s3 cp test1 s3://${{ env.S3_BUCKET }}/t0rn/test1
+        aws s3 cp test2 s3://${{ env.S3_BUCKET }}/t0rn/test2
+        rm test1 test2
+        aws s3 cp --recursive s3://${{ env.S3_BUCKET }}/t0rn/ ./test-data
+
+        ls -lah ./test-data
