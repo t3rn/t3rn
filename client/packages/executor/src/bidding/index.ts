@@ -35,7 +35,7 @@ export class BiddingEngine {
     whoBidsOnWhat = new Map<string, string[]>()
 
     constructor(logger: any) {
-        this.logger = logger;
+        this.logger = logger
     }
 
     /**
@@ -50,13 +50,13 @@ export class BiddingEngine {
         switch (scenario) {
             case Scenario.noBidAndNoCompetition:
                 bid = this.computeNoBidAndNoCompetition(sfx)
-                break;
+                break
             case Scenario.noBidButCompetition:
                 bid = this.computeNoBidButCompetition(sfx)
-                break;
+                break
             case Scenario.beenOutbid:
                 bid = this.computeBeenOutbid(sfx)
-                break;
+                break
         }
         return bid
     }
@@ -148,11 +148,14 @@ export class BiddingEngine {
         const executorIsTopBidder = sfx.isBidder
         const otherBidsOnSFX: boolean = sfx.lastBids.length > 0 ? true : false
 
-        if(!otherBidsOnSFX) { // No other, so we should be first
+        if (!otherBidsOnSFX) {
+            // No other, so we should be first
             return Scenario.noBidAndNoCompetition
-        } else if(!executorIsTopBidder) { // Othes, but we're not top bidder
+        } else if (!executorIsTopBidder) {
+            // Othes, but we're not top bidder
             return Scenario.beenOutbid
-        } else { // ToDo: This is probably incorrect, because there should be 4 scenarios
+        } else {
+            // ToDo: This is probably incorrect, because there should be 4 scenarios
             return Scenario.noBidButCompetition
         }
     }

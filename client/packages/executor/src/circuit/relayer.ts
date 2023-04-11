@@ -1,4 +1,4 @@
-import { createType } from "@t3rn/types";
+import { createType } from "@t3rn/types"
 import { EventEmitter } from "events"
 import { ApiPromise } from "@polkadot/api"
 import { SideEffect } from "../executionManager/sideEffect"
@@ -64,9 +64,9 @@ export class CircuitRelayer extends EventEmitter {
      * @param sfx The SideEffect to confirm
      */
     createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
-        let inclusionData;
+        let inclusionData
 
-        if(sfx.target === "roco") {
+        if (sfx.target === "roco") {
             inclusionData = this.api.createType("RelaychainInclusionProof", {
                 encoded_payload: sfx.inclusionProof.encoded_payload,
                 payload_proof: sfx.inclusionProof.payload_proof,
@@ -81,17 +81,14 @@ export class CircuitRelayer extends EventEmitter {
             })
         }
 
-        const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType(
-            "T3rnTypesSfxConfirmedSideEffect",
-            {
-                err: null,
-                output: null,
-                inclusionData: inclusionData.toHex(),
-                executioner: sfx.executor,
-                receivedAt: 0,
-                cost: null,
-            }
-        )
+        const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType("T3rnTypesSfxConfirmedSideEffect", {
+            err: null,
+            output: null,
+            inclusionData: inclusionData.toHex(),
+            executioner: sfx.executor,
+            receivedAt: 0,
+            cost: null,
+        })
 
         return this.api.tx.circuit.confirmSideEffect(sfx.id, confirmedSideEffect.toJSON())
     }
