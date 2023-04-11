@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.9.0-rc.0] - 2023-04-11
+### :sparkles: New Features
+- [`5b2c7bb`](https://github.com/t3rn/t3rn/commit/5b2c7bb32f961f7703d38567776b683180037502) - add base call filter for t0rn runtime *(commit by [@palozano](https://github.com/palozano))*
+
+
 ## [v1.8.1-rc.0] - 2023-04-07
 ### :wrench: Chores
 - [`b940d72`](https://github.com/t3rn/t3rn/commit/b940d7287599af8882b2af2b120ea9ca9808ba02) - extend GH linguist with package-lock and Cargo.lock *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -880,3 +885,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.7.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.7.0-rc.0...v1.7.1-rc.0
 [v1.8.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.7.2-rc.0...v1.8.0-rc.0
 [v1.8.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.8.0-rc.0...v1.8.1-rc.0
+[v1.9.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.8.2-rc.0...v1.9.0-rc.0
