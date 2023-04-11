@@ -49,5 +49,5 @@ export async function fetchNonce(api: ApiPromise, address: string): Promise<BN> 
  * @returns bool
  */
 export function problySubstrateSeed(x: any): boolean {
-    return typeof x === "string" && x.startsWith("0x") && x.length === 66
+    return /^0x[0-9a-f]{64}$/.test(x)
 }
