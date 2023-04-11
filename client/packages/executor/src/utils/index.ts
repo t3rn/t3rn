@@ -41,3 +41,13 @@ export const getEventProofs = async (api: ApiPromise, blockHash: any) => {
 export async function fetchNonce(api: ApiPromise, address: string): Promise<BN> {
     return api.rpc.system.accountNextIndex(address)
 }
+
+/**
+ * Whether a string looks like a Substrate private key.
+ *
+ * @param x string in question
+ * @returns bool
+ */
+export function problySubstrateSeed(x: any): boolean {
+    return typeof x === "string" && x.startsWith("0x") && x.length === 66
+}

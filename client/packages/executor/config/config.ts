@@ -126,12 +126,12 @@ export type Config = {
     /** The gateways that are being tracked */
     gateways: Gateway[]
 
-    vendors: string[],
+    vendors: string[]
     /** The price sources that are being used */
     pricing: {
         [source: string]: {
-            endpoint: string,
-            endpointDefaults: string,
+            endpoint: string
+            endpointDefaults: string
             frequency: number
         }
     }
