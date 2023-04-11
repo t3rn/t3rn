@@ -3,7 +3,7 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU32, ConstU8,
+        ConstU32, ConstU8, Contains,
     },
     weights::IdentityFee,
 };
@@ -18,7 +18,7 @@ impl frame_system::Config for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = frame_support::traits::Everything;
+    type BaseCallFilter = BaseCallFilter;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
@@ -146,4 +146,258 @@ impl pallet_utility::Config for Runtime {
     type Event = Event;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
+// Moonbeam and Akala runtimes have references for BaseCallFilter
+// MaintenanceFilter, NormalFilter and for Proxy type
+// `impl pallet_evm_precompile_proxy::EvmProxyCallFilter for ProxyType`
+pub struct BaseCallFilter;
+impl Contains<Call> for BaseCallFilter {
+    fn contains(c: &Call) -> bool {
+        match c {
+            // System support
+            Call::System(_) => true,
+            Call::ParachainSystem(_) => true,
+            Call::Timestamp(_) => true,
+            Call::Preimage(_) => true,
+            Call::Scheduler(_) => true,
+            Call::Utility(_) => true,
+            Call::Identity(_) => true,
+            // Monetary
+            Call::Balances(_) => true,
+            Call::Assets(_) => true,
+            Call::Treasury(_) => true,
+            Call::AccountManager(method) => matches!(
+                method,
+                pallet_account_manager::Call::deposit { .. }
+                    | pallet_account_manager::Call::finalize { .. }
+            ),
+            // Collator support
+            Call::Authorship(_) => true,
+            Call::CollatorSelection(_) => true,
+            Call::Session(_) => true,
+            // XCM helpers
+            Call::XcmpQueue(_) => true,
+            Call::PolkadotXcm(_) => false,
+            Call::DmpQueue(_) => true,
+            Call::XBIPortal(_) => true,
+            Call::AssetRegistry(_) => true,
+            // t3rn pallets
+            Call::XDNS(method) => matches!(
+                method,
+                pallet_xdns::Call::purge_gateway { .. }
+                    | pallet_xdns::Call::purge_gateway_record { .. }
+            ),
+            Call::ContractsRegistry(method) => matches!(
+                method,
+                pallet_contracts_registry::Call::add_new_contract { .. }
+                    | pallet_contracts_registry::Call::purge { .. }
+            ),
+            Call::Circuit(method) => matches!(
+                method,
+                pallet_circuit::Call::on_local_trigger { .. }
+                    | pallet_circuit::Call::on_xcm_trigger { .. }
+                    | pallet_circuit::Call::on_remote_gateway_trigger { .. }
+                    | pallet_circuit::Call::cancel_xtx { .. }
+                    | pallet_circuit::Call::revert { .. }
+                    | pallet_circuit::Call::on_extrinsic_trigger { .. }
+                    | pallet_circuit::Call::bid_sfx { .. }
+                    | pallet_circuit::Call::confirm_side_effect { .. }
+            ),
+            // 3VM
+            Call::ThreeVm(_) => false,
+            Call::Contracts(method) => matches!(
+                method,
+                pallet_3vm_contracts::Call::call { .. }
+                    | pallet_3vm_contracts::Call::instantiate_with_code { .. }
+                    | pallet_3vm_contracts::Call::instantiate { .. }
+                    | pallet_3vm_contracts::Call::upload_code { .. }
+                    | pallet_3vm_contracts::Call::remove_code { .. }
+            ),
+            Call::Evm(method) => matches!(
+                method,
+                pallet_3vm_evm::Call::withdraw { .. }
+                    | pallet_3vm_evm::Call::call { .. }
+                    | pallet_3vm_evm::Call::create { .. }
+                    | pallet_3vm_evm::Call::create2 { .. }
+                    | pallet_3vm_evm::Call::claim { .. }
+            ),
+            // Portal
+            Call::Portal(method) => matches!(method, pallet_portal::Call::register_gateway { .. }),
+            Call::RococoBridge(method) => matches!(
+                method,
+                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
+            ),
+            // TODO: check this one
+            Call::PolkadotBridge(method) => matches!(
+                method,
+                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
+            ),
+            // TODO: check this one
+            Call::KusamaBridge(method) => matches!(
+                method,
+                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
+            ),
+            // Admin
+            Call::Sudo(_) => true,
+            _ => false,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use codec::Compact;
+
+    #[test]
+    fn base_call_filter_returns_true_with_allowed_calls() {
+        // System support
+        let call = frame_system::Call::remark { remark: vec![] }.into();
+        assert!(BaseCallFilter::contains(&call));
+
+        // let call = cumulus_pallet_parachain_system::Call::set_validation_data {
+        //     data: Default::default(),
+        // }
+        // .into();
+        // assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_timestamp::Call::set { now: 0 }.into();
+        assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_preimage::Call::note_preimage { bytes: vec![0] }.into();
+        assert!(BaseCallFilter::contains(&call));
+
+        // let call = pallet_scheduler::Call::schedule {
+        //     when: 0,
+        //     maybe_periodic: None,
+        //     priority: 0,
+        //     call: Box::new(frame_system::Call::remark { remark: vec![] }.into()),
+        // }
+        // .into();
+        // assert!(BaseCallFilter::contains(&call));
+
+        // let call = pallet_utility::Call::dispatch_as {
+        //     call: Box::new(frame_system::Call::remark { remark: vec![] }.into()),
+        //     as_origin: Default::default(),
+        // }
+        // .into();
+        // assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_identity::Call::add_registrar {
+            account: sp_runtime::AccountId32::new([0; 32]),
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
+        // Monetary
+        let call = pallet_balances::Call::transfer {
+            dest: MultiAddress::Address32([0; 32]),
+            value: 0,
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_assets::Call::create {
+            id: Default::default(),
+            admin: MultiAddress::Address32([0; 32]),
+            min_balance: 0,
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_treasury::Call::propose_spend {
+            value: 0,
+            beneficiary: MultiAddress::Address32([0; 32]),
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
+        // let call = pallet_account_manager::Call::deposit {
+        //     charge_id: todo!(),
+        //     payee: sp_runtime::AccountId32::new([0; 32]),
+        //     charge_fee: todo!(),
+        //     offered_reward: todo!(),
+        //     source: todo!(),
+        //     role: todo!(),
+        //     recipient: todo!(),
+        //     maybe_asset_id: todo!(),
+        // }
+        // .into();
+        // assert!(BaseCallFilter::contains(&call));
+
+        // Collator support
+        let call = pallet_authorship::Call::set_uncles { new_uncles: vec![] }.into();
+        assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_collator_selection::Call::set_invulnerables { new: vec![] }.into();
+        assert!(BaseCallFilter::contains(&call));
+
+        // let call = pallet_session::Call::set_keys {
+        //     keys: parachain_config::SessionKeys {
+        //         aura: sp_consensus_aura::sr25519::AuthorityId::default(),
+        //     },
+        //     proof: vec![],
+        // }
+        // .into();
+        // assert!(BaseCallFilter::contains(&call));
+
+        // XCM helpers
+        // let call = pallet_xcm::Call::force_default_xcm_version {
+        //     maybe_xcm_version: None,
+        // }
+        // .into();
+        // assert!(BaseCallFilter::contains(&call));
+
+        // 3VM
+        let call = pallet_3vm_evm::Call::withdraw {
+            address: Default::default(),
+            value: 0,
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
+        // let call = pallet_3vm_contracts::Call::call {
+        //     dest: MultiAddress::Address32([0; 32]),
+        //     value: 0,
+        //     gas_limit: 0,
+        //     storage_deposit_limit: Some(pallet_3vm_contracts::BalanceOf::<Runtime>::max_value()),
+        //     data: vec![],
+        // }
+        // .into();
+        // assert!(BaseCallFilter::contains(&call));
+
+        // let call = pallet_grandpa_finality_verifier::Call::<T,I>::submit_headers {
+        //     range: vec![0],
+        //     signed_header: vec![0],
+        //     justification: pallet_grandpa_finality_verifier::bridges::header_chain::justification::GrandpaJustification{
+        //         round: 0,
+        //         commit: finality_grandpa::Commit {
+        //             target_hash: Default::default(),
+        //             target_number: 0,
+        //             precommits: vec![],
+        //         },
+        //         votes_ancestries: vec![],
+        //     },
+        // }
+        // .into();
+        // assert!(BaseCallFilter::contains(&call));
+
+        // Admin
+        let call = pallet_sudo::Call::sudo {
+            call: Box::new(frame_system::Call::remark { remark: vec![] }.into()),
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+    }
+
+    #[test]
+    fn base_call_filter_returns_false_with_disallowed_call() {
+        // Create a call for PolkadotXCM
+        let call = pallet_xcm::Call::force_default_xcm_version {
+            maybe_xcm_version: Some(1),
+        }
+        .into();
+        assert!(!BaseCallFilter::contains(&call));
+    }
 }
