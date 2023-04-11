@@ -15,7 +15,7 @@ path = "src/main.rs"
 clap         = { version = "3.1", features = [ "derive" ] }
 codec        = { package = "parity-scale-codec", version = "3" }
 derive_more  = "0.99.2"
-hex-literal  = "0.3.4"
+hex-literal  = "0.4.1"
 jsonrpc-core = "18.0.0"
 log          = "0.4.14"
 serde        = { version = "1.0", features = [ "derive" ] }
