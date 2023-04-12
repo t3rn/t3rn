@@ -3,7 +3,7 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU32, ConstU8, Contains,
+        ConstU32, ConstU8, Contains, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade,
     },
     weights::IdentityFee,
 };
@@ -252,6 +252,144 @@ impl Contains<Call> for BaseCallFilter {
             Call::Sudo(_) => true,
             _ => false,
         }
+    }
+}
+
+/// Maintenance mode Call filter
+///
+/// For maintenance mode, we disallow everything
+pub struct MaintenanceFilter;
+impl Contains<Call> for MaintenanceFilter {
+    fn contains(c: &Call) -> bool {
+        match c {
+            Call::System(_) => false,
+            Call::ParachainSystem(_) => false,
+            Call::Timestamp(_) => false,
+            Call::Preimage(_) => false,
+            Call::Scheduler(_) => false,
+            Call::Utility(_) => false,
+            Call::Identity(_) => false,
+            Call::Balances(_) => false,
+            Call::Assets(_) => false,
+            Call::Treasury(_) => false,
+            Call::AccountManager(_) => false,
+            Call::Authorship(_) => false,
+            Call::CollatorSelection(_) => false,
+            Call::Session(_) => false,
+            Call::XcmpQueue(_) => false,
+            Call::PolkadotXcm(_) => false,
+            Call::DmpQueue(_) => false,
+            Call::XBIPortal(_) => false,
+            Call::AssetRegistry(_) => false,
+            Call::XDNS(_) => false,
+            Call::ContractsRegistry(_) => false,
+            Call::Circuit(_) => false,
+            Call::ThreeVm(_) => false,
+            Call::Contracts(_) => false,
+            Call::Evm(_) => false,
+            Call::Portal(_) => false,
+            Call::RococoBridge(_) => false,
+            Call::PolkadotBridge(_) => false,
+            Call::KusamaBridge(_) => false,
+            Call::Sudo(_) => false,
+            _ => true,
+        }
+    }
+}
+
+/// Hooks to run when in Maintenance Mode
+pub struct MaintenanceHooks;
+
+impl OnInitialize<BlockNumber> for MaintenanceHooks {
+    fn on_initialize(n: BlockNumber) -> frame_support::weights::Weight {
+        AllPalletsWithSystem::on_initialize(n)
+    }
+}
+
+/// Only two pallets use `on_idle`: xcmp and dmp queues.
+/// Empty on_idle in case we want the pallets to execute it, we need to provide it here.
+impl OnIdle<BlockNumber> for MaintenanceHooks {
+    fn on_idle(_n: BlockNumber, _max_weight: Weight) -> Weight {
+        Weight::zero()
+    }
+}
+
+impl OnRuntimeUpgrade for MaintenanceHooks {
+    fn on_runtime_upgrade() -> Weight {
+        AllPalletsWithSystem::on_runtime_upgrade()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+        AllPalletsWithSystem::pre_upgrade()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+        AllPalletsWithSystem::post_upgrade()
+    }
+}
+
+impl OnFinalize<BlockNumber> for MaintenanceHooks {
+    fn on_finalize(n: BlockNumber) {
+        AllPalletsWithSystem::on_finalize(n)
+    }
+}
+
+impl OffchainWorker<BlockNumber> for MaintenanceHooks {
+    fn offchain_worker(n: BlockNumber) {
+        AllPalletsWithSystem::offchain_worker(n)
+    }
+}
+
+// TODO: check if we need to implement this, and what should go here
+impl pallet_maintenance_mode::Config for Runtime {
+    type Event = Event;
+    type MaintenanceFilter = MaintenanceFilter;
+    type MaintenanceHooks = MaintenanceHooks;
+    type MaintenanceOrigin = EnsureRootOrHalfCouncil;
+    type NormalCallFilter = NormalFilter;
+    type WeightInfo = ();
+}
+
+/// Normal Call filter
+/// We don't allow for a certain number of calls, but we allow everything else.
+/// Now, only System calls are allowed as a default before implementing.
+pub struct NormalFilter;
+impl Contains<Call> for NormalFilter {
+    fn contains(c: &Call) -> bool {
+        match c {
+            Call::System(_) => false,
+            Call::ParachainSystem(_) => false,
+            Call::Timestamp(_) => false,
+            Call::Preimage(_) => false,
+            Call::Scheduler(_) => false,
+            Call::Utility(_) => false,
+            Call::Identity(_) => false,
+            Call::Balances(_) => false,
+            Call::Assets(_) => false,
+            Call::Treasury(_) => false,
+            Call::AccountManager(_) => false,
+            Call::Authorship(_) => false,
+            Call::CollatorSelection(_) => false,
+            Call::Session(_) => false,
+            Call::XcmpQueue(_) => false,
+            Call::PolkadotXcm(_) => false,
+            Call::DmpQueue(_) => false,
+            Call::XBIPortal(_) => false,
+            Call::AssetRegistry(_) => false,
+            Call::XDNS(_) => false,
+            Call::ContractsRegistry(_) => false,
+            Call::Circuit(_) => false,
+            Call::ThreeVm(_) => false,
+            Call::Contracts(_) => false,
+            Call::Evm(_) => false,
+            Call::Portal(_) => false,
+            Call::RococoBridge(_) => false,
+            Call::PolkadotBridge(_) => false,
+            Call::KusamaBridge(_) => false,
+            Call::Sudo(_) => false,
+            _ => true,
     }
 }
 

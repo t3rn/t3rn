@@ -83,6 +83,7 @@ cumulus-pallet-xcmp-queue           = { git = 'https://github.com/paritytech/cum
 cumulus-primitives-core             = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 cumulus-primitives-timestamp        = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 cumulus-primitives-utility          = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
+moonbeam-pallets                    = { git = 'https://github.com/t3rn/moonbeam-pallets', branch = 'polkadot-v0.9.27', default-features = false }
 pallet-collator-selection           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 parachains-common                   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
