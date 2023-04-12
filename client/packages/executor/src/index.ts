@@ -1,12 +1,17 @@
 import "@polkadot/api-augment"
 // @ts-ignore
 import { Sdk } from "@t3rn/sdk"
-import { Keyring } from "@polkadot/api"
+import { ApiPromise, Keyring } from "@polkadot/api"
+import { cryptoWaitReady } from "@polkadot/util-crypto"
+import { KeyringPair } from "@polkadot/keyring/types"
+import { readFile, writeFile, mkdir } from "fs/promises"
+import { dirname, join } from "path"
+import { homedir } from "os"
+import readline from "readline"
 require("dotenv").config()
 import "@t3rn/types"
 import { SubstrateRelayer, CostEstimator, Estimator, Estimate, InclusionProof } from "./gateways/substrate/relayer"
 import { ExecutionManager, Queue } from "./executionManager"
-import { ApiPromise } from "@polkadot/api"
 import { Config, Gateway, Circuit, Strategy } from "../config/config"
 import { BiddingEngine, BiddingStrategy } from "./bidding"
 import { PriceEngine, CoingeckoPricing } from "./pricing"
@@ -17,43 +22,65 @@ import { CircuitListener, ListenerEvents, ListenerEventData } from "./circuit/li
 import { CircuitRelayer } from "./circuit/relayer"
 // @ts-ignore
 import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
-import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { readFile, writeFile, mkdir } from "fs/promises"
-import { dirname } from "path"
-import { homedir } from "os"
-import readline from "readline"
 import * as defaultConfig from "../config.json"
 import { problySubstrateSeed } from "./utils"
-
-const pino = require("pino")
-const logger = pino(
-    {
-        level: process.env.LOG_LEVEL || "info",
-        formatters: {
-            level: (label) => {
-                return { level: label }
-            },
-        },
-        base: undefined,
-    }
-    // pino.destination(`${__dirname}/logger.log`) // remove comment to export to file
-)
+import { default as pino, Logger, P } from "pino"
+// const pino = require("pino")
+// const logger = pino(
+//     {
+//         level: process.env.LOG_LEVEL || "info",
+//         formatters: {
+//             level: (label) => {
+//                 return { level: `${name} ${label}` }
+//             },
+//         },
+//         base: undefined,
+//     }
+//     // pino.destination(`${__dirname}/logger.log`) // remove comment to export to file
+// )
 
 /** An executor instance. */
 class Instance {
     circuitClient: ApiPromise
     executionManager: ExecutionManager
     sdk: Sdk
-    signer: any
+    signer: KeyringPair
+    config: Config
+    logger: Logger
 
     /**
      * Sets up and configures an executor instance.
      *
      * @param name Display name and config identifier for an instance
+     * @param logToDisk Write logs to disk within ~/.t3rn-executor-${name}/logs
      * @returns Instance
      */
-    async setup(name: string = "example"): Promise<Instance> {
+    async setup(name: string = "example", logToDisk = false): Promise<Instance> {
         const config = await this.loadConfig(name)
+        if (logToDisk) {
+            const logDir = join(homedir(), `.t3rn-executor-${name}`, "logs")
+            await mkdir(logDir, { recursive: true })
+            this.logger = pino(
+                {
+                    level: process.env.LOG_LEVEL || "info",
+                    formatters: {
+                        bindings(bindings) {
+                            return { ...bindings, name }
+                        },
+                    },
+                },
+                pino.destination(join(logDir, `${Date.now()}.log`))
+            )
+        } else {
+            this.logger = pino({
+                level: process.env.LOG_LEVEL || "info",
+                formatters: {
+                    bindings(bindings) {
+                        return { ...bindings, name }
+                    },
+                },
+            })
+        }
         await cryptoWaitReady()
         this.signer = new Keyring({ type: "sr25519" })
             // loadConfig asserts that config.circuit.signerKey is set
@@ -61,10 +88,10 @@ class Instance {
         this.sdk = new Sdk(config.circuit.rpc, this.signer)
         // @ts-ignore
         this.circuitClient = await this.sdk.init()
-        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, logger)
+        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, this.logger)
         await this.executionManager.setup(config.gateways, config.vendors)
         this.registerExitListener()
-        logger.info("Executor: setup complete")
+        this.logger.info("setup complete")
         return this
     }
 
@@ -77,9 +104,9 @@ class Instance {
      * @returns Instance configuration
      */
     async loadConfig(name: string): Promise<Config> {
-        const configFile = `${homedir()}/.t3rn-executor-${name}/config.json`
+        const configFile = join(homedir(), `.t3rn-executor-${name}`, "config.json")
         const configDir = dirname(configFile)
-        await mkdir(configDir, { recursive: true, mode: 600 })
+        await mkdir(configDir, { recursive: true })
         const persistedConfig = await readFile(configFile)
             // if the persisted config file does not exist yet we wanna
             // handle it gracefully because it is probly an initial run
@@ -87,12 +114,12 @@ class Instance {
                 try {
                     return JSON.parse(buf.toString())
                 } catch (err) {
-                    logger.warn(`failed reading ${configFile} ${err}`)
+                    this.logger.warn(`failed reading ${configFile} ${err}`)
                     return {}
                 }
             })
             .catch((err) => {
-                logger.warn(`failed reading ${configFile} ${err}`)
+                this.logger.warn(`failed reading ${configFile} ${err}`)
                 return {}
             })
         const config = { ...defaultConfig, ...persistedConfig }
@@ -102,7 +129,7 @@ class Instance {
         }
         config.gateways.forEach((gateway) => {
             if (gateway.signerKey !== undefined && !problySubstrateSeed(gateway.signerKey)) {
-                gateway.signerKey = process.env[`${gateway.name.toUpperCase()}_GATEWAY_SIGNER_KEY`] as string
+                gateway.signerKey = process.env[`${gateway.id.toUpperCase()}_GATEWAY_SIGNER_KEY`] as string
             }
         })
         if (!problySubstrateSeed(config.circuit.signerKey)) {
@@ -111,15 +138,16 @@ class Instance {
         if (!config.gateways.some((gateway) => problySubstrateSeed(gateway.signerKey))) {
             throw Error("Instance::loadConfig: missing gateway signer key")
         }
+        this.config = config
         return config
     }
 
-    /** Registers a keypress listener for Ctrl+C that initates instance shutdown. */
+    /** Registers a keypress listener for Ctrl+C that initiates instance shutdown. */
     private registerExitListener() {
         readline.emitKeypressEvents(process.stdin)
         process.stdin.on("keypress", async (_, { ctrl, name }) => {
             if (ctrl && name === "c") {
-                console.log("shutting down...")
+                this.logger.info("shutting down...")
                 await this.executionManager.shutdown()
                 process.exit(0)
             }
@@ -160,10 +188,3 @@ export {
     Strategy,
     BiddingStrategy,
 }
-
-async function main() {
-    const instanceManager = new Instance()
-    await instanceManager.setup(process.env.EXECUTOR)
-}
-
-main()
