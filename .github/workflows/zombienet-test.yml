@@ -44,7 +44,7 @@ jobs:
     if: needs.changes.outputs.src == 'true'
     steps:
       - name: ☁️ Checkout git repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
