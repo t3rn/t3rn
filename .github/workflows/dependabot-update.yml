@@ -42,14 +42,9 @@ jobs:
             echo "DEPENDABOT=false" >> $GITHUB_ENV
           fi
 
-      - name: ⚙️ Get nightly rust toolchain with wasm target
-        uses: actions-rs/toolchain@v1
+      - name: ⚙ Install rust toolchain defined in rust-toolchain.toml
         if: ${{ env.DEPENDABOT == 'true' }}
-        with:
-          toolchain: nightly-2023-01-24
-          target: wasm32-unknown-unknown
-          components: rustfmt, clippy
-          override: true
+        run: rustup show
 
       - name: Update Cargo.lock
         if: ${{ env.DEPENDABOT == 'true' }}
