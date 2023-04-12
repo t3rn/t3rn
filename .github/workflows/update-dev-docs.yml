@@ -14,7 +14,7 @@ jobs:
     runs-on: [self-hosted, rust]
     steps:
       - name: ☁️Checkout git repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
