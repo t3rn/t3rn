@@ -12,6 +12,11 @@ use sp_std::{prelude::*, vec::IntoIter};
 pub struct RecodeScale;
 
 impl Recode for RecodeScale {
+    fn fill_abi(abi: Abi, field_data: Vec<u8>) -> Result<FilledAbi, DispatchError> {
+        let (filled_abi, _size) = FilledAbi::recursive_fill_abi(abi, &field_data, Codec::Scale)?;
+        Ok(filled_abi)
+    }
+
     // Removes the first byte of the input data for SCALE encoded data and chops the data into fields by the given ABI size.
     fn chop_encoded(
         field_data: &[u8],

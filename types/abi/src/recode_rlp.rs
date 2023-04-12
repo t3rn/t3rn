@@ -1,4 +1,4 @@
-use crate::{recode::Recode, to_abi::Abi, to_filled_abi::FilledAbi, types::Name};
+use crate::{recode::Recode, to_abi::Abi, to_filled_abi::FilledAbi, types::Name, Codec};
 use codec::{Decode, Encode};
 
 use sp_core::{H160, H256};
@@ -7,7 +7,7 @@ use sp_std::{prelude::*, vec::IntoIter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub struct EthIngressEventLog(pub Vec<H256>, pub Vec<u8>);
-use bytes::{Buf, Bytes};
+use bytes::{Buf, Bytes, BytesMut};
 use frame_support::ensure;
 
 pub struct RecodeRlp;
@@ -78,6 +78,88 @@ impl Recode for RecodeRlp {
             .collect::<Vec<Box<FilledAbi>>>();
 
         Ok((FilledAbi::Log(name, filled_abi_content, 0u8), total_size))
+    }
+
+    fn fill_abi(abi: Abi, field_data: Vec<u8>) -> Result<FilledAbi, DispatchError> {
+        println!("Rlp::fill_abi - abi: {:?}", abi);
+        println!("Rlp::fill_abi - field_data: {:?}", field_data);
+        let rlp = rlp::Rlp::new(&*field_data);
+        println!("Rlp::fill_abi - rlp: {:?}", rlp);
+
+        for field in rlp.iter() {
+            println!("Rlp::fill_abi - field: {:?}", field);
+        }
+
+        // if rlp isn't able to decode the bytes, give it a shot with raw fillers
+        let chopped_field_data: Vec<Vec<u8>> =
+            rlp.into_iter().map(|rlp| rlp.as_raw().to_vec()).collect();
+
+        println!(
+            "Rlp::fill_abi - chopped_field_data: {:?}",
+            chopped_field_data
+        );
+
+        let mut filled_abi_vec = vec![];
+        let mut total_struct_size = 0usize;
+
+        for field in chopped_field_data.iter() {
+            let (filled_abi, size) =
+                FilledAbi::recursive_fill_abi(abi.clone(), field.as_slice(), Codec::Rlp)?;
+            total_struct_size += size;
+            filled_abi_vec.push(Box::new(filled_abi));
+        }
+
+        println!("Rlp::fill_abi - filled_abi_vec: {:?}", filled_abi_vec);
+
+        match filled_abi_vec.len() {
+            0 => Err(DispatchError::from("RecodeRlp::fill_abi - empty struct")),
+            1 => Ok(*filled_abi_vec.pop().unwrap()),
+            2 => Ok(FilledAbi::Tuple(
+                abi.get_name().map(|name| name),
+                (filled_abi_vec[0].clone(), filled_abi_vec[1].clone()),
+            )),
+            3 => Ok(FilledAbi::Triple(
+                abi.get_name().map(|name| name),
+                (
+                    filled_abi_vec[0].clone(),
+                    filled_abi_vec[1].clone(),
+                    filled_abi_vec[2].clone(),
+                ),
+            )),
+            4 => Ok(FilledAbi::Quadruple(
+                abi.get_name().map(|name| name),
+                (
+                    filled_abi_vec[0].clone(),
+                    filled_abi_vec[1].clone(),
+                    filled_abi_vec[2].clone(),
+                    filled_abi_vec[3].clone(),
+                ),
+            )),
+            5 => Ok(FilledAbi::Quintuple(
+                abi.get_name().map(|name| name),
+                (
+                    filled_abi_vec[0].clone(),
+                    filled_abi_vec[1].clone(),
+                    filled_abi_vec[2].clone(),
+                    filled_abi_vec[3].clone(),
+                    filled_abi_vec[4].clone(),
+                ),
+            )),
+            6 => Ok(FilledAbi::Sextuple(
+                abi.get_name().map(|name| name),
+                (
+                    filled_abi_vec[0].clone(),
+                    filled_abi_vec[1].clone(),
+                    filled_abi_vec[2].clone(),
+                    filled_abi_vec[3].clone(),
+                    filled_abi_vec[4].clone(),
+                    filled_abi_vec[5].clone(),
+                ),
+            )),
+            _ => Err(DispatchError::from(
+                "RecodeRlp::fill_abi - unsupported args with more than 7 fields",
+            )),
+        }
     }
 }
 
@@ -205,6 +287,88 @@ impl Abi {
             },
         }
     }
+}
+
+pub fn rlp_encode(input: Vec<u8>) -> Vec<u8> {
+    let mut output = Vec::new();
+    output.extend(rlp::encode_list(&input[..]).to_vec());
+    println!("rlp_encode -- output: {:?}", output);
+    output
+
+    // let len = input.len();
+    //
+    // let mut encoded: Vec<u8> = Vec::new();
+    //
+    // // If the length is between 0 and 55 bytes and the first byte is greater than or equal to 0x80
+    // if len > 0 && len <= 55 && input[0] >= 0x80 {
+    //     encoded.push(0x80 + len as u8);
+    //     encoded.extend(input);
+    // }
+    // // If the length is between 1 and 55 bytes and the first byte is less than 0x80
+    // else if len > 0 && len <= 55 && input[0] < 0x80 {
+    //     encoded = input;
+    // }
+    // // If the length is more than 55 bytes
+    // else if len > 55 {
+    //     let len_of_len = length_of_length(len);
+    //     encoded.push(0xb7 + len_of_len as u8);
+    //     encoded.extend(rlp::encode_length(len, len_of_len));
+    //     encoded.extend(input);
+    // }
+    //
+    // encoded
+}
+
+pub fn rlp_encode_raw(input: Vec<u8>) -> Vec<u8> {
+    println!("rlp_encode start input: {:?}", input);
+    let len = input.len();
+
+    let mut encoded: Vec<u8> = Vec::new();
+
+    // // If the length is between 0 and 55 bytes and the first byte is greater than or equal to 0x80
+    // if len > 0 && len <= 55 && input[0] >= 0x80 {
+    //     encoded.push(0x80 + len as u8);
+    //     encoded.extend(input);
+    // }
+    // // If the length is between 1 and 55 bytes and the first byte is less than 0x80
+    // else if len > 0 && len <= 55 && input[0] < 0x80 {
+    //     encoded = input;
+    // }
+    // If the length is between 0 and 55 bytes and the first byte is greater than or equal to 0x80
+    if len > 0 && len <= 55 {
+        encoded.push(0x80 + len as u8);
+        encoded.extend(input);
+    }
+    // // If the length is between 1 and 55 bytes and the first byte is less than 0x80
+    // else if len > 0 && len <= 55 && input[0] < 0x80 {
+    //     encoded = input;
+    // }
+    // If the length is more than 55 bytes
+    else if len > 55 {
+        let len_of_len = length_of_length(len);
+        encoded.push(0xb7 + len_of_len as u8);
+        encoded.extend(encode_length(len, len_of_len));
+        encoded.extend(input);
+    }
+
+    println!("rlp_encode: {:?}", encoded);
+    encoded
+}
+
+pub fn length_of_length(len: usize) -> usize {
+    let mut len_of_len = 0;
+    while (len >> (8 * len_of_len)) > 0 {
+        len_of_len += 1;
+    }
+    len_of_len
+}
+
+pub fn encode_length(len: usize, len_of_len: usize) -> Vec<u8> {
+    let mut encoded_length = vec![0; len_of_len];
+    for i in 0..len_of_len {
+        encoded_length[len_of_len - 1 - i] = ((len >> (8 * i)) & 0xff) as u8;
+    }
+    encoded_length
 }
 
 #[cfg(test)]

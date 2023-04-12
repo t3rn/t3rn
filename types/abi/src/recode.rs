@@ -34,11 +34,24 @@ pub trait Recode {
         name: Option<Name>,
         fields_iter_clone: IntoIter<Box<Abi>>,
     ) -> Result<(FilledAbi, usize), DispatchError>;
+
+    fn fill_abi(abi: Abi, field_data: Vec<u8>) -> Result<FilledAbi, DispatchError>;
 }
 
 pub struct CrossRecode;
 
 impl CrossRecode {
+    pub fn fill_abi(
+        abi: Abi,
+        field_data: Vec<u8>,
+        codec: Codec,
+    ) -> Result<FilledAbi, DispatchError> {
+        match codec {
+            Codec::Scale => RecodeScale::fill_abi(abi, field_data),
+            Codec::Rlp => RecodeRlp::fill_abi(abi, field_data),
+        }
+    }
+
     pub fn chop_encoded(
         codec: Codec,
         field_data: &[u8],
