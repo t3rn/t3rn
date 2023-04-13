@@ -13412,7 +13412,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.28",
- "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
  "jsonrpc-core 18.0.0",
  "jsonrpc-runtime-client",
  "jsonrpsee 0.14.0",
