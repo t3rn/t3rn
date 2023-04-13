@@ -5,26 +5,24 @@ name    = "portal-precompile"
 version = "1.5.0-rc.0"
 
 [dependencies]
-codec                        = { package = "parity-scale-codec", version = "3", default-features = false }
+codec = { package = "parity-scale-codec", version = "3", default-features = false }
 
-sp-std                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 
-frame-support                = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-frame-system                 = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
+frame-system  = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 
-fp-evm                       = { version = "3.0.0-dev", path = "../../primitives", default-features = false }
-pallet-evm                   = { version = "0.1.0", path = "../..", default-features = false }
-pallet-portal                = { path = "../../../portal", default-features = false }
+fp-evm        = { version = "3.0.0-dev", path = "../../primitives", default-features = false }
+pallet-evm    = { version = "0.1.0", path = "../..", default-features = false }
+pallet-portal = { path = "../../../portal", default-features = false }
 
-t3rn-primitives              = { default-features = false, path = "../../../../primitives" }
-t3rn-abi                     = { default-features = false, path = "../../../../types/abi", feature = "runtime" }
+t3rn-primitives = { default-features = false, path = "../../../../primitives" }
 
 [dev-dependencies]
-pallet-evm                   = { path = "../.."}
-rlp                          = { version = "0.5" }
-t3rn-abi                     = { path = "../../../../types/abi", feature = "std" }
-t3rn-mini-mock-runtime      = { path = "../../../../runtime/mini-mock" }
+pallet-evm             = { path = "../.." }
+rlp                    = { version = "0.5" }
+t3rn-mini-mock-runtime = { path = "../../../../runtime/mini-mock" }
 
 [features]
 default = [ "std" ]
-std     = [ "pallet-portal/std", "sp-std/std", "codec/std", "t3rn-abi/std", "t3rn-primitives/std", "frame-support/std", "frame-system/std", "fp-evm/std", "pallet-evm/std" ]
+std     = [ "pallet-portal/std", "sp-std/std", "codec/std", "t3rn-primitives/std", "frame-support/std", "frame-system/std", "fp-evm/std", "pallet-evm/std" ]

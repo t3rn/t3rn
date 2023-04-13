@@ -1,9 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Encode;
 pub use pallet_3vm_evm_primitives::{
     Context, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
+use pallet_3vm_evm_primitives::{ExitError, PrecompileFailure};
 pub use pallet_evm_precompile_modexp::Modexp;
 pub use pallet_evm_precompile_sha3fips::{Sha3FIPS256, Sha3FIPS512};
 pub use pallet_evm_precompile_simple::{
@@ -12,9 +12,8 @@ pub use pallet_evm_precompile_simple::{
 use portal_precompile::PortalPrecompile;
 use sp_core::H160;
 use sp_std::{collections::btree_map::BTreeMap, marker::PhantomData, vec::Vec};
-use t3rn_primitives::portal::PortalReadApi;
 
-pub enum KnownPrecompile {
+pub enum KnownPrecompile<T: pallet_3vm_evm::Config> {
     // Ethereum precompiles:
     ECRecover,
     Sha256,
@@ -25,25 +24,12 @@ pub enum KnownPrecompile {
     Sha3FIPS256,
     Sha3FIPS512,
     ECRecoverPublicKey,
-    // 3VM precompiles:
-}
-
-pub enum CustomPrecompile<T, BlockNumber> {
-    // t3rn-specific
+    // T3rn precompiles:
     Portal,
-    PhantomData(PhantomData<(T, BlockNumber)>),
+    Noop(T),
 }
 
-impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> CustomPrecompile<T, BlockNumber> {
-    pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
-        match self {
-            CustomPrecompile::Portal => PortalPrecompile::<T, BlockNumber>::execute(handle),
-            _ => panic!("Custom precompile not implemented"),
-        }
-    }
-}
-
-impl KnownPrecompile {
+impl<T: pallet_3vm_evm::Config> KnownPrecompile<T> {
     pub fn execute(&self, handle: &mut impl PrecompileHandle) -> PrecompileResult {
         match self {
             // Ethereum:
@@ -56,23 +42,24 @@ impl KnownPrecompile {
             KnownPrecompile::Sha3FIPS256 => Sha3FIPS256::execute(handle),
             KnownPrecompile::Sha3FIPS512 => Sha3FIPS512::execute(handle),
             KnownPrecompile::ECRecoverPublicKey => ECRecoverPublicKey::execute(handle),
+            KnownPrecompile::Portal => PortalPrecompile::<T>::execute(handle),
+            KnownPrecompile::Noop(_) => PrecompileResult::Err(PrecompileFailure::from(
+                ExitError::Other("Noop precompile".into()),
+            )),
         }
     }
 }
 
-pub struct Precompiles<T, BlockNumber> {
-    pub inner: BTreeMap<H160, KnownPrecompile>,
-    pub custom: BTreeMap<H160, CustomPrecompile<T, BlockNumber>>,
+pub struct Precompiles<T: pallet_3vm_evm::Config> {
+    pub inner: BTreeMap<H160, KnownPrecompile<T>>,
+    phantom: PhantomData<T>,
 }
 
-impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> Precompiles<T, BlockNumber> {
-    pub fn new(
-        inner: BTreeMap<u64, KnownPrecompile>,
-        custom: BTreeMap<u64, CustomPrecompile<T, BlockNumber>>,
-    ) -> Self {
+impl<T: pallet_3vm_evm::Config> Precompiles<T> {
+    pub fn new(inner: BTreeMap<u64, KnownPrecompile<T>>) -> Self {
         Self {
             inner: inner.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
-            custom: custom.into_iter().map(|(k, v)| (hash(&k), v)).collect(),
+            phantom: Default::default(),
         }
     }
 
@@ -81,9 +68,7 @@ impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> Precompiles<T, BlockNum
     }
 }
 
-impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> PrecompileSet
-    for Precompiles<T, BlockNumber>
-{
+impl<T: pallet_3vm_evm::Config> PrecompileSet for Precompiles<T> {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         self.inner
             .get(&handle.code_address())
