@@ -48,6 +48,15 @@ export type Queue = {
   };
 };
 
+/** Persisted state for JSON de/serialization. WIP */
+export interface PersistedState {
+    queue: Queue
+    xtx: { [id: string]: Execution }
+    sfxToXtx: { [sfxId: string]: string }
+    // targetEstimator: { [id: string]: Estimator }
+    // relayers: { [key: string]: SubstrateRelayer }
+}
+
 /**
  * The ExecutionManager lies at the heart of the t3rn executor. It is responsible for managing and coordinating the execution of incoming
  * XTXs and the corresponding SFXs. It processes incoming events, triggering the creation/execution/confirmation of SFXs.
@@ -124,6 +133,22 @@ export class ExecutionManager {
           this.circuitListener.once("Event", recheckQueue)
       })
   }
+
+      /** Injects persisted execution state.
+     *
+     * @param state Persisted state to rebase ontop
+     *
+     */
+      inject(state: undefined | PersistedState): ExecutionManager {
+        if (state) {
+            this.queue = state.queue
+            this.xtx = state.xtx
+            this.sfxToXtx = state.sfxToXtx
+            // this.targetEstimator = state.targetEstimator
+            // this.relayers = state.relayers
+        }
+        return this
+    }
 
   initializeVendors(vendors: string[]) {
     for (let i = 0; i < vendors.length; i++) {
@@ -209,9 +234,10 @@ export class ExecutionManager {
           }
         });
       }
-    }
+
     this.addLog({ msg: "Gateways Initialized" });
   }
+}
 
   /** Initialize the circuit listeners */
   async initializeEventListeners() {

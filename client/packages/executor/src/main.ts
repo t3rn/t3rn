@@ -1,8 +1,8 @@
 import { Instance } from "./index"
 
 async function main() {
-    const instance = new Instance()
-    await instance.setup(process.env.EXECUTOR)
+    const instance = new Instance(process.env.EXECUTOR)
+    await instance.setup()
 }
 
 main()
