@@ -2,14 +2,14 @@ use crate::*;
 
 use crate::{
     accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-    BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, ThreeVm,
-    Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
+    BlockWeights, Call, Circuit, ContractsRegistry, Event, Portal, RandomnessCollectiveFlip,
+    ThreeVm, Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 
 use circuit_runtime_pallets::{
     evm_precompile_util, pallet_3vm, pallet_3vm_contracts, pallet_3vm_evm,
-    pallet_3vm_evm_primitives, pallet_circuit::HeightResult,
+    pallet_3vm_evm_primitives,
 };
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
@@ -18,12 +18,10 @@ use pallet_3vm_evm::{
 };
 use pallet_3vm_evm_primitives::FeeCalculator;
 use sp_core::{H160, U256};
-use sp_runtime::{ConsensusEngineId, DispatchError, RuntimeAppPublic};
+use sp_runtime::{ConsensusEngineId, RuntimeAppPublic};
 
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
-use t3rn_abi::{types::Bytes, Codec};
-use t3rn_primitives::portal::{HeaderResult, PortalReadApi};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -74,6 +72,7 @@ impl pallet_3vm::Config for Runtime {
     type EscrowAccount = EscrowAccount;
     type Event = Event;
     type OnLocalTrigger = Circuit;
+    type Portal = Portal;
     type SignalBounceThreshold = ConstU32<2>;
 }
 
@@ -137,138 +136,10 @@ impl FeeCalculator for FixedGasPrice {
     }
 }
 
-impl PortalReadApi<BlockNumber> for Runtime {
-    fn get_latest_finalized_header(
-        gateway_id: t3rn_primitives::ChainId,
-    ) -> Result<HeaderResult, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::get_latest_finalized_header(gateway_id)
-    }
-
-    fn get_latest_finalized_height(
-        gateway_id: t3rn_primitives::ChainId,
-    ) -> Result<HeightResult<BlockNumber>, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::get_latest_finalized_height(gateway_id)
-    }
-
-    fn get_latest_updated_height(
-        gateway_id: t3rn_primitives::ChainId,
-    ) -> Result<HeightResult<BlockNumber>, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::get_latest_updated_height(gateway_id)
-    }
-
-    fn get_current_epoch(
-        gateway_id: t3rn_primitives::ChainId,
-    ) -> Result<HeightResult<BlockNumber>, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::get_current_epoch(gateway_id)
-    }
-
-    fn read_fast_confirmation_offset(
-        gateway_id: t3rn_primitives::ChainId,
-    ) -> Result<BlockNumber, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::read_fast_confirmation_offset(gateway_id)
-    }
-
-    fn read_rational_confirmation_offset(
-        gateway_id: t3rn_primitives::ChainId,
-    ) -> Result<BlockNumber, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::read_rational_confirmation_offset(gateway_id)
-    }
-
-    fn read_epoch_offset(
-        gateway_id: t3rn_primitives::ChainId,
-    ) -> Result<BlockNumber, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::read_epoch_offset(gateway_id)
-    }
-
-    fn verify_event_inclusion(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::verify_event_inclusion(
-            gateway_id,
-            message,
-            submission_target_height,
-        )
-    }
-
-    fn verify_state_inclusion(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::verify_state_inclusion(
-            gateway_id,
-            message,
-            submission_target_height,
-        )
-    }
-
-    fn verify_tx_inclusion(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::verify_tx_inclusion(
-            gateway_id,
-            message,
-            submission_target_height,
-        )
-    }
-
-    fn verify_state_inclusion_and_recode(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-        abi_descriptor: Bytes,
-        out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::verify_state_inclusion_and_recode(
-            gateway_id,
-            message,
-            submission_target_height,
-            abi_descriptor,
-            out_codec,
-        )
-    }
-
-    fn verify_tx_inclusion_and_recode(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-        abi_descriptor: Bytes,
-        out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::verify_tx_inclusion_and_recode(
-            gateway_id,
-            message,
-            submission_target_height,
-            abi_descriptor,
-            out_codec,
-        )
-    }
-
-    fn verify_event_inclusion_and_recode(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-        abi_descriptor: Bytes,
-        out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        <Portal as PortalReadApi<BlockNumber>>::verify_event_inclusion_and_recode(
-            gateway_id,
-            message,
-            submission_target_height,
-            abi_descriptor,
-            out_codec,
-        )
-    }
-}
-
 parameter_types! {
     pub const ChainId: u64 = 42;
     pub BlockGasLimit: U256 = U256::from(u32::max_value());
-    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime, BlockNumber> = evm_precompile_util::Precompiles::new(sp_std::vec![
+    pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
         (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
         (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
         (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
@@ -277,8 +148,7 @@ parameter_types! {
         (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
         (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
         (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-    ].into_iter().collect(), sp_std::vec![
-        (819_u64, evm_precompile_util::CustomPrecompile::<Runtime, BlockNumber>::Portal),
+        (40_u64, evm_precompile_util::KnownPrecompile::Portal)
     ].into_iter().collect());
 }
 
@@ -291,12 +161,12 @@ impl pallet_3vm_evm::Config for Runtime {
     type ChainId = ChainId;
     type Currency = Balances;
     type Event = Event;
-    type FeeCalculator = FixedGasPrice;
     // BaseFee pallet may be better from frontier TODO
+    type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasWeightMapping = FixedGasWeightMapping;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
-    type PrecompilesType = evm_precompile_util::Precompiles<Self, BlockNumber>;
+    type PrecompilesType = evm_precompile_util::Precompiles<Self>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type ThreeVm = ThreeVm;

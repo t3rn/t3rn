@@ -47,12 +47,12 @@ frame_support::construct_runtime!(
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Config<T>, Event<T>},
         Sudo: pallet_sudo,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
-        CircuitPortal: pallet_portal,
+        Portal: pallet_portal,
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
-        RococoBridge: pallet_grandpa_finality_verifier = 129,
-        PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
-        KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        RococoBridge: pallet_grandpa_finality_verifier,
+        PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1>,
+        KusamaBridge: pallet_grandpa_finality_verifier::<Instance2>,
     }
 );
 
@@ -161,6 +161,7 @@ impl pallet_3vm::Config for Test {
     type EscrowAccount = EscrowAccount;
     type Event = Event;
     type OnLocalTrigger = Circuit;
+    type Portal = Portal;
     type SignalBounceThreshold = ConstU32<2>;
 }
 
@@ -196,7 +197,7 @@ impl pallet_circuit::Config for Test {
     type DeletionQueueLimit = ConstU32<1024>;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    type Portal = CircuitPortal;
+    type Portal = Portal;
     type SFXBiddingPeriod = ConstU32<3>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = CircuitTargetId;

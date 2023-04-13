@@ -64,7 +64,7 @@ pub mod runner;
 #[cfg(test)]
 pub mod tests;
 
-use codec::{Decode, Encode};
+pub use self::{pallet::*, runner::Runner};
 pub use evm::{
     Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -72,6 +72,8 @@ pub use fp_evm::{
     Account, CallInfo, CreateInfo, ExecutionInfo, LinearCostPrecompile, Log, Precompile,
     PrecompileFailure, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
+
+use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResultWithPostInfo,
     pallet_prelude::IsType,
@@ -95,8 +97,6 @@ use t3rn_primitives::{
 
 #[cfg(feature = "std")]
 use fp_evm::GenesisAccount;
-
-pub use self::{pallet::*, runner::Runner};
 
 pub type CurrencyOf<T> = <T as pallet::Config>::Currency;
 

@@ -46,7 +46,7 @@ pub mod pallet {
     use frame_support::{pallet_prelude::*, traits::Currency};
     use t3rn_primitives::{
         account_manager::AccountManager, circuit::OnLocalTrigger, contract_metadata::ContractType,
-        contracts_registry::ContractsRegistry, ChainId,
+        contracts_registry::ContractsRegistry, portal::Portal, ChainId,
     };
     use t3rn_sdk_primitives::signal::SignalKind;
 
@@ -84,6 +84,9 @@ pub mod pallet {
 
         /// A provider that will give us access to on_local_trigger
         type OnLocalTrigger: OnLocalTrigger<Self, BalanceOf<Self>>;
+
+        /// Inject access to portal so contracts can use light clients
+        type Portal: Portal<Self>;
     }
 
     #[pallet::pallet]
