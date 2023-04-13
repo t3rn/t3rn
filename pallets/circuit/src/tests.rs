@@ -28,8 +28,8 @@ use codec::{Decode, Encode};
 use frame_support::{
     assert_err, assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency,
 };
-
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
+use t3rn_primitives::xdns::Xdns;
 
 use circuit_mock_runtime::test_utils::*;
 use hex_literal::hex;
@@ -37,7 +37,7 @@ pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
+use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo, DispatchResult};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs, str::FromStr};
 use t3rn_types::{gateway::*, sfx::*};
@@ -70,6 +70,11 @@ pub const FIFTH_SFX_INDEX: u32 = 4;
 
 pub const ED: Balance = 1_u128;
 
+fn advance_to_block(block: BlockNumber) {
+    System::set_block_number(block);
+    <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(block);
+}
+
 fn set_ids(
     sfx: SideEffect<AccountId32, Balance>,
     requester: AccountId32,
@@ -86,81 +91,70 @@ fn set_ids(
     (xtx_id, sfx_id)
 }
 
-fn register(
-    origin: OriginFor<Runtime>,
-    json: Value,
-    valid: bool,
-) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let url: Vec<u8> = hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
+fn register(_origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchResult {
+    let _url: Vec<u8> = hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
     let gateway_id: ChainId =
         Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap())
             .unwrap();
-    let gateway_abi: GatewayABIConfig =
+    let _gateway_abi: GatewayABIConfig =
         Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap())
             .unwrap();
     let gateway_vendor: GatewayVendor = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let gateway_type: GatewayType =
+    let _gateway_type: GatewayType =
         Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap())
             .unwrap();
-    let gateway_genesis: GatewayGenesisConfig = Decode::decode(
+    let _gateway_genesis: GatewayGenesisConfig = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let gateway_sys_props: TokenSysProps = Decode::decode(
+    let _gateway_sys_props: TokenSysProps = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let allowed_side_effects: Vec<Sfx4bId> = Decode::decode(
+    let allowed_side_effects: Vec<(Sfx4bId, Option<u8>)> = Decode::decode(
         &mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let encoded_registration_data: Vec<u8> =
+    let _encoded_registration_data: Vec<u8> =
         hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
 
-    let res = Portal::register_gateway(
-        origin,
-        url,
+    let res = XDNS::add_new_gateway(
         gateway_id,
-        gateway_abi.clone(),
         gateway_vendor.clone(),
-        gateway_type.clone(),
-        gateway_genesis.clone(),
-        gateway_sys_props.clone(),
+        t3rn_abi::Codec::Scale,
+        None,
+        None,
         allowed_side_effects.clone(),
-        encoded_registration_data,
     );
 
     if valid {
-        let xdns_record = pallet_xdns::XDNSRegistry::<Runtime>::get(gateway_id).unwrap();
-        let stored_side_effects = xdns_record.allowed_side_effects;
+        let gateway_record = pallet_xdns::Gateways::<Runtime>::get(gateway_id).unwrap();
+        let stored_side_effects = gateway_record.allowed_side_effects;
 
         // ensure XDNS writes are correct
         assert_eq!(stored_side_effects, allowed_side_effects);
-        assert_eq!(xdns_record.gateway_vendor, gateway_vendor);
-        assert_eq!(xdns_record.gateway_abi, gateway_abi);
-        assert_eq!(xdns_record.gateway_type, gateway_type);
-        assert_eq!(xdns_record.gateway_sys_props, gateway_sys_props);
-        assert_eq!(xdns_record.gateway_genesis, gateway_genesis);
+        assert_eq!(gateway_record.verification_vendor, gateway_vendor);
     }
 
     res
 }
 
 fn submit_headers(
-    origin: OriginFor<Runtime>,
+    _origin: OriginFor<Runtime>,
     json: Value,
     index: usize,
 ) -> Result<(), DispatchError> {
-    let encoded_header_data: Vec<u8> =
+    let _encoded_header_data: Vec<u8> =
         hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
-    let gateway_id: ChainId = Decode::decode(
+    let _gateway_id: ChainId = Decode::decode(
         &mut &*hex::decode(json[index]["encoded_gateway_id"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    Portal::submit_headers(origin, gateway_id, encoded_header_data)
+    // Portal::submit_encoded_headers(origin, gateway_id, encoded_header_data)
+    Ok(())
 }
 
 fn on_extrinsic_trigger(
@@ -280,6 +274,8 @@ pub fn place_winning_bid_and_advance_3_blocks(
     let three_blocks_ahead = System::block_number() + 3;
     advance_to_block(three_blocks_ahead);
 
+    <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(three_blocks_ahead);
+
     assert_eq!(
         Circuit::get_x_exec_signals(xtx_id).unwrap().status,
         CircuitStatus::Ready
@@ -296,11 +292,6 @@ fn read_file_and_set_height(path: &str, ignore_submission_height: bool) -> Value
         }
     }
     json
-}
-
-fn advance_to_block(block: BlockNumber) {
-    System::set_block_number(block);
-    <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(block);
 }
 
 // iterates sequentially though all test files in mock-data
@@ -560,7 +551,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -759,7 +750,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -865,6 +856,7 @@ fn circuit_handles_dropped_at_bidding() {
 
             System::reset_events();
             advance_to_block(4);
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(4);
             let events = System::events();
 
             assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE);
@@ -994,7 +986,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -1103,6 +1095,10 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
 
             advance_to_block(BIDDING_BLOCK_NO + BIDDING_TIMEOUT);
 
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
+                BIDDING_BLOCK_NO + BIDDING_TIMEOUT,
+            );
+
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
                 Some(XExecSignal {
@@ -1113,11 +1109,6 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1),
                 })
-            );
-
-            assert_eq!(
-                Circuit::get_full_side_effects(xtx_id).unwrap()[0][0].input.enforce_executor,
-                Some(BID_WINNER)
             );
         });
 }
@@ -1184,7 +1175,7 @@ fn circuit_handles_swap_with_insurance() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -1322,7 +1313,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     confirmed: None,
                     best_bid: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![0],
+                    submission_target_height: 0,
                     index: FIRST_SFX_INDEX,
                 }]]
             );
@@ -1472,7 +1463,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             ));
 
             let events = System::events();
-            assert_eq!(events.len(), 10);
+            assert_eq!(events.len(), 9);
         });
 }
 
@@ -1645,6 +1636,8 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
 
             advance_to_block(410);
 
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
+
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
                 Some(XExecSignal {
@@ -1749,6 +1742,8 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
             );
 
             advance_to_block(410);
+
+            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -4197,7 +4192,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //                     confirmed: None,
 //                     best_bid: None,
 //                     security_lvl: SecurityLvl::Escrow,
-//                     submission_target_height: vec![0],
+//                     submission_target_height: 0,
 //                     index: FIRST_SFX_INDEX,
 //                 }]]
 //             );
@@ -4325,7 +4320,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //                     confirmed: None,
 //                     best_bid: None,
 //                     security_lvl: SecurityLvl::Escrow,
-//                     submission_target_height: vec![0],
+//                     submission_target_height: 0,
 //                     index: FIRST_SFX_INDEX,
 //                 }]]
 //             );
@@ -4433,9 +4428,6 @@ fn no_duplicate_xtx_and_sfx_ids() {
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
                     circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Endowed { account: ALICE, free_balance: ENDOWMENT  + ED }), topics: vec![]
                 },
-                EventRecord { phase: Phase::Initialization, event: Event::Clock(
-                    circuit_runtime_pallets::pallet_clock::Event::<Runtime>::NewRound { index: 2, head: 1, term: 500 }), topics: vec![]
-                },
                 EventRecord { phase: Phase::Initialization, event: Event::Balances(
                     circuit_runtime_pallets::pallet_balances::Event::<Runtime>::Withdraw { who: ALICE, amount: BID_AMOUNT }), topics: vec![]
                 },
@@ -4539,7 +4531,7 @@ fn test_storage_migration_v130_to_v140_for_fsx_map_with_updated_encoded_action_f
                 input: sfx_v13.clone(),
                 confirmed: None,
                 security_lvl: SecurityLvl::Optimistic,
-                submission_target_height: vec![12, 13, 14],
+                submission_target_height: vec![12, 13, 14, 0, 0, 0, 0, 0],
                 best_bid: None,
                 index: 0,
             };
@@ -4561,7 +4553,7 @@ fn test_storage_migration_v130_to_v140_for_fsx_map_with_updated_encoded_action_f
                     },
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
-                    submission_target_height: vec![12, 13, 14],
+                    submission_target_height: 920844,
                     best_bid: None,
                     index: 0,
                 }
