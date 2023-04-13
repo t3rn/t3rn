@@ -22,7 +22,7 @@ describe("Instance", () => {
             }
             process.env.CIRCUIT_SIGNER_KEY = `0x${"dead".repeat(16)}`
             process.env.ROCO_GATEWAY_SIGNER_KEY = `0x${"dead".repeat(16)}`
-            instance = new Instance()
+            instance = new Instance(name, false /*logToDisk*/)
             instance.logger = { warn() {}, info() {} }
         })
 
@@ -30,13 +30,13 @@ describe("Instance", () => {
             process.env.CIRCUIT_SIGNER_KEY = undefined
             process.env.ROCO_GATEWAY_SIGNER_KEY = undefined
 
-            instance.loadConfig(name).should.be.rejectedWith(Error, "Instance::loadConfig: missing circuit signer key")
+            instance.loadConfig().should.be.rejectedWith(Error, "Instance::loadConfig: missing circuit signer key")
         })
 
         it("should load custom config", async () => {
             expect(instance.config).to.be.undefined
 
-            let config = await instance.loadConfig(name)
+            let config = await instance.loadConfig()
 
             expect(instance.config).to.not.be.undefined
             expect(config).to.deep.equal(instance.config)
@@ -45,7 +45,7 @@ describe("Instance", () => {
         it("should persist custom config", async () => {
             expect(existsSync(conf)).to.be.false
 
-            let config = await instance.loadConfig(name)
+            let config = await instance.loadConfig()
 
             let stored = await readFile(conf, "utf8").then((str) => JSON.parse(str))
             expect(existsSync(conf)).to.be.true
