@@ -45,7 +45,7 @@ export type Queue = {
     }
 }
 
-/** Persisted state for JSON de/serialization. */
+/** Persisted state for JSON de/serialization. WIP */
 export interface PersistedState {
     queue: Queue
     xtx: { [id: string]: Execution }

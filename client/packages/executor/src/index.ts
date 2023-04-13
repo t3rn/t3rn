@@ -57,24 +57,20 @@ class Instance {
 
     /**
      * Sets up and configures an executor instance.
-     *
-     * @param name Display name and config identifier for an instance
-     * @param logToDisk Write logs to disk within ~/.t3rn-executor-${name}/logs
-     * @returns Instance
      */
     async setup(): Promise<Instance> {
-        await this.configureLogging(this.name, this.logToDisk)
-        const config = await this.loadConfig()
+        await this.configureLogging()
+        await this.loadConfig()
         await cryptoWaitReady()
         this.signer = new Keyring({ type: "sr25519" })
             // loadConfig asserts that config.circuit.signerKey is set
-            .addFromSeed(Uint8Array.from(Buffer.from(config.circuit.signerKey!.slice(2), "hex")))
-        this.sdk = new Sdk(config.circuit.rpc, this.signer)
+            .addFromSeed(Uint8Array.from(Buffer.from(this.config.circuit.signerKey!.slice(2), "hex")))
+        this.sdk = new Sdk(this.config.circuit.rpc, this.signer)
         // @ts-ignore
         this.circuitClient = await this.sdk.init()
         this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, this.logger)
         this.injectState()
-        await this.executionManager.setup(config.gateways, config.vendors)
+        await this.executionManager.setup(this.config.gateways, this.config.vendors)
         this.registerExitListener()
         this.logger.info("setup complete")
         return this
@@ -84,9 +80,6 @@ class Instance {
      * Loads an instance's config file thereby updating any config changes
      * staged at ../config.json by persisting the effective instance config
      * at ~/.t3rn-executor-${name}/config.json.
-     *
-     * @param name Executor instance name
-     * @returns Instance configuration
      */
     async loadConfig(): Promise<Config> {
         await mkdir(this.baseDir, { recursive: true })
@@ -125,53 +118,46 @@ class Instance {
         return config
     }
 
-    /**
-     * Loads persisted execution state.
-     * @returns Instance
-     */
+    /** Loads persisted execution state. */
     async injectState(): Promise<Instance> {
         if (existsSync(this.stateFile)) {
-            const state = await readFile(this.stateFile, "utf8").then(JSON.parse)
+            const state: PersistedState = await readFile(this.stateFile, "utf8").then(JSON.parse)
             this.executionManager.inject(state)
         }
         return this
     }
 
-    /** Configures the instance's pino logger.
-     *
-     * @param name Display name and config identifier for an instance
-     * @param logToDisk Write logs to disk within ~/.t3rn-executor-${name}/logs
-     */
-    private async configureLogging(name: string, logToDisk: boolean): Promise<Instance> {
-        if (logToDisk) {
-            await mkdir(this.logsDir, { recursive: true })
-            this.logger = pino(
+    /** Configures the instance's pino logger. */
+    private async configureLogging(): Promise<Instance> {
+        const self = this
+        if (self.logToDisk) {
+            await mkdir(self.logsDir, { recursive: true })
+            self.logger = pino(
                 {
                     level: process.env.LOG_LEVEL || "info",
                     formatters: {
                         bindings(bindings) {
-                            return { ...bindings, name }
+                            return { ...bindings, name: self.name }
                         },
                     },
                 },
-                pino.destination(join(this.logsDir.toString(), `${Date.now()}.log`))
+                pino.destination(join(self.logsDir.toString(), `${Date.now()}.log`))
             )
         } else {
-            this.logger = pino({
+            self.logger = pino({
                 level: process.env.LOG_LEVEL || "info",
                 formatters: {
                     bindings(bindings) {
-                        return { ...bindings, name }
+                        return { ...bindings, name: self.name }
                     },
                 },
             })
         }
-        return this
+        return self
     }
 
     /** Registers a keypress listener for Ctrl+C that initiates instance shutdown. */
     private registerExitListener(): Instance {
-        // soft exit
         readline.emitKeypressEvents(process.stdin)
         process.stdin.on("keypress", async (_, { ctrl, name }) => {
             if (ctrl && name === "c") {
@@ -182,9 +168,8 @@ class Instance {
         })
         process.stdin.setRawMode(true)
         process.stdin.resume()
-        // hard exit
         process.once("exit", async () => {
-            const serializedState = JSON.stringify({
+            const serializedState = JSON.stringify({ //WIP
                 queue: this.executionManager.queue,
                 xtx: this.executionManager.xtx,
                 sfxToXtx: this.executionManager.sfxToXtx,
