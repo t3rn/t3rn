@@ -578,8 +578,7 @@ pub fn ensure_vector_and_trim_prefix(
         Codec::Rlp => {
             let rlp = rlp::Rlp::new(data);
             let rlp_encoded = rlp.as_raw();
-            let mut rlp_buf = Bytes::copy_from_slice(rlp_encoded);
-            rlp_buf.advance(1);
+            let rlp_buf = Bytes::copy_from_slice(rlp_encoded);
             ensure!(
                 !rlp_buf.is_empty(),
                 "recode_as_vector::Rlp::InvalidDataSize"
@@ -655,10 +654,10 @@ impl FilledAbi {
                 Ok((FilledAbi::Option(name, Box::new(field)), size + 1))
             },
             Abi::Bytes(name) => {
-                let recoded_bytes = field_data.to_vec();
+                let ensured_bytes_data = ensure_vector_and_trim_prefix(field_data, &in_codec)?;
                 Ok((
-                    FilledAbi::Bytes(name, recoded_bytes.to_vec()),
-                    recoded_bytes.len(),
+                    FilledAbi::Bytes(name, ensured_bytes_data.clone()),
+                    ensured_bytes_data.len(),
                 ))
             },
             Abi::Account20(name) => {
@@ -687,7 +686,7 @@ impl FilledAbi {
 
                 let data_32b: [u8; 32] = data_maybe_stripped_prefix
                     .try_into()
-                    .map_err(|_| "Account20::InvalidDataSize: expected 20 bytes")?;
+                    .map_err(|_| "Account32::InvalidDataSize: expected 32 bytes")?;
 
                 Ok((
                     FilledAbi::Account32(name, data_32b.to_vec()),
@@ -917,11 +916,6 @@ impl FilledAbi {
     // Fills the ABI with raw data, only assuming the type size of input codec
     pub fn try_fill_abi(abi: Abi, data: Data, in_codec: Codec) -> Result<FilledAbi, DispatchError> {
         return crate::recode::CrossRecode::fill_abi(abi, data, in_codec)
-
-        // match Self::recursive_fill_abi(abi, data.as_slice(), in_codec) {
-        //     Ok((filled_abi, _)) => Ok(filled_abi),
-        //     Err(e) => Err(e),
-        // }
     }
 }
 
@@ -933,7 +927,6 @@ mod test_fill_abi {
     use hex_literal::hex;
     use std::vec;
 
-    use crate::recode_rlp::rlp_encode;
     use rlp_derive::{RlpDecodable, RlpEncodable};
     use sp_core::{crypto::AccountId32, ByteArray};
 
@@ -1477,40 +1470,40 @@ mod test_fill_abi {
     #[test]
     fn fills_abi_for_32b_rlp_encoded_word_representing_enum_with_bytes4_and_bytes_as_tuple_and_recodes_to_scale_on_4_bytes(
     ) {
-        let abi = Abi::Enum(
+        let abi = Abi::Tuple(
             None,
-            vec![Box::new(Abi::Tuple(
-                None,
-                (
-                    Box::new(Abi::Bytes4(Some(b"word1".to_vec()))),
-                    Box::new(Abi::Bytes(Some(b"word2".to_vec()))),
-                ),
-            ))],
+            (
+                Box::new(Abi::Bytes4(Some(b"word1".to_vec()))),
+                Box::new(Abi::Bytes(Some(b"word2".to_vec()))),
+            ),
         );
 
-        // 0x09 - enum option for verifyTxInclusionData - see PortalEnum
-        // 0x03030303 - encoded bytes4 - chain id of [3,3,3,3]
-        let rlp_encoded_bytes4 = rlp_encode(hex!("03030303").to_vec());
+        let rlp_encoded_query: Vec<u8> =
+            hex!("03030303c2d5cdaced73af1a6e5dd6465191c154071b0b5ff9994b107e4d2e7241e8fc15")
+                .to_vec();
 
-        let valid_inclusion_bytes: Vec<u8> =
-            rlp_encode(hex!("0102030405060708090A0B0C0D0E0F").to_vec());
+        let _mock_inclusion_proof =
+            hex!("08030303037fb09b6a8503d96a0973116d0b5ad5156ed22c72ffae000f9bc40f31777026415b4df5ede06c41f0a8277d3c11dec000f39a4da8d2a365b44ba3b3d207f32a3e5cd6c39d9c8b726df5c0506e1a6ede115d");
 
-        let verify_tx_inclusion_selector: u8 = 9u8;
+        let filled_abi = FilledAbi::try_fill_abi(abi, rlp_encoded_query, Codec::Rlp).unwrap();
 
-        let mut rlp_encoded_query = vec![verify_tx_inclusion_selector];
-        rlp_encoded_query.extend_from_slice(&*rlp_encoded_bytes4);
-        rlp_encoded_query.extend_from_slice(&*valid_inclusion_bytes);
-
-        let rlp_encoded_query = rlp_encode(rlp_encoded_query);
-
-        // let rlp_3 = hex!("098403030303950102030405060708090A0B0C0D0E0F").to_vec();
-        let rlp_3 = hex!("d7098403030303950102030405060708090a0b0c0d0e0f").to_vec();
-        let rlp_2 = vec![
-            9, 3, 3, 3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-        ];
-        println!("rlp_encoded_query: {:?}", rlp_encoded_query);
-
-        let filled_abi = FilledAbi::try_fill_abi(abi, rlp_3, Codec::Rlp).unwrap();
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Tuple(
+                None,
+                (
+                    Box::new(FilledAbi::Bytes4(
+                        Some(b"word1".to_vec()),
+                        hex!("03030303").to_vec()
+                    )),
+                    Box::new(FilledAbi::Bytes(
+                        Some(b"word2".to_vec()),
+                        hex!("c2d5cdaced73af1a6e5dd6465191c154071b0b5ff9994b107e4d2e7241e8fc15")
+                            .to_vec()
+                    ))
+                )
+            )
+        );
 
         let recoded_2_words_tuple = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale);
 
@@ -1518,10 +1511,54 @@ mod test_fill_abi {
 
         assert_eq!(
             recoded_2_words_tuple.unwrap(),
-            vec![
-                3, 3, 3, 3, 1, 35, 69, 103, 137, 175, 205, 1, 35, 69, 103, 137, 175, 205, 1, 35,
-                69, 103, 137, 175, 205, 1, 35, 69, 103, 137, 175, 205, 1, 35, 69, 103, 137, 175,
-            ]
+            hex!("03030303c2d5cdaced73af1a6e5dd6465191c154071b0b5ff9994b107e4d2e7241e8fc15")
+                .to_vec()
+        )
+    }
+
+    #[test]
+    fn fills_abi_for_32b_rlp_encoded_word_representing_enum_with_bytes4_and_bytes_81_long_as_tuple_and_recodes_to_scale_on_4_bytes(
+    ) {
+        let abi = Abi::Tuple(
+            None,
+            (
+                Box::new(Abi::Bytes4(Some(b"word1".to_vec()))),
+                Box::new(Abi::Bytes(Some(b"word2".to_vec()))),
+            ),
+        );
+
+        let rlp_encoded_query: Vec<u8> =
+            hex!("030303037fb09b6a8503d96a0973116d0b5ad5156ed22c72ffae000f9bc40f31777026415b4df5ede06c41f0a8277d3c11dec000f39a4da8d2a365b44ba3b3d207f32a3e5cd6c39d9c8b726df5c0506e1a6ede115d")
+                .to_vec();
+
+        let filled_abi = FilledAbi::try_fill_abi(abi, rlp_encoded_query, Codec::Rlp).unwrap();
+
+        assert_eq!(
+            filled_abi,
+            FilledAbi::Tuple(
+                None,
+                (
+                    Box::new(FilledAbi::Bytes4(
+                        Some(b"word1".to_vec()),
+                        hex!("03030303").to_vec()
+                    )),
+                    Box::new(FilledAbi::Bytes(
+                        Some(b"word2".to_vec()),
+                        hex!("7fb09b6a8503d96a0973116d0b5ad5156ed22c72ffae000f9bc40f31777026415b4df5ede06c41f0a8277d3c11dec000f39a4da8d2a365b44ba3b3d207f32a3e5cd6c39d9c8b726df5c0506e1a6ede115d")
+                            .to_vec()
+                    ))
+                )
+            )
+        );
+
+        let recoded_2_words_tuple = filled_abi.recode_as(&Codec::Rlp, &Codec::Scale);
+
+        assert_ok!(recoded_2_words_tuple.clone());
+
+        assert_eq!(
+            recoded_2_words_tuple.unwrap(),
+            hex!("030303037fb09b6a8503d96a0973116d0b5ad5156ed22c72ffae000f9bc40f31777026415b4df5ede06c41f0a8277d3c11dec000f39a4da8d2a365b44ba3b3d207f32a3e5cd6c39d9c8b726df5c0506e1a6ede115d")
+                .to_vec()
         )
     }
 
