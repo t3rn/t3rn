@@ -75,15 +75,18 @@ impl SFXAbi {
     ) -> Result<FilledAbi, DispatchError> {
         self.ensure_arguments_order(ordered_args)?;
 
-        let prefix_memo: u8 = self.maybe_prefix_memo.unwrap_or(0u8);
-
         let abi: Abi = self
             .get_expected_egress_descriptor(ordered_args_codec.clone())
             .try_into()?;
 
+        let maybe_prefix_vec = match self.maybe_prefix_memo {
+            Some(prefix_memo) => vec![prefix_memo],
+            None => vec![],
+        };
+
         let ordered_args_flatten: Data =
             // Extend with 0u8 assumed as prefix memo for struct Codec
-            ordered_args.iter().fold(vec![prefix_memo], |mut acc, arg| {
+            ordered_args.iter().fold(maybe_prefix_vec, |mut acc, arg| {
                 acc.append(&mut arg.clone());
                 acc
             });
