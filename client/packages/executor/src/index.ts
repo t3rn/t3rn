@@ -56,31 +56,8 @@ class Instance {
      * @returns Instance
      */
     async setup(name: string = "example", logToDisk = false): Promise<Instance> {
+        await this.configureLogging(name, logToDisk)
         const config = await this.loadConfig(name)
-        if (logToDisk) {
-            const logDir = join(homedir(), `.t3rn-executor-${name}`, "logs")
-            await mkdir(logDir, { recursive: true })
-            this.logger = pino(
-                {
-                    level: process.env.LOG_LEVEL || "info",
-                    formatters: {
-                        bindings(bindings) {
-                            return { ...bindings, name }
-                        },
-                    },
-                },
-                pino.destination(join(logDir, `${Date.now()}.log`))
-            )
-        } else {
-            this.logger = pino({
-                level: process.env.LOG_LEVEL || "info",
-                formatters: {
-                    bindings(bindings) {
-                        return { ...bindings, name }
-                    },
-                },
-            })
-        }
         await cryptoWaitReady()
         this.signer = new Keyring({ type: "sr25519" })
             // loadConfig asserts that config.circuit.signerKey is set
@@ -133,6 +110,7 @@ class Instance {
             }
         })
         if (!problySubstrateSeed(config.circuit.signerKey)) {
+            console.log("@#$#@$#$#@$#@$", config.circuit.signerKey)
             throw Error("Instance::loadConfig: missing circuit signer key")
         }
         if (!config.gateways.some((gateway) => problySubstrateSeed(gateway.signerKey))) {
@@ -140,6 +118,38 @@ class Instance {
         }
         this.config = config
         return config
+    }
+
+    /** Configures the instance's pino logger.
+     *
+     * @param name Display name and config identifier for an instance
+     * @param logToDisk Write logs to disk within ~/.t3rn-executor-${name}/logs
+     */
+    private async configureLogging(name: string, logToDisk) {
+        if (logToDisk) {
+            const logDir = join(homedir(), `.t3rn-executor-${name}`, "logs")
+            await mkdir(logDir, { recursive: true })
+            this.logger = pino(
+                {
+                    level: process.env.LOG_LEVEL || "info",
+                    formatters: {
+                        bindings(bindings) {
+                            return { ...bindings, name }
+                        },
+                    },
+                },
+                pino.destination(join(logDir, `${Date.now()}.log`))
+            )
+        } else {
+            this.logger = pino({
+                level: process.env.LOG_LEVEL || "info",
+                formatters: {
+                    bindings(bindings) {
+                        return { ...bindings, name }
+                    },
+                },
+            })
+        }
     }
 
     /** Registers a keypress listener for Ctrl+C that initiates instance shutdown. */
