@@ -3,6 +3,7 @@ use crate::{
     circuit::LocalStateExecutionView,
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, RegistryContract},
+    portal::{PortalExecution, PortalPrecompileInterfaceEnum},
     SpeedMode,
 };
 use codec::{Decode, Encode};
@@ -12,6 +13,10 @@ use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
     state::SideEffects,
 };
+
+// Tells the precompile indexer whether the call came from EVM or WASM in encoding-specific formats
+pub const EVM_RECODING_BYTE_SELECTOR: u8 = 40;
+pub const WASM_RECODING_BYTE_SELECTOR: u8 = 41;
 
 #[derive(Encode, Decode)]
 pub struct GetState<T: frame_system::Config> {
@@ -31,6 +36,7 @@ where
         SpeedMode,
     ),
     Signal(T::Origin, ExecutionSignal<T::Hash>),
+    Portal(PortalPrecompileInterfaceEnum),
 }
 
 /// The happy return type of an invocation
@@ -38,6 +44,7 @@ pub enum PrecompileInvocation<T: frame_system::Config, Balance> {
     GetState(LocalStateExecutionView<T, Balance>),
     Submit(LocalStateExecutionView<T, Balance>),
     Signal,
+    Portal(PortalExecution<T>),
 }
 
 impl<T: frame_system::Config, Balance> PrecompileInvocation<T, Balance> {

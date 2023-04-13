@@ -25,69 +25,8 @@ pub struct RegistrationData {
     pub encoded_registration_data: Bytes,
 }
 
-pub trait PortalReadApi<BlockNumber> {
-    fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError>;
-
-    fn get_latest_finalized_height(
-        gateway_id: ChainId,
-    ) -> Result<HeightResult<BlockNumber>, DispatchError>;
-
-    fn get_latest_updated_height(
-        gateway_id: ChainId,
-    ) -> Result<HeightResult<BlockNumber>, DispatchError>;
-
-    fn get_current_epoch(gateway_id: ChainId) -> Result<HeightResult<BlockNumber>, DispatchError>;
-
-    fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<BlockNumber, DispatchError>;
-
-    fn read_rational_confirmation_offset(gateway_id: ChainId)
-        -> Result<BlockNumber, DispatchError>;
-
-    fn read_epoch_offset(gateway_id: ChainId) -> Result<BlockNumber, DispatchError>;
-
-    fn verify_event_inclusion(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
-
-    fn verify_state_inclusion(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
-
-    fn verify_tx_inclusion(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
-
-    fn verify_state_inclusion_and_recode(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-        abi_descriptor: Bytes,
-        out_codec: Codec,
-    ) -> Result<Bytes, DispatchError>;
-
-    fn verify_tx_inclusion_and_recode(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-        abi_descriptor: Bytes,
-        out_codec: Codec,
-    ) -> Result<Bytes, DispatchError>;
-
-    fn verify_event_inclusion_and_recode(
-        gateway_id: [u8; 4],
-        message: Bytes,
-        submission_target_height: Option<BlockNumber>,
-        abi_descriptor: Bytes,
-        out_codec: Codec,
-    ) -> Result<Bytes, DispatchError>;
-}
-
+// This could be split into readable parts here, or even more specific traits in the future, if needed.
+// Something like `.. Portal: ReadHeaders + Submit { ..`
 pub trait Portal<T: frame_system::Config> {
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError>;
 
@@ -177,6 +116,57 @@ pub trait Portal<T: frame_system::Config> {
     fn turn_on(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
 
     fn turn_off(origin: T::Origin, gateway_id: [u8; 4]) -> Result<bool, DispatchError>;
+}
+
+#[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
+pub enum PortalExecution<T: frame_system::Config> {
+    Header(HeaderResult),
+    Height(HeightResult<T::BlockNumber>),
+    BlockNumber(T::BlockNumber),
+    Data(Bytes),
+    Switched(bool),
+    Noop,
+}
+
+impl<T: frame_system::Config> From<HeaderResult> for PortalExecution<T> {
+    fn from(value: HeaderResult) -> Self {
+        Self::Header(value)
+    }
+}
+impl<T: frame_system::Config> From<HeightResult<T::BlockNumber>> for PortalExecution<T> {
+    fn from(value: HeightResult<T::BlockNumber>) -> Self {
+        Self::Height(value)
+    }
+}
+impl<T: frame_system::Config> From<Bytes> for PortalExecution<T> {
+    fn from(value: Bytes) -> Self {
+        Self::Data(value)
+    }
+}
+impl<T: frame_system::Config> From<bool> for PortalExecution<T> {
+    fn from(value: bool) -> Self {
+        Self::Switched(value)
+    }
+}
+impl<T: frame_system::Config> From<()> for PortalExecution<T> {
+    fn from(_value: ()) -> Self {
+        Self::Noop
+    }
+}
+
+// Justification, don't need from here, would require unneeded implementation too
+#[allow(clippy::from_over_into)]
+impl<T: frame_system::Config> Into<Bytes> for PortalExecution<T> {
+    fn into(self) -> Bytes {
+        match self {
+            PortalExecution::Header(x) => x.encode(),
+            PortalExecution::Height(x) => x.encode(),
+            PortalExecution::BlockNumber(x) => x.encode(),
+            PortalExecution::Data(x) => x.encode(),
+            PortalExecution::Switched(x) => x.encode(),
+            PortalExecution::Noop => sp_std::vec![],
+        }
+    }
 }
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]

@@ -1,260 +1,61 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate codec;
-extern crate fp_evm;
-extern crate t3rn_primitives;
-
-use codec::{alloc::string::ToString, Decode, Encode};
-use pallet_evm::LinearCostPrecompile;
-
-use fp_evm::{ExitError, ExitSucceed, PrecompileFailure};
-
-use frame_support::pallet_prelude::DispatchError;
-use sp_std::{marker::PhantomData, vec::Vec};
-use t3rn_abi::{Codec, FilledAbi};
-use t3rn_primitives::portal::{
-    get_portal_interface_abi, PortalPrecompileInterfaceEnum,
-    PortalPrecompileInterfaceEnum::{
-        GetCurrentEpoch, GetLatestFinalizedHeader, GetLatestFinalizedHeight,
-        GetLatestUpdatedHeight, ReadEpochOffset, ReadFastConfirmationOffset,
-        ReadRationalConfirmationOffset, VerifyEventInclusion, VerifyStateInclusion,
-        VerifyTxInclusion,
-    },
-    PortalReadApi,
+use fp_evm::{
+    ExitError, ExitSucceed, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
+    PrecompileOutput, PrecompileResult,
 };
+use sp_std::{marker::PhantomData, vec, vec::Vec};
+use t3rn_primitives::threevm::{Precompile, EVM_RECODING_BYTE_SELECTOR};
 
-pub struct PortalPrecompile<T, BlockNumber>(PhantomData<(T, BlockNumber)>);
+pub struct PortalPrecompile<T: pallet_evm::Config>(PhantomData<T>);
 
-pub fn recode_input_as_portal_api_enum(
-    input: &[u8],
-) -> Result<PortalPrecompileInterfaceEnum, PrecompileFailure> {
-    let enum_selector_byte: u8 = *input.first().ok_or(ExitError::Other(
-        "PortalPrecompile failed to derive PortalInterface enum option for provided input".into(),
-    ))?;
+// TODO: this is just the same as 3vm dispatch Right now
+impl<T: pallet_evm::Config> EvmPrecompile for PortalPrecompile<T> {
+    fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+        let input = handle.input();
+        let _target_gas = handle.gas_limit();
+        let _context = handle.context();
+        let mut output = Vec::new();
 
-    let from_rlp_decoded_portal_call_filled_abi = FilledAbi::try_fill_abi(
-        get_portal_interface_abi(),
-        input.to_vec(),
-        Codec::Rlp,
-    )
-    .map_err(|e| match e {
-        DispatchError::Other(err_str) => ExitError::Other(err_str.into()),
-        _ => ExitError::Other(
-            "PortalPrecompile failed to derive PortalInterface enum option for provided input"
-                .into(),
-        ),
-    })?;
+        // TODO: assert the length is at least 2 bytes
+        if input.len() < 2 {
+            return Err(
+                ExitError::Other("PortalPrecompile input contained too little bytes".into()).into(),
+            )
+        }
 
-    let mut recoded_interface_option = from_rlp_decoded_portal_call_filled_abi
-        .recode_as(&Codec::Rlp, &Codec::Scale)
-        .map_err(|e| match e {
-            DispatchError::Other(err_str) => ExitError::Other(err_str.into()),
-            _ => ExitError::Other(
-                "PortalPrecompile failed to recode portal Enum from Rlp to Scale".into(),
-            ),
-        })?;
+        // TODO; assert on first byte that it is indeed portal
+        let precompile_selector_index = input[0];
 
-    recoded_interface_option.insert(0, enum_selector_byte);
+        // TODO: add the evm selector here
+        let args_with_evm_selector = vec![&[EVM_RECODING_BYTE_SELECTOR][..], &input[1..]].concat();
 
-    let recoded_call_as_enum: PortalPrecompileInterfaceEnum =
-        PortalPrecompileInterfaceEnum::decode(&mut &recoded_interface_option[..])
-            .map_err(|e| ExitError::Other(e.to_string().into()))?;
+        T::ThreeVm::invoke_raw(
+            &precompile_selector_index,
+            &args_with_evm_selector,
+            &mut output,
+        );
 
-    Ok(recoded_call_as_enum)
-}
+        // Hmm, maybe we just recode the entire thing
 
-impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> PortalPrecompile<T, BlockNumber> {
-    pub fn call_portal(input: &[u8]) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
-        match recode_input_as_portal_api_enum(input)? {
-            GetLatestFinalizedHeader(chain_id) => {
-                let res = T::get_latest_finalized_header(chain_id).map_err(|_| {
-                    ExitError::Other("Failed to get latest finalized header".into())
-                })?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            GetLatestFinalizedHeight(chain_id) => {
-                let res = T::get_latest_finalized_height(chain_id).map_err(|_| {
-                    ExitError::Other("Failed to get latest finalized height".into())
-                })?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            GetLatestUpdatedHeight(chain_id) => {
-                let res = T::get_latest_updated_height(chain_id)
-                    .map_err(|_| ExitError::Other("Failed to get latest updated height".into()))?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            GetCurrentEpoch(chain_id) => {
-                let res = T::get_current_epoch(chain_id)
-                    .map_err(|_| ExitError::Other("Failed to get current epoch".into()))?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            ReadEpochOffset(chain_id) => {
-                let res = T::read_epoch_offset(chain_id)
-                    .map_err(|_| ExitError::Other("Failed to read epoch offset".into()))?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            ReadFastConfirmationOffset(chain_id) => {
-                let res = T::read_fast_confirmation_offset(chain_id).map_err(|_| {
-                    ExitError::Other("Failed to read fast confirmation offset".into())
-                })?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            ReadRationalConfirmationOffset(chain_id) => {
-                let res = T::read_rational_confirmation_offset(chain_id).map_err(|_| {
-                    ExitError::Other("Failed to read rational confirmation offset".into())
-                })?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            VerifyEventInclusion(chain_id, event) => {
-                let res = T::verify_event_inclusion(chain_id, event, None)
-                    .map_err(|_| ExitError::Other("Failed to verify event inclusion".into()))?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            VerifyStateInclusion(chain_id, event) => {
-                let res = T::verify_state_inclusion(chain_id, event, None)
-                    .map_err(|_| ExitError::Other("Failed to verify state inclusion".into()))?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
-            VerifyTxInclusion(chain_id, event) => {
-                let res = T::verify_tx_inclusion(chain_id, event, None)
-                    .map_err(|_| ExitError::Other("Failed to verify tx inclusion".into()))?;
-
-                Ok((ExitSucceed::Returned, res.encode()))
-            },
+        // FIXME: always passes right now, needs error check
+        if !output.is_empty() {
+            Ok(PrecompileOutput {
+                exit_status: ExitSucceed::Returned,
+                output,
+            })
+        } else {
+            Err(PrecompileFailure::Error {
+                exit_status: ExitError::Other("invalid output".into()),
+            })
         }
     }
 }
 
-impl<T: PortalReadApi<BlockNumber>, BlockNumber: Encode> LinearCostPrecompile
-    for PortalPrecompile<T, BlockNumber>
-{
-    const BASE: u64 = 3000;
-    const WORD: u64 = 200;
-
-    fn execute(
-        input: &[u8],
-        _max_linear_cost_based_on_input_size: u64,
-    ) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
-        PortalPrecompile::<T, BlockNumber>::call_portal(input)
-    }
-}
-
 #[cfg(test)]
-pub mod test_portal_precompile {
+pub mod tests {
     use super::*;
 
     #[test]
-    fn test_get_latest_finalized_header_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = GetLatestFinalizedHeader(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, GetLatestFinalizedHeader(chain_id));
-    }
-
-    #[test]
-    fn test_get_latest_finalized_height_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = GetLatestFinalizedHeight(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, GetLatestFinalizedHeight(chain_id));
-    }
-
-    #[test]
-    fn test_get_latest_updated_height_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = GetLatestUpdatedHeight(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, GetLatestUpdatedHeight(chain_id));
-    }
-
-    #[test]
-    fn test_get_current_epoch_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = GetCurrentEpoch(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, GetCurrentEpoch(chain_id));
-    }
-
-    #[test]
-    fn test_read_epoch_offset_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = ReadEpochOffset(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, ReadEpochOffset(chain_id));
-    }
-
-    #[test]
-    fn test_read_fast_confirmation_offset_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = ReadFastConfirmationOffset(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, ReadFastConfirmationOffset(chain_id));
-    }
-
-    #[test]
-    fn test_read_rational_confirmation_offset_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = ReadRationalConfirmationOffset(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(
-            recoded_portal_call,
-            ReadRationalConfirmationOffset(chain_id)
-        );
-    }
-
-    #[test]
-    fn test_verify_event_inclusion_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let event = vec![1, 2, 3, 4];
-        let portal_call = VerifyEventInclusion(chain_id, event.clone());
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, VerifyEventInclusion(chain_id, event));
-    }
-
-    #[test]
-    fn test_verify_state_inclusion_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let event = vec![1, 2, 3, 4];
-        let portal_call = VerifyStateInclusion(chain_id, event.clone());
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, VerifyStateInclusion(chain_id, event));
-    }
-
-    #[test]
-    fn test_verify_tx_inclusion_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let event = vec![1, 2, 3, 4];
-        let portal_call = VerifyTxInclusion(chain_id, event.clone());
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-        assert_eq!(recoded_portal_call, VerifyTxInclusion(chain_id, event));
-    }
+    fn stub() {}
 }
