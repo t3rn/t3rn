@@ -92,7 +92,7 @@ jobs:
 
       - name: 🚀 t0rn Runtime Upgrade
         run: |
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ github.ref }} ${{ env.PARACHAIN_NAME }}
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
 
   ranger-deploy:
     runs-on: self-hosted
