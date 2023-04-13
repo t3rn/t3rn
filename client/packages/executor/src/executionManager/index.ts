@@ -50,8 +50,8 @@ export interface PersistedState {
     queue: Queue
     xtx: { [id: string]: Execution }
     sfxToXtx: { [sfxId: string]: string }
-    targetEstimator: { [id: string]: Estimator }
-    relayers: { [key: string]: SubstrateRelayer }
+    // targetEstimator: { [id: string]: Estimator }
+    // relayers: { [key: string]: SubstrateRelayer }
 }
 
 /**
@@ -112,8 +112,8 @@ export class ExecutionManager {
             this.queue = state.queue
             this.xtx = state.xtx
             this.sfxToXtx = state.sfxToXtx
-            this.targetEstimator = state.targetEstimator
-            this.relayers = state.relayers
+            // this.targetEstimator = state.targetEstimator
+            // this.relayers = state.relayers
         }
         return this
     }

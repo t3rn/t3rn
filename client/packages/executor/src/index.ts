@@ -158,6 +158,7 @@ class Instance {
 
     /** Registers a keypress listener for Ctrl+C that initiates instance shutdown. */
     private registerExitListener(): Instance {
+        const self = this
         readline.emitKeypressEvents(process.stdin)
         process.stdin.on("keypress", async (_, { ctrl, name }) => {
             if (ctrl && name === "c") {
@@ -169,16 +170,17 @@ class Instance {
         process.stdin.setRawMode(true)
         process.stdin.resume()
         process.once("exit", async () => {
+            //TODO do this on every self.executionManager.circuitListener.on("Event"
             const serializedState = JSON.stringify({ //WIP
-                queue: this.executionManager.queue,
-                xtx: this.executionManager.xtx,
-                sfxToXtx: this.executionManager.sfxToXtx,
-                targetEstimator: this.executionManager.targetEstimator,
-                relayers: this.executionManager.relayers,
+                queue: self.executionManager.queue,
+                xtx: self.executionManager.xtx, //WIP handle <Execution>
+                sfxToXtx: self.executionManager.sfxToXtx,
+                // targetEstimator: this.executionManager.targetEstimator,
+                // relayers: this.executionManager.relayers,
             })
-            await writeFile(join(this.baseDir.toString(), "state.json"), serializedState)
+            await writeFile(join(self.baseDir.toString(), "state.json"), serializedState)
         })
-        return this
+        return self
     }
 }
 
