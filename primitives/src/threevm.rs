@@ -3,8 +3,7 @@ use crate::{
     circuit::LocalStateExecutionView,
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, RegistryContract},
-    portal::{PortalExecution, PrecompileArgs as PortalPrecompileArgs},
-    SpeedMode,
+    portal::{PortalExecution, PortalPrecompileInterfaceEnum},
 };
 use codec::{Decode, Encode};
 use sp_runtime::{DispatchError, DispatchResult};
@@ -14,12 +13,9 @@ use t3rn_sdk_primitives::{
     state::SideEffects,
 };
 
-// Precompile pointers baked into the binary.
-// Genesis exists only to map hashes to pointers.
-pub const GET_STATE: u8 = 55;
-pub const SUBMIT: u8 = 56;
-pub const POST_SIGNAL: u8 = 57;
-pub const PORTAL: u8 = 70;
+// Tells the precompile indexer whether the call came from EVM or WASM in encoding-specific formats
+pub const EVM_RECODING_BYTE_SELECTOR: u8 = 40;
+pub const WASM_RECODING_BYTE_SELECTOR: u8 = 41;
 
 #[derive(Encode, Decode)]
 pub struct GetState<T: frame_system::Config> {
@@ -40,7 +36,7 @@ where
         SpeedMode,
     ),
     Signal(T::Origin, ExecutionSignal<T::Hash>),
-    Portal(PortalPrecompileArgs),
+    Portal(PortalPrecompileInterfaceEnum),
 }
 
 /// The happy return type of an invocation

@@ -6489,6 +6489,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
 ]
@@ -9681,7 +9682,6 @@ dependencies = [
  "parity-scale-codec",
  "rlp",
  "sp-std",
- "t3rn-abi",
  "t3rn-mini-mock-runtime",
  "t3rn-primitives",
 ]
@@ -9698,6 +9698,7 @@ version = "1.0.0"
 dependencies = [
  "fp-evm 3.0.0-dev",
  "frame-system",
+ "pallet-evm 0.1.0",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",

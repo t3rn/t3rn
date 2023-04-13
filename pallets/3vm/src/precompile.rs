@@ -1,16 +1,12 @@
 use crate::{BalanceOf, Config, Error, Pallet, PrecompileIndex};
 use codec::{Decode, Encode};
 use frame_support::{dispatch::RawOrigin, sp_runtime::DispatchError};
-use frame_system::ensure_signed;
-use sp_std::prelude::*;
+use sp_std::{vec, vec::Vec};
+use t3rn_abi::{Codec as T3rnCodec, FilledAbi};
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
-    portal::{Portal, PortalExecution, PrecompileArgs as PortalPrecompileArgs},
-    threevm::{
-        GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation, GET_STATE, PORTAL,
-        POST_SIGNAL, SUBMIT,
-    },
-    SpeedMode, T3rnCodec,
+    portal::{get_portal_interface_abi, Portal, PortalExecution, PortalPrecompileInterfaceEnum},
+    threevm::{GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation},
 };
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
@@ -19,6 +15,13 @@ use t3rn_sdk_primitives::{
 
 const LOG_TARGET: &str = "3vm::precompile";
 
+// Precompile pointers baked into the binary.
+// Genesis exists only to map hashes to pointers.
+pub const GET_STATE: u8 = 55;
+pub const SUBMIT: u8 = 56;
+pub const POST_SIGNAL: u8 = 57;
+pub const PORTAL: u8 = 70;
+
 type CodecResult<T> = Result<T, codec::Error>;
 
 pub(crate) fn lookup<T: Config>(dest: &T::Hash) -> Option<u8> {
@@ -26,6 +29,7 @@ pub(crate) fn lookup<T: Config>(dest: &T::Hash) -> Option<u8> {
 }
 
 // FIXME: figure out charging, costing
+// TODO: determine recoding, can we always assume here that invoke_raw is invoked by EVM? if so we prefix the byte and recode everything
 pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &mut Vec<u8>) {
     if args.len() < 2 {
         return Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output)
@@ -112,14 +116,45 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 }
             },
             PORTAL => {
-                let mut result = PortalPrecompileArgs::recode_to_scale_and_decode(&codec, args)
+                // TODO: use bytesmut and advance these
+
+                let input = &args[..];
+                // FIXME: Panic here, dont
+                assert!(input.len() > 3, "Not enough data to determine selectors");
+
+                // First byte determines the selector here
+                // TODO: handle if this is coming from an evm contract or from wasm
+                // Second byte determines if it came from EVM or WASM
+                let input_without_vm_selectors = &input[2..];
+                // Third byte is portal
+                let portal_selector = input_without_vm_selectors.first();
+
+                let mut result = FilledAbi::try_fill_abi(
+                    get_portal_interface_abi(),
+                    // Strip the portal prefix
+                    input_without_vm_selectors[1..].to_vec(),
+                    T3rnCodec::Rlp,
+                )
+                // TODO Here determine if we should recode as RLP or not, depending on VM selector
+                .and_then(|abi| abi.recode_as(&T3rnCodec::Rlp, &T3rnCodec::Scale))
+                .and_then(|mut recoded| {
+                    portal_selector
+                        .map(|x| {
+                            recoded.insert(0, *x);
+                            recoded
+                        })
+                        .ok_or_else(|| DispatchError::Other("There was no portal selector byte"))
+                })
+                .and_then(|recoded| {
+                    PortalPrecompileInterfaceEnum::decode(&mut &recoded[..])
+                        .map_err(|e| DispatchError::Other("Failed to decode portal interface enum"))
+                })
                 .and_then(|recoded_call_as_enum| {
-                    log::debug!(target: LOG_TARGET, "Built recoded call {:?}", recoded_call_as_enum);
                     invoke::<T>(PrecompileArgs::Portal(recoded_call_as_enum)).map(|x| if let PrecompileInvocation::Portal(i) = x {
                         let bytes: Vec<u8> = i.into();
                         bytes
                     } else {
-                        log::warn!(target: LOG_TARGET, "Exceptional issue, portal precompile invocation returned something other than a portal result");
+                        log::warn!("Exceptional issue, portal precompile invocation returned something other than a portal result");
                         Default::default()
                     })
                 })
@@ -128,18 +163,9 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                     _ => "Failed to invoke portal",
                 });
 
-                log::debug!(target: LOG_TARGET, "Result {:?}", result);
-
                 match result {
-                    Ok(ref mut bytes) => {
-                        output.push(0); // It's an ok
-                        output.append(bytes);
-                    },
-                    Err(msg) => {
-                        log::error!(target: LOG_TARGET, "Failed to invoke portal: {}", msg);
-                        output.push(1); // It's an error
-                                        // output.append(msg.as_bytes().to_vec().as_mut()) No need to write result if it gets thrown away
-                    },
+                    Ok(ref mut bytes) => output.append(bytes),
+                    Err(msg) => output.append(msg.as_bytes().to_vec().as_mut()),
                 }
             },
             _ => Err::<(), _>(Error::<T>::InvalidPrecompilePointer).encode_to(output),
@@ -232,34 +258,34 @@ pub(crate) fn invoke<T: Config>(
             }
         },
         PrecompileArgs::Portal(args) => match args {
-            PortalPrecompileArgs::GetLatestFinalizedHeader(chain_id) =>
+            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeader(chain_id) =>
                 T::Portal::get_latest_finalized_header(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::GetLatestFinalizedHeight(chain_id) =>
+            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeight(chain_id) =>
                 T::Portal::get_latest_finalized_height(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::GetLatestUpdatedHeight(chain_id) =>
+            PortalPrecompileInterfaceEnum::GetLatestUpdatedHeight(chain_id) =>
                 T::Portal::get_latest_updated_height(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::GetCurrentEpoch(chain_id) =>
+            PortalPrecompileInterfaceEnum::GetCurrentEpoch(chain_id) =>
                 T::Portal::get_current_epoch(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::ReadEpochOffset(chain_id) =>
+            PortalPrecompileInterfaceEnum::ReadEpochOffset(chain_id) =>
                 T::Portal::read_epoch_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileArgs::ReadFastConfirmationOffset(chain_id) =>
+            PortalPrecompileInterfaceEnum::ReadFastConfirmationOffset(chain_id) =>
                 T::Portal::read_fast_confirmation_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileArgs::ReadRationalConfirmationOffset(chain_id) =>
+            PortalPrecompileInterfaceEnum::ReadRationalConfirmationOffset(chain_id) =>
                 T::Portal::read_rational_confirmation_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileArgs::VerifyEventInclusion(chain_id, event) =>
+            PortalPrecompileInterfaceEnum::VerifyEventInclusion(chain_id, event) =>
                 T::Portal::verify_event_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyStateInclusion(chain_id, event) =>
+            PortalPrecompileInterfaceEnum::VerifyStateInclusion(chain_id, event) =>
                 T::Portal::verify_state_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyTxInclusion(chain_id, event) =>
+            PortalPrecompileInterfaceEnum::VerifyTxInclusion(chain_id, event) =>
                 T::Portal::verify_tx_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
         },
@@ -399,63 +425,6 @@ mod tests {
                     xtx_id: <Test as frame_system::Config>::Hash::decode(
                         &mut &hex::decode(
                             "e8b9e71dc3f878ecf9dae04303767b76882fd0034dd73c98589ff45dab57b05b"
-                        )
-                        .unwrap()[..]
-                    )
-                    .unwrap()
-                })
-            );
-        });
-    }
-
-    #[test]
-    fn invoke_submit_sfx_with_speed_mode() {
-        new_test_ext().execute_with(|| {
-            let account = 4_u64;
-            let caller = 5_u64;
-            let dest = 6_u64;
-            let mut side_effects_bounded_vec: BoundedVec<Chain<AccountId, u128, H256>, 16> =
-                BoundedVec::default();
-
-            side_effects_bounded_vec
-                .try_push(Chain::Kusama(Operation::Transfer {
-                    caller,
-                    to: dest,
-                    amount: 1_u128,
-                    insurance: None,
-                }))
-                .unwrap();
-
-            let speed_mode = SpeedMode::Finalized;
-            let submit_sfx_args = SideEffects::<AccountId, u128, H256> {
-                execution_id: H256::zero(),
-                side_effects: side_effects_bounded_vec,
-            };
-
-            let args = &mut &[
-                account.encode(),
-                submit_sfx_args.encode(),
-                speed_mode.encode(),
-            ]
-            .concat()[..];
-            let mut out = Vec::<u8>::new();
-
-            invoke_raw::<Test>(&GET_STATE, args, &mut out);
-            let res = <core::result::Result<
-                LocalStateExecutionView<Test, BalanceOf<Test>>,
-                crate::Error<Test>,
-            > as Decode>::decode(&mut &out[..])
-            .unwrap();
-
-            assert_eq!(
-                res,
-                Ok(LocalStateExecutionView::<Test, BalanceOf<Test>> {
-                    local_state: Default::default(),
-                    hardened_side_effects: vec![vec![]],
-                    steps_cnt: (0, 1),
-                    xtx_id: <Test as frame_system::Config>::Hash::decode(
-                        &mut &hex::decode(
-                            "d2097ea5ba9ae6f4484fa960dbc0f82a6ac5a08e4c0785cff0b95d510a97ce18"
                         )
                         .unwrap()[..]
                     )
