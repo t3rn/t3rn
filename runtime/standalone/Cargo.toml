@@ -34,6 +34,7 @@ pallet-portal                             = { path = "../../pallets/portal", def
 pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
+pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "create-standalone-pallet", default-features = false }
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types   = { path = "../../types", default-features = false }
@@ -123,6 +124,7 @@ std = [
   "pallet-3vm/std",
   "pallet-3vm-contracts/std",
   # "circuit-runtime-pallets/std",
+  "pallet-eth2-finality-verifier/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
   "pallet-3vm-evm/std",
