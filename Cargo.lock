@@ -6590,6 +6590,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-mini-mock-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]

@@ -1,7 +1,8 @@
 use codec::{Decode, Encode};
 use frame_support::RuntimeDebug;
 pub use pallet_attesters::{
-    Attestation, AttestationFor, AttestationStatus, Error as AttestersError,
+    ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations,
+    Error as AttestersError, Nominations, SortedNominatedAttesters,
 };
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
@@ -46,6 +47,7 @@ frame_support::construct_runtime!(
 
 impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
+    type Currency = Balances;
     type Event = Event;
 }
 
