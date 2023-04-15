@@ -6585,10 +6585,11 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-application-crypto",
  "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
+ "t3rn-mini-mock-runtime",
 ]
 
 [[package]]
@@ -13521,6 +13522,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -13641,6 +13643,7 @@ dependencies = [
  "num",
  "num-traits",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-balances",
  "pallet-contracts 4.0.0-dev",
  "pallet-grandpa-finality-verifier",
@@ -13654,6 +13657,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "t3rn-abi",
