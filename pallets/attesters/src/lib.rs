@@ -14,24 +14,50 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_application_crypto::RuntimePublic;
     use sp_runtime::RuntimeAppPublic;
-
-    use sp_core::{
-        crypto::{KeyTypeId},
-        ecdsa, ed25519, sr25519,
-    };
-    
-
-    use sp_runtime::traits::Verify;
     use sp_std::{convert::TryInto, prelude::*};
 
+    use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, sr25519};
+
+    use sp_runtime::traits::Verify;
+
     // Key types for attester crypto
-    const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
-    const ED25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"edat");
-    const SR25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"srat");
+    pub const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
+    pub const ED25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"edat");
+    pub const SR25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"srat");
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub enum AttestationFor {
+        Xtx,
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub enum AttestationStatus {
+        Pending,
+        Timeout,
+        Approved,
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub struct Attestation<Attester, Signature> {
+        pub for_: AttestationFor,
+        pub status: AttestationStatus,
+        pub signature: Vec<(Attester, Signature)>,
+    }
+
+    impl<Attester, Signature> Default for Attestation<Attester, Signature> {
+        fn default() -> Self {
+            Self {
+                for_: AttestationFor::Xtx,
+                status: AttestationStatus::Pending,
+                signature: Vec::new(),
+            }
+        }
+    }
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type ActiveSetSize: Get<u32>;
     }
 
     #[pallet::pallet]
@@ -41,8 +67,12 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn attesters)]
-    pub type Attesters<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, AttesterInfo<T::AccountId>>;
+    pub type Attesters<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AttesterInfo>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn attestations)]
+    pub type Attestations<T: Config> =
+        StorageMap<_, Identity, T::Hash, Attestation<T::AccountId, Vec<u8>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn nominations)]
@@ -59,9 +89,11 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         InvalidSignature,
+        InvalidMessage,
         AlreadyRegistered,
         PublicKeyMissing,
         AttestationSignatureInvalid,
+        AttestationDoubleSignAttempt,
         NotRegistered,
         AlreadyNominated,
     }
@@ -83,11 +115,9 @@ pub mod pallet {
                 Error::<T>::AlreadyRegistered
             );
 
-            // Registration logic
             Attesters::<T>::insert(
                 &account_id,
                 AttesterInfo {
-                    account_id: account_id.clone(),
                     key_ec: ecdsa_key,
                     key_ed: ed25519_key,
                     key_sr: sr25519_key,
@@ -102,6 +132,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             message: Vec<u8>,
             signature: Vec<u8>,
+            attestation_for: AttestationFor,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
 
@@ -114,7 +145,45 @@ pub mod pallet {
 
             ensure!(is_verified, Error::<T>::AttestationSignatureInvalid);
 
-            Self::deposit_event(Event::AttestationSubmitted(attester.account_id));
+            match attestation_for {
+                AttestationFor::Xtx => {
+                    let xtx_hash: T::Hash = Decode::decode(&mut &message[..])
+                        .map_err(|_| Error::<T>::InvalidMessage)?;
+                    let xtx_attestation = Attestations::<T>::get(xtx_hash).unwrap_or_default();
+
+                    // Check if the attester has already signed the attestation
+                    ensure!(
+                        !xtx_attestation
+                            .signature
+                            .iter()
+                            .any(|(attester, _)| attester == &account_id),
+                        Error::<T>::AttestationDoubleSignAttempt
+                    );
+
+                    let signature_chain: Vec<(T::AccountId, Vec<u8>)> = xtx_attestation
+                        .signature
+                        .into_iter()
+                        .chain(vec![(account_id.clone(), signature)])
+                        .collect();
+
+                    let status = if signature_chain.len() < T::ActiveSetSize::get() as usize {
+                        AttestationStatus::Pending
+                    } else {
+                        AttestationStatus::Approved
+                    };
+
+                    Attestations::<T>::insert(
+                        xtx_hash,
+                        Attestation {
+                            for_: attestation_for,
+                            status,
+                            signature: signature_chain,
+                        },
+                    );
+                },
+            }
+
+            Self::deposit_event(Event::AttestationSubmitted(account_id));
 
             Ok(())
         }
@@ -152,14 +221,13 @@ pub mod pallet {
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
-    pub struct AttesterInfo<AccountId> {
-        pub account_id: AccountId,
+    pub struct AttesterInfo {
         pub key_ed: [u8; 32],
         pub key_ec: [u8; 33],
         pub key_sr: [u8; 32],
     }
 
-    impl<AccountId> AttesterInfo<AccountId> {
+    impl AttesterInfo {
         pub fn verify_attestation_signature(
             &self,
             key_type: KeyTypeId,
@@ -193,36 +261,67 @@ pub mod pallet {
 
 #[cfg(test)]
 pub mod attesters_test {
-    // use crate::{AttesterInfo, Config, Error, Event, Pallet};
-    use codec::Encode;
-    use frame_support::{
-        assert_ok,
+    use super::{
+        ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use sp_application_crypto::{ecdsa, ed25519, sr25519, Pair, RuntimePublic};
+    use codec::Encode;
+    use frame_support::assert_ok;
+    use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
+    use sp_core::H256;
     use std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, Attesters, ExtBuilder, Origin,
+        AccountId, AttestationFor, AttestationStatus, Attesters, AttestersError, ExtBuilder,
+        MiniRuntime, Origin,
     };
+    fn register_attester_with_single_private_key(private_key: [u8; 32]) {
+        // Register an attester
+        let attester = AccountId::from(private_key);
+
+        let secret_key = [1u8; 32];
+        let ecdsa_key = ecdsa::Pair::from_seed(&secret_key).public().to_raw_vec();
+        let ed25519_key = ed25519::Pair::from_seed(&secret_key).public().to_raw_vec();
+        let sr25519_key = sr25519::Pair::from_seed(&secret_key).public().to_raw_vec();
+
+        assert_ok!(Attesters::register_attester(
+            Origin::signed(attester),
+            ecdsa_key.try_into().unwrap(),
+            ed25519_key.try_into().unwrap(),
+            sr25519_key.try_into().unwrap(),
+        ));
+    }
 
     #[test]
     fn register_attester_from_single_private_key() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            // Register an attester
-            let attester = AccountId::from([1; 32]);
-
-            let secret_key = [1u8; 32];
-            let ecdsa_key = ecdsa::Pair::from_seed(&secret_key).public().to_raw_vec();
-            let ed25519_key = ed25519::Pair::from_seed(&secret_key).public().to_raw_vec();
-            let sr25519_key = sr25519::Pair::from_seed(&secret_key).public().to_raw_vec();
-
-            assert_ok!(Attesters::register_attester(
-                Origin::signed(attester),
-                ecdsa_key.try_into().unwrap(),
-                ed25519_key.try_into().unwrap(),
-                sr25519_key.try_into().unwrap(),
-            ));
+            register_attester_with_single_private_key([1u8; 32]);
         });
+    }
+
+    fn sign_and_submit_attestation(
+        attester: AccountId,
+        message: [u8; 32],
+        key_type: KeyTypeId,
+        secret_key: [u8; 32],
+    ) {
+        let signature: Vec<u8> = match key_type {
+            ECDSA_ATTESTER_KEY_TYPE_ID =>
+                ecdsa::Pair::from_seed(&secret_key).sign(&message).encode(),
+            ED25519_ATTESTER_KEY_TYPE_ID => ed25519::Pair::from_seed(&secret_key)
+                .sign(&message)
+                .encode(),
+            SR25519_ATTESTER_KEY_TYPE_ID => sr25519::Pair::from_seed(&secret_key)
+                .sign(&message)
+                .encode(),
+            _ => panic!("Invalid key type"),
+        };
+
+        assert_ok!(Attesters::submit_attestation(
+            Origin::signed(attester),
+            message.to_vec(),
+            signature,
+            AttestationFor::Xtx,
+        ));
     }
 
     #[test]
@@ -231,29 +330,70 @@ pub mod attesters_test {
         ext.execute_with(|| {
             // Register an attester
             let attester = AccountId::from([1; 32]);
-
-            let secret_key = [1u8; 32];
-            let ecdsa_key = ecdsa::Pair::from_seed(&secret_key).public().to_raw_vec();
-            let ed25519_key = ed25519::Pair::from_seed(&secret_key).public().to_raw_vec();
-            let sr25519_key = sr25519::Pair::from_seed(&secret_key).public().to_raw_vec();
-
-            assert_ok!(Attesters::register_attester(
-                Origin::signed(attester.clone()),
-                ecdsa_key.try_into().unwrap(),
-                ed25519_key.try_into().unwrap(),
-                sr25519_key.try_into().unwrap(),
-            ));
-
+            register_attester_with_single_private_key([1u8; 32]);
             // Submit an attestation signed with the Ed25519 key
-            let message = b"message".to_vec();
-            let key_pair = ecdsa::Pair::from_seed(&secret_key);
-            let signature = key_pair.sign(&message);
+            let message: [u8; 32] = *b"message_that_needs_attestation32";
+            sign_and_submit_attestation(attester, message, ECDSA_ATTESTER_KEY_TYPE_ID, [1u8; 32]);
 
-            assert_ok!(Attesters::submit_attestation(
-                Origin::signed(attester),
+            let attestation =
+                Attesters::attestations(H256::from(*b"message_that_needs_attestation32"))
+                    .expect("Attestation should exist");
+            assert_eq!(attestation.status, AttestationStatus::Pending);
+        });
+    }
+
+    #[test]
+    fn double_attestation_is_not_allowed() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Register an attester
+            let attester = AccountId::from([1; 32]);
+            register_attester_with_single_private_key([1u8; 32]);
+            // Submit an attestation signed with the Ed25519 key
+            let message: [u8; 32] = *b"message_that_needs_attestation32";
+            sign_and_submit_attestation(
+                attester.clone(),
                 message,
-                signature.encode(),
-            ));
+                ECDSA_ATTESTER_KEY_TYPE_ID,
+                [1u8; 32],
+            );
+
+            let same_signature_again = ecdsa::Pair::from_seed(&[1u8; 32]).sign(&message).encode();
+
+            frame_support::assert_err!(
+                Attesters::submit_attestation(
+                    Origin::signed(attester),
+                    message.to_vec(),
+                    same_signature_again,
+                    AttestationFor::Xtx,
+                ),
+                AttestersError::<MiniRuntime>::AttestationDoubleSignAttempt
+            );
+        });
+    }
+
+    #[test]
+    fn register_and_submit_32x_attestations_in_ecdsa_changes_status_to_approved() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            for counter in 1..33u8 {
+                // Register an attester
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+                // Submit an attestation signed with the Ed25519 key
+                let message: [u8; 32] = *b"message_that_needs_attestation32";
+                sign_and_submit_attestation(
+                    attester,
+                    message,
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    [1u8; 32],
+                );
+            }
+
+            let attestation =
+                Attesters::attestations(H256::from(*b"message_that_needs_attestation32"))
+                    .expect("Attestation should exist");
+            assert_eq!(attestation.status, AttestationStatus::Approved);
         });
     }
 }
