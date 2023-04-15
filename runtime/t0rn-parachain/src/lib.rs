@@ -170,6 +170,7 @@ construct_runtime!(
 
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
+        Attesters: pallet_attesters = 101,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
@@ -195,6 +196,9 @@ construct_runtime!(
 );
 
 #[cfg(feature = "runtime-benchmarks")]
+pub use pallet_attesters::benchmarking;
+
+#[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
 extern crate frame_benchmarking;
 
@@ -207,6 +211,7 @@ mod benches {
         [pallet_timestamp, Timestamp]
         [pallet_collator_selection, CollatorSelection]
         [pallet_account_manager, AccountManager]
+        [pallet_attesters, Attesters]
     );
 }
 
