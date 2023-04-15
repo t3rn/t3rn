@@ -125,10 +125,6 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
     }
 }
 
-impl pallet_attesters::Config for Runtime {
-    type Event = Event;
-}
-
 impl pallet_clock::Config for Runtime {
     type AccountManager = AccountManager;
     type Event = Event;

@@ -17,6 +17,7 @@ num        = { version = "0.4.0" }
 scale-info = { version = "2.1.1",  features = [ "derive" ] }
 serde      = {  version = "1.0", features = [ "derive" ] }
 
+sp-io           = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 sp-core         = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 sp-runtime      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 sp-std          = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
@@ -42,7 +43,8 @@ pallet-contracts  = { git = "https://github.com/paritytech/substrate.git", branc
 pallet-timestamp  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../../pallets/portal" }
-pallet-xdns                    = { path = "../../pallets/xdns" }
+pallet-xdns                      = { path = "../../pallets/xdns" }
+pallet-attesters                  = { path = "../../pallets/attesters" }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }
 
