@@ -32,6 +32,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances = 2,
         Timestamp: pallet_timestamp = 3,
         XDNS: pallet_xdns = 100,
+        Attesters: pallet_attesters::{Pallet, Call, Storage, Event<T>, Config<T>} = 101,
         // Portal
         Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
@@ -39,6 +40,10 @@ frame_support::construct_runtime!(
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
     }
 );
+
+impl pallet_attesters::Config for MiniRuntime {
+    type Event = Event;
+}
 
 impl pallet_balances::Config for MiniRuntime {
     type AccountStore = System;
@@ -368,4 +373,57 @@ pub enum MockWasmContractsEvent<T: frame_system::Config + pallet_balances::Confi
         /// The code hash that was delegate called.
         code_hash: CodeHash<T>,
     },
+}
+
+use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild;
+use t3rn_abi::{types::Sfx4bId, SFXAbi};
+use t3rn_primitives::{contracts_registry::RegistryContract, xdns::GatewayRecord};
+
+#[derive(Default)]
+pub struct ExtBuilder {
+    known_gateway_records: Vec<GatewayRecord<AccountId>>,
+    standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
+    known_contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
+}
+
+impl ExtBuilder {
+    pub fn with_gateway_records(mut self, gateway_records: Vec<GatewayRecord<AccountId>>) -> Self {
+        self.known_gateway_records = gateway_records;
+        self
+    }
+
+    pub fn with_standard_sfx_abi(mut self, standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>) -> Self {
+        self.standard_sfx_abi = standard_sfx_abi;
+        self
+    }
+
+    pub fn with_known_contracts(
+        mut self,
+        known_contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
+    ) -> Self {
+        self.known_contracts = known_contracts;
+        self
+    }
+
+    pub fn build(self) -> sp_io::TestExternalities {
+        let mut t = frame_system::GenesisConfig::default()
+            .build_storage::<MiniRuntime>()
+            .expect("Frame system builds valid default genesis config");
+
+        pallet_balances::GenesisConfig::<MiniRuntime> { balances: vec![] }
+            .assimilate_storage(&mut t)
+            .expect("Pallet balances storage can be assimilated");
+
+        pallet_xdns::GenesisConfig::<MiniRuntime> {
+            known_xdns_records: vec![],
+            known_gateway_records: self.known_gateway_records,
+            standard_sfx_abi: self.standard_sfx_abi,
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet xdns can be assimilated");
+
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
 }
