@@ -375,7 +375,7 @@ pub mod attesters_test {
     use std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
-        Balance, Balances, ExtBuilder, MiniRuntime, Nominations, Origin, SortedNominatedAttesters,
+        Balances, ExtBuilder, MiniRuntime, Origin, SortedNominatedAttesters,
     };
 
     fn register_attester_with_single_private_key(private_key: [u8; 32]) {
@@ -521,38 +521,27 @@ pub mod attesters_test {
             }
 
             // Nominate the attesters
-            let mut nominations = Vec::new();
-            for i in 0..64 {
+            for i in 0..64u128 {
                 let nominator = AccountId::from([(i + 1) as u8; 32]);
-                let attester = attesters[i].clone();
-                let amount = 1000u128;
+                let attester = attesters[i as usize].clone();
+                let amount = 1000u128 + i;
                 let _ = Balances::deposit_creating(&nominator, amount);
-                let nomination = (attester.clone(), amount);
-                Nominations::<MiniRuntime>::insert(&attester, nomination);
-                SortedNominatedAttesters::<MiniRuntime>::try_mutate(|attesters| {
-                    if let Some(index) = attesters.iter().position(|a| a == &attester) {
-                        attesters[index] = attester.clone();
-                    } else {
-                        attesters.push(attester.clone());
-                    }
-                    attesters.sort_unstable_by_key(|a| {
-                        Nominations::<MiniRuntime>::get(a)
-                            .map(|bal| bal.1 as Balance)
-                            .unwrap_or(0)
-                    });
-                    attesters.truncate(32);
-                    Ok::<(), AttestersError<MiniRuntime>>(())
-                })
-                .unwrap();
-                nominations.push((nominator, attester, amount));
+                assert_ok!(Attesters::nominate(
+                    Origin::signed(nominator),
+                    attester.clone(),
+                    amount
+                ));
             }
 
             Attesters::on_initialize(400);
 
             // Check that the top 32 attesters are the ones with the most nominations
             let active_set = ActiveSet::<MiniRuntime>::get();
+
             assert_eq!(active_set.len(), 32);
             let top_nominated_attesters = SortedNominatedAttesters::<MiniRuntime>::get();
+            assert_eq!(top_nominated_attesters, attesters[32..64].to_vec());
+
             for i in 0..32 {
                 assert_eq!(active_set[i], top_nominated_attesters[i]);
             }
