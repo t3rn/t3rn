@@ -8,15 +8,15 @@ pub use crate::pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    t3rn_primitives::reexport_currency_types!();
 
     use codec::{Decode, Encode};
-    use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
+    use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::Currency};
     use frame_system::pallet_prelude::*;
     use sp_application_crypto::RuntimePublic;
-    use sp_runtime::RuntimeAppPublic;
-    use sp_std::{convert::TryInto, prelude::*};
-
     use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, sr25519};
+    use sp_runtime::{traits::Zero, RuntimeAppPublic};
+    use sp_std::{convert::TryInto, prelude::*};
 
     use sp_runtime::traits::Verify;
 
@@ -58,6 +58,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type ActiveSetSize: Get<u32>;
+        type Currency: Currency<Self::AccountId>;
     }
 
     #[pallet::pallet]
@@ -70,20 +71,29 @@ pub mod pallet {
     pub type Attesters<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AttesterInfo>;
 
     #[pallet::storage]
+    #[pallet::getter(fn active_set)]
+    pub type ActiveSet<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn sorted_nominated_attesters)]
+    pub type SortedNominatedAttesters<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+    #[pallet::storage]
     #[pallet::getter(fn attestations)]
     pub type Attestations<T: Config> =
         StorageMap<_, Identity, T::Hash, Attestation<T::AccountId, Vec<u8>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn nominations)]
-    pub type Nominations<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, T::AccountId>;
+    pub type Nominations<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, (T::AccountId, BalanceOf<T>)>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         AttesterRegistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
-        Nominated(T::AccountId, T::AccountId),
+        Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
     }
 
     #[pallet::error]
@@ -94,8 +104,10 @@ pub mod pallet {
         PublicKeyMissing,
         AttestationSignatureInvalid,
         AttestationDoubleSignAttempt,
+        NotActiveSet,
         NotRegistered,
         AlreadyNominated,
+        MissingNominations,
     }
 
     #[pallet::call]
@@ -103,6 +115,7 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn register_attester(
             origin: OriginFor<T>,
+            self_nominate_amount: BalanceOf<T>,
             ecdsa_key: [u8; 33],
             ed25519_key: [u8; 32],
             sr25519_key: [u8; 32],
@@ -124,6 +137,9 @@ pub mod pallet {
                 },
             );
 
+            // Self nominate in order to be part of the active set selection
+            Self::do_nominate(account_id.clone(), account_id, self_nominate_amount)?;
+
             Ok(())
         }
 
@@ -138,6 +154,12 @@ pub mod pallet {
 
             // Lookup the attester in the storage
             let attester = Attesters::<T>::get(&account_id).ok_or(Error::<T>::NotRegistered)?;
+
+            // Check if active set
+            ensure!(
+                ActiveSet::<T>::get().contains(&account_id),
+                Error::<T>::NotActiveSet
+            );
 
             let is_verified = attester
                 .verify_attestation_signature(ECDSA_ATTESTER_KEY_TYPE_ID, &message, &signature)
@@ -189,14 +211,80 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
-        pub fn nominate(_origin: OriginFor<T>, _attester: T::AccountId) -> DispatchResult {
-            // Nomination logic
+        pub fn nominate(
+            origin: OriginFor<T>,
+            attester: T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> DispatchResult {
+            let nominator = ensure_signed(origin)?;
+            Self::do_nominate(nominator.clone(), attester.clone(), amount);
+            Self::deposit_event(Event::Nominated(nominator, attester, amount));
+            Ok(())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        pub fn do_nominate(
+            _nominator: T::AccountId,
+            attester: T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> DispatchResult {
+            let mut nomination = match Nominations::<T>::get(&attester) {
+                Some(nomination) => nomination,
+                None => (attester.clone(), Zero::zero()),
+            };
+
+            nomination.1 += amount;
+
+            // Update the nomination storage item
+            Nominations::<T>::insert(&attester, nomination);
+
+            // Update the sorted list of nominated attesters
+            SortedNominatedAttesters::<T>::try_mutate(|attesters| {
+                if let Some(index) = attesters.iter().position(|a| a == &attester) {
+                    // Update the existing nomination amount
+                    attesters[index] = attester.clone();
+                } else {
+                    // Add the new attester to the list
+                    attesters.push(attester.clone());
+                }
+
+                // Sort the attesters by their nomination amount
+                attesters.sort_unstable_by_key(|a| -> BalanceOf<T> {
+                    Nominations::<T>::get(a)
+                        .map(|n| n.1)
+                        .and_then(|bal| BalanceOf::<T>::try_into(bal).ok())
+                        .unwrap_or_else(Zero::zero)
+                });
+
+                // Keep only the top 32 attesters in the list
+                attesters.truncate(32);
+
+                Ok::<(), Error<T>>(())
+            })?;
+
             Ok(())
         }
     }
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(n: T::BlockNumber) -> Weight {
+            if (n % 400u32.into()).is_zero() {
+                // Update the active set of attesters
+                ActiveSet::<T>::put(
+                    SortedNominatedAttesters::<T>::get()
+                        .iter()
+                        .take(32)
+                        .cloned()
+                        .collect::<Vec<T::AccountId>>(),
+                );
+                T::DbWeight::get().reads_writes(1, 1)
+            } else {
+                0
+            }
+        }
+    }
 
     // The genesis config type.
     #[pallet::genesis_config]
@@ -265,14 +353,15 @@ pub mod attesters_test {
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use codec::Encode;
-    use frame_support::assert_ok;
+    use frame_support::{assert_ok, traits::Hooks};
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
     use std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, AttestationFor, AttestationStatus, Attesters, AttestersError, ExtBuilder,
-        MiniRuntime, Origin,
+        AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
+        Balance, ExtBuilder, MiniRuntime, Nominations, Origin, SortedNominatedAttesters,
     };
+
     fn register_attester_with_single_private_key(private_key: [u8; 32]) {
         // Register an attester
         let attester = AccountId::from(private_key);
@@ -284,10 +373,14 @@ pub mod attesters_test {
 
         assert_ok!(Attesters::register_attester(
             Origin::signed(attester),
+            10u128,
             ecdsa_key.try_into().unwrap(),
             ed25519_key.try_into().unwrap(),
             sr25519_key.try_into().unwrap(),
         ));
+
+        // Run to active set selection
+        Attesters::on_initialize(400u32);
     }
 
     #[test]
@@ -394,6 +487,56 @@ pub mod attesters_test {
                 Attesters::attestations(H256::from(*b"message_that_needs_attestation32"))
                     .expect("Attestation should exist");
             assert_eq!(attestation.status, AttestationStatus::Approved);
+        });
+    }
+
+    #[test]
+    fn attester_nomination() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Register 64 attesters
+            let mut attesters = Vec::new();
+            for i in 0..64 {
+                let attester = AccountId::from([i as u8; 32]);
+                register_attester_with_single_private_key([i as u8; 32]);
+                attesters.push(attester);
+            }
+
+            // Nominate the attesters
+            let mut nominations = Vec::new();
+            for i in 0..64 {
+                let nominator = AccountId::from([(i + 1) as u8; 32]);
+                let attester = attesters[i].clone();
+                let amount = 1000;
+                let nomination = (attester.clone(), amount);
+                Nominations::<MiniRuntime>::insert(&attester, nomination);
+                SortedNominatedAttesters::<MiniRuntime>::try_mutate(|attesters| {
+                    if let Some(index) = attesters.iter().position(|a| a == &attester) {
+                        attesters[index] = attester.clone();
+                    } else {
+                        attesters.push(attester.clone());
+                    }
+                    attesters.sort_unstable_by_key(|a| {
+                        Nominations::<MiniRuntime>::get(a)
+                            .map(|bal| bal.1 as Balance)
+                            .unwrap_or(0)
+                    });
+                    attesters.truncate(32);
+                    Ok::<(), AttestersError<MiniRuntime>>(())
+                })
+                .unwrap();
+                nominations.push((nominator, attester, amount));
+            }
+
+            Attesters::on_initialize(400);
+
+            // Check that the top 32 attesters are the ones with the most nominations
+            let active_set = ActiveSet::<MiniRuntime>::get();
+            assert_eq!(active_set.len(), 32);
+            let top_nominated_attesters = SortedNominatedAttesters::<MiniRuntime>::get();
+            for i in 0..32 {
+                assert_eq!(active_set[i], top_nominated_attesters[i]);
+            }
         });
     }
 }
