@@ -1,5 +1,8 @@
 use codec::{Decode, Encode};
 use frame_support::RuntimeDebug;
+pub use pallet_attesters::{
+    Attestation, AttestationFor, AttestationStatus, Error as AttestersError,
+};
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{
@@ -42,6 +45,7 @@ frame_support::construct_runtime!(
 );
 
 impl pallet_attesters::Config for MiniRuntime {
+    type ActiveSetSize = ConstU32<32>;
     type Event = Event;
 }
 
