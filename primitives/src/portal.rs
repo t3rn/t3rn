@@ -378,7 +378,7 @@ pub mod portal_precompile_decode_test {
                 Some(b"VerifyEventInclusion".to_vec()),
                 (
                     Box::new(FilledAbi::Bytes4(None, vec![1u8; 4])),
-                    Box::new(FilledAbi::Bytes(None, vec![4u8; 32].encode())),
+                    Box::new(FilledAbi::Bytes(None, vec![4u8; 32])),
                 ),
             )
         )
