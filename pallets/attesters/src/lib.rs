@@ -9,9 +9,12 @@ pub use crate::pallet::*;
 pub mod pallet {
     use super::*;
     t3rn_primitives::reexport_currency_types!();
-
     use codec::{Decode, Encode};
-    use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::Currency};
+    use frame_support::{
+        dispatch::DispatchResult,
+        pallet_prelude::*,
+        traits::{Currency, ReservableCurrency},
+    };
     use frame_system::pallet_prelude::*;
     use sp_application_crypto::RuntimePublic;
     use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, sr25519};
@@ -58,7 +61,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type ActiveSetSize: Get<u32>;
-        type Currency: Currency<Self::AccountId>;
+        type Currency: ReservableCurrency<Self::AccountId>;
     }
 
     #[pallet::pallet]
@@ -107,6 +110,7 @@ pub mod pallet {
         NotActiveSet,
         NotRegistered,
         AlreadyNominated,
+        NominatorNotEnoughBalance,
         MissingNominations,
     }
 
@@ -225,7 +229,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         pub fn do_nominate(
-            _nominator: T::AccountId,
+            nominator: T::AccountId,
             attester: T::AccountId,
             amount: BalanceOf<T>,
         ) -> DispatchResult {
@@ -233,6 +237,12 @@ pub mod pallet {
                 Some(nomination) => nomination,
                 None => (attester.clone(), Zero::zero()),
             };
+
+            // Check if nominator has enough balance
+            ensure!(
+                T::Currency::free_balance(&nominator) >= amount,
+                Error::<T>::NominatorNotEnoughBalance
+            );
 
             nomination.1 += amount;
 
@@ -262,6 +272,9 @@ pub mod pallet {
 
                 Ok::<(), Error<T>>(())
             })?;
+
+            // Lock the nomination amount in the nominator's account
+            T::Currency::reserve(&nominator, amount)?;
 
             Ok(())
         }
@@ -353,13 +366,16 @@ pub mod attesters_test {
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use codec::Encode;
-    use frame_support::{assert_ok, traits::Hooks};
+    use frame_support::{
+        assert_ok,
+        traits::{Currency, Hooks},
+    };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
     use std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
-        Balance, ExtBuilder, MiniRuntime, Nominations, Origin, SortedNominatedAttesters,
+        Balance, Balances, ExtBuilder, MiniRuntime, Nominations, Origin, SortedNominatedAttesters,
     };
 
     fn register_attester_with_single_private_key(private_key: [u8; 32]) {
@@ -370,6 +386,8 @@ pub mod attesters_test {
         let ecdsa_key = ecdsa::Pair::from_seed(&secret_key).public().to_raw_vec();
         let ed25519_key = ed25519::Pair::from_seed(&secret_key).public().to_raw_vec();
         let sr25519_key = sr25519::Pair::from_seed(&secret_key).public().to_raw_vec();
+
+        let _ = Balances::deposit_creating(&attester, 100u128);
 
         assert_ok!(Attesters::register_attester(
             Origin::signed(attester),
@@ -507,7 +525,8 @@ pub mod attesters_test {
             for i in 0..64 {
                 let nominator = AccountId::from([(i + 1) as u8; 32]);
                 let attester = attesters[i].clone();
-                let amount = 1000;
+                let amount = 1000u128;
+                let _ = Balances::deposit_creating(&nominator, amount);
                 let nomination = (attester.clone(), amount);
                 Nominations::<MiniRuntime>::insert(&attester, nomination);
                 SortedNominatedAttesters::<MiniRuntime>::try_mutate(|attesters| {
