@@ -40,5 +40,8 @@
     "ts-node": "^10.9.1",
     "typedoc": "^0.24.6",
     "typescript": "^4.8.4"
+  },
+  "devDependencies": {
+    "mocha-chai-jest-snapshot": "^1.1.4"
   }
 }

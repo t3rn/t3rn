@@ -12,7 +12,7 @@ import { CircuitRelayer } from "../circuit/relayer"
 import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types"
 import { RelayerEventData, RelayerEvents } from "../gateways/types"
 import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
-import { Gateway } from "../../config/config"
+import { Config, Gateway } from "../../config/config"
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -90,8 +90,9 @@ export class ExecutionManager {
     circuitRelayer: CircuitRelayer
     signer: any
     logger: any
+    config: Config
 
-    constructor(circuitClient: ApiPromise, sdk: Sdk, logger: any) {
+    constructor(circuitClient: ApiPromise, sdk: Sdk, logger: any, config: Config) {
         this.priceEngine = new PriceEngine()
         this.strategyEngine = new StrategyEngine()
         this.biddingEngine = new BiddingEngine(logger)
@@ -100,6 +101,7 @@ export class ExecutionManager {
         this.circuitRelayer = new CircuitRelayer(sdk)
         this.sdk = sdk
         this.logger = logger
+        this.config = config
     }
 
     /** Injects persisted execution state.
@@ -277,7 +279,14 @@ export class ExecutionManager {
      */
     async addXtx(xtxData: any, sdk: Sdk) {
         // create the XTX object
-        const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine, sdk.signer.address, this.logger)
+        const misc = {
+            executorName: this.config.name,
+            logsDir: this.logger.logsDir,
+            circuitRpc: this.config.circuit.rpc,
+            circuitSignerAddress: sdk.signer.address,
+            circuitSignerSecret: this.config.circuit.signerKey!,
+        }
+        const xtx = new Execution(xtxData, sdk, this.strategyEngine, this.biddingEngine, this.logger, misc)
 
         // Run the XTX strategy checks
         try {
