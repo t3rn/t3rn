@@ -71,6 +71,7 @@ export type Notification = {
  */
 export interface SideEffectMiscellaneous extends Miscellaneous {
     gatewayId: string
+    xdns: { [key: string]: any }
 }
 
 /**
@@ -166,6 +167,10 @@ export class SideEffect extends EventEmitter {
 
   strategyEngine: StrategyEngine;
   biddingEngine: BiddingEngine;
+
+  rawSideEffect: T3rnTypesSideEffect
+  misc: Miscellaneous
+  xdns: { [key: string]: any }
 
   /**
    * @param sideEffect Scale encoded side effect
@@ -301,8 +306,69 @@ export class SideEffect extends EventEmitter {
     if (maxProfitUsd !== this.maxProfitUsd.getValue()) {
       this.maxProfitUsd.next(maxProfitUsd);
       this.triggerBid();
+
+      }}
+
+    /** Custom JSON serialization. */
+    toJSON(): SerializableSideEffect {
+        return {
+            id: this.id,
+            xtxId: this.xtxId,
+            sideEffect: Object.assign({}, this.rawSideEffect, { action: this.rawSideEffect.action.toHuman() }),
+            misc: {
+                executorName: this.misc.executorName,
+                logsDir: this.logger.logsDir,
+                circuitRpc: this.misc.circuitRpc,
+                circuitSignerAddress: this.misc.circuitSignerAddress,
+                circuitSignerSecret: this.misc.circuitSignerSecret,
+                gatewayId: this.gateway.id,
+                xdns: this.xdns,
+            },
+        }
     }
-  }
+
+    /** Custom JSON deserialization. */
+    static fromJSON(o: SerializableSideEffect): SideEffect {
+        const logger = createLogger(o.misc.executorName, o.misc.logsDir)
+        const sdk = new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret)
+        const sideEffectType = o.sideEffect.action
+        // const sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](o.sideEffect) as T3rnTypesSideEffect
+        let sideEffect = {
+            ...o.sideEffect,
+            action: {
+                toHuman() {
+                    return o.sideEffect.action.toString()
+                },
+            },
+            target: {
+                toU8a() {
+                    return Uint8Array.from(Buffer.from(o.misc.gatewayId))
+                },
+            },
+        }
+        // sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
+        sideEffect = this.gateway.createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
+        return new SideEffect(
+            sideEffect as T3rnTypesSideEffect,
+            o.id,
+            o.xtxId,
+            sdk,
+            new StrategyEngine(),
+            new BiddingEngine(logger),
+            logger,
+            o.misc
+        )
+    }
+
+    // /**
+    //  * Set the correct phase index
+    //  *
+    //  * @param phase The index of the SFXs phase
+    //  */
+    // setPhase(phase: number) {
+    //     this.phase = phase
+    // }
+  // }
 
   /** Triggers the bidding engine to place a new bid for the SFX. */
   triggerBid() {
@@ -434,7 +500,7 @@ export class SideEffect extends EventEmitter {
         this.lastBids.push(bidAmount)
 
         // if this is not own bid, update reward and isBidder
-        if (signer !== this.circuitSignerAddress) {
+        if (signer !== this.misc.circuitSignerAddress) {
             this.logger.info(`Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(bidAmount)} TRN 🎰`)
             this.addLog({ msg: "Competing bid received", signer, bidAmount })
             this.isBidder = false

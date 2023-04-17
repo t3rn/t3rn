@@ -241,7 +241,7 @@ export class Execution extends EventEmitter {
      * @param strategyEngine The strategy engine instance.
      * @param biddingEngine The bidding engine instance.
      */
-    initializeSideEffects(
+    async initializeSideEffects(
         sideEffects: T3rnTypesSideEffect[],
         ids: H256[],
         sdk: Sdk,
@@ -249,6 +249,14 @@ export class Execution extends EventEmitter {
         biddingEngine: BiddingEngine
     ) {
         for (let i = 0; i < sideEffects.length; i++) {
+            //   const records = (await api.rpc.xdns.fetchFullRecords());
+            //   let res: Record<string, Gateway> = {};
+
+            //   for (let i = 0; i < records.length; i++) {
+            //     const gateway = new Gateway(records[i]);
+            //     res[gateway.id] = gateway;
+            //   }
+
             const sideEffect = new SideEffect(
                 sideEffects[i],
                 ids[i].toHex(),
@@ -256,7 +264,6 @@ export class Execution extends EventEmitter {
                 sdk,
                 strategyEngine,
                 biddingEngine,
-                this.misc.circuitSignerAddress,
                 this.logger,
                 this.misc
             )
