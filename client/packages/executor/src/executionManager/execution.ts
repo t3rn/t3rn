@@ -159,7 +159,6 @@ export class Execution extends EventEmitter {
                 sdk,
                 strategyEngine,
                 biddingEngine,
-                this.misc.circuitSignerAddress,
                 this.logger,
                 this.misc
             )

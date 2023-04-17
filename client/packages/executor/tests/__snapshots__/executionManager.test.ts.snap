@@ -1,14 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Serialiation Execution should rountrip 1`] = `
+exports[`Serialization Execution should rountrip xtx 1`] = `
 Object {
   "currentPhase": 0,
   "humanId": "0xacabac",
   "id": "0xacabacab",
   "misc": Object {
-    "circuitRpc": "ws://localhost:9944",
+    "circuitRpc": "wss://ws.t0rn.io",
     "circuitSignerAddress": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-    "circuitSignerSecret": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+    "circuitSignerSecret": "0xe5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a",
     "executorName": "alina",
     "logsDir": "~/.t3rn-executor-alina/logs",
   },
@@ -18,5 +18,32 @@ Object {
   ],
   "sideEffects": Object {},
   "status": 0,
+}
+`;
+
+exports[`Serialization SideEffect should rountrip sfx 1`] = `
+Object {
+  "id": "0xacabacab",
+  "misc": Object {
+    "circuitRpc": "wss://ws.t0rn.io",
+    "circuitSignerAddress": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+    "circuitSignerSecret": "0xe5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a",
+    "executorName": "alina",
+    "gatewayId": "ROCO",
+    "logsDir": "~/.t3rn-executor-alina/logs",
+  },
+  "sideEffect": Object {
+    "action": "tran",
+    "encodedArgs": Array [],
+    "from": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+    "insurance": 100,
+    "maxReward": 1,
+    "target": Object {
+      "toU8a": [Function],
+    },
+    "to": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+    "value": 50,
+  },
+  "xtxId": "0xacabacabacabacab",
 }
 `;
