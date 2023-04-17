@@ -19,6 +19,7 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
     type BaseCallFilter = BaseCallFilter;
+    // type BaseCallFilter = MaintenanceMode;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
@@ -307,7 +308,7 @@ impl OnInitialize<BlockNumber> for MaintenanceHooks {
 }
 
 /// Only two pallets use `on_idle`: xcmp and dmp queues.
-/// Empty on_idle in case we want the pallets to execute it, we need to provide it here.
+/// Empty on_idle, in case we want the pallets to execute it, should be provided here.
 impl OnIdle<BlockNumber> for MaintenanceHooks {
     fn on_idle(_n: BlockNumber, _max_weight: Weight) -> Weight {
         Weight::zero()
@@ -343,6 +344,7 @@ impl OffchainWorker<BlockNumber> for MaintenanceHooks {
 }
 
 // TODO: check if we need to implement this, and what should go here
+// https://github.com/PureStake/moonbeam/blob/77e4f1994cd1f6b22e7a5d29f047390c8e0900bc/runtime/moonbeam/src/lib.rs#L1222
 impl pallet_maintenance_mode::Config for Runtime {
     type Event = Event;
     type MaintenanceFilter = MaintenanceFilter;
@@ -390,6 +392,7 @@ impl Contains<Call> for NormalFilter {
             Call::KusamaBridge(_) => false,
             Call::Sudo(_) => false,
             _ => true,
+        }
     }
 }
 
