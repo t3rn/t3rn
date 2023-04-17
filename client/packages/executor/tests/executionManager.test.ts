@@ -8,8 +8,8 @@ chai.use(chaiAsPromised)
 chai.use(jestSnapshotPlugin())
 chai.should()
 
-describe("Execution", () => {
-    describe("Serialization", () => {
+describe("Serialiation", () => {
+    describe("Execution", () => {
         let xtx
 
         beforeEach(async () => {
@@ -44,7 +44,7 @@ describe("Execution", () => {
 
         it("should rountrip", async () => {
             let input = xtx.toJSON()
-            expect(before).toMatchSnapshot()
+            expect(input).toMatchSnapshot()
 
             let restored = Execution.fromJSON(JSON.parse(JSON.stringify(xtx.toJSON())))
             let output = restored.toJSON()
@@ -53,4 +53,6 @@ describe("Execution", () => {
             expect(restored).to.be.instanceOf(Execution)
         })
     })
+
+    describe("SideEffect",() => {})
 })
