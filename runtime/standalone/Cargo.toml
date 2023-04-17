@@ -189,6 +189,7 @@ runtime-benchmarks = [
   "pallet-3vm-evm/runtime-benchmarks",
   "pallet-grandpa/runtime-benchmarks",
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
+  "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-identity/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
