@@ -214,7 +214,7 @@ export class SideEffect extends EventEmitter {
         return {
             id: this.id,
             xtxId: this.xtxId,
-            sideEffect: this.rawSideEffect.toJSON(),
+            sideEffect: Object.assign({},this.rawSideEffect, { action: this.rawSideEffect.action.toHuman() }),
             misc: {
                 executorName: this.misc.executorName,
                 logsDir: this.logger.logsDir,
@@ -230,9 +230,21 @@ export class SideEffect extends EventEmitter {
     static fromJSON(o: SerializableSideEffect): SideEffect {
         const logger = createLogger(o.misc.executorName, o.misc.logsDir)
         const sdk = new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret)
-        const sideEffectType = Buffer.from(o.sideEffect.action.replace("0x", "")).toString("utf8")
-        const sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](o.sideEffect)
-        return new SideEffect(sideEffect, o.id, o.xtxId, sdk, new StrategyEngine(), new BiddingEngine(logger), logger, o.misc)
+        const sideEffectType = o.sideEffect.action
+        // const sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](o.sideEffect) as T3rnTypesSideEffect
+        let sideEffect = { ...o.sideEffect, action:{toHuman() {return o.sideEffect.action.toString()}},
+    target: {toU8a(){return Uint8Array.from(Buffer.from(o.misc.gatewayId))}}}
+    sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
+    //WIP 
+//       // @ts-ignore
+//   const records = (await api.rpc.xdns.fetchFullRecords());
+//   let res: Record<string, Gateway> = {};
+
+//   for (let i = 0; i < records.length; i++) {
+//     const gateway = new Gateway(records[i]);
+//     res[gateway.id] = gateway;
+//   }
+        return new SideEffect(sideEffect as T3rnTypesSideEffect, o.id, o.xtxId, sdk, new StrategyEngine(), new BiddingEngine(logger), logger, o.misc)
     }
 
     /**

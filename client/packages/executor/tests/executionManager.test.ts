@@ -3,21 +3,22 @@ import chaiAsPromised from "chai-as-promised"
 import { jestSnapshotPlugin } from "mocha-chai-jest-snapshot"
 import { mkdir } from "fs/promises"
 import { Execution } from "../src/executionManager/execution"
-import { SideEffect } from "src/executionManager/sideEffect"
+import { SideEffect } from "../src/executionManager/sideEffect"
 
 chai.use(chaiAsPromised)
 chai.use(jestSnapshotPlugin())
 chai.should()
 
 describe("Serialization", () => {
-    const logger = { logsDir: "~/.t3rn-executor-alina/logs" }
-    const sdk = { signer: { address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" } }
-    const misc = {
+    let logger = { logsDir: "~/.t3rn-executor-alina/logs" }
+    let sdk = { signer: { address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" }, gateways: {ROCO:{id:"ROCO",createSfx:{tran(x) {return x}}}}, circuit:{toFloat(x){return x}} }
+    let misc = {
         executorName: "alina",
         logsDir: logger.logsDir,
-        circuitRpc: "ws://localhost:9944",
-        circuitSignerAddress: sdk.signer.address,
-        circuitSignerSecret: `0x${"acab".repeat(16)}`,
+        circuitRpc: "wss://ws.t0rn.io",
+        circuitSignerAddress: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        circuitSignerSecret: "0xe5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a",
+        gatewayId: "ROCO"
     }
 
     describe("Execution", () => {
@@ -62,15 +63,16 @@ describe("Serialization", () => {
         beforeEach(async () => {
             await mkdir(logger.logsDir, { recursive: true })
             sfx = new SideEffect(
-                [
-                    {
-                        from: "0xdDf4C5025D1A5742cF12F74eEC246d4432c295e4",
-                        to: "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990",
-                        value: 50,
-                        maxReward: 1,
-                        insurance: 100,
-                    },
-                ],
+                {
+                    action: { toHuman() {return "tran"}},
+                    encodedArgs: [],
+                    target: { toU8a() {return Uint8Array.from(Buffer.from("ROCO"))}},
+                    from: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+                    to: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+                    value: 50,
+                    maxReward: 1,
+                    insurance: 100,
+                },
                 "0xacabacab",
                 "0xacabacabacabacab",
                 sdk as any,
