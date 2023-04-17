@@ -325,3 +325,18 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
+
+parameter_types! {
+    pub const SyncCommitteeSize: u32 = 512;
+    pub const GenesisValidatorsRoot: [u8; 32] = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
+    pub const SlotsPerEpoch: u32 = 32;
+    pub const EpochsPerSyncCommitteeTerm: u32 = 256;
+}
+
+impl pallet_eth2_finality_verifier::Config for Runtime {
+    type EpochsPerSyncCommitteeTerm = EpochsPerSyncCommitteeTerm;
+    type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type SlotsPerEpoch = SlotsPerEpoch;
+    type SyncCommitteeSize = SyncCommitteeSize;
+    type WeightInfo = ();
+}

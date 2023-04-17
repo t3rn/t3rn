@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 //! Runtime utilities
 #![recursion_limit = "256"]
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
@@ -93,6 +94,7 @@ frame_support::construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        EthereumBridge: pallet_eth2_finality_verifier = 132,
     }
 );
 

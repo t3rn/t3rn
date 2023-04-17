@@ -193,6 +193,7 @@ construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        EthereumBridge: pallet_eth2_finality_verifier = 132,
 
         // Handy utilities
         MaintenanceMode: pallet_maintenance_mode = 140,
