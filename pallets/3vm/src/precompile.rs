@@ -6,7 +6,10 @@ use t3rn_abi::{Codec as T3rnCodec, FilledAbi};
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
     portal::{get_portal_interface_abi, Portal, PortalExecution, PortalPrecompileInterfaceEnum},
-    threevm::{GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation},
+    threevm::{
+        GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation,
+        EVM_RECODING_BYTE_SELECTOR, WASM_RECODING_BYTE_SELECTOR,
+    },
 };
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
@@ -29,19 +32,23 @@ pub(crate) fn lookup<T: Config>(dest: &T::Hash) -> Option<u8> {
 }
 
 // FIXME: figure out charging, costing
-// TODO: determine recoding, can we always assume here that invoke_raw is invoked by EVM? if so we prefix the byte and recode everything
 pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &mut Vec<u8>) {
-    if args.len() < 2 {
-        return Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output)
-    }
+    // TODO: assert the length here
 
     // First byte determines if it came from EVM or WASM
-    let codec = T3rnCodec::from(args[0]);
+    let codec_selector = args[1];
 
     // Strip the selector
     let args = &mut &args[1..];
 
-    match extract_origin::<T>(&codec, args) {
+    let codec = if codec_selector == EVM_RECODING_BYTE_SELECTOR {
+        T3rnCodec::Rlp
+    } else {
+        T3rnCodec::default()
+    };
+
+    // TODO: Is origin provided first or at all? if so that also needs recoding
+    match extract_origin::<T>(args) {
         Some(origin) => match *precompile {
             GET_STATE => {
                 let args: CodecResult<GetState<T>> = match codec {
@@ -65,31 +72,17 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 }
             },
             SUBMIT => {
-                let args: CodecResult<(
-                    SideEffects<T::AccountId, BalanceOf<T>, T::Hash>,
-                    SpeedMode,
-                )> = match codec {
-                    T3rnCodec::Scale => Decode::decode(args),
-                    T3rnCodec::Rlp =>
-                        Err(codec::Error::from("Cannot decode SideEffects with RLP yet")),
-                };
-
-                if let Ok((sfx_arg, speed_mode_arg)) = args {
-                    match invoke::<T>(PrecompileArgs::SubmitSideEffects(
-                        origin,
-                        sfx_arg,
-                        speed_mode_arg,
-                    )) {
-                        Ok(precompile_invocation) => {
-                            let out_execution_state_view = precompile_invocation.get_submit();
-
-                            // Insert encoded execution state view into output buffer
-                            out_execution_state_view.encode_to(output);
-
-                            // Insert Res::Success 0 byte
-                            output.insert(0, 0u8);
-
-                            Ok::<_, Error<T>>(());
+                let args: CodecResult<SideEffects<T::AccountId, BalanceOf<T>, T::Hash>> =
+                    match codec {
+                        T3rnCodec::Scale => Decode::decode(args),
+                        T3rnCodec::Rlp =>
+                            Err(codec::Error::from("Cannot decode SideEffects with RLP yet")),
+                    };
+                if let Ok(args) = args {
+                    match invoke::<T>(PrecompileArgs::SubmitSideEffects(origin, args)) {
+                        Ok(_) => {
+                            // No need to write output other than a success byte
+                            Ok::<_, Error<T>>(()).encode_to(output)
                         },
                         Err(e) => Err::<(), _>(e).encode_to(output),
                     }
@@ -116,38 +109,31 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 }
             },
             PORTAL => {
-                // TODO: use bytesmut and advance these
+                // First byte is portal selector
+                let portal_selector = &args[0];
+                // The rest is the input for portal
+                let input_without_vm_selectors = &args[1..];
 
-                let input = &args[..];
-                // FIXME: Panic here, dont
-                assert!(input.len() > 3, "Not enough data to determine selectors");
-
-                // First byte determines the selector here
-                // TODO: handle if this is coming from an evm contract or from wasm
-                // Second byte determines if it came from EVM or WASM
-                let input_without_vm_selectors = &input[2..];
-                // Third byte is portal
-                let portal_selector = input_without_vm_selectors.first();
-
-                let mut result = FilledAbi::try_fill_abi(
-                    get_portal_interface_abi(),
-                    // Strip the portal prefix
-                    input_without_vm_selectors[1..].to_vec(),
-                    T3rnCodec::Rlp,
-                )
-                // TODO Here determine if we should recode as RLP or not, depending on VM selector
-                .and_then(|abi| abi.recode_as(&T3rnCodec::Rlp, &T3rnCodec::Scale))
-                .and_then(|mut recoded| {
-                    portal_selector
-                        .map(|x| {
-                            recoded.insert(0, *x);
-                            recoded
+                let mut result = match codec {
+                    T3rnCodec::Rlp => {
+                        FilledAbi::try_fill_abi(
+                            get_portal_interface_abi(), // This panics :<
+                            input_without_vm_selectors.to_vec(),
+                            codec.clone(),
+                        )
+                        .and_then(|abi| {
+                            abi.recode_as(&codec.clone(), &T3rnCodec::Scale)
                         })
-                        .ok_or_else(|| DispatchError::Other("There was no portal selector byte"))
+                    }
+                    T3rnCodec::Scale => Ok(input_without_vm_selectors.to_vec())
+                }
+                .map(|mut recoded| {
+                    recoded.insert(0, *portal_selector);
+                    recoded
                 })
                 .and_then(|recoded| {
                     PortalPrecompileInterfaceEnum::decode(&mut &recoded[..])
-                        .map_err(|e| DispatchError::Other("Failed to decode portal interface enum"))
+                        .map_err(|_e| DispatchError::Other("Failed to decode portal interface enum"))
                 })
                 .and_then(|recoded_call_as_enum| {
                     invoke::<T>(PrecompileArgs::Portal(recoded_call_as_enum)).map(|x| if let PrecompileInvocation::Portal(i) = x {

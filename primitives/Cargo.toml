@@ -41,6 +41,8 @@ t3rn-abi            = { path = "../types/abi", default-features = false, feature
 t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
 
+t3rn-light-client-commons = { path = "../finality-verifiers/common", default-features = false }
+
 [dev-dependencies]
 hex         = "0.4"
 hex-literal = { version = '0.3.1' }
