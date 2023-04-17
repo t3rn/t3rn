@@ -1,5 +1,6 @@
 import { default as chai, expect } from "chai"
 import chaiAsPromised from "chai-as-promised"
+import { jestSnapshotPlugin } from "mocha-chai-jest-snapshot"
 import { join } from "path"
 import { homedir } from "os"
 import { existsSync } from "fs"
@@ -7,6 +8,7 @@ import { readFile, readdir, mkdir, unlink } from "fs/promises"
 import { Instance } from "../src"
 
 chai.use(chaiAsPromised)
+chai.use(jestSnapshotPlugin())
 chai.should()
 
 describe("Instance", () => {
@@ -40,6 +42,7 @@ describe("Instance", () => {
             instance.loadConfig().should.be.rejectedWith(Error, "Instance::loadConfig: missing circuit signer key")
 
             // reset to bogus substrate private key for the remainder
+            // somehow the beforeEach hook resets don't suffice
             process.env.CIRCUIT_SIGNER_KEY = `0x${"acab".repeat(16)}`
             process.env.ROCO_GATEWAY_SIGNER_KEY = `0x${"acab".repeat(16)}`
         })
@@ -51,6 +54,7 @@ describe("Instance", () => {
 
             expect(instance.config).to.not.be.undefined
             expect(config).to.deep.equal(instance.config)
+            expect(instance.config).toMatchSnapshot()
         })
 
         it("should persist custom config", async () => {
@@ -58,9 +62,10 @@ describe("Instance", () => {
 
             let config = await instance.loadConfig()
 
-            let stored = await readFile(conf, "utf8").then((str) => JSON.parse(str))
             expect(existsSync(conf)).to.be.true
+            let stored = await readFile(conf, "utf8").then(JSON.parse)
             expect(stored).to.deep.equal(config)
+            expect(stored).toMatchSnapshot()
         })
     })
 
@@ -81,7 +86,7 @@ describe("Instance", () => {
             expect(logFiles.length).to.equal(0)
 
             await instance.configureLogging()
-            instance.logger = { warn() {}, info() {} }
+            instance.logger = { warn() {}, info() {} } as any
             await instance.logger.info("hallo")
 
             logFiles = await readdir(logs)
@@ -89,9 +94,9 @@ describe("Instance", () => {
         })
 
         it("should log to disk", async () => {
+            let instance = new Instance(name, true /**logToDisk*/)
             let logFiles = await readdir(logs)
             expect(logFiles.length).to.equal(0)
-            instance.logToDisk = true
 
             await instance.configureLogging()
             await instance.logger.info("hallo")

@@ -22,8 +22,8 @@ import { Execution } from "./executionManager/execution"
 import { CircuitListener, ListenerEvents, ListenerEventData } from "./circuit/listener"
 import { CircuitRelayer } from "./circuit/relayer"
 import * as defaultConfig from "../config.json"
-import { problySubstrateSeed } from "./utils"
-import { default as pino, Logger } from "pino"
+import { problySubstrateSeed, createLogger } from "./utils"
+import { Logger } from "pino"
 
 /** An executor instance. */
 class Instance {
@@ -35,10 +35,9 @@ class Instance {
     config: Config
     logger: Logger
     baseDir: PathLike
-    logsDir: PathLike
+    logsDir: undefined | PathLike
     configFile: PathLike
     stateFile: PathLike
-    logToDisk: boolean
 
     /**
      * Initializes an executor instance.
@@ -48,9 +47,8 @@ class Instance {
      */
     constructor(name: string = "example", logToDisk: boolean = false) {
         this.name = name
-        this.logToDisk = logToDisk
         this.baseDir = join(homedir(), `.t3rn-executor-${name}`)
-        this.logsDir = join(this.baseDir.toString(), "logs")
+        this.logsDir = logToDisk ? join(this.baseDir.toString(), "logs") : undefined
         this.stateFile = join(this.baseDir.toString(), "state.json")
         this.configFile = join(homedir(), `.t3rn-executor-${name}`, "config.json")
     }
@@ -68,7 +66,7 @@ class Instance {
         this.sdk = new Sdk(this.config.circuit.rpc, this.signer)
         // @ts-ignore
         this.circuitClient = await this.sdk.init()
-        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, this.logger)
+        this.executionManager = new ExecutionManager(this.circuitClient, this.sdk, this.logger, this.config)
         this.injectState()
         await this.executionManager.setup(this.config.gateways, this.config.vendors)
         this.registerExitListener()
@@ -98,7 +96,7 @@ class Instance {
                 this.logger.warn(`failed reading ${this.configFile} ${err}`)
                 return {}
             })
-        const config = { ...defaultConfig, ...persistedConfig }
+        const config = { ...defaultConfig, ...persistedConfig, name: this.name }
         await writeFile(this.configFile, JSON.stringify(config))
         if (!config.circuit.signerKey?.startsWith("0x")) {
             config.circuit.signerKey = process.env.CIRCUIT_SIGNER_KEY as string
@@ -128,32 +126,14 @@ class Instance {
     }
 
     /** Configures the instance's pino logger. */
-    private async configureLogging(): Promise<Instance> {
-        const self = this
-        if (self.logToDisk) {
-            await mkdir(self.logsDir, { recursive: true })
-            self.logger = pino(
-                {
-                    level: process.env.LOG_LEVEL || "info",
-                    formatters: {
-                        bindings(bindings) {
-                            return { ...bindings, name: self.name }
-                        },
-                    },
-                },
-                pino.destination(join(self.logsDir.toString(), `${Date.now()}.log`))
-            )
+    async configureLogging(): Promise<Instance> {
+        if (this.logsDir) {
+            await mkdir(this.logsDir, { recursive: true })
+            this.logger = createLogger(this.name, this.logsDir.toString())
         } else {
-            self.logger = pino({
-                level: process.env.LOG_LEVEL || "info",
-                formatters: {
-                    bindings(bindings) {
-                        return { ...bindings, name: self.name }
-                    },
-                },
-            })
+            this.logger = createLogger(this.name)
         }
-        return self
+        return this
     }
 
     /** Registers a keypress listener for Ctrl+C that initiates instance shutdown. */
@@ -171,7 +151,8 @@ class Instance {
         process.stdin.resume()
         process.once("exit", async () => {
             //TODO do this on every self.executionManager.circuitListener.on("Event"
-            const serializedState = JSON.stringify({ //WIP
+            const serializedState = JSON.stringify({
+                //WIP
                 queue: self.executionManager.queue,
                 xtx: self.executionManager.xtx, //WIP handle <Execution>
                 sfxToXtx: self.executionManager.sfxToXtx,

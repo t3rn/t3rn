@@ -7,8 +7,29 @@ import { EventEmitter } from "events"
 
 import { SecurityLevel, SfxStatus, XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
 import { Sdk } from "@t3rn/sdk"
+import { Config } from "../../config/config"
 import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"
+import { createLogger } from "../utils"
+
+export interface Miscellaneous {
+    executorName: string
+    logsDir: string
+    circuitRpc: string
+    circuitSignerAddress: string
+    circuitSignerSecret: string
+}
+
+export interface SerializableExecution {
+    id: string
+    status: XtxStatus
+    humanId: string
+    owner: string
+    sideEffects: { [key: string]: SideEffect }
+    phases: string[][]
+    currentPhase: number
+    misc: Miscellaneous
+}
 
 /**
  * Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.
@@ -32,9 +53,13 @@ export class Execution extends EventEmitter {
     phases: string[][] = [[], []]
     /** The current phase of the XTX */
     currentPhase: number
-    /** The circuit signer address */
-    circuitSignerAddress: string
+
     logger: any
+    sdk: Sdk
+    biddingEngine: BiddingEngine
+    strategyEngine: StrategyEngine
+    misc: Miscellaneous
+    config: Config
 
     /**
      * Creates a new Execution instance.
@@ -43,26 +68,61 @@ export class Execution extends EventEmitter {
      * @param sdk The @t3rn/sdk instance.
      * @param strategyEngine The strategy engine instance.
      * @param biddingEngine The bidding engine instance.
-     * @param circuitSignerAddress The circuit signer address.
      * @param logger The logger instance.
+     * @param misc Add. data required for de/serialization.
      */
-    constructor(
-        eventData: any,
-        sdk: Sdk,
-        strategyEngine: StrategyEngine,
-        biddingEngine: BiddingEngine,
-        circuitSignerAddress: string,
-        logger: any
-    ) {
+    constructor(eventData: any, sdk: Sdk, strategyEngine: StrategyEngine, biddingEngine: BiddingEngine, logger: any, misc: Miscellaneous) {
         super()
         this.owner = eventData[0]
         this.xtxId = eventData[1]
         this.id = this.xtxId.toHex()
         this.humanId = this.id.slice(0, 8)
-        this.circuitSignerAddress = circuitSignerAddress
         this.logger = logger
         this.initializeSideEffects(eventData[2], eventData[3], sdk, strategyEngine, biddingEngine)
         this.currentPhase = 0
+        this.misc = misc
+    }
+
+    /** Custom JSON serialization. */
+    toJSON(): SerializableExecution {
+        return {
+            id: this.id,
+            status: this.status,
+            humanId: this.humanId,
+            owner: this.owner.toString(),
+            sideEffects: Object.fromEntries(this.sideEffects),
+            phases: this.phases,
+            currentPhase: this.currentPhase,
+            misc: {
+                executorName: this.misc.executorName,
+                logsDir: this.misc.logsDir,
+                circuitRpc: this.misc.circuitRpc,
+                circuitSignerAddress: this.misc.circuitSignerAddress,
+                circuitSignerSecret: this.misc.circuitSignerSecret,
+            },
+        }
+    }
+
+    /** Custom JSON deserialization. */
+    static fromJSON(o: SerializableExecution): Execution {
+        const logger = createLogger(o.misc.executorName, o.misc.logsDir)
+        return new Execution(
+            [
+                o.owner,
+                {
+                    toHex() {
+                        return o.id
+                    },
+                },
+                Object.values(o.sideEffects),
+                Object.keys(o.sideEffects),
+            ],
+            new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret),
+            new StrategyEngine(),
+            new BiddingEngine(logger),
+            logger,
+            o.misc
+        )
     }
 
     /**
@@ -89,7 +149,7 @@ export class Execution extends EventEmitter {
                 sdk,
                 strategyEngine,
                 biddingEngine,
-                this.circuitSignerAddress,
+                this.misc.circuitSignerAddress,
                 this.logger
             )
             this.sideEffects.set(sideEffect.id, sideEffect)

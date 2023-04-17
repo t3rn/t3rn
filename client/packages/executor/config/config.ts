@@ -122,6 +122,7 @@ export type Strategy = {
  * - @group Configuration
  */
 export type Config = {
+    name: string
     circuit: Circuit
     /** The gateways that are being tracked */
     gateways: Gateway[]
@@ -156,6 +157,7 @@ export type Config = {
 }
 
 export const config: Config = {
+    name: "example",
     circuit: {
         rpc: WS_CIRCUIT_ENDPOINT,
         ticker: "TRN",
