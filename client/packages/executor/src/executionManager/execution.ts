@@ -161,7 +161,7 @@ export class Execution extends EventEmitter {
                 biddingEngine,
                 this.misc.circuitSignerAddress,
                 this.logger,
-                { ...this.misc, gatewayId: "NaN", sideEffectType: "NaN" }
+                this.misc
             )
             this.sideEffects.set(sideEffect.id, sideEffect)
 
