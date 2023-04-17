@@ -1,4 +1,6 @@
-use circuit_parachain_runtime::{AccountId, AuraId, EvmConfig, Signature, SudoConfig, XDNSConfig};
+use circuit_parachain_runtime::{
+    AccountId, AuraId, EvmConfig, MaintenanceModeConfig, Signature, SudoConfig, XDNSConfig,
+};
 use cumulus_primitives_core::ParaId;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -384,6 +386,9 @@ fn testnet_genesis(
                     )
                 })
                 .collect(),
+        },
+        maintenance_mode: MaintenanceModeConfig {
+            start_in_maintenance_mode: false,
         },
     }
 }

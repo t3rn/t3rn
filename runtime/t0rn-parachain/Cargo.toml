@@ -182,6 +182,7 @@ std = [
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
+  "pallet-maintenance-mode/std",
   "sp-core/std",
   "sp-inherents/std",
   "sp-io/std",

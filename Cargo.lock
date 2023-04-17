@@ -6855,6 +6855,7 @@ name = "pallet-maintenance-mode"
 version = "0.1.0"
 source = "git+https://github.com/t3rn/moonbeam-pallets?branch=polkadot-v0.9.27#031758abddf0073ce4249004e0a11e2af1034c88"
 dependencies = [
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "log",

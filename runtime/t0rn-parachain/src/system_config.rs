@@ -3,13 +3,14 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU32, ConstU8, Contains, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade,
+        ConstU32, ConstU8, Contains, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
+        OnRuntimeUpgrade,
     },
     weights::IdentityFee,
 };
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
-use sp_runtime::traits::{BlakeTwo256, ConvertInto};
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, Zero};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -159,9 +160,6 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
-// Moonbeam and Akala runtimes have references for BaseCallFilter
-// MaintenanceFilter, NormalFilter and for Proxy type
-// `impl pallet_evm_precompile_proxy::EvmProxyCallFilter for ProxyType`
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
     fn contains(c: &Call) -> bool {
@@ -263,20 +261,26 @@ pub struct MaintenanceFilter;
 impl Contains<Call> for MaintenanceFilter {
     fn contains(c: &Call) -> bool {
         match c {
-            Call::System(_) => false,
-            Call::ParachainSystem(_) => false,
-            Call::Timestamp(_) => false,
+            // We want to make calls to the system and scheduler pallets
+            Call::System(_) => true,
+            Call::Scheduler(_) => true,
+            // Sometimes scheduler/system calls require utility calls, particularly batch
+            Call::Utility(_) => true,
+            // We dont manually control these so likely we dont want to block them during maintenance mode
+            Call::Balances(_) => true,
+            Call::Assets(_) => true,
+            // We wanna be able to make sudo calls in maintenance mode just incase
+            Call::Sudo(_) => true,
+            Call::ParachainSystem(_) => true,
+            Call::Timestamp(_) => true,
+            Call::Session(_) => true,
+
             Call::Preimage(_) => false,
-            Call::Scheduler(_) => false,
-            Call::Utility(_) => false,
             Call::Identity(_) => false,
-            Call::Balances(_) => false,
-            Call::Assets(_) => false,
             Call::Treasury(_) => false,
             Call::AccountManager(_) => false,
             Call::Authorship(_) => false,
             Call::CollatorSelection(_) => false,
-            Call::Session(_) => false,
             Call::XcmpQueue(_) => false,
             Call::PolkadotXcm(_) => false,
             Call::DmpQueue(_) => false,
@@ -292,8 +296,8 @@ impl Contains<Call> for MaintenanceFilter {
             Call::RococoBridge(_) => false,
             Call::PolkadotBridge(_) => false,
             Call::KusamaBridge(_) => false,
-            Call::Sudo(_) => false,
-            _ => true,
+            // To catch all new pallets and avoid any exploit
+            _ => false,
         }
     }
 }
@@ -347,53 +351,11 @@ impl OffchainWorker<BlockNumber> for MaintenanceHooks {
 // https://github.com/PureStake/moonbeam/blob/77e4f1994cd1f6b22e7a5d29f047390c8e0900bc/runtime/moonbeam/src/lib.rs#L1222
 impl pallet_maintenance_mode::Config for Runtime {
     type Event = Event;
-    type MaintenanceFilter = MaintenanceFilter;
-    type MaintenanceHooks = MaintenanceHooks;
-    type MaintenanceOrigin = EnsureRootOrHalfCouncil;
-    type NormalCallFilter = NormalFilter;
-    type WeightInfo = ();
-}
-
-/// Normal Call filter
-/// We don't allow for a certain number of calls, but we allow everything else.
-/// Now, only System calls are allowed as a default before implementing.
-pub struct NormalFilter;
-impl Contains<Call> for NormalFilter {
-    fn contains(c: &Call) -> bool {
-        match c {
-            Call::System(_) => false,
-            Call::ParachainSystem(_) => false,
-            Call::Timestamp(_) => false,
-            Call::Preimage(_) => false,
-            Call::Scheduler(_) => false,
-            Call::Utility(_) => false,
-            Call::Identity(_) => false,
-            Call::Balances(_) => false,
-            Call::Assets(_) => false,
-            Call::Treasury(_) => false,
-            Call::AccountManager(_) => false,
-            Call::Authorship(_) => false,
-            Call::CollatorSelection(_) => false,
-            Call::Session(_) => false,
-            Call::XcmpQueue(_) => false,
-            Call::PolkadotXcm(_) => false,
-            Call::DmpQueue(_) => false,
-            Call::XBIPortal(_) => false,
-            Call::AssetRegistry(_) => false,
-            Call::XDNS(_) => false,
-            Call::ContractsRegistry(_) => false,
-            Call::Circuit(_) => false,
-            Call::ThreeVm(_) => false,
-            Call::Contracts(_) => false,
-            Call::Evm(_) => false,
-            Call::Portal(_) => false,
-            Call::RococoBridge(_) => false,
-            Call::PolkadotBridge(_) => false,
-            Call::KusamaBridge(_) => false,
-            Call::Sudo(_) => false,
-            _ => true,
-        }
-    }
+    type MaintenanceCallFilter = MaintenanceFilter;
+    type MaintenanceExecutiveHooks = AllPalletsWithSystem;
+    type MaintenanceOrigin = EnsureRoot<AccountId>;
+    type NormalCallFilter = BaseCallFilter;
+    type NormalExecutiveHooks = AllPalletsWithSystem;
 }
 
 #[cfg(test)]

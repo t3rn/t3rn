@@ -186,7 +186,7 @@ construct_runtime!(
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
 
         // Handy utilities
-        MaintenanceMode: pallet_maintenance_mode::{Pallet, Call, Config, Storage, Event} = 132,
+        MaintenanceMode: pallet_maintenance_mode = 132,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
