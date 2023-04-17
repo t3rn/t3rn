@@ -107,8 +107,6 @@ export class SideEffect extends EventEmitter {
     gateway: Gateway
     /** Security Level, e.g. Escrow or Optimistic */
     securityLevel: SecurityLevel
-    /** Executor address on circuit */
-    circuitSignerAddress: string
     /** Is currently the winning bidder of the SFX */
     isBidder: boolean = false
     /** The minimum profit in USD required for executing this SFX. Number is computed by strategy engine */
@@ -177,7 +175,6 @@ export class SideEffect extends EventEmitter {
      * @param sdk Instance of @t3rn/sdk
      * @param strategyEngine Instance of the strategy engine
      * @param biddingEngine Instance of the bidding engine
-     * @param circuitSignerAddress Address of the executor account used for transaction on circuit
      * @param logger The logger instance
      * @param misc Extra data
      * @returns SideEffect instance
@@ -189,7 +186,6 @@ export class SideEffect extends EventEmitter {
         sdk: Sdk,
         strategyEngine: StrategyEngine,
         biddingEngine: BiddingEngine,
-        circuitSignerAddress: string,
         logger: any,
         misc: Miscellaneous
     ) {
@@ -208,7 +204,6 @@ export class SideEffect extends EventEmitter {
             this.insurance = sdk.circuit.toFloat(sideEffect.insurance) // this is always in TRN (native asset)
             this.strategyEngine = strategyEngine
             this.biddingEngine = biddingEngine
-            this.circuitSignerAddress = circuitSignerAddress
             this.logger = logger
             this.vendor = this.gateway.vendor
         }
@@ -237,17 +232,7 @@ export class SideEffect extends EventEmitter {
         const sdk = new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret)
         const sideEffectType = Buffer.from(o.sideEffect.action.replace("0x", "")).toString("utf8")
         const sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](o.sideEffect)
-        return new SideEffect(
-            sideEffect,
-            o.id,
-            o.xtxId,
-            sdk,
-            new StrategyEngine(),
-            new BiddingEngine(logger),
-            o.misc.circuitSignerAddress,
-            logger,
-            o.misc
-        )
+        return new SideEffect(sideEffect, o.id, o.xtxId, sdk, new StrategyEngine(), new BiddingEngine(logger), logger, o.misc)
     }
 
     /**
@@ -469,7 +454,7 @@ export class SideEffect extends EventEmitter {
         this.lastBids.push(bidAmount)
 
         // if this is not own bid, update reward and isBidder
-        if (signer !== this.circuitSignerAddress) {
+        if (signer !== this.misc.circuitSignerAddress) {
             this.logger.info(`Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(bidAmount)} TRN 🎰`)
             this.addLog({ msg: "Competing bid received", signer, bidAmount })
             this.isBidder = false
