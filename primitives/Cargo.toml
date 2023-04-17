@@ -37,9 +37,9 @@ sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", default
 sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 
+t3rn-abi            = { path = "../types/abi", default-features = false, features = [ "runtime" ] }
 t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
-t3rn-abi            = { path = "../types/abi", default-features = false, features = [ "runtime" ] }
 
 [dev-dependencies]
 hex         = "0.4"
