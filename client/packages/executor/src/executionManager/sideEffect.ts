@@ -70,8 +70,7 @@ export type Notification = {
  * @group Execution Manager
  */
 export interface SideEffectMiscellaneous extends Miscellaneous {
-    gatewayId: string,
-    sideEffectType: string
+    gatewayId: string
 }
 
 /**
@@ -79,11 +78,11 @@ export interface SideEffectMiscellaneous extends Miscellaneous {
  *
  * @group Execution Manager
  */
-export interface SerializableSideEffect{
+export interface SerializableSideEffect {
     id: string
-    xtxId: string,
-    misc:  SideEffectMiscellaneous,
-    sideEffect: {[key:string]: any},
+    xtxId: string
+    misc: SideEffectMiscellaneous
+    sideEffect: { [key: string]: any }
 }
 
 /**
@@ -169,7 +168,7 @@ export class SideEffect extends EventEmitter {
     biddingEngine: BiddingEngine
 
     rawSideEffect: T3rnTypesSideEffect
-    misc: SideEffectMiscellaneous
+    misc: Miscellaneous
 
     /**
      * @param sideEffect Scale encoded side effect
@@ -192,7 +191,7 @@ export class SideEffect extends EventEmitter {
         biddingEngine: BiddingEngine,
         circuitSignerAddress: string,
         logger: any,
-        misc: SideEffectMiscellaneous
+        misc: Miscellaneous
     ) {
         super()
         this.rawSideEffect = sideEffect
@@ -227,28 +226,28 @@ export class SideEffect extends EventEmitter {
                 circuitRpc: this.misc.circuitRpc,
                 circuitSignerAddress: this.misc.circuitSignerAddress,
                 circuitSignerSecret: this.misc.circuitSignerSecret,
-                gatewayId: this.misc.gatewayId,
-                sideEffectType: this.misc.sideEffectType
+                gatewayId: this.gateway.id,
             },
         }
     }
 
     /** Custom JSON deserialization. */
-    static fromJSON(o: SerializableSideEffect) : SideEffect {
-    const logger = createLogger(o.misc.executorName, o.misc.logsDir)
-    const sdk =  new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret)
-const sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[o.misc.sideEffectType](o.sideEffect)
-    return new SideEffect(
-        sideEffect,
-        o.id,
-        o.xtxId,
-        sdk,
+    static fromJSON(o: SerializableSideEffect): SideEffect {
+        const logger = createLogger(o.misc.executorName, o.misc.logsDir)
+        const sdk = new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret)
+        const sideEffectType = Buffer.from(o.sideEffect.action.replace("0x", "")).toString("utf8")
+        const sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](o.sideEffect)
+        return new SideEffect(
+            sideEffect,
+            o.id,
+            o.xtxId,
+            sdk,
             new StrategyEngine(),
             new BiddingEngine(logger),
-        o.misc.circuitSignerAddress,
-        logger,
-        o.misc
-    )
+            o.misc.circuitSignerAddress,
+            logger,
+            o.misc
+        )
     }
 
     /**
