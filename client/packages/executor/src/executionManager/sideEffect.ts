@@ -12,6 +12,8 @@ import { EventEmitter } from "events"
 import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
 import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
 import { InclusionProof } from "../gateways/types"
+import { Miscellaneous } from "./execution"
+import { createLogger } from "../utils"
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"]
@@ -60,6 +62,28 @@ export enum TxStatus {
 export type Notification = {
     type: NotificationType
     payload: any
+}
+
+/**
+ * Extra data to recreate a serialized side effect
+ *
+ * @group Execution Manager
+ */
+export interface SideEffectMiscellaneous extends Miscellaneous {
+    gatewayId: string,
+    sideEffectType: string
+}
+
+/**
+ * JSON serializable side effect
+ *
+ * @group Execution Manager
+ */
+export interface SerializableSideEffect{
+    id: string
+    xtxId: string,
+    misc:  SideEffectMiscellaneous,
+    sideEffect: {[key:string]: any},
 }
 
 /**
@@ -144,6 +168,9 @@ export class SideEffect extends EventEmitter {
     strategyEngine: StrategyEngine
     biddingEngine: BiddingEngine
 
+    rawSideEffect: T3rnTypesSideEffect
+    misc: SideEffectMiscellaneous
+
     /**
      * @param sideEffect Scale encoded side effect
      * @param id Id of the SFX
@@ -153,6 +180,7 @@ export class SideEffect extends EventEmitter {
      * @param biddingEngine Instance of the bidding engine
      * @param circuitSignerAddress Address of the executor account used for transaction on circuit
      * @param logger The logger instance
+     * @param misc Extra data
      * @returns SideEffect instance
      */
     constructor(
@@ -163,9 +191,12 @@ export class SideEffect extends EventEmitter {
         strategyEngine: StrategyEngine,
         biddingEngine: BiddingEngine,
         circuitSignerAddress: string,
-        logger: any
+        logger: any,
+        misc: SideEffectMiscellaneous
     ) {
         super()
+        this.rawSideEffect = sideEffect
+        this.misc = misc
         if (this.decodeAction(sideEffect.action)) {
             this.raw = sideEffect
             this.id = id
@@ -182,6 +213,42 @@ export class SideEffect extends EventEmitter {
             this.logger = logger
             this.vendor = this.gateway.vendor
         }
+    }
+
+    /** Custom JSON serialization. */
+    toJSON(): SerializableSideEffect {
+        return {
+            id: this.id,
+            xtxId: this.xtxId,
+            sideEffect: this.rawSideEffect.toJSON(),
+            misc: {
+                executorName: this.misc.executorName,
+                logsDir: this.logger.logsDir,
+                circuitRpc: this.misc.circuitRpc,
+                circuitSignerAddress: this.misc.circuitSignerAddress,
+                circuitSignerSecret: this.misc.circuitSignerSecret,
+                gatewayId: this.misc.gatewayId,
+                sideEffectType: this.misc.sideEffectType
+            },
+        }
+    }
+
+    /** Custom JSON deserialization. */
+    static fromJSON(o: SerializableSideEffect) : SideEffect {
+    const logger = createLogger(o.misc.executorName, o.misc.logsDir)
+    const sdk =  new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret)
+const sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[o.misc.sideEffectType](o.sideEffect)
+    return new SideEffect(
+        sideEffect,
+        o.id,
+        o.xtxId,
+        sdk,
+            new StrategyEngine(),
+            new BiddingEngine(logger),
+        o.misc.circuitSignerAddress,
+        logger,
+        o.misc
+    )
     }
 
     /**

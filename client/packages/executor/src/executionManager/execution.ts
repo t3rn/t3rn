@@ -12,6 +12,11 @@ import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"
 import { createLogger } from "../utils"
 
+/**
+ * Extra data to recreate a serialized execution
+ *
+ * @group Execution Manager
+ */
 export interface Miscellaneous {
     executorName: string
     logsDir: string
@@ -20,6 +25,11 @@ export interface Miscellaneous {
     circuitSignerSecret: string
 }
 
+/**
+ * JSON serializable execution
+ *
+ * @group Execution Manager
+ */
 export interface SerializableExecution {
     id: string
     status: XtxStatus
@@ -150,7 +160,8 @@ export class Execution extends EventEmitter {
                 strategyEngine,
                 biddingEngine,
                 this.misc.circuitSignerAddress,
-                this.logger
+                this.logger,
+                { ...this.misc, gatewayId: "NaN", sideEffectType: "NaN" }
             )
             this.sideEffects.set(sideEffect.id, sideEffect)
 

@@ -151,6 +151,7 @@ class Instance {
         process.stdin.resume()
         process.once("exit", async () => {
             //TODO do this on every self.executionManager.circuitListener.on("Event"
+            // OR BETTER whenever this.execMngr.queue changes!!! TODO
             const serializedState = JSON.stringify({
                 //WIP
                 queue: self.executionManager.queue,
