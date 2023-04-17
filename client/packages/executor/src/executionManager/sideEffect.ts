@@ -12,6 +12,8 @@ import { EventEmitter } from "events"
 import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
 import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
 import { InclusionProof } from "../gateways/types"
+import { Miscellaneous } from "./execution"
+import { createLogger } from "../utils"
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];
@@ -61,6 +63,27 @@ export type Notification = {
   type: NotificationType;
   payload: any;
 };
+
+/**
+ * Extra data to recreate a serialized side effect
+ *
+ * @group Execution Manager
+ */
+export interface SideEffectMiscellaneous extends Miscellaneous {
+    gatewayId: string
+}
+
+/**
+ * JSON serializable side effect
+ *
+ * @group Execution Manager
+ */
+export interface SerializableSideEffect {
+    id: string
+    xtxId: string
+    misc: SideEffectMiscellaneous
+    sideEffect: { [key: string]: any }
+}
 
 /**
  * Class used for tracking the state of a side effect. It contains all needed data and helper functions to go through the lifecycle of a XTX.

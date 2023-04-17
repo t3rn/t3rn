@@ -1,7 +1,10 @@
+import { join } from "path"
 import { ApiPromise } from "@polkadot/api"
 import { u8aToHex } from "@polkadot/util"
 import { xxhashAsU8a } from "@polkadot/util-crypto"
 import { BN } from "@polkadot/util"
+import { mkdir } from "fs/promises"
+import { default as pino, Logger } from "pino"
 
 export async function getStorage(api: ApiPromise, parameters: any) {
     const res = await api.rpc.state.getStorage(parameters.key)
@@ -50,4 +53,33 @@ export async function fetchNonce(api: ApiPromise, address: string): Promise<BN> 
  */
 export function problySubstrateSeed(x: any): boolean {
     return /^0x[0-9a-f]{64}$/.test(x)
+}
+
+/** Creates a pino logger. */
+export function createLogger(name: string, logsDir?: string): Logger {
+    let logger
+    if (logsDir) {
+        logger = pino(
+            {
+                level: process.env.LOG_LEVEL || "info",
+                formatters: {
+                    bindings(bindings) {
+                        return { ...bindings, name }
+                    },
+                },
+            },
+            pino.destination(join(logsDir.toString(), `${Date.now()}.log`))
+        )
+    } else {
+        logger = pino({
+            level: process.env.LOG_LEVEL || "info",
+            formatters: {
+                bindings(bindings) {
+                    return { ...bindings, name }
+                },
+            },
+        })
+    }
+    logger.logsDir = logsDir
+    return logger
 }

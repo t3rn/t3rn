@@ -1,21 +1,18 @@
-import { Execution } from "./execution";
-import { Notification, NotificationType, SideEffect } from "./sideEffect";
-import Estimator from "../gateways/substrate/estimator";
-import { SubstrateRelayer } from "../gateways/substrate/relayer";
-import { PriceEngine } from "../pricing";
-import { StrategyEngine } from "../strategy";
-import { Sdk } from "@t3rn/sdk";
-import { BiddingEngine } from "../bidding";
-import {
-  CircuitListener,
-  ListenerEventData,
-  ListenerEvents,
-} from "../circuit/listener";
-import { ApiPromise } from "@polkadot/api";
-import { CircuitRelayer } from "../circuit/relayer";
-import { RelayerEventData, RelayerEvents } from "../gateways/types";
-import { XtxStatus } from "@t3rn/sdk/dist/side-effects/types";
-import { Gateway } from "../../config/config";
+import { Execution } from "./execution"
+import { Notification, NotificationType, SideEffect } from "./sideEffect"
+import Estimator from "../gateways/substrate/estimator"
+import { SubstrateRelayer } from "../gateways/substrate/relayer"
+import { PriceEngine } from "../pricing"
+import { StrategyEngine } from "../strategy"
+import { Sdk } from "@t3rn/sdk"
+import { BiddingEngine } from "../bidding"
+import { CircuitListener, ListenerEventData, ListenerEvents } from "../circuit/listener"
+import { ApiPromise } from "@polkadot/api"
+import { CircuitRelayer } from "../circuit/relayer"
+import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types"
+import { RelayerEventData, RelayerEvents } from "../gateways/types"
+import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
+import { Config, Gateway } from "../../config/config"
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -64,77 +61,50 @@ export interface PersistedState {
  * @group Execution Manager
  */
 export class ExecutionManager {
-  // we map the current state in the queue
-  /** Queue used to track SFXs and gateways height */
-  queue: Queue = <Queue>{};
-  // maps xtxId to Execution instance
-  /** Maps XTX id to their corresponding Execution instance */
-  xtx: {
-    [id: string]: Execution;
-  } = {};
-  /** Maps SFX id to their corresponding XTX id. Used for lookups */
-  sfxToXtx: {
-    [sfxId: string]: string;
-  } = {};
+    // we map the current state in the queue
+    /** Queue used to track SFXs and gateways height */
+    queue: Queue = <Queue>{}
+    // maps xtxId to Execution instance
+    /** Maps XTX id to their corresponding Execution instance */
+    xtx: {
+        [id: string]: Execution
+    } = {}
+    /** Maps SFX id to their corresponding XTX id. Used for lookups */
+    sfxToXtx: {
+        [sfxId: string]: string
+    } = {}
 
-  /** Tx cost estimator instances for the specific targets */
-  targetEstimator: {
-    [id: string]: Estimator;
-  } = {};
-  /** Relayer instances for the specific targets */
-  relayers: { [key: string]: SubstrateRelayer } = {};
+    /** Tx cost estimator instances for the specific targets */
+    targetEstimator: {
+        [id: string]: Estimator
+    } = {}
+    /** Relayer instances for the specific targets */
+    relayers: { [key: string]: SubstrateRelayer } = {}
 
-  priceEngine: PriceEngine;
-  strategyEngine: StrategyEngine;
-  biddingEngine: BiddingEngine;
-  sdk: Sdk;
-  circuitClient: ApiPromise;
-  circuitListener: CircuitListener;
-  circuitRelayer: CircuitRelayer;
-  signer: any;
-  logger: any;
+    priceEngine: PriceEngine
+    strategyEngine: StrategyEngine
+    biddingEngine: BiddingEngine
+    sdk: Sdk
+    circuitClient: ApiPromise
+    circuitListener: CircuitListener
+    circuitRelayer: CircuitRelayer
+    signer: any
+    logger: any
+    config: Config
 
-  constructor(circuitClient: ApiPromise, sdk: Sdk, logger: any) {
-    this.priceEngine = new PriceEngine();
-    this.strategyEngine = new StrategyEngine();
-    this.biddingEngine = new BiddingEngine(logger);
-    this.circuitClient = circuitClient;
-    this.circuitListener = new CircuitListener(this.circuitClient);
-    this.circuitRelayer = new CircuitRelayer(sdk);
-    this.sdk = sdk;
-    this.logger = logger;
-  }
+    constructor(circuitClient: ApiPromise, sdk: Sdk, logger: any, config: Config) {
+        this.priceEngine = new PriceEngine()
+        this.strategyEngine = new StrategyEngine()
+        this.biddingEngine = new BiddingEngine(logger)
+        this.circuitClient = circuitClient
+        this.circuitListener = new CircuitListener(this.circuitClient)
+        this.circuitRelayer = new CircuitRelayer(sdk)
+        this.sdk = sdk
+        this.logger = logger
+        this.config = config
+    }
 
-  /** Setup all instances and listeners for the execution manager */
-  async setup(gatewayConfig: Gateway[], vendors: string[]) {
-    this.initializeVendors(vendors);
-    await this.initializeGateways(gatewayConfig);
-    await this.circuitListener.start();
-    await this.initializeEventListeners();
-    this.addLog({ msg: "Setup Successful" });
-  }
-
-    /** Initiates the shutdown sequence. */
-    async shutdown() {
-      const self = this
-      await this.circuitListener.stop()
-      return new Promise(resolve => {
-          function recheckQueue() {
-              const gtwyIds = Object.entries(self.sdk.gateways).map(([_, gtwy]) => gtwy.id)
-              const done = gtwyIds.every(gtwyId =>  self.queue[gtwyId].isBidding.length === 0 && 
-                  self.queue[gtwyId].isExecuting.length === 0 &&
-                  self.queue[gtwyId].isConfirming.length === 0)
-              if (done) {
-                  resolve(undefined)
-              } else {
-                  self.circuitListener.once("Event", recheckQueue)
-              }
-          }
-          this.circuitListener.once("Event", recheckQueue)
-      })
-  }
-
-      /** Injects persisted execution state.
+    /** Injects persisted execution state.
      *
      * @param state Persisted state to rebase ontop
      *

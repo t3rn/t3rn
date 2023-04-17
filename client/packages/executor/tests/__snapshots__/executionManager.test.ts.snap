@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Serialiation Execution should rountrip 1`] = `
+Object {
+  "currentPhase": 0,
+  "humanId": "0xacabac",
+  "id": "0xacabacab",
+  "misc": Object {
+    "circuitRpc": "ws://localhost:9944",
+    "circuitSignerAddress": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+    "circuitSignerSecret": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+    "executorName": "alina",
+    "logsDir": "~/.t3rn-executor-alina/logs",
+  },
+  "owner": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+  "phases": Array [
+    Array [],
+  ],
+  "sideEffects": Object {},
+  "status": 0,
+}
+`;
