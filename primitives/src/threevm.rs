@@ -23,6 +23,7 @@ pub struct GetState<T: frame_system::Config> {
     pub xtx_id: Option<T::Hash>,
 }
 
+// FIXME: none of these work at the moment due to large updates to SFX ABI.
 #[derive(Encode, Decode)]
 pub enum PrecompileArgs<T, Balance>
 where
