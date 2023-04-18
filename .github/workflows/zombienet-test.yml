@@ -22,6 +22,9 @@ jobs:
       src: ${{ steps.changes.outputs.src }}
 
     steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
       - uses: dorny/paths-filter@v2
         id: changes
         with:
