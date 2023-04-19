@@ -16,7 +16,7 @@
     "./tests/"
   ],
   "dependencies": {
-    "@polkadot/api": "^9.8.2",
+    "@polkadot/api": "^10.3.4",
     "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
     "@types/chai": "^4.3.4",
