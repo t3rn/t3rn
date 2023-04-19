@@ -507,11 +507,187 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TooManySubAccounts: AugmentedError<ApiType>;
     };
+    kusamaBridge: {
+      /**
+       * The block height couldn't be converted
+       **/
+      BlockHeightConversionError: AugmentedError<ApiType>;
+      /**
+       * The submitted range is empty
+       **/
+      EmptyRangeSubmitted: AugmentedError<ApiType>;
+      /**
+       * The events paramaters couldn't be decoded
+       **/
+      EventDecodingFailed: AugmentedError<ApiType>;
+      /**
+       * The event was not found in the specified block
+       **/
+      EventNotIncluded: AugmentedError<ApiType>;
+      /**
+       * The pallet is currently halted
+       **/
+      Halted: AugmentedError<ApiType>;
+      /**
+       * The given bytes couldn't be decoded as header data
+       **/
+      HeaderDataDecodingError: AugmentedError<ApiType>;
+      /**
+       * The given bytes couldn't be decoded as a header
+       **/
+      HeaderDecodingError: AugmentedError<ApiType>;
+      /**
+       * The inclusion data couldn't be decoded
+       **/
+      InclusionDataDecodeError: AugmentedError<ApiType>;
+      /**
+       * The authority set in invalid
+       **/
+      InvalidAuthoritySet: AugmentedError<ApiType>;
+      /**
+       * The submitted GrandpaJustification is not valid
+       **/
+      InvalidGrandpaJustification: AugmentedError<ApiType>;
+      /**
+       * The linkage with the justified header is not valid
+       **/
+      InvalidJustificationLinkage: AugmentedError<ApiType>;
+      /**
+       * The header range linkage is not valid
+       **/
+      InvalidRangeLinkage: AugmentedError<ApiType>;
+      /**
+       * The submitted storage proof is invalid
+       **/
+      InvalidStorageProof: AugmentedError<ApiType>;
+      /**
+       * No finalized header was found in storage
+       **/
+      NoFinalizedHeader: AugmentedError<ApiType>;
+      /**
+       * The parachain entry was not found in storage
+       **/
+      ParachainEntryNotFound: AugmentedError<ApiType>;
+      /**
+       * The submitted range is larger the HeadersToStore, which is not permitted
+       **/
+      RangeToLarge: AugmentedError<ApiType>;
+      /**
+       * The headers storage root doesn't map the supplied once
+       **/
+      StorageRootMismatch: AugmentedError<ApiType>;
+      /**
+       * The relaychains storge root was not found. This implies the header is not available
+       **/
+      StorageRootNotFound: AugmentedError<ApiType>;
+      /**
+       * The header couldn't be found in storage
+       **/
+      UnknownHeader: AugmentedError<ApiType>;
+      /**
+       * The side effect is not known for this vendor
+       **/
+      UnkownSideEffect: AugmentedError<ApiType>;
+      /**
+       * A forced change was detected, which is not supported
+       **/
+      UnsupportedScheduledChange: AugmentedError<ApiType>;
+    };
+    polkadotBridge: {
+      /**
+       * The block height couldn't be converted
+       **/
+      BlockHeightConversionError: AugmentedError<ApiType>;
+      /**
+       * The submitted range is empty
+       **/
+      EmptyRangeSubmitted: AugmentedError<ApiType>;
+      /**
+       * The events paramaters couldn't be decoded
+       **/
+      EventDecodingFailed: AugmentedError<ApiType>;
+      /**
+       * The event was not found in the specified block
+       **/
+      EventNotIncluded: AugmentedError<ApiType>;
+      /**
+       * The pallet is currently halted
+       **/
+      Halted: AugmentedError<ApiType>;
+      /**
+       * The given bytes couldn't be decoded as header data
+       **/
+      HeaderDataDecodingError: AugmentedError<ApiType>;
+      /**
+       * The given bytes couldn't be decoded as a header
+       **/
+      HeaderDecodingError: AugmentedError<ApiType>;
+      /**
+       * The inclusion data couldn't be decoded
+       **/
+      InclusionDataDecodeError: AugmentedError<ApiType>;
+      /**
+       * The authority set in invalid
+       **/
+      InvalidAuthoritySet: AugmentedError<ApiType>;
+      /**
+       * The submitted GrandpaJustification is not valid
+       **/
+      InvalidGrandpaJustification: AugmentedError<ApiType>;
+      /**
+       * The linkage with the justified header is not valid
+       **/
+      InvalidJustificationLinkage: AugmentedError<ApiType>;
+      /**
+       * The header range linkage is not valid
+       **/
+      InvalidRangeLinkage: AugmentedError<ApiType>;
+      /**
+       * The submitted storage proof is invalid
+       **/
+      InvalidStorageProof: AugmentedError<ApiType>;
+      /**
+       * No finalized header was found in storage
+       **/
+      NoFinalizedHeader: AugmentedError<ApiType>;
+      /**
+       * The parachain entry was not found in storage
+       **/
+      ParachainEntryNotFound: AugmentedError<ApiType>;
+      /**
+       * The submitted range is larger the HeadersToStore, which is not permitted
+       **/
+      RangeToLarge: AugmentedError<ApiType>;
+      /**
+       * The headers storage root doesn't map the supplied once
+       **/
+      StorageRootMismatch: AugmentedError<ApiType>;
+      /**
+       * The relaychains storge root was not found. This implies the header is not available
+       **/
+      StorageRootNotFound: AugmentedError<ApiType>;
+      /**
+       * The header couldn't be found in storage
+       **/
+      UnknownHeader: AugmentedError<ApiType>;
+      /**
+       * The side effect is not known for this vendor
+       **/
+      UnkownSideEffect: AugmentedError<ApiType>;
+      /**
+       * A forced change was detected, which is not supported
+       **/
+      UnsupportedScheduledChange: AugmentedError<ApiType>;
+    };
     portal: {
       /**
        * The gateways vendor is not available, which is a result of a missing XDNS record.
        **/
       GatewayVendorNotFound: AugmentedError<ApiType>;
+      /**
+       * The light client could not be found
+       **/
+      LightClientNotFoundByVendor: AugmentedError<ApiType>;
       /**
        * No gateway height could be found
        **/
@@ -528,6 +704,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Finality Verifier owner can't be set.
        **/
       SetOwnerError: AugmentedError<ApiType>;
+      /**
+       * Recoding failed
+       **/
+      SFXRecodeError: AugmentedError<ApiType>;
       /**
        * SideEffect confirmation failed
        **/
@@ -744,17 +924,29 @@ declare module '@polkadot/api-base/types/errors' {
     };
     xdns: {
       /**
+       * Stored gateway has already been added before
+       **/
+      GatewayRecordAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * Gateway Record not found
+       **/
+      GatewayRecordNotFound: AugmentedError<ApiType>;
+      /**
        * the xdns entry does not contain parachain information
        **/
       NoParachainInfoFound: AugmentedError<ApiType>;
       /**
-       * SideEffect already stored
+       * SideEffectABI already exists
        **/
-      SideEffectInterfaceAlreadyExists: AugmentedError<ApiType>;
+      SideEffectABIAlreadyExists: AugmentedError<ApiType>;
       /**
-       * SideEffect interface was not found in storage
+       * SideEffectABI not found
        **/
-      SideEffectInterfaceNotFound: AugmentedError<ApiType>;
+      SideEffectABINotFound: AugmentedError<ApiType>;
+      /**
+       * Stored token has already been added before
+       **/
+      TokenRecordAlreadyExists: AugmentedError<ApiType>;
       /**
        * Access of unknown xdns_record
        **/

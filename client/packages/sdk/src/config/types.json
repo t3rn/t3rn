@@ -7,12 +7,34 @@
             "Ethereum"
         ]
     },
+    "ExecutionVendor": {
+        "_enum": [
+            "Substrate",
+            "EVM"
+        ]
+    },
     "GatewayType": {
         "_enum": {
             "ProgrammableInternal": "u32",
             "ProgrammableExternal": "u32",
             "TxOnly": "u32"
         }
+    },
+    "TokenInfo": {
+        "_enum": {
+            "Substrate": "SubstrateToken",
+            "Ethereum": "EthereumToken"
+        }
+    },
+    "SubstrateToken": {
+        "id": "u32",
+        "symbol": "Bytes",
+        "decimals": "u8"
+    },
+    "EthereumToken": {
+        "symbol": "Vec<u8>",
+        "decimals": "u8",
+        "address": "Option<[u8; 20]>"
     },
     "RuntimeCodec": {
          "_enum": [
@@ -25,11 +47,7 @@
         "extrinsics_version": "u8",
         "genesis_hash": "Bytes"
     },
-    "TokenSysProps": {
-        "ss58_format": "u16",
-        "token_symbol": "Bytes",
-        "token_decimals": "u8"
-    },
+
     "AllowedSideEffect": "[u8; 4]",
     "BlockNumber": "u64",
     "Compose": {
@@ -127,7 +145,7 @@
         "gateway_vendor": "GatewayVendor",
         "gateway_type": "GatewayType",
         "gateway_id": "ChainId",
-        "gateway_sys_props": "TokenSysProps",
+        "gateway_sys_props": "TokenInfo",
         "registrant": "Option<AccountId>",
         "last_finalized": "Option<u64>",
         "allowed_side_effects": "Vec<AllowedSideEffect>"
@@ -135,6 +153,7 @@
     "GatewayRecord": {
         "gateway_id": "ChainId",
         "verification_vendor": "GatewayVendor",
+        "execution_vendor": "ExecutionVendor",
         "codec": "RuntimeCodec",
         "registrant": "Option<AccountId>",
         "escrow_account": "Option<AccountId>",
@@ -143,7 +162,7 @@
     "TokenRecord": {
         "token_id": "[u8; 4]",
         "gateway_id": "[u8; 4]",
-        "token_props": "TokenSysProps"
+        "token_props": "TokenInfo"
     },
     "FullGatewayRecord": {
         "gateway_record": "GatewayRecord",

@@ -54,7 +54,6 @@ pub use t3rn_types::{
 pub use t3rn_primitives::{
     account_manager::{AccountManager, Outcome},
     circuit::{XExecSignalId, XExecStepSideEffectId},
-    circuit_portal::CircuitPortal,
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
     gateway::{GatewayABIConfig, HasherAlgo as HA},

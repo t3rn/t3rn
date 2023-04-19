@@ -92,7 +92,7 @@ use t3rn_abi::SFXAbi;
 use t3rn_primitives::{
     contracts_registry::RegistryContract,
     xdns::{GatewayRecord, Parachain, XdnsRecord},
-    GatewayType, GatewayVendor, TokenSysProps,
+    ExecutionVendor, GatewayType, GatewayVendor, SubstrateToken, TokenInfo,
 };
 use t3rn_types::sfx::Sfx4bId;
 
@@ -117,11 +117,11 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::OnCircuit(0),
             Default::default(),
-            TokenSysProps {
-                ss58_format: 1333,
-                token_symbol: Encode::encode("TRN"),
-                token_decimals: 12,
-            },
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1333,
+                symbol: Encode::encode("TRN"),
+                decimals: 12,
+            }),
             vec![],
             t3rn_abi::standard::standard_sfx_abi_ids(),
         );
@@ -137,11 +137,11 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::OnCircuit(0),
             Default::default(),
-            TokenSysProps {
-                ss58_format: 1333,
-                token_symbol: Encode::encode("TRN"),
-                token_decimals: 12,
-            },
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1333,
+                symbol: Encode::encode("TRN"),
+                decimals: 12,
+            }),
             vec![],
             t3rn_abi::standard::standard_sfx_abi_ids(),
         );
@@ -164,11 +164,11 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableInternal(0),
             Default::default(),
-            TokenSysProps {
-                ss58_format: 1333,
-                token_symbol: Encode::encode("TRN"),
-                token_decimals: 12,
-            },
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1333,
+                symbol: Encode::encode("TRN"),
+                decimals: 12,
+            }),
             vec![],
             t3rn_abi::standard::standard_sfx_abi_ids(),
         );
@@ -180,11 +180,11 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
-            TokenSysProps {
-                ss58_format: 1333,
-                token_symbol: Encode::encode("ZERO"),
-                token_decimals: 0,
-            },
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1333,
+                symbol: Encode::encode("ZERO"),
+                decimals: 0,
+            }),
             vec![],
             t3rn_abi::standard::standard_sfx_abi_ids(),
         );
@@ -196,11 +196,11 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
-            TokenSysProps {
-                ss58_format: 1333,
-                token_symbol: Encode::encode("TRN"),
-                token_decimals: 12,
-            },
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1333,
+                symbol: Encode::encode("TRN"),
+                decimals: 12,
+            }),
             vec![],
             t3rn_abi::standard::standard_sfx_abi_ids(),
         );
@@ -212,11 +212,11 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
-            TokenSysProps {
-                ss58_format: 0,
-                token_symbol: Encode::encode("DOT"),
-                token_decimals: 10,
-            },
+            TokenInfo::Substrate(SubstrateToken {
+                id: 0,
+                symbol: Encode::encode("DOT"),
+                decimals: 10,
+            }),
             vec![],
             t3rn_abi::standard::standard_sfx_abi_ids(),
         );
@@ -228,11 +228,11 @@ impl ExtBuilder {
             GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
-            TokenSysProps {
-                ss58_format: 2,
-                token_symbol: Encode::encode("KSM"),
-                token_decimals: 12,
-            },
+            TokenInfo::Substrate(SubstrateToken {
+                id: 2,
+                symbol: Encode::encode("KSM"),
+                decimals: 12,
+            }),
             vec![],
             t3rn_abi::standard::standard_sfx_abi_ids(),
         );
@@ -250,6 +250,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: [3, 3, 3, 3],
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -266,6 +267,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: [1, 1, 1, 1],
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -282,6 +284,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: [5, 5, 5, 5],
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -298,6 +301,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: *b"ksma",
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -306,6 +310,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: *b"pdot",
                 verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -314,6 +319,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: *b"gate",
                 verification_vendor: GatewayVendor::Rococo,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,
@@ -322,6 +328,7 @@ impl ExtBuilder {
             GatewayRecord {
                 gateway_id: [0, 0, 0, 0],
                 verification_vendor: GatewayVendor::Rococo,
+                execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
                 escrow_account: None,

@@ -1,6 +1,6 @@
 use crate::{
-    gateway::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
-    TokenSysProps,
+    gateway::GatewayABIConfig, ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType,
+    GatewayVendor, TokenInfo,
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
@@ -37,7 +37,7 @@ pub struct TokenRecord {
     pub gateway_id: [u8; 4],
 
     /// Token properties - decimals, symbol, name
-    pub token_props: TokenSysProps,
+    pub token_props: TokenInfo,
 }
 
 /// A preliminary representation of a xdns_record in the onchain registry.
@@ -49,6 +49,9 @@ pub struct GatewayRecord<AccountId> {
 
     /// Verification Vendor / Light Client or internal (XCM/XBI)
     pub verification_vendor: GatewayVendor,
+
+    /// Type of execution layer, e.g. EVM for polygon and ethereum
+    pub execution_vendor: ExecutionVendor,
 
     /// Default encoding for the gateway
     pub codec: t3rn_abi::Codec,
@@ -93,7 +96,7 @@ pub struct XdnsRecord<AccountId> {
     pub parachain: Option<Parachain>,
 
     /// Gateway System Properties
-    pub gateway_sys_props: TokenSysProps,
+    pub gateway_sys_props: TokenInfo,
 
     pub registrant: Option<AccountId>,
 
@@ -117,7 +120,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         parachain: Option<Parachain>,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
-        gateway_sys_props: TokenSysProps,
+        gateway_sys_props: TokenInfo,
         registrant: Option<AccountId>,
         security_coordinates: Vec<u8>,
         last_finalized: Option<u64>,
@@ -153,7 +156,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
-        gateway_sys_props: TokenSysProps,
+        gateway_sys_props: TokenInfo,
         security_coordinates: Vec<u8>,
         allowed_side_effects: Vec<Sfx4bId>,
     ) -> Self {
@@ -196,18 +199,19 @@ pub trait Xdns<T: frame_system::Config> {
     fn add_new_token(
         token_id: [u8; 4],
         gateway_id: [u8; 4],
-        token_props: TokenSysProps,
+        token_props: TokenInfo,
     ) -> DispatchResult;
 
     fn override_token(
         token_id: [u8; 4],
         gateway_id: [u8; 4],
-        token_props: TokenSysProps,
+        token_props: TokenInfo,
     ) -> DispatchResult;
 
     fn add_new_gateway(
         gateway_id: [u8; 4],
         verification_vendor: GatewayVendor,
+        execution_vendor: ExecutionVendor,
         codec: t3rn_abi::Codec,
         registrant: Option<T::AccountId>,
         escrow_account: Option<T::AccountId>,
@@ -217,6 +221,7 @@ pub trait Xdns<T: frame_system::Config> {
     fn override_gateway(
         gateway_id: [u8; 4],
         verification_vendor: GatewayVendor,
+        execution_vendor: ExecutionVendor,
         codec: t3rn_abi::Codec,
         registrant: Option<T::AccountId>,
         escrow_account: Option<T::AccountId>,

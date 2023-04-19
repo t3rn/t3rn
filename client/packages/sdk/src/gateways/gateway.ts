@@ -9,7 +9,6 @@ import { AmountConverter } from "../converters/amounts";
 import * as Address from "../converters/address";
 import { toU8aId } from "../converters/utils";
 import { createSfx } from "../side-effects";
-import { ExecutionLayerType } from "./types";
 
 /**
  * A Gateway type enum
@@ -28,11 +27,11 @@ export class Gateway {
   id: string;
   rpc: string;
   vendor: string;
-  executionLayerType: ExecutionLayerType;
+  executionVendor: string;
   gatewayType: any;
   ticker: string;
   decimals: number;
-  addressFormat: number;
+  tokenId: number;
   valueTypeSize: number;
   allowedSideEffects: string[];
   createSfx: {} = {};
@@ -46,17 +45,19 @@ export class Gateway {
   constructor(record: T3rnPrimitivesXdnsFullGatewayRecord) {
     this.id = record.gateway_record.gateway_id.toHuman();
     this.vendor = record.gateway_record.verification_vendor.toHuman();
-    this.executionLayerType = this.getType(
-      record.gateway_record.verification_vendor.toHuman()
-    ) as unknown as ExecutionLayerType;
+    this.executionVendor = record.gateway_record.execution_vendor.toHuman()
     let tokens: any[] = record.tokens.map(token => token.toHuman())
+
     let nativeToken = tokens.filter(token => token.gateway_id === this.id)[0];
-    this.ticker = nativeToken.token_props.token_symbol;
+    // @ts-ignore
+    this.ticker = Object.values(nativeToken.token_props)[0].symbol;
     this.decimals = parseInt(
-      nativeToken.token_props.token_decimals
+      // @ts-ignore
+      Object.values(nativeToken.token_props)[0].decimals
     );
-    this.addressFormat = parseInt(
-       nativeToken.token_props.ss58_format
+    this.tokenId = parseInt(
+       // @ts-ignore
+      Object.values(nativeToken.token_props)[0].id
     );
     this.allowedSideEffects = record.gateway_record.allowed_side_effects.toHuman().map(entry => entry[0]);
     this.setSfxBindings();
@@ -145,8 +146,8 @@ export class Gateway {
    */
 
   validateAddress(addr: string) {
-    switch (this.executionLayerType) {
-      case ExecutionLayerType.Substrate:
+    switch (this.executionVendor) {
+      case "Substrate":
         return Address.Substrate.addrToPub(addr);
         break;
       default:
@@ -220,5 +221,3 @@ export class Gateway {
     }
   }
 }
-
-export { ExecutionLayerType };

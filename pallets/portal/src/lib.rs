@@ -16,7 +16,7 @@ use t3rn_primitives::{
     self,
     portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
-    ChainId, GatewayVendor, TokenSysProps,
+    ChainId, GatewayVendor, TokenInfo,
 };
 pub mod weights;
 
@@ -31,7 +31,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
 
     use sp_std::vec::Vec;
-    use t3rn_primitives::{xdns::Xdns, ChainId, GatewayVendor};
+    use t3rn_primitives::{xdns::Xdns, ChainId, ExecutionVendor, GatewayVendor};
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -104,17 +104,19 @@ pub mod pallet {
             gateway_id: [u8; 4],
             token_id: [u8; 4],
             verification_vendor: GatewayVendor,
+            execution_vendor: ExecutionVendor,
             codec: t3rn_abi::Codec,
             registrant: Option<T::AccountId>,
             escrow_account: Option<T::AccountId>,
             allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
-            token_props: TokenSysProps,
+            token_props: TokenInfo,
             encoded_registration_data: Bytes,
         ) -> DispatchResult {
             ensure_root(origin.clone())?;
             <T as Config>::Xdns::add_new_gateway(
                 gateway_id,
                 verification_vendor,
+                execution_vendor,
                 codec,
                 registrant,
                 escrow_account,
