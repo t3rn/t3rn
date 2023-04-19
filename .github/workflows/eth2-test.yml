@@ -44,36 +44,36 @@ jobs:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v3
 
-      - name: Install eth2 tools
-        working-directory: tests/eth2
-        run: npm i
-
       - name: 📼 Setup local testnet
         working-directory: tests/eth2/local-testnet
         run: |
           ./stop_local_testnet.sh || true
           ./start_local_testnet.sh
 
-      - name: 📼 Run blockscout
-        working-directory: tests/eth2/local-testnet/blockscout
-        run: |
-          docker-compose -f docker-compose-blockscout.yml stop
-          docker-compose -f docker-compose-blockscout.yml rm -f
-          docker-compose -f docker-compose-blockscout.yml up -d
+      - name: Install eth2 tools
+        working-directory: tests/eth2
+        run: npm i
+
+      # - name: 📼 Run blockscout
+      #   working-directory: tests/eth2/local-testnet/blockscout
+      #   run: |
+      #     docker-compose -f docker-compose-blockscout.yml stop
+      #     docker-compose -f docker-compose-blockscout.yml rm -f
+      #     docker-compose -f docker-compose-blockscout.yml up -d
 
       - name: Run eth2 tests
         working-directory: tests/eth2
         run: npm run test
 
-      - name: Sleep
-        working-directory: tests/zombienet
-        run: sleep 600
+      # - name: Sleep
+      #   working-directory: tests/zombienet
+      #   run: sleep 600
 
-      - name: 📼 Stop blockscout
-        working-directory: tests/eth2/local-testnet/blockscout
-        run: |
-          docker-compose -f docker-compose-blockscout.yml stop
-          docker-compose -f docker-compose-blockscout.yml rm -f
+      # - name: 📼 Stop blockscout
+      #   working-directory: tests/eth2/local-testnet/blockscout
+      #   run: |
+      #     docker-compose -f docker-compose-blockscout.yml stop
+      #     docker-compose -f docker-compose-blockscout.yml rm -f
 
       - name: 📼 Stop local testnet
         working-directory: tests/eth2/local-testnet
