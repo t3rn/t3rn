@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  redis_db:
+    extends:
+      file: ./docker-compose-redis.yml
+      service: redis_db
+
+  db:
+    extends:
+      file: ./docker-compose-db.yml
+      service: db
+
+  blockscout:
+    depends_on:
+      - db
+      - redis_db
+    image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    pull_policy: always
+    restart: always
+    stop_grace_period: 5m
+    container_name: 'blockscout'
+    links:
+      - db:database
+    command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ./common-blockscout.env
+    environment:
+        # BLOCK_TRANSFORMER: clique # it doesnt work :|
+        # blockscout  | 2023-04-18T15:53:04.254 application=indexer fetcher=block_catchup first_block_number=114 last_block_number=105 [error] ** (MatchError) no match of right hand side value: ""
+        # blockscout  |     (indexer 5.1.0) lib/indexer/transform/blocks.ex:90: Indexer.Transform.Blocks.recover_pub_key/2
+        # blockscout  |     (indexer 5.1.0) lib/indexer/transform/blocks/clique.ex:14: Indexer.Transform.Blocks.Clique.transform/1
+        # blockscout  |     (elixir 1.13.1) lib/enum.ex:1593: Enum."-map/2-lists^map/1-0-"/2
+        # blockscout  |     (indexer 5.1.0) lib/indexer/block/fetcher.ex:136: Indexer.Block.Fetcher.fetch_and_import_range/2
+        # blockscout  |     (stdlib 3.17) timer.erl:166: :timer.tc/1
+        # blockscout  |     (indexer 5.1.0) lib/indexer/block/catchup/fetcher.ex:177: Indexer.Block.Catchup.Fetcher.fetch_and_import_range_from_sequence/3
+        # blockscout  |     (elixir 1.13.1) lib/task/supervised.ex:89: Task.Supervised.invoke_mfa/2
+        # blockscout  |     (elixir 1.13.1) lib/task/supervised.ex:34: Task.Supervised.reply/4
+        # blockscout  | 
+        # blockscout  | 
+        # blockscout  | Retrying.
+        BLOCK_TRANSFORMER: base # this should display validators
+        # SUBNETWORK: t3rn eth testnet
+        ETHEREUM_JSONRPC_VARIANT: 'ganache'
+        ETHEREUM_JSONRPC_HTTP_URL: http://host.docker.internal:8545/
+        INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: 'true'
+        INDEXER_DISABLE_PENDING_TRANSACTIONS_FETCHER: 'true'
+        DATABASE_URL: postgresql://postgres:@host.docker.internal:7432/blockscout?ssl=false
+        SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
+        CHAIN_ID: '4242'
+    ports:
+      - 4000:4000
+    # volumes:
+    #   - ./logs/:/app/logs/
+
+  # visualizer:
+  #   extends:
+  #     file: ./docker-compose-visualizer.yml
+  #     service: visualizer
+
+  # sig-provider:
+  #   extends:
+  #     file: ./docker-compose-sig-provider.yml
+  #     service: sig-provider
+
+  # smart-contract-verifier:
+  #   extends:
+  #     file: ./services/docker-compose-smart-contract-verifier.yml
+  #     service: smart-contract-verifier

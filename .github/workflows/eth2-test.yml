@@ -1,0 +1,80 @@
+name: Eth2
+
+env:
+  parachain: t0rn # TODO: fix before merging master
+
+on:
+  pull_request:
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # This job checks if zombienet files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without zombienet changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/tests/eth2/**/*"
+              - ".github/workflows/eth2-test.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
+  eth2-test:
+    name: Eth2 Test
+    runs-on: [self-hosted, rust]
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: Install eth2 tools
+        working-directory: tests/eth2
+        run: npm i
+
+      - name: 📼 Setup local testnet
+        working-directory: tests/eth2/local-testnet
+        run: |
+          ./stop_local_testnet.sh || true
+          ./start_local_testnet.sh
+
+      - name: 📼 Run blockscout
+        working-directory: tests/eth2/local-testnet/blockscout
+        run: |
+          docker-compose -f docker-compose-blockscout.yml stop
+          docker-compose -f docker-compose-blockscout.yml rm -f
+          docker-compose -f docker-compose-blockscout.yml up -d
+
+      - name: Run eth2 tests
+        working-directory: tests/eth2
+        run: npm run test
+
+      - name: Sleep
+        working-directory: tests/zombienet
+        run: sleep 600
+
+      - name: 📼 Stop blockscout
+        working-directory: tests/eth2/local-testnet/blockscout
+        run: |
+          docker-compose -f docker-compose-blockscout.yml stop
+          docker-compose -f docker-compose-blockscout.yml rm -f
+
+      - name: 📼 Stop local testnet
+        working-directory: tests/eth2/local-testnet
+        run: ./stop_local_testnet.sh
