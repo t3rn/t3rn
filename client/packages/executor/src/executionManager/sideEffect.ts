@@ -71,6 +71,7 @@ export type Notification = {
  */
 export interface SideEffectMiscellaneous extends Miscellaneous {
     gatewayId: string
+    xdns: { [key: string]: any }
 }
 
 /**
@@ -167,6 +168,7 @@ export class SideEffect extends EventEmitter {
 
     rawSideEffect: T3rnTypesSideEffect
     misc: Miscellaneous
+    xdns: { [key: string]: any }
 
     /**
      * @param sideEffect Scale encoded side effect
@@ -214,7 +216,7 @@ export class SideEffect extends EventEmitter {
         return {
             id: this.id,
             xtxId: this.xtxId,
-            sideEffect: Object.assign({},this.rawSideEffect, { action: this.rawSideEffect.action.toHuman() }),
+            sideEffect: Object.assign({}, this.rawSideEffect, { action: this.rawSideEffect.action.toHuman() }),
             misc: {
                 executorName: this.misc.executorName,
                 logsDir: this.logger.logsDir,
@@ -222,6 +224,7 @@ export class SideEffect extends EventEmitter {
                 circuitSignerAddress: this.misc.circuitSignerAddress,
                 circuitSignerSecret: this.misc.circuitSignerSecret,
                 gatewayId: this.gateway.id,
+                xdns: this.xdns,
             },
         }
     }
@@ -232,19 +235,31 @@ export class SideEffect extends EventEmitter {
         const sdk = new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret)
         const sideEffectType = o.sideEffect.action
         // const sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](o.sideEffect) as T3rnTypesSideEffect
-        let sideEffect = { ...o.sideEffect, action:{toHuman() {return o.sideEffect.action.toString()}},
-    target: {toU8a(){return Uint8Array.from(Buffer.from(o.misc.gatewayId))}}}
-    sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
-    //WIP 
-//       // @ts-ignore
-//   const records = (await api.rpc.xdns.fetchFullRecords());
-//   let res: Record<string, Gateway> = {};
-
-//   for (let i = 0; i < records.length; i++) {
-//     const gateway = new Gateway(records[i]);
-//     res[gateway.id] = gateway;
-//   }
-        return new SideEffect(sideEffect as T3rnTypesSideEffect, o.id, o.xtxId, sdk, new StrategyEngine(), new BiddingEngine(logger), logger, o.misc)
+        let sideEffect = {
+            ...o.sideEffect,
+            action: {
+                toHuman() {
+                    return o.sideEffect.action.toString()
+                },
+            },
+            target: {
+                toU8a() {
+                    return Uint8Array.from(Buffer.from(o.misc.gatewayId))
+                },
+            },
+        }
+        // sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
+        sideEffect = this.gateway.createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
+        return new SideEffect(
+            sideEffect as T3rnTypesSideEffect,
+            o.id,
+            o.xtxId,
+            sdk,
+            new StrategyEngine(),
+            new BiddingEngine(logger),
+            logger,
+            o.misc
+        )
     }
 
     /**
