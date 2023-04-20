@@ -18,6 +18,13 @@ use t3rn_sdk_primitives::{
 pub const EVM_RECODING_BYTE_SELECTOR: u8 = 40;
 pub const WASM_RECODING_BYTE_SELECTOR: u8 = 41;
 
+// Precompile pointers baked into the binary.
+// Genesis exists only to map hashes to pointers.
+pub const GET_STATE: u8 = 55;
+pub const SUBMIT: u8 = 56;
+pub const POST_SIGNAL: u8 = 57;
+pub const PORTAL: u8 = 70;
+
 #[derive(Encode, Decode)]
 pub struct GetState<T: frame_system::Config> {
     pub xtx_id: Option<T::Hash>,

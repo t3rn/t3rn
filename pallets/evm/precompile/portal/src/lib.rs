@@ -4,12 +4,11 @@ use fp_evm::{
     ExitError, ExitSucceed, Precompile as EvmPrecompile, PrecompileFailure, PrecompileHandle,
     PrecompileOutput, PrecompileResult,
 };
-use sp_std::{marker::PhantomData, vec, vec::Vec};
-use t3rn_primitives::threevm::{Precompile, EVM_RECODING_BYTE_SELECTOR};
+use sp_std::{marker::PhantomData, vec::Vec};
+use t3rn_primitives::threevm::{Precompile, EVM_RECODING_BYTE_SELECTOR, PORTAL};
 
 pub struct PortalPrecompile<T: pallet_evm::Config>(PhantomData<T>);
 
-// TODO: this is just the same as 3vm dispatch Right now
 impl<T: pallet_evm::Config> EvmPrecompile for PortalPrecompile<T> {
     fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
         let input = handle.input();
@@ -18,20 +17,11 @@ impl<T: pallet_evm::Config> EvmPrecompile for PortalPrecompile<T> {
         let mut output = Vec::new();
         let callee = handle.context().caller.clone();
 
-        // // TODO: assert the length is at least 2 bytes
-        // if input.len() < 2 {
-        //     return Err(
-        //         ExitError::Other("PortalPrecompile input contained too little bytes".into()).into(),
-        //     )
-        // }
-
         let restructured_args =
             [&[EVM_RECODING_BYTE_SELECTOR][..], callee.as_bytes(), &input].concat();
 
-        // TODO: dont hardcode me
-        T::ThreeVm::invoke_raw(&70, &restructured_args, &mut output);
+        T::ThreeVm::invoke_raw(&PORTAL, &restructured_args, &mut output);
 
-        // FIXME: always passes right now, needs error check
         if let Some(result_byte) = output.first() {
             if *result_byte == 0 {
                 Ok(PrecompileOutput {
