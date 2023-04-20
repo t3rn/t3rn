@@ -62,8 +62,11 @@ jobs:
 
       - name: Print eth2 details
         run: |
+          echo Genesis:
+          echo "$(curl localhost:8001/eth/v1/beacon/genesis | jq .)"
+          echo
           echo First beacon block:
-          echo `curl localhost:8001/eth/v2/beacon/blocks/0 | jq .`
+          echo "$(curl localhost:8001/eth/v2/beacon/blocks/0 | jq .)"
 
       # - name: 📼 Run blockscout
       #   working-directory: tests/eth2/local-testnet/blockscout
