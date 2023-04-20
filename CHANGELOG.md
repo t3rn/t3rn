@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.11.0-rc.0] - 2023-04-20
+### :sparkles: New Features
+- [`de93371`](https://github.com/t3rn/t3rn/commit/de93371c13451896e4078bbf9068b3bcc025f036) - expose entire light client trait in primitives *(PR [#848](https://github.com/t3rn/t3rn/pull/848) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.10.4-rc.0] - 2023-04-20
 ### :bug: Bug Fixes
 - [`df07e2d`](https://github.com/t3rn/t3rn/commit/df07e2d8781ab54a5d6c905f00c766622a6e4f9f) - make extrinsics transactional *(PR [#857](https://github.com/t3rn/t3rn/pull/857) by [@petscheit](https://github.com/petscheit))*
@@ -918,3 +923,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.9.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.9.0-rc.0...v1.9.1-rc.0
 [v1.10.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.9.3-rc.0...v1.10.0-rc.0
 [v1.10.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.3-rc.0...v1.10.4-rc.0
+[v1.11.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.4-rc.0...v1.11.0-rc.0
