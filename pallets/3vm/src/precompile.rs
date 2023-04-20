@@ -37,7 +37,7 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
     // TODO: assert the length here
 
     // First byte determines if it came from EVM or WASM
-    let codec_selector = args[1];
+    let codec_selector = args[0];
 
     // Strip the selector
     let args = &mut &args[1..];
@@ -49,7 +49,7 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
     };
 
     // TODO: Is origin provided first or at all? if so that also needs recoding
-    match extract_origin::<T>(args) {
+    match extract_origin::<T>(&codec, args) {
         Some(origin) => match *precompile {
             GET_STATE => {
                 let args: CodecResult<GetState<T>> = match codec {
@@ -123,20 +123,23 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 // First byte is portal selector
                 let portal_selector = &args[0];
                 // The rest is the input for portal
-                let input_without_vm_selectors = &args[1..];
+                let input_without_portal_selector = &args[1..];
 
                 let mut result = match codec {
                     T3rnCodec::Rlp => {
+                        log::debug!(target: LOG_TARGET, "Rlp encoding bytes for portal selector {}", portal_selector);
+                        log::debug!(target: LOG_TARGET, "Bytes {:?}", input_without_portal_selector);
                         FilledAbi::try_fill_abi(
                             get_portal_interface_abi(), // This panics :<
-                            input_without_vm_selectors.to_vec(),
+                            input_without_portal_selector.to_vec(),
                             codec.clone(),
                         )
                         .and_then(|abi| {
+                            log::debug!(target: LOG_TARGET, "ABI was filled, recoding to scale {}", portal_selector);
                             abi.recode_as(&codec.clone(), &T3rnCodec::Scale)
                         })
                     }
-                    T3rnCodec::Scale => Ok(input_without_vm_selectors.to_vec())
+                    T3rnCodec::Scale => Ok(input_without_portal_selector.to_vec())
                 }
                 .map(|mut recoded| {
                     recoded.insert(0, *portal_selector);
@@ -147,11 +150,12 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                         .map_err(|_e| DispatchError::Other("Failed to decode portal interface enum"))
                 })
                 .and_then(|recoded_call_as_enum| {
+                    log::debug!(target: LOG_TARGET, "Built recoded call {:?}", recoded_call_as_enum);
                     invoke::<T>(PrecompileArgs::Portal(recoded_call_as_enum)).map(|x| if let PrecompileInvocation::Portal(i) = x {
                         let bytes: Vec<u8> = i.into();
                         bytes
                     } else {
-                        log::warn!("Exceptional issue, portal precompile invocation returned something other than a portal result");
+                        log::warn!(target: LOG_TARGET, "Exceptional issue, portal precompile invocation returned something other than a portal result");
                         Default::default()
                     })
                 })
@@ -160,9 +164,18 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                     _ => "Failed to invoke portal",
                 });
 
+                log::debug!(target: LOG_TARGET, "Result {:?}", result);
+
                 match result {
-                    Ok(ref mut bytes) => output.append(bytes),
-                    Err(msg) => output.append(msg.as_bytes().to_vec().as_mut()),
+                    Ok(ref mut bytes) => {
+                        output.push(0); // It's an ok
+                        output.append(bytes);
+                    },
+                    Err(msg) => {
+                        log::error!(target: LOG_TARGET, "Failed to invoke portal: {}", msg);
+                        output.push(1); // It's an error
+                        output.append(msg.as_bytes().to_vec().as_mut())
+                    },
                 }
             },
             _ => Err::<(), _>(Error::<T>::InvalidPrecompilePointer).encode_to(output),
@@ -171,12 +184,26 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
     }
 }
 
-fn extract_origin<T: frame_system::Config>(args: &mut &[u8]) -> Option<T::Origin> {
-    match <T::AccountId as Decode>::decode(args) {
-        Ok(account) => Some(T::Origin::from(RawOrigin::Signed(account))),
-        Err(err) => {
-            log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
-            None
+fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::Origin> {
+    match codec {
+        T3rnCodec::Scale => match <T::AccountId as Decode>::decode(args) {
+            Ok(account) => Some(T::Origin::from(RawOrigin::Signed(account))),
+            Err(err) => {
+                log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
+                None
+            },
+        },
+        T3rnCodec::Rlp => {
+            // TODO: inject addressmapping here, dont always assume padded 12
+            let address_bytes = vec![args.take(..20)?, &[0_u8; 12][..]].concat();
+
+            match <T::AccountId as Decode>::decode(&mut &address_bytes[..]) {
+                Ok(account) => Some(T::Origin::from(RawOrigin::Signed(account))),
+                Err(err) => {
+                    log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
+                    None
+                },
+            }
         },
     }
 }
@@ -293,7 +320,7 @@ mod tests {
         new_test_ext().execute_with(|| {
             let account = 4_u64;
             let buffer = &mut &account.encode()[..];
-            let _result = extract_origin::<Test>(buffer).unwrap();
+            let _result = extract_origin::<Test>(&T3rnCodec::Scale, buffer).unwrap();
             assert_eq!(buffer.len(), 0)
         });
     }
