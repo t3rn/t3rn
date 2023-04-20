@@ -83,4 +83,4 @@ jobs:
 
       - name: 📼 Stop local testnet
         working-directory: tests/eth2/local-testnet
-        run: ./stop_local_testnet.sh
+        run: ./stop_local_testnet.sh || true
