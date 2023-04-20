@@ -44,6 +44,12 @@ jobs:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v3
 
+      - name: Print versions
+        run: |
+          echo `lcli --version`
+          echo `lighthouse --version`
+          echo `ganache --version`
+
       - name: 📼 Setup local testnet
         working-directory: tests/eth2/local-testnet
         run: |
