@@ -125,4 +125,13 @@ done
 echo "Started!"
 
 echo "Setting up Validators!"
-./setup.sh
+./setup.sh || true
+
+while read -r pid; do
+    if ! kill -0 "$pid" > /dev/null 2>&1; then
+        echo "Process $pid is not running"
+        exit 1
+    fi
+done < $PID_FILE
+
+echo "All processes are running"

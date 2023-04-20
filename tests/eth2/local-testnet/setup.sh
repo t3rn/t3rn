@@ -42,7 +42,16 @@ lcli \
 echo Specification generated at $TESTNET_DIR.
 echo "Generating $VALIDATOR_COUNT validators concurrently... (this may take a while)"
 
-# rm -rf $DATADIR/node_*
+# TODO: looks like all validators are already created and this is not necessary
+lcli \
+	insecure-validators \
+	--count $VALIDATOR_COUNT \
+	--base-dir $DATADIR \
+	--node-count $BN_COUNT || true
+
+echo Validators generated with keystore passwords at $DATADIR.
+echo "Building genesis state... (this might take a while)"
+
 lcli \
 	interop-genesis \
 	--spec $SPEC_PRESET \
@@ -51,13 +60,3 @@ lcli \
 	$GENESIS_VALIDATOR_COUNT
 
 echo Created genesis state in $TESTNET_DIR
-
-# TODO: looks like all validators are already created and this is not necessary
-# lcli \
-# 	insecure-validators \
-# 	--count $VALIDATOR_COUNT \
-# 	--base-dir $DATADIR \
-# 	--node-count $BN_COUNT
-
-# echo Validators generated with keystore passwords at $DATADIR.
-# echo "Building genesis state... (this might take a while)"
