@@ -44,7 +44,7 @@ use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 use sp_std::convert::TryInto;
 
 use finality_grandpa::voter_set::VoterSet;
-use frame_support::{ensure, pallet_prelude::*, StorageHasher};
+use frame_support::{ensure, pallet_prelude::*, transactional, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
 
 use sp_core::crypto::ByteArray;
@@ -432,6 +432,7 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
+    #[transactional]
     pub(crate) fn verify_and_store_headers(
         // seq vector of headers to be added.
         range: Vec<BridgedHeader<T, I>>,
@@ -929,7 +930,7 @@ mod tests {
     };
 
     use codec::Encode;
-    use frame_support::{assert_err, assert_noop, assert_ok};
+    use frame_support::{assert_noop, assert_ok};
     use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
@@ -1089,7 +1090,7 @@ mod tests {
     fn cant_register_duplicate_gateway_ids() {
         run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
-            assert_err!(
+            assert_noop!(
                 initialize_relaychain(Origin::root()),
                 "chain_id already initialized"
             );
@@ -1124,7 +1125,7 @@ mod tests {
     #[test]
     fn cant_register_relaychain_as_non_root() {
         run_test(|| {
-            assert_err!(initialize_relaychain(Origin::signed(1)), "Bad origin");
+            assert_noop!(initialize_relaychain(Origin::signed(1)), "Bad origin");
         })
     }
 
@@ -1325,7 +1326,7 @@ mod tests {
                 justification,
             };
 
-            assert_err!(
+            assert_noop!(
                 Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidRangeLinkage
             );
@@ -1352,7 +1353,7 @@ mod tests {
                 justification,
             };
 
-            assert_err!(
+            assert_noop!(
                 Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidJustificationLinkage
             );
@@ -1382,7 +1383,7 @@ mod tests {
                 justification,
             };
 
-            assert_err!(
+            assert_noop!(
                 Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
@@ -1408,7 +1409,7 @@ mod tests {
                 justification,
             };
 
-            assert_err!(
+            assert_noop!(
                 Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
@@ -1448,7 +1449,7 @@ mod tests {
                 justification,
             };
 
-            assert_err!(
+            assert_noop!(
                 Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 Error::<TestRuntime>::InvalidGrandpaJustification
             );
@@ -1537,7 +1538,7 @@ mod tests {
             };
 
             // Should not be allowed to import this header
-            assert_err!(
+            assert_noop!(
                 Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
@@ -1567,7 +1568,7 @@ mod tests {
             };
 
             // Should not be allowed to import this header
-            assert_err!(
+            assert_noop!(
                 Pallet::<TestRuntime>::submit_encoded_headers(data.encode()),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
