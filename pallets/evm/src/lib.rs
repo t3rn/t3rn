@@ -133,6 +133,7 @@ impl<T: Config> ModuleOperations<T, BalanceOf<T>> for ThreeVmInfo<T> {
 
 #[frame_support::pallet]
 pub mod pallet {
+
     use super::*;
     use fp_evm::FeeCalculator;
     use frame_support::pallet_prelude::*;
@@ -234,7 +235,7 @@ pub mod pallet {
             let source = T::AddressMapping::get_or_create_evm_address(&who);
 
             let is_transactional = true;
-            let info = T::Runner::call(
+            let info = match T::Runner::call(
                 source,
                 target,
                 input,
@@ -246,10 +247,20 @@ pub mod pallet {
                 access_list,
                 is_transactional,
                 T::config(),
-            )?;
+            ) {
+                Ok(info) => info,
+                Err(e) =>
+                    return Err(DispatchErrorWithPostInfo {
+                        post_info: PostDispatchInfo {
+                            actual_weight: None,
+                            pays_fee: Pays::Yes,
+                        },
+                        error: e.into(),
+                    }),
+            };
 
             match info.exit_reason {
-                ExitReason::Succeed(_) => {
+                ExitReason::Succeed(ExitSucceed::Returned) => {
                     Pallet::<T>::deposit_event(Event::<T>::Executed(target));
                 },
                 _ => {
