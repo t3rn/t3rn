@@ -8,7 +8,7 @@ use t3rn_primitives::{
     portal::{get_portal_interface_abi, Portal, PortalExecution, PortalPrecompileInterfaceEnum},
     threevm::{
         GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation,
-        EVM_RECODING_BYTE_SELECTOR, WASM_RECODING_BYTE_SELECTOR,
+        EVM_RECODING_BYTE_SELECTOR, GET_STATE, PORTAL, POST_SIGNAL, SUBMIT,
     },
     SpeedMode,
 };
@@ -19,13 +19,6 @@ use t3rn_sdk_primitives::{
 
 const LOG_TARGET: &str = "3vm::precompile";
 
-// Precompile pointers baked into the binary.
-// Genesis exists only to map hashes to pointers.
-pub const GET_STATE: u8 = 55;
-pub const SUBMIT: u8 = 56;
-pub const POST_SIGNAL: u8 = 57;
-pub const PORTAL: u8 = 70;
-
 type CodecResult<T> = Result<T, codec::Error>;
 
 pub(crate) fn lookup<T: Config>(dest: &T::Hash) -> Option<u8> {
@@ -34,7 +27,9 @@ pub(crate) fn lookup<T: Config>(dest: &T::Hash) -> Option<u8> {
 
 // FIXME: figure out charging, costing
 pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &mut Vec<u8>) {
-    // TODO: assert the length here
+    if args.len() < 2 {
+        return Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output)
+    }
 
     // First byte determines if it came from EVM or WASM
     let codec_selector = args[0];
@@ -48,7 +43,6 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
         T3rnCodec::default()
     };
 
-    // TODO: Is origin provided first or at all? if so that also needs recoding
     match extract_origin::<T>(&codec, args) {
         Some(origin) => match *precompile {
             GET_STATE => {
@@ -120,6 +114,10 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 }
             },
             PORTAL => {
+                if args.len() < 2 {
+                    return Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output)
+                }
+
                 // First byte is portal selector
                 let portal_selector = &args[0];
                 // The rest is the input for portal
@@ -174,7 +172,7 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                     Err(msg) => {
                         log::error!(target: LOG_TARGET, "Failed to invoke portal: {}", msg);
                         output.push(1); // It's an error
-                        output.append(msg.as_bytes().to_vec().as_mut())
+                                        // output.append(msg.as_bytes().to_vec().as_mut()) No need to write result if it gets thrown away
                     },
                 }
             },
