@@ -74,12 +74,13 @@ pub mod pallet {
     pub type Attesters<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AttesterInfo>;
 
     #[pallet::storage]
-    #[pallet::getter(fn active_set)]
-    pub type ActiveSet<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+    #[pallet::getter(fn sorted_nominated_attesters)]
+    pub type SortedNominatedAttesters<T: Config> =
+        StorageValue<_, Vec<(T::AccountId, BalanceOf<T>)>, ValueQuery>;
 
     #[pallet::storage]
-    #[pallet::getter(fn sorted_nominated_attesters)]
-    pub type SortedNominatedAttesters<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+    #[pallet::getter(fn active_set)]
+    pub type ActiveSet<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn attestations)]
@@ -246,26 +247,23 @@ pub mod pallet {
 
             nomination.1 += amount;
 
+            let nomination_amount = nomination.1;
+
             // Update the nomination storage item
             Nominations::<T>::insert(&attester, nomination);
 
             // Update the sorted list of nominated attesters
             SortedNominatedAttesters::<T>::try_mutate(|attesters| {
-                if let Some(index) = attesters.iter().position(|a| a == &attester) {
+                if let Some(index) = attesters.iter().position(|(a, _n)| a == &attester) {
                     // Update the existing nomination amount
-                    attesters[index] = attester.clone();
+                    attesters[index] = (attester.clone(), nomination_amount);
                 } else {
                     // Add the new attester to the list
-                    attesters.push(attester.clone());
+                    attesters.push((attester.clone(), nomination_amount));
                 }
 
                 // Sort the attesters by their nomination amount
-                attesters.sort_unstable_by_key(|a| -> BalanceOf<T> {
-                    Nominations::<T>::get(a)
-                        .map(|n| n.1)
-                        .and_then(|bal| BalanceOf::<T>::try_into(bal).ok())
-                        .unwrap_or_else(Zero::zero)
-                });
+                attesters.sort_by(|(_a1, n1), (_a2, n2)| n2.cmp(n1));
 
                 // Keep only the top 32 attesters in the list
                 attesters.truncate(32);
@@ -290,6 +288,7 @@ pub mod pallet {
                         .iter()
                         .take(32)
                         .cloned()
+                        .map(|(account_id, _balance)| account_id)
                         .collect::<Vec<T::AccountId>>(),
                 );
                 T::DbWeight::get().reads_writes(1, 1)
@@ -375,7 +374,7 @@ pub mod attesters_test {
     use std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
-        Balances, ExtBuilder, MiniRuntime, Origin, SortedNominatedAttesters,
+        Balances, ExtBuilder, MiniRuntime, Nominations, Origin, SortedNominatedAttesters,
     };
 
     fn register_attester_with_single_private_key(private_key: [u8; 32]) {
@@ -540,10 +539,16 @@ pub mod attesters_test {
 
             assert_eq!(active_set.len(), 32);
             let top_nominated_attesters = SortedNominatedAttesters::<MiniRuntime>::get();
-            assert_eq!(top_nominated_attesters, attesters[32..64].to_vec());
-
-            for i in 0..32 {
-                assert_eq!(active_set[i], top_nominated_attesters[i]);
+            for (i, (attester, _nominated_stake)) in top_nominated_attesters.iter().enumerate() {
+                let nomination = Nominations::<MiniRuntime>::get(attester).unwrap();
+                assert_eq!(nomination.0, *attester);
+                assert_eq!(
+                    nomination.1,
+                    1000u128 + 63 + 10 - i as u128, // where 10 is the self-bond for attesters
+                    "attester: {:?}, nomination: {}",
+                    attester,
+                    nomination.1
+                );
             }
         });
     }
