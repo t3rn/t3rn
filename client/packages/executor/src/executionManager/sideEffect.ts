@@ -224,7 +224,7 @@ export class SideEffect extends EventEmitter {
                 circuitSignerAddress: this.misc.circuitSignerAddress,
                 circuitSignerSecret: this.misc.circuitSignerSecret,
                 gatewayId: this.gateway.id,
-                xdns: this.xdns,
+                xdns: Object.assign({}, this.gateway.record),
             },
         }
     }
@@ -249,7 +249,8 @@ export class SideEffect extends EventEmitter {
             },
         }
         // sideEffect = sdk.gateways[o.misc.gatewayId].createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
-        sideEffect = this.gateway.createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
+        const gateway = new Gateway(o.misc.xdns)
+        sideEffect = gateway.createSfx[sideEffectType](sideEffect) as T3rnTypesSideEffect
         return new SideEffect(
             sideEffect as T3rnTypesSideEffect,
             o.id,
