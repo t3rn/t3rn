@@ -3,7 +3,7 @@ use crate::{
     circuit::LocalStateExecutionView,
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, RegistryContract},
-    portal::{PortalExecution, PortalPrecompileInterfaceEnum},
+    portal::{PortalExecution, PrecompileArgs as PortalPrecompileArgs},
 };
 use codec::{Decode, Encode};
 use sp_runtime::{DispatchError, DispatchResult};
@@ -43,7 +43,7 @@ where
         SpeedMode,
     ),
     Signal(T::Origin, ExecutionSignal<T::Hash>),
-    Portal(PortalPrecompileInterfaceEnum),
+    Portal(PortalPrecompileArgs),
 }
 
 /// The happy return type of an invocation

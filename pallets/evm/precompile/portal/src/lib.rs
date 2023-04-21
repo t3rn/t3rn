@@ -15,9 +15,10 @@ impl<T: pallet_evm::Config> EvmPrecompile for PortalPrecompile<T> {
         let _target_gas = handle.gas_limit();
         let _context = handle.context();
         let mut output = Vec::new();
+        let callee = handle.context().caller;
 
         let restructured_args =
-            [&[EVM_RECODING_BYTE_SELECTOR][..], callee.as_bytes(), &input].concat();
+            [&[EVM_RECODING_BYTE_SELECTOR][..], callee.as_bytes(), input].concat();
 
         T::ThreeVm::invoke_raw(&PORTAL, &restructured_args, &mut output);
 
@@ -38,12 +39,4 @@ impl<T: pallet_evm::Config> EvmPrecompile for PortalPrecompile<T> {
             })
         }
     }
-}
-
-#[cfg(test)]
-pub mod tests {
-    use super::*;
-
-    #[test]
-    fn stub() {}
 }

@@ -8,7 +8,7 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::{convert::TryFrom, vec::Vec};
-use t3rn_abi::{recode::Codec, types::Bytes, Abi};
+use t3rn_abi::{recode::Codec, types::Bytes, Abi, FilledAbi};
 pub use t3rn_light_client_commons::traits::{HeaderResult, HeightResult};
 use t3rn_types::sfx::Sfx4bId;
 
@@ -171,7 +171,7 @@ impl<T: frame_system::Config> Into<Bytes> for PortalExecution<T> {
 }
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
-pub enum PortalPrecompileInterfaceEnum {
+pub enum PrecompileArgs {
     GetLatestFinalizedHeader(ChainId),
     GetLatestFinalizedHeight(ChainId),
     GetLatestUpdatedHeight(ChainId),
@@ -184,36 +184,85 @@ pub enum PortalPrecompileInterfaceEnum {
     VerifyTxInclusion([u8; 4], Bytes),
 }
 
-pub fn get_portal_interface_abi() -> Abi {
-    Abi::try_from(PORTAL_INTERFACE_ABI_DESCRIPTOR.to_vec())
-        .expect("Expect parsing PORTAL_INTERFACE_ABI_DESCRIPTOR to succeed.")
+impl PrecompileArgs {
+    pub fn descriptor() -> Vec<u8> {
+        b"PrecompileArgs:Enum(\
+                GetLatestFinalizedHeader:Bytes4,\
+                GetLatestFinalizedHeight:Bytes4,\
+                GetLatestUpdatedHeight:Bytes4,\
+                GetCurrentEpoch:Bytes4,\
+                ReadFastConfirmationOffset:Bytes4,\
+                ReadRationalConfirmationOffset:Bytes4,\
+                ReadEpochOffset:Bytes4,\
+                VerifyEventInclusion:Tuple(Bytes4,Bytes),\
+                VerifyStateInclusion:Tuple(Bytes4,Bytes),\
+                VerifyTxInclusion:Tuple(Bytes4,Bytes),\
+        )"
+        .to_vec()
+    }
+
+    pub fn interface_abi() -> Result<Abi, DispatchError> {
+        Abi::try_from(Self::descriptor())
+    }
+
+    pub fn recode_to_scale_and_decode(
+        in_codec: &t3rn_abi::Codec,
+        input: &[u8],
+    ) -> Result<Self, DispatchError> {
+        if input.len() < 2 {
+            return Err(DispatchError::Other("Not enough arguments to build enum"))
+        }
+        // First byte is portal selector
+        let portal_selector = &input[0];
+
+        match in_codec {
+            t3rn_abi::Codec::Rlp => {
+                log::debug!(
+                    target: "portal::recode",
+                    "Rlp encoding bytes for portal selector {}",
+                    portal_selector
+                );
+                log::trace!(
+                    target: "portal::recode",
+                    "Bytes {:?}",
+                    input
+                );
+                FilledAbi::try_fill_abi(Self::interface_abi()?, input.to_vec(), in_codec.clone())
+                    .and_then(|abi| {
+                        log::debug!(
+                            target: "portal::recode",
+                            "ABI was filled, recoding to scale {}",
+                            portal_selector
+                        );
+
+                        abi.recode_as(&in_codec.clone(), &t3rn_abi::Codec::Scale)
+                    })
+            },
+            t3rn_abi::Codec::Scale => Ok(input.to_vec()),
+        }
+        .map(|mut recoded| {
+            recoded.insert(0, *portal_selector);
+            recoded
+        })
+        .and_then(|recoded| {
+            Self::decode(&mut &recoded[..])
+                .map_err(|_e| DispatchError::Other("Failed to decode portal interface enum"))
+        })
+    }
 }
 
-pub const PORTAL_INTERFACE_ABI_DESCRIPTOR: &[u8] = b"PortalPrecompileInterface:Enum(\
-        GetLatestFinalizedHeader:Bytes4,\
-        GetLatestFinalizedHeight:Bytes4,\
-        GetLatestUpdatedHeight:Bytes4,\
-        GetCurrentEpoch:Bytes4,\
-        ReadFastConfirmationOffset:Bytes4,\
-        ReadRationalConfirmationOffset:Bytes4,\
-        ReadEpochOffset:Bytes4,\
-        VerifyEventInclusion:Tuple(Bytes4,Bytes),\
-        VerifyStateInclusion:Tuple(Bytes4,Bytes),\
-        VerifyTxInclusion:Tuple(Bytes4,Bytes),\
-    )";
-
 #[cfg(test)]
-pub mod portal_precompile_decode_test {
+pub mod tests {
     use super::*;
     use t3rn_abi::{Abi, Codec, FilledAbi};
 
     #[test]
     fn portal_interface_abi_descriptor_parses() {
-        let portal_interface_abi = get_portal_interface_abi();
+        let portal_interface_abi = PrecompileArgs::interface_abi().unwrap();
         assert_eq!(
             portal_interface_abi,
             Abi::Enum(
-                Some(b"PortalPrecompileInterface".to_vec()),
+                Some(b"PrecompileArgs".to_vec()),
                 vec![
                     Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeader".to_vec()))),
                     Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeight".to_vec()))),
@@ -243,11 +292,11 @@ pub mod portal_precompile_decode_test {
 
     #[test]
     fn portal_precompile_selects_enum_for_get_latest_finalized_header() {
-        let portal_precompile_interface = get_portal_interface_abi();
+        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeader([1u8; 4]).encode(),
+            PrecompileArgs::GetLatestFinalizedHeader([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
@@ -260,11 +309,11 @@ pub mod portal_precompile_decode_test {
 
     #[test]
     fn portal_precompile_selects_enum_for_get_latest_finalized_height() {
-        let portal_precompile_interface = get_portal_interface_abi();
+        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeight([1u8; 4]).encode(),
+            PrecompileArgs::GetLatestFinalizedHeight([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
@@ -277,11 +326,11 @@ pub mod portal_precompile_decode_test {
 
     #[test]
     fn portal_precompile_selects_enum_for_get_latest_updated_height() {
-        let portal_precompile_interface = get_portal_interface_abi();
+        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PortalPrecompileInterfaceEnum::GetLatestUpdatedHeight([1u8; 4]).encode(),
+            PrecompileArgs::GetLatestUpdatedHeight([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
@@ -294,11 +343,11 @@ pub mod portal_precompile_decode_test {
 
     #[test]
     fn portal_precompile_selects_enum_for_get_current_epoch() {
-        let portal_precompile_interface = get_portal_interface_abi();
+        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PortalPrecompileInterfaceEnum::GetCurrentEpoch([1u8; 4]).encode(),
+            PrecompileArgs::GetCurrentEpoch([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
@@ -311,11 +360,11 @@ pub mod portal_precompile_decode_test {
 
     #[test]
     fn portal_precompile_selects_enum_for_read_fast_confirmation_offset() {
-        let portal_precompile_interface = get_portal_interface_abi();
+        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PortalPrecompileInterfaceEnum::ReadFastConfirmationOffset([1u8; 4]).encode(),
+            PrecompileArgs::ReadFastConfirmationOffset([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
@@ -328,11 +377,11 @@ pub mod portal_precompile_decode_test {
 
     #[test]
     fn portal_precompile_selects_enum_for_read_rational_confirmation_offset() {
-        let portal_precompile_interface = get_portal_interface_abi();
+        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PortalPrecompileInterfaceEnum::ReadRationalConfirmationOffset([1u8; 4]).encode(),
+            PrecompileArgs::ReadRationalConfirmationOffset([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
@@ -348,11 +397,11 @@ pub mod portal_precompile_decode_test {
 
     #[test]
     fn portal_precompile_selects_enum_for_read_epoch_offset() {
-        let portal_precompile_interface = get_portal_interface_abi();
+        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PortalPrecompileInterfaceEnum::ReadEpochOffset([1u8; 4]).encode(),
+            PrecompileArgs::ReadEpochOffset([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
@@ -365,11 +414,11 @@ pub mod portal_precompile_decode_test {
 
     #[test]
     fn portal_precompile_selects_enum_for_verify_event_inclusion() {
-        let portal_precompile_interface = get_portal_interface_abi();
+        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PortalPrecompileInterfaceEnum::VerifyEventInclusion([1u8; 4], vec![4u8; 32]).encode(),
+            PrecompileArgs::VerifyEventInclusion([1u8; 4], vec![4u8; 32]).encode(),
             Codec::Scale,
         )
         .unwrap();
@@ -384,5 +433,159 @@ pub mod portal_precompile_decode_test {
                 ),
             )
         )
+    }
+
+    #[test]
+    fn test_get_latest_finalized_header_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let portal_call = PrecompileArgs::GetLatestFinalizedHeader(chain_id);
+        let encoded_portal_call = portal_call.encode();
+        println!("Call: {:?}", encoded_portal_call);
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::GetLatestFinalizedHeader(chain_id)
+        );
+    }
+
+    #[test]
+    fn test_get_latest_finalized_height_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let portal_call = PrecompileArgs::GetLatestFinalizedHeight(chain_id);
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::GetLatestFinalizedHeight(chain_id)
+        );
+    }
+
+    #[test]
+    fn test_get_latest_updated_height_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let portal_call = PrecompileArgs::GetLatestUpdatedHeight(chain_id);
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::GetLatestUpdatedHeight(chain_id)
+        );
+    }
+
+    #[test]
+    fn test_get_current_epoch_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let portal_call = PrecompileArgs::GetCurrentEpoch(chain_id);
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::GetCurrentEpoch(chain_id)
+        );
+    }
+
+    #[test]
+    fn test_read_epoch_offset_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let portal_call = PrecompileArgs::ReadEpochOffset(chain_id);
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::ReadEpochOffset(chain_id)
+        );
+    }
+
+    #[test]
+    fn test_read_fast_confirmation_offset_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let portal_call = PrecompileArgs::ReadFastConfirmationOffset(chain_id);
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::ReadFastConfirmationOffset(chain_id)
+        );
+    }
+
+    #[test]
+    fn test_read_rational_confirmation_offset_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let portal_call = PrecompileArgs::ReadRationalConfirmationOffset(chain_id);
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::ReadRationalConfirmationOffset(chain_id)
+        );
+    }
+
+    #[test]
+    fn test_verify_event_inclusion_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let event = vec![1, 2, 3, 4];
+        let portal_call = PrecompileArgs::VerifyEventInclusion(chain_id, event.clone());
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::VerifyEventInclusion(chain_id, event)
+        );
+    }
+
+    #[test]
+    fn test_verify_state_inclusion_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let event = vec![1, 2, 3, 4];
+        let portal_call = PrecompileArgs::VerifyStateInclusion(chain_id, event.clone());
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::VerifyStateInclusion(chain_id, event)
+        );
+    }
+
+    #[test]
+    fn test_verify_tx_inclusion_recodes_correctly_to_scale() {
+        let chain_id: [u8; 4] = [9, 9, 9, 9];
+        let event = vec![1, 2, 3, 4];
+        let portal_call = PrecompileArgs::VerifyTxInclusion(chain_id, event.clone());
+        let encoded_portal_call = portal_call.encode();
+        let recoded_portal_call =
+            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
+                .unwrap();
+
+        assert_eq!(
+            recoded_portal_call,
+            PrecompileArgs::VerifyTxInclusion(chain_id, event)
+        );
     }
 }

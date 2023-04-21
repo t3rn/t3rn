@@ -2,10 +2,10 @@ use crate::{BalanceOf, Config, Error, Pallet, PrecompileIndex};
 use codec::{Decode, Encode};
 use frame_support::{dispatch::RawOrigin, sp_runtime::DispatchError};
 use sp_std::{vec, vec::Vec};
-use t3rn_abi::{Codec as T3rnCodec, FilledAbi};
+use t3rn_abi::Codec as T3rnCodec;
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
-    portal::{get_portal_interface_abi, Portal, PortalExecution, PortalPrecompileInterfaceEnum},
+    portal::{Portal, PortalExecution, PrecompileArgs as PortalPrecompileArgs},
     threevm::{
         GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation,
         EVM_RECODING_BYTE_SELECTOR, GET_STATE, PORTAL, POST_SIGNAL, SUBMIT,
@@ -103,36 +103,7 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 }
             },
             PORTAL => {
-                if args.len() < 2 {
-                    return Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output)
-                }
-
-                // First byte is portal selector
-                let portal_selector = &args[0];
-                // The rest is the input for portal
-                let input_without_vm_selectors = &args[1..];
-
-                let mut result = match codec {
-                    T3rnCodec::Rlp => {
-                        FilledAbi::try_fill_abi(
-                            get_portal_interface_abi(), // This panics :<
-                            input_without_vm_selectors.to_vec(),
-                            codec.clone(),
-                        )
-                        .and_then(|abi| {
-                            abi.recode_as(&codec.clone(), &T3rnCodec::Scale)
-                        })
-                    }
-                    T3rnCodec::Scale => Ok(input_without_vm_selectors.to_vec())
-                }
-                .map(|mut recoded| {
-                    recoded.insert(0, *portal_selector);
-                    recoded
-                })
-                .and_then(|recoded| {
-                    PortalPrecompileInterfaceEnum::decode(&mut &recoded[..])
-                        .map_err(|_e| DispatchError::Other("Failed to decode portal interface enum"))
-                })
+                let mut result = PortalPrecompileArgs::recode_to_scale_and_decode(&codec, args)
                 .and_then(|recoded_call_as_enum| {
                     invoke::<T>(PrecompileArgs::Portal(recoded_call_as_enum)).map(|x| if let PrecompileInvocation::Portal(i) = x {
                         let bytes: Vec<u8> = i.into();
@@ -249,34 +220,34 @@ pub(crate) fn invoke<T: Config>(
             }
         },
         PrecompileArgs::Portal(args) => match args {
-            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeader(chain_id) =>
+            PortalPrecompileArgs::GetLatestFinalizedHeader(chain_id) =>
                 T::Portal::get_latest_finalized_header(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeight(chain_id) =>
+            PortalPrecompileArgs::GetLatestFinalizedHeight(chain_id) =>
                 T::Portal::get_latest_finalized_height(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::GetLatestUpdatedHeight(chain_id) =>
+            PortalPrecompileArgs::GetLatestUpdatedHeight(chain_id) =>
                 T::Portal::get_latest_updated_height(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::GetCurrentEpoch(chain_id) =>
+            PortalPrecompileArgs::GetCurrentEpoch(chain_id) =>
                 T::Portal::get_current_epoch(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::ReadEpochOffset(chain_id) =>
+            PortalPrecompileArgs::ReadEpochOffset(chain_id) =>
                 T::Portal::read_epoch_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileInterfaceEnum::ReadFastConfirmationOffset(chain_id) =>
+            PortalPrecompileArgs::ReadFastConfirmationOffset(chain_id) =>
                 T::Portal::read_fast_confirmation_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileInterfaceEnum::ReadRationalConfirmationOffset(chain_id) =>
+            PortalPrecompileArgs::ReadRationalConfirmationOffset(chain_id) =>
                 T::Portal::read_rational_confirmation_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileInterfaceEnum::VerifyEventInclusion(chain_id, event) =>
+            PortalPrecompileArgs::VerifyEventInclusion(chain_id, event) =>
                 T::Portal::verify_event_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::VerifyStateInclusion(chain_id, event) =>
+            PortalPrecompileArgs::VerifyStateInclusion(chain_id, event) =>
                 T::Portal::verify_state_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::VerifyTxInclusion(chain_id, event) =>
+            PortalPrecompileArgs::VerifyTxInclusion(chain_id, event) =>
                 T::Portal::verify_tx_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
         },
@@ -424,110 +395,4 @@ mod tests {
             );
         });
     }
-
-    // #[test]
-    // fn test_get_latest_finalized_header_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let portal_call = GetLatestFinalizedHeader(chain_id);
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, GetLatestFinalizedHeader(chain_id));
-    // }
-
-    // #[test]
-    // fn test_get_latest_finalized_height_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let portal_call = GetLatestFinalizedHeight(chain_id);
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, GetLatestFinalizedHeight(chain_id));
-    // }
-
-    // #[test]
-    // fn test_get_latest_updated_height_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let portal_call = GetLatestUpdatedHeight(chain_id);
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, GetLatestUpdatedHeight(chain_id));
-    // }
-
-    // #[test]
-    // fn test_get_current_epoch_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let portal_call = GetCurrentEpoch(chain_id);
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, GetCurrentEpoch(chain_id));
-    // }
-
-    // #[test]
-    // fn test_read_epoch_offset_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let portal_call = ReadEpochOffset(chain_id);
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, ReadEpochOffset(chain_id));
-    // }
-
-    // #[test]
-    // fn test_read_fast_confirmation_offset_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let portal_call = ReadFastConfirmationOffset(chain_id);
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, ReadFastConfirmationOffset(chain_id));
-    // }
-
-    // #[test]
-    // fn test_read_rational_confirmation_offset_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let portal_call = ReadRationalConfirmationOffset(chain_id);
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(
-    //         recoded_portal_call,
-    //         ReadRationalConfirmationOffset(chain_id)
-    //     );
-    // }
-
-    // #[test]
-    // fn test_verify_event_inclusion_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let event = vec![1, 2, 3, 4];
-    //     let portal_call = VerifyEventInclusion(chain_id, event.clone());
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, VerifyEventInclusion(chain_id, event));
-    // }
-
-    // #[test]
-    // fn test_verify_state_inclusion_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let event = vec![1, 2, 3, 4];
-    //     let portal_call = VerifyStateInclusion(chain_id, event.clone());
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, VerifyStateInclusion(chain_id, event));
-    // }
-
-    // #[test]
-    // fn test_verify_tx_inclusion_recodes_correctly_to_scale() {
-    //     let chain_id: [u8; 4] = [9, 9, 9, 9];
-    //     let event = vec![1, 2, 3, 4];
-    //     let portal_call = VerifyTxInclusion(chain_id, event.clone());
-    //     let encoded_portal_call = portal_call.encode();
-    //     let recoded_portal_call = recode_input_as_portal_api_enum(&encoded_portal_call).unwrap();
-
-    //     assert_eq!(recoded_portal_call, VerifyTxInclusion(chain_id, event));
-    // }
 }
