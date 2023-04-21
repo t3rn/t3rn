@@ -1,7 +1,7 @@
 use codec::{Decode, Encode};
 use frame_support::RuntimeDebug;
 pub use pallet_attesters::{
-    ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations,
+    ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations, BatchStatus, Batches,
     Error as AttestersError, Nominations, SortedNominatedAttesters,
 };
 use pallet_grandpa_finality_verifier::{
@@ -45,10 +45,19 @@ frame_support::construct_runtime!(
     }
 );
 
+parameter_types! {
+    pub const CommitmentRewardSource: AccountId = AccountId::new([51u8; 32]);
+    pub const RewardMultiplier: Balance = 1;
+}
+
 impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
+    type BatchingWindow = ConstU32<6>;
+    type CommitmentRewardSource = CommitmentRewardSource;
     type Currency = Balances;
     type Event = Event;
+    type MaxBatchSize = ConstU32<128>;
+    type RewardMultiplier = RewardMultiplier;
 }
 
 impl pallet_balances::Config for MiniRuntime {
