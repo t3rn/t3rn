@@ -12,12 +12,10 @@ use pallet_3vm_evm::{
 };
 use pallet_3vm_evm_primitives::FeeCalculator;
 use sp_core::{H160, U256};
-use sp_runtime::{ConsensusEngineId, DispatchError, RuntimeAppPublic};
+use sp_runtime::{ConsensusEngineId, RuntimeAppPublic};
 
 #[cfg(feature = "std")]
 pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
-use t3rn_abi::{types::Bytes, Codec};
-use t3rn_primitives::portal::{HeaderResult, HeightResult};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -144,7 +142,7 @@ parameter_types! {
         (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
         (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
         (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
-        (40_u64, evm_precompile_util::KnownPrecompile::Portal)
+        (10_u64, evm_precompile_util::KnownPrecompile::Portal)
     ].into_iter().collect());
 }
 
