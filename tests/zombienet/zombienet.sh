@@ -90,8 +90,10 @@ NODE_ARG=t3rn
 
 build_collator() {
     if [ ! -f "$bin_dir/$NODE_ARG-collator" ]; then
-        echo "Building $NODE_ARG..."
-        cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+        echo "::group::Building $NODE_ARG..."
+        time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+        echo "::endgroup::"
+
         echo "Copying $NODE_ARG to bin dir"
         cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
     else
@@ -100,8 +102,10 @@ build_collator() {
 }
 
 force_build_collator() {
-    echo "Rebuilding $NODE_ARG..."
-    cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+    echo "::group::Rebuilding $NODE_ARG..."
+    time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+    echo "::endgroup::"
+    
     cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
 }
 
