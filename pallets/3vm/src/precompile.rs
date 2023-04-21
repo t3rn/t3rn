@@ -3,9 +3,10 @@ use codec::{Decode, Encode};
 use frame_support::{dispatch::RawOrigin, sp_runtime::DispatchError};
 use frame_system::ensure_signed;
 use sp_std::prelude::*;
+use t3rn_abi::Codec as T3rnCodec;
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
-    portal::{get_portal_interface_abi, Portal, PortalExecution, PortalPrecompileInterfaceEnum},
+    portal::{Portal, PortalExecution, PrecompileArgs as PortalPrecompileArgs},
     threevm::{
         GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation,
         EVM_RECODING_BYTE_SELECTOR, GET_STATE, PORTAL, POST_SIGNAL, SUBMIT,
@@ -114,39 +115,7 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 }
             },
             PORTAL => {
-                if args.len() < 2 {
-                    return Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output)
-                }
-
-                // First byte is portal selector
-                let portal_selector = &args[0];
-                // The rest is the input for portal
-                let input_without_portal_selector = &args[1..];
-
-                let mut result = match codec {
-                    T3rnCodec::Rlp => {
-                        log::debug!(target: LOG_TARGET, "Rlp encoding bytes for portal selector {}", portal_selector);
-                        log::debug!(target: LOG_TARGET, "Bytes {:?}", input_without_portal_selector);
-                        FilledAbi::try_fill_abi(
-                            get_portal_interface_abi(), // This panics :<
-                            input_without_portal_selector.to_vec(),
-                            codec.clone(),
-                        )
-                        .and_then(|abi| {
-                            log::debug!(target: LOG_TARGET, "ABI was filled, recoding to scale {}", portal_selector);
-                            abi.recode_as(&codec.clone(), &T3rnCodec::Scale)
-                        })
-                    }
-                    T3rnCodec::Scale => Ok(input_without_portal_selector.to_vec())
-                }
-                .map(|mut recoded| {
-                    recoded.insert(0, *portal_selector);
-                    recoded
-                })
-                .and_then(|recoded| {
-                    PortalPrecompileInterfaceEnum::decode(&mut &recoded[..])
-                        .map_err(|_e| DispatchError::Other("Failed to decode portal interface enum"))
-                })
+                let mut result = PortalPrecompileArgs::recode_to_scale_and_decode(&codec, args)
                 .and_then(|recoded_call_as_enum| {
                     log::debug!(target: LOG_TARGET, "Built recoded call {:?}", recoded_call_as_enum);
                     invoke::<T>(PrecompileArgs::Portal(recoded_call_as_enum)).map(|x| if let PrecompileInvocation::Portal(i) = x {
@@ -266,34 +235,34 @@ pub(crate) fn invoke<T: Config>(
             }
         },
         PrecompileArgs::Portal(args) => match args {
-            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeader(chain_id) =>
+            PortalPrecompileArgs::GetLatestFinalizedHeader(chain_id) =>
                 T::Portal::get_latest_finalized_header(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::GetLatestFinalizedHeight(chain_id) =>
+            PortalPrecompileArgs::GetLatestFinalizedHeight(chain_id) =>
                 T::Portal::get_latest_finalized_height(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::GetLatestUpdatedHeight(chain_id) =>
+            PortalPrecompileArgs::GetLatestUpdatedHeight(chain_id) =>
                 T::Portal::get_latest_updated_height(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::GetCurrentEpoch(chain_id) =>
+            PortalPrecompileArgs::GetCurrentEpoch(chain_id) =>
                 T::Portal::get_current_epoch(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::ReadEpochOffset(chain_id) =>
+            PortalPrecompileArgs::ReadEpochOffset(chain_id) =>
                 T::Portal::read_epoch_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileInterfaceEnum::ReadFastConfirmationOffset(chain_id) =>
+            PortalPrecompileArgs::ReadFastConfirmationOffset(chain_id) =>
                 T::Portal::read_fast_confirmation_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileInterfaceEnum::ReadRationalConfirmationOffset(chain_id) =>
+            PortalPrecompileArgs::ReadRationalConfirmationOffset(chain_id) =>
                 T::Portal::read_rational_confirmation_offset(chain_id)
                     .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileInterfaceEnum::VerifyEventInclusion(chain_id, event) =>
+            PortalPrecompileArgs::VerifyEventInclusion(chain_id, event) =>
                 T::Portal::verify_event_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::VerifyStateInclusion(chain_id, event) =>
+            PortalPrecompileArgs::VerifyStateInclusion(chain_id, event) =>
                 T::Portal::verify_state_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileInterfaceEnum::VerifyTxInclusion(chain_id, event) =>
+            PortalPrecompileArgs::VerifyTxInclusion(chain_id, event) =>
                 T::Portal::verify_tx_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
         },
