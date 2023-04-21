@@ -50,7 +50,7 @@ class Instance {
         this.baseDir = join(homedir(), `.t3rn-executor-${name}`)
         this.logsDir = logToDisk ? join(this.baseDir.toString(), "logs") : undefined
         this.stateFile = join(this.baseDir.toString(), "state.json")
-        this.configFile = join(homedir(), `.t3rn-executor-${name}`, "config.json")
+        this.configFile = join(this.baseDir.toString(), "config.json")
     }
 
     /**
@@ -153,22 +153,27 @@ class Instance {
         return self
     }
 
-        /** Registers a state listener that persists to disk. */
-        private registerStateListener(): Instance {
-            const self = this
-            process.once("exit", async () => {
-                //TODO do this on every self.executionManager.circuitListener.on("Event"
-                // OR BETTER whenever this.execMngr.queue changes!!! TODO
-                const serializedState = JSON.stringify({
-                    //WIP
-                    queue: self.executionManager.queue,
-                    xtx: self.executionManager.xtx, //WIP handle <Execution>
-                    sfxToXtx: self.executionManager.sfxToXtx,
-                })
-                await writeFile(join(self.baseDir.toString(), "state.json"), serializedState)
-            })
-            return self
-        }
+    /** Registers a state listener that persists to disk. */
+    private registerStateListener(): Instance {
+        const self = this
+        const _proxy = new Proxy(this.executionManager.queue, {
+            set(target, prop, receiver) {
+                // wait until reflected, then persist state
+                setTimeout(() => self.persistState(), 100)
+                return Reflect.set(target, prop, receiver)
+            },
+        })
+        return self
+    }
+
+    private async persistState() {
+        const serializedState = JSON.stringify({
+            queue: this.executionManager.queue,
+            xtx: this.executionManager.xtx,
+            sfxToXtx: this.executionManager.sfxToXtx,
+        })
+        await writeFile(this.stateFile, serializedState)
+    }
 }
 
 export {
