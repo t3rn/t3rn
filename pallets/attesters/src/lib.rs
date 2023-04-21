@@ -5,6 +5,8 @@ pub mod benchmarking;
 
 pub use crate::pallet::*;
 
+pub type TargetId = [u8; 4];
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -30,7 +32,7 @@ pub mod pallet {
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub enum AttestationFor {
-        Xtx,
+        SFX,
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -38,6 +40,43 @@ pub mod pallet {
         Pending,
         Timeout,
         Approved,
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub enum BatchStatus {
+        Pending,
+        ReadyForSubmission,
+        Committed,
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub struct Batch<Attester, Signature, BlockNumber> {
+        attestations: Vec<Attestation<Attester, Signature>>,
+        target: [u8; 4],
+        created: BlockNumber,
+        status: BatchStatus,
+    }
+
+    impl<Attester, Signature, BlockNumber: Zero> Default for Batch<Attester, Signature, BlockNumber> {
+        fn default() -> Self {
+            Self {
+                attestations: Vec::new(),
+                target: [0u8; 4],
+                created: Zero::zero(),
+                status: BatchStatus::Pending,
+            }
+        }
+    }
+
+    impl<Attester, Signature, BlockNumber> Batch<Attester, Signature, BlockNumber> {
+        pub fn new(target: [u8; 4], now: BlockNumber) -> Self {
+            Self {
+                attestations: Vec::new(),
+                target,
+                created: now,
+                status: BatchStatus::Pending,
+            }
+        }
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -50,7 +89,7 @@ pub mod pallet {
     impl<Attester, Signature> Default for Attestation<Attester, Signature> {
         fn default() -> Self {
             Self {
-                for_: AttestationFor::Xtx,
+                for_: AttestationFor::SFX,
                 status: AttestationStatus::Pending,
                 signature: Vec::new(),
             }
@@ -61,6 +100,8 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type ActiveSetSize: Get<u32>;
+        type BatchingWindow: Get<Self::BlockNumber>;
+        type MaxBatchSize: Get<u32>;
         type Currency: ReservableCurrency<Self::AccountId>;
     }
 
@@ -88,6 +129,11 @@ pub mod pallet {
         StorageMap<_, Identity, T::Hash, Attestation<T::AccountId, Vec<u8>>>;
 
     #[pallet::storage]
+    #[pallet::getter(fn batches)]
+    pub type Batches<T: Config> =
+        StorageMap<_, Identity, [u8; 4], Vec<Batch<T::AccountId, Vec<u8>, T::BlockNumber>>>;
+
+    #[pallet::storage]
     #[pallet::getter(fn nominations)]
     pub type Nominations<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, (T::AccountId, BalanceOf<T>)>;
@@ -113,6 +159,8 @@ pub mod pallet {
         AlreadyNominated,
         NominatorNotEnoughBalance,
         MissingNominations,
+        BatchNotFound,
+        BatchAlreadyCommitted,
     }
 
     #[pallet::call]
@@ -153,6 +201,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             message: Vec<u8>,
             signature: Vec<u8>,
+            target: [u8; 4],
             attestation_for: AttestationFor,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
@@ -170,43 +219,71 @@ pub mod pallet {
                 .verify_attestation_signature(ECDSA_ATTESTER_KEY_TYPE_ID, &message, &signature)
                 .map_err(|_| Error::<T>::InvalidSignature)?;
 
+            // todo: slash the attester if the signature is invalid
             ensure!(is_verified, Error::<T>::AttestationSignatureInvalid);
 
             match attestation_for {
-                AttestationFor::Xtx => {
-                    let xtx_hash: T::Hash = Decode::decode(&mut &message[..])
+                AttestationFor::SFX => {
+                    let sfx_hash: T::Hash = Decode::decode(&mut &message[..])
                         .map_err(|_| Error::<T>::InvalidMessage)?;
-                    let xtx_attestation = Attestations::<T>::get(xtx_hash).unwrap_or_default();
+                    let mut sfx_attestation = Attestations::<T>::get(sfx_hash).unwrap_or_default();
 
                     // Check if the attester has already signed the attestation
                     ensure!(
-                        !xtx_attestation
+                        !sfx_attestation
                             .signature
                             .iter()
                             .any(|(attester, _)| attester == &account_id),
                         Error::<T>::AttestationDoubleSignAttempt
                     );
 
-                    let signature_chain: Vec<(T::AccountId, Vec<u8>)> = xtx_attestation
+                    sfx_attestation
                         .signature
-                        .into_iter()
-                        .chain(vec![(account_id.clone(), signature)])
-                        .collect();
+                        .push((account_id.clone(), signature));
 
-                    let status = if signature_chain.len() < T::ActiveSetSize::get() as usize {
+                    let required_signatures = (T::ActiveSetSize::get() * 2 / 3) as usize;
+                    let status = if sfx_attestation.signature.len() < required_signatures {
                         AttestationStatus::Pending
                     } else {
                         AttestationStatus::Approved
                     };
 
                     Attestations::<T>::insert(
-                        xtx_hash,
+                        sfx_hash,
                         Attestation {
                             for_: attestation_for,
                             status,
-                            signature: signature_chain,
+                            signature: sfx_attestation.signature.clone(),
                         },
                     );
+
+                    let mut target_batches = Batches::<T>::get(target).unwrap_or_default();
+                    let current_block = frame_system::Pallet::<T>::block_number();
+                    let is_full = target_batches.last().map_or(false, |b| {
+                        b.attestations.len() >= T::MaxBatchSize::get() as usize
+                    });
+                    let interval_passed = target_batches.last().map_or(false, |b| {
+                        current_block - b.created >= T::BatchingWindow::get()
+                    });
+
+                    if is_full || interval_passed {
+                        // Create a new batch
+                        let new_batch =
+                            Batch::new(target, frame_system::Pallet::<T>::block_number());
+                        target_batches.push(new_batch);
+                    }
+
+                    // Add the attestation to the last batch
+                    if let Some(last_batch) = target_batches.last_mut() {
+                        last_batch.attestations.push(sfx_attestation);
+
+                        if last_batch.attestations.len() >= T::MaxBatchSize::get() as usize {
+                            last_batch.status = BatchStatus::ReadyForSubmission;
+                        }
+                    }
+
+                    // Save the updated batches
+                    Batches::<T>::insert(target, target_batches);
                 },
             }
 
@@ -214,6 +291,105 @@ pub mod pallet {
 
             Ok(())
         }
+
+        #[pallet::weight(10_000)]
+        pub fn commit_batch(
+            origin: OriginFor<T>,
+            target: [u8; 4],
+            batch_index: u32,
+        ) -> DispatchResult {
+            let _ = ensure_signed(origin)?;
+
+            Batches::<T>::try_mutate(target, |batches_option| {
+                if let Some(batches) = batches_option {
+                    let index = batch_index as usize;
+                    if let Some(batch) = batches.get_mut(index) {
+                        match batch.status {
+                            BatchStatus::Pending | BatchStatus::ReadyForSubmission => {
+                                batch.status = BatchStatus::Committed;
+                                Ok(Some(batches.clone()))
+                            },
+                            _ => Err(Error::<T>::BatchAlreadyCommitted),
+                        }
+                    } else {
+                        Err(Error::<T>::BatchNotFound)
+                    }
+                } else {
+                    Err(Error::<T>::BatchNotFound)
+                }
+            })?;
+
+            Ok(())
+        }
+
+        // #[pallet::weight(10_000)]
+        // pub fn submit_attestation(
+        //     origin: OriginFor<T>,
+        //     message: Vec<u8>,
+        //     signature: Vec<u8>,
+        //     target: [u8; 4],
+        //     attestation_for: AttestationFor,
+        // ) -> DispatchResult {
+        //     let account_id = ensure_signed(origin)?;
+        //
+        //     // Lookup the attester in the storage
+        //     let attester = Attesters::<T>::get(&account_id).ok_or(Error::<T>::NotRegistered)?;
+        //
+        //     // Check if active set
+        //     ensure!(
+        //         ActiveSet::<T>::get().contains(&account_id),
+        //         Error::<T>::NotActiveSet
+        //     );
+        //
+        //     let is_verified = attester
+        //         .verify_attestation_signature(ECDSA_ATTESTER_KEY_TYPE_ID, &message, &signature)
+        //         .map_err(|_| Error::<T>::InvalidSignature)?;
+        //
+        //     // todo: slash the attester if the signature is invalid
+        //     ensure!(is_verified, Error::<T>::AttestationSignatureInvalid);
+        //
+        //     match attestation_for {
+        //         AttestationFor::SFX => {
+        //             let sfx_hash: T::Hash = Decode::decode(&mut &message[..])
+        //                 .map_err(|_| Error::<T>::InvalidMessage)?;
+        //             let sfx_attestation = Attestations::<T>::get(sfx_hash).unwrap_or_default();
+        //
+        //             // Check if the attester has already signed the attestation
+        //             ensure!(
+        //                 !sfx_attestation
+        //                     .signature
+        //                     .iter()
+        //                     .any(|(attester, _)| attester == &account_id),
+        //                 Error::<T>::AttestationDoubleSignAttempt
+        //             );
+        //
+        //             let signature_chain: Vec<(T::AccountId, Vec<u8>)> = sfx_attestation
+        //                 .signature
+        //                 .into_iter()
+        //                 .chain(vec![(account_id.clone(), signature)])
+        //                 .collect();
+        //
+        //             let status = if signature_chain.len() < T::ActiveSetSize::get() as usize {
+        //                 AttestationStatus::Pending
+        //             } else {
+        //                 AttestationStatus::Approved
+        //             };
+        //
+        //             Attestations::<T>::insert(
+        //                 sfx_hash,
+        //                 Attestation {
+        //                     for_: attestation_for,
+        //                     status,
+        //                     signature: signature_chain,
+        //                 },
+        //             );
+        //         },
+        //     }
+        //
+        //     Self::deposit_event(Event::AttestationSubmitted(account_id));
+        //
+        //     Ok(())
+        // }
 
         #[pallet::weight(10_000)]
         pub fn nominate(
@@ -430,7 +606,8 @@ pub mod attesters_test {
             Origin::signed(attester),
             message.to_vec(),
             signature,
-            AttestationFor::Xtx,
+            [0u8; 4],
+            AttestationFor::SFX,
         ));
     }
 
@@ -475,7 +652,8 @@ pub mod attesters_test {
                     Origin::signed(attester),
                     message.to_vec(),
                     same_signature_again,
-                    AttestationFor::Xtx,
+                    [0, 0, 0, 0],
+                    AttestationFor::SFX,
                 ),
                 AttestersError::<MiniRuntime>::AttestationDoubleSignAttempt
             );
