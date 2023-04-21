@@ -26,6 +26,7 @@ impl pallet_3vm::Config for Test {
     type EscrowAccount = EscrowAccount;
     type Event = Event;
     type OnLocalTrigger = Circuit;
+    type Portal = CircuitPortal;
     type SignalBounceThreshold = ConstU32<2>;
 }
 
