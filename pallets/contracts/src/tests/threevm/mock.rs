@@ -27,6 +27,7 @@ mod threevm_mock {
         type EscrowAccount = EscrowAccount;
         type Event = Event;
         type OnLocalTrigger = Circuit;
+        type Portal = CircuitPortal;
         type SignalBounceThreshold = ConstU32<2>;
     }
 
