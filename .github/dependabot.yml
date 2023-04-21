@@ -36,6 +36,36 @@ updates:
     schedule:
       interval: "daily"
 
+  - package-ecosystem: "cargo" 
+    directory: "/node/standalone"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/types"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/types/abi"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/finality-verifiers/grandpa"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/finality-verifiers/common"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
   # TODO: uncomment when we have a proper tests for all node applications
   # - package-ecosystem: "npm" 
   #   directory: "client/packages/cli"
