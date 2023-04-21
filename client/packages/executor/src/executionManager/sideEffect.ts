@@ -322,7 +322,7 @@ export class SideEffect extends EventEmitter {
                 circuitSignerAddress: this.misc.circuitSignerAddress,
                 circuitSignerSecret: this.misc.circuitSignerSecret,
                 gatewayId: this.gateway.id,
-                xdns: Object.assign({}, this.gateway.record),
+                xdns: Object.assign({}, (this.gateway as any).record),
             },
         }
     }

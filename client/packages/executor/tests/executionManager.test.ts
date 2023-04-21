@@ -102,6 +102,24 @@ describe("Serialization", () => {
                 logger,
                 misc
             )
+            /*
+                this.vendor = record.gateway_record.verification_vendor.toHuman();
+    this.executionVendor = record.gateway_record.execution_vendor.toHuman()
+    let tokens: any[] = record.tokens.map(token => token.toHuman())
+
+    let nativeToken = tokens.filter(token => token.gateway_id === this.id)[0];
+    // @ts-ignore
+    this.ticker = Object.values(nativeToken.token_props)[0].symbol;
+    this.decimals = parseInt(
+      // @ts-ignore
+      Object.values(nativeToken.token_props)[0].decimals
+    );
+    this.tokenId = parseInt(
+       // @ts-ignore
+      Object.values(nativeToken.token_props)[0].id
+    );
+    this.allowedSideEffects = record.gateway_record.allowed_side_effects.toHuman().map(entry => entry[0]);
+            */
         })
 
         it("should rountrip sfx", async () => {
