@@ -15,12 +15,16 @@ pub mod pallet {
     use frame_support::{
         dispatch::DispatchResult,
         pallet_prelude::*,
-        traits::{Currency, ReservableCurrency},
+        traits::{Currency, ExistenceRequirement, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
     use sp_application_crypto::RuntimePublic;
     use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, sr25519};
-    use sp_runtime::{traits::Zero, RuntimeAppPublic};
+    use sp_runtime::{
+        traits::{Saturating, Zero},
+        RuntimeAppPublic,
+    };
+
     use sp_std::{convert::TryInto, prelude::*};
 
     use sp_runtime::traits::Verify;
@@ -51,10 +55,10 @@ pub mod pallet {
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct Batch<Attester, Signature, BlockNumber> {
-        attestations: Vec<Attestation<Attester, Signature>>,
-        target: [u8; 4],
-        created: BlockNumber,
-        status: BatchStatus,
+        pub attestations: Vec<Attestation<Attester, Signature>>,
+        pub target: [u8; 4],
+        pub created: BlockNumber,
+        pub status: BatchStatus,
     }
 
     impl<Attester, Signature, BlockNumber: Zero> Default for Batch<Attester, Signature, BlockNumber> {
@@ -102,6 +106,8 @@ pub mod pallet {
         type ActiveSetSize: Get<u32>;
         type BatchingWindow: Get<Self::BlockNumber>;
         type MaxBatchSize: Get<u32>;
+        type RewardMultiplier: Get<BalanceOf<Self>>;
+        type CommitmentRewardSource: Get<Self::AccountId>;
         type Currency: ReservableCurrency<Self::AccountId>;
     }
 
@@ -137,6 +143,11 @@ pub mod pallet {
     #[pallet::getter(fn nominations)]
     pub type Nominations<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, (T::AccountId, BalanceOf<T>)>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn fast_confirmation_cost)]
+    pub type FastConfirmationCost<T: Config> =
+        StorageMap<_, Blake2_128Concat, [u8; 4], BalanceOf<T>>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -298,7 +309,7 @@ pub mod pallet {
             target: [u8; 4],
             batch_index: u32,
         ) -> DispatchResult {
-            let _ = ensure_signed(origin)?;
+            let submitter = ensure_signed(origin)?;
 
             Batches::<T>::try_mutate(target, |batches_option| {
                 if let Some(batches) = batches_option {
@@ -319,77 +330,20 @@ pub mod pallet {
                 }
             })?;
 
+            // Reward the submitter
+            let fast_confirmation_cost =
+                FastConfirmationCost::<T>::get(target).unwrap_or_else(Zero::zero);
+            let total_reward = fast_confirmation_cost.saturating_mul(T::RewardMultiplier::get());
+
+            T::Currency::transfer(
+                &T::CommitmentRewardSource::get(),
+                &submitter,
+                total_reward,
+                ExistenceRequirement::KeepAlive,
+            )?;
+
             Ok(())
         }
-
-        // #[pallet::weight(10_000)]
-        // pub fn submit_attestation(
-        //     origin: OriginFor<T>,
-        //     message: Vec<u8>,
-        //     signature: Vec<u8>,
-        //     target: [u8; 4],
-        //     attestation_for: AttestationFor,
-        // ) -> DispatchResult {
-        //     let account_id = ensure_signed(origin)?;
-        //
-        //     // Lookup the attester in the storage
-        //     let attester = Attesters::<T>::get(&account_id).ok_or(Error::<T>::NotRegistered)?;
-        //
-        //     // Check if active set
-        //     ensure!(
-        //         ActiveSet::<T>::get().contains(&account_id),
-        //         Error::<T>::NotActiveSet
-        //     );
-        //
-        //     let is_verified = attester
-        //         .verify_attestation_signature(ECDSA_ATTESTER_KEY_TYPE_ID, &message, &signature)
-        //         .map_err(|_| Error::<T>::InvalidSignature)?;
-        //
-        //     // todo: slash the attester if the signature is invalid
-        //     ensure!(is_verified, Error::<T>::AttestationSignatureInvalid);
-        //
-        //     match attestation_for {
-        //         AttestationFor::SFX => {
-        //             let sfx_hash: T::Hash = Decode::decode(&mut &message[..])
-        //                 .map_err(|_| Error::<T>::InvalidMessage)?;
-        //             let sfx_attestation = Attestations::<T>::get(sfx_hash).unwrap_or_default();
-        //
-        //             // Check if the attester has already signed the attestation
-        //             ensure!(
-        //                 !sfx_attestation
-        //                     .signature
-        //                     .iter()
-        //                     .any(|(attester, _)| attester == &account_id),
-        //                 Error::<T>::AttestationDoubleSignAttempt
-        //             );
-        //
-        //             let signature_chain: Vec<(T::AccountId, Vec<u8>)> = sfx_attestation
-        //                 .signature
-        //                 .into_iter()
-        //                 .chain(vec![(account_id.clone(), signature)])
-        //                 .collect();
-        //
-        //             let status = if signature_chain.len() < T::ActiveSetSize::get() as usize {
-        //                 AttestationStatus::Pending
-        //             } else {
-        //                 AttestationStatus::Approved
-        //             };
-        //
-        //             Attestations::<T>::insert(
-        //                 sfx_hash,
-        //                 Attestation {
-        //                     for_: attestation_for,
-        //                     status,
-        //                     signature: signature_chain,
-        //                 },
-        //             );
-        //         },
-        //     }
-        //
-        //     Self::deposit_event(Event::AttestationSubmitted(account_id));
-        //
-        //     Ok(())
-        // }
 
         #[pallet::weight(10_000)]
         pub fn nominate(
@@ -550,7 +504,8 @@ pub mod attesters_test {
     use std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
-        Balances, ExtBuilder, MiniRuntime, Nominations, Origin, SortedNominatedAttesters,
+        Balances, BatchStatus, Batches, ExtBuilder, MiniRuntime, Nominations, Origin,
+        SortedNominatedAttesters,
     };
 
     fn register_attester_with_single_private_key(private_key: [u8; 32]) {
@@ -682,6 +637,49 @@ pub mod attesters_test {
                 Attesters::attestations(H256::from(*b"message_that_needs_attestation32"))
                     .expect("Attestation should exist");
             assert_eq!(attestation.status, AttestationStatus::Approved);
+        });
+    }
+
+    #[test]
+    fn register_and_submit_32x_attestations_in_ecdsa_with_batching() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: [u8; 4] = [1u8; 4];
+            let message: [u8; 32] = *b"message_that_needs_attestation32";
+            let _hash = H256::from(message);
+
+            for counter in 1..33u8 {
+                // Register an attester
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+
+                // Submit an attestation signed with the Ed25519 key
+                sign_and_submit_attestation(
+                    attester,
+                    message,
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    [counter; 32],
+                );
+            }
+
+            // Check if the attestations have been added to the batch
+            let batches = Batches::<MiniRuntime>::get(target).expect("Batches should exist");
+            let first_batch = batches.first().expect("First batch should exist");
+            assert_eq!(first_batch.attestations.len(), 32);
+            assert_eq!(first_batch.status, BatchStatus::Pending);
+
+            // Commit the batch
+            let batch_index = 0;
+            let _ = Attesters::commit_batch(
+                Origin::signed(AccountId::from([1; 32])),
+                target,
+                batch_index,
+            );
+
+            // Check if the batch status has been updated to Committed
+            let batches = Batches::<MiniRuntime>::get(target).expect("Batches should exist");
+            let first_batch = batches.first().expect("First batch should exist");
+            assert_eq!(first_batch.status, BatchStatus::Committed);
         });
     }
 
