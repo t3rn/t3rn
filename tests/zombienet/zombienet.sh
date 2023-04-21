@@ -125,7 +125,9 @@ smoke() {
     echo "Running smoke tests.."
     # TODO[Optimisation]: loop through directory and test all
 	# TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
-    zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_and_registered.feature
+    echo "::group::Zombienet tests..."
+    time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_and_registered.feature
+    echo "::endgroup::"
 }
 
 upgrade() {
