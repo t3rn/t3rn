@@ -70,6 +70,7 @@ class Instance {
         this.injectState()
         await this.executionManager.setup(this.config.gateways, this.config.vendors)
         this.registerExitListener()
+        this.registerStateListener()
         this.logger.info("setup complete")
         return this
     }
@@ -149,21 +150,25 @@ class Instance {
         })
         process.stdin.setRawMode(true)
         process.stdin.resume()
-        process.once("exit", async () => {
-            //TODO do this on every self.executionManager.circuitListener.on("Event"
-            // OR BETTER whenever this.execMngr.queue changes!!! TODO
-            const serializedState = JSON.stringify({
-                //WIP
-                queue: self.executionManager.queue,
-                xtx: self.executionManager.xtx, //WIP handle <Execution>
-                sfxToXtx: self.executionManager.sfxToXtx,
-                // targetEstimator: this.executionManager.targetEstimator,
-                // relayers: this.executionManager.relayers,
-            })
-            await writeFile(join(self.baseDir.toString(), "state.json"), serializedState)
-        })
         return self
     }
+
+        /** Registers a state listener that persists to disk. */
+        private registerStateListener(): Instance {
+            const self = this
+            process.once("exit", async () => {
+                //TODO do this on every self.executionManager.circuitListener.on("Event"
+                // OR BETTER whenever this.execMngr.queue changes!!! TODO
+                const serializedState = JSON.stringify({
+                    //WIP
+                    queue: self.executionManager.queue,
+                    xtx: self.executionManager.xtx, //WIP handle <Execution>
+                    sfxToXtx: self.executionManager.sfxToXtx,
+                })
+                await writeFile(join(self.baseDir.toString(), "state.json"), serializedState)
+            })
+            return self
+        }
 }
 
 export {
