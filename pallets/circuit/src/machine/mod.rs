@@ -16,6 +16,7 @@ pub mod test_extra;
 pub mod test_extra_stress;
 
 use sp_std::marker::PhantomData;
+use t3rn_primitives::circuit::SpeedMode;
 
 pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,
@@ -65,6 +66,7 @@ impl<T: Config> Machine<T> {
     pub fn setup(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
+        speed_mode: SpeedMode,
     ) -> Result<LocalXtxCtx<T>, Error<T>> {
         // ToDo: Introduce default delay
         let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
@@ -75,6 +77,7 @@ impl<T: Config> Machine<T> {
         let (xtx_id, xtx) = XExecSignal::<T::AccountId, T::BlockNumber>::setup_fresh::<T>(
             requester,
             timeouts_at,
+            speed_mode,
             delay_steps_at,
         );
 

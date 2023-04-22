@@ -68,6 +68,7 @@ use crate::machine::{Machine, *};
 pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
+use t3rn_primitives::circuit::SpeedMode;
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 #[cfg(test)]
@@ -113,7 +114,7 @@ pub mod pallet {
     };
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
-        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
+        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger, SpeedMode},
         portal::Portal,
         xdns::Xdns,
     };
@@ -380,7 +381,7 @@ pub mod pallet {
             let local_ctx = match maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester, SpeedMode::Finalized)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -446,7 +447,7 @@ pub mod pallet {
             let mut local_ctx = match trigger.maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester, SpeedMode::Finalized)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -552,12 +553,12 @@ pub mod pallet {
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
-            _sequential: bool,
+            speed_mode: SpeedMode,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Setup: new xtx context with SFX validation
-            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester, speed_mode)?;
             // Compile: apply the new state post squaring up and emit
             Machine::<T>::compile(
                 &mut fresh_xtx,
@@ -1060,7 +1061,48 @@ impl<T: Config> Pallet<T> {
         // confirm order of current season, by passing the side_effects of it to confirm order.
         let fsx = confirm_order::<T>(xtx_id, *sfx_id, confirmation, step_side_effects)?;
 
+        let current_finalized_target_height =
+            match T::Portal::get_latest_finalized_height(fsx.input.target)? {
+                HeightResult::Height(block_numer) => block_numer,
+                HeightResult::NotActive =>
+                    return Err("SFX validate failed - get_latest_finalized_height returned None"),
+            };
+
+        let current_target_height = match T::Portal::get_latest_updated_height(fsx.input.target)? {
+            HeightResult::Height(block_numer) => block_numer,
+            HeightResult::NotActive =>
+                return Err("SFX validate failed - get_latest_target_height returned None"),
+        };
+
+        let target = fsx.input.target;
+        let xtx = &mut Machine::<T>::load_xtx(xtx_id)?.xtx;
+
+        match xtx.speed_mode {
+            SpeedMode::Fast => {
+                if fsx.submission_target_height + T::Portal::read_fast_confirmation_offset(target)?
+                    < current_target_height
+                {
+                    return Err("SFX validate failed - fast confirmation offset not satisfied")
+                }
+            },
+            SpeedMode::Rational => {
+                if fsx.submission_target_height
+                    + T::Portal::read_rational_confirmation_offset(target)?
+                    < current_target_height
+                {
+                    return Err("SFX validate failed - slow confirmation offset not satisfied")
+                }
+            },
+            SpeedMode::Finalized => {
+                if fsx.submission_target_height < current_finalized_target_height {
+                    return Err("SFX validate failed - finalized confirmation offset not satisfied")
+                }
+            },
+        }
+
         log::debug!("Order confirmed!");
+
+        // Confirm that speed mode is satisfied
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
