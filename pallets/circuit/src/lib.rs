@@ -1252,28 +1252,34 @@ impl<T: Config> Pallet<T> {
 
         while !queue.is_empty() && processed_weight < max_allowed_weight {
             // Cannot panic due to loop condition
-            let (_requester, signal) = &mut queue[0];
+            let (_requester, signal) = &mut queue.swap_remove(0);
 
             // worst case 4 from setup
             if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as Weight) {
                 processed_weight = v
             }
+
             match Machine::<T>::load_xtx(signal.execution_id) {
                 Ok(local_ctx) => {
                     let _success: bool = Machine::<T>::kill(
                         local_ctx.xtx_id,
                         Cause::IntentionalKill,
                         |_status_change, _local_ctx| {
-                            queue.swap_remove(0);
-                            // apply has 2
                             processed_weight += db_weight.reads_writes(2 as Weight, 1 as Weight);
                         },
                     );
                 },
-                Err(_err) => {
-                    log::error!("Could not handle signal");
-                    // Slide the erroneous signal to the back
-                    queue.slide(0, queue.len());
+                Err(err) => match err {
+                    Error::XtxDoesNotExist => {
+                        log::error!(
+                                "Failed to process signal is for non-existent Xtx: {:?}. Removing from queue.",
+                                signal.execution_id
+                            );
+                    },
+                    _ => {
+                        log::error!("Failed to process signal ID {:?} with Err: {:?}. Sliding back to queue.", signal.execution_id, err);
+                        queue.slide(0, queue.len());
+                    },
                 },
             }
         }
