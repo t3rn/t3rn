@@ -1,8 +1,9 @@
 use codec::{Decode, Encode};
 use frame_support::RuntimeDebug;
 pub use pallet_attesters::{
-    ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations, BatchStatus, Batches,
-    Error as AttestersError, Nominations, SortedNominatedAttesters,
+    ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations,
+    Attesters as AttestersStore, BatchStatus, Batches, Config as AttestersConfig, CurrentCommittee,
+    Error as AttestersError, Nominations, PreviousCommittee, SortedNominatedAttesters,
 };
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
@@ -35,6 +36,8 @@ frame_support::construct_runtime!(
         System: frame_system = 1,
         Balances: pallet_balances = 2,
         Timestamp: pallet_timestamp = 3,
+        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 4,
+
         XDNS: pallet_xdns = 100,
         Attesters: pallet_attesters::{Pallet, Call, Storage, Event<T>, Config<T>} = 101,
         // Portal
@@ -54,11 +57,16 @@ impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
     type CommitmentRewardSource = CommitmentRewardSource;
+    type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
     type Event = Event;
     type MaxBatchSize = ConstU32<128>;
+    type RandomnessSource = RandomnessCollectiveFlip;
     type RewardMultiplier = RewardMultiplier;
+    type ShufflingFrequency = ConstU32<400>;
 }
+
+impl pallet_insecure_randomness_collective_flip::Config for MiniRuntime {}
 
 impl pallet_balances::Config for MiniRuntime {
     type AccountStore = System;
