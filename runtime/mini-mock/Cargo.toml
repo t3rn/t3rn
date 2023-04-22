@@ -25,6 +25,8 @@ sp-std          = { git = "https://github.com/paritytech/substrate.git", branch 
 frame-system    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 frame-support   = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 
+pallet-insecure-randomness-collective-flip =  { package = "pallet-randomness-collective-flip", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+
 rlp             = { version = "0.5.2",  features = [ "derive" ] }
 
 hex         = "0.4"

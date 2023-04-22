@@ -15,7 +15,7 @@ pub mod pallet {
     use frame_support::{
         dispatch::DispatchResult,
         pallet_prelude::*,
-        traits::{Currency, ExistenceRequirement, ReservableCurrency},
+        traits::{Currency, ExistenceRequirement, Randomness, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
     use sp_application_crypto::RuntimePublic;
@@ -104,11 +104,14 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type ActiveSetSize: Get<u32>;
+        type CommitteeSize: Get<u32>;
         type BatchingWindow: Get<Self::BlockNumber>;
+        type ShufflingFrequency: Get<Self::BlockNumber>;
         type MaxBatchSize: Get<u32>;
         type RewardMultiplier: Get<BalanceOf<Self>>;
         type CommitmentRewardSource: Get<Self::AccountId>;
         type Currency: ReservableCurrency<Self::AccountId>;
+        type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
     }
 
     #[pallet::pallet]
@@ -119,6 +122,12 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn attesters)]
     pub type Attesters<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AttesterInfo>;
+
+    #[pallet::storage]
+    pub type CurrentCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+    #[pallet::storage]
+    pub type PreviousCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn sorted_nominated_attesters)]
@@ -172,6 +181,7 @@ pub mod pallet {
         MissingNominations,
         BatchNotFound,
         BatchAlreadyCommitted,
+        CommitteeSizeTooLarge,
     }
 
     #[pallet::call]
@@ -363,6 +373,10 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        pub fn committee_size() -> usize {
+            T::CommitteeSize::get() as usize
+        }
+
         pub fn do_nominate(
             nominator: T::AccountId,
             attester: T::AccountId,
@@ -410,12 +424,54 @@ pub mod pallet {
 
             Ok(())
         }
+
+        fn shuffle_committee() -> bool {
+            let active_set = ActiveSet::<T>::get();
+            let active_set_size = active_set.len();
+            let mut committee_size = T::CommitteeSize::get() as usize;
+
+            let full_shuffle = if committee_size > active_set_size {
+                committee_size = active_set_size;
+                false
+            } else {
+                true
+            };
+
+            let current_committee = CurrentCommittee::<T>::get();
+            PreviousCommittee::<T>::put(current_committee);
+
+            let _seed = T::RandomnessSource::random_seed();
+
+            let mut shuffled_active_set = active_set;
+            for i in (1..shuffled_active_set.len()).rev() {
+                let random_value = T::RandomnessSource::random(&i.to_be_bytes());
+                let random_index = random_value
+                    .0
+                    .as_ref()
+                    .iter()
+                    .fold(0usize, |acc, &val| (acc + val as usize) % (i + 1));
+
+                if i != random_index {
+                    shuffled_active_set.swap(i, random_index);
+                }
+            }
+
+            let new_committee = shuffled_active_set
+                .into_iter()
+                .take(committee_size)
+                .collect::<Vec<T::AccountId>>();
+
+            CurrentCommittee::<T>::put(new_committee);
+
+            full_shuffle
+        }
     }
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            if (n % 400u32.into()).is_zero() {
+            // Check if a shuffling round has passed
+            if (n % T::ShufflingFrequency::get()).is_zero() {
                 // Update the active set of attesters
                 ActiveSet::<T>::put(
                     SortedNominatedAttesters::<T>::get()
@@ -425,10 +481,16 @@ pub mod pallet {
                         .map(|(account_id, _balance)| account_id)
                         .collect::<Vec<T::AccountId>>(),
                 );
-                T::DbWeight::get().reads_writes(1, 1)
-            } else {
-                0
+
+                // Call shuffle_committee
+                if !Self::shuffle_committee() {
+                    log::error!("Failed to shuffle committee");
+                    return T::DbWeight::get().reads_writes(2, 2)
+                }
+
+                return T::DbWeight::get().reads_writes(5, 5)
             }
+            0
         }
     }
 
@@ -501,15 +563,17 @@ pub mod attesters_test {
     use codec::Encode;
     use frame_support::{
         assert_ok,
-        traits::{Currency, Hooks},
+        traits::{Currency, Get, Hooks},
+        StorageValue,
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use std::convert::TryInto;
+
+    use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
-        Balances, BatchStatus, Batches, ExtBuilder, MiniRuntime, Nominations, Origin,
-        SortedNominatedAttesters,
+        AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersConfig,
+        AttestersError, AttestersStore, Balances, BatchStatus, Batches, CurrentCommittee,
+        ExtBuilder, MiniRuntime, Nominations, Origin, PreviousCommittee, SortedNominatedAttesters,
     };
 
     fn register_attester_with_single_private_key(secret_key: [u8; 32]) {
@@ -623,6 +687,55 @@ pub mod attesters_test {
                 ),
                 AttestersError::<MiniRuntime>::AttestationDoubleSignAttempt
             );
+        });
+    }
+
+    #[test]
+    fn committee_setup_and_transition() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // On initialization, the current committee should be empty and the previous committee should be None
+            assert!(CurrentCommittee::<MiniRuntime>::get().is_empty());
+            assert_eq!(PreviousCommittee::<MiniRuntime>::get(), vec![]);
+
+            // Register multiple attesters
+            let attester_count = 100;
+            for counter in 1..=attester_count {
+                let _attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+            }
+
+            // Trigger the first setup
+            Attesters::on_initialize(400u32);
+
+            // Check if the committee is set up and has the correct size
+            let committee = CurrentCommittee::<MiniRuntime>::get();
+            let committee_size: u32 = <MiniRuntime as AttestersConfig>::CommitteeSize::get();
+            assert_eq!(committee.len(), committee_size as usize);
+
+            // Check that each member of the committee is in the registered attesters
+            for member in &committee {
+                assert!(AttestersStore::<MiniRuntime>::contains_key(member));
+            }
+
+            // Trigger the transition
+            Attesters::on_initialize(800u32);
+
+            // Check if the previous committee is now set to the old committee and the new committee is different
+            let previous_committee = PreviousCommittee::<MiniRuntime>::get();
+            assert_eq!(previous_committee, committee);
+
+            let new_committee = CurrentCommittee::<MiniRuntime>::get();
+            // todo: RandomnessCollectiveFlip always returns 0x0000...0000 as random value
+            // assert_ne!(new_committee, committee);
+
+            // Check if the new committee is set up and has the correct size
+            assert_eq!(new_committee.len(), Attesters::committee_size());
+
+            // Check that each member of the new committee is in the registered attesters
+            for member in &new_committee {
+                assert!(AttestersStore::<MiniRuntime>::contains_key(member));
+            }
         });
     }
 
