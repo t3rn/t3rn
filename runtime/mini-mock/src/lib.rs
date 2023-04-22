@@ -57,7 +57,7 @@ impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
     type CommitmentRewardSource = CommitmentRewardSource;
-    type CommitteeSize = ConstU32<16>;
+    type CommitteeSize = ConstU32<32>;
     type Currency = Balances;
     type Event = Event;
     type MaxBatchSize = ConstU32<128>;
