@@ -66,7 +66,6 @@ impl<T: Config> Machine<T> {
     pub fn setup(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
-        speed_mode: SpeedMode,
     ) -> Result<LocalXtxCtx<T>, Error<T>> {
         // ToDo: Introduce default delay
         let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
@@ -77,7 +76,7 @@ impl<T: Config> Machine<T> {
         let (xtx_id, xtx) = XExecSignal::<T::AccountId, T::BlockNumber>::setup_fresh::<T>(
             requester,
             timeouts_at,
-            speed_mode,
+            SpeedMode::Finalized,
             delay_steps_at,
         );
 
