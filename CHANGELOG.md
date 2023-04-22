@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.12.0-rc.0] - 2023-04-22
+### :sparkles: New Features
+- [`e029213`](https://github.com/t3rn/t3rn/commit/e02921375708cb122fba828f81ae577698f025ab) - add compiler and deployer *(commit by [@petscheit](https://github.com/petscheit))*
+- [`1cc003a`](https://github.com/t3rn/t3rn/commit/1cc003a43a65b27eb5679921d69b5f41873475cf) - add ballot contract, deploy args and transact *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :bug: Bug Fixes
+- [`c59a7ae`](https://github.com/t3rn/t3rn/commit/c59a7ae58b43bbb1d04aaeca3bfe5229ca846c99) - append extra prefix memo byte only if specified in ABI SFX *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`067c99b`](https://github.com/t3rn/t3rn/commit/067c99bfaa0079596092513e7d18836a85f4c3e5) - remove signals from queue at processing by default *(PR [#666](https://github.com/t3rn/t3rn/pull/666) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.11.0-rc.0] - 2023-04-20
 ### :sparkles: New Features
 - [`de93371`](https://github.com/t3rn/t3rn/commit/de93371c13451896e4078bbf9068b3bcc025f036) - expose entire light client trait in primitives *(PR [#848](https://github.com/t3rn/t3rn/pull/848) by [@petscheit](https://github.com/petscheit))*
@@ -924,3 +934,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.10.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.9.3-rc.0...v1.10.0-rc.0
 [v1.10.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.3-rc.0...v1.10.4-rc.0
 [v1.11.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.4-rc.0...v1.11.0-rc.0
+[v1.12.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.11.0-rc.0...v1.12.0-rc.0
