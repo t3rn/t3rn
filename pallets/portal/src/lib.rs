@@ -23,6 +23,7 @@ pub mod weights;
 pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
+use frame_support::transactional;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -99,6 +100,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[transactional]
         pub fn register_gateway(
             origin: OriginFor<T>,
             gateway_id: [u8; 4],
