@@ -3,7 +3,7 @@ use codec::{Decode, Encode};
 
 use sp_core::{H160, H256};
 use sp_runtime::DispatchError;
-use sp_std::{prelude::*, vec::IntoIter};
+use sp_std::{borrow::Cow, prelude::*, vec::IntoIter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub struct EthIngressEventLog(pub Vec<H256>, pub Vec<u8>);
@@ -213,29 +213,33 @@ impl Abi {
     }
 }
 
-pub fn rlp_encode(input: Vec<u8>) -> Vec<u8> {
+pub fn rlp_encode(input: Vec<u8>) -> Cow<[u8]> {
     let len = input.len();
-
-    let mut encoded: Vec<u8> = Vec::new();
 
     // If the length is between 0 and 55 bytes and the first byte is greater than or equal to 0x80
     if len > 0 && len <= 55 && input[0] >= 0x80 {
+        let mut encoded: Vec<u8> = Vec::new();
         encoded.push(0x80 + len as u8);
         encoded.extend(input);
+        Cow::Owned(encoded)
     }
     // If the length is between 1 and 55 bytes and the first byte is less than 0x80
     else if len > 0 && len <= 55 && input[0] < 0x80 {
-        encoded = input;
+        Cow::Owned(input)
     }
     // If the length is more than 55 bytes
     else if len > 55 {
+        let mut encoded: Vec<u8> = Vec::new();
         let len_of_len = length_of_length(len);
         encoded.push(0xb7 + len_of_len as u8);
         encoded.extend(encode_length(len, len_of_len));
         encoded.extend(input);
+        Cow::Owned(encoded)
     }
-
-    encoded
+    // Return an empty slice if the input is empty
+    else {
+        Cow::Borrowed(&[])
+    }
 }
 
 pub fn length_of_length(len: usize) -> usize {
