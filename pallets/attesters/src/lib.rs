@@ -508,11 +508,10 @@ pub mod attesters_test {
         SortedNominatedAttesters,
     };
 
-    fn register_attester_with_single_private_key(private_key: [u8; 32]) {
+    fn register_attester_with_single_private_key(secret_key: [u8; 32]) {
         // Register an attester
-        let attester = AccountId::from(private_key);
+        let attester = AccountId::from(secret_key);
 
-        let secret_key = [1u8; 32];
         let ecdsa_key = ecdsa::Pair::from_seed(&secret_key).public().to_raw_vec();
         let ed25519_key = ed25519::Pair::from_seed(&secret_key).public().to_raw_vec();
         let sr25519_key = sr25519::Pair::from_seed(&secret_key).public().to_raw_vec();
@@ -629,7 +628,7 @@ pub mod attesters_test {
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
-                    [1u8; 32],
+                    [counter; 32],
                 );
             }
 
@@ -646,13 +645,11 @@ pub mod attesters_test {
         ext.execute_with(|| {
             let target: [u8; 4] = [1u8; 4];
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            let _hash = H256::from(message);
 
             for counter in 1..33u8 {
                 // Register an attester
                 let attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
-
                 // Submit an attestation signed with the Ed25519 key
                 sign_and_submit_attestation(
                     attester,
@@ -689,17 +686,18 @@ pub mod attesters_test {
         ext.execute_with(|| {
             // Register 64 attesters
             let mut attesters = Vec::new();
-            for i in 0..64 {
-                let attester = AccountId::from([i as u8; 32]);
-                register_attester_with_single_private_key([i as u8; 32]);
+
+            for counter in 1..65u8 {
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
                 attesters.push(attester);
             }
 
             // Nominate the attesters
-            for i in 0..64u128 {
-                let nominator = AccountId::from([(i + 1) as u8; 32]);
-                let attester = attesters[i as usize].clone();
-                let amount = 1000u128 + i;
+            for counter in 1..65u128 {
+                let nominator = AccountId::from([(counter + 1) as u8; 32]);
+                let attester = attesters[(counter - 1) as usize].clone();
+                let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
                 assert_ok!(Attesters::nominate(
                     Origin::signed(nominator),
@@ -720,7 +718,7 @@ pub mod attesters_test {
                 assert_eq!(nomination.0, *attester);
                 assert_eq!(
                     nomination.1,
-                    1000u128 + 63 + 10 - i as u128, // where 10 is the self-bond for attesters
+                    1000u128 + 64 + 10 - i as u128, // where 10 is the self-bond for attesters
                     "attester: {:?}, nomination: {}",
                     attester,
                     nomination.1
