@@ -175,6 +175,7 @@ pub mod pallet {
         AttestationSignatureInvalid,
         AttestationDoubleSignAttempt,
         NotActiveSet,
+        NotInCurrentCommittee,
         NotRegistered,
         AlreadyNominated,
         NominatorNotEnoughBalance,
@@ -234,6 +235,12 @@ pub mod pallet {
             ensure!(
                 ActiveSet::<T>::get().contains(&account_id),
                 Error::<T>::NotActiveSet
+            );
+
+            // Check if the attester is part of the current committee
+            ensure!(
+                CurrentCommittee::<T>::get().contains(&account_id),
+                Error::<T>::NotInCurrentCommittee
             );
 
             let is_verified = attester
