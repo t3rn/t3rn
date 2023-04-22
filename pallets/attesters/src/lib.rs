@@ -259,29 +259,33 @@ pub mod pallet {
                         AttestationStatus::Approved
                     };
 
-                    Attestations::<T>::insert(
-                        sfx_hash,
-                        Attestation {
-                            for_: attestation_for,
-                            status,
-                            signature: sfx_attestation.signature.clone(),
-                        },
-                    );
+                    sfx_attestation.for_ = attestation_for;
+                    sfx_attestation.status = status;
+
+                    Attestations::<T>::insert(sfx_hash, sfx_attestation.clone());
 
                     let mut target_batches = Batches::<T>::get(target).unwrap_or_default();
                     let current_block = frame_system::Pallet::<T>::block_number();
-                    let is_full = target_batches.last().map_or(false, |b| {
-                        b.attestations.len() >= T::MaxBatchSize::get() as usize
-                    });
-                    let interval_passed = target_batches.last().map_or(false, |b| {
-                        current_block - b.created >= T::BatchingWindow::get()
-                    });
 
-                    if is_full || interval_passed {
-                        // Create a new batch
+                    if target_batches.is_empty() {
+                        // Create a new batch if there are no batches yet
                         let new_batch =
                             Batch::new(target, frame_system::Pallet::<T>::block_number());
                         target_batches.push(new_batch);
+                    } else {
+                        let is_full = target_batches.last().map_or(false, |b| {
+                            b.attestations.len() >= T::MaxBatchSize::get() as usize
+                        });
+                        let interval_passed = target_batches.last().map_or(false, |b| {
+                            current_block - b.created >= T::BatchingWindow::get()
+                        });
+
+                        if is_full || interval_passed {
+                            // Create a new batch
+                            let new_batch =
+                                Batch::new(target, frame_system::Pallet::<T>::block_number());
+                            target_batches.push(new_batch);
+                        }
                     }
 
                     // Add the attestation to the last batch
@@ -542,6 +546,7 @@ pub mod attesters_test {
         attester: AccountId,
         message: [u8; 32],
         key_type: KeyTypeId,
+        target: [u8; 4],
         secret_key: [u8; 32],
     ) {
         let signature: Vec<u8> = match key_type {
@@ -560,7 +565,7 @@ pub mod attesters_test {
             Origin::signed(attester),
             message.to_vec(),
             signature,
-            [0u8; 4],
+            target,
             AttestationFor::SFX,
         ));
     }
@@ -574,7 +579,13 @@ pub mod attesters_test {
             register_attester_with_single_private_key([1u8; 32]);
             // Submit an attestation signed with the Ed25519 key
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            sign_and_submit_attestation(attester, message, ECDSA_ATTESTER_KEY_TYPE_ID, [1u8; 32]);
+            sign_and_submit_attestation(
+                attester,
+                message,
+                ECDSA_ATTESTER_KEY_TYPE_ID,
+                [0u8; 4],
+                [1u8; 32],
+            );
 
             let attestation =
                 Attesters::attestations(H256::from(*b"message_that_needs_attestation32"))
@@ -596,6 +607,7 @@ pub mod attesters_test {
                 attester.clone(),
                 message,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
+                [0u8; 4],
                 [1u8; 32],
             );
 
@@ -628,6 +640,7 @@ pub mod attesters_test {
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
+                    [0u8; 4],
                     [counter; 32],
                 );
             }
@@ -655,12 +668,14 @@ pub mod attesters_test {
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
+                    target,
                     [counter; 32],
                 );
             }
 
             // Check if the attestations have been added to the batch
             let batches = Batches::<MiniRuntime>::get(target).expect("Batches should exist");
+            println!("Batches: {batches:?}");
             let first_batch = batches.first().expect("First batch should exist");
             assert_eq!(first_batch.attestations.len(), 32);
             assert_eq!(first_batch.status, BatchStatus::Pending);
