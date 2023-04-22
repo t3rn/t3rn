@@ -7,7 +7,7 @@ use scale_info::TypeInfo;
 use sp_core::Hasher;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::{default::Default, fmt::Debug};
-use t3rn_primitives::circuit::{XExecSignalId, XExecStepSideEffectId};
+use t3rn_primitives::circuit::{SpeedMode, XExecSignalId, XExecStepSideEffectId};
 
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
@@ -321,6 +321,9 @@ pub struct XExecSignal<AccountId, BlockNumber> {
     /// Has returned status already and what
     pub status: CircuitStatus,
 
+    /// Speed of confirmation
+    pub speed_mode: SpeedMode,
+
     /// Has returned status already and what
     pub steps_cnt: (u32, u32),
 }
@@ -339,6 +342,8 @@ impl<
         timeouts_at: BlockNumber,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<BlockNumber>>,
+        // Speed of confirmation
+        speed_mode: SpeedMode,
         // Current steps count
         steps_cnt: (u32, u32),
     ) -> Self {
@@ -348,6 +353,7 @@ impl<
             timeouts_at,
             delay_steps_at,
             status: Default::default(),
+            speed_mode,
             steps_cnt,
         }
     }
@@ -373,6 +379,8 @@ impl<
         requester: &T::AccountId,
         // Expiry timeout
         timeouts_at: T::BlockNumber,
+        // Speed of confirmation
+        speed_mode: SpeedMode,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<T::BlockNumber>>,
     ) -> (XExecSignalId<T>, XExecSignal<T::AccountId, T::BlockNumber>) {
@@ -387,6 +395,7 @@ impl<
             requester_nonce,
             timeouts_at,
             delay_steps_at,
+            speed_mode,
             (0, 0),
         );
         let id = signal.generate_id::<T>();
