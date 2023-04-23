@@ -132,6 +132,25 @@ impl pallet_xdns::Config for Runtime {
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    // TODO: update me to be better
+    pub const EscrowAccount: AccountId = AccountId::new([51_u8; 32]);
+    pub const RewardMultiplier: Balance = 1;
+}
+
+impl pallet_attesters::Config for Runtime {
+    type ActiveSetSize = ConstU32<32>;
+    type BatchingWindow = ConstU32<6>;
+    type CommitmentRewardSource = EscrowAccount;
+    type CommitteeSize = ConstU32<16>;
+    type Currency = Balances;
+    type Event = Event;
+    type MaxBatchSize = ConstU32<128>;
+    type RandomnessSource = RandomnessCollectiveFlip;
+    type RewardMultiplier = RewardMultiplier;
+    type ShufflingFrequency = ConstU32<400>;
+}
+
 impl pallet_contracts_registry::Config for Runtime {
     type Balances = Balances;
     type Currency = Balances;

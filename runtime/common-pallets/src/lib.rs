@@ -19,6 +19,7 @@ pub use pallet_3vm_contracts;
 pub use pallet_3vm_evm;
 pub use pallet_3vm_evm_primitives;
 pub use pallet_account_manager;
+pub use pallet_attesters;
 pub use pallet_circuit;
 pub use pallet_clock;
 pub use pallet_contracts_registry;
