@@ -1,6 +1,6 @@
 use crate::{
-    AccountId, AccountManager, Balances, BlockNumber, Call, Circuit, Clock, Event, Portal, Runtime,
-    Timestamp, XDNS,
+    AccountId, AccountManager, Balance, Balances, BlockNumber, Call, Circuit, Clock, Event, Portal,
+    RandomnessCollectiveFlip, Runtime, Timestamp, XDNS,
 };
 
 use pallet_grandpa_finality_verifier::{
@@ -123,6 +123,25 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
 
         total_consumed
     }
+}
+
+parameter_types! {
+    // TODO: update me to be better
+    pub const EscrowAccount: AccountId = AccountId::new([51_u8; 32]);
+    pub const RewardMultiplier: Balance = 1;
+}
+
+impl pallet_attesters::Config for Runtime {
+    type ActiveSetSize = ConstU32<32>;
+    type BatchingWindow = ConstU32<6>;
+    type CommitmentRewardSource = EscrowAccount;
+    type CommitteeSize = ConstU32<16>;
+    type Currency = Balances;
+    type Event = Event;
+    type MaxBatchSize = ConstU32<128>;
+    type RandomnessSource = RandomnessCollectiveFlip;
+    type RewardMultiplier = RewardMultiplier;
+    type ShufflingFrequency = ConstU32<400>;
 }
 
 impl pallet_clock::Config for Runtime {
