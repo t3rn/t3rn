@@ -39,7 +39,7 @@ frame_support::construct_runtime!(
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 4,
 
         XDNS: pallet_xdns = 100,
-        Attesters: pallet_attesters::{Pallet, Call, Storage, Event<T>, Config<T>} = 101,
+        Attesters: pallet_attesters = 101,
         // Portal
         Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
