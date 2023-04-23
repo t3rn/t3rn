@@ -197,6 +197,7 @@ fn testnet_genesis(
         },
         contracts_registry: Default::default(),
         account_manager: Default::default(),
+        attesters: Default::default(),
         clock: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers\
         evm: EvmConfig {
