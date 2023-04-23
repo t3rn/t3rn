@@ -578,8 +578,8 @@ pub mod attesters_test {
 
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersConfig,
-        AttestersError, AttestersStore, Balances, BatchStatus, Batches, CurrentCommittee,
+        AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
+        AttestersStore, Balances, BatchStatus, Batches, ConfigAttesters, CurrentCommittee,
         ExtBuilder, MiniRuntime, Nominations, Origin, PreviousCommittee, SortedNominatedAttesters,
     };
 
@@ -717,7 +717,7 @@ pub mod attesters_test {
 
             // Check if the committee is set up and has the correct size
             let committee = CurrentCommittee::<MiniRuntime>::get();
-            let committee_size: u32 = <MiniRuntime as AttestersConfig>::CommitteeSize::get();
+            let committee_size: u32 = <MiniRuntime as ConfigAttesters>::CommitteeSize::get();
             assert_eq!(committee.len(), committee_size as usize);
 
             // Check that each member of the committee is in the registered attesters

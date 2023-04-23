@@ -2,7 +2,7 @@ use codec::{Decode, Encode};
 use frame_support::RuntimeDebug;
 pub use pallet_attesters::{
     ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations,
-    Attesters as AttestersStore, BatchStatus, Batches, Config as AttestersConfig, CurrentCommittee,
+    Attesters as AttestersStore, BatchStatus, Batches, Config as ConfigAttesters, CurrentCommittee,
     Error as AttestersError, Nominations, PreviousCommittee, SortedNominatedAttesters,
 };
 use pallet_grandpa_finality_verifier::{
