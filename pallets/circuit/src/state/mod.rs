@@ -374,6 +374,10 @@ impl<
         SystemHashing::<T>::hash(xtx_id_buf.as_ref())
     }
 
+    pub fn set_speed_mode(&mut self, speed_mode: SpeedMode) {
+        self.speed_mode = speed_mode;
+    }
+
     pub fn setup_fresh<T: frame_system::Config>(
         // Requester of xtx
         requester: &T::AccountId,

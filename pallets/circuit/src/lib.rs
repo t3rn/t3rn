@@ -553,12 +553,14 @@ pub mod pallet {
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
-            _speed_mode: SpeedMode,
+            speed_mode: SpeedMode,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Setup: new xtx context with SFX validation
             let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+
+            fresh_xtx.xtx.set_speed_mode(speed_mode);
             // Compile: apply the new state post squaring up and emit
             Machine::<T>::compile(
                 &mut fresh_xtx,
@@ -1058,9 +1060,10 @@ impl<T: Config> Pallet<T> {
             }
         }
 
-        // confirm order of current season, by passing the side_effects of it to confirm order.
+        // Confirm order of current season, by passing the side_effects of it to confirm order.
         let fsx = confirm_order::<T>(xtx_id, *sfx_id, confirmation, step_side_effects)?;
 
+        // Confirm that speed mode is satisfied
         let current_finalized_target_height =
             match T::Portal::get_latest_finalized_height(fsx.input.target)? {
                 HeightResult::Height(block_numer) => block_numer,
@@ -1101,8 +1104,6 @@ impl<T: Config> Pallet<T> {
         }
 
         log::debug!("Order confirmed!");
-
-        // Confirm that speed mode is satisfied
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
