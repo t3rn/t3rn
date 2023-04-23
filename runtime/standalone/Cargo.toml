@@ -23,6 +23,7 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot.git", 
 
 # Circuit dependencies
 pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
+pallet-attesters                            = { path = "../../pallets/attesters", default-features = false }
 pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
 pallet-clock                              = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
@@ -105,6 +106,7 @@ std = [
   "pallet-aura/std",
   "pallet-authorship/std",
   "pallet-assets/std",
+  "pallet-attesters/std",
   "pallet-asset-tx-payment/std",
   "t3rn-primitives/std",
   "t3rn-types/std",
@@ -171,6 +173,7 @@ runtime-benchmarks = [
   'pallet-balances/runtime-benchmarks',
   'pallet-contracts-registry/runtime-benchmarks',
   'pallet-xdns/runtime-benchmarks',
+  'pallet-attesters/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'sp-runtime/runtime-benchmarks',
   "pallet-treasury/runtime-benchmarks",
