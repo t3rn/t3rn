@@ -2,12 +2,13 @@ import { ApiPromise } from '@polkadot/api';
 import { Sdk } from "@t3rn/sdk";
 import "@t3rn/types"
 // @ts-ignore
-import { Vec, T3rnTypesSfxSideEffect } from "@polkadot/types/lookup"
+import { Vec, T3rnTypesSfxSideEffect, SpeedMode } from "@polkadot/types/lookup"
 
-export const onExtrinsicTrigger = (circuitApi: ApiPromise, sideEffects: any[], sequential: boolean, sender: any, sdk: Sdk) => {
+export const onExtrinsicTrigger = (circuitApi: ApiPromise, sideEffects: any[], speed_mode: SpeedMode, sender: any, sdk: Sdk) => {
     return {
         sideEffects: circuitApi.createType("Vec<T3rnTypesSfxSideEffect>",
             sideEffects.map(data => {
+                console.log("data", data)
                 const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[data.type]({
                     from: sender.toString(),
                     to: data.to,
@@ -19,6 +20,6 @@ export const onExtrinsicTrigger = (circuitApi: ApiPromise, sideEffects: any[], s
                 return obj
             })
         ),
-        sequential: circuitApi.createType("bool", sequential),
+        speed_mode: circuitApi.createType("SpeedMode", speed_mode),
     }
 }

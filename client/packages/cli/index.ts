@@ -65,6 +65,7 @@ class CircuitCLI {
                 // @ts-ignore
                 data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
             }
+            console.log("data", data)
             const registrationData: any = await register(this.circuit, data)
 
             const tx = this.circuit.tx.portal.registerGateway(
@@ -256,7 +257,7 @@ class CircuitCLI {
             }
         })
 
-        const transactionArgs: any = onExtrinsicTrigger(this.circuit, data.sideEffects, data.sequential, this.signer.address, this.sdk)
+        const transactionArgs: any = onExtrinsicTrigger(this.circuit, data.sideEffects, data.speedMode, this.signer.address, this.sdk)
         const tx = this.circuit.tx.circuit.onExtrinsicTrigger(transactionArgs.sideEffects, false)
 
         const submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
