@@ -7002,7 +7002,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hash-db",
- "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
  "log",
  "num-traits",
  "pallet-balances",
