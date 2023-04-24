@@ -155,6 +155,15 @@ pub enum TokenInfo {
     Ethereum(EthereumToken),
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Default, Decode, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum SpeedMode {
+    Fast,
+    Rational,
+    #[default]
+    Finalized,
+}
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SubstrateToken {

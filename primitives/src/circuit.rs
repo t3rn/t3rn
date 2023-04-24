@@ -1,4 +1,5 @@
 use crate::xtx::LocalState;
+pub use crate::SpeedMode;
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
@@ -6,14 +7,6 @@ use scale_info::TypeInfo;
 use sp_std::{fmt::Debug, vec::Vec};
 use t3rn_sdk_primitives::signal::ExecutionSignal;
 use t3rn_types::sfx::HardenedSideEffect;
-
-#[derive(Debug, Clone, Eq, PartialEq, Encode, Default, Decode, TypeInfo)]
-pub enum SpeedMode {
-    Fast,
-    Rational,
-    #[default]
-    Finalized,
-}
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalTrigger<T: Config> {
