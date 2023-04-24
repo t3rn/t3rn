@@ -14,10 +14,6 @@ use t3rn_sdk_primitives::{
     state::SideEffects,
 };
 
-// Tells the precompile indexer whether the call came from EVM or WASM in encoding-specific formats
-pub const EVM_RECODING_BYTE_SELECTOR: u8 = 40;
-pub const WASM_RECODING_BYTE_SELECTOR: u8 = 41;
-
 // Precompile pointers baked into the binary.
 // Genesis exists only to map hashes to pointers.
 pub const GET_STATE: u8 = 55;
