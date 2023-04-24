@@ -22,6 +22,26 @@ pub enum Codec {
     Scale,
     Rlp,
 }
+
+impl From<u8> for Codec {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Codec::Scale,
+            1 => Codec::Rlp,
+            _ => Codec::default(),
+        }
+    }
+}
+
+impl From<Codec> for u8 {
+    fn from(value: Codec) -> Self {
+        match value {
+            Codec::Scale => 0,
+            Codec::Rlp => 1,
+        }
+    }
+}
+
 // Implementable Recode trait for each codec.
 pub trait Recode {
     fn chop_encoded(

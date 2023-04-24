@@ -171,6 +171,7 @@ pub mod pallet {
         InvalidPrecompileArgs,
         /// Invalid arithmetic computation causes overflow
         InvalidArithmeticOverflow,
+        DownstreamCircuit,
     }
 
     #[pallet::call]
