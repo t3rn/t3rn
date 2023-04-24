@@ -10,6 +10,8 @@ securityContext:
   # readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsUser: 1000
+  fsGroup: 1000
+
 
 resources: 
   limits:
@@ -18,6 +20,9 @@ resources:
   requests:
     cpu: 10m
     memory: 128Mi
+
+storage:
+  size: 1Gi
 
 nodeSelector: {}
 

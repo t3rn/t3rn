@@ -5,6 +5,9 @@ metadata:
   labels:
     {{- include "executor.labels" . | nindent 4 }}
 spec:
+  strategy:
+    type: Recreate
+  replicas: 1
   selector:
     matchLabels:
       {{- include "executor.selectorLabels" . | nindent 6 }}
@@ -22,8 +25,6 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: executor
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.repository }}:{{ .Values.tag }}"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -32,6 +33,17 @@ spec:
               value: "{{ .Values.websocketEndpoint }}"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if hasKey .Values "storage" }}
+          volumeMounts:
+          - name: storage
+            mountPath: /data
+          {{- end }}
+      {{- if hasKey .Values "storage" }}
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: executor
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

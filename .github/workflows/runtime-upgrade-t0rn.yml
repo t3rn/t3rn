@@ -17,16 +17,9 @@ jobs:
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GH_PAT }}
 
-      - name: ⚙️ Get nightly rust toolchain with wasm target
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2023-01-24
-          target: wasm32-unknown-unknown
-          components: rustfmt, clippy
-          override: true
+      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
+        run: rustup show
 
       - name: 📼 Run zombienet runtime upgrade test
         continue-on-error: false
@@ -92,7 +85,7 @@ jobs:
 
       - name: 🚀 t0rn Runtime Upgrade
         run: |
-          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ github.ref }} ${{ env.PARACHAIN_NAME }}
+          ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
 
   ranger-deploy:
     runs-on: self-hosted

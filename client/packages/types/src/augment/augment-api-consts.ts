@@ -197,6 +197,26 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       subAccountDeposit: u128 & AugmentedConst<ApiType>;
     };
+    kusamaBridge: {
+      /**
+       * Maximal number of finalized headers to keep in the storage.
+       * 
+       * The setting is there to prevent growing the on-chain state indefinitely. Note
+       * the setting does not relate to block numbers - we will simply keep as much items
+       * in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
+       **/
+      headersToStore: u32 & AugmentedConst<ApiType>;
+    };
+    polkadotBridge: {
+      /**
+       * Maximal number of finalized headers to keep in the storage.
+       * 
+       * The setting is there to prevent growing the on-chain state indefinitely. Note
+       * the setting does not relate to block numbers - we will simply keep as much items
+       * in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
+       **/
+      headersToStore: u32 & AugmentedConst<ApiType>;
+    };
     rococoBridge: {
       /**
        * Maximal number of finalized headers to keep in the storage.

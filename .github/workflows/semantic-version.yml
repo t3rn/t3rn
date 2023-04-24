@@ -2,7 +2,7 @@ name: Semantic Version
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize, edited]
 
 permissions:
   pull-requests: write
@@ -10,6 +10,7 @@ permissions:
 jobs:
   comment:
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.title, 'skip release') }}
     steps:
       - uses: actions/checkout@v3
         with:

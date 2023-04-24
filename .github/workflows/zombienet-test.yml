@@ -22,6 +22,9 @@ jobs:
       src: ${{ steps.changes.outputs.src }}
 
     steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
       - uses: dorny/paths-filter@v2
         id: changes
         with:
@@ -46,13 +49,8 @@ jobs:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v3
 
-      - name: ⚙️ Get nightly rust toolchain with wasm target
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2023-01-24
-          target: wasm32-unknown-unknown
-          components: rustfmt, clippy
-          override: true
+      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
+        run: rustup show
 
       - name: Print sccache stats
         working-directory: tests/zombienet

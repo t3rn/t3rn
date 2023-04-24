@@ -48,7 +48,7 @@ pub mod pallet {
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
         xdns::{FullGatewayRecord, GatewayRecord, TokenRecord, Xdns, XdnsRecord},
-        Bytes, ChainId, GatewayType, GatewayVendor, TokenSysProps,
+        Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -223,6 +223,8 @@ pub mod pallet {
         SideEffectABINotFound,
         /// the xdns entry does not contain parachain information
         NoParachainInfoFound,
+        /// A token is not compatible with the gateways execution layer
+        TokenExecutionVendorMismatch,
     }
 
     // Deprecated storage entry -- StandardSideEffects
@@ -346,6 +348,7 @@ pub mod pallet {
         fn add_new_gateway(
             gateway_id: [u8; 4],
             verification_vendor: GatewayVendor,
+            execution_vendor: ExecutionVendor,
             codec: Codec,
             registrant: Option<T::AccountId>,
             escrow_account: Option<T::AccountId>,
@@ -359,6 +362,7 @@ pub mod pallet {
             Self::override_gateway(
                 gateway_id,
                 verification_vendor,
+                execution_vendor,
                 codec,
                 registrant,
                 escrow_account,
@@ -369,6 +373,7 @@ pub mod pallet {
         fn override_gateway(
             gateway_id: [u8; 4],
             verification_vendor: GatewayVendor,
+            execution_vendor: ExecutionVendor,
             codec: Codec,
             registrant: Option<T::AccountId>,
             escrow_account: Option<T::AccountId>,
@@ -389,6 +394,7 @@ pub mod pallet {
                 GatewayRecord {
                     gateway_id,
                     verification_vendor,
+                    execution_vendor,
                     codec,
                     registrant,
                     escrow_account,
@@ -403,12 +409,21 @@ pub mod pallet {
         fn add_new_token(
             token_id: [u8; 4],
             gateway_id: [u8; 4],
-            token_props: TokenSysProps,
+            token_props: TokenInfo,
         ) -> DispatchResult {
             // early exit if record already exists in storage
             if <Tokens<T>>::contains_key(token_id) {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
             }
+
+            // fetch record and ensure it exists
+            let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
+
+            // ensure that the token's execution vendor matches the gateway's execution vendor
+            ensure!(
+                token_props.match_execution_vendor() == record.execution_vendor,
+                Error::<T>::TokenExecutionVendorMismatch
+            );
 
             Self::override_token(token_id, gateway_id, token_props)
         }
@@ -416,7 +431,7 @@ pub mod pallet {
         fn override_token(
             token_id: [u8; 4],
             gateway_id: [u8; 4],
-            token_props: TokenSysProps,
+            token_props: TokenInfo,
         ) -> DispatchResult {
             <Tokens<T>>::insert(
                 token_id,

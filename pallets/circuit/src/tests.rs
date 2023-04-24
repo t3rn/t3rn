@@ -45,7 +45,7 @@ use t3rn_types::{gateway::*, sfx::*};
 use t3rn_primitives::{
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
     volatile::LocalState,
-    Balance, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenSysProps,
+    Balance, ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
 };
 
 use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;
@@ -69,6 +69,11 @@ pub const FOURTH_SFX_INDEX: u32 = 3;
 pub const FIFTH_SFX_INDEX: u32 = 4;
 
 pub const ED: Balance = 1_u128;
+
+fn advance_to_block(block: BlockNumber) {
+    System::set_block_number(block);
+    <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(block);
+}
 
 fn set_ids(
     sfx: SideEffect<AccountId32, Balance>,
@@ -105,7 +110,7 @@ fn register(_origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchRe
         &mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
-    let _gateway_sys_props: TokenSysProps = Decode::decode(
+    let _gateway_sys_props: TokenInfo = Decode::decode(
         &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
     )
     .unwrap();
@@ -119,6 +124,7 @@ fn register(_origin: OriginFor<Runtime>, json: Value, valid: bool) -> DispatchRe
     let res = XDNS::add_new_gateway(
         gateway_id,
         gateway_vendor.clone(),
+        ExecutionVendor::Substrate,
         t3rn_abi::Codec::Scale,
         None,
         None,
@@ -267,7 +273,7 @@ pub fn place_winning_bid_and_advance_3_blocks(
     );
 
     let three_blocks_ahead = System::block_number() + 3;
-    System::set_block_number(three_blocks_ahead);
+    advance_to_block(three_blocks_ahead);
 
     <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(three_blocks_ahead);
 
@@ -283,7 +289,7 @@ fn read_file_and_set_height(path: &str, ignore_submission_height: bool) -> Value
     for entry in json.as_array().unwrap() {
         let submission_height: u64 = entry["submission_height"].as_u64().unwrap();
         if submission_height > 0 && !ignore_submission_height {
-            System::set_block_number(submission_height.try_into().unwrap());
+            advance_to_block(submission_height.try_into().unwrap());
         }
     }
     json
@@ -311,7 +317,7 @@ fn run_mock_tests(path: &str) -> Result<(), DispatchErrorWithPostInfo<PostDispat
         for entry in json.as_array().unwrap() {
             let submission_height: u64 = entry["submission_height"].as_u64().unwrap();
             if submission_height > 0 {
-                System::set_block_number(submission_height.try_into().unwrap());
+                advance_to_block(submission_height.try_into().unwrap());
             }
             match entry["transaction_type"].as_str().unwrap() {
                 "register" => {
@@ -413,7 +419,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -446,7 +452,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -576,7 +582,7 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -610,7 +616,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -708,7 +714,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                 REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT + ED,
             ); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -816,7 +822,7 @@ fn circuit_handles_dropped_at_bidding() {
             let _ =
                 Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE);
@@ -850,7 +856,7 @@ fn circuit_handles_dropped_at_bidding() {
             );
 
             System::reset_events();
-            System::set_block_number(4);
+            advance_to_block(4);
             <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(4);
             let events = System::events();
 
@@ -945,7 +951,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             let _ = Balances::deposit_creating(&BID_WINNER, INITIAL_BALANCE);
             let _ = Balances::deposit_creating(&BID_LOOSER, INITIAL_BALANCE);
 
-            System::set_block_number(BIDDING_BLOCK_NO);
+            advance_to_block(BIDDING_BLOCK_NO);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(origin, side_effects, true,));
@@ -1088,7 +1094,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 }
             );
 
-            System::set_block_number(BIDDING_BLOCK_NO + BIDDING_TIMEOUT);
+            advance_to_block(BIDDING_BLOCK_NO + BIDDING_TIMEOUT);
 
             <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
                 BIDDING_BLOCK_NO + BIDDING_TIMEOUT,
@@ -1133,7 +1139,7 @@ fn circuit_handles_swap_with_insurance() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
             let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1 + ED); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -1223,7 +1229,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2);
             let _ = Balances::deposit_creating(&BOB_RELAYER, 1);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -1271,7 +1277,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2 + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
             let _ = Balances::deposit_creating(&BOB_RELAYER, 1 + 1 + ED); // Bob should have at least: insurance deposit (1) + ED (for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -1448,7 +1454,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 10);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -1493,7 +1499,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1_000_000);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -1550,7 +1556,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1_000_000);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -1584,7 +1590,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1_000_000);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -1629,7 +1635,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
 
             place_winning_bid_and_advance_3_blocks(ALICE, xtx_id, sfx_id, 1);
 
-            System::set_block_number(410);
+            advance_to_block(410);
 
             <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
 
@@ -1694,7 +1700,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, 1_000_000);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
@@ -1736,7 +1742,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
                 MAX_FEE,
             );
 
-            System::set_block_number(410);
+            advance_to_block(410);
 
             <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(410);
 
@@ -3794,7 +3800,7 @@ fn sdk_basic_success() {
                 Some(res.xtx_id),
             );
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1(*b"pdot");
 
             // then it submits to circuit
@@ -3802,7 +3808,7 @@ fn sdk_basic_success() {
                 <Circuit as OnLocalTrigger<Runtime, BalanceOf>>::on_local_trigger(&origin, trigger)
             );
 
-            System::set_block_number(10);
+            advance_to_block(10);
 
             // submits a signal
             let signal =
@@ -3813,8 +3819,7 @@ fn sdk_basic_success() {
             check_queue(QueueValidator::Elements(vec![(ALICE, signal)]));
 
             // async process the signal
-            System::set_block_number(100);
-            <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(100);
+            advance_to_block(100);
 
             // no signal left
             check_queue(QueueValidator::Length(0));
@@ -3835,7 +3840,7 @@ fn sdk_can_send_multiple_states() {
 
             let res = setup_fresh_state(&origin);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1(*b"pdot");
 
             assert_ok!(
@@ -3855,7 +3860,7 @@ fn sdk_can_send_multiple_states() {
                 )
             );
 
-            System::set_block_number(10);
+            advance_to_block(10);
             brute_seed_block_1(*b"ksma");
 
             assert_ok!(
@@ -3890,7 +3895,7 @@ fn transfer_is_validated_correctly() {
 
             let res = setup_fresh_state(&origin);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1(*b"pdot");
 
             assert_ok!(
@@ -3925,7 +3930,7 @@ fn swap_is_validated_correctly() {
 
             let res = setup_fresh_state(&origin);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1(*b"pdot");
 
             assert_ok!(
@@ -3963,7 +3968,7 @@ fn add_liquidity_is_validated_correctly() {
 
             let res = setup_fresh_state(&origin);
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1(*b"pdot");
 
             assert_ok!(
@@ -4152,7 +4157,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //
 //             let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE);
 //
-//             System::set_block_number(1);
+//             advance_to_block(1);
 //             brute_seed_block_1([3, 3, 3, 3]);
 //
 //             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
@@ -4285,7 +4290,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //             // XTX SETUP
 //             let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 //
-//             System::set_block_number(1);
+//             advance_to_block(1);
 //             brute_seed_block_1([3, 3, 3, 3]);
 //             brute_seed_block_1([1, 1, 1, 1]);
 //
@@ -4393,7 +4398,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
         .execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, ENDOWMENT + ED); // Alice should have at least: fee (1) + insurance reward (2) + ED (for VariantA)
 
-            System::set_block_number(1);
+            advance_to_block(1);
             brute_seed_block_1([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(

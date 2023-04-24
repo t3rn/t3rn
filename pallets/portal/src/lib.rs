@@ -16,13 +16,14 @@ use t3rn_primitives::{
     self,
     portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
-    ChainId, GatewayVendor, TokenSysProps,
+    ChainId, GatewayVendor, TokenInfo,
 };
 pub mod weights;
 
 pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
+use frame_support::transactional;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -31,7 +32,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
 
     use sp_std::vec::Vec;
-    use t3rn_primitives::{xdns::Xdns, ChainId, GatewayVendor};
+    use t3rn_primitives::{xdns::Xdns, ChainId, ExecutionVendor, GatewayVendor};
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -99,22 +100,25 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        #[transactional]
         pub fn register_gateway(
             origin: OriginFor<T>,
             gateway_id: [u8; 4],
             token_id: [u8; 4],
             verification_vendor: GatewayVendor,
+            execution_vendor: ExecutionVendor,
             codec: t3rn_abi::Codec,
             registrant: Option<T::AccountId>,
             escrow_account: Option<T::AccountId>,
             allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
-            token_props: TokenSysProps,
+            token_props: TokenInfo,
             encoded_registration_data: Bytes,
         ) -> DispatchResult {
             ensure_root(origin.clone())?;
             <T as Config>::Xdns::add_new_gateway(
                 gateway_id,
                 verification_vendor,
+                execution_vendor,
                 codec,
                 registrant,
                 escrow_account,

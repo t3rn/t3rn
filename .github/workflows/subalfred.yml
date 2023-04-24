@@ -1,0 +1,75 @@
+# https://github.com/hack-ink/subalfred
+# https://github.com/hack-ink/subalfred-check-features-action
+name: Subalfred
+
+on: [pull_request]
+
+env:
+  IGNORE_FALSE_POSITIVES_REGEX_PATTERN: "benchmarking|frame-try-runtime|frame-std"
+
+jobs:
+  # This job checks if files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+              - "**/zombienet/**/*"
+              - ".github/workflows/subalfred.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
+  check:
+    name: Subalfred Check Features
+    runs-on: [self-hosted, rust]
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
+        run: rustup show
+
+      - name: Install Subalfred
+        run: |
+          curl -L https://github.com/hack-ink/subalfred/releases/download/v0.9.0-rc20/subalfred-x86_64-unknown-linux-gnu.zst | zstd -o subalfred -d
+          chmod u+x subalfred
+          cp subalfred ~/.cargo/bin
+        shell: bash
+
+      - name: Check
+        run: |
+          unset RUSTC_WRAPPER
+          ./scripts/subalfred-check.sh "$IGNORE_FALSE_POSITIVES_REGEX_PATTERN" > result.out
+        shell: bash
+
+      - name: Print results
+        if: always()
+        run: |
+          cat result.out
+        shell: bash
+
+      - name: Comment on results
+        if: always()
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: result.out
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}

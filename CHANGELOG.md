@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.12.0-rc.0] - 2023-04-22
+### :sparkles: New Features
+- [`e029213`](https://github.com/t3rn/t3rn/commit/e02921375708cb122fba828f81ae577698f025ab) - add compiler and deployer *(commit by [@petscheit](https://github.com/petscheit))*
+- [`1cc003a`](https://github.com/t3rn/t3rn/commit/1cc003a43a65b27eb5679921d69b5f41873475cf) - add ballot contract, deploy args and transact *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :bug: Bug Fixes
+- [`c59a7ae`](https://github.com/t3rn/t3rn/commit/c59a7ae58b43bbb1d04aaeca3bfe5229ca846c99) - append extra prefix memo byte only if specified in ABI SFX *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`067c99b`](https://github.com/t3rn/t3rn/commit/067c99bfaa0079596092513e7d18836a85f4c3e5) - remove signals from queue at processing by default *(PR [#666](https://github.com/t3rn/t3rn/pull/666) by [@petscheit](https://github.com/petscheit))*
+
+
+## [v1.11.0-rc.0] - 2023-04-20
+### :sparkles: New Features
+- [`de93371`](https://github.com/t3rn/t3rn/commit/de93371c13451896e4078bbf9068b3bcc025f036) - expose entire light client trait in primitives *(PR [#848](https://github.com/t3rn/t3rn/pull/848) by [@petscheit](https://github.com/petscheit))*
+
+
+## [v1.10.4-rc.0] - 2023-04-20
+### :bug: Bug Fixes
+- [`df07e2d`](https://github.com/t3rn/t3rn/commit/df07e2d8781ab54a5d6c905f00c766622a6e4f9f) - make extrinsics transactional *(PR [#857](https://github.com/t3rn/t3rn/pull/857) by [@petscheit](https://github.com/petscheit))*
+
+
+## [v1.10.0-rc.0] - 2023-04-13
+### :sparkles: New Features
+- [`1968ab4`](https://github.com/t3rn/t3rn/commit/1968ab4a49e2c9815122afd9b81c5fd75597bec4) - add eth specific token type *(commit by [@petscheit](https://github.com/petscheit))*
+- [`9fc5efa`](https://github.com/t3rn/t3rn/commit/9fc5efac1b7b09a0f1253db8f16020aa015474c0) - add execution vendor fiel *(commit by [@petscheit](https://github.com/petscheit))*
+- [`186a95c`](https://github.com/t3rn/t3rn/commit/186a95cae15705975901c447f2a89b20c840fd6b) - add token execution vendor check and tests *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :recycle: Refactors
+- [`859fc54`](https://github.com/t3rn/t3rn/commit/859fc540f282a652b59e737b58e7f2f7b52108d5) - cli registration and execution vendor selection in sdk *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :wrench: Chores
+- [`0b6de3d`](https://github.com/t3rn/t3rn/commit/0b6de3da31fbc195202f7022d7ece82a2deb62c5) - remove preset gateways from standalone *(commit by [@petscheit](https://github.com/petscheit))*
+- [`cc487f1`](https://github.com/t3rn/t3rn/commit/cc487f168c38c9932cefd5226bd4d3a0d436475e) - remove old files *(commit by [@petscheit](https://github.com/petscheit))*
+- [`13533ea`](https://github.com/t3rn/t3rn/commit/13533eadf34dc2ccea27abf08ff6930529702b94) - fmt *(commit by [@petscheit](https://github.com/petscheit))*
+- [`6902ef4`](https://github.com/t3rn/t3rn/commit/6902ef4243d1b1d5606ba883ad9512dfff8a127b) - update cli registration to conform with new fields *(commit by [@petscheit](https://github.com/petscheit))*
+- [`ee21eae`](https://github.com/t3rn/t3rn/commit/ee21eae81b2614e6686f6b273e4bb254a3f95880) - sdk gateway loading restored *(commit by [@petscheit](https://github.com/petscheit))*
+- [`69eabf1`](https://github.com/t3rn/t3rn/commit/69eabf1b31a4d1a232f89ffdb981db6ec73e6b9a) - update token_info fields, prepare cli for eth2 and add config *(commit by [@petscheit](https://github.com/petscheit))*
+- [`5fe9959`](https://github.com/t3rn/t3rn/commit/5fe99594794b3b5ae5b2b7d2b55e0786758fe187) - fix pr comments *(commit by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.9.1-rc.0] - 2023-04-11
 ### :bug: Bug Fixes
 - [`87d9baf`](https://github.com/t3rn/t3rn/commit/87d9bafbcdb60302df2b97e5f9c75de11b0046d4) - update rust toolchain *(PR [#822](https://github.com/t3rn/t3rn/pull/822) by [@3h4x](https://github.com/3h4x))*
@@ -892,3 +931,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.8.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.8.0-rc.0...v1.8.1-rc.0
 [v1.9.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.8.2-rc.0...v1.9.0-rc.0
 [v1.9.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.9.0-rc.0...v1.9.1-rc.0
+[v1.10.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.9.3-rc.0...v1.10.0-rc.0
+[v1.10.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.3-rc.0...v1.10.4-rc.0
+[v1.11.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.4-rc.0...v1.11.0-rc.0
+[v1.12.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.11.0-rc.0...v1.12.0-rc.0

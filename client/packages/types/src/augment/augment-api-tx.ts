@@ -6,7 +6,7 @@ import type { Data } from '@polkadot/types';
 import type { Bytes, Compact, Option, U256, U8aFixed, Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H160, H256, MultiAddress, Perbill } from '@polkadot/types/interfaces/runtime';
-import type { CircuitStandaloneRuntimeOriginCaller, PalletAssetsDestroyWitness, PalletIdentityBitFlags, PalletIdentityIdentityInfo, PalletIdentityJudgement, SpCoreVoid, SpFinalityGrandpaEquivocationProof, SpRuntimeHeader, T3rnPrimitivesAccountManagerOutcome, T3rnPrimitivesClaimableBenefitSource, T3rnPrimitivesClaimableCircuitRole, T3rnPrimitivesContractsRegistryRegistryContract, T3rnPrimitivesGatewayGenesisConfig, T3rnPrimitivesGatewaySysProps, T3rnPrimitivesGatewayType, T3rnPrimitivesGatewayVendor, T3rnTypesAbiGatewayABIConfig, T3rnTypesAbiType, T3rnTypesSfxConfirmedSideEffect, T3rnTypesSfxSideEffect } from '@polkadot/types/lookup';
+import type { CircuitStandaloneRuntimeOriginCaller, PalletAssetsDestroyWitness, PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification, PalletIdentityBitFlags, PalletIdentityIdentityInfo, PalletIdentityJudgement, SpCoreVoid, SpFinalityGrandpaEquivocationProof, SpRuntimeHeader, T3rnAbiRecodeCodec, T3rnPrimitivesAccountManagerOutcome, T3rnPrimitivesClaimableBenefitSource, T3rnPrimitivesClaimableCircuitRole, T3rnPrimitivesContractsRegistryRegistryContract, T3rnPrimitivesExecutionVendor, T3rnPrimitivesGatewayVendor, T3rnPrimitivesTokenInfo, T3rnTypesSfxConfirmedSideEffect, T3rnTypesSfxSideEffect } from '@polkadot/types/lookup';
 
 declare module '@polkadot/api-base/types/submittable' {
   export interface AugmentedSubmittables<ApiType extends ApiTypes> {
@@ -542,7 +542,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * Blind version should only be used for testing - unsafe since skips inclusion proof check.
        **/
       confirmSideEffect: AugmentedSubmittable<(sfxId: H256 | string | Uint8Array, confirmation: T3rnTypesSfxConfirmedSideEffect | { err?: any; output?: any; inclusionData?: any; executioner?: any; receivedAt?: any; cost?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [H256, T3rnTypesSfxConfirmedSideEffect]>;
-      onExtrinsicTrigger: AugmentedSubmittable<(sideEffects: Vec<T3rnTypesSfxSideEffect> | (T3rnTypesSfxSideEffect | { target?: any; action?: any; maxReward?: any; insurance?: any; encodedArgs?: any; signature?: any; enforceExecutor?: any; rewardAssetId?: any } | string | Uint8Array)[], sequential: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<T3rnTypesSfxSideEffect>, bool]>;
+      onExtrinsicTrigger: AugmentedSubmittable<(sideEffects: Vec<T3rnTypesSfxSideEffect> | (T3rnTypesSfxSideEffect | { target?: any; maxReward?: any; insurance?: any; action?: any; encodedArgs?: any; signature?: any; enforceExecutor?: any; rewardAssetId?: any } | string | Uint8Array)[], sequential: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<T3rnTypesSfxSideEffect>, bool]>;
       /**
        * Used by other pallets that want to create the exec order
        **/
@@ -967,11 +967,47 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       setSubs: AugmentedSubmittable<(subs: Vec<ITuple<[AccountId32, Data]>> | ([AccountId32 | string | Uint8Array, Data | { None: any } | { Raw: any } | { BlakeTwo256: any } | { Sha256: any } | { Keccak256: any } | { ShaThree256: any } | string | Uint8Array])[]) => SubmittableExtrinsic<ApiType>, [Vec<ITuple<[AccountId32, Data]>>]>;
     };
+    kusamaBridge: {
+      /**
+       * Add a header range for the relaychain
+       * 
+       * It will use the underlying storage pallet to fetch information about the current
+       * authorities and best finalized header in order to verify that the header is finalized,
+       * and the corresponding range valid.
+       * 
+       * If successful in verification, it will write the target range to the underlying storage
+       * pallet.
+       **/
+      submitHeaders: AugmentedSubmittable<(range: Vec<SpRuntimeHeader> | (SpRuntimeHeader | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array)[], signedHeader: SpRuntimeHeader | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array, justification: PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification | { round?: any; commit?: any; votesAncestries?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<SpRuntimeHeader>, SpRuntimeHeader, PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification]>;
+    };
+    polkadotBridge: {
+      /**
+       * Add a header range for the relaychain
+       * 
+       * It will use the underlying storage pallet to fetch information about the current
+       * authorities and best finalized header in order to verify that the header is finalized,
+       * and the corresponding range valid.
+       * 
+       * If successful in verification, it will write the target range to the underlying storage
+       * pallet.
+       **/
+      submitHeaders: AugmentedSubmittable<(range: Vec<SpRuntimeHeader> | (SpRuntimeHeader | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array)[], signedHeader: SpRuntimeHeader | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array, justification: PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification | { round?: any; commit?: any; votesAncestries?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<SpRuntimeHeader>, SpRuntimeHeader, PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification]>;
+    };
     portal: {
-      registerGateway: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: U8aFixed | string | Uint8Array, gatewayAbi: T3rnTypesAbiGatewayABIConfig | { blockNumberTypeSize?: any; hashSize?: any; hasher?: any; crypto?: any; addressLength?: any; valueTypeSize?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: T3rnPrimitivesGatewayVendor | 'Polkadot' | 'Kusama' | 'Rococo' | 'Ethereum' | number | Uint8Array, gatewayType: T3rnPrimitivesGatewayType | { ProgrammableInternal: any } | { ProgrammableExternal: any } | { TxOnly: any } | { OnCircuit: any } | string | Uint8Array, gatewayGenesis: T3rnPrimitivesGatewayGenesisConfig | { modulesEncoded?: any; extrinsicsVersion?: any; genesisHash?: any } | string | Uint8Array, gatewaySysProps: T3rnPrimitivesGatewaySysProps | { ss58Format?: any; tokenSymbol?: any; tokenDecimals?: any } | string | Uint8Array, allowedSideEffects: Vec<U8aFixed>, encodedRegistrationData: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, U8aFixed, T3rnTypesAbiGatewayABIConfig, T3rnPrimitivesGatewayVendor, T3rnPrimitivesGatewayType, T3rnPrimitivesGatewayGenesisConfig, T3rnPrimitivesGatewaySysProps, Vec<U8aFixed>, Bytes]>;
-      setOperational: AugmentedSubmittable<(gatewayId: U8aFixed | string | Uint8Array, operational: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed, bool]>;
-      setOwner: AugmentedSubmittable<(gatewayId: U8aFixed | string | Uint8Array, encodedNewOwner: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed, Bytes]>;
-      submitHeaders: AugmentedSubmittable<(gatewayId: U8aFixed | string | Uint8Array, encodedHeaderData: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed, Bytes]>;
+      registerGateway: AugmentedSubmittable<(gatewayId: U8aFixed | string | Uint8Array, tokenId: U8aFixed | string | Uint8Array, verificationVendor: T3rnPrimitivesGatewayVendor | 'Polkadot' | 'Kusama' | 'Rococo' | 'Ethereum' | number | Uint8Array, executionVendor: T3rnPrimitivesExecutionVendor | 'Substrate' | 'EVM' | number | Uint8Array, codec: T3rnAbiRecodeCodec | 'Scale' | 'Rlp' | number | Uint8Array, registrant: Option<AccountId32> | null | object | string | Uint8Array, escrowAccount: Option<AccountId32> | null | object | string | Uint8Array, allowedSideEffects: Vec<ITuple<[U8aFixed, Option<u8>]>> | ([U8aFixed | string | Uint8Array, Option<u8> | null | object | string | Uint8Array])[], tokenProps: T3rnPrimitivesTokenInfo | { Substrate: any } | { Ethereum: any } | string | Uint8Array, encodedRegistrationData: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed, U8aFixed, T3rnPrimitivesGatewayVendor, T3rnPrimitivesExecutionVendor, T3rnAbiRecodeCodec, Option<AccountId32>, Option<AccountId32>, Vec<ITuple<[U8aFixed, Option<u8>]>>, T3rnPrimitivesTokenInfo, Bytes]>;
+    };
+    rococoBridge: {
+      /**
+       * Add a header range for the relaychain
+       * 
+       * It will use the underlying storage pallet to fetch information about the current
+       * authorities and best finalized header in order to verify that the header is finalized,
+       * and the corresponding range valid.
+       * 
+       * If successful in verification, it will write the target range to the underlying storage
+       * pallet.
+       **/
+      submitHeaders: AugmentedSubmittable<(range: Vec<SpRuntimeHeader> | (SpRuntimeHeader | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array)[], signedHeader: SpRuntimeHeader | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array, justification: PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification | { round?: any; commit?: any; votesAncestries?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<SpRuntimeHeader>, SpRuntimeHeader, PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification]>;
     };
     sudo: {
       /**
@@ -1271,15 +1307,14 @@ declare module '@polkadot/api-base/types/submittable' {
       forceBatch: AugmentedSubmittable<(calls: Vec<Call> | (Call | IMethod | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Vec<Call>]>;
     };
     xdns: {
-      addSideEffect: AugmentedSubmittable<(id: U8aFixed | string | Uint8Array, name: Bytes | string | Uint8Array, argumentAbi: Vec<T3rnTypesAbiType> | (T3rnTypesAbiType | { Address: any } | { DynamicAddress: any } | { Bool: any } | { Int: any } | { Uint: any } | { Bytes: any } | { DynamicBytes: any } | { String: any } | { Enum: any } | { Struct: any } | { Mapping: any } | { Contract: any } | { Ref: any } | { Option: any } | { OptionalInsurance: any } | { OptionalReward: any } | { StorageRef: any } | { Value: any } | { Slice: any } | { Hasher: any } | { Crypto: any } | string | Uint8Array)[], argumentToStateMapper: Vec<Bytes> | (Bytes | string | Uint8Array)[], confirmEvents: Vec<Bytes> | (Bytes | string | Uint8Array)[], escrowedEvents: Vec<Bytes> | (Bytes | string | Uint8Array)[], commitEvents: Vec<Bytes> | (Bytes | string | Uint8Array)[], revertEvents: Vec<Bytes> | (Bytes | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [U8aFixed, Bytes, Vec<T3rnTypesAbiType>, Vec<Bytes>, Vec<Bytes>, Vec<Bytes>, Vec<Bytes>, Vec<Bytes>]>;
       /**
-       * Removes a xdns_record from the onchain registry. Root only access.
+       * Removes a gateway from the onchain registry. Root only access.
        **/
-      purgeXdnsRecord: AugmentedSubmittable<(requester: AccountId32 | string | Uint8Array, xdnsRecordId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, U8aFixed]>;
+      purgeGateway: AugmentedSubmittable<(requester: AccountId32 | string | Uint8Array, gatewayId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, U8aFixed]>;
       /**
-       * Updates the last_finalized field for an xdns_record from the onchain registry. Root only access.
+       * Removes a gateway from the onchain registry. Root only access.
        **/
-      updateTtl: AugmentedSubmittable<(gatewayId: U8aFixed | string | Uint8Array, lastFinalized: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed, u64]>;
+      purgeGatewayRecord: AugmentedSubmittable<(requester: AccountId32 | string | Uint8Array, gatewayId: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, U8aFixed]>;
     };
   } // AugmentedSubmittables
 } // declare module

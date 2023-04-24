@@ -841,7 +841,9 @@ where
         if fee.is_zero() {
             return Ok((None, None))
         }
+        log::info!("withdraw_fee: {:?} {:?}", who, fee);
         let account_id = T::AddressMapping::get_or_into_account_id(who);
+        log::info!("withdraw_fee: {:?} {:?}", account_id, fee);
         let imbalance = C::withdraw(
             &account_id,
             fee.low_u128().unique_saturated_into(),
