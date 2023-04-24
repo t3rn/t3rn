@@ -6484,6 +6484,7 @@ dependencies = [
  "pallet-xbi-portal",
  "pallet-xdns",
  "parity-scale-codec",
+ "rlp",
  "scale-info",
  "sp-core",
  "sp-io",

@@ -2,14 +2,14 @@ use crate::{BalanceOf, Config, Error, Pallet, PrecompileIndex};
 use codec::{Decode, Encode};
 use frame_support::{dispatch::RawOrigin, sp_runtime::DispatchError};
 use sp_std::{vec, vec::Vec};
-use t3rn_abi::Codec as T3rnCodec;
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
     portal::{Portal, PortalExecution, PrecompileArgs as PortalPrecompileArgs},
     threevm::{
-        GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation,
-        EVM_RECODING_BYTE_SELECTOR, GET_STATE, PORTAL, POST_SIGNAL, SUBMIT,
+        GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation, GET_STATE, PORTAL,
+        POST_SIGNAL, SUBMIT,
     },
+    T3rnCodec,
 };
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
@@ -31,16 +31,10 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
     }
 
     // First byte determines if it came from EVM or WASM
-    let codec_selector = args[0];
+    let codec = T3rnCodec::from(args[0]);
 
     // Strip the selector
     let args = &mut &args[1..];
-
-    let codec = if codec_selector == EVM_RECODING_BYTE_SELECTOR {
-        T3rnCodec::Rlp
-    } else {
-        T3rnCodec::default()
-    };
 
     match extract_origin::<T>(&codec, args) {
         Some(origin) => match *precompile {
@@ -52,10 +46,14 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 };
 
                 if let Ok(args) = args {
-                    if let Ok(PrecompileInvocation::GetState(state)) =
-                        invoke::<T>(PrecompileArgs::GetState(origin, args))
-                    {
-                        Ok::<_, Error<T>>(state).encode_to(output)
+                    match invoke::<T>(PrecompileArgs::GetState(origin, args)) {
+                        Ok(PrecompileInvocation::GetState(state)) =>
+                            Ok::<_, Error<T>>(state).encode_to(output),
+                        Err(e) => {
+                            Err::<(), _>(Error::<T>::DownstreamCircuit).encode_to(output);
+                            Err::<(), _>(e).encode_to(output)
+                        },
+                        _ => {},
                     }
                 } else {
                     Err::<(), _>(Error::<T>::InvalidPrecompileArgs).encode_to(output)
@@ -146,7 +144,7 @@ fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::O
         },
         T3rnCodec::Rlp => {
             // TODO: inject addressmapping here, dont always assume padded 12
-            let address_bytes = vec![args.take(..20)?, &[0_u8; 12][..]].concat();
+            let address_bytes = vec![args.take(..=20)?, &[0_u8; 12][..]].concat();
 
             match <T::AccountId as Decode>::decode(&mut &address_bytes[..]) {
                 Ok(account) => Some(T::Origin::from(RawOrigin::Signed(account))),
@@ -257,30 +255,44 @@ pub(crate) fn invoke<T: Config>(
         },
     }
 }
-// TODO: tests
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::{new_test_ext, Test};
+    use crate::mock::{new_test_ext, Test, ALICE};
+    use sp_core::H160;
     use sp_runtime::traits::Hash;
     use t3rn_primitives::circuit::LocalStateExecutionView;
 
     #[test]
     fn test_extract_origin_consumes_buffer() {
         new_test_ext().execute_with(|| {
-            let account = 4_u64;
-            let buffer = &mut &account.encode()[..];
-            let _result = extract_origin::<Test>(&T3rnCodec::Scale, buffer).unwrap();
+            let buffer = &mut &ALICE.encode()[..];
+            let result = extract_origin::<Test>(&T3rnCodec::Scale, buffer).unwrap();
+            println!("{:?}", result);
+
             assert_eq!(buffer.len(), 0)
         });
     }
 
     #[test]
-    fn invoke_raw_bad_pointer() {
+    fn test_extract_origin_consumes_buffer_rlp() {
         new_test_ext().execute_with(|| {
-            let account = 4_u64;
-            let args = &mut &account.encode()[..];
+            let account = H160::from_low_u64_be(4);
+            let buffer = &mut &rlp::encode(&account)[..];
+            let result = extract_origin::<Test>(&T3rnCodec::Rlp, buffer).unwrap();
+            println!("{:?}", result);
+
+            assert_eq!(buffer.len(), 0)
+        });
+    }
+
+    #[test]
+    fn invoke_raw_bad_pointer_rlp() {
+        new_test_ext().execute_with(|| {
+            let account = H160::from_low_u64_be(4);
+            let args = &mut &vec![vec![T3rnCodec::Rlp.into()], rlp::encode(&account).to_vec()]
+                .concat()[..];
             let mut out = Vec::<u8>::new();
 
             invoke_raw::<Test>(&244_u8, args, &mut out);
@@ -291,39 +303,74 @@ mod tests {
         });
     }
 
-    // TODO: errors from pallet-circuit should not cause a panic in the buffer.
-    #[ignore]
+    #[test]
+    fn invoke_raw_bad_pointer_scale() {
+        new_test_ext().execute_with(|| {
+            let args = &mut &vec![vec![T3rnCodec::Scale.into()], ALICE.encode()].concat()[..];
+            let mut out = Vec::<u8>::new();
+
+            invoke_raw::<Test>(&244_u8, args, &mut out);
+            let res =
+                <core::result::Result<(), crate::Error<Test>> as Decode>::decode(&mut &out[..])
+                    .unwrap();
+            assert_eq!(res, Err(Error::<Test>::InvalidPrecompilePointer));
+        });
+    }
+
+    #[test]
+    fn invoke_bad_origin() {
+        new_test_ext().execute_with(|| {
+            // RLP codec, scale encoded origin
+            let args = vec![vec![1], ALICE.encode()].concat();
+            let mut out = Vec::<u8>::new();
+
+            invoke_raw::<Test>(&244_u8, &mut &args[..], &mut out);
+            let res =
+                <core::result::Result<(), crate::Error<Test>> as Decode>::decode(&mut &out[..])
+                    .unwrap();
+            assert_eq!(res, Err(Error::<Test>::InvalidOrigin));
+        });
+    }
+
     #[test]
     fn invoke_get_state_circuit_error() {
         new_test_ext().execute_with(|| {
-            let account = 4_u64;
             let get_state = GetState::<Test> {
                 xtx_id: Some(<Test as frame_system::Config>::Hashing::hash_of(
-                    b"hello world sir",
+                    b"hello world",
                 )),
             };
-            let args = &mut &[account.encode(), get_state.encode()].concat()[..];
+
+            let mut args: Vec<u8> = vec![T3rnCodec::Scale.into()];
+            args.extend(ALICE.encode());
+            args.extend(get_state.encode());
+
             let mut out = Vec::<u8>::new();
 
-            invoke_raw::<Test>(&GET_STATE, args, &mut out);
+            invoke_raw::<Test>(&GET_STATE, &mut &args[..], &mut out);
+
             let res = <core::result::Result<
                 LocalStateExecutionView<Test, BalanceOf<Test>>,
-                DispatchError,
+                crate::Error<Test>,
             > as Decode>::decode(&mut &out[..])
             .unwrap();
-            assert_eq!(res, Err(Error::<Test>::InvalidPrecompilePointer.into()));
+            assert_eq!(res, Err(Error::<Test>::DownstreamCircuit.into()));
         });
     }
 
     #[test]
     fn invoke_get_state() {
         new_test_ext().execute_with(|| {
-            let account = 4_u64;
             let get_state = GetState::<Test> { xtx_id: None };
-            let args = &mut &[account.encode(), get_state.encode()].concat()[..];
+
+            let mut args: Vec<u8> = vec![T3rnCodec::Scale.into()];
+            args.extend(ALICE.encode());
+            args.extend(get_state.encode());
+
             let mut out = Vec::<u8>::new();
 
-            invoke_raw::<Test>(&GET_STATE, args, &mut out);
+            invoke_raw::<Test>(&GET_STATE, &mut &args[..], &mut out);
+
             let res = <core::result::Result<
                 LocalStateExecutionView<Test, BalanceOf<Test>>,
                 crate::Error<Test>,
@@ -337,7 +384,7 @@ mod tests {
                     steps_cnt: (0, 1),
                     xtx_id: <Test as frame_system::Config>::Hash::decode(
                         &mut &hex::decode(
-                            "e0f81c92f7ec3253b2bc5356d5bd928792d40f3022c38ce088553dc8f5bb32c0"
+                            "e8b9e71dc3f878ecf9dae04303767b76882fd0034dd73c98589ff45dab57b05b"
                         )
                         .unwrap()[..]
                     )
