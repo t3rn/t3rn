@@ -630,7 +630,7 @@ pub mod pallet {
                 &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, __status, _requester| {
                     Self::confirm(xtx_id, current_fsx, &sfx_id, &confirmation).map_err(|e| {
-                        println!("Self::confirm hit an error -- {:?}", e);
+                        log::error!("Self::confirm hit an error -- {:?}", e);
                         Error::<T>::ConfirmationFailed
                     })?;
                     Ok(PrecompileResult::TryConfirm(sfx_id, confirmation))
@@ -1094,13 +1094,13 @@ impl<T: Config> Pallet<T> {
         #[cfg(not(feature = "test-skip-verification"))]
         log::debug!("SFX confirmation params: {:?}", encoded_event_params);
 
-        let sfx_abi = <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action)
-            .ok_or_else(|| {
+        let sfx_abi =
+            <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action).ok_or({
                 DispatchError::Other("Unable to find matching Side Effect descriptor in XDNS")
             })?;
 
         #[cfg(feature = "test-skip-verification")]
-        let encoded_event_params = Vec::new(); // Empty encoded_event_params for testing purposes
+        let encoded_event_params = confirmation.inclusion_data.clone(); // Empty encoded_event_params for testing purposes
 
         fsx.input.confirm(
             sfx_abi,

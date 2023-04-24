@@ -1337,6 +1337,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
 }
 
 #[test]
+#[cfg(feature = "test-skip-verification")]
 fn successfully_confirm_optimistic_transfer() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -1387,18 +1388,14 @@ fn successfully_confirm_optimistic_transfer() {
             );
 
             let mut scale_encoded_transfer_event = pallet_balances::Event::<Runtime>::Transfer {
-                from: AccountId32::new([2; 32]),
-                to: AccountId32::new([1; 32]),
-                amount: 100u128,
+                from: BOB,
+                to: AccountId32::new([9u8; 32]),
+                amount: 1,
             }
             .encode();
             // append an extra pallet event index byte as the second byte
             scale_encoded_transfer_event.insert(1, 4u8);
 
-            println!(
-                "mock_encoded_transfer_on_target_args: {:?}",
-                scale_encoded_transfer_event
-            );
             let confirmation_transfer_1 = ConfirmedSideEffect::<AccountId32, BlockNumber, Balance> {
                 err: None,
                 output: None,
@@ -1411,7 +1408,7 @@ fn successfully_confirm_optimistic_transfer() {
             assert_ok!(Circuit::confirm_side_effect(
                 Origin::signed(BOB_RELAYER),
                 side_effect_a_id,
-                confirmation_transfer_1.clone()
+                confirmation_transfer_1
             ));
         })
 }

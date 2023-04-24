@@ -248,7 +248,6 @@ impl Contains<Call> for BaseCallFilter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codec::Compact;
 
     #[test]
     fn base_call_filter_returns_true_with_allowed_calls() {
