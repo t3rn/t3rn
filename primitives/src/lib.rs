@@ -21,6 +21,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
+pub use t3rn_abi::recode::Codec as T3rnCodec;
 pub use t3rn_types::{gateway, types::Bytes};
 
 #[cfg(feature = "std")]
