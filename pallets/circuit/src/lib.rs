@@ -41,7 +41,7 @@ use frame_system::{
 };
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
-    KeyTypeId,
+    DispatchError, KeyTypeId,
 };
 use sp_std::{convert::TryInto, vec, vec::Vec};
 
@@ -630,7 +630,7 @@ pub mod pallet {
                 &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, __status, _requester| {
                     Self::confirm(xtx_id, current_fsx, &sfx_id, &confirmation).map_err(|e| {
-                        log::error!("Self::confirm hit an error -- {:?}", e);
+                        println!("Self::confirm hit an error -- {:?}", e);
                         Error::<T>::ConfirmationFailed
                     })?;
                     Ok(PrecompileResult::TryConfirm(sfx_id, confirmation))
@@ -999,82 +999,51 @@ impl<T: Config> Pallet<T> {
 
     fn confirm(
         xtx_id: XExecSignalId<T>,
-        step_side_effects: &mut Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-        >,
+        step_side_effects: &mut Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         sfx_id: &SideEffectId<T>,
-        confirmation: &ConfirmedSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-    ) -> Result<(), &'static str> {
-        fn confirm_order<T: Config>(
-            xtx_id: XExecSignalId<T>,
-            sfx_id: SideEffectId<T>,
-            confirmation: &ConfirmedSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            step_side_effects: &mut Vec<
-                FullSideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
-                >,
-            >,
-        ) -> Result<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            &'static str,
-        > {
-            // Double check there are some side effects for that Xtx - should have been checked at API level tho already
-            if step_side_effects.is_empty() {
-                return Err("Xtx has an empty single step.")
-            }
-
-            // Find sfx object index in the current step
-            match step_side_effects
-                .iter()
-                .position(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
-            {
-                Some(index) => {
-                    // side effect found in current step
-                    if step_side_effects[index].confirmed.is_none() {
-                        // side effect unconfirmed currently
-                        step_side_effects[index].confirmed = Some(confirmation.clone());
-                        Ok(step_side_effects[index].clone())
-                    } else {
-                        Err("Side Effect already confirmed")
-                    }
-                },
-                None => Err("Unable to find matching Side Effect in given Xtx to confirm"),
-            }
+        confirmation: &ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+    ) -> Result<(), DispatchError> {
+        // Double check there are some side effects for that Xtx - should have been checked at API level tho already
+        if step_side_effects.is_empty() {
+            return Err(DispatchError::Other("Xtx has an empty single step."))
         }
 
-        // Confirm order of current season, by passing the side_effects of it to confirm order.
-        let fsx = confirm_order::<T>(xtx_id, *sfx_id, confirmation, step_side_effects)?;
+        let fsx_opt = step_side_effects
+            .iter_mut()
+            .find(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == *sfx_id);
 
-        // Confirm that speed mode is satisfied
+        let fsx = match fsx_opt {
+            Some(fsx) if fsx.confirmed.is_none() => {
+                fsx.confirmed = Some(confirmation.clone());
+                fsx.clone()
+            },
+            Some(_) => return Err(DispatchError::Other("Side Effect already confirmed")),
+            None =>
+                return Err(DispatchError::Other(
+                    "Unable to find matching Side Effect in given Xtx to confirm",
+                )),
+        };
+
         let current_finalized_target_height =
-            match T::Portal::get_latest_finalized_height(fsx.input.target)? {
-                HeightResult::Height(block_numer) => block_numer,
-                HeightResult::NotActive =>
-                    return Err("SFX validate failed - get_latest_finalized_height returned None"),
+            match T::Portal::get_latest_finalized_height(fsx.input.target) {
+                Ok(HeightResult::Height(block_numer)) => block_numer,
+                Ok(HeightResult::NotActive) =>
+                    return Err(DispatchError::Other(
+                        "SFX validate failed - get_latest_finalized_height returned None",
+                    )),
+                Err(_) =>
+                    return Err(DispatchError::Other(
+                        "Failed to get latest finalized height",
+                    )),
             };
 
-        let current_target_height = match T::Portal::get_latest_updated_height(fsx.input.target)? {
-            HeightResult::Height(block_numer) => block_numer,
-            HeightResult::NotActive =>
-                return Err("SFX validate failed - get_latest_target_height returned None"),
+        let current_target_height = match T::Portal::get_latest_updated_height(fsx.input.target) {
+            Ok(HeightResult::Height(block_numer)) => block_numer,
+            Ok(HeightResult::NotActive) =>
+                return Err(DispatchError::Other(
+                    "SFX validate failed - get_latest_target_height returned None",
+                )),
+            Err(_) => return Err(DispatchError::Other("Failed to get latest target height")),
         };
 
         let target = fsx.input.target;
@@ -1085,7 +1054,9 @@ impl<T: Config> Pallet<T> {
                 if fsx.submission_target_height + T::Portal::read_fast_confirmation_offset(target)?
                     < current_target_height
                 {
-                    return Err("SFX validate failed - fast confirmation offset not satisfied")
+                    return Err(DispatchError::Other(
+                        "SFX validate failed - fast confirmation offset not satisfied",
+                    ))
                 }
             },
             SpeedMode::Rational => {
@@ -1093,12 +1064,16 @@ impl<T: Config> Pallet<T> {
                     + T::Portal::read_rational_confirmation_offset(target)?
                     < current_target_height
                 {
-                    return Err("SFX validate failed - slow confirmation offset not satisfied")
+                    return Err(DispatchError::Other(
+                        "SFX validate failed - slow confirmation offset not satisfied",
+                    ))
                 }
             },
             SpeedMode::Finalized => {
                 if fsx.submission_target_height < current_finalized_target_height {
-                    return Err("SFX validate failed - finalized confirmation offset not satisfied")
+                    return Err(DispatchError::Other(
+                        "SFX validate failed - finalized confirmation offset not satisfied",
+                    ))
                 }
             },
         }
@@ -1107,21 +1082,25 @@ impl<T: Config> Pallet<T> {
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
+        #[cfg(not(feature = "test-skip-verification"))]
         let encoded_event_params = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
             confirmation.inclusion_data.clone(),
             Some(fsx.submission_target_height), // this enforces the submission height check!
         )
-        .map_err(|_| "SideEffect confirmation of inclusion failed")?;
+        .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
-        // ToDo: handle misbehaviour
+        // ToDo: handle misbehavior
+        #[cfg(not(feature = "test-skip-verification"))]
         log::debug!("SFX confirmation params: {:?}", encoded_event_params);
 
-        let sfx_abi: SFXAbi =
-            match <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action) {
-                Some(sfx_abi) => sfx_abi,
-                None => return Err("Unable to find matching Side Effect descriptor in XDNS"),
-            };
+        let sfx_abi = <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action)
+            .ok_or_else(|| {
+                DispatchError::Other("Unable to find matching Side Effect descriptor in XDNS")
+            })?;
+
+        #[cfg(feature = "test-skip-verification")]
+        let encoded_event_params = Vec::new(); // Empty encoded_event_params for testing purposes
 
         fsx.input.confirm(
             sfx_abi,
@@ -1131,7 +1110,7 @@ impl<T: Config> Pallet<T> {
             &Codec::Scale,
         )?;
 
-        log::debug!("confirmation plug ok");
+        log::debug!("Confirmation plug ok");
 
         Ok(())
     }

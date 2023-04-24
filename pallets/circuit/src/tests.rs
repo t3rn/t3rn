@@ -1336,6 +1336,86 @@ fn circuit_handles_add_liquidity_with_insurance() {
         });
 }
 
+#[test]
+fn successfully_confirm_optimistic_transfer() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let valid_transfer_side_effect = produce_and_validate_side_effect(
+        *b"tran",
+        1, // insurance
+        1, // max_reward
+        t3rn_abi::Codec::Scale,
+        ArgVariant::A,
+    );
+
+    let side_effects = vec![valid_transfer_side_effect.clone()];
+    const REQUESTED_INSURANCE_AMOUNT: Balance = 1;
+    const INITIAL_BALANCE: Balance = 3;
+    const BID_AMOUNT: Balance = 1;
+    const MAX_REWARD: Balance = 1;
+
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ =
+                Balances::deposit_creating(&BOB_RELAYER, REQUESTED_INSURANCE_AMOUNT + BID_AMOUNT); // Bob should have at least: insurance deposit (1)(for VariantA)
+
+            System::set_block_number(1);
+            brute_seed_block_1([0, 0, 0, 0]);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                SpeedMode::Finalized,
+            ));
+
+            let (xtx_id, side_effect_a_id) = set_ids(
+                valid_transfer_side_effect.clone(),
+                ALICE,
+                FIRST_REQUESTER_NONCE,
+                FIRST_SFX_INDEX,
+            );
+
+            place_winning_bid_and_advance_3_blocks(
+                BOB_RELAYER,
+                xtx_id,
+                side_effect_a_id,
+                1 as Balance,
+            );
+
+            let mut scale_encoded_transfer_event = pallet_balances::Event::<Runtime>::Transfer {
+                from: AccountId32::new([2; 32]),
+                to: AccountId32::new([1; 32]),
+                amount: 100u128,
+            }
+            .encode();
+            // append an extra pallet event index byte as the second byte
+            scale_encoded_transfer_event.insert(1, 4u8);
+
+            println!(
+                "mock_encoded_transfer_on_target_args: {:?}",
+                scale_encoded_transfer_event
+            );
+            let confirmation_transfer_1 = ConfirmedSideEffect::<AccountId32, BlockNumber, Balance> {
+                err: None,
+                output: None,
+                inclusion_data: scale_encoded_transfer_event,
+                executioner: ALICE,
+                received_at: System::block_number(),
+                cost: None,
+            };
+
+            assert_ok!(Circuit::confirm_side_effect(
+                Origin::signed(BOB_RELAYER),
+                side_effect_a_id,
+                confirmation_transfer_1.clone()
+            ));
+        })
+}
+
 // fn successfully_confirm_optimistic(side_effect: SideEffect<AccountId32, Balance>) {
 //
 //     let from = side_effect.encoded_args[0].clone();
