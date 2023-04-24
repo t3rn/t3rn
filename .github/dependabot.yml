@@ -3,6 +3,9 @@
 # Please see the documentation for all configuration options:
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
+# Glob is not yet possible here
+# https://github.com/dependabot/dependabot-core/issues/3951
+
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -12,6 +15,8 @@ updates:
       interval: "daily"
 
   # Rust
+  # workspace is not correctly detected by dependabot
+  # that's why we need to specify each dir
   - package-ecosystem: "cargo" 
     directory: "/"
     open-pull-requests-limit: 3
@@ -32,6 +37,36 @@ updates:
 
   - package-ecosystem: "cargo" 
     directory: "/runtime/t0rn-parachain"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/node/standalone"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/types"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/types/abi"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/finality-verifiers/grandpa"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" 
+    directory: "/finality-verifiers/common"
     open-pull-requests-limit: 1
     schedule:
       interval: "daily"
