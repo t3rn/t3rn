@@ -2,14 +2,14 @@ use crate::{BalanceOf, Config, Error, Pallet, PrecompileIndex};
 use codec::{Decode, Encode};
 use frame_support::{dispatch::RawOrigin, sp_runtime::DispatchError};
 use sp_std::{vec, vec::Vec};
-use t3rn_abi::Codec as T3rnCodec;
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
     portal::{Portal, PortalExecution, PrecompileArgs as PortalPrecompileArgs},
     threevm::{
-        GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation,
-        EVM_RECODING_BYTE_SELECTOR, GET_STATE, PORTAL, POST_SIGNAL, SUBMIT,
+        GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation, GET_STATE, PORTAL,
+        POST_SIGNAL, SUBMIT,
     },
+    T3rnCodec,
 };
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
@@ -31,16 +31,10 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
     }
 
     // First byte determines if it came from EVM or WASM
-    let codec_selector = args[1];
+    let codec = T3rnCodec::from(args[0]);
 
     // Strip the selector
     let args = &mut &args[1..];
-
-    let codec = if codec_selector == EVM_RECODING_BYTE_SELECTOR {
-        T3rnCodec::Rlp
-    } else {
-        T3rnCodec::default()
-    };
 
     match extract_origin::<T>(&codec, args) {
         Some(origin) => match *precompile {
@@ -257,8 +251,8 @@ pub(crate) fn invoke<T: Config>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::{new_test_ext, AccountId, Test, ALICE};
-    use sp_core::{H160, H256};
+    use crate::mock::{new_test_ext, Test, ALICE};
+    use sp_core::H160;
     use sp_runtime::traits::Hash;
     use t3rn_primitives::circuit::LocalStateExecutionView;
     use t3rn_sdk_primitives::{
@@ -271,7 +265,7 @@ mod tests {
         new_test_ext().execute_with(|| {
             let buffer = &mut &ALICE.encode()[..];
             let result = extract_origin::<Test>(&T3rnCodec::Scale, buffer).unwrap();
-            println!("{result:?}");
+            println!("{:?}", result);
 
             assert_eq!(buffer.len(), 0)
         });
@@ -283,7 +277,7 @@ mod tests {
             let account = H160::from_low_u64_be(4);
             let buffer = &mut &rlp::encode(&account)[..];
             let result = extract_origin::<Test>(&T3rnCodec::Rlp, buffer).unwrap();
-            println!("{result:?}");
+            println!("{:?}", result);
 
             assert_eq!(buffer.len(), 0)
         });
@@ -356,7 +350,7 @@ mod tests {
                 crate::Error<Test>,
             > as Decode>::decode(&mut &out[..])
             .unwrap();
-            assert_eq!(res, Err(Error::<Test>::DownstreamCircuit));
+            assert_eq!(res, Err(Error::<Test>::DownstreamCircuit.into()));
         });
     }
 
