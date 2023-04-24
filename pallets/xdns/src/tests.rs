@@ -24,8 +24,7 @@ use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
-    xdns::Xdns, EthereumToken, ExecutionVendor, GatewayVendor, ReadLatestGatewayHeight::Error,
-    SubstrateToken, TokenInfo,
+    xdns::Xdns, EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo,
 };
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 7;
 const STANDARD_SFX_ABI_COUNT: usize = 7;
