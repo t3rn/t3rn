@@ -2,13 +2,12 @@
 
 set -e
 
-
 root_dir=$(git rev-parse --show-toplevel)
 bin_dir="$root_dir/bin"
 working_dir="$(pwd)"
 
 provider=native
-zombienet_version=v1.3.29
+zombienet_version=v1.3.43
 pdot_branch=release-v0.9.37
 polkadot_tmp_dir=/tmp/polkadot
 
@@ -34,6 +33,13 @@ make_bin_dir() {
 
 fetch_zombienet() {
     if [ "$(nixos-version 2>/dev/null)" == "" ]; then
+        # Don't fetch zombienet if it's already present in the system
+        if which zombienet-$zombienet_version >/dev/null; then
+            cp $(which zombienet-$zombienet_version) "$bin_dir/zombienet"
+            echo "✅ Zombienet $zombienet_version installed"
+            return
+        fi
+
         if [ ! -f "$bin_dir/zombienet" ]; then
             echo "Fetching zombienet..."
             curl -fL -o "$bin_dir/zombienet" "https://github.com/paritytech/zombienet/releases/download/$zombienet_version/zombienet-$machine"
@@ -41,7 +47,7 @@ fetch_zombienet() {
             echo "Making zombienet executable"
             chmod +x "$bin_dir/zombienet"
         else 
-            echo "Zombienet already fetched"
+            echo "✅ Zombienet $zombienet_version installed"
         fi
     else
         echo "This is a NixOS machine, skipping zombienet fetch"
@@ -54,26 +60,29 @@ fetch_zombienet() {
 }
 
 build_polkadot() {
+    # Don't compile polkadot if it's already present in the system
+    if which polkadot-$pdot_branch >/dev/null; then
+        cp $(which polkadot-$pdot_branch) "$bin_dir/polkadot"
+        echo "✅ Polkadot $pdot_branch installed"
+        return
+    fi
+
     if [ ! -d "$polkadot_tmp_dir" ]; then
         echo "Cloning polkadot into $polkadot_tmp_dir"
         mkdir -p "$polkadot_tmp_dir"
         git clone --branch "$pdot_branch" --depth 1 https://github.com/paritytech/polkadot "$polkadot_tmp_dir/$pdot_branch"
-    else
-        echo "Polkadot already cloned"
     fi
 
     if [ ! -f "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" ]; then
         echo "Building polkadot..."
         cargo build --manifest-path "$polkadot_tmp_dir/$pdot_branch/Cargo.toml" --features fast-runtime --release --locked
-    else 
-        echo "Polkadot already built"
     fi
 
     if [ ! -f "$bin_dir/polkadot" ]; then
         echo "Copying polkadot to bin dir"
         cp "$polkadot_tmp_dir/$pdot_branch/target/release/polkadot" "$bin_dir/polkadot"
     else
-        echo "Polkadot already copied"
+        echo "✅ Polkadot $pdot_branch installed"
     fi
 }
 
@@ -81,18 +90,22 @@ NODE_ARG=t3rn
 
 build_collator() {
     if [ ! -f "$bin_dir/$NODE_ARG-collator" ]; then
-        echo "Building $NODE_ARG..."
-        cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+        echo "::group::Building $NODE_ARG..."
+        time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+        echo "::endgroup::"
+
         echo "Copying $NODE_ARG to bin dir"
         cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
     else
-        echo "$NODE_ARG already built"
+        echo "✅ $NODE_ARG already built"
     fi
 }
 
 force_build_collator() {
-    echo "Rebuilding $NODE_ARG..."
-    cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+    echo "::group::Rebuilding $NODE_ARG..."
+    time cargo build --manifest-path "$root_dir/node/$NODE_ARG-parachain/Cargo.toml" --release --locked
+    echo "::endgroup::"
+    
     cp "$root_dir/target/release/$NODE_ARG-collator" "$bin_dir/"
 }
 
@@ -112,7 +125,9 @@ smoke() {
     echo "Running smoke tests.."
     # TODO[Optimisation]: loop through directory and test all
 	# TODO[Optimisation, NotImplemented]: when zombienet can run on a pre-existing network, run it
-    zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_and_registered.feature
+    echo "::group::Zombienet tests..."
+    time zombienet --provider="$provider" test $working_dir/smoke/0001-is_up_and_registered.feature
+    echo "::endgroup::"
 }
 
 upgrade() {
