@@ -7,7 +7,7 @@ use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::{recode::Codec, types::Bytes};
-pub use t3rn_light_client_commons::traits::{HeaderResult, HeightResult};
+pub use t3rn_light_client_commons::traits::{HeaderResult, HeightResult, InclusionReceipt};
 use t3rn_types::sfx::Sfx4bId;
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
@@ -51,19 +51,19 @@ pub trait Portal<T: frame_system::Config> {
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_state_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_tx_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],
@@ -71,7 +71,7 @@ pub trait Portal<T: frame_system::Config> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
@@ -79,7 +79,7 @@ pub trait Portal<T: frame_system::Config> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
@@ -87,7 +87,7 @@ pub trait Portal<T: frame_system::Config> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn initialize(
         origin: T::Origin,

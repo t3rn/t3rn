@@ -8,7 +8,7 @@ pub use t3rn_light_client_commons::traits::{LightClient, LightClientHeartbeat};
 use sp_runtime::{traits::Header, DispatchError};
 use sp_std::marker::PhantomData;
 use t3rn_abi::types::Bytes;
-use t3rn_light_client_commons::traits::{HeaderResult, HeightResult};
+use t3rn_light_client_commons::traits::{HeaderResult, HeightResult, InclusionReceipt};
 use t3rn_primitives::GatewayVendor;
 
 pub type RococoInstance = ();
@@ -201,7 +201,7 @@ where
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
                 pallet.verify_event_inclusion(gateway_id, message, submission_target_height),
@@ -218,7 +218,7 @@ where
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
                 pallet.verify_state_inclusion(gateway_id, message, submission_target_height),
@@ -235,7 +235,7 @@ where
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
                 pallet.verify_tx_inclusion(gateway_id, message, submission_target_height),
@@ -340,7 +340,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, submission_target_height)
     }
 
@@ -349,7 +349,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         _gateway_id: [u8; 4],
         _message: Bytes,
         _submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         unimplemented!("GrandpaFV::verify_storage_inclusion not implemented yet")
     }
 
@@ -358,7 +358,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         _gateway_id: [u8; 4],
         _message: Bytes,
         _submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         unimplemented!("GrandpaFV::verify_tx_inclusion not implemented yet")
     }
 }
