@@ -347,8 +347,6 @@ impl OffchainWorker<BlockNumber> for MaintenanceHooks {
     }
 }
 
-// TODO: check if we need to implement this, and what should go here
-// https://github.com/PureStake/moonbeam/blob/77e4f1994cd1f6b22e7a5d29f047390c8e0900bc/runtime/moonbeam/src/lib.rs#L1222
 impl pallet_maintenance_mode::Config for Runtime {
     type Event = Event;
     type MaintenanceCallFilter = MaintenanceFilter;

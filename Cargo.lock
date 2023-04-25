@@ -1125,6 +1125,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
+ "pallet-maintenance-mode",
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
