@@ -9,6 +9,7 @@ env:
 
 permissions:
   pull-requests: write
+  issues: write
 
 jobs:
   # This job checks if files has been modified.
