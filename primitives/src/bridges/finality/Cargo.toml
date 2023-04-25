@@ -21,4 +21,4 @@ stacktrace    = "0.2"
 t3rn-primitives = { path = "../../.." }
 
 [dev-dependencies]
-parking_lot = "0.11.0"
+parking_lot = "0.12.1"
