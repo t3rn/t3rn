@@ -24,6 +24,7 @@ pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
 use frame_support::transactional;
+use t3rn_primitives::portal::InclusionReceipt;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -191,7 +192,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
             gateway_id,
             message,
@@ -203,7 +204,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_state_inclusion(
             gateway_id,
             message,
@@ -215,7 +216,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_tx_inclusion(
             gateway_id,
             message,
@@ -229,8 +230,8 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        let encoded_ingress =
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+        let mut inclusion_check =
             Self::verify_state_inclusion(gateway_id, message, submission_target_height)?;
 
         let in_codec = match_vendor_with_codec(
@@ -238,7 +239,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
         );
 
-        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+        let recoded_message = recode_bytes_with_descriptor(
+            inclusion_check.message,
+            abi_descriptor,
+            in_codec,
+            out_codec,
+        )?;
+        inclusion_check.message = recoded_message;
+
+        Ok(inclusion_check)
     }
 
     fn verify_tx_inclusion_and_recode(
@@ -247,8 +256,8 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        let encoded_ingress =
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+        let mut inclusion_check =
             Self::verify_tx_inclusion(gateway_id, message, submission_target_height)?;
 
         let in_codec = match_vendor_with_codec(
@@ -256,7 +265,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
         );
 
-        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+        let recoded_message = recode_bytes_with_descriptor(
+            inclusion_check.message,
+            abi_descriptor,
+            in_codec,
+            out_codec,
+        )?;
+        inclusion_check.message = recoded_message;
+
+        Ok(inclusion_check)
     }
 
     fn verify_event_inclusion_and_recode(
@@ -265,8 +282,8 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        let encoded_ingress =
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+        let mut inclusion_check =
             Self::verify_event_inclusion(gateway_id, message, submission_target_height)?;
 
         let in_codec = match_vendor_with_codec(
@@ -274,7 +291,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
         );
 
-        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+        let recoded_message = recode_bytes_with_descriptor(
+            inclusion_check.message,
+            abi_descriptor,
+            in_codec,
+            out_codec,
+        )?;
+        inclusion_check.message = recoded_message;
+
+        Ok(inclusion_check)
     }
 
     fn initialize(

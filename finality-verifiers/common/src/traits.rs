@@ -18,6 +18,13 @@ pub enum HeaderResult {
 }
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
+pub struct InclusionReceipt<BlockNumber> {
+    pub height: HeightResult<BlockNumber>,
+    pub header: HeaderResult,
+    pub message: Bytes,
+}
+
+#[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub struct LightClientHeartbeat<T: frame_system::Config> {
     pub last_heartbeat: T::BlockNumber,
     pub last_finalized_height: T::BlockNumber,
@@ -69,19 +76,19 @@ pub trait LightClient<T: frame_system::Config> {
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_state_inclusion(
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_tx_inclusion(
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError>;
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 }

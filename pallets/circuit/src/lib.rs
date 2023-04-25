@@ -68,7 +68,10 @@ use crate::machine::{Machine, *};
 pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
-use t3rn_primitives::circuit::SpeedMode;
+use t3rn_primitives::{
+    circuit::SpeedMode,
+    portal::{HeaderResult, InclusionReceipt},
+};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 #[cfg(test)]
@@ -1023,94 +1026,106 @@ impl<T: Config> Pallet<T> {
                     "Unable to find matching Side Effect in given Xtx to confirm",
                 )),
         };
-
-        let current_finalized_target_height =
-            match T::Portal::get_latest_finalized_height(fsx.input.target) {
-                Ok(HeightResult::Height(block_numer)) => block_numer,
-                Ok(HeightResult::NotActive) =>
-                    return Err(DispatchError::Other(
-                        "SFX validate failed - get_latest_finalized_height returned None",
-                    )),
-                Err(_) =>
-                    return Err(DispatchError::Other(
-                        "Failed to get latest finalized height",
-                    )),
-            };
-
-        let current_target_height = match T::Portal::get_latest_updated_height(fsx.input.target) {
-            Ok(HeightResult::Height(block_numer)) => block_numer,
-            Ok(HeightResult::NotActive) =>
-                return Err(DispatchError::Other(
-                    "SFX validate failed - get_latest_target_height returned None",
-                )),
-            Err(_) => return Err(DispatchError::Other("Failed to get latest target height")),
-        };
-
-        let target = fsx.input.target;
-        let xtx = &mut Machine::<T>::load_xtx(xtx_id)?.xtx;
-
-        match xtx.speed_mode {
-            SpeedMode::Fast => {
-                if fsx.submission_target_height + T::Portal::read_fast_confirmation_offset(target)?
-                    < current_target_height
-                {
-                    return Err(DispatchError::Other(
-                        "SFX validate failed - fast confirmation offset not satisfied",
-                    ))
-                }
-            },
-            SpeedMode::Rational => {
-                if fsx.submission_target_height
-                    + T::Portal::read_rational_confirmation_offset(target)?
-                    < current_target_height
-                {
-                    return Err(DispatchError::Other(
-                        "SFX validate failed - slow confirmation offset not satisfied",
-                    ))
-                }
-            },
-            SpeedMode::Finalized => {
-                if fsx.submission_target_height < current_finalized_target_height {
-                    return Err(DispatchError::Other(
-                        "SFX validate failed - finalized confirmation offset not satisfied",
-                    ))
-                }
-            },
-        }
-
         log::debug!("Order confirmed!");
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
         #[cfg(not(feature = "test-skip-verification"))]
-        let encoded_event_params = <T as Config>::Portal::verify_event_inclusion(
+        let inclusion_receipt = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
             confirmation.inclusion_data.clone(),
             Some(fsx.submission_target_height), // this enforces the submission height check!
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
+        log::debug!("Inclusion confirmed!");
+
+        #[cfg(feature = "test-skip-verification")]
+        let inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
+            message: confirmation.inclusion_data.clone(),
+            header: HeaderResult::Header([0u8; 32].encode()),
+            height: HeightResult::Height(T::BlockNumber::zero()),
+        }; // Empty encoded_event_params for testing purposes
+
+        match inclusion_receipt.height {
+            HeightResult::Height(inclusion_block_number) => {
+                let xtx = &mut Machine::<T>::load_xtx(xtx_id)?.xtx;
+                let target = fsx.input.target;
+                match xtx.speed_mode {
+                    SpeedMode::Fast | SpeedMode::Rational => {
+                        let current_target_height =
+                            match T::Portal::get_latest_updated_height(fsx.input.target) {
+                                Ok(HeightResult::Height(block_numer)) => block_numer,
+                                Ok(HeightResult::NotActive) => return Err(DispatchError::Other(
+                                    "SFX validate failed - get_latest_target_height returned None",
+                                )),
+                                Err(_) =>
+                                    return Err(DispatchError::Other(
+                                        "Failed to get latest target height",
+                                    )),
+                            };
+
+                        let offset = if xtx.speed_mode == SpeedMode::Fast {
+                            T::Portal::read_fast_confirmation_offset(target)?
+                        } else {
+                            T::Portal::read_rational_confirmation_offset(target)?
+                        };
+
+                        if inclusion_block_number < current_target_height + offset {
+                            return Err(DispatchError::Other(
+                                "SFX validate failed - fast confirmation offset not satisfied",
+                            ))
+                        }
+                    },
+                    SpeedMode::Finalized => {
+                        let current_finalized_target_height =
+                            match T::Portal::get_latest_finalized_height(fsx.input.target) {
+                                Ok(HeightResult::Height(block_numer)) => block_numer,
+                                Ok(HeightResult::NotActive) =>
+                                    return Err(DispatchError::Other(
+                                        "SFX validate failed - get_latest_finalized_height returned None",
+                                    )),
+                                Err(_) =>
+                                    return Err(DispatchError::Other(
+                                        "Failed to get latest finalized height",
+                                    )),
+                            };
+
+                        if inclusion_block_number < current_finalized_target_height {
+                            return Err(DispatchError::Other(
+                                "SFX validate failed - finalized confirmation offset not satisfied",
+                            ))
+                        }
+                    },
+                }
+            },
+            HeightResult::NotActive =>
+                return Err("Failed to retreive inclusion receipt target height".into()),
+        }
+
+        log::debug!("Speed mode satisfied!");
+
         // ToDo: handle misbehavior
         #[cfg(not(feature = "test-skip-verification"))]
-        log::debug!("SFX confirmation params: {:?}", encoded_event_params);
+        log::debug!(
+            "SFX confirmation inclusion receipt: {:?}",
+            inclusion_receipt
+        );
 
         let sfx_abi =
             <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action).ok_or({
                 DispatchError::Other("Unable to find matching Side Effect descriptor in XDNS")
             })?;
 
-        #[cfg(feature = "test-skip-verification")]
-        let encoded_event_params = confirmation.inclusion_data.clone(); // Empty encoded_event_params for testing purposes
-
         fsx.input.confirm(
             sfx_abi,
-            encoded_event_params,
+            inclusion_receipt.message,
             // todo: store the codec info in gateway's records and use it here
             &Codec::Scale,
             &Codec::Scale,
         )?;
 
-        log::debug!("Confirmation plug ok");
+        log::debug!("Confirmation success");
 
         Ok(())
     }
