@@ -7,7 +7,6 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
 env:
-  APPROVERS: AwesomeIbex,MaciejBaj,chiefbiiko,petscheit,palozano
   PARACHAIN_NAME: t0rn
 
 jobs:
@@ -68,22 +67,6 @@ jobs:
           echo "RUNTIME_UPGRADE_OUTPUT<<$EOF" >> $GITHUB_ENV
           ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }} --dry-run >> $GITHUB_ENV
           echo "$EOF" >> $GITHUB_ENV          
-
-      - name: Approval
-        uses: trstringer/manual-approval@v1
-        timeout-minutes: 300
-        with:
-          secret: ${{ secrets.GH_PAT }}
-          approvers: ${{ env.APPROVERS }}
-          minimum-approvals: 1
-          issue-title: "Release ${{ env.PARACHAIN_NAME }} ${{ github.ref }}"
-          issue-body: |            
-            Please approve runtime upgrade with github release [${{ env.PARACHAIN_NAME }} ${{ env.PUSHED_TAG}}](https://github.com/t3rn/t3rn/releases/tag/${{ env.PUSHED_TAG }})
-            
-            Runtime upgrade dry run output:
-            ```
-            ${{ env.RUNTIME_UPGRADE_OUTPUT }}
-            ```
 
       - name: 🚀 t0rn Runtime Upgrade
         run: |
