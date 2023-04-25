@@ -1,12 +1,12 @@
 [package]
 authors     = [ "t3rn" ]
 description = "RPC interface for the contracts registry pallet."
-edition     = "2018"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-contracts-registry-rpc"
-readme      = "README.md"
-repository  = "https://github.com/t3rn/t3rn/"
+readme      = { workspace = true }
+repository  = { workspace = true }
 version     = "1.0.0-aplha.0"
 
 [package.metadata.docs.rs]

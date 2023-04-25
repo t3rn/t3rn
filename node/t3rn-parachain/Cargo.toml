@@ -1,10 +1,10 @@
 [package]
-authors    = [ "devs @ t3rn" ]
-edition    = "2021"
-homepage   = "https://t3rn.io"
-license    = "Apache-2.0"
+authors    = { workspace = true }
+edition    = { workspace = true }
+homepage   = { workspace = true }
+license    = { workspace = true }
 name       = "t3rn-parachain-collator"
-repository = 'https://github.com/t3rn/t3rn'
+repository = { workspace = true }
 version    = "1.0.0"
 
 [[bin]]

@@ -1,9 +1,9 @@
 [package]
-authors     = [ "t3rn devs <team@t3rn.io" ]
+authors     = { workspace = true }
 description = "Implements t3rn x-chain executors staking."
-edition     = "2021"
-homepage    = "https://t3rn.io/"
-license     = "Apache 2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-executors"
 publish     = false
 repository  = "https://github.com/t3rn/t3rn"

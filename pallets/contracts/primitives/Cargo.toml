@@ -1,11 +1,11 @@
 [package]
 authors     = [ "Parity Technologies <admin@parity.io>" ]
 description = "A crate that hosts a common definitions that are relevant for the pallet-contracts."
-edition     = "2021"
+edition     = { workspace = true }
 homepage    = "https://substrate.io"
-license     = "Apache-2.0"
+license     = { workspace = true }
 name        = "pallet-contracts-primitives"
-readme      = "README.md"
+readme      = { workspace = true }
 repository  = "https://github.com/paritytech/substrate/"
 version     = "5.0.0"
 

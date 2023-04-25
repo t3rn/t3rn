@@ -1,13 +1,13 @@
 [package]
-authors     = [ "Parity Technologies <admin@parity.io>" ]
+authors     = [ "Parity Technologies <admin@parity.io>", "t3rn ltd. <team@t3rn.io>" ]
 description = "FRAME pallet for WASM contracts"
-edition     = "2021"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-contracts"
-readme      = "README.md"
-repository  = "https://github.com/paritytech/substrate/"
-version     = "1.0.0-alpha.0"
+readme      = { workspace = true }
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -77,7 +77,15 @@ pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
 
 [features]
 default = [ "std" ]
-runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-system/runtime-benchmarks", "frame-support/runtime-benchmarks", "sp-runtime/runtime-benchmarks",  "rand", "rand_pcg", "unstable-interface" ]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+  "rand",
+  "rand_pcg",
+  "unstable-interface",
+]
 std = [
   "serde/std",
   "codec/std",

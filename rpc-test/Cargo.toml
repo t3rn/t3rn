@@ -1,12 +1,12 @@
 [package]
 authors     = [ "t3rn Ltd." ]
 description = "Circuit RPC Tests"
-edition     = "2018"
-homepage    = "https://t3rn.io"
+edition     = { workspace = true }
+homepage    = { workspace = true }
 license     = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 name        = "circuit-rpc-tests"
-readme      = "README.md"
-repository  = "https://github.com/t3rn/t3rn/"
+readme      = { workspace = true }
+repository  = { workspace = true }
 version     = "4.0.0"
 
 [package.metadata.docs.rs]

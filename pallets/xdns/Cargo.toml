@@ -1,13 +1,13 @@
 [package]
-authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+authors     = { workspace = true }
 description = "x-chain DNS"
-edition     = "2018"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-xdns"
-readme      = "README.md"
-repository  = "https://github.com/t3rn/t3rn/"
-version     = "1.0.0-alpha.0"
+readme      = { workspace = true }
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -29,9 +29,9 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+t3rn-abi         = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives  = { default-features = false, path = "../../primitives" }
-t3rn-types  = { default-features = false, path = "../../types", features = [ "runtime" ] }
-t3rn-abi  = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
+t3rn-types       = { default-features = false, path = "../../types", features = [ "runtime" ] }
 
 [dev-dependencies]
 circuit-mock-runtime    = { path = "../../runtime/mock" }
@@ -44,7 +44,13 @@ sp-keystore             = { git = "https://github.com/paritytech/substrate", bra
 
 [features]
 default = [ "std" ]
-runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-support/runtime-benchmarks", "frame-system/runtime-benchmarks", "pallet-timestamp/runtime-benchmarks", "sp-runtime/runtime-benchmarks"]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "pallet-timestamp/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+]
 std = [
   "codec/std",
   "frame-support/std",
@@ -62,4 +68,4 @@ std = [
   "t3rn-types/std",
   "t3rn-abi/std",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime"]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime" ]

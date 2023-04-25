@@ -2,43 +2,43 @@
 timeout = 1000
 
 [relaychain]
+chain   = "rococo-local"
 command = "polkadot"
-chain = "rococo-local"
 
 [[relaychain.nodes]]
-name = "alice"
-ws_port = 9900
-validator = true
 extra_args = [ "-lparachain=debug" ]
+name       = "alice"
+validator  = true
+ws_port    = 9900
 
 [[relaychain.nodes]]
-name = "bob"
-ws_port = 9901
-validator = true
 extra_args = [ "-lparachain=debug" ]
+name       = "bob"
+validator  = true
+ws_port    = 9901
 
 [[parachains]]
-id = 3000
 add_to_genesis = true
-cumulus_based = true
-chain = "rococo-local"
+chain          = "rococo-local"
+cumulus_based  = true
+id             = 3000
 
 [[parachains.collators]]
-name = "t0rn-collator01"
-command = "t0rn-collator"
-ws_port = 9930
+args     = [ "--log=xcm=trace,pallet-assets=trace" ]
+command  = "t0rn-collator"
+name     = "t0rn-collator01"
 rpc_port = 8830
-args = ["--log=xcm=trace,pallet-assets=trace"]
+ws_port  = 9930
 
 [[parachains.collators]]
-name = "t0rn-collator02"
-command = "t0rn-collator"
-ws_port = 9931
+args     = [ "--log=xcm=trace,pallet-assets=trace" ]
+command  = "t0rn-collator"
+name     = "t0rn-collator02"
 rpc_port = 8831
-args = ["--log=xcm=trace,pallet-assets=trace"]
+ws_port  = 9931
 
 [types.Header]
-number = "u64"
-weigth = "u64"
+number      = "u64"
 parent_hash = "Hash"
-post_state = "Hash"
+post_state  = "Hash"
+weigth      = "u64"

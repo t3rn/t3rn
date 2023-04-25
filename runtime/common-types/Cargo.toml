@@ -1,12 +1,12 @@
 [package]
-authors     = [ "devs @ t3rn" ]
+authors     = { workspace = true }
 description = "Circuit parachain runtime"
-edition     = "2018"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "circuit-runtime-types"
-repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.0.0-alpha.0"
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [dependencies]
 frame-support     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }

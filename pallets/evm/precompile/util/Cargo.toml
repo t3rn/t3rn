@@ -1,10 +1,10 @@
 [package]
-edition    = "2021"
-homepage   = "https://t3rn.io"
-license    = "Apache 2.0"
+edition    = { workspace = true }
+homepage   = { workspace = true }
+license    = { workspace = true }
 name       = "precompile-util"
-repository = 'https://github.com/t3rn/3vm'
-version    = "1.0.0"
+repository = { workspace = true }
+version    = { workspace = true }
 
 [dependencies]
 pallet-3vm-evm-primitives = { path = "../../primitives", default-features = false, package = "fp-evm" }

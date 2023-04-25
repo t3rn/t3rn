@@ -1,13 +1,12 @@
 [package]
-authors       = [ "Parity Technologies <admin@parity.io>" ]
-description   = "Primitive EVM abstractions for Substrate."
-documentation = "https://docs.rs/sp-evm"
-edition       = "2021"
-homepage      = "https://substrate.io"
-license       = "Apache-2.0"
-name          = "fp-evm"
-repository    = "https://github.com/paritytech/frontier/"
-version       = "3.0.0-dev"
+authors     = [ "Parity Technologies <admin@parity.io>", "devs @ t3rn" ]
+description = "Primitive EVM abstractions for Substrate."
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
+name        = "fp-evm"
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]

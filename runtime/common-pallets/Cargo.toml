@@ -1,12 +1,12 @@
 [package]
-authors     = [ "devs @ t3rn" ]
+authors     = { workspace = true }
 description = "Circuit parachain runtime"
-edition     = "2018"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "circuit-runtime-pallets"
-repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.0.0-alpha.0"
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
@@ -87,7 +87,7 @@ parachains-common                   = { git = 'https://github.com/paritytech/cum
 
 # t3rn Deps
 t3rn-primitives = { default-features = false, path = "../../primitives" }
-t3rn-types   = { default-features = false, path = "../../types", features = [ "runtime" ] }
+t3rn-types      = { default-features = false, path = "../../types", features = [ "runtime" ] }
 
 # t3rn pallets
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }

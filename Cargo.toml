@@ -19,6 +19,22 @@ tikv-jemalloc-sys.opt-level  = 3
 wasmtime-cranelift.opt-level = 3
 wasmtime.opt-level           = 3
 
+[workspace.package]
+authors    = [ "t3rn ltd. <team@t3rn.io>" ]
+edition    = "2021"
+homepage   = "https://t3rn.io"
+license    = "Apache-2.0"
+readme     = "README.md"
+repository = "https://github.com/t3rn/t3rn"
+version    = "1.4.0-rc.0"
+
+[workspace.dependencies]
+# Dependencies are split into 2 groups: wasm and client.
+# - "wasm" dependencies requires to be no_std compatible, which often requires
+#   `default-features = false`. When used in a client-side crate the "std" feature should be enabled
+#   there if it exists.
+# - "client" dependencies are only used in the client, and thus don't need to be no_std compatible.
+
 [workspace]
 exclude = [  ]
 # Substrate don't use glob in their workspace, so we don't either.

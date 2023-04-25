@@ -1,11 +1,11 @@
 [package]
-authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+authors     = { workspace = true }
 description = "Node-specific RPC methods for interaction with evm contracts."
-edition     = "2021"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-evm-rpc"
-repository  = "https://github.com/t3rn/3vm/"
-version     = "0.0.1"
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
