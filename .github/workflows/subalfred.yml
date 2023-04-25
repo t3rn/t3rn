@@ -7,6 +7,9 @@ on: [pull_request]
 env:
   IGNORE_FALSE_POSITIVES_REGEX_PATTERN: "benchmarking|frame-try-runtime|frame-std"
 
+permissions:
+  pull-requests: write
+
 jobs:
   # This job checks if files has been modified.
   # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
@@ -71,5 +74,3 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message-path: result.out
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
