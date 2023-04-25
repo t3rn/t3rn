@@ -74,7 +74,6 @@ export class CircuitListener extends EventEmitter {
                     }
                     const data = {
                         vendor,
-                        // @ts-ignore
                         height: parseInt(notifications[i].event.data[0]),
                     }
                     this.emit("Event", <ListenerEventData>{
