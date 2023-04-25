@@ -116,7 +116,7 @@ pub mod pallet {
     };
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
-        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
+        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX},
         portal::Portal,
         xdns::Xdns,
         SpeedMode,
@@ -231,7 +231,7 @@ pub mod pallet {
 
     /// This pallet's configuration trait
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config + pallet_balances::Config {
         /// The Circuit's account id
         #[pallet::constant]
         type SelfAccountId: Get<Self::AccountId>;
@@ -370,6 +370,24 @@ pub mod pallet {
                 }
             })
             .unwrap_or(0)
+        }
+    }
+
+    impl<T: Config> ReadSFX<T::Hash> for Pallet<T> {
+        fn get_fsx_status(fsx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
+            let _fsx = FullSideEffects::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::FSXNotFoundById.into())?;
+
+            let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            Self::get_xtx_status(xtx_id)
+        }
+
+        fn get_xtx_status(xtx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
+            XExecSignals::<T>::get(xtx_id)
+                .map(|xtx| xtx.status)
+                .ok_or(Error::<T>::XtxNotFound.into())
         }
     }
 
@@ -811,6 +829,7 @@ pub mod pallet {
         DeterminedForbiddenXtxStatus,
         SideEffectIsAlreadyScheduledToExecuteOverXBI,
         FSXNotFoundById,
+        XtxNotFound,
         LocalSideEffectExecutionNotApplicable,
         LocalExecutionUnauthorized,
         OnLocalTriggerFailedToSetupXtx,
@@ -920,7 +939,7 @@ impl<T: Config> Pallet<T> {
 
     fn validate(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
     ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
             vec![];
@@ -1297,7 +1316,7 @@ impl<T: Config> Pallet<T> {
 
     pub fn recover_local_ctx_by_sfx_id(
         sfx_id: SideEffectId<T>,
-    ) -> Result<LocalXtxCtx<T>, Error<T>> {
+    ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
             .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
         Machine::<T>::load_xtx(xtx_id)

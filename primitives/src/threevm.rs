@@ -7,6 +7,7 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
+use frame_system::Config as ConfigSystem;
 use sp_runtime::{DispatchError, DispatchResult};
 use sp_std::{fmt::Debug, result::Result, vec::Vec};
 use t3rn_sdk_primitives::{
@@ -22,7 +23,7 @@ pub const POST_SIGNAL: u8 = 57;
 pub const PORTAL: u8 = 70;
 
 #[derive(Encode, Decode)]
-pub struct GetState<T: frame_system::Config> {
+pub struct GetState<T: ConfigSystem> {
     pub xtx_id: Option<T::Hash>,
 }
 
@@ -30,7 +31,7 @@ pub struct GetState<T: frame_system::Config> {
 #[derive(Encode, Decode)]
 pub enum PrecompileArgs<T, Balance>
 where
-    T: frame_system::Config,
+    T: ConfigSystem,
     Balance: Encode + Decode,
 {
     GetState(T::Origin, GetState<T>),
@@ -44,14 +45,14 @@ where
 }
 
 /// The happy return type of an invocation
-pub enum PrecompileInvocation<T: frame_system::Config, Balance> {
+pub enum PrecompileInvocation<T: ConfigSystem, Balance> {
     GetState(LocalStateExecutionView<T, Balance>),
     Submit(LocalStateExecutionView<T, Balance>),
     Signal,
     Portal(PortalExecution<T>),
 }
 
-impl<T: frame_system::Config, Balance> PrecompileInvocation<T, Balance> {
+impl<T: ConfigSystem, Balance> PrecompileInvocation<T, Balance> {
     pub fn get_state(&self) -> Option<&LocalStateExecutionView<T, Balance>> {
         match self {
             PrecompileInvocation::GetState(state) => Some(state),
@@ -69,7 +70,7 @@ impl<T: frame_system::Config, Balance> PrecompileInvocation<T, Balance> {
 
 pub trait Precompile<T, Balance>
 where
-    T: frame_system::Config,
+    T: ConfigSystem,
     Balance: Encode + Decode,
 {
     /// Looks up a precompile function pointer
@@ -86,7 +87,7 @@ where
 
 pub trait LocalStateAccess<T, Balance>
 where
-    T: frame_system::Config,
+    T: ConfigSystem,
 {
     fn load_local_state(
         origin: &T::Origin,
@@ -114,7 +115,7 @@ impl<Hash> Remunerated<Hash> {
     }
 }
 
-pub trait Remuneration<T: frame_system::Config, Balance> {
+pub trait Remuneration<T: ConfigSystem, Balance> {
     /// Try to remunerate the fees from the given module
     fn try_remunerate<Module: ModuleOperations<T, Balance>>(
         payee: &T::AccountId,
@@ -154,7 +155,7 @@ pub trait ThreeVm<T, Balance>:
     + Signaller<T::Hash, Result = Result<SignalOpcode, DispatchError>>
     + Remuneration<T, Balance>
 where
-    T: frame_system::Config,
+    T: ConfigSystem,
     Balance: Encode + Decode,
 {
     fn peek_registry(
@@ -190,7 +191,7 @@ pub struct NoopThreeVm;
 
 impl<T, Balance> LocalStateAccess<T, Balance> for NoopThreeVm
 where
-    T: frame_system::Config,
+    T: ConfigSystem,
 {
     fn load_local_state(
         _origin: &T::Origin,
@@ -200,7 +201,7 @@ where
     }
 }
 
-impl<T: frame_system::Config, Balance: Encode + Decode> Remuneration<T, Balance> for NoopThreeVm {
+impl<T: ConfigSystem, Balance: Encode + Decode> Remuneration<T, Balance> for NoopThreeVm {
     fn try_remunerate<Module: ModuleOperations<T, Balance>>(
         _payee: &T::AccountId,
         _module: &Module,
@@ -235,7 +236,7 @@ impl<Hash: Encode + Decode + Debug + Clone> Signaller<Hash> for NoopThreeVm {
 
 impl<T, Balance> Precompile<T, Balance> for NoopThreeVm
 where
-    T: frame_system::Config,
+    T: ConfigSystem,
     Balance: Encode + Decode,
 {
     fn lookup(_dest: &T::Hash) -> Option<u8> {
@@ -252,15 +253,15 @@ where
 }
 
 // Default impl
-impl<T: frame_system::Config, Balance: Encode + Decode> ThreeVm<T, Balance> for NoopThreeVm {
+impl<T: ConfigSystem, Balance: Encode + Decode> ThreeVm<T, Balance> for NoopThreeVm {
     fn peek_registry(
-        _id: &<T as frame_system::Config>::Hash,
+        _id: &<T as ConfigSystem>::Hash,
     ) -> Result<
         RegistryContract<
-            <T as frame_system::Config>::Hash,
-            <T as frame_system::Config>::AccountId,
+            <T as ConfigSystem>::Hash,
+            <T as ConfigSystem>::AccountId,
             Balance,
-            <T as frame_system::Config>::BlockNumber,
+            <T as ConfigSystem>::BlockNumber,
         >,
         DispatchError,
     > {
@@ -268,7 +269,7 @@ impl<T: frame_system::Config, Balance: Encode + Decode> ThreeVm<T, Balance> for 
     }
 
     fn from_registry<Module, ModuleGen>(
-        _id: &<T as frame_system::Config>::Hash,
+        _id: &<T as ConfigSystem>::Hash,
         _module_generator: ModuleGen,
     ) -> Result<Module, DispatchError>
     where
@@ -295,20 +296,18 @@ impl<T: frame_system::Config, Balance: Encode + Decode> ThreeVm<T, Balance> for 
     }
 
     fn try_persist_author(
-        _contract: &<T as frame_system::Config>::AccountId,
-        _author: Option<&AuthorInfo<<T as frame_system::Config>::AccountId, Balance>>,
+        _contract: &<T as ConfigSystem>::AccountId,
+        _author: Option<&AuthorInfo<<T as ConfigSystem>::AccountId, Balance>>,
     ) -> Result<(), DispatchError> {
         Ok(())
     }
 
-    fn try_remove_author(
-        _conztract: &<T as frame_system::Config>::AccountId,
-    ) -> Result<(), DispatchError> {
+    fn try_remove_author(_conztract: &<T as ConfigSystem>::AccountId) -> Result<(), DispatchError> {
         Ok(())
     }
 }
 
-pub trait ModuleOperations<T: frame_system::Config, Balance> {
+pub trait ModuleOperations<T: ConfigSystem, Balance> {
     fn get_bytecode(&self) -> &Vec<u8>;
     fn get_author(&self) -> Option<&AuthorInfo<T::AccountId, Balance>>;
     fn set_author(&mut self, author: AuthorInfo<T::AccountId, Balance>);
