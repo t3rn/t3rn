@@ -109,7 +109,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
-          args: nextest --workspace --exclude pallet-executors --locked --features runtime test-skip-verification --lcov --output-path lcov.info
+          args: nextest --workspace --exclude pallet-executors --locked --features runtime --lcov --output-path lcov.info
 
       - name: Upload coverage data
         uses: codecov/codecov-action@v3
