@@ -122,8 +122,18 @@ impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
                 .saturating_div(<u32 as Into<Balance>>::into(100_u32));
             let (author_cut, treasury_cut) = credit.split(author_credit);
             // Drop the result which will trigger the `OnDrop` of the imbalance in case of error.
-            Assets::resolve(&author, author_cut);
-            Assets::resolve(&Treasury::account_id(), treasury_cut);
+            match Assets::resolve(&author, author_cut) {
+                Ok(_) => (),
+                Err(_err) => {
+                    log::error!("Failed to credit block author");
+                },
+            }
+            match Assets::resolve(&Treasury::account_id(), treasury_cut) {
+                Ok(_) => (),
+                Err(_err) => {
+                    log::error!("Failed to credit treasury");
+                },
+            }
         }
     }
 }
