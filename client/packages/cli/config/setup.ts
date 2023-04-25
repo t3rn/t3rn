@@ -22,8 +22,8 @@ export default {
                 runtimeCodec: "Scale",
                 tokenInfo: {
                     Substrate: {
-                        tokenSymbol: "ROC",
-                        tokenDecimals: 12,
+                        symbol: "ROC",
+                        decimals: 12,
                         id: 42
                     }
                 },
