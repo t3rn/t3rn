@@ -55,7 +55,7 @@
         "genesis_hash": "Bytes"
     },
 
-    "AllowedSideEffect": "[u8; 4]",
+    "AllowedSideEffect": "([u8; 4], Option<u8>)",
     "BlockNumber": "u64",
     "Compose": {
         "name": "Vec<u8>",
@@ -346,4 +346,5 @@
         "payload_proof": "StorageProof",
         "relay_block_hash": "Header::Hash"
     },
+
 }
