@@ -69,9 +69,7 @@ use crate::machine::{Machine, *};
 pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
-use t3rn_primitives::{
-    portal::{InclusionReceipt},
-};
+use t3rn_primitives::portal::InclusionReceipt;
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 #[cfg(test)]
@@ -1040,15 +1038,9 @@ impl<T: Config> Pallet<T> {
 
         log::debug!("Inclusion confirmed!");
 
-        #[cfg(feature = "test-skip-verification")]
-        let inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
-            message: confirmation.inclusion_data.clone(),
-            including_header: [0u8; 32].encode(),
-            height: T::BlockNumber::zero(),
-        }; // Empty encoded_event_params for testing purposes
-
         let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
 
+        #[cfg(not(feature = "test-skip-verification"))]
         ensure!(
             T::Portal::header_speed_mode_satisfied(
                 fsx.input.target,
@@ -1071,6 +1063,13 @@ impl<T: Config> Pallet<T> {
             <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action).ok_or({
                 DispatchError::Other("Unable to find matching Side Effect descriptor in XDNS")
             })?;
+
+        #[cfg(feature = "test-skip-verification")]
+        let inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
+            message: confirmation.inclusion_data.clone(),
+            including_header: [0u8; 32].encode(),
+            height: T::BlockNumber::zero(),
+        }; // Empty encoded_event_params for testing purposes
 
         fsx.input.confirm(
             sfx_abi,
