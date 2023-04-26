@@ -28,7 +28,7 @@ rlp             = { version = "0.5.2", default-features = false, features = [ "d
 
 [dev-dependencies]
 hex         = "0.4"
-hex-literal = "0.3.1"
+hex-literal = "0.4.1"
 serde_json  = "1.0.41"
 ethabi = "18.0.0"
 rlp-derive = "0.1.0"
