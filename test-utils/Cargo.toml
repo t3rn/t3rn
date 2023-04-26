@@ -4,8 +4,8 @@ name    = "circuit-test-utils"
 version = { workspace = true }
 
 [dependencies]
-codec           = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
-frame-metadata  = { version = "15", features = [ "v13", "v14" ], default-features = false }
+codec           = { workspace = true, package = "parity-scale-codec" }
+frame-metadata  = { workspace = true }
 jsonrpsee-types = "0.2.0"
 
 pallet-circuit-portal  = { path = "../pallets/circuit-portal" }

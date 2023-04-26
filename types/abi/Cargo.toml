@@ -10,21 +10,21 @@ version     = "1.5.0-rc.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bytes      = { version = "1.2.1", default-features = false, optional = true }
-codec      = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ], optional = true }
-num        = { version = "0.4.0", default-features = false, optional = true }
-num-traits = { version = "0.2", default-features = false, optional = true }
-scale-info = { version = "2.1.1", default-features = false, features = [ "derive" ], optional = true }
-serde      = { default-features = false, version = "1.0", optional = true, features = [ "derive" ] }
+bytes      = { workspace = true, optional = true }
+codec      = { workspace = true, optional = true }
+num        = { workspace = true, optional = true }
+num-traits = { workspace = true, optional = true }
+scale-info = { workspace = true, optional = true }
+serde      = { workspace = true, optional = true }
 
-sp-core         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-sp-runtime      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-sp-std          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
+sp-core    = { workspace = true, optional = true }
+sp-runtime = { workspace = true, optional = true }
+sp-std     = { workspace = true, optional = true }
 
-frame-system    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-frame-support   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
+frame-support = { workspace = true, optional = true }
+frame-system  = { workspace = true, optional = true }
 
-rlp = { version = "0.5.2", default-features = false, features = [ "derive" ], optional = true }
+rlp = { workspace = true, optional = true }
 
 [dev-dependencies]
 ethabi      = "18.0.0"

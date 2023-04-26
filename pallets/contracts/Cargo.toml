@@ -13,32 +13,32 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-bitflags         = "1.3"
-codec            = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [ "derive", "max-encoded-len" ] }
-hex              = { version = "0.4", default-features = false }
-log              = { version = "0.4", default-features = false }
-scale-info       = { version = "2.0.0", default-features = false, features = [ "derive" ] }
-serde            = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
-smallvec         = { version = "1.0", default-features = false, features = [ "const_generics" ] }
-wasm-instrument  = { version = "0.1", default-features = false }
-wasmi-validation = { version = "0.4", default-features = false }
+bitflags         = { workspace = true }
+codec            = { workspace = true, package = "parity-scale-codec" }
+hex              = { workspace = true }
+log              = { workspace = true }
+scale-info       = { workspace = true }
+serde            = { workspace = true, optional = true, features = [ "derive" ] }
+smallvec         = { workspace = true }
+wasm-instrument  = { workspace = true }
+wasmi-validation = { workspace = true }
 
 # Enabled by benchmarks
-frame-benchmarking = { optional = true, default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-rand               = { version = "0.8", optional = true, default-features = false }
-rand_pcg           = { version = "0.3", optional = true }
+frame-benchmarking = { workspace = true, optional = true }
+rand               = { workspace = true, optional = true }
+rand_pcg           = { workspace = true, optional = true }
 
 # Substrate Dependencies
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-frame-system  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+frame-support = { workspace = true }
+frame-system  = { workspace = true }
 
 pallet-contracts-primitives = { default-features = false, path = "primitives" }
-pallet-contracts-proc-macro = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-core                     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-io                       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-runtime                  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-sandbox                  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-std                      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-contracts-proc-macro = { workspace = true }
+sp-core                     = { workspace = true }
+sp-io                       = { workspace = true }
+sp-runtime                  = { workspace = true }
+sp-sandbox                  = { workspace = true }
+sp-std                      = { workspace = true }
 
 # t3rn dependencies
 t3rn-primitives     = { default-features = false, path = "../../primitives" }

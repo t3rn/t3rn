@@ -70,7 +70,7 @@ polkadot-cli        = { git = "https://github.com/paritytech/polkadot", branch =
 polkadot-parachain  = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
 polkadot-service    = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
-xcm                 = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.27" }
+xcm                 = { workspace = true }
 
 # Cumulus
 cumulus-client-cli                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27' }

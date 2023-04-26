@@ -907,7 +907,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-mock-runtime"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-runtime-pallets",
  "circuit-runtime-types",
@@ -944,7 +944,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-pallets"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -955,7 +955,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm 3.0.0-dev",
+ "fp-evm 1.4.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -963,7 +963,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
  "log",
  "pallet-3vm",
  "pallet-account-manager",
@@ -977,11 +977,11 @@ dependencies = [
  "pallet-circuit",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.0.0-alpha.0",
+ "pallet-contracts 1.4.0-rc.0",
  "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
- "pallet-evm 0.1.0",
+ "pallet-evm 1.4.0-rc.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-executors",
  "pallet-grandpa",
@@ -1035,7 +1035,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-runtime-types"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -1046,7 +1046,7 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-node"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-standalone-runtime",
  "clap",
@@ -1093,17 +1093,17 @@ dependencies = [
 
 [[package]]
 name = "circuit-standalone-runtime"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
- "fp-evm 3.0.0-dev",
+ "fp-evm 1.4.0-rc.0",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
- "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
  "log",
  "node-primitives",
  "pallet-3vm",
@@ -1115,12 +1115,12 @@ dependencies = [
  "pallet-balances",
  "pallet-circuit",
  "pallet-clock",
- "pallet-contracts 1.0.0-alpha.0",
+ "pallet-contracts 1.4.0-rc.0",
  "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "pallet-contracts-rpc-runtime-api",
- "pallet-evm 0.1.0",
+ "pallet-evm 1.4.0-rc.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
@@ -2857,7 +2857,20 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
+version = "1.4.0-rc.0"
+dependencies = [
+ "evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-evm"
 version = "3.0.0-dev"
+source = "git+https://github.com/t3rn/t3rn?branch=development#e3ae145b799f950401f0a84c341c7bdd5becde95"
 dependencies = [
  "evm",
  "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.27)",
@@ -5804,7 +5817,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-3vm"
-version = "0.1.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "frame-benchmarking",
@@ -5831,13 +5844,13 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
  "t3rn-sdk-primitives",
 ]
 
 [[package]]
 name = "pallet-account-manager"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -5857,7 +5870,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "substrate-abi",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
 ]
 
 [[package]]
@@ -5873,7 +5886,7 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.1",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -6096,7 +6109,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-circuit"
-version = "1.2.29-rc.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -6132,15 +6145,15 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-trie",
- "t3rn-abi",
- "t3rn-primitives",
+ "t3rn-abi 1.0.0-rc.0",
+ "t3rn-primitives 1.4.0-rc.0",
  "t3rn-sdk-primitives",
  "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]
 name = "pallet-clock"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "frame-benchmarking",
  "frame-metadata",
@@ -6161,7 +6174,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
 ]
 
 [[package]]
@@ -6203,7 +6216,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "assert_matches",
  "bitflags",
@@ -6245,7 +6258,7 @@ dependencies = [
  "sp-runtime",
  "sp-sandbox",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
  "t3rn-sdk-primitives",
  "wasm-instrument",
  "wasmi-validation",
@@ -6320,7 +6333,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "frame-benchmarking",
@@ -6335,7 +6348,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
 ]
 
 [[package]]
@@ -6359,7 +6372,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry-rpc-runtime-api"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "pallet-contracts-registry",
  "parity-scale-codec",
@@ -6472,10 +6485,10 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "0.1.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev",
+ "fp-evm 1.4.0-rc.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6497,7 +6510,7 @@ dependencies = [
  "pallet-xbi-portal",
  "pallet-xdns",
  "parity-scale-codec",
- "primitive-types 0.11.1",
+ "primitive-types 0.12.1",
  "rlp",
  "scale-info",
  "serde",
@@ -6507,7 +6520,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
  "t3rn-sdk-primitives",
 ]
 
@@ -6537,12 +6550,12 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
-version = "0.0.1"
+version = "1.4.0-rc.0"
 dependencies = [
- "fp-evm 3.0.0-dev",
+ "fp-evm 1.4.0-rc.0",
  "frame-support",
- "pallet-evm 0.1.0",
- "t3rn-primitives",
+ "pallet-evm 1.4.0-rc.0",
+ "t3rn-primitives 1.4.0-rc.0",
 ]
 
 [[package]]
@@ -6621,7 +6634,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-rpc"
-version = "0.0.1"
+version = "1.4.0-rc.0"
 dependencies = [
  "fp-evm 3.0.0-dev",
  "jsonrpsee",
@@ -6638,11 +6651,11 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-rpc-runtime-api"
-version = "0.1.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "ethereum",
  "ethereum-types 0.13.1",
- "fp-evm 3.0.0-dev",
+ "fp-evm 1.4.0-rc.0",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -6958,7 +6971,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -6989,7 +7002,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-core-client 18.0.0",
@@ -7005,13 +7018,13 @@ dependencies = [
 
 [[package]]
 name = "pallet-portal-rpc-runtime-api"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "pallet-portal",
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
 ]
 
 [[package]]
@@ -7330,7 +7343,7 @@ name = "pallet-xbi-portal"
 version = "0.3.7"
 source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
- "fp-evm 3.0.0-dev",
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/t3rn?branch=development)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7348,7 +7361,7 @@ dependencies = [
  "sp-std",
  "substrate-abi",
  "substrate-contracts-abi",
- "t3rn-primitives",
+ "t3rn-primitives 1.0.0-alpha.1",
  "xcm",
  "xp-channel",
  "xp-format",
@@ -7393,7 +7406,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "circuit-mock-runtime",
  "circuit-runtime-pallets",
@@ -7422,7 +7435,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "jsonrpsee",
  "pallet-xdns-rpc-runtime-api",
@@ -7437,13 +7450,13 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns-rpc-runtime-api"
-version = "1.0.0-alpha.0"
+version = "1.4.0-rc.0"
 dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
 ]
 
 [[package]]
@@ -8967,9 +8980,9 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "precompile-util"
-version = "1.0.0"
+version = "1.4.0-rc.0"
 dependencies = [
- "fp-evm 3.0.0-dev",
+ "fp-evm 1.4.0-rc.0",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -12427,11 +12440,11 @@ dependencies = [
  "pallet-circuit",
  "pallet-clock",
  "pallet-collator-selection",
- "pallet-contracts 1.0.0-alpha.0",
+ "pallet-contracts 1.4.0-rc.0",
  "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
- "pallet-evm 0.1.0",
+ "pallet-evm 1.4.0-rc.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -12590,7 +12603,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
  "t3rn-parachain-runtime",
- "t3rn-primitives",
+ "t3rn-primitives 1.4.0-rc.0",
  "try-runtime-cli",
  "xcm",
 ]
@@ -12662,6 +12675,38 @@ dependencies = [
 [[package]]
 name = "t3rn-primitives"
 version = "1.0.0-alpha.1"
+source = "git+https://github.com/t3rn/t3rn?branch=development#e3ae145b799f950401f0a84c341c7bdd5becde95"
+dependencies = [
+ "ed25519-dalek",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "log",
+ "num-traits",
+ "pallet-sudo",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "sp-version",
+ "t3rn-abi 1.5.0-rc.0",
+ "t3rn-light-client-commons",
+ "t3rn-sdk-primitives",
+ "t3rn-types 1.5.0-rc.0",
+]
+
+[[package]]
+name = "t3rn-primitives"
+version = "1.4.0-rc.0"
 dependencies = [
  "ed25519-dalek",
  "finality-grandpa",
@@ -12739,8 +12784,28 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-abi",
+ "t3rn-abi 1.0.0-rc.0",
  "t3rn-sdk-primitives",
+]
+
+[[package]]
+name = "t3rn-types"
+version = "1.5.0-rc.0"
+source = "git+https://github.com/t3rn/t3rn?branch=development#e3ae145b799f950401f0a84c341c7bdd5becde95"
+dependencies = [
+ "bytes 1.4.0",
+ "frame-system",
+ "num",
+ "num-traits",
+ "parity-scale-codec",
+ "primitive-types 0.12.1",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-abi 1.5.0-rc.0",
 ]
 
 [[package]]

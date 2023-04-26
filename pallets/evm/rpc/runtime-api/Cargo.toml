@@ -12,14 +12,14 @@ ethereum       = { version = "0.12.0", default-features = false, features = [ "w
 ethereum-types = { version = "0.13.1", default-features = false }
 
 codec      = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
-scale-info = { version = "2.0.0", default-features = false, features = [ "derive" ] }
-sp-api     = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-sp-core    = { version = "6.0.0", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-sp-io      = { version = "6.0.0", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
-sp-std     = { version = "4.0.0", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
+scale-info = { workspace = true }
+sp-api     = { version = "4.0.0-dev", workspace = true }
+sp-core    = { version = "6.0.0", workspace = true }
+sp-io      = { version = "6.0.0", workspace = true }
+sp-runtime = { version = "6.0.0", workspace = true }
+sp-std     = { version = "4.0.0", workspace = true }
 
-fp-evm = { version = "3.0.0-dev", path = "../../primitives", default-features = false }
+fp-evm = { path = "../../primitives", default-features = false }
 
 [features]
 default = [ "std" ]
