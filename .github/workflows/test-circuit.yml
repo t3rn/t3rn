@@ -21,6 +21,8 @@ jobs:
   # Using paths in pull request trigger would make this action unpassable for PRs without circuit changes - due to required checks.
   changes:
     runs-on: [self-hosted]
+    # We don't need to run this job on every push to development branch
+    if: ${{ !(contains(github.event.head_commit.message, 'build(release):')) }}
     outputs:
       src: ${{ steps.changes.outputs.src }}
 
@@ -36,7 +38,7 @@ jobs:
               - "**/*.rs"
               - "**/Cargo.toml"
               - "**/Cargo.lock"
-              - ".github/workflows/circuit.yml"
+              - ".github/workflows/test-circuit.yml"
 
       - name: Detected changes
         run: |
@@ -100,6 +102,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }} # this should fix occasional failures when querying Github API
           fail_ci_if_error: true # we want to enforce coverage
 
       - name: Archive code coverage results
@@ -108,3 +111,28 @@ jobs:
           name: code-coverage-report
           path: lcov.info
 
+  # We should run zombienet only when tests are passing
+  smoke-test:
+    name: Zombienet Smoke Test
+    runs-on: [self-hosted, rust]
+    needs: [changes, build-test]
+    if: needs.changes.outputs.src == 'true'
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Install rust toolchain defined in rust-toolchain.toml
+        run: rustup show
+
+      - name: Print sccache stats
+        working-directory: tests/zombienet
+        run: sccache --show-stats
+
+      - name: 📼 Run zombienet tests
+        continue-on-error: false
+        working-directory: tests/zombienet
+        run: ./zombienet.sh smoke
+
+      - name: Print sccache stats
+        working-directory: tests/zombienet
+        run: sccache --show-stats
