@@ -9,7 +9,7 @@ use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use t3rn_abi::sfx_abi::SFXAbi;
-use t3rn_primitives::{bridges::header_chain::InitializationData, xdns::GatewayRecord, Header};
+use t3rn_primitives::{xdns::GatewayRecord, Header};
 use t3rn_types::sfx::Sfx4bId;
 
 // The URL for the telemetry server.
@@ -72,7 +72,6 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 ],
                 vec![],
                 standard_sfx_abi(),
-                vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
                 true,
@@ -128,7 +127,6 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                 ],
                 vec![],
                 standard_sfx_abi(),
-                vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
                 true,
@@ -162,7 +160,6 @@ fn testnet_genesis(
     endowed_accounts: Vec<AccountId>,
     gateway_records: Vec<GatewayRecord<AccountId>>,
     standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
-    _initial_gateways: Vec<InitializationData<Header>>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {

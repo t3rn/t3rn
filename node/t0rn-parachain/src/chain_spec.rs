@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
-use t3rn_primitives::{bridges::header_chain::InitializationData, monetary::TRN, Header};
+use t3rn_primitives::{monetary::TRN, Header};
 
 use t3rn_abi::sfx_abi::SFXAbi;
 use t3rn_primitives::xdns::GatewayRecord;
@@ -142,7 +142,6 @@ pub fn development_config() -> ChainSpec {
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 vec![],
                 standard_sfx_abi(),
-                vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
             )
@@ -205,7 +204,6 @@ pub fn local_testnet_config() -> ChainSpec {
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 vec![],
                 standard_sfx_abi(),
-                vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
             )
@@ -276,7 +274,6 @@ pub fn rococo_config() -> ChainSpec {
                 get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
                 vec![],
                 standard_sfx_abi(),
-                vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
             )
@@ -313,7 +310,6 @@ fn testnet_genesis(
     root_key: AccountId,
     _gateway_records: Vec<GatewayRecord<AccountId>>,
     standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
-    _initial_gateways: Vec<InitializationData<Header>>,
 ) -> circuit_parachain_runtime::GenesisConfig {
     circuit_parachain_runtime::GenesisConfig {
         system: circuit_parachain_runtime::SystemConfig {
