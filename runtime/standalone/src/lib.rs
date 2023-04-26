@@ -125,7 +125,7 @@ construct_runtime!(
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
 
         // Handy utilities
-        MaintenanceMode: pallet_maintenance_mode = 132,
+        MaintenanceMode: pallet_maintenance_mode = 140,
 
     }
 );

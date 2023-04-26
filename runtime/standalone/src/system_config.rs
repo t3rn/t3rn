@@ -194,10 +194,7 @@ impl Contains<Call> for BaseCallFilter {
         match c {
             // System support
             Call::System(_) => true,
-            // Call::ParachainSystem(_) => true,
             Call::Timestamp(_) => true,
-            // Call::Preimage(_) => true,
-            // Call::Scheduler(_) => true,
             Call::Utility(_) => true,
             Call::Identity(_) => true,
             // Monetary
@@ -211,14 +208,6 @@ impl Contains<Call> for BaseCallFilter {
             ),
             // Collator support
             Call::Authorship(_) => true,
-            // Call::CollatorSelection(_) => true,
-            // Call::Session(_) => true,
-            // XCM helpers
-            // Call::XcmpQueue(_) => true,
-            // Call::PolkadotXcm(_) => false,
-            // Call::DmpQueue(_) => true,
-            // Call::XBIPortal(_) => true,
-            // Call::AssetRegistry(_) => true,
             // t3rn pallets
             Call::XDNS(method) => matches!(
                 method,
@@ -265,12 +254,10 @@ impl Contains<Call> for BaseCallFilter {
                 method,
                 pallet_grandpa_finality_verifier::Call::submit_headers { .. }
             ),
-            // TODO: check this one
             Call::PolkadotBridge(method) => matches!(
                 method,
                 pallet_grandpa_finality_verifier::Call::submit_headers { .. }
             ),
-            // TODO: check this one
             Call::KusamaBridge(method) => matches!(
                 method,
                 pallet_grandpa_finality_verifier::Call::submit_headers { .. }

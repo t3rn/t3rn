@@ -237,12 +237,10 @@ impl Contains<Call> for BaseCallFilter {
                 method,
                 pallet_grandpa_finality_verifier::Call::submit_headers { .. }
             ),
-            // TODO: check this one
             Call::PolkadotBridge(method) => matches!(
                 method,
                 pallet_grandpa_finality_verifier::Call::submit_headers { .. }
             ),
-            // TODO: check this one
             Call::KusamaBridge(method) => matches!(
                 method,
                 pallet_grandpa_finality_verifier::Call::submit_headers { .. }
