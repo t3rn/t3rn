@@ -16,7 +16,7 @@ use t3rn_primitives::{
     self,
     portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
-    ChainId, GatewayVendor, TokenInfo,
+    ChainId, GatewayVendor, SpeedMode, TokenInfo,
 };
 pub mod weights;
 
@@ -153,39 +153,54 @@ pub fn match_light_client_by_gateway_id<T: Config>(
 
 impl<T: Config> Portal<T> for Pallet<T> {
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_header()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_header())
     }
 
     fn get_latest_finalized_height(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_height()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_height())
     }
 
     fn get_latest_updated_height(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_updated_height()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_updated_height())
     }
 
     fn get_current_epoch(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.get_current_epoch()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_current_epoch())
     }
 
     fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.read_fast_confirmation_offset()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_fast_confirmation_offset())
     }
 
     fn read_rational_confirmation_offset(
         gateway_id: ChainId,
     ) -> Result<T::BlockNumber, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.read_rational_confirmation_offset()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_rational_confirmation_offset())
+    }
+
+    fn read_finalized_confirmation_offset(
+        gateway_id: ChainId,
+    ) -> Result<T::BlockNumber, DispatchError> {
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_finalized_confirmation_offset())
     }
 
     fn read_epoch_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.read_epoch_offset()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_epoch_offset())
+    }
+
+    fn header_speed_mode_satisfied(
+        gateway_id: [u8; 4],
+        header: Bytes,
+        speed_mode: SpeedMode,
+    ) -> Result<bool, DispatchError> {
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?
+            .header_speed_mode_satisfied(header, speed_mode))
     }
 
     fn verify_event_inclusion(
