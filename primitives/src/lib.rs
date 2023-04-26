@@ -17,12 +17,6 @@
 //! A crate that hosts a common definitions that are relevant for the pallet-contracts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
-use crate::bridges::runtime::{
-    BASILISK_CHAIN_ID, CATALYST_CHAIN_ID, DALI_CHAIN_ID, DOLPHIN_CHAIN_ID, GENSHIRO_CHAIN_ID,
-    KUSAMA_CHAIN_ID, PANGOLIN_CHAIN_ID, POLKADOT_CHAIN_ID, ROCFINITY_CHAIN_ID, ROCOCO_CHAIN_ID,
-    ROCOCO_ENCOINTER_CHAIN_ID, SNOWBLINK_CHAIN_ID, SOONSOCIAL_CHAIN_ID,
-};
 use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
@@ -46,7 +40,6 @@ use sp_std::{convert::TryFrom, prelude::*, vec};
 use std::fmt::Debug;
 
 pub mod account_manager;
-pub mod bridges;
 pub mod circuit;
 pub mod claimable;
 pub mod clock;
@@ -176,96 +169,6 @@ pub struct EthereumToken {
     pub symbol: Vec<u8>,
     pub decimals: u8,
     pub address: Option<[u8; 20]>,
-}
-
-impl TryFrom<&ChainId> for TokenInfo {
-    type Error = &'static str;
-
-    /// Maps a chain id to its system properties.
-    //)/
-    /// Source of truth for Substrate parachains system properties is the
-    /// corresponding chain's metadata tab in the polkadot apps browser ui:
-    /// https://polkadot.js.org/apps/?rpc=${PROVIDER}#/settings/metadata.
-    fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
-        match chain_id {
-            b"circ" => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 1333,
-                symbol: Encode::encode("TRN"),
-                decimals: 12,
-            })),
-            b"gate" => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 1333,
-                symbol: Encode::encode("TRN"),
-                decimals: 12,
-            })),
-            &POLKADOT_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 0,
-                symbol: Encode::encode("DOT"),
-                decimals: 10,
-            })),
-            &KUSAMA_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 2,
-                symbol: Encode::encode("KSM"),
-                decimals: 12,
-            })),
-            &ROCOCO_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 42,
-                symbol: Encode::encode("ROC"),
-                decimals: 12,
-            })),
-            &ROCOCO_ENCOINTER_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 2,
-                symbol: Encode::encode("ROC"), // notatypo
-                decimals: 12,
-            })),
-            &BASILISK_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 10041,
-                symbol: Encode::encode("BSX"),
-                decimals: 12,
-            })),
-            &CATALYST_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 36,
-                symbol: Encode::encode("NCFG"),
-                decimals: 18,
-            })),
-            &DALI_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 49,
-                symbol: Encode::encode("DALI"),
-                decimals: 12,
-            })),
-            &DOLPHIN_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 78,
-                symbol: Encode::encode("DOL"),
-                decimals: 18,
-            })),
-            &ROCFINITY_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 195,
-                symbol: Encode::encode("RFI"),
-                decimals: 18,
-            })),
-            &GENSHIRO_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 67,
-                symbol: Encode::encode("Token"),
-                decimals: 9,
-            })),
-            &PANGOLIN_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 42,
-                symbol: Encode::encode("PRING"),
-                decimals: 18,
-            })),
-            &SNOWBLINK_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 42,
-                symbol: Encode::encode("SNO"),
-                decimals: 12,
-            })),
-            &SOONSOCIAL_CHAIN_ID => Ok(TokenInfo::Substrate(SubstrateToken {
-                id: 28,
-                symbol: Encode::encode("SUB"),
-                decimals: 10,
-            })),
-            _ => Err("unknown chain id"),
-        }
-    }
 }
 
 impl Default for TokenInfo {
