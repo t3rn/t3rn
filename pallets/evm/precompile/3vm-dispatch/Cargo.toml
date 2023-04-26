@@ -5,7 +5,7 @@ name    = "pallet-evm-precompile-3vm-dispatch"
 version = "0.0.1"
 
 [dependencies]
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.27" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 
 fp-evm     = { version = "3.0.0-dev", path = "../../primitives", default-features = false }
 pallet-evm = { version = "0.1.0", path = "../..", default-features = false }

@@ -18,8 +18,8 @@ serde = { version = "1.0.144", features = [ "derive" ], optional = true }
 
 # TODO: frontier still on 3.0.0
 codec   = { package = "parity-scale-codec", version = "3.1.0", default-features = false }
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.27" }
-sp-std  = { version = "4.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.27" }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
+sp-std  = { version = "4.0.0", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
 
 frontier-fp-evm = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false, package = "fp-evm" }
 

@@ -7,7 +7,7 @@ env:
   PARACHAIN_NAME: t0rn
 
 jobs:
-  release:
+  cargo-release-dry-run:
     runs-on: [self-hosted, rust]
     steps:
       - name: Checkout

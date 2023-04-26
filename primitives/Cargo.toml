@@ -15,27 +15,27 @@ targets = [ "x86_64-unknown-linux-gnu" ]
 # This crate should not rely on any of the frame primitives.
 codec                 = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
 ed25519-dalek         = { version = "1.0", default-features = false, features = [ "u64_backend" ] }
-frame-support         = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
-frame-system          = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+frame-support         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+frame-system          = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 log                   = { version = "0.4", default-features = false }
-pallet-sudo           = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+pallet-sudo           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 scale-info            = { version = "2.1.1", default-features = false, features = [ "derive" ] }
 serde                 = { default-features = false, version = "1.0", optional = true }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
-sp-core               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
-sp-io                 = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
-sp-runtime            = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
-sp-std                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
-sp-version            = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-core               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-io                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-runtime            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-std                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-version            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 
 #bridges
 finality-grandpa    = { version = "0.16", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
 num-traits          = { version = "0.2", default-features = false }
-sp-api              = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = 'polkadot-v0.9.27' }
-sp-state-machine    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
-sp-trie             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
+sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.27' }
+sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 
 t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
