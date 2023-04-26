@@ -1650,16 +1650,16 @@ export default {
    * Lookup224: t3rn_primitives::SubstrateToken
    **/
   T3rnPrimitivesSubstrateToken: {
-    ss58Format: 'u16',
-    tokenSymbol: 'Bytes',
-    tokenDecimals: 'u8'
+    id: 'u32',
+    symbol: 'Bytes',
+    decimals: 'u8'
   },
   /**
    * Lookup225: t3rn_primitives::EthereumToken
    **/
   T3rnPrimitivesEthereumToken: {
-    tokenSymbol: 'Bytes',
-    tokenDecimals: 'u8',
+    symbol: 'Bytes',
+    decimals: 'u8',
     address: 'Option<[u8;20]>'
   },
   /**
@@ -1971,7 +1971,7 @@ export default {
    * Lookup293: pallet_xdns::pallet::Error<T>
    **/
   PalletXdnsError: {
-    _enum: ['GatewayRecordAlreadyExists', 'TokenRecordAlreadyExists', 'XdnsRecordAlreadyExists', 'UnknownXdnsRecord', 'GatewayRecordNotFound', 'XdnsRecordNotFound', 'SideEffectABIAlreadyExists', 'SideEffectABINotFound', 'NoParachainInfoFound']
+    _enum: ['GatewayRecordAlreadyExists', 'TokenRecordAlreadyExists', 'XdnsRecordAlreadyExists', 'UnknownXdnsRecord', 'GatewayRecordNotFound', 'XdnsRecordNotFound', 'SideEffectABIAlreadyExists', 'SideEffectABINotFound', 'NoParachainInfoFound', 'TokenExecutionVendorMismatch']
   },
   /**
    * Lookup294: pallet_contracts_registry::pallet::Error<T>
