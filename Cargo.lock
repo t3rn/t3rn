@@ -12716,7 +12716,7 @@ dependencies = [
  "circuit-runtime-types",
  "frame-system",
  "hex",
- "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
  "num",
  "num-traits",
  "parity-scale-codec",
