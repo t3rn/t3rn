@@ -31,7 +31,7 @@ class Instance {
     circuitClient: ApiPromise
     executionManager: ExecutionManager
     sdk: Sdk
-    signer: KeyringPair
+    signer: any
     config: Config
     logger: Logger
     baseDir: PathLike
