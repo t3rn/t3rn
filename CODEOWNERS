@@ -1,17 +1,13 @@
-* @MaciejBaj
+* @t3rn/dev
 
-/.github/ @t3rn/dev
+/.github/ @3h4x
 
-
+/pallets/3vm @AwesomeIbex
 /pallets/account-manager @AwesomeIbex
 /pallets/circuit-portal @petscheit
 
 /devnet @chiefbiiko
 /specs @chiefbiiko
-/scripts @chiefbiiko
+/scripts @chiefbiiko @3h4x
 /types @AwesomeIbex
 
-/3vm @AwesomeIbex
-/vm @AwesomeIbex
-
-/docs @petscheit
