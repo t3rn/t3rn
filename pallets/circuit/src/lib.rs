@@ -30,6 +30,7 @@ use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
+    ensure,
     traits::{Currency, ExistenceRequirement::AllowDeath, Get},
     weights::Weight,
     RuntimeDebug,
@@ -69,8 +70,7 @@ pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
 use t3rn_primitives::{
-    circuit::SpeedMode,
-    portal::{HeaderResult, InclusionReceipt},
+    portal::{InclusionReceipt},
 };
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
@@ -1043,65 +1043,20 @@ impl<T: Config> Pallet<T> {
         #[cfg(feature = "test-skip-verification")]
         let inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
             message: confirmation.inclusion_data.clone(),
-            header: HeaderResult::Header([0u8; 32].encode()),
-            height: HeightResult::Height(T::BlockNumber::zero()),
+            including_header: [0u8; 32].encode(),
+            height: T::BlockNumber::zero(),
         }; // Empty encoded_event_params for testing purposes
 
-        match inclusion_receipt.height {
-            HeightResult::Height(inclusion_block_number) => {
-                let xtx = &mut Machine::<T>::load_xtx(xtx_id)?.xtx;
-                let target = fsx.input.target;
-                match xtx.speed_mode {
-                    SpeedMode::Fast | SpeedMode::Rational => {
-                        let current_target_height =
-                            match T::Portal::get_latest_updated_height(fsx.input.target) {
-                                Ok(HeightResult::Height(block_numer)) => block_numer,
-                                Ok(HeightResult::NotActive) => return Err(DispatchError::Other(
-                                    "SFX validate failed - get_latest_target_height returned None",
-                                )),
-                                Err(_) =>
-                                    return Err(DispatchError::Other(
-                                        "Failed to get latest target height",
-                                    )),
-                            };
+        let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
 
-                        let offset = if xtx.speed_mode == SpeedMode::Fast {
-                            T::Portal::read_fast_confirmation_offset(target)?
-                        } else {
-                            T::Portal::read_rational_confirmation_offset(target)?
-                        };
-
-                        if inclusion_block_number < current_target_height + offset {
-                            return Err(DispatchError::Other(
-                                "SFX validate failed - fast confirmation offset not satisfied",
-                            ))
-                        }
-                    },
-                    SpeedMode::Finalized => {
-                        let current_finalized_target_height =
-                            match T::Portal::get_latest_finalized_height(fsx.input.target) {
-                                Ok(HeightResult::Height(block_numer)) => block_numer,
-                                Ok(HeightResult::NotActive) =>
-                                    return Err(DispatchError::Other(
-                                        "SFX validate failed - get_latest_finalized_height returned None",
-                                    )),
-                                Err(_) =>
-                                    return Err(DispatchError::Other(
-                                        "Failed to get latest finalized height",
-                                    )),
-                            };
-
-                        if inclusion_block_number < current_finalized_target_height {
-                            return Err(DispatchError::Other(
-                                "SFX validate failed - finalized confirmation offset not satisfied",
-                            ))
-                        }
-                    },
-                }
-            },
-            HeightResult::NotActive =>
-                return Err("Failed to retreive inclusion receipt target height".into()),
-        }
+        ensure!(
+            T::Portal::header_speed_mode_satisfied(
+                fsx.input.target,
+                inclusion_receipt.including_header.clone(),
+                xtx.speed_mode,
+            )?,
+            "Speed mode not satisfied"
+        );
 
         log::debug!("Speed mode satisfied!");
 

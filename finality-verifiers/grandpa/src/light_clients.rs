@@ -1,15 +1,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::{to_local_block_number, Config, Pallet};
+use crate::{to_local_block_number, BridgedBlockHash, Config, Pallet};
+use codec::Decode;
 use frame_support::traits::Get;
 use frame_system::pallet_prelude::OriginFor;
-pub use t3rn_light_client_commons::traits::{LightClient, LightClientHeartbeat};
+pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
 
+use crate::pallet::ImportedHeaders;
 use sp_runtime::{traits::Header, DispatchError};
 use sp_std::marker::PhantomData;
 use t3rn_abi::types::Bytes;
-use t3rn_light_client_commons::traits::{HeaderResult, HeightResult, InclusionReceipt};
-use t3rn_primitives::GatewayVendor;
+use t3rn_primitives::{
+    light_client::{HeaderResult, HeightResult, InclusionReceipt},
+    GatewayVendor, SpeedMode,
+};
 
 pub type RococoInstance = ();
 pub type KusamaInstance = crate::pallet::Instance1;
@@ -55,7 +59,7 @@ impl<T, I: 'static> LightClient<T> for PalletInstance<T, I>
 where
     T: Config<RococoInstance> + Config<KusamaInstance> + Config<PolkadotInstance> + Config<I>,
 {
-    fn get_latest_finalized_header(&self) -> Result<HeaderResult, DispatchError> {
+    fn get_latest_finalized_header(&self) -> HeaderResult {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_latest_finalized_header(),
             PalletInstance::Kusama(pallet) => pallet.get_latest_finalized_header(),
@@ -64,7 +68,7 @@ where
         }
     }
 
-    fn get_latest_finalized_height(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+    fn get_latest_finalized_height(&self) -> HeightResult<T::BlockNumber> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_latest_finalized_height(),
             PalletInstance::Kusama(pallet) => pallet.get_latest_finalized_height(),
@@ -73,7 +77,7 @@ where
         }
     }
 
-    fn get_latest_updated_height(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+    fn get_latest_updated_height(&self) -> HeightResult<T::BlockNumber> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_latest_updated_height(),
             PalletInstance::Kusama(pallet) => pallet.get_latest_updated_height(),
@@ -91,7 +95,7 @@ where
         }
     }
 
-    fn read_fast_confirmation_offset(&self) -> Result<T::BlockNumber, DispatchError> {
+    fn read_fast_confirmation_offset(&self) -> T::BlockNumber {
         match self {
             PalletInstance::Rococo(pallet) => pallet.read_fast_confirmation_offset(),
             PalletInstance::Kusama(pallet) => pallet.read_fast_confirmation_offset(),
@@ -100,7 +104,7 @@ where
         }
     }
 
-    fn read_rational_confirmation_offset(&self) -> Result<T::BlockNumber, DispatchError> {
+    fn read_rational_confirmation_offset(&self) -> T::BlockNumber {
         match self {
             PalletInstance::Rococo(pallet) => pallet.read_rational_confirmation_offset(),
             PalletInstance::Kusama(pallet) => pallet.read_rational_confirmation_offset(),
@@ -109,7 +113,7 @@ where
         }
     }
 
-    fn read_finalized_confirmation_offset(&self) -> Result<T::BlockNumber, DispatchError> {
+    fn read_finalized_confirmation_offset(&self) -> T::BlockNumber {
         match self {
             PalletInstance::Rococo(pallet) => pallet.read_finalized_confirmation_offset(),
             PalletInstance::Kusama(pallet) => pallet.read_finalized_confirmation_offset(),
@@ -118,7 +122,7 @@ where
         }
     }
 
-    fn get_current_epoch(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+    fn get_current_epoch(&self) -> HeightResult<T::BlockNumber> {
         match self {
             PalletInstance::Rococo(pallet) => pallet.get_current_epoch(),
             PalletInstance::Kusama(pallet) => pallet.get_current_epoch(),
@@ -127,7 +131,7 @@ where
         }
     }
 
-    fn read_epoch_offset(&self) -> Result<T::BlockNumber, DispatchError> {
+    fn read_epoch_offset(&self) -> T::BlockNumber {
         match self {
             PalletInstance::Rococo(pallet) => pallet.read_epoch_offset(),
             PalletInstance::Kusama(pallet) => pallet.read_epoch_offset(),
@@ -196,6 +200,18 @@ where
         }
     }
 
+    fn header_speed_mode_satisfied(&self, header: Bytes, speed_mode: SpeedMode) -> bool {
+        match self {
+            PalletInstance::Rococo(pallet) =>
+                pallet.header_speed_mode_satisfied(header, speed_mode),
+            PalletInstance::Kusama(pallet) =>
+                pallet.header_speed_mode_satisfied(header, speed_mode),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.header_speed_mode_satisfied(header, speed_mode),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],
@@ -249,25 +265,24 @@ where
 }
 
 impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
-    fn get_latest_finalized_header(&self) -> Result<HeaderResult, DispatchError> {
+    fn get_latest_finalized_header(&self) -> HeaderResult {
         match Pallet::<T, I>::get_latest_finalized_header() {
-            Some(header) => Ok(HeaderResult::Header(header)),
-            None => Ok(HeaderResult::NotActive),
+            Some(header) => HeaderResult::Header(header),
+            None => HeaderResult::NotActive,
         }
     }
 
-    fn get_latest_finalized_height(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+    fn get_latest_finalized_height(&self) -> HeightResult<T::BlockNumber> {
         let header = Pallet::<T, I>::best_finalized_map();
-        Ok(HeightResult::Height(to_local_block_number::<T, I>(
-            *header.number(),
-        )?))
+        let local_number = match to_local_block_number::<T, I>(*header.number()) {
+            Ok(number) => number,
+            Err(_) => return HeightResult::NotActive,
+        };
+        HeightResult::Height(local_number)
     }
 
-    fn get_latest_updated_height(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        let header = Pallet::<T, I>::best_finalized_map();
-        Ok(HeightResult::Height(to_local_block_number::<T, I>(
-            *header.number(),
-        )?))
+    fn get_latest_updated_height(&self) -> HeightResult<T::BlockNumber> {
+        self.get_latest_finalized_height()
     }
 
     fn get_latest_heartbeat(&self) -> Result<LightClientHeartbeat<T>, DispatchError> {
@@ -282,24 +297,24 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         })
     }
 
-    fn read_fast_confirmation_offset(&self) -> Result<T::BlockNumber, DispatchError> {
-        Ok(T::FastConfirmationOffset::get())
+    fn read_fast_confirmation_offset(&self) -> T::BlockNumber {
+        T::FastConfirmationOffset::get()
     }
 
-    fn read_rational_confirmation_offset(&self) -> Result<T::BlockNumber, DispatchError> {
-        Ok(T::RationalConfirmationOffset::get())
+    fn read_rational_confirmation_offset(&self) -> T::BlockNumber {
+        T::RationalConfirmationOffset::get()
     }
 
-    fn read_finalized_confirmation_offset(&self) -> Result<T::BlockNumber, DispatchError> {
-        Ok(T::FinalizedConfirmationOffset::get())
+    fn read_finalized_confirmation_offset(&self) -> T::BlockNumber {
+        T::FinalizedConfirmationOffset::get()
     }
 
-    fn get_current_epoch(&self) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        Ok(HeightResult::NotActive)
+    fn get_current_epoch(&self) -> HeightResult<T::BlockNumber> {
+        HeightResult::NotActive
     }
 
-    fn read_epoch_offset(&self) -> Result<T::BlockNumber, DispatchError> {
-        Ok(T::EpochOffset::get())
+    fn read_epoch_offset(&self) -> T::BlockNumber {
+        T::EpochOffset::get()
     }
 
     fn initialize(
@@ -325,6 +340,35 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
     fn submit_encoded_headers(&self, headers: Bytes) -> Result<bool, DispatchError> {
         Pallet::<T, I>::submit_encoded_headers(headers)?;
         Ok(true)
+    }
+
+    fn header_speed_mode_satisfied(&self, including_header: Bytes, speed_mode: SpeedMode) -> bool {
+        let as_target_header: BridgedBlockHash<T, I> =
+            match BridgedBlockHash::<T, I>::decode(&mut &*including_header) {
+                Ok(header) => header,
+                Err(_) => return false,
+            };
+
+        let inclusion_block_number = match <ImportedHeaders<T, I>>::get(as_target_header) {
+            Some(header) => match to_local_block_number::<T, I>(*header.number()) {
+                Ok(block_number) => block_number,
+                Err(_) => return false,
+            },
+            None => return false,
+        };
+
+        let current_target_height = match self.get_latest_updated_height() {
+            HeightResult::Height(height) => height,
+            HeightResult::NotActive => return false,
+        };
+
+        let offset = match speed_mode {
+            SpeedMode::Fast => self.read_fast_confirmation_offset(),
+            SpeedMode::Rational => self.read_rational_confirmation_offset(),
+            SpeedMode::Finalized => self.read_finalized_confirmation_offset(),
+        };
+
+        inclusion_block_number <= current_target_height + offset
     }
 
     fn submit_finality_header(
@@ -428,7 +472,7 @@ pub mod grandpa_light_clients_test {
             assert_eq!(heartbeat_after.ever_initialized, true);
             assert_eq!(heartbeat_after.is_halted, false);
 
-            let latest_finalized = lc_instance.get_latest_finalized_header().unwrap();
+            let latest_finalized = lc_instance.get_latest_finalized_header();
 
             assert_eq!(
                 latest_finalized,
@@ -573,7 +617,7 @@ pub mod grandpa_light_clients_test {
                     }
                 );
 
-                let actual_header = roco_light_client.get_latest_finalized_header().unwrap();
+                let actual_header = roco_light_client.get_latest_finalized_header();
                 assert_eq!(actual_header, expected_header);
             },
             GatewayVendor::Rococo,

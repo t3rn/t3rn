@@ -101,7 +101,7 @@ use crate::types::{
     RelaychainInclusionProof, RelaychainRegistrationData,
 };
 use frame_system::pallet_prelude::*;
-use t3rn_light_client_commons::traits::{HeaderResult, HeightResult, InclusionReceipt};
+use t3rn_primitives::light_client::{InclusionReceipt};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -668,7 +668,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
-        let (payload_proof, encoded_payload, header) = if is_relaychain {
+        let (payload_proof, encoded_payload, header, header_hash) = if is_relaychain {
             let proof: RelaychainInclusionProof<BridgedHeader<T, I>> =
                 Decode::decode(&mut &*encoded_inclusion_proof)
                     .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
@@ -681,7 +681,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 executed_after_creation::<T, I>(submission_target_height, &header)?;
             }
 
-            (proof.payload_proof, proof.encoded_payload, header)
+            (
+                proof.payload_proof,
+                proof.encoded_payload,
+                header,
+                proof.block_hash,
+            )
         } else {
             let proof: ParachainInclusionProof<BridgedHeader<T, I>> =
                 Decode::decode(&mut &*encoded_inclusion_proof)
@@ -693,15 +698,20 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                     .ok_or(Error::<T, I>::ParachainEntryNotFound)?,
                 submission_target_height,
             )?;
-            (proof.payload_proof, proof.encoded_payload, header)
+            (
+                proof.payload_proof,
+                proof.encoded_payload,
+                header,
+                proof.relay_block_hash,
+            )
         };
 
         let message =
             verify_event_storage_proof::<T, I>(payload_proof, header.clone(), encoded_payload)?;
 
         Ok(InclusionReceipt::<T::BlockNumber> {
-            height: HeightResult::Height(to_local_block_number::<T, I>(*header.number())?),
-            header: HeaderResult::Header(header.hash().encode()),
+            height: to_local_block_number::<T, I>(*header.number())?,
+            including_header: header_hash.encode(),
             message,
         })
     }

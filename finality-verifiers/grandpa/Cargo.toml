@@ -42,8 +42,6 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = '
 t3rn-primitives = { path = "../../primitives", default-features = false }
 t3rn-abi        = { path = "../../types/abi", features = ["runtime"], default-features = false }
 
-t3rn-light-client-commons = { path = "../common", default-features = false }
-
 [features]
 default = [ "std" ]
 runtime-benchmarks = [  ]
@@ -76,6 +74,5 @@ std = [
 
   "t3rn-primitives/std",
   "t3rn-abi/std",
-  "t3rn-light-client-commons/std",
 ]
 testing = [ "ed25519-dalek", "pallet-balances", "pallet-sudo", "pallet-timestamp", "hex", "hex-literal" ]

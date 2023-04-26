@@ -27,7 +27,6 @@ exclude = [  ]
 # Example: https://github.com/t3rn/t3rn/network/updates/651720180
 # updater | 2023/04/25 09:27:23 ERROR <job_651720180> error: failed to load manifest for workspace member `/home/dependabot/dependabot-updater/dependabot_tmp_dir/pallets/contracts-registry/rpc`
 members = [
-  "finality-verifiers/common",
   "finality-verifiers/grandpa",
   "node/standalone",
   "node/t0rn-parachain",
