@@ -944,6 +944,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       SideEffectABINotFound: AugmentedError<ApiType>;
       /**
+       * A token is not compatible with the gateways execution layer
+       **/
+      TokenExecutionVendorMismatch: AugmentedError<ApiType>;
+      /**
        * Stored token has already been added before
        **/
       TokenRecordAlreadyExists: AugmentedError<ApiType>;

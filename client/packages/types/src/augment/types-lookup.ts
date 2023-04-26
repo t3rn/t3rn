@@ -1792,15 +1792,15 @@ declare module '@polkadot/types/lookup' {
 
   /** @name T3rnPrimitivesSubstrateToken (224) */
   export interface T3rnPrimitivesSubstrateToken extends Struct {
-    readonly ss58Format: u16;
-    readonly tokenSymbol: Bytes;
-    readonly tokenDecimals: u8;
+    readonly id: u32;
+    readonly symbol: Bytes;
+    readonly decimals: u8;
   }
 
   /** @name T3rnPrimitivesEthereumToken (225) */
   export interface T3rnPrimitivesEthereumToken extends Struct {
-    readonly tokenSymbol: Bytes;
-    readonly tokenDecimals: u8;
+    readonly symbol: Bytes;
+    readonly decimals: u8;
     readonly address: Option<U8aFixed>;
   }
 
@@ -2152,7 +2152,8 @@ declare module '@polkadot/types/lookup' {
     readonly isSideEffectABIAlreadyExists: boolean;
     readonly isSideEffectABINotFound: boolean;
     readonly isNoParachainInfoFound: boolean;
-    readonly type: 'GatewayRecordAlreadyExists' | 'TokenRecordAlreadyExists' | 'XdnsRecordAlreadyExists' | 'UnknownXdnsRecord' | 'GatewayRecordNotFound' | 'XdnsRecordNotFound' | 'SideEffectABIAlreadyExists' | 'SideEffectABINotFound' | 'NoParachainInfoFound';
+    readonly isTokenExecutionVendorMismatch: boolean;
+    readonly type: 'GatewayRecordAlreadyExists' | 'TokenRecordAlreadyExists' | 'XdnsRecordAlreadyExists' | 'UnknownXdnsRecord' | 'GatewayRecordNotFound' | 'XdnsRecordNotFound' | 'SideEffectABIAlreadyExists' | 'SideEffectABINotFound' | 'NoParachainInfoFound' | 'TokenExecutionVendorMismatch';
   }
 
   /** @name PalletContractsRegistryError (294) */
