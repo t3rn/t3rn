@@ -1,0 +1,36 @@
+name: Test
+
+on:
+  pull_request:
+
+env:
+  PARACHAIN_NAME: t0rn
+
+jobs:
+  release:
+    runs-on: [self-hosted, rust]
+    # Dont trigger release when commit message contains 'build(release):' or ends with '[skip release]'
+    if: ${{ !(contains(github.event.head_commit.message, 'build(release):') || contains(github.event.head_commit.message, '[skip release]')) }}
+    concurrency: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Calculate semantic version
+        id: version
+        uses: t3rn/semantic-version@v6.0.3
+        with:
+          tag_prefix: "v"
+          major_pattern: "/^(feat|refactor)(\\([a-z]+\\))?!:/"
+          minor_pattern: "/^(feat|refactor)(\\([a-z]+\\))?:/"
+          version_format: "${major}.${minor}.${patch}-rc.${increment}"
+          bump_each_commit: false
+          search_commit_body: false
+          user_format_type: "json"
+          prerelease_name: "rc"
+
+      - name: Cargo Release Dry Run
+        run: |
+          cargo release -c release.toml -p ${{ env.PARACHAIN_NAME }}-parachain-runtime -p ${{ env.PARACHAIN_NAME }}-parachain-collator ${{ steps.version.outputs.version }} --no-push
