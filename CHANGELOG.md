@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.12.4-rc.0] - 2023-04-26
+### :wrench: Chores
+- [`756c63e`](https://github.com/t3rn/t3rn/commit/756c63e09672cdd036377097371e17d1ce95b34b) - removes unused modules *(PR [#895](https://github.com/t3rn/t3rn/pull/895) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.12.0-rc.0] - 2023-04-22
 ### :sparkles: New Features
 - [`e029213`](https://github.com/t3rn/t3rn/commit/e02921375708cb122fba828f81ae577698f025ab) - add compiler and deployer *(commit by [@petscheit](https://github.com/petscheit))*
@@ -935,3 +940,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.10.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.3-rc.0...v1.10.4-rc.0
 [v1.11.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.4-rc.0...v1.11.0-rc.0
 [v1.12.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.11.0-rc.0...v1.12.0-rc.0
+[v1.12.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.12.3-rc.0...v1.12.4-rc.0
