@@ -13,7 +13,6 @@ env:
 jobs:
   runtime-upgrade-smoke-tests:
     runs-on: [self-hosted, rust]
-    concurrency: release
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -29,6 +28,7 @@ jobs:
   runtime-upgrade:
     runs-on: self-hosted
     needs: runtime-upgrade-smoke-tests
+    concurrency: runtime-upgrade
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -89,7 +89,6 @@ jobs:
 
   ranger-deploy:
     runs-on: self-hosted
-    needs: runtime-upgrade
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
