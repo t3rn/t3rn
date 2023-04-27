@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - development
+  merge_group:
 
 jobs:
   test-executor:
