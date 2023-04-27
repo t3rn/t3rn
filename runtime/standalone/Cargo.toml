@@ -13,7 +13,7 @@ version     = { workspace = true }
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 [dependencies]
-codec       = { workspace = true }
+codec      = { workspace = true, package = "parity-scale-codec" }
 hex-literal = { workspace = true, optional = true }
 log         = { workspace = true }
 scale-info  = { workspace = true }

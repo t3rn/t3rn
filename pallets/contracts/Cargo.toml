@@ -14,7 +14,7 @@ targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
 bitflags         = { workspace = true }
-codec            = { workspace = true }
+codec      = { workspace = true, package = "parity-scale-codec" }
 hex              = { workspace = true }
 log              = { workspace = true }
 scale-info       = { workspace = true }

@@ -12,7 +12,7 @@ version     = { workspace = true }
 
 [dependencies]
 bytes           = { workspace = true }
-codec           = { workspace = true }
+codec      = { workspace = true, package = "parity-scale-codec" }
 frame-system    = { workspace = true, optional = true }
 num             = { workspace = true }
 num-traits      = { workspace = true }

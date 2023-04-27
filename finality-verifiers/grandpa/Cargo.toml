@@ -11,7 +11,7 @@ version    = "1.5.0-rc.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-codec            = { workspace = true }
+codec      = { workspace = true, package = "parity-scale-codec" }
 finality-grandpa = { version = "0.16", default-features = false, features = [ "derive-codec" ] }
 hash-db          = { version = "0.15.2", default-features = false }
 log              = { workspace = true }

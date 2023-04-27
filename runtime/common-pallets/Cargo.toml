@@ -12,7 +12,7 @@ version     = { workspace = true }
 substrate-wasm-builder = { workspace = true }
 
 [dependencies]
-codec       = { workspace = true }
+codec      = { workspace = true, package = "parity-scale-codec" }
 hex-literal = { workspace = true, optional = true }
 log         = { workspace = true }
 scale-info  = { workspace = true }
