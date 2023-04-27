@@ -40,8 +40,7 @@ export const handleSetOperational = async (id: string, enabled: boolean) => {
       ),
     })
   } catch (error) {
-    spinner.text = colorLogMsg("ERROR", error)
-    spinner.fail()
+    spinner.fail(colorLogMsg("ERROR", error))
     process.exit(1)
   }
 }
