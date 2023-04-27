@@ -277,18 +277,20 @@ where
             // Cannot panic due to loop condition
             let trie = &mut queue[0];
             let outcome =
-                child::kill_storage(&child_trie_info(&trie.trie_id), Some(remaining_key_budget));
-            let keys_removed = match outcome {
-                // This happens when our budget wasn't large enough to remove all keys.
-                KillStorageResult::SomeRemaining(count) => count,
-                KillStorageResult::AllRemoved(count) => {
-                    // We do not care to preserve order. The contract is deleted already and
-                    // no one waits for the trie to be deleted.
-                    queue.swap_remove(0);
-                    count
-                },
-            };
-            remaining_key_budget = remaining_key_budget.saturating_sub(keys_removed);
+                    // child::kill_storage(&child_trie_info(&trie.trie_id), Some(remaining_key_budget));
+                    // refactor due to deprecation of kill_storage in favor of clear_storage
+                    child::clear_storage(&child_trie_info(&trie.trie_id), Some(remaining_key_budget), None);
+            // let keys_removed = match outcome {
+            //     KillStorageResult::SomeRemaining(count) => count,
+            //     KillStorageResult::AllRemoved(count) => {
+            //         // We do not care to preserve order. The contract is deleted already and
+            //         // no one waits for the trie to be deleted.
+            //         queue.swap_remove(0);
+            //         count
+            //     },
+            // };
+            // remaining_key_budget = remaining_key_budget.saturating_sub(keys_removed);
+            remaining_key_budget = remaining_key_budget.saturating_sub(outcome.unique);
         }
 
         <DeletionQueue<T>>::put(queue);
