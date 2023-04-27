@@ -2,7 +2,9 @@
 # https://github.com/hack-ink/subalfred-check-features-action
 name: Subalfred
 
-on: [pull_request]
+on: 
+  pull_request:
+  merge_group:
 
 env:
   IGNORE_FALSE_POSITIVES_REGEX_PATTERN: "benchmarking|frame-try-runtime|frame-std"

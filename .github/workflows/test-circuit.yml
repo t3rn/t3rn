@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - development
+  merge_group:
 
 # Automatically cancel older in-progress jobs on the same branch
 concurrency:
