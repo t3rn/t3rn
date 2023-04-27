@@ -89,6 +89,7 @@ jobs:
 
   ranger-deploy:
     runs-on: self-hosted
+    needs: runtime-upgrade
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
