@@ -219,5 +219,6 @@ fn testnet_genesis(
                 })
                 .collect(),
         },
+        maintenance_mode: Default::default(),
     }
 }
