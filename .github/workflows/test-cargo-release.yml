@@ -9,6 +9,7 @@ env:
 
 jobs:
   cargo-release-dry-run:
+    name: Cargo Release Dry Run
     runs-on: [self-hosted, rust]
     steps:
       - name: Checkout
