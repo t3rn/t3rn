@@ -5,6 +5,7 @@ import { wrapCryptoWaitReady } from "./utils/fns.ts"
 import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleSetOperational } from "./commands/set_operational.ts"
+import { handleBidCmd } from "./commands/bid.ts"
 
 const program = new Command()
 
@@ -38,5 +39,12 @@ program
   .argument("operational <bool>", "gateway_id as specified in setup.ts")
   .description("Set a gateway operational")
   .action(wrapCryptoWaitReady(handleSetOperational))
+
+program
+  .command("bid")
+  .description("Bid on an execution as an Executor")
+  .argument("sfxId <string>", "sfxId of the side effect to bid on")
+  .argument("amount <float>", "bid amount")
+  .action(wrapCryptoWaitReady(handleBidCmd))
 
 program.parse(process.argv)
