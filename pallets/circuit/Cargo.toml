@@ -13,7 +13,7 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-codec            = { workspace = true, package = "parity-scale-codec" }
+codec            = { workspace = true }
 log              = { workspace = true }
 pallet-timestamp = { workspace = true }
 scale-info       = { workspace = true }

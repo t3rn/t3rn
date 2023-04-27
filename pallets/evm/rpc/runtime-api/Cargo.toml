@@ -11,7 +11,7 @@ version     = { workspace = true }
 ethereum       = { version = "0.12.0", default-features = false, features = [ "with-codec" ] }
 ethereum-types = { version = "0.13.1", default-features = false }
 
-codec      = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
+codec      = { workspace = true, package = "parity-scale-codec" }
 scale-info = { workspace = true }
 sp-api     = { version = "4.0.0-dev", workspace = true }
 sp-core    = { version = "6.0.0", workspace = true }

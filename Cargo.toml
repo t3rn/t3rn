@@ -56,9 +56,9 @@ wasm-instrument  = { version = "0.1", default-features = false }
 wasmi-validation = { version = "0.4", default-features = false }
 
 # parity
-codec              = { version = "3", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
 frame-metadata     = { version = "15", features = [ "v13", "v14" ], default-features = false }
-parity-scale-codec = { version = "3", features = [ "derive", "max-encoded-len" ], default-features = false }
+codec              = { version = "3.0.0", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
+parity-scale-codec = { version = "3.0.0", package = "parity-scale-codec", features = [ "derive", "max-encoded-len" ], default-features = false }
 scale-info         = { version = "2.1.1", features = [ "derive" ], default-features = false }
 
 frame-benchmarking                         = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', default-features = false }
