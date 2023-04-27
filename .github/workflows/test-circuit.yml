@@ -75,7 +75,19 @@ jobs:
           crate: sarif-fmt
 
       - name: 📑 Lint code
-        run: cargo clippy --all --message-format=json | clippy-sarif | tee results.sarif | sarif-fmt
+        run: |
+          # We want to fail fast if clippy fails
+          set -e
+          cargo clippy --all --message-format=json | clippy-sarif | tee results.sarif | sarif-fmt
+          echo
+
+          if jq -e -n '[inputs | .runs[] | select(.results[]?.level == "error")] | length > 0' results.sarif >/dev/null; then
+            echo "Clippy found errors. Aborting build."
+            exit 1
+          else
+            echo "Clippy found no errors"
+          fi
+
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
