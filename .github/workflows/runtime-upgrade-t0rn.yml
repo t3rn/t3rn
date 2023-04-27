@@ -7,7 +7,7 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
 
 env:
-  APPROVERS: AwesomeIbex,MaciejBaj
+  APPROVERS: AwesomeIbex,MaciejBaj,chiefbiiko,petscheit,palozano
   PARACHAIN_NAME: t0rn
 
 jobs:
