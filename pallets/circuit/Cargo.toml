@@ -60,7 +60,7 @@ circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
 circuit-runtime-types   = { path = "../../runtime/common-types" }
 
 [features]
-default = [ "std", "test-skip-verification" ]
+default = [ "std" ]
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
