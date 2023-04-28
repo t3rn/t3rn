@@ -308,6 +308,12 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
+        fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
+            Some(1000)
+        }
+    }
+
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
         fn benchmark_metadata(extra: bool) -> (

@@ -6,7 +6,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{alloc::vec::Vec, Codec};
+use codec::Codec;
+use sp_runtime::sp_std;
+use sp_std::prelude::*;
 pub use t3rn_primitives::ChainId;
 
 sp_api::decl_runtime_apis! {
@@ -14,7 +16,7 @@ sp_api::decl_runtime_apis! {
     pub trait PortalRuntimeApi<AccountId> where
         AccountId: Codec,
     {
-        /// Returns hash of latest finalized header
-        fn get_latest_finalized_header(gateway_id: ChainId) -> Option<Vec<u8>>;
+        /// Returns the current head height of the given chain
+        fn fetch_head_height(chain_id: ChainId) -> Option<u128>;
     }
 }
