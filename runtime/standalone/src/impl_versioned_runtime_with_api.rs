@@ -13,7 +13,10 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
-use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
+use t3rn_primitives::{
+    light_client::HeightResult,
+    xdns::{FullGatewayRecord, GatewayRecord},
+};
 
 pub use frame_support::{
     construct_runtime, parameter_types,
@@ -310,7 +313,12 @@ impl_runtime_apis! {
 
     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
-            Some(1000)
+            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_latest_updated_height(chain_id);
+
+            match res {
+                Ok(HeightResult::Height(height)) => Some(height.into()),
+                _ => None,
+            }
         }
     }
 
