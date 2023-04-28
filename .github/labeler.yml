@@ -1,0 +1,21 @@
+test:
+  - "**/test*.rs"
+
+"dependencies :deciduous_tree:":
+  - any: ['**/Cargo.lock']
+
+javascript:
+  - '**/*.js'
+  - '**/*.ts'
+
+"runtime :hammer_and_wrench:":
+  - 'runtime/**'
+
+rust:
+  - '**/*.rs'
+
+circuit:
+  - pallets/circuit/**
+
+github_actions:
+  - .github/**
