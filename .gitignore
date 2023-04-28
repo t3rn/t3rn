@@ -10,6 +10,7 @@ comms
 *.iml
 client/**/node_modules
 **/.nyc_output
+results.sarif
 
 # accound id info
 /.devkey
