@@ -6748,7 +6748,6 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "t3rn-abi",
- "t3rn-light-client-commons",
  "t3rn-primitives",
 ]
 
@@ -12512,21 +12511,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "t3rn-light-client-commons"
-version = "1.5.0-rc.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
- "t3rn-abi",
-]
-
-[[package]]
 name = "t3rn-parachain-collator"
 version = "1.0.0"
 dependencies = [
@@ -12688,7 +12672,6 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-abi",
- "t3rn-light-client-commons",
  "t3rn-sdk-primitives",
  "t3rn-types 1.5.0-rc.0",
 ]
