@@ -38,14 +38,12 @@ class GrandpaRanger {
 			.catch((e) => {
 				console.log(e);
 				// potentially we want to introduce a retry logic here
-				// console.log("-resolving collectAndSubmit on range generation error")
 				return resolve()
 			})
 
 		if(batches.length > 0) {
 			// calculate the total number of elements in the batches elements
 			const totalElements = batches.reduce((acc, curr) => acc + curr.range.length, 0)
-			// console.log(`Submitting ${batches?.length} ranges with ${totalElements} elements`)
 
 			this.submitToCircuit(batches)
 				.then((res) => {
