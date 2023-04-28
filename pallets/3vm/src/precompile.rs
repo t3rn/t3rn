@@ -171,7 +171,7 @@ mod tests {
     use super::*;
     use crate::mock::{new_test_ext, AccountId, Test};
     use sp_core::H256;
-    use sp_runtime::traits::{Hash};
+    use sp_runtime::traits::Hash;
     use t3rn_primitives::circuit::LocalStateExecutionView;
     use t3rn_sdk_primitives::{
         storage::BoundedVec,

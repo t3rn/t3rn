@@ -45,6 +45,7 @@ use sp_runtime::{
     DispatchError, KeyTypeId,
 };
 use sp_std::{convert::TryInto, vec, vec::Vec};
+use t3rn_primitives::portal::InclusionReceipt;
 
 pub use t3rn_types::{
     bid::SFXBid,
