@@ -31,7 +31,7 @@ const generateBatchProof = async (circuitClient: ApiPromise, targetClient: ApiPr
 	let transactionArguments: any[] = [];
 	while(from < to) {
 		// get finalityProof element of epoch that contains block #from
-		const finalityProof = await targetClient.rpc.grandpa.proveFinality(from) //  -- from +1, +2, +3, +4, +5, +6, +7, +8, +9, +10.... until: grandpa session is over, or latest header
+		const finalityProof = await targetClient.rpc.grandpa.proveFinality(from)
 		// decode finality proof
 		let { justification, headers } = Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
 		let signed_header = headers.pop()
@@ -58,7 +58,7 @@ const currentTargetHeight = async (connection: Connection): Promise<number> => {
 }
 
 const currentGatewayHeight = async (client: Connection, targetGatewayId: string)=> {
-	return axios.post('http://127.0.0.1:9933', {
+	return axios.post(client.currentProvider().http, {
 		jsonrpc: '2.0',
 		method: 'portal_fetchHeadHeight',
 		params: [Array.from(new TextEncoder().encode(targetGatewayId))],

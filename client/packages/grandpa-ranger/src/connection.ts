@@ -4,16 +4,16 @@ import { Prometheus } from "./prometheus";
 export class Connection {
 	client: ApiPromise;
 	provider: WsProvider;
-	rpc1: string;
+	rpc1: any;
 	usingPrimaryRpc: boolean = true;
-	rpc2: string;
+	rpc2: any;
 	isCircuit: boolean;
 	isActive: boolean = false;
 	sdk: Sdk | undefined;
 	signer: any;
 	prometheus: Prometheus;
 
-	constructor(rpc1: string, rpc2: string, isCircuit: boolean, prometheus: Prometheus, signer?: string) {
+	constructor(rpc1: any, rpc2: any, isCircuit: boolean, prometheus: Prometheus, signer?: string) {
 		this.rpc1 = rpc1;
 		this.rpc2 = rpc2;
 		this.usingPrimaryRpc = true;
@@ -32,13 +32,17 @@ export class Connection {
 				await this.setListeners();
 				break;
 			} catch(e) {
-				const endpoint = this.usingPrimaryRpc ? this.rpc1 : this.rpc2
+				const endpoint = this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws
 				this.isCircuit ?
-					this.prometheus.circuitDisconnected.inc({endpoint, timestamp: Date.now() }) :
+					this.prometheus.circuitDisconnected.inc({endpoint, timestamp: Date.now()}) :
 					this.prometheus.targetDisconnected.inc({endpoint, timestamp: Date.now()});
 
+				this.isCircuit ?
+					this.prometheus.circuitDisconnectCounter.inc(1) :
+					this.prometheus.targetDisconnectCounter.inc(1);
+
 				this.usingPrimaryRpc = !this.usingPrimaryRpc; // toggle connection
-				console.log(`Retrying in 2 second with ${this.usingPrimaryRpc ? this.rpc1 : this.rpc2}`)
+				console.log(`Retrying in 2 second with ${this.currentProvider().ws}`)
 				await new Promise((resolve, _reject) => setTimeout(resolve, 2000));
 			}
 		}
@@ -48,7 +52,7 @@ export class Connection {
 		return new Promise((resolve, reject) => {
 			this.provider.on('connected', async () => {
 				this.isActive = true;
-				console.log(`Connected to ${this.usingPrimaryRpc ? this.rpc1 : this.rpc2}`)
+				console.log(`Connected to ${this.currentProvider().ws}`)
 				if(this.isCircuit) {
 					this.prometheus.circuitActive = true;
 					const sdk = new Sdk(this.provider, this.signer);
@@ -70,7 +74,7 @@ export class Connection {
 			this.provider.on('disconnected', () => {
 				this.isActive = false;
 				this.isCircuit ? this.prometheus.circuitActive = false : this.prometheus.targetActive = false;
-				console.log(`Disconnected from ${this.usingPrimaryRpc ? this.rpc1 : this.rpc2}`)
+				console.log(`Disconnected from ${this.currentProvider().ws}`)
 				this.provider.disconnect()
 				if(this.client) {
 					this.client.disconnect()
@@ -81,7 +85,7 @@ export class Connection {
 			this.provider.on('error',  () => {
 				this.isActive = false;
 				this.isCircuit ? this.prometheus.circuitActive = false : this.prometheus.targetActive = false;
-				console.log(`Error from ${this.usingPrimaryRpc ? this.rpc1 : this.rpc2}`)
+				console.log(`Error from ${this.currentProvider().ws}`)
 				this.provider.disconnect()
 				if(this.client) {
 					this.client.disconnect()
@@ -92,7 +96,11 @@ export class Connection {
 
 	}
 
+	currentProvider(): any {
+		return this.usingPrimaryRpc ? this.rpc1 : this.rpc2
+	}
+
 	createProvider() {
-		return new WsProvider(this.usingPrimaryRpc ? this.rpc1 : this.rpc2)
+		return new WsProvider(this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws)
 	}
 }
