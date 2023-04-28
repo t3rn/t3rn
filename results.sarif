@@ -1,0 +1,2591 @@
+{
+  "$schema": "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.5.json",
+  "runs": [
+    {
+      "results": [
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "types/abi/src/to_abi.rs"
+                },
+                "region": {
+                  "byteLength": 50,
+                  "byteOffset": 1087,
+                  "endColumn": 59,
+                  "endLine": 36,
+                  "startColumn": 9,
+                  "startLine": 36
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "types/abi/src/to_abi.rs"
+                },
+                "region": {
+                  "byteLength": 60,
+                  "byteOffset": 1190,
+                  "endColumn": 69,
+                  "endLine": 40,
+                  "startColumn": 9,
+                  "startLine": 40
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "types/abi/src/to_filled_abi.rs"
+                },
+                "region": {
+                  "byteLength": 151,
+                  "byteOffset": 1410,
+                  "endColumn": 10,
+                  "endLine": 53,
+                  "startColumn": 9,
+                  "startLine": 47
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "types/abi/src/to_filled_abi.rs"
+                },
+                "region": {
+                  "byteLength": 179,
+                  "byteOffset": 1614,
+                  "endColumn": 10,
+                  "endLine": 64,
+                  "startColumn": 9,
+                  "startLine": 57
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "types/src/sfx.rs"
+                },
+                "region": {
+                  "byteLength": 6,
+                  "byteOffset": 5674,
+                  "endColumn": 12,
+                  "endLine": 185,
+                  "startColumn": 6,
+                  "startLine": 185
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "variants `CallEvm`, `CallWasm`, and `CallComposable` are never constructed"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "types/src/sfx.rs"
+                },
+                "region": {
+                  "byteLength": 7,
+                  "byteOffset": 5758,
+                  "endColumn": 12,
+                  "endLine": 191,
+                  "startColumn": 5,
+                  "startLine": 191
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "variants `CallEvm`, `CallWasm`, and `CallComposable` are never constructed"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "types/src/sfx.rs"
+                },
+                "region": {
+                  "byteLength": 8,
+                  "byteOffset": 5771,
+                  "endColumn": 13,
+                  "endLine": 192,
+                  "startColumn": 5,
+                  "startLine": 192
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "variants `CallEvm`, `CallWasm`, and `CallComposable` are never constructed"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "types/src/sfx.rs"
+                },
+                "region": {
+                  "byteLength": 14,
+                  "byteOffset": 5785,
+                  "endColumn": 19,
+                  "endLine": 193,
+                  "startColumn": 5,
+                  "startLine": 193
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "variants `CallEvm`, `CallWasm`, and `CallComposable` are never constructed"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 16,
+                  "byteOffset": 1323,
+                  "endColumn": 30,
+                  "endLine": 38,
+                  "startColumn": 14,
+                  "startLine": 38
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused import: `convert::TryFrom`"
+          },
+          "ruleId": "unused_imports",
+          "ruleIndex": 2
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/circuit.rs"
+                },
+                "region": {
+                  "byteLength": 69,
+                  "byteOffset": 1106,
+                  "endColumn": 78,
+                  "endLine": 36,
+                  "startColumn": 9,
+                  "startLine": 36
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/circuit.rs"
+                },
+                "region": {
+                  "byteLength": 67,
+                  "byteOffset": 1428,
+                  "endColumn": 99,
+                  "endLine": 45,
+                  "startColumn": 32,
+                  "startLine": 45
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/contract_metadata.rs"
+                },
+                "region": {
+                  "byteLength": 373,
+                  "byteOffset": 5288,
+                  "endColumn": 26,
+                  "endLine": 210,
+                  "startColumn": 5,
+                  "startLine": 199
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (10/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/contracts_registry.rs"
+                },
+                "region": {
+                  "byteLength": 124,
+                  "byteOffset": 602,
+                  "endColumn": 6,
+                  "endLine": 28,
+                  "startColumn": 10,
+                  "startLine": 25
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/contracts_registry.rs"
+                },
+                "region": {
+                  "byteLength": 129,
+                  "byteOffset": 835,
+                  "endColumn": 6,
+                  "endLine": 36,
+                  "startColumn": 10,
+                  "startLine": 33
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/gateway_inbound_protocol.rs"
+                },
+                "region": {
+                  "byteLength": 298,
+                  "byteOffset": 1252,
+                  "endColumn": 54,
+                  "endLine": 39,
+                  "startColumn": 5,
+                  "startLine": 29
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/gateway_inbound_protocol.rs"
+                },
+                "region": {
+                  "byteLength": 358,
+                  "byteOffset": 1912,
+                  "endColumn": 54,
+                  "endLine": 57,
+                  "startColumn": 5,
+                  "startLine": 45
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (11/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/gateway_inbound_protocol.rs"
+                },
+                "region": {
+                  "byteLength": 259,
+                  "byteOffset": 2604,
+                  "endColumn": 54,
+                  "endLine": 72,
+                  "startColumn": 5,
+                  "startLine": 63
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/gateway_inbound_protocol.rs"
+                },
+                "region": {
+                  "byteLength": 305,
+                  "byteOffset": 3166,
+                  "endColumn": 54,
+                  "endLine": 87,
+                  "startColumn": 5,
+                  "startLine": 77
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/gateway_inbound_protocol.rs"
+                },
+                "region": {
+                  "byteLength": 304,
+                  "byteOffset": 3843,
+                  "endColumn": 54,
+                  "endLine": 103,
+                  "startColumn": 5,
+                  "startLine": 93
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/gateway_inbound_protocol.rs"
+                },
+                "region": {
+                  "byteLength": 305,
+                  "byteOffset": 4524,
+                  "endColumn": 54,
+                  "endLine": 119,
+                  "startColumn": 5,
+                  "startLine": 109
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/gateway_inbound_protocol.rs"
+                },
+                "region": {
+                  "byteLength": 268,
+                  "byteOffset": 6923,
+                  "endColumn": 54,
+                  "endLine": 171,
+                  "startColumn": 5,
+                  "startLine": 162
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/threevm.rs"
+                },
+                "region": {
+                  "byteLength": 62,
+                  "byteOffset": 3247,
+                  "endColumn": 67,
+                  "endLine": 120,
+                  "startColumn": 5,
+                  "startLine": 120
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this returns a `Result<_, ()>`"
+          },
+          "ruleId": "clippy::result_unit_err",
+          "ruleIndex": 4
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/threevm.rs"
+                },
+                "region": {
+                  "byteLength": 87,
+                  "byteOffset": 3719,
+                  "endColumn": 97,
+                  "endLine": 139,
+                  "startColumn": 10,
+                  "startLine": 139
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/xdns.rs"
+                },
+                "region": {
+                  "byteLength": 545,
+                  "byteOffset": 3602,
+                  "endColumn": 14,
+                  "endLine": 128,
+                  "startColumn": 5,
+                  "startLine": 113
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (14/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "primitives/src/xdns.rs"
+                },
+                "region": {
+                  "byteLength": 395,
+                  "byteOffset": 4667,
+                  "endColumn": 14,
+                  "endLine": 162,
+                  "startColumn": 5,
+                  "startLine": 151
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (10/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "finality-verifiers/grandpa/src/side_effects.rs"
+                },
+                "region": {
+                  "byteLength": 10,
+                  "byteOffset": 389,
+                  "endColumn": 16,
+                  "endLine": 17,
+                  "startColumn": 6,
+                  "startLine": 17
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "type alias `CurrencyId` is never used"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "finality-verifiers/grandpa/src/side_effects.rs"
+                },
+                "region": {
+                  "byteLength": 12,
+                  "byteOffset": 762,
+                  "endColumn": 27,
+                  "endLine": 31,
+                  "startColumn": 15,
+                  "startLine": 31
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "function `decode_event` is never used"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/runner/stack.rs"
+                },
+                "region": {
+                  "byteLength": 13,
+                  "byteOffset": 20688,
+                  "endColumn": 44,
+                  "endLine": 650,
+                  "startColumn": 31,
+                  "startLine": 650
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "use of deprecated associated function `frame_support::pallet_prelude::StorageDoubleMap::<Prefix, Hasher1, Key1, Hasher2, Key2, Value, QueryKind, OnEmpty, MaxValues>::remove_prefix`: Use `clear_prefix` instead"
+          },
+          "ruleId": "deprecated",
+          "ruleIndex": 5
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/runner/stack.rs"
+                },
+                "region": {
+                  "byteLength": 457,
+                  "byteOffset": 1736,
+                  "endColumn": 44,
+                  "endLine": 61,
+                  "startColumn": 5,
+                  "startLine": 49
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (11/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/runner/mod.rs"
+                },
+                "region": {
+                  "byteLength": 383,
+                  "byteOffset": 900,
+                  "endColumn": 39,
+                  "endLine": 40,
+                  "startColumn": 5,
+                  "startLine": 28
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (11/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/runner/mod.rs"
+                },
+                "region": {
+                  "byteLength": 364,
+                  "byteOffset": 1290,
+                  "endColumn": 41,
+                  "endLine": 53,
+                  "startColumn": 5,
+                  "startLine": 42
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (10/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/runner/mod.rs"
+                },
+                "region": {
+                  "byteLength": 385,
+                  "byteOffset": 1661,
+                  "endColumn": 41,
+                  "endLine": 67,
+                  "startColumn": 5,
+                  "startLine": 55
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (11/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 362,
+                  "byteOffset": 8103,
+                  "endColumn": 40,
+                  "endLine": 231,
+                  "startColumn": 9,
+                  "startLine": 221
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 337,
+                  "byteOffset": 9775,
+                  "endColumn": 40,
+                  "endLine": 279,
+                  "startColumn": 9,
+                  "startLine": 270
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 362,
+                  "byteOffset": 11587,
+                  "endColumn": 40,
+                  "endLine": 334,
+                  "startColumn": 9,
+                  "startLine": 324
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 4,
+                  "byteOffset": 7283,
+                  "endColumn": 19,
+                  "endLine": 197,
+                  "startColumn": 15,
+                  "startLine": 197
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 4,
+                  "byteOffset": 7283,
+                  "endColumn": 19,
+                  "endLine": 197,
+                  "startColumn": 15,
+                  "startLine": 197
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/evm/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 52,
+                  "byteOffset": 25927,
+                  "endColumn": 61,
+                  "endLine": 727,
+                  "startColumn": 9,
+                  "startLine": 727
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused `sp_io::MultiRemovalResults` that must be used"
+          },
+          "ruleId": "unused_must_use",
+          "ruleIndex": 6
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts-registry/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 4,
+                  "byteOffset": 4061,
+                  "endColumn": 19,
+                  "endLine": 117,
+                  "startColumn": 15,
+                  "startLine": 117
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "large size difference between variants"
+          },
+          "ruleId": "clippy::large_enum_variant",
+          "ruleIndex": 7
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts-registry/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 219,
+                  "byteOffset": 4061,
+                  "endColumn": 32,
+                  "endLine": 121,
+                  "startColumn": 15,
+                  "startLine": 117
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "large size difference between variants"
+          },
+          "ruleId": "clippy::large_enum_variant",
+          "ruleIndex": 7
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts-registry/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 4,
+                  "byteOffset": 4061,
+                  "endColumn": 19,
+                  "endLine": 117,
+                  "startColumn": 15,
+                  "startLine": 117
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "large size difference between variants"
+          },
+          "ruleId": "clippy::large_enum_variant",
+          "ruleIndex": 7
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/portal/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 13,
+                  "byteOffset": 1869,
+                  "endColumn": 59,
+                  "endLine": 57,
+                  "startColumn": 46,
+                  "startLine": 57
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "associated function `deposit_event` is never used"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/portal/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 546,
+                  "byteOffset": 3834,
+                  "endColumn": 28,
+                  "endLine": 116,
+                  "startColumn": 9,
+                  "startLine": 103
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (11/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/portal/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 4,
+                  "byteOffset": 3723,
+                  "endColumn": 19,
+                  "endLine": 100,
+                  "startColumn": 15,
+                  "startLine": 100
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (10/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/account-manager/src/monetary.rs"
+                },
+                "region": {
+                  "byteLength": 192,
+                  "byteOffset": 1575,
+                  "endColumn": 18,
+                  "endLine": 54,
+                  "startColumn": 17,
+                  "startLine": 51
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "match expression looks like `matches!` macro"
+          },
+          "ruleId": "clippy::match_like_matches_macro",
+          "ruleIndex": 8
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/rpc/runtime-api/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 1872,
+                  "byteOffset": 1130,
+                  "endColumn": 2,
+                  "endLine": 85,
+                  "startColumn": 1,
+                  "startLine": 32
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/rpc/runtime-api/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 1872,
+                  "byteOffset": 1130,
+                  "endColumn": 2,
+                  "endLine": 85,
+                  "startColumn": 1,
+                  "startLine": 32
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/rpc/runtime-api/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 1872,
+                  "byteOffset": 1130,
+                  "endColumn": 2,
+                  "endLine": 85,
+                  "startColumn": 1,
+                  "startLine": 32
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/rpc/runtime-api/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 1872,
+                  "byteOffset": 1130,
+                  "endColumn": 2,
+                  "endLine": 85,
+                  "startColumn": 1,
+                  "startLine": 32
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (10/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/circuit/src/bids/mod.rs"
+                },
+                "region": {
+                  "byteLength": 68,
+                  "byteOffset": 283,
+                  "endColumn": 87,
+                  "endLine": 14,
+                  "startColumn": 19,
+                  "startLine": 14
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do"
+          },
+          "ruleId": "clippy::ptr_arg",
+          "ruleIndex": 9
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/circuit/src/bids/mod.rs"
+                },
+                "region": {
+                  "byteLength": 252,
+                  "byteOffset": 1997,
+                  "endColumn": 10,
+                  "endLine": 62,
+                  "startColumn": 9,
+                  "startLine": 56
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`"
+          },
+          "ruleId": "clippy::single_match",
+          "ruleIndex": 10
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/circuit/src/machine/extra.rs"
+                },
+                "region": {
+                  "byteLength": 182,
+                  "byteOffset": 150,
+                  "endColumn": 6,
+                  "endLine": 13,
+                  "startColumn": 19,
+                  "startLine": 7
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do"
+          },
+          "ruleId": "clippy::ptr_arg",
+          "ruleIndex": 9
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/circuit/src/machine/mod.rs"
+                },
+                "region": {
+                  "byteLength": 202,
+                  "byteOffset": 11172,
+                  "endColumn": 10,
+                  "endLine": 303,
+                  "startColumn": 22,
+                  "startLine": 297
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "writing `&Vec` instead of `&[_]` involves a new object where a slice will do"
+          },
+          "ruleId": "clippy::ptr_arg",
+          "ruleIndex": 9
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/circuit/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 68,
+                  "byteOffset": 43456,
+                  "endColumn": 97,
+                  "endLine": 1100,
+                  "startColumn": 29,
+                  "startLine": 1100
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do"
+          },
+          "ruleId": "clippy::ptr_arg",
+          "ruleIndex": 9
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 2,
+                  "byteOffset": 2356,
+                  "endColumn": 7,
+                  "endLine": 54,
+                  "startColumn": 5,
+                  "startLine": 54
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 2,
+                  "byteOffset": 2382,
+                  "endColumn": 7,
+                  "endLine": 55,
+                  "startColumn": 5,
+                  "startLine": 55
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 2,
+                  "byteOffset": 2411,
+                  "endColumn": 7,
+                  "endLine": 56,
+                  "startColumn": 5,
+                  "startLine": 56
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 2,
+                  "byteOffset": 2443,
+                  "endColumn": 7,
+                  "endLine": 57,
+                  "startColumn": 5,
+                  "startLine": 57
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 2,
+                  "byteOffset": 2472,
+                  "endColumn": 7,
+                  "endLine": 58,
+                  "startColumn": 5,
+                  "startLine": 58
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 2,
+                  "byteOffset": 2504,
+                  "endColumn": 7,
+                  "endLine": 59,
+                  "startColumn": 5,
+                  "startLine": 59
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 1,
+                  "byteOffset": 2540,
+                  "endColumn": 6,
+                  "endLine": 60,
+                  "startColumn": 5,
+                  "startLine": 60
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 1,
+                  "byteOffset": 2610,
+                  "endColumn": 6,
+                  "endLine": 62,
+                  "startColumn": 5,
+                  "startLine": 62
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/schedule.rs"
+                },
+                "region": {
+                  "byteLength": 1,
+                  "byteOffset": 2692,
+                  "endColumn": 6,
+                  "endLine": 65,
+                  "startColumn": 5,
+                  "startLine": 65
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "using tabs in doc comments is not recommended"
+          },
+          "ruleId": "clippy::tabs_in_doc_comments",
+          "ruleIndex": 11
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/storage.rs"
+                },
+                "region": {
+                  "byteLength": 17,
+                  "byteOffset": 1092,
+                  "endColumn": 56,
+                  "endLine": 30,
+                  "startColumn": 39,
+                  "startLine": 30
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused import: `KillStorageResult`"
+          },
+          "ruleId": "unused_imports",
+          "ruleIndex": 2
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/migration.rs"
+                },
+                "region": {
+                  "byteLength": 21,
+                  "byteOffset": 1940,
+                  "endColumn": 41,
+                  "endLine": 63,
+                  "startColumn": 20,
+                  "startLine": 63
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "use of deprecated function `frame_support::migration::remove_storage_prefix`: Use `clear_storage_prefix` instead"
+          },
+          "ruleId": "deprecated",
+          "ruleIndex": 5
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/exec.rs"
+                },
+                "region": {
+                  "byteLength": 94,
+                  "byteOffset": 9316,
+                  "endColumn": 99,
+                  "endLine": 242,
+                  "startColumn": 5,
+                  "startLine": 242
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this returns a `Result<_, ()>`"
+          },
+          "ruleId": "clippy::result_unit_err",
+          "ruleIndex": 4
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/exec.rs"
+                },
+                "region": {
+                  "byteLength": 366,
+                  "byteOffset": 20957,
+                  "endColumn": 54,
+                  "endLine": 555,
+                  "startColumn": 5,
+                  "startLine": 546
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/exec.rs"
+                },
+                "region": {
+                  "byteLength": 395,
+                  "byteOffset": 22603,
+                  "endColumn": 60,
+                  "endLine": 604,
+                  "startColumn": 5,
+                  "startLine": 594
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (9/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/exec.rs"
+                },
+                "region": {
+                  "byteLength": 51,
+                  "byteOffset": 33065,
+                  "endColumn": 64,
+                  "endLine": 865,
+                  "startColumn": 13,
+                  "startLine": 865
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "called `map(f)` on an `Option` value where `f` is a closure that returns the unit type `()`"
+          },
+          "ruleId": "clippy::option_map_unit_fn",
+          "ruleIndex": 12
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/exec.rs"
+                },
+                "region": {
+                  "byteLength": 129,
+                  "byteOffset": 41314,
+                  "endColumn": 18,
+                  "endLine": 1084,
+                  "startColumn": 35,
+                  "startLine": 1081
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "very complex type used. Consider factoring parts into `type` definitions"
+          },
+          "ruleId": "clippy::type_complexity",
+          "ruleIndex": 0
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/storage/meter.rs"
+                },
+                "region": {
+                  "byteLength": 446,
+                  "byteOffset": 5620,
+                  "endColumn": 10,
+                  "endLine": 147,
+                  "startColumn": 9,
+                  "startLine": 139
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "`if` chain can be rewritten with `match`"
+          },
+          "ruleId": "clippy::comparison_chain",
+          "ruleIndex": 13
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/storage/meter.rs"
+                },
+                "region": {
+                  "byteLength": 446,
+                  "byteOffset": 6076,
+                  "endColumn": 10,
+                  "endLine": 157,
+                  "startColumn": 9,
+                  "startLine": 149
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "`if` chain can be rewritten with `match`"
+          },
+          "ruleId": "clippy::comparison_chain",
+          "ruleIndex": 13
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/wasm/prepare.rs"
+                },
+                "region": {
+                  "byteLength": 114,
+                  "byteOffset": 9608,
+                  "endColumn": 14,
+                  "endLine": 255,
+                  "startColumn": 29,
+                  "startLine": 252
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "match expression looks like `matches!` macro"
+          },
+          "ruleId": "clippy::match_like_matches_macro",
+          "ruleIndex": 8
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/wasm/runtime.rs"
+                },
+                "region": {
+                  "byteLength": 4,
+                  "byteOffset": 18213,
+                  "endColumn": 13,
+                  "endLine": 472,
+                  "startColumn": 9,
+                  "startLine": 472
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "methods with the following characteristics: (`to_*` and `self` type is not `Copy`) usually take `self` by reference"
+          },
+          "ruleId": "clippy::wrong_self_convention",
+          "ruleIndex": 14
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/wasm/runtime.rs"
+                },
+                "region": {
+                  "byteLength": 358,
+                  "byteOffset": 33166,
+                  "endColumn": 40,
+                  "endLine": 866,
+                  "startColumn": 5,
+                  "startLine": 853
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (12/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/wasm/runtime.rs"
+                },
+                "region": {
+                  "byteLength": 11,
+                  "byteOffset": 69270,
+                  "endColumn": 53,
+                  "endLine": 1724,
+                  "startColumn": 42,
+                  "startLine": 1724
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "writing `&mut Vec` instead of `&mut [_]` involves a new object where a slice will do"
+          },
+          "ruleId": "clippy::ptr_arg",
+          "ruleIndex": 9
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 326,
+                  "byteOffset": 34770,
+                  "endColumn": 63,
+                  "endLine": 806,
+                  "startColumn": 5,
+                  "startLine": 797
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 329,
+                  "byteOffset": 40031,
+                  "endColumn": 38,
+                  "endLine": 954,
+                  "startColumn": 5,
+                  "startLine": 945
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/rpc/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 0,
+                  "byteOffset": 686,
+                  "endColumn": 1,
+                  "endLine": 18,
+                  "startColumn": 1,
+                  "startLine": 18
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "external crate `jsonrpc_core` unused in `pallet_contracts_rpc`: remove the dependency or add `use jsonrpc_core as _;`"
+          },
+          "ruleId": "unused_crate_dependencies",
+          "ruleIndex": 15
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/rpc/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 0,
+                  "byteOffset": 686,
+                  "endColumn": 1,
+                  "endLine": 18,
+                  "startColumn": 1,
+                  "startLine": 18
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "external crate `jsonrpc_core_client` unused in `pallet_contracts_rpc`: remove the dependency or add `use jsonrpc_core_client as _;`"
+          },
+          "ruleId": "unused_crate_dependencies",
+          "ruleIndex": 15
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts/rpc/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 0,
+                  "byteOffset": 686,
+                  "endColumn": 1,
+                  "endLine": 18,
+                  "startColumn": 1,
+                  "startLine": 18
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "external crate `jsonrpc_derive` unused in `pallet_contracts_rpc`: remove the dependency or add `use jsonrpc_derive as _;`"
+          },
+          "ruleId": "unused_crate_dependencies",
+          "ruleIndex": 15
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts-registry/rpc/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 4,
+                  "byteOffset": 510,
+                  "endColumn": 35,
+                  "endLine": 16,
+                  "startColumn": 31,
+                  "startLine": 16
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused import: `Hash`"
+          },
+          "ruleId": "unused_imports",
+          "ruleIndex": 2
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts-registry/rpc/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 21,
+                  "byteOffset": 580,
+                  "endColumn": 28,
+                  "endLine": 20,
+                  "startColumn": 7,
+                  "startLine": 20
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "constant `CONTRACT_DOESNT_EXIST` is never used"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "pallets/contracts-registry/rpc/src/lib.rs"
+                },
+                "region": {
+                  "byteLength": 23,
+                  "byteOffset": 618,
+                  "endColumn": 30,
+                  "endLine": 21,
+                  "startColumn": 7,
+                  "startLine": 21
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "constant `CONTRACT_IS_A_TOMBSTONE` is never used"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "runtime/mock/src/circuit_config.rs"
+                },
+                "region": {
+                  "byteLength": 3,
+                  "byteOffset": 476,
+                  "endColumn": 39,
+                  "endLine": 14,
+                  "startColumn": 36,
+                  "startLine": 14
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused import: `Get`"
+          },
+          "ruleId": "unused_imports",
+          "ruleIndex": 2
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "runtime/mock/src/system_no_version_config.rs"
+                },
+                "region": {
+                  "byteLength": 36,
+                  "byteOffset": 5234,
+                  "endColumn": 49,
+                  "endLine": 137,
+                  "startColumn": 13,
+                  "startLine": 137
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused `std::result::Result` that must be used"
+          },
+          "ruleId": "unused_must_use",
+          "ruleIndex": 6
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "runtime/mock/src/system_no_version_config.rs"
+                },
+                "region": {
+                  "byteLength": 54,
+                  "byteOffset": 5284,
+                  "endColumn": 67,
+                  "endLine": 138,
+                  "startColumn": 13,
+                  "startLine": 138
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused `std::result::Result` that must be used"
+          },
+          "ruleId": "unused_must_use",
+          "ruleIndex": 6
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "node/t3rn-parachain/src/chain_spec.rs"
+                },
+                "region": {
+                  "byteLength": 20,
+                  "byteOffset": 2743,
+                  "endColumn": 28,
+                  "endLine": 76,
+                  "startColumn": 8,
+                  "startLine": 76
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "function `get_public_from_adrs` is never used"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "node/t3rn-parachain/src/chain_spec.rs"
+                },
+                "region": {
+                  "byteLength": 21,
+                  "byteOffset": 3090,
+                  "endColumn": 29,
+                  "endLine": 85,
+                  "startColumn": 8,
+                  "startLine": 85
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "function `get_aura_id_from_adrs` is never used"
+          },
+          "ruleId": "dead_code",
+          "ruleIndex": 1
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "node/t3rn-parachain/src/chain_spec.rs"
+                },
+                "region": {
+                  "byteLength": 18,
+                  "byteOffset": 10887,
+                  "endColumn": 33,
+                  "endLine": 287,
+                  "startColumn": 15,
+                  "startLine": 287
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "struct update has no effect, all the fields in the struct have already been specified"
+          },
+          "ruleId": "clippy::needless_update",
+          "ruleIndex": 16
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "node/t3rn-parachain/src/service.rs"
+                },
+                "region": {
+                  "byteLength": 494,
+                  "byteOffset": 6764,
+                  "endColumn": 3,
+                  "endLine": 214,
+                  "startColumn": 1,
+                  "startLine": 201
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this function has too many arguments (8/7)"
+          },
+          "ruleId": "clippy::too_many_arguments",
+          "ruleIndex": 3
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "runtime/standalone/src/system_config.rs"
+                },
+                "region": {
+                  "byteLength": 12,
+                  "byteOffset": 533,
+                  "endColumn": 41,
+                  "endLine": 19,
+                  "startColumn": 29,
+                  "startLine": 19
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused import: `MultiAddress`"
+          },
+          "ruleId": "unused_imports",
+          "ruleIndex": 2
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/rustc/c8e6a9e8b6251bbc8276cb78cabe1998deecbed7/library/core/src/macros/mod.rs"
+                },
+                "region": {
+                  "byteLength": 105,
+                  "byteOffset": 12455,
+                  "endColumn": 10,
+                  "endLine": 347,
+                  "startColumn": 9,
+                  "startLine": 344
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this `match` can be collapsed into the outer `match`"
+          },
+          "ruleId": "clippy::collapsible_match",
+          "ruleIndex": 17
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/rustc/c8e6a9e8b6251bbc8276cb78cabe1998deecbed7/library/core/src/macros/mod.rs"
+                },
+                "region": {
+                  "byteLength": 105,
+                  "byteOffset": 12455,
+                  "endColumn": 10,
+                  "endLine": 347,
+                  "startColumn": 9,
+                  "startLine": 344
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this `match` can be collapsed into the outer `match`"
+          },
+          "ruleId": "clippy::collapsible_match",
+          "ruleIndex": 17
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/rustc/c8e6a9e8b6251bbc8276cb78cabe1998deecbed7/library/core/src/macros/mod.rs"
+                },
+                "region": {
+                  "byteLength": 105,
+                  "byteOffset": 12455,
+                  "endColumn": 10,
+                  "endLine": 347,
+                  "startColumn": 9,
+                  "startLine": 344
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this `match` can be collapsed into the outer `match`"
+          },
+          "ruleId": "clippy::collapsible_match",
+          "ruleIndex": 17
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/rustc/c8e6a9e8b6251bbc8276cb78cabe1998deecbed7/library/core/src/macros/mod.rs"
+                },
+                "region": {
+                  "byteLength": 105,
+                  "byteOffset": 12455,
+                  "endColumn": 10,
+                  "endLine": 347,
+                  "startColumn": 9,
+                  "startLine": 344
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "this `match` can be collapsed into the outer `match`"
+          },
+          "ruleId": "clippy::collapsible_match",
+          "ruleIndex": 17
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "node/standalone/src/chain_spec.rs"
+                },
+                "region": {
+                  "byteLength": 6,
+                  "byteOffset": 484,
+                  "endColumn": 50,
+                  "endLine": 12,
+                  "startColumn": 44,
+                  "startLine": 12
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "unused import: `Header`"
+          },
+          "ruleId": "unused_imports",
+          "ruleIndex": 2
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "node/standalone/src/chain_spec.rs"
+                },
+                "region": {
+                  "byteLength": 13,
+                  "byteOffset": 6067,
+                  "endColumn": 18,
+                  "endLine": 165,
+                  "startColumn": 5,
+                  "startLine": 165
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "missing field `maintenance_mode` in initializer of `circuit_standalone_runtime::GenesisConfig`"
+          },
+          "ruleId": "E0063",
+          "ruleIndex": 18
+        }
+      ],
+      "tool": {
+        "driver": {
+          "informationUri": "https://rust-lang.github.io/rust-clippy/",
+          "name": "clippy",
+          "rules": [
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity\n`#[warn(clippy::type_complexity)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity",
+              "id": "clippy::type_complexity"
+            },
+            {
+              "fullDescription": {
+                "text": "`#[warn(dead_code)]` on by default\n"
+              },
+              "id": "dead_code"
+            },
+            {
+              "fullDescription": {
+                "text": "`#[warn(unused_imports)]` on by default\n"
+              },
+              "id": "unused_imports"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_arguments\n`#[warn(clippy::too_many_arguments)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#too_many_arguments",
+              "id": "clippy::too_many_arguments"
+            },
+            {
+              "fullDescription": {
+                "text": "use a custom `Error` type instead\nfor further information visit https://rust-lang.github.io/rust-clippy/master/index.html#result_unit_err\n`#[warn(clippy::result_unit_err)]` on by default\n"
+              },
+              "id": "clippy::result_unit_err"
+            },
+            {
+              "fullDescription": {
+                "text": "`#[warn(deprecated)]` on by default\n"
+              },
+              "id": "deprecated"
+            },
+            {
+              "fullDescription": {
+                "text": "`#[warn(unused_must_use)]` on by default\n"
+              },
+              "id": "unused_must_use"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#large_enum_variant\n`#[warn(clippy::large_enum_variant)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#large_enum_variant",
+              "id": "clippy::large_enum_variant"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#match_like_matches_macro\n`#[warn(clippy::match_like_matches_macro)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#match_like_matches_macro",
+              "id": "clippy::match_like_matches_macro"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#ptr_arg\n`#[warn(clippy::ptr_arg)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#ptr_arg",
+              "id": "clippy::ptr_arg"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match\n`#[warn(clippy::single_match)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#single_match",
+              "id": "clippy::single_match"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#tabs_in_doc_comments\n`#[warn(clippy::tabs_in_doc_comments)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#tabs_in_doc_comments",
+              "id": "clippy::tabs_in_doc_comments"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#option_map_unit_fn\n`#[warn(clippy::option_map_unit_fn)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#option_map_unit_fn",
+              "id": "clippy::option_map_unit_fn"
+            },
+            {
+              "fullDescription": {
+                "text": "consider rewriting the `if` chain to use `cmp` and `match`\nfor further information visit https://rust-lang.github.io/rust-clippy/master/index.html#comparison_chain\n`#[warn(clippy::comparison_chain)]` on by default\n"
+              },
+              "id": "clippy::comparison_chain"
+            },
+            {
+              "fullDescription": {
+                "text": "consider choosing a less ambiguous name\nfor further information visit https://rust-lang.github.io/rust-clippy/master/index.html#wrong_self_convention\n`#[warn(clippy::wrong_self_convention)]` on by default\n"
+              },
+              "id": "clippy::wrong_self_convention"
+            },
+            {
+              "fullDescription": {
+                "text": ""
+              },
+              "id": "unused_crate_dependencies"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_update\n`#[warn(clippy::needless_update)]` on by default\n"
+              },
+              "helpUri": "https://rust-lang.github.io/rust-clippy/master/index.html#needless_update",
+              "id": "clippy::needless_update"
+            },
+            {
+              "fullDescription": {
+                "text": "for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_match\n`#[warn(clippy::collapsible_match)]` on by default\n"
+              },
+              "id": "clippy::collapsible_match"
+            },
+            {
+              "fullDescription": {
+                "text": ""
+              },
+              "id": "E0063"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}
