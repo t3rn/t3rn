@@ -19,8 +19,7 @@ import { Circuit, Tx } from "./circuit";
  */
 
 export class Sdk {
-  /*RPC url of the circuit */
-  rpcUrl: string;
+  provider: WsProvider;
   /* ApiPromise instance of the circuit */
   client: ApiPromise;
   /* Mapping for looking up Gateway instances via ID */
@@ -33,12 +32,16 @@ export class Sdk {
   signer: any;
 
   /**
-   * @param rpcUrl - The RPC URL of the node to connect to
+   * @param provider - RPC url or WsProvider instance of circuit
    * @param circuitSigner - The signer to use for signing transactions
    */
-  constructor(rpcUrl: string, circuitSigner: any) {
-    this.rpcUrl = rpcUrl;
+  constructor(provider: string | WsProvider, circuitSigner: any) {
     this.signer = circuitSigner;
+    if( typeof provider === "string") {
+      this.provider = new WsProvider(provider);
+    } else {
+      this.provider = provider;
+    }
   }
 
   /**
@@ -48,7 +51,7 @@ export class Sdk {
   async init(): Promise<ApiPromise> {
     await cryptoWaitReady()
     this.client = await ApiPromise.create({
-      provider: new WsProvider(this.rpcUrl),
+      provider: this.provider,
       types: types as any,
       rpc: rpc as any,
     });
@@ -59,4 +62,4 @@ export class Sdk {
   }
 }
 
-export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils};
+export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils, ApiPromise, WsProvider};
