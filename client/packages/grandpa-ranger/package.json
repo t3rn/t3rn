@@ -1,0 +1,17 @@
+{
+  "name": "grandpa-ranger",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@t3rn/sdk": "../sdk",
+    "axios": "^1.4.0",
+    "dotenv": "^16.0.3",
+    "http": "^0.0.1-security",
+    "prom-client": "^14.2.0",
+    "url": "^0.11.0"
+  }
+}
