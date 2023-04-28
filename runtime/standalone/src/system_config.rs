@@ -16,7 +16,7 @@ use frame_support::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
-use sp_runtime::{traits::*, MultiAddress, Permill};
+use sp_runtime::{traits::*, Permill};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
