@@ -276,16 +276,16 @@ where
         while !queue.is_empty() && remaining_key_budget > 0 {
             // Cannot panic due to loop condition
             let trie = &mut queue[0];
-            let outcome =
-                child::kill_storage(&child_trie_info(&trie.trie_id), Some(remaining_key_budget));
-            let keys_removed = match outcome {
-                // This happens when our budget wasn't large enough to remove all keys.
-                KillStorageResult::SomeRemaining(count) => count,
-                KillStorageResult::AllRemoved(count) => {
-                    // We do not care to preserve order. The contract is deleted already and
-                    // no one waits for the trie to be deleted.
+            let outcome = child::clear_storage(
+                &child_trie_info(&trie.trie_id),
+                Some(remaining_key_budget),
+                None,
+            );
+            let keys_removed = match outcome.maybe_cursor {
+                Some(_) => outcome.backend,
+                None => {
                     queue.swap_remove(0);
-                    count
+                    outcome.backend
                 },
             };
             remaining_key_budget = remaining_key_budget.saturating_sub(keys_removed);
