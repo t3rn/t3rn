@@ -7037,9 +7037,7 @@ dependencies = [
 name = "pallet-portal-rpc"
 version = "1.0.0-alpha.0"
 dependencies = [
- "jsonrpc-core 18.0.0",
- "jsonrpc-core-client 18.0.0",
- "jsonrpc-derive 18.0.0",
+ "jsonrpsee",
  "pallet-portal-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
@@ -7047,6 +7045,7 @@ dependencies = [
  "sp-core",
  "sp-rpc",
  "sp-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]
