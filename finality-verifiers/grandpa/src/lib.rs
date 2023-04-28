@@ -558,7 +558,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     }
 
     pub fn initialize(
-        origin: OriginFor<T>,
+        origin: T::RuntimeOrigin,
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
@@ -615,7 +615,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ///
     /// May only be called either by root, or by `PalletOwner`.
     pub fn set_owner(
-        origin: OriginFor<T>,
+        origin: T::RuntimeOrigin,
         _gateway_id: ChainId,
         encoded_new_owner: Vec<u8>,
     ) -> Result<(), &'static str> {

@@ -38,7 +38,7 @@ use frame_support::{
     traits::{
         BalanceStatus, ConstU32, ConstU64, Contains, Currency, OnInitialize, ReservableCurrency,
     },
-    weights::{constants::WEIGHT_PER_SECOND, DispatchClass, PostDispatchInfo, Weight},
+    weights::{constants::WEIGHT_REF_TIME_PER_SECOND, DispatchClass, PostDispatchInfo, Weight},
 };
 use frame_system::{self as system, EventRecord, Phase};
 use pretty_assertions::assert_eq;
@@ -207,7 +207,7 @@ impl ChainExtension<Test> for TestExtension {
 
 parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(2_u64.checked_mul(WEIGHT_PER_SECOND).unwrap());
+        frame_system::limits::BlockWeights::simple_max(2_u64.checked_mul(WEIGHT_REF_TIME_PER_SECOND).unwrap());
     pub static ExistentialDeposit: u64 = 1;
 }
 impl frame_system::Config for Test {

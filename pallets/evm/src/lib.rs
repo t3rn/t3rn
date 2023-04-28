@@ -921,11 +921,11 @@ where
     }
 }
 
-impl<T: Config> fp_evm::traits::Evm<T::Origin> for Pallet<T> {
+impl<T: Config> fp_evm::traits::Evm<T::RuntimeOrigin> for Pallet<T> {
     type Outcome = Result<(CallInfo, Weight), sp_runtime::DispatchError>;
 
     fn call(
-        origin: T::Origin,
+        origin: T::RuntimeOrigin,
         _source: H160,
         target: H160,
         input: Vec<u8>,

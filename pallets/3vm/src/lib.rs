@@ -206,7 +206,7 @@ impl<T: Config> Precompile<T, BalanceOf<T>> for Pallet<T> {
 
 impl<T: Config> LocalStateAccess<T, BalanceOf<T>> for Pallet<T> {
     fn load_local_state(
-        origin: &T::Origin,
+        origin: &T::RuntimeOrigin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
         <T as Config>::OnLocalTrigger::load_local_state(origin, xtx_id.cloned())
