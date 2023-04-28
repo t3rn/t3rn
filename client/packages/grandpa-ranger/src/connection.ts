@@ -50,10 +50,12 @@ export class Connection {
 				this.isActive = true;
 				console.log(`Connected to ${this.usingPrimaryRpc ? this.rpc1 : this.rpc2}`)
 				if(this.isCircuit) {
+					this.prometheus.circuitActive = true;
 					const sdk = new Sdk(this.provider, this.signer);
 					this.sdk = sdk;
 					this.client = await sdk.init();
 				} else {
+					this.prometheus.targetActive = true;
 					this.client = await ApiPromise.create({
 						provider: this.provider
 					})
@@ -67,6 +69,7 @@ export class Connection {
 
 			this.provider.on('disconnected', () => {
 				this.isActive = false;
+				this.isCircuit ? this.prometheus.circuitActive = false : this.prometheus.targetActive = false;
 				console.log(`Disconnected from ${this.usingPrimaryRpc ? this.rpc1 : this.rpc2}`)
 				this.provider.disconnect()
 				if(this.client) {
@@ -77,6 +80,7 @@ export class Connection {
 
 			this.provider.on('error',  () => {
 				this.isActive = false;
+				this.isCircuit ? this.prometheus.circuitActive = false : this.prometheus.targetActive = false;
 				console.log(`Error from ${this.usingPrimaryRpc ? this.rpc1 : this.rpc2}`)
 				this.provider.disconnect()
 				if(this.client) {
