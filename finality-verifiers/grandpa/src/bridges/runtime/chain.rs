@@ -17,7 +17,7 @@
 use frame_support::Parameter;
 use num_traits::AsPrimitive;
 use sp_runtime::traits::{
-    AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeMallocSizeOf,
+    AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay,
     MaybeSerializeDeserialize, Member, SimpleBitOps,
 };
 use sp_std::str::FromStr;
@@ -40,7 +40,6 @@ pub trait Chain: Send + Sync + 'static {
         + MaybeDisplay
         + AtLeast32BitUnsigned
         + FromStr
-        + MaybeMallocSizeOf
         + AsPrimitive<usize>
         + Default;
 
@@ -58,8 +57,7 @@ pub trait Chain: Send + Sync + 'static {
         + Default
         + SimpleBitOps
         + AsRef<[u8]>
-        + AsMut<[u8]>
-        + MaybeMallocSizeOf;
+        + AsMut<[u8]>;
 
     /// A type that fulfills the abstract idea of what a Substrate hasher (a type
     /// that produces hashes) is.

@@ -81,7 +81,7 @@ where
             // If the block hash is not supplied assume the best block.
             self.client.info().best_hash));
 
-        match api.get_evm_address(&at, account_id) {
+        match api.get_evm_address(at, account_id) {
             Ok(Some(tuple)) => Ok(tuple),
             _ => Err("No evm address"),
         }
@@ -97,7 +97,7 @@ where
         let at = BlockId::hash(at.unwrap_or_else(||
             // If the block hash is not supplied assume the best block.
             self.client.info().best_hash));
-        api.get_or_into_account_id(&at, address)
+        api.get_or_into_account_id(at, address)
             .map_err(runtime_error_into_rpc_err)
     }
 
@@ -110,7 +110,7 @@ where
         let at = BlockId::hash(at.unwrap_or_else(||
             // If the block hash is not supplied assume the best block.
             self.client.info().best_hash));
-        match api.get_threevm_info(&at, address) {
+        match api.get_threevm_info(at, address) {
             Ok(Some(tuple)) => Ok(tuple),
             _ => Err("No 3vm info"),
         }
@@ -126,7 +126,7 @@ where
         let at = BlockId::hash(at.unwrap_or_else(||
             // If the block hash is not supplied assume the best block.
             self.client.info().best_hash));
-        api.account_info(&at, address)
+        api.account_info(at, address)
             .map_err(runtime_error_into_rpc_err)
     }
 }

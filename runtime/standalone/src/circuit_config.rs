@@ -120,7 +120,7 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
 
 impl pallet_clock::Config for Runtime {
     type AccountManager = AccountManager;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
@@ -130,7 +130,7 @@ impl pallet_clock::Config for Runtime {
 impl pallet_xdns::Config for Runtime {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
@@ -138,7 +138,7 @@ impl pallet_xdns::Config for Runtime {
 impl pallet_contracts_registry::Config for Runtime {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
@@ -167,7 +167,7 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
 }
 
 impl pallet_portal::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
@@ -191,10 +191,10 @@ parameter_types! {
 impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
     type Balances = Balances;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<100u32>;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
     type SFXBiddingPeriod = ConstU32<3u32>;

@@ -218,9 +218,9 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type BlockNumber = u32;
     type BlockWeights = BlockWeights;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type DbWeight = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Header = Header;
@@ -230,7 +230,7 @@ impl frame_system::Config for Test {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type PalletInfo = PalletInfo;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
@@ -241,7 +241,7 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ();
     type MaxReserves = ();
@@ -256,8 +256,8 @@ impl pallet_timestamp::Config for Test {
     type WeightInfo = ();
 }
 impl pallet_utility::Config for Test {
-    type Call = Call;
-    type Event = Event;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = ();
 }
@@ -304,7 +304,7 @@ impl Contains<Call> for TestFilter {
 
 impl Config for Test {
     type AddressGenerator = DefaultAddressGenerator;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type CallFilter = TestFilter;
     type CallStack = [Frame<Self>; 31];
     type ChainExtension = TestExtension;
@@ -313,7 +313,7 @@ impl Config for Test {
     type DeletionWeightLimit = DeletionWeightLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Randomness = Randomness;
     type Schedule = MySchedule;
     type ThreeVm = ThreeVm;

@@ -24,20 +24,20 @@ impl pallet_3vm::Config for Test {
     type ContractsRegistry = ContractsRegistry;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type OnLocalTrigger = Circuit;
     type SignalBounceThreshold = ConstU32<2>;
 }
 
 impl pallet_sudo::Config for Test {
-    type Call = Call;
-    type Event = Event;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_contracts_registry::Config for Test {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -59,7 +59,7 @@ impl pallet_assets::Config for Test {
     type AssetId = u32;
     type Balance = Balance;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Extra = ();
     type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type Freezer = ();
@@ -76,7 +76,7 @@ impl pallet_account_manager::Config for Test {
     type Clock = t3rn_primitives::clock::ClockMock<Self>;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Time = Timestamp;
     type WeightInfo = ();
@@ -89,10 +89,10 @@ parameter_types! {
 impl pallet_circuit::Config for Test {
     type AccountManager = AccountManager;
     type Balances = Balances;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<1024>;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = CircuitPortal;
     type SFXBiddingPeriod = ConstU32<3>;
@@ -109,7 +109,7 @@ impl pallet_circuit::Config for Test {
 impl pallet_xdns::Config for Test {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = ();
 }
@@ -196,7 +196,7 @@ impl pallet_portal::SelectLightClient<Test> for SelectLightClientRegistry {
 }
 
 impl pallet_portal::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Test>;
     type Xdns = Xdns;

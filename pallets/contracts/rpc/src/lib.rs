@@ -245,7 +245,7 @@ where
         limit_gas(gas_limit)?;
 
         api.call(
-            &at,
+            at,
             origin,
             dest,
             value,
@@ -284,7 +284,7 @@ where
         limit_gas(gas_limit)?;
 
         api.instantiate(
-            &at,
+            at,
             origin,
             value,
             gas_limit,
@@ -316,7 +316,7 @@ where
             .map(|l| decode_hex(l, "balance"))
             .transpose()?;
 
-        api.upload_code(&at, origin, code.to_vec(), storage_deposit_limit)
+        api.upload_code(at, origin, code.to_vec(), storage_deposit_limit)
             .map_err(runtime_error_into_rpc_err)
     }
 
@@ -329,7 +329,7 @@ where
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
         let result = api
-            .get_storage(&at, address, key.to_vec())
+            .get_storage(at, address, key.to_vec())
             .map_err(runtime_error_into_rpc_err)?
             .map_err(ContractAccessError)?
             .map(Bytes);
