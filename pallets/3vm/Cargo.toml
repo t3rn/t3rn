@@ -45,14 +45,14 @@ pallet-portal                    = { path = "../portal" }
 pallet-xdns                      = { path = "../xdns" }
 
 # Substrate Dependencies
-pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-timestamp                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', package = "pallet-insecure-randomness-collective-flip" }
+pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-timestamp                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 
-pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
+pallet-xbi-portal = { workspace = true, default-features = true }
 
 [features]
 default = [ "std" ]

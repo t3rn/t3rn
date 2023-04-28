@@ -37,10 +37,10 @@ t3rn-types       = { default-features = false, path = "../../types", features = 
 circuit-mock-runtime    = { path = "../../runtime/mock" }
 circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
 circuit-runtime-types   = { path = "../../runtime/common-types" }
-pallet-balances         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-sudo             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-core                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-keystore             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-balances         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-sudo             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+sp-core                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+sp-keystore             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 
 [features]
 default = [ "std" ]

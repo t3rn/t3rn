@@ -41,8 +41,8 @@ pallet-circuit = { path = "../circuit", default-features = true }
 [dev-dependencies]
 similar-asserts = "1.1.0"
 
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
-sp-io   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+sp-io   = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 
 hex-literal = "0.3"
 

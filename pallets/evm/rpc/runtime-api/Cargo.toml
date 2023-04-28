@@ -14,10 +14,10 @@ ethereum-types = { version = "0.13.1", default-features = false }
 codec      = { workspace = true, package = "parity-scale-codec" }
 scale-info = { workspace = true }
 sp-api     = { version = "4.0.0-dev", workspace = true }
-sp-core    = { version = "6.0.0", workspace = true }
-sp-io      = { version = "6.0.0", workspace = true }
-sp-runtime = { version = "6.0.0", workspace = true }
-sp-std     = { version = "4.0.0", workspace = true }
+sp-core    = { version = "7.0.0", workspace = true }
+sp-io      = { version = "7.0.0", workspace = true }
+sp-runtime = { version = "7.0.0", workspace = true }
+sp-std     = { version = "5.0.0", workspace = true }
 
 fp-evm = { path = "../../primitives", default-features = false }
 

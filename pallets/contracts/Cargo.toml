@@ -37,7 +37,6 @@ pallet-contracts-proc-macro = { workspace = true }
 sp-core                     = { workspace = true }
 sp-io                       = { workspace = true }
 sp-runtime                  = { workspace = true }
-sp-sandbox                  = { workspace = true }
 sp-std                      = { workspace = true }
 
 # t3rn dependencies
@@ -55,12 +54,12 @@ serde_json        = "1.0.81"
 wat               = "1"
 
 # Substrate Dependencies
-pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-timestamp                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', package = "pallet-insecure-randomness-collective-flip" }
+pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-timestamp                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 
 # t3rn dependencies
 pallet-3vm                       = { path = "../3vm" }
@@ -71,9 +70,9 @@ pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../portal" }
 pallet-xdns                      = { path = "../xdns" }
 
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 
-pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
+pallet-xbi-portal = { workspace = true, default-features = true }
 
 [features]
 default = [ "std" ]
@@ -95,7 +94,6 @@ std = [
   "sp-runtime/std",
   "sp-io/std",
   "sp-std/std",
-  "sp-sandbox/std",
   "frame-support/std",
   "frame-system/std",
   "wasm-instrument/std",

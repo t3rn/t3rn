@@ -16,10 +16,10 @@ evm   = { git = "https://github.com/rust-blockchain/evm.git", rev = "01bcbd2205a
 serde = { version = "1.0.144", features = [ "derive" ], optional = true }
 
 codec      = { workspace = true, package = "parity-scale-codec" }
-sp-core = { version = "6.0.0", workspace = true }
-sp-std  = { version = "4.0.0", workspace = true }
+sp-core = { version = "7.0.0", workspace = true }
+sp-std  = { version = "5.0.0", workspace = true }
 
-frontier-fp-evm = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.27", default-features = false, package = "fp-evm" }
+frontier-fp-evm = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.39", default-features = false, package = "fp-evm" }
 
 [features]
 default = [ "std" ]
