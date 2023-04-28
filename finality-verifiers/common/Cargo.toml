@@ -9,7 +9,7 @@ repository = "https://github.com/t3rn/t3rn/"
 version    = "1.5.0-rc.0"
 
 [dependencies]
-codec            = { workspace = true }
+codec            = { workspace = true, package = "parity-scale-codec" }
 scale-info       = { workspace = true }
 serde            = { workspace = true, optional = true }
 
