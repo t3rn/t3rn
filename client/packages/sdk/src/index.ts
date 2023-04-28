@@ -1,5 +1,5 @@
 import "@polkadot/api-augment"; // DO NOT REMOVE THIS LINE
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
 import types from "./config/types.json";
@@ -62,4 +62,4 @@ export class Sdk {
   }
 }
 
-export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils, ApiPromise, WsProvider};
+export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils, ApiPromise, WsProvider, Keyring, cryptoWaitReady};
