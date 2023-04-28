@@ -354,6 +354,7 @@ impl pallet_maintenance_mode::Config for Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sp_runtime::MultiAddress;
 
     #[test]
     fn base_call_filter_returns_true_with_allowed_calls() {
