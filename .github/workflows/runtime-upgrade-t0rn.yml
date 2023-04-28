@@ -13,6 +13,8 @@ env:
 jobs:
   runtime-upgrade-smoke-tests:
     runs-on: [self-hosted, rust]
+    # This can only run when all release artificats are available
+    concurrency: release
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
