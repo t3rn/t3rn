@@ -55,7 +55,6 @@ class GrandpaRanger {
 					this.prometheus.successCount.inc(1)
 					const latestHeight = parseInt(batches[batches.length - 1].signed_header.number)
 					this.prometheus.circuitHeight.set(latestHeight)
-					// console.log("-resolving collectAndSubmit on range submission")
 					return resolve()
 				})
 				.catch((e) => {
@@ -63,7 +62,6 @@ class GrandpaRanger {
 					this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
 					this.prometheus.errors.inc({rangeSize: totalElements, timestamp: Date.now()})
 					this.prometheus.errorCount.inc(1)
-					// console.log("-resolving collectAndSubmit on range submission error")
 					return resolve() // resolve, as we don't want to stop the loop
 				})
 		} else {
@@ -81,6 +79,7 @@ class GrandpaRanger {
 				if(this.circuit.sdk && this.circuit.isActive) {
 					let tx = this.circuit.sdk.circuit.tx.createBatch(range.map(args => {
 						let submit;
+						// select the correct submit function based on the targetGatewayId
 						if(this.config.targetGatewayId === "roco") {
 							submit = this.circuit.client.tx.rococoBridge.submitHeaders
 						} else if (this.config.targetGatewayId === "ksma") {
