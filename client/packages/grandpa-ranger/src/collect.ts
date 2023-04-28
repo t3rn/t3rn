@@ -1,22 +1,27 @@
 import {Connection} from "./connection";
 import {ApiPromise, Encodings} from "@t3rn/sdk";
 const axios = require('axios').default;
+import {Prometheus} from "./prometheus";
 
-export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection): Promise<any[]> => {
+export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection, prometheus: Prometheus): Promise<any[]> => {
 	return new Promise(async (resolve, reject) => {
 		try {
 			const circuitHeight = await currentGatewayHeight(circuitConnection, config.targetGatewayId)
 			const targetHeight = await currentTargetHeight(targetConnection)
 
+			prometheus.circuitHeight.set(circuitHeight)
+			prometheus.targetHeight.set(targetHeight)
+
 			if(targetHeight > circuitHeight) {
 				let batches = await generateBatchProof(circuitConnection.client, targetConnection.client, config.targetGatewayId, circuitHeight + 1, targetHeight)
-				resolve(batches)
+				return resolve(batches)
 			} else {
-				console.log("No new blocks to submit")
-				resolve([])
+				throw new Error("No new blocks to submit")
+
 			}
+
 		} catch(error) {
-			reject(error)
+			return reject(error)
 		}
 	})
 }
@@ -26,7 +31,7 @@ const generateBatchProof = async (circuitClient: ApiPromise, targetClient: ApiPr
 	let transactionArguments: any[] = [];
 	while(from < to) {
 		// get finalityProof element of epoch that contains block #from
-		const finalityProof = await targetClient.rpc.grandpa.proveFinality(from)
+		const finalityProof = await targetClient.rpc.grandpa.proveFinality(from) //  -- from +1, +2, +3, +4, +5, +6, +7, +8, +9, +10.... until: grandpa session is over, or latest header
 		// decode finality proof
 		let { justification, headers } = Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
 		let signed_header = headers.pop()
@@ -53,7 +58,7 @@ const currentTargetHeight = async (connection: Connection): Promise<number> => {
 }
 
 const currentGatewayHeight = async (client: Connection, targetGatewayId: string)=> {
-	return axios.post('http://localhost:9933', {
+	return axios.post('http://127.0.0.1:9933', {
 		jsonrpc: '2.0',
 		method: 'portal_fetchHeadHeight',
 		params: [Array.from(new TextEncoder().encode(targetGatewayId))],
@@ -65,6 +70,9 @@ const currentGatewayHeight = async (client: Connection, targetGatewayId: string)
 	})
 	.then(response => {
 	  	return response.data.result;
+	})
+	.catch(error => {
+		throw new Error(`Gateway height couldnt be fetched! Err: ${error.toString()}`)
 	})
 }
 
