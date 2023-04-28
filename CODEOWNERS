@@ -5,7 +5,12 @@
 /pallets/3vm @AwesomeIbex
 /pallets/account-manager @AwesomeIbex
 /pallets/circuit-portal @petscheit
+/pallets/circuit @MaciejBaj 
+/types/abi @MaciejBaj 
 
+
+/pallets/contracts @AwesomeIbex 
+/pallets/evm @AwesomeIbex 
 /devnet @chiefbiiko
 /specs @chiefbiiko
 /scripts @chiefbiiko @3h4x
