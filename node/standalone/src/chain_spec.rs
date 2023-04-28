@@ -9,7 +9,7 @@ use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use t3rn_abi::sfx_abi::SFXAbi;
-use t3rn_primitives::{xdns::GatewayRecord};
+use t3rn_primitives::xdns::GatewayRecord;
 use t3rn_types::sfx::Sfx4bId;
 
 // The URL for the telemetry server.
