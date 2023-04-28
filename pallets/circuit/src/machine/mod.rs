@@ -16,7 +16,7 @@ pub mod test_extra;
 pub mod test_extra_stress;
 
 use sp_std::marker::PhantomData;
-use t3rn_primitives::circuit::SpeedMode;
+use t3rn_primitives::SpeedMode;
 
 pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,

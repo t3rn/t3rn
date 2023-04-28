@@ -1,10 +1,12 @@
 use crate::{BalanceOf, Config, Error, Pallet, PrecompileIndex};
 use codec::{Decode, Encode};
 use frame_support::{dispatch::RawOrigin, sp_runtime::DispatchError};
+use frame_system::ensure_signed;
 use sp_std::vec::Vec;
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
     threevm::{GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation},
+    SpeedMode,
 };
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
@@ -42,13 +44,27 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
                 }
             },
             SUBMIT => {
-                let args: CodecResult<SideEffects<T::AccountId, BalanceOf<T>, T::Hash>> =
-                    Decode::decode(args);
-                if let Ok(args) = args {
-                    match invoke::<T>(PrecompileArgs::SubmitSideEffects(origin, args)) {
-                        Ok(_) => {
-                            // No need to write output other than a success byte
-                            Ok::<_, Error<T>>(()).encode_to(output)
+                let args: CodecResult<(
+                    SideEffects<T::AccountId, BalanceOf<T>, T::Hash>,
+                    SpeedMode,
+                )> = Decode::decode(args);
+
+                if let Ok((sfx_arg, speed_mode_arg)) = args {
+                    match invoke::<T>(PrecompileArgs::SubmitSideEffects(
+                        origin,
+                        sfx_arg,
+                        speed_mode_arg,
+                    )) {
+                        Ok(precompile_invocation) => {
+                            let out_execution_state_view = precompile_invocation.get_submit();
+
+                            // Insert encoded execution state view into output buffer
+                            out_execution_state_view.encode_to(output);
+
+                            // Insert Res::Success 0 byte
+                            output.insert(0, 0u8);
+
+                            Ok::<_, Error<T>>(());
                         },
                         Err(e) => Err::<(), _>(e).encode_to(output),
                     }
@@ -99,37 +115,32 @@ pub(crate) fn invoke<T: Config>(
             )?;
             Ok(PrecompileInvocation::GetState(state))
         },
-        PrecompileArgs::SubmitSideEffects(origin, side_effects) => {
-            log::debug!(
-                target: LOG_TARGET,
-                "Submitting {:?} side effects: {:?}",
-                side_effects.execution_id,
-                side_effects.side_effects,
-            );
+        PrecompileArgs::SubmitSideEffects(origin, side_effects, speed_mode) => {
+            let account = ensure_signed(origin.clone()).map_err(|_e| Error::<T>::InvalidOrigin)?;
 
-            let origin_account = if let RawOrigin::Signed(account) = origin
-                .clone()
-                .into()
-                .map_err(|_| Error::<T>::InvalidOrigin)?
-            {
-                account
+            // todo: change parameter of t3rn_sdk::state::SideEffects to have optional execution_id
+            let maybe_xtx_id = if side_effects.execution_id.encode() == [0; 32] {
+                None
             } else {
-                return Err(Error::<T>::InvalidOrigin.into())
+                Some(side_effects.execution_id)
             };
-
             if !side_effects.side_effects.is_empty() {
                 let trigger = LocalTrigger::<T>::new(
-                    origin_account, // FIXME: this is not right, investigate the contract address param
+                    account, // FIXME: this is not right, investigate the contract address param
                     side_effects
                         .side_effects
                         .iter()
                         .map(|i| i.encode())
                         .collect(),
-                    Some(side_effects.execution_id),
+                    speed_mode,
+                    maybe_xtx_id,
                 );
 
-                T::OnLocalTrigger::on_local_trigger(&origin, trigger)
-                    .map(|_| PrecompileInvocation::Submit)
+                T::OnLocalTrigger::on_local_trigger(&origin, trigger).map(
+                    |local_state_execution_view| {
+                        PrecompileInvocation::Submit(local_state_execution_view)
+                    },
+                )
             } else {
                 Err(Error::<T>::CannotTriggerWithoutSideEffects.into())
             }
@@ -158,9 +169,14 @@ pub(crate) fn invoke<T: Config>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::{new_test_ext, Test};
-    use sp_runtime::traits::Hash;
+    use crate::mock::{new_test_ext, AccountId, Test};
+    use sp_core::H256;
+    use sp_runtime::traits::{Hash};
     use t3rn_primitives::circuit::LocalStateExecutionView;
+    use t3rn_sdk_primitives::{
+        storage::BoundedVec,
+        xc::{Chain, Operation},
+    };
 
     #[test]
     fn test_extract_origin_consumes_buffer() {
@@ -225,6 +241,63 @@ mod tests {
                 crate::Error<Test>,
             > as Decode>::decode(&mut &out[..])
             .unwrap();
+            assert_eq!(
+                res,
+                Ok(LocalStateExecutionView::<Test, BalanceOf<Test>> {
+                    local_state: Default::default(),
+                    hardened_side_effects: vec![vec![]],
+                    steps_cnt: (0, 1),
+                    xtx_id: <Test as frame_system::Config>::Hash::decode(
+                        &mut &hex::decode(
+                            "e0f81c92f7ec3253b2bc5356d5bd928792d40f3022c38ce088553dc8f5bb32c0"
+                        )
+                        .unwrap()[..]
+                    )
+                    .unwrap()
+                })
+            );
+        });
+    }
+
+    #[test]
+    fn invoke_submit_sfx_with_speed_mode() {
+        new_test_ext().execute_with(|| {
+            let account = 4_u64;
+            let caller = 5_u64;
+            let dest = 6_u64;
+            let mut side_effects_bounded_vec: BoundedVec<Chain<AccountId, u128, H256>, 16> =
+                BoundedVec::default();
+
+            side_effects_bounded_vec
+                .try_push(Chain::Kusama(Operation::Transfer {
+                    caller,
+                    to: dest,
+                    amount: 1_u128,
+                    insurance: None,
+                }))
+                .unwrap();
+
+            let speed_mode = SpeedMode::Finalized;
+            let submit_sfx_args = SideEffects::<AccountId, u128, H256> {
+                execution_id: H256::zero(),
+                side_effects: side_effects_bounded_vec,
+            };
+
+            let args = &mut &[
+                account.encode(),
+                submit_sfx_args.encode(),
+                speed_mode.encode(),
+            ]
+            .concat()[..];
+            let mut out = Vec::<u8>::new();
+
+            invoke_raw::<Test>(&GET_STATE, args, &mut out);
+            let res = <core::result::Result<
+                LocalStateExecutionView<Test, BalanceOf<Test>>,
+                crate::Error<Test>,
+            > as Decode>::decode(&mut &out[..])
+            .unwrap();
+
             assert_eq!(
                 res,
                 Ok(LocalStateExecutionView::<Test, BalanceOf<Test>> {

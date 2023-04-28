@@ -69,7 +69,7 @@ use crate::machine::{Machine, *};
 pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
-use t3rn_primitives::portal::InclusionReceipt;
+
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 #[cfg(test)]
@@ -115,9 +115,10 @@ pub mod pallet {
     };
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
-        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger, SpeedMode},
+        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         portal::Portal,
         xdns::Xdns,
+        SpeedMode,
     };
     use t3rn_types::migrations::v13::FullSideEffectV13;
 
@@ -434,7 +435,10 @@ pub mod pallet {
             Ok(local_state_execution_view)
         }
 
-        fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+        fn on_local_trigger(
+            origin: &OriginFor<T>,
+            trigger: LocalTrigger<T>,
+        ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
             log::debug!(
                 target: "runtime::circuit",
                 "Handling on_local_trigger xtx: {:?}, contract: {:?}, side_effects: {:?}",
@@ -442,6 +446,7 @@ pub mod pallet {
                 trigger.contract,
                 trigger.submitted_side_effects
             );
+
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
@@ -482,7 +487,7 @@ pub mod pallet {
                 },
             )?;
 
-            Ok(())
+            Self::load_local_state(origin, Some(xtx_id))
         }
 
         fn on_signal(origin: &OriginFor<T>, signal: ExecutionSignal<T::Hash>) -> DispatchResult {
@@ -502,11 +507,13 @@ pub mod pallet {
         /// Used by other pallets that want to create the exec order
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
-            <Self as OnLocalTrigger<T, BalanceOf<T>>>::on_local_trigger(
-                &origin,
-                LocalTrigger::<T>::decode(&mut &trigger[..])
-                    .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
-            )
+            let _execution_state_view =
+                <Self as OnLocalTrigger<T, BalanceOf<T>>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::<T>::decode(&mut &trigger[..])
+                        .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
+                )?;
+            Ok(())
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]

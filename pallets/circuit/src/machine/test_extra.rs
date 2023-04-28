@@ -14,7 +14,7 @@ use circuit_runtime_pallets::pallet_circuit::{
     state::{Cause, CircuitStatus, LocalXtxCtx},
     Config, Error, XExecSignal,
 };
-use t3rn_primitives::circuit::SpeedMode;
+use t3rn_primitives::SpeedMode;
 use t3rn_types::sfx::{ConfirmedSideEffect, FullSideEffect};
 
 use t3rn_primitives::xtx::LocalState;
