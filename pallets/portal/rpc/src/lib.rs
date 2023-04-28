@@ -1,31 +1,33 @@
-//! RPC interface for the Portal pallet.
+//! RPC interface for the XDNS pallet.
 
-use std::sync::Arc;
-
-pub use self::gen_client::Client as PortalClient;
 use codec::Codec;
-use jsonrpc_core::{Error, ErrorCode, Result};
-
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+    core::{async_trait, Error as JsonRpseeError, RpcResult},
+    proc_macros::rpc,
+    types::error::CallError,
+};
 use pallet_portal_rpc_runtime_api::ChainId;
 pub use pallet_portal_rpc_runtime_api::PortalRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::sp_std;
 use sp_runtime::{
     generic::BlockId,
     traits::{Block as BlockT, MaybeDisplay},
 };
+use sp_std::prelude::*;
+use std::sync::Arc;
 
 const RUNTIME_ERROR: i64 = 1;
 
-#[rpc]
+#[rpc(client, server)]
 pub trait PortalApi<AccountId> {
-    /// Returns latest finalized header of a gateway if available
-    #[rpc(name = "portal_getLatestFinalizedHeader")]
-    fn get_latest_finalized_header(&self, chain_id: ChainId) -> Result<Vec<u8>>;
+    /// Returns all known XDNS records
+    #[method(name = "portal_fetchHeadHeight")]
+    fn fetch_head_height(&self, chain_id: ChainId) -> RpcResult<u128>;
 }
 
-/// A struct that implements the [`PortalApi`].
+/// A struct that implements the [`PortalApiServer`].
 pub struct Portal<C, P> {
     client: Arc<C>,
     _marker: std::marker::PhantomData<P>,
@@ -41,32 +43,34 @@ impl<C, P> Portal<C, P> {
     }
 }
 
-impl<C, Block, AccountId> PortalApi<AccountId> for Portal<C, Block>
+#[async_trait]
+impl<C, Block, AccountId> PortalApiServer<AccountId> for Portal<C, Block>
 where
     AccountId: Codec + MaybeDisplay,
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
     C::Api: PortalRuntimeApi<Block, AccountId>,
 {
-    // ToDo ChainId decoding is not working, like in XDNS
-    fn get_latest_finalized_header(&self, gateway_id: ChainId) -> Result<Vec<u8>> {
+    fn fetch_head_height(&self, chain_id: ChainId) -> RpcResult<u128> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().best_hash);
 
-        let result: Option<Vec<u8>> = api.get_latest_finalized_header(&at, gateway_id).unwrap();
+        let result: Option<u128> = api
+            .fetch_head_height(&at, chain_id)
+            .map_err(runtime_error_into_rpc_err)?;
 
         match result {
-            Some(header_hash) => Ok(header_hash),
-            None => Err("No Finalized Header Found"),
+            Some(height) => Ok(height),
+            None => Err("ABI doesn't exist"),
         }
         .map_err(runtime_error_into_rpc_err)
     }
 }
 
-fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
-    Error {
-        code: ErrorCode::ServerError(RUNTIME_ERROR),
-        message: "Runtime error".into(),
-        data: Some(format!("{err:?}").into()),
-    }
+fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> JsonRpseeError {
+    JsonRpseeError::Call(CallError::Custom(jsonrpsee::types::ErrorObject::owned(
+        RUNTIME_ERROR as i32,
+        "Runtime Error - Portal RPC",
+        Some(format!("{err:?}")),
+    )))
 }
