@@ -1011,7 +1011,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -6195,7 +6195,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-utility",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.3.7 (git+https://github.com/t3rn/xbi)",
  "pallet-xdns",
  "parity-scale-codec",
  "scale-info",
@@ -6228,14 +6228,14 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "substrate-abi",
+ "substrate-abi 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
  "t3rn-primitives 1.4.0-rc.0",
 ]
 
 [[package]]
 name = "pallet-asset-registry"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi?branch=chore/upgrades#02b406e5422a27d74a2dd9c35bc6972f09085508"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6245,12 +6245,12 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.1",
+ "t3rn-primitives 1.4.0-rc.0",
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xp-channel",
- "xp-xcm",
+ "xp-channel 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "xp-xcm 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
 ]
 
 [[package]]
@@ -6489,7 +6489,7 @@ dependencies = [
  "pallet-staking-reward-curve",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6601,7 +6601,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-utility",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.3.7 (git+https://github.com/t3rn/xbi)",
  "pallet-xdns",
  "parity-scale-codec",
  "pretty_assertions",
@@ -6866,7 +6866,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-utility",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.3.7 (git+https://github.com/t3rn/xbi)",
  "pallet-xdns",
  "parity-scale-codec",
  "primitive-types 0.12.1",
@@ -7700,9 +7700,9 @@ dependencies = [
 [[package]]
 name = "pallet-xbi-portal"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi?branch=chore/upgrades#02b406e5422a27d74a2dd9c35bc6972f09085508"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/t3rn/t3rn?branch=development)",
+ "fp-evm 1.4.0-rc.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7718,14 +7718,44 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "substrate-abi",
- "substrate-contracts-abi",
+ "substrate-abi 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "substrate-contracts-abi 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "t3rn-primitives 1.4.0-rc.0",
+ "xcm",
+ "xp-channel 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "xp-format 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "xp-xcm 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "xs-channel 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+]
+
+[[package]]
+name = "pallet-xbi-portal"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+dependencies = [
+ "fp-evm 3.0.0-dev (git+https://github.com/t3rn/t3rn?branch=development)",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "pallet-contracts-primitives 5.0.0",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "substrate-abi 0.3.7 (git+https://github.com/t3rn/xbi)",
+ "substrate-contracts-abi 0.3.7 (git+https://github.com/t3rn/xbi)",
  "t3rn-primitives 1.0.0-alpha.1",
  "xcm",
- "xp-channel",
- "xp-format",
- "xp-xcm",
- "xs-channel",
+ "xp-channel 0.3.7 (git+https://github.com/t3rn/xbi)",
+ "xp-format 0.3.7 (git+https://github.com/t3rn/xbi)",
+ "xp-xcm 0.3.7 (git+https://github.com/t3rn/xbi)",
+ "xs-channel 0.3.7 (git+https://github.com/t3rn/xbi)",
 ]
 
 [[package]]
@@ -12749,6 +12779,19 @@ dependencies = [
 [[package]]
 name = "substrate-abi"
 version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi?branch=chore/upgrades#02b406e5422a27d74a2dd9c35bc6972f09085508"
+dependencies = [
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "substrate-abi"
+version = "0.3.7"
 source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
  "log",
@@ -12796,6 +12839,20 @@ dependencies = [
 [[package]]
 name = "substrate-contracts-abi"
 version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi?branch=chore/upgrades#02b406e5422a27d74a2dd9c35bc6972f09085508"
+dependencies = [
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "substrate-abi 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+]
+
+[[package]]
+name = "substrate-contracts-abi"
+version = "0.3.7"
 source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
  "log",
@@ -12804,7 +12861,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
- "substrate-abi",
+ "substrate-abi 0.3.7 (git+https://github.com/t3rn/xbi)",
 ]
 
 [[package]]
@@ -13097,7 +13154,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
  "pallet-utility",
- "pallet-xbi-portal",
+ "pallet-xbi-portal 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -15029,6 +15086,21 @@ dependencies = [
 [[package]]
 name = "xp-channel"
 version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi?branch=chore/upgrades#02b406e5422a27d74a2dd9c35bc6972f09085508"
+dependencies = [
+ "frame-support",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xp-format 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+]
+
+[[package]]
+name = "xp-channel"
+version = "0.3.7"
 source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
  "frame-support",
@@ -15038,7 +15110,23 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "xcm",
- "xp-format",
+ "xp-format 0.3.7 (git+https://github.com/t3rn/xbi)",
+]
+
+[[package]]
+name = "xp-format"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi?branch=chore/upgrades#02b406e5422a27d74a2dd9c35bc6972f09085508"
+dependencies = [
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "substrate-abi 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "substrate-contracts-abi 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
 ]
 
 [[package]]
@@ -15053,8 +15141,19 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
- "substrate-abi",
- "substrate-contracts-abi",
+ "substrate-abi 0.3.7 (git+https://github.com/t3rn/xbi)",
+ "substrate-contracts-abi 0.3.7 (git+https://github.com/t3rn/xbi)",
+]
+
+[[package]]
+name = "xp-xcm"
+version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi?branch=chore/upgrades#02b406e5422a27d74a2dd9c35bc6972f09085508"
+dependencies = [
+ "parity-scale-codec",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -15071,6 +15170,25 @@ dependencies = [
 [[package]]
 name = "xs-channel"
 version = "0.3.7"
+source = "git+https://github.com/t3rn/xbi?branch=chore/upgrades#02b406e5422a27d74a2dd9c35bc6972f09085508"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xp-channel 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "xp-format 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+ "xp-xcm 0.3.7 (git+https://github.com/t3rn/xbi?branch=chore/upgrades)",
+]
+
+[[package]]
+name = "xs-channel"
+version = "0.3.7"
 source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
 dependencies = [
  "frame-support",
@@ -15082,9 +15200,9 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xp-channel",
- "xp-format",
- "xp-xcm",
+ "xp-channel 0.3.7 (git+https://github.com/t3rn/xbi)",
+ "xp-format 0.3.7 (git+https://github.com/t3rn/xbi)",
+ "xp-xcm 0.3.7 (git+https://github.com/t3rn/xbi)",
 ]
 
 [[package]]
