@@ -8,7 +8,7 @@ repository  = "https://github.com/t3rn/3vm/"
 version     = "0.1.0"
 
 [dependencies]
-ethereum       = { version = "0.12.0", default-features = false, features = [ "with-codec" ] }
+ethereum       = { version = "0.14.0", default-features = false, features = [ "with-codec" ] }
 ethereum-types = { version = "0.13.1", default-features = false }
 
 codec      = { package = "parity-scale-codec", version = "3.0.0", default-features = false }

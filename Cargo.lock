@@ -2519,8 +2519,10 @@ checksum = "c22d4b5885b6aa2fe5e8b9329fb8d232bf739e434e6b87347c63bdd00c120f60"
 dependencies = [
  "crunchy",
  "fixed-hash 0.8.0",
+ "impl-codec",
  "impl-rlp",
  "impl-serde 0.4.0",
+ "scale-info",
  "tiny-keccak",
 ]
 
@@ -2537,6 +2539,24 @@ dependencies = [
  "parity-scale-codec",
  "rlp",
  "rlp-derive",
+ "scale-info",
+ "serde",
+ "sha3",
+ "triehash",
+]
+
+[[package]]
+name = "ethereum"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a89fb87a9e103f71b903b80b670200b54cc67a07578f070681f1fffb7396fb7"
+dependencies = [
+ "bytes",
+ "ethereum-types 0.14.1",
+ "hash-db",
+ "hash256-std-hasher",
+ "parity-scale-codec",
+ "rlp",
  "scale-info",
  "serde",
  "sha3",
@@ -2567,9 +2587,11 @@ checksum = "02d215cbf040552efcbe99a38372fe80ab9d00268e20012b79fcd0f073edd8ee"
 dependencies = [
  "ethbloom 0.13.0",
  "fixed-hash 0.8.0",
+ "impl-codec",
  "impl-rlp",
  "impl-serde 0.4.0",
  "primitive-types 0.12.1",
+ "scale-info",
  "uint",
 ]
 
@@ -2586,7 +2608,7 @@ source = "git+https://github.com/rust-blockchain/evm.git?rev=01bcbd2205a212c3445
 dependencies = [
  "auto_impl",
  "environmental",
- "ethereum",
+ "ethereum 0.12.0",
  "evm-core",
  "evm-gasometer",
  "evm-runtime",
@@ -6483,7 +6505,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
- "hex-literal 0.3.4",
+ "hex-literal 0.4.1",
  "log",
  "pallet-3vm",
  "pallet-account-manager",
@@ -6644,7 +6666,7 @@ dependencies = [
 name = "pallet-evm-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
- "ethereum",
+ "ethereum 0.14.0",
  "ethereum-types 0.13.1",
  "fp-evm 3.0.0-dev",
  "parity-scale-codec",
