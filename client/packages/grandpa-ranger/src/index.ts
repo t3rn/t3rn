@@ -3,14 +3,19 @@ import {generateRange} from "./collect";
 require('dotenv').config()
 import { Connection } from './connection';
 import { cryptoWaitReady } from "@t3rn/sdk"
+import { Prometheus } from "./prometheus";
 
 class GrandpaRanger {
 	circuit: Connection;
 	target: Connection;
 	config: any;
+	prometheus: Prometheus;
 
 	constructor(config: any) {
 		this.config = config;
+		this.prometheus = new Prometheus();
+		this.prometheus.rangeBreak.inc(this.config.rangeBreak);
+		this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
 	}
 
 	async start() {
@@ -20,30 +25,49 @@ class GrandpaRanger {
 
 	async connectClients() {
 		await cryptoWaitReady()
-		this.circuit = new Connection(this.config.circuit.rpc1, this.config.circuit.rpc2, true, this.config.circuitSigner);
+		this.circuit = new Connection(this.config.circuit.rpc1, this.config.circuit.rpc2, true, this.prometheus, this.config.circuitSigner);
 		this.circuit.connect();
-		this.target = new Connection(this.config.target.rpc1, this.config.target.rpc2, false);
+		this.target = new Connection(this.config.target.rpc1, this.config.target.rpc2, false, this.prometheus);
 		this.target.connect();
-		this.collectAndSubmit(() => {})
 	}
 
 	async collectAndSubmit(resolve: any) {
-		let range = await generateRange(this.config, this.circuit, this.target)
-			.then(range => range)
+		if (!this.circuit.isActive || !this.target.isActive) return resolve() // skip if either client is not active
+
+		let batches = await generateRange(this.config, this.circuit, this.target, this.prometheus)
 			.catch((e) => {
 				console.log(e);
 				// potentially we want to introduce a retry logic here
-				return [];
+				// console.log("-resolving collectAndSubmit on range generation error")
+				return resolve()
 			})
 
-		if(range.length > 0) {
-			console.log(`Submitting ${range.length} ranges`)
-			this.submitToCircuit(range)
-				.then(() => resolve())
+		if(batches.length > 0) {
+			// calculate the total number of elements in the batches elements
+			const totalElements = batches.reduce((acc, curr) => acc + curr.range.length, 0)
+			// console.log(`Submitting ${batches?.length} ranges with ${totalElements} elements`)
+
+			this.submitToCircuit(batches)
+				.then((res) => {
+					console.log({"status": "Submitted", "range_size": totalElements, "circuit_block": res})
+					this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
+					this.prometheus.successes.inc({rangeSize: totalElements, circuitBlock: res, timestamp: Date.now()})
+					this.prometheus.successCount.inc(1)
+					const latestHeight = parseInt(batches[batches.length - 1].signed_header.number)
+					this.prometheus.circuitHeight.set(latestHeight)
+					// console.log("-resolving collectAndSubmit on range submission")
+					return resolve()
+				})
 				.catch((e) => {
 					console.log(e);
-					resolve() // resolve anyway
+					this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
+					this.prometheus.errors.inc({rangeSize: totalElements, timestamp: Date.now()})
+					this.prometheus.errorCount.inc(1)
+					// console.log("-resolving collectAndSubmit on range submission error")
+					return resolve() // resolve, as we don't want to stop the loop
 				})
+		} else {
+			console.log({"status": "skipped", "range_size": 0, "circuit_block": 0})
 		}
 	}
 
@@ -52,46 +76,47 @@ class GrandpaRanger {
 		if(range.length > 10) {
 			range = range.slice(0, 10);
 		}
-		new Promise((resolve, reject) => {
-			if(this.circuit.sdk && this.circuit.isActive) {
-				let tx = this.circuit.sdk.circuit.tx.createBatch(range.map(args => {
-					let submit;
-					if(this.config.targetGatewayId === "roco") {
-						submit = this.circuit.client.tx.rococoBridge.submitHeaders
-					} else if (this.config.targetGatewayId === "ksma") {
-						submit = this.circuit.client.tx.kusamaBridge.submitHeaders
-					} else {
-						throw new Error(`Unknown targetGatewayId ${this.config.targetGatewayId}`)
-					}
-					return submit(
-						args.range,
-						args.signed_header,
-						args.justification
-					)
-				}))
+		return new Promise(async (resolve, reject) => {
+			try {
+				if(this.circuit.sdk && this.circuit.isActive) {
+					let tx = this.circuit.sdk.circuit.tx.createBatch(range.map(args => {
+						let submit;
+						if(this.config.targetGatewayId === "roco") {
+							submit = this.circuit.client.tx.rococoBridge.submitHeaders
+						} else if (this.config.targetGatewayId === "ksma") {
+							submit = this.circuit.client.tx.kusamaBridge.submitHeaders
+						} else if (this.config.targetGatewayId === "pdot") {
+							submit = this.circuit.client.tx.polkadotBridge.submitHeaders
+						} else {
+							throw new Error(`Unknown targetGatewayId: ${this.config.targetGatewayId}`)
+						}
+						return submit(
+							args.range,
+							args.signed_header,
+							args.justification
+						)
+					}))
 
-				this.circuit.sdk.circuit.tx.signAndSendSafe(tx)
-					.then((result) => {
-						console.log(`Submitted ${range.length} ranges to circuit`)
-						console.log(`Tx hash: ${result}`)
-					})
-
-				resolve
-			} else {
-				// we should prob have some retry logic here instead
-				reject(new Error(`Circuit client is not active!`))
+					let res = await this.circuit.sdk.circuit.tx.signAndSendSafe(tx)
+					resolve(res)
+				} else {
+					// we should prob have some retry logic here instead
+					throw new Error(`Circuit client is not active!`)
+				}
+			} catch(err) {
+				reject(err)
 			}
 		})
-
 	}
 
 	async scheduleRangeSubmission() {
 		while(true) {
-			await new Promise((resolve, reject) => {
+			await new Promise((resolve, _reject) => {
+				console.log(`Starting new range submission loop: ${new Date().toISOString()}`)
 				setTimeout(
 					() => {
 						this.collectAndSubmit(resolve)
-							.catch(() => reject) // we should never get here with the setup above
+							.catch(() => resolve) // we should never get here with the setup above
 					},
 					this.config.rangeBreak * 1000
 				)
