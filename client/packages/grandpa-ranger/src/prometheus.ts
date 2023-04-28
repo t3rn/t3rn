@@ -4,7 +4,8 @@ const url = require('url')
 export class Prometheus {
 	circuitActive: boolean
 	targetActive: boolean
-
+	targetDisconnectCounter: any
+	circuitDisconnectCounter: any
 	register: any;
 	circuitHeight: any
 	targetHeight: any
@@ -87,18 +88,34 @@ export class Prometheus {
 		this.circuitDisconnected = new client.Counter(
 			{
 				name: 'circuit_disconnect',
-				help: 'Number of times circuit rpc server has disconnected',
+				help: 'Information on circuit disconnections',
 				registers: [this.register],
 				labelNames: ['endpoint', 'timestamp']
+			}
+		)
+
+		this.circuitDisconnectCounter = new client.Counter(
+			{
+				name: 'circuit_disconnect_counter',
+				help: 'Number of times circuit rpc server has disconnected',
+				registers: [this.register],
 			}
 		)
 
 		this.targetDisconnected = new client.Counter(
 			{
 				name: 'target_disconnect',
-				help: 'Number of times target rpc server has disconnected',
+				help: 'Information on target disconnections',
 				registers: [this.register],
 				labelNames: ['endpoint', 'timestamp']
+			}
+		)
+
+		this.targetDisconnectCounter = new client.Counter(
+			{
+				name: 'target_disconnect_counter',
+				help: 'Number of times target rpc server has disconnected',
+				registers: [this.register],
 			}
 		)
 
