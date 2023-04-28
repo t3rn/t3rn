@@ -1,18 +1,26 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from '@polkadot/api-base/types';
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import '@polkadot/api-base/types/submittable';
+
+import type { ApiTypes, AugmentedSubmittable, SubmittableExtrinsic, SubmittableExtrinsicFunction } from '@polkadot/api-base/types';
 import type { Data } from '@polkadot/types';
 import type { Bytes, Compact, Option, U256, U8aFixed, Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H160, H256, MultiAddress, Perbill } from '@polkadot/types/interfaces/runtime';
 import type { CircuitStandaloneRuntimeOriginCaller, PalletAssetsDestroyWitness, PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification, PalletIdentityBitFlags, PalletIdentityIdentityInfo, PalletIdentityJudgement, SpCoreVoid, SpFinalityGrandpaEquivocationProof, SpRuntimeHeader, T3rnAbiRecodeCodec, T3rnPrimitivesAccountManagerOutcome, T3rnPrimitivesClaimableBenefitSource, T3rnPrimitivesClaimableCircuitRole, T3rnPrimitivesContractsRegistryRegistryContract, T3rnPrimitivesExecutionVendor, T3rnPrimitivesGatewayVendor, T3rnPrimitivesTokenInfo, T3rnTypesSfxConfirmedSideEffect, T3rnTypesSfxSideEffect } from '@polkadot/types/lookup';
 
+export type __AugmentedSubmittable = AugmentedSubmittable<() => unknown>;
+export type __SubmittableExtrinsic<ApiType extends ApiTypes> = SubmittableExtrinsic<ApiType>;
+export type __SubmittableExtrinsicFunction<ApiType extends ApiTypes> = SubmittableExtrinsicFunction<ApiType>;
+
 declare module '@polkadot/api-base/types/submittable' {
-  export interface AugmentedSubmittables<ApiType extends ApiTypes> {
+  interface AugmentedSubmittables<ApiType extends ApiTypes> {
     accountManager: {
-      deposit: AugmentedSubmittable<(chargeId: H256 | string | Uint8Array, payee: AccountId32 | string | Uint8Array, chargeFee: u128 | AnyNumber | Uint8Array, offeredReward: u128 | AnyNumber | Uint8Array, source: T3rnPrimitivesClaimableBenefitSource | 'BootstrapPool' | 'Inflation' | 'TrafficFees' | 'TrafficRewards' | 'Unsettled' | number | Uint8Array, role: T3rnPrimitivesClaimableCircuitRole | 'Ambassador' | 'Executor' | 'Attester' | 'Staker' | 'Collator' | 'ContractAuthor' | 'Relayer' | 'Requester' | 'Local' | number | Uint8Array, recipient: Option<AccountId32> | null | object | string | Uint8Array, maybeAssetId: Option<u32> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [H256, AccountId32, u128, u128, T3rnPrimitivesClaimableBenefitSource, T3rnPrimitivesClaimableCircuitRole, Option<AccountId32>, Option<u32>]>;
-      finalize: AugmentedSubmittable<(chargeId: H256 | string | Uint8Array, outcome: T3rnPrimitivesAccountManagerOutcome | 'UnexpectedFailure' | 'Revert' | 'Commit' | 'Slash' | number | Uint8Array, maybeRecipient: Option<AccountId32> | null | object | string | Uint8Array, maybeActualFees: Option<u128> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [H256, T3rnPrimitivesAccountManagerOutcome, Option<AccountId32>, Option<u128>]>;
+      deposit: AugmentedSubmittable<(chargeId: H256 | string | Uint8Array, payee: AccountId32 | string | Uint8Array, chargeFee: u128 | AnyNumber | Uint8Array, offeredReward: u128 | AnyNumber | Uint8Array, source: T3rnPrimitivesClaimableBenefitSource | 'BootstrapPool' | 'Inflation' | 'TrafficFees' | 'TrafficRewards' | 'Unsettled' | number | Uint8Array, role: T3rnPrimitivesClaimableCircuitRole | 'Ambassador' | 'Executor' | 'Attester' | 'Staker' | 'Collator' | 'ContractAuthor' | 'Relayer' | 'Requester' | 'Local' | number | Uint8Array, recipient: Option<AccountId32> | null | Uint8Array | AccountId32 | string, maybeAssetId: Option<u32> | null | Uint8Array | u32 | AnyNumber) => SubmittableExtrinsic<ApiType>, [H256, AccountId32, u128, u128, T3rnPrimitivesClaimableBenefitSource, T3rnPrimitivesClaimableCircuitRole, Option<AccountId32>, Option<u32>]>;
+      finalize: AugmentedSubmittable<(chargeId: H256 | string | Uint8Array, outcome: T3rnPrimitivesAccountManagerOutcome | 'UnexpectedFailure' | 'Revert' | 'Commit' | 'Slash' | number | Uint8Array, maybeRecipient: Option<AccountId32> | null | Uint8Array | AccountId32 | string, maybeActualFees: Option<u128> | null | Uint8Array | u128 | AnyNumber) => SubmittableExtrinsic<ApiType>, [H256, T3rnPrimitivesAccountManagerOutcome, Option<AccountId32>, Option<u128>]>;
     };
     assets: {
       /**
@@ -570,7 +578,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * * If no account exists and the call value is not less than `existential_deposit`,
        * a regular account will be created and any value will be transferred.
        **/
-      call: AugmentedSubmittable<(dest: MultiAddress | { Id: any } | { Index: any } | { Raw: any } | { Address32: any } | { Address20: any } | string | Uint8Array, value: Compact<u128> | AnyNumber | Uint8Array, gasLimit: Compact<u64> | AnyNumber | Uint8Array, storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array, data: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [MultiAddress, Compact<u128>, Compact<u64>, Option<Compact<u128>>, Bytes]>;
+      call: AugmentedSubmittable<(dest: MultiAddress | { Id: any } | { Index: any } | { Raw: any } | { Address32: any } | { Address20: any } | string | Uint8Array, value: Compact<u128> | AnyNumber | Uint8Array, gasLimit: Compact<u64> | AnyNumber | Uint8Array, storageDepositLimit: Option<Compact<u128>> | null | Uint8Array | Compact<u128> | AnyNumber, data: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [MultiAddress, Compact<u128>, Compact<u64>, Option<Compact<u128>>, Bytes]>;
       /**
        * Instantiates a contract from a previously deployed wasm binary.
        * 
@@ -578,7 +586,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
        * must be supplied.
        **/
-      instantiate: AugmentedSubmittable<(value: Compact<u128> | AnyNumber | Uint8Array, gasLimit: Compact<u64> | AnyNumber | Uint8Array, storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array, codeHash: H256 | string | Uint8Array, data: Bytes | string | Uint8Array, salt: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Compact<u128>, Compact<u64>, Option<Compact<u128>>, H256, Bytes, Bytes]>;
+      instantiate: AugmentedSubmittable<(value: Compact<u128> | AnyNumber | Uint8Array, gasLimit: Compact<u64> | AnyNumber | Uint8Array, storageDepositLimit: Option<Compact<u128>> | null | Uint8Array | Compact<u128> | AnyNumber, codeHash: H256 | string | Uint8Array, data: Bytes | string | Uint8Array, salt: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Compact<u128>, Compact<u64>, Option<Compact<u128>>, H256, Bytes, Bytes]>;
       /**
        * Instantiates a new contract from the supplied `code` optionally transferring
        * some balance.
@@ -607,7 +615,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - The `value` is transferred to the new account.
        * - The `deploy` function is executed in the context of the newly-created account.
        **/
-      instantiateWithCode: AugmentedSubmittable<(value: Compact<u128> | AnyNumber | Uint8Array, gasLimit: Compact<u64> | AnyNumber | Uint8Array, storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array, code: Bytes | string | Uint8Array, data: Bytes | string | Uint8Array, salt: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Compact<u128>, Compact<u64>, Option<Compact<u128>>, Bytes, Bytes, Bytes]>;
+      instantiateWithCode: AugmentedSubmittable<(value: Compact<u128> | AnyNumber | Uint8Array, gasLimit: Compact<u64> | AnyNumber | Uint8Array, storageDepositLimit: Option<Compact<u128>> | null | Uint8Array | Compact<u128> | AnyNumber, code: Bytes | string | Uint8Array, data: Bytes | string | Uint8Array, salt: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Compact<u128>, Compact<u64>, Option<Compact<u128>>, Bytes, Bytes, Bytes]>;
       /**
        * Remove the code stored under `code_hash` and refund the deposit to its owner.
        * 
@@ -633,7 +641,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * only be instantiated by permissioned entities. The same is true when uploading
        * through [`Self::instantiate_with_code`].
        **/
-      uploadCode: AugmentedSubmittable<(code: Bytes | string | Uint8Array, storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, Option<Compact<u128>>]>;
+      uploadCode: AugmentedSubmittable<(code: Bytes | string | Uint8Array, storageDepositLimit: Option<Compact<u128>> | null | Uint8Array | Compact<u128> | AnyNumber) => SubmittableExtrinsic<ApiType>, [Bytes, Option<Compact<u128>>]>;
     };
     contractsRegistry: {
       /**
@@ -649,7 +657,7 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
        **/
-      call: AugmentedSubmittable<(target: H160 | string | Uint8Array, input: Bytes | string | Uint8Array, value: U256 | AnyNumber | Uint8Array, gasLimit: u64 | AnyNumber | Uint8Array, maxFeePerGas: U256 | AnyNumber | Uint8Array, maxPriorityFeePerGas: Option<U256> | null | object | string | Uint8Array, nonce: Option<U256> | null | object | string | Uint8Array, accessList: Vec<ITuple<[H160, Vec<H256>]>> | ([H160 | string | Uint8Array, Vec<H256> | (H256 | string | Uint8Array)[]])[]) => SubmittableExtrinsic<ApiType>, [H160, Bytes, U256, u64, U256, Option<U256>, Option<U256>, Vec<ITuple<[H160, Vec<H256>]>>]>;
+      call: AugmentedSubmittable<(target: H160 | string | Uint8Array, input: Bytes | string | Uint8Array, value: U256 | AnyNumber | Uint8Array, gasLimit: u64 | AnyNumber | Uint8Array, maxFeePerGas: U256 | AnyNumber | Uint8Array, maxPriorityFeePerGas: Option<U256> | null | Uint8Array | U256 | AnyNumber, nonce: Option<U256> | null | Uint8Array | U256 | AnyNumber, accessList: Vec<ITuple<[H160, Vec<H256>]>> | ([H160 | string | Uint8Array, Vec<H256> | (H256 | string | Uint8Array)[]])[]) => SubmittableExtrinsic<ApiType>, [H160, Bytes, U256, u64, U256, Option<U256>, Option<U256>, Vec<ITuple<[H160, Vec<H256>]>>]>;
       /**
        * Claim an evm address, used to claim an evm address that is compatible with EVM.
        **/
@@ -658,11 +666,11 @@ declare module '@polkadot/api-base/types/submittable' {
        * Issue an EVM create operation. This is similar to a contract creation transaction in
        * Ethereum.
        **/
-      create: AugmentedSubmittable<(init: Bytes | string | Uint8Array, value: U256 | AnyNumber | Uint8Array, gasLimit: u64 | AnyNumber | Uint8Array, maxFeePerGas: U256 | AnyNumber | Uint8Array, maxPriorityFeePerGas: Option<U256> | null | object | string | Uint8Array, nonce: Option<U256> | null | object | string | Uint8Array, accessList: Vec<ITuple<[H160, Vec<H256>]>> | ([H160 | string | Uint8Array, Vec<H256> | (H256 | string | Uint8Array)[]])[]) => SubmittableExtrinsic<ApiType>, [Bytes, U256, u64, U256, Option<U256>, Option<U256>, Vec<ITuple<[H160, Vec<H256>]>>]>;
+      create: AugmentedSubmittable<(init: Bytes | string | Uint8Array, value: U256 | AnyNumber | Uint8Array, gasLimit: u64 | AnyNumber | Uint8Array, maxFeePerGas: U256 | AnyNumber | Uint8Array, maxPriorityFeePerGas: Option<U256> | null | Uint8Array | U256 | AnyNumber, nonce: Option<U256> | null | Uint8Array | U256 | AnyNumber, accessList: Vec<ITuple<[H160, Vec<H256>]>> | ([H160 | string | Uint8Array, Vec<H256> | (H256 | string | Uint8Array)[]])[]) => SubmittableExtrinsic<ApiType>, [Bytes, U256, u64, U256, Option<U256>, Option<U256>, Vec<ITuple<[H160, Vec<H256>]>>]>;
       /**
        * Issue an EVM create2 operation.
        **/
-      create2: AugmentedSubmittable<(init: Bytes | string | Uint8Array, salt: H256 | string | Uint8Array, value: U256 | AnyNumber | Uint8Array, gasLimit: u64 | AnyNumber | Uint8Array, maxFeePerGas: U256 | AnyNumber | Uint8Array, maxPriorityFeePerGas: Option<U256> | null | object | string | Uint8Array, nonce: Option<U256> | null | object | string | Uint8Array, accessList: Vec<ITuple<[H160, Vec<H256>]>> | ([H160 | string | Uint8Array, Vec<H256> | (H256 | string | Uint8Array)[]])[]) => SubmittableExtrinsic<ApiType>, [Bytes, H256, U256, u64, U256, Option<U256>, Option<U256>, Vec<ITuple<[H160, Vec<H256>]>>]>;
+      create2: AugmentedSubmittable<(init: Bytes | string | Uint8Array, salt: H256 | string | Uint8Array, value: U256 | AnyNumber | Uint8Array, gasLimit: u64 | AnyNumber | Uint8Array, maxFeePerGas: U256 | AnyNumber | Uint8Array, maxPriorityFeePerGas: Option<U256> | null | Uint8Array | U256 | AnyNumber, nonce: Option<U256> | null | Uint8Array | U256 | AnyNumber, accessList: Vec<ITuple<[H160, Vec<H256>]>> | ([H160 | string | Uint8Array, Vec<H256> | (H256 | string | Uint8Array)[]])[]) => SubmittableExtrinsic<ApiType>, [Bytes, H256, U256, u64, U256, Option<U256>, Option<U256>, Vec<ITuple<[H160, Vec<H256>]>>]>;
       /**
        * Withdraw balance from EVM into currency/balances pallet.
        **/
@@ -994,7 +1002,7 @@ declare module '@polkadot/api-base/types/submittable' {
       submitHeaders: AugmentedSubmittable<(range: Vec<SpRuntimeHeader> | (SpRuntimeHeader | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array)[], signedHeader: SpRuntimeHeader | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array, justification: PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification | { round?: any; commit?: any; votesAncestries?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<SpRuntimeHeader>, SpRuntimeHeader, PalletGrandpaFinalityVerifierBridgesHeaderChainJustificationGrandpaJustification]>;
     };
     portal: {
-      registerGateway: AugmentedSubmittable<(gatewayId: U8aFixed | string | Uint8Array, tokenId: U8aFixed | string | Uint8Array, verificationVendor: T3rnPrimitivesGatewayVendor | 'Polkadot' | 'Kusama' | 'Rococo' | 'Ethereum' | number | Uint8Array, executionVendor: T3rnPrimitivesExecutionVendor | 'Substrate' | 'EVM' | number | Uint8Array, codec: T3rnAbiRecodeCodec | 'Scale' | 'Rlp' | number | Uint8Array, registrant: Option<AccountId32> | null | object | string | Uint8Array, escrowAccount: Option<AccountId32> | null | object | string | Uint8Array, allowedSideEffects: Vec<ITuple<[U8aFixed, Option<u8>]>> | ([U8aFixed | string | Uint8Array, Option<u8> | null | object | string | Uint8Array])[], tokenProps: T3rnPrimitivesTokenInfo | { Substrate: any } | { Ethereum: any } | string | Uint8Array, encodedRegistrationData: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed, U8aFixed, T3rnPrimitivesGatewayVendor, T3rnPrimitivesExecutionVendor, T3rnAbiRecodeCodec, Option<AccountId32>, Option<AccountId32>, Vec<ITuple<[U8aFixed, Option<u8>]>>, T3rnPrimitivesTokenInfo, Bytes]>;
+      registerGateway: AugmentedSubmittable<(gatewayId: U8aFixed | string | Uint8Array, tokenId: U8aFixed | string | Uint8Array, verificationVendor: T3rnPrimitivesGatewayVendor | 'Polkadot' | 'Kusama' | 'Rococo' | 'Ethereum' | number | Uint8Array, executionVendor: T3rnPrimitivesExecutionVendor | 'Substrate' | 'EVM' | number | Uint8Array, codec: T3rnAbiRecodeCodec | 'Scale' | 'Rlp' | number | Uint8Array, registrant: Option<AccountId32> | null | Uint8Array | AccountId32 | string, escrowAccount: Option<AccountId32> | null | Uint8Array | AccountId32 | string, allowedSideEffects: Vec<ITuple<[U8aFixed, Option<u8>]>> | ([U8aFixed | string | Uint8Array, Option<u8> | null | Uint8Array | u8 | AnyNumber])[], tokenProps: T3rnPrimitivesTokenInfo | { Substrate: any } | { Ethereum: any } | string | Uint8Array, encodedRegistrationData: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [U8aFixed, U8aFixed, T3rnPrimitivesGatewayVendor, T3rnPrimitivesExecutionVendor, T3rnAbiRecodeCodec, Option<AccountId32>, Option<AccountId32>, Vec<ITuple<[U8aFixed, Option<u8>]>>, T3rnPrimitivesTokenInfo, Bytes]>;
     };
     rococoBridge: {
       /**

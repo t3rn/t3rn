@@ -46,6 +46,8 @@
   },
   "devDependencies": {
     "@polkadot/typegen": "^9.2.4",
+    "@polkadot/util": "^9.5.1",
+    "@polkadot/util-crypto": "^9.5.1",
     "madge": "^4.0.1",
     "ts-node": "^10.2.1",
     "tsup": "6.6.3",
