@@ -9,19 +9,18 @@ import { ExtrinsicSchema, Extrinsic } from "@/schemas/extrinsic.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { getConfig } from "@/utils/config.ts"
 import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup"
-import { Args } from "@/types.ts"
 
 export const spinner = ora()
 
-export const handleSubmitExtrinsicCmd = (args: Args<"extrinsic">) => {
-  const unvalidatedExtrinsic = readExtrinsicFile(args.extrinsic)
+export const handleSubmitExtrinsicCmd = (extrinsicFile: string) => {
+  const unvalidatedExtrinsic = readExtrinsicFile(extrinsicFile)
 
   if (!unvalidatedExtrinsic) {
     process.exit(1)
   }
 
   const extrinsic = validate(ExtrinsicSchema, unvalidatedExtrinsic, {
-    configFileName: args.extrinsic,
+    configFileName: extrinsicFile,
   })
 
   if (!extrinsic) {
