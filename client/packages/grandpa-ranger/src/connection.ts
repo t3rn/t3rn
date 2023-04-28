@@ -1,7 +1,7 @@
-import { EventEmitter } from "events"
 import { Sdk, ApiPromise, WsProvider, Keyring } from '@t3rn/sdk';
+import { Prometheus } from "./prometheus";
 
-export class Connection extends EventEmitter {
+export class Connection {
 	client: ApiPromise;
 	provider: WsProvider;
 	rpc1: string;
@@ -11,37 +11,40 @@ export class Connection extends EventEmitter {
 	isActive: boolean = false;
 	sdk: Sdk | undefined;
 	signer: any;
+	prometheus: Prometheus;
 
-	constructor(rpc1: string, rpc2: string, isCircuit: boolean, signer?: string) {
-		super();
+	constructor(rpc1: string, rpc2: string, isCircuit: boolean, prometheus: Prometheus, signer?: string) {
 		this.rpc1 = rpc1;
 		this.rpc2 = rpc2;
 		this.usingPrimaryRpc = true;
 		this.isCircuit = isCircuit;
+		this.prometheus = prometheus;
 		if(signer) {
 			const keyring = new Keyring({ type: 'sr25519' });
 			this.signer = keyring.addFromMnemonic(signer);
-			console.log(`Signer address: ${this.signer.address}`)
 		}
-
 	}
 
 	async connect() {
 		while(true) {
 			try {
 				this.provider = this.createProvider();
-				await this.setListeners(this.provider);
+				await this.setListeners();
 				break;
 			} catch(e) {
+				const endpoint = this.usingPrimaryRpc ? this.rpc1 : this.rpc2
+				this.isCircuit ?
+					this.prometheus.circuitDisconnected.inc({endpoint, timestamp: Date.now() }) :
+					this.prometheus.targetDisconnected.inc({endpoint, timestamp: Date.now()});
+
 				this.usingPrimaryRpc = !this.usingPrimaryRpc; // toggle connection
 				console.log(`Retrying in 2 second with ${this.usingPrimaryRpc ? this.rpc1 : this.rpc2}`)
-				await new Promise((resolve, reject) => setTimeout(resolve, 2000));
+				await new Promise((resolve, _reject) => setTimeout(resolve, 2000));
 			}
 		}
 	}
 
-	async setListeners(provider: WsProvider) {
-		// this.provider = new WsProvider(this.usingPrimaryRpc ? this.rpc1 : this.rpc2)
+	async setListeners() {
 		return new Promise((resolve, reject) => {
 			this.provider.on('connected', async () => {
 				this.isActive = true;
@@ -53,6 +56,11 @@ export class Connection extends EventEmitter {
 				} else {
 					this.client = await ApiPromise.create({
 						provider: this.provider
+					})
+
+					// update prometheus metrics with incoming blocks
+					this.client.derive.chain.subscribeNewHeads(header => {
+						this.prometheus.targetHeight.set(header.number.toNumber());
 					})
 				}
 			})
@@ -83,5 +91,4 @@ export class Connection extends EventEmitter {
 	createProvider() {
 		return new WsProvider(this.usingPrimaryRpc ? this.rpc1 : this.rpc2)
 	}
-
 }
