@@ -5,13 +5,6 @@ import { Tx } from "./tx";
 
 const DECIMALS = 12;
 const VALUE_TYPE_SIZE = 16;
-
-export enum SpeedMode {
-  Fast,
-  Rational,
-  Finalized,
-}
-
 /**
  * The circuit class holds the signer object, exposes amount conversion and exposes the Tx class, which can then be used to submit.
  *
