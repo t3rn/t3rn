@@ -3,6 +3,7 @@ use crate::{
     circuit::LocalStateExecutionView,
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, RegistryContract},
+    SpeedMode,
 };
 use codec::{Decode, Encode};
 use sp_runtime::{DispatchError, DispatchResult};
@@ -24,14 +25,18 @@ where
     Balance: Encode + Decode,
 {
     GetState(T::Origin, GetState<T>),
-    SubmitSideEffects(T::Origin, SideEffects<T::AccountId, Balance, T::Hash>),
+    SubmitSideEffects(
+        T::Origin,
+        SideEffects<T::AccountId, Balance, T::Hash>,
+        SpeedMode,
+    ),
     Signal(T::Origin, ExecutionSignal<T::Hash>),
 }
 
 /// The happy return type of an invocation
 pub enum PrecompileInvocation<T: frame_system::Config, Balance> {
     GetState(LocalStateExecutionView<T, Balance>),
-    Submit,
+    Submit(LocalStateExecutionView<T, Balance>),
     Signal,
 }
 
@@ -39,6 +44,13 @@ impl<T: frame_system::Config, Balance> PrecompileInvocation<T, Balance> {
     pub fn get_state(&self) -> Option<&LocalStateExecutionView<T, Balance>> {
         match self {
             PrecompileInvocation::GetState(state) => Some(state),
+            _ => None,
+        }
+    }
+
+    pub fn get_submit(&self) -> Option<&LocalStateExecutionView<T, Balance>> {
+        match self {
+            PrecompileInvocation::Submit(state) => Some(state),
             _ => None,
         }
     }

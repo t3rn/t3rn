@@ -20,8 +20,8 @@ use circuit_runtime_pallets::pallet_executors::{
 use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, traits::Currency};
 use hex_literal::hex;
-use pallet_circuit::{bridges::polkadot_core::Hashing, SideEffect};
-use sp_runtime::{AccountId32, Percent};
+use pallet_circuit::SideEffect;
+use sp_runtime::{traits::BlakeTwo256 as Hashing, AccountId32, Percent};
 use substrate_abi::{SubstrateAbiConverter as Sabi, TryConvert, ValueMorphism};
 use t3rn_primitives::{
     common::{OrderedSet, Range, DEFAULT_ROUND_TERM},

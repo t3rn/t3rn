@@ -1,5 +1,4 @@
-use crate::xtx::LocalState;
-pub use crate::SpeedMode;
+use crate::{xtx::LocalState, SpeedMode};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
@@ -14,6 +13,7 @@ pub struct LocalTrigger<T: Config> {
     pub contract: T::AccountId,
     /// Side effects generated from the contract call
     pub submitted_side_effects: Vec<Vec<u8>>,
+    pub speed_mode: SpeedMode,
     pub maybe_xtx_id: Option<T::Hash>,
 }
 
@@ -21,11 +21,13 @@ impl<T: Config> LocalTrigger<T> {
     pub fn new(
         contract: T::AccountId,
         submitted_side_effects: Vec<Vec<u8>>,
+        speed_mode: SpeedMode,
         maybe_xtx_id: Option<T::Hash>,
     ) -> Self {
         LocalTrigger {
             contract,
             submitted_side_effects,
+            speed_mode,
             maybe_xtx_id,
         }
     }
@@ -57,7 +59,10 @@ impl<T: Config, Balance> LocalStateExecutionView<T, Balance> {
 }
 
 pub trait OnLocalTrigger<T: Config, Balance> {
-    fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult;
+    fn on_local_trigger(
+        origin: &OriginFor<T>,
+        trigger: LocalTrigger<T>,
+    ) -> Result<LocalStateExecutionView<T, Balance>, sp_runtime::DispatchError>;
 
     fn load_local_state(
         origin: &OriginFor<T>,

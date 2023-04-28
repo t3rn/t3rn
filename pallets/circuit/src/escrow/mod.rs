@@ -164,7 +164,7 @@ pub mod test {
 
     use frame_support::{assert_ok, traits::Currency};
     use frame_system::{EventRecord, Phase};
-    use t3rn_primitives::circuit::SpeedMode;
+    use t3rn_primitives::SpeedMode;
 
     use circuit_mock_runtime::test_utils::*;
 

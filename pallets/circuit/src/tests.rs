@@ -3858,6 +3858,7 @@ fn sdk_basic_success() {
                     insurance: None,
                 })
                 .encode()],
+                SpeedMode::Finalized,
                 Some(res.xtx_id),
             );
 
@@ -3916,6 +3917,7 @@ fn sdk_can_send_multiple_states() {
                             insurance: None
                         })
                         .encode()],
+                        SpeedMode::Finalized,
                         Some(res.xtx_id),
                     )
                 )
@@ -3936,6 +3938,7 @@ fn sdk_can_send_multiple_states() {
                             insurance: None
                         })
                         .encode()],
+                        SpeedMode::Finalized,
                         Some(res.xtx_id),
                     )
                 )
@@ -3971,6 +3974,7 @@ fn transfer_is_validated_correctly() {
                             insurance: None
                         })
                         .encode()],
+                        SpeedMode::Finalized,
                         Some(res.xtx_id),
                     )
                 )
@@ -4009,6 +4013,7 @@ fn swap_is_validated_correctly() {
                             insurance: None
                         })
                         .encode()],
+                        SpeedMode::Finalized,
                         Some(res.xtx_id),
                     )
                 )
@@ -4049,6 +4054,7 @@ fn add_liquidity_is_validated_correctly() {
                             insurance: None,
                         })
                         .encode()],
+                        SpeedMode::Finalized,
                         Some(res.xtx_id),
                     )
                 )
@@ -4056,7 +4062,7 @@ fn add_liquidity_is_validated_correctly() {
         });
 }
 
-use t3rn_primitives::circuit::SpeedMode;
+use t3rn_primitives::SpeedMode;
 use t3rn_sdk_primitives::{
     storage::BoundedVec,
     xc::{Call as CallVM, Operation},
@@ -4096,6 +4102,7 @@ fn call_to_vm_is_validated_correctly() {
                             )))
                             .encode()
                         ],
+                        SpeedMode::Finalized,
                         Some(res.xtx_id),
                     )
                 )

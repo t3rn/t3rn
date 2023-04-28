@@ -70,7 +70,10 @@ pub use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{traits::UniqueSaturatedInto, DispatchError};
 use sp_std::{marker::PhantomData, vec::Vec};
 pub use state::Init as InitState;
-use t3rn_primitives::threevm::{GetState, Precompile, PrecompileArgs};
+use t3rn_primitives::{
+    threevm::{GetState, Precompile, PrecompileArgs},
+    SpeedMode,
+};
 use t3rn_sdk_primitives::{
     signal::ExecutionSignal, state::SideEffects, GET_STATE_FUNCTION_CODE,
     POST_SIGNAL_FUNCTION_CODE, SUBMIT_FUNCTION_CODE,
@@ -183,13 +186,14 @@ impl<C: Config> ChainExtension<C> for () {
             SUBMIT_FUNCTION_CODE => {
                 let mut env = env.buf_in_buf_out();
 
-                let arg: SideEffects<C::AccountId, BalanceOf<C>, C::Hash> =
+                let arg: (SideEffects<C::AccountId, BalanceOf<C>, C::Hash>, SpeedMode) =
                     read_from_environment(&mut env)?;
 
                 let origin = RawOrigin::Signed(env.ext().caller().clone());
                 <C as Config>::ThreeVm::invoke(PrecompileArgs::SubmitSideEffects(
                     C::Origin::from(origin),
-                    arg,
+                    arg.0,
+                    arg.1,
                 ))?;
                 Ok(RetVal::Converging(0))
             },
