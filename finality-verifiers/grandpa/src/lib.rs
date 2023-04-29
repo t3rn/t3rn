@@ -52,7 +52,7 @@ use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::{vec, vec::Vec};
 
-mod types;
+pub mod types;
 
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 
@@ -932,7 +932,7 @@ pub mod tests {
 }
 
 #[cfg(all(feature = "testing", test))]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::mock::{
         run_test, test_header, test_header_range, test_header_with_correct_parent, AccountId,
