@@ -23,7 +23,9 @@ use sp_finality_grandpa::{AuthorityId, AuthoritySignature, AuthorityWeight, SetI
 use sp_runtime::traits::{Header as HeaderT, One, Zero};
 use sp_std::{convert::TryFrom, prelude::*, vec};
 // Re-export all our test account utilities
+use crate::{mock::TestHeader, types::GrandpaHeaderData};
 pub use keyring::*;
+
 mod keyring;
 
 pub const TEST_GRANDPA_ROUND: u64 = 1;
