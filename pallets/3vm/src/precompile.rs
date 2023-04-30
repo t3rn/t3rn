@@ -269,7 +269,7 @@ pub(crate) fn invoke<T: Config>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::{new_test_ext, Test, ALICE};
+    use crate::mock::{new_test_ext, AccountId, Test, ALICE};
     use sp_core::{H160, H256};
     use sp_runtime::traits::Hash;
     use t3rn_primitives::circuit::LocalStateExecutionView;
@@ -283,7 +283,7 @@ mod tests {
         new_test_ext().execute_with(|| {
             let buffer = &mut &ALICE.encode()[..];
             let result = extract_origin::<Test>(&T3rnCodec::Scale, buffer).unwrap();
-            println!("{:?}", result);
+            println!("{result:?}");
 
             assert_eq!(buffer.len(), 0)
         });
@@ -295,7 +295,7 @@ mod tests {
             let account = H160::from_low_u64_be(4);
             let buffer = &mut &rlp::encode(&account)[..];
             let result = extract_origin::<Test>(&T3rnCodec::Rlp, buffer).unwrap();
-            println!("{:?}", result);
+            println!("{result:?}");
 
             assert_eq!(buffer.len(), 0)
         });
@@ -368,7 +368,7 @@ mod tests {
                 crate::Error<Test>,
             > as Decode>::decode(&mut &out[..])
             .unwrap();
-            assert_eq!(res, Err(Error::<Test>::DownstreamCircuit.into()));
+            assert_eq!(res, Err(Error::<Test>::DownstreamCircuit));
         });
     }
 

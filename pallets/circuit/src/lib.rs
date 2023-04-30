@@ -45,7 +45,6 @@ use sp_runtime::{
     DispatchError, KeyTypeId,
 };
 use sp_std::{convert::TryInto, vec, vec::Vec};
-use t3rn_primitives::portal::InclusionReceipt;
 
 pub use t3rn_types::{
     bid::SFXBid,
@@ -59,7 +58,7 @@ pub use t3rn_primitives::{
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
     gateway::{GatewayABIConfig, HasherAlgo as HA},
-    portal::{HeightResult, Portal},
+    portal::{HeightResult, InclusionReceipt, Portal},
     volatile::LocalState,
     xdns::Xdns,
     xtx::{Xtx, XtxId},
