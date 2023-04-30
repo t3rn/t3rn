@@ -17,3 +17,5 @@ alice: parachain 3334 is registered within 225 seconds
 {% for node in nodes %}
 {{node}}: reports block height is at least 5 within 250 seconds
 {% endfor %}
+#  Given the setup of rangers + executors + single transfer SFX submission can be confirmed
+collator02: js-script ./confirm_single_optimistic_transfer_sfx.js within 200 seconds
