@@ -4,7 +4,7 @@ use crate::{
     GatewayVendor, SpeedMode, TokenInfo,
 };
 use codec::{Decode, Encode};
-use ed25519_dalek::ed25519::signature::digest::generic_array::arr::Inc;
+
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::{convert::TryFrom, vec::Vec};
