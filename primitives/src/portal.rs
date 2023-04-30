@@ -4,11 +4,11 @@ use crate::{
     GatewayVendor, SpeedMode, TokenInfo,
 };
 use codec::{Decode, Encode};
+use ed25519_dalek::ed25519::signature::digest::generic_array::arr::Inc;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
-use sp_std::vec::Vec;
-use t3rn_abi::{recode::Codec, types::Bytes};
-pub use t3rn_light_client_commons::traits::{HeaderResult, HeightResult};
+use sp_std::{convert::TryFrom, vec::Vec};
+use t3rn_abi::{recode::Codec, types::Bytes, Abi, FilledAbi};
 use t3rn_types::sfx::Sfx4bId;
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
@@ -122,6 +122,7 @@ pub trait Portal<T: frame_system::Config> {
 pub enum PortalExecution<T: frame_system::Config> {
     Header(HeaderResult),
     Height(HeightResult<T::BlockNumber>),
+    Inclusion(InclusionReceipt<T::BlockNumber>),
     BlockNumber(T::BlockNumber),
     Data(Bytes),
     Switched(bool),
@@ -136,6 +137,11 @@ impl<T: frame_system::Config> From<HeaderResult> for PortalExecution<T> {
 impl<T: frame_system::Config> From<HeightResult<T::BlockNumber>> for PortalExecution<T> {
     fn from(value: HeightResult<T::BlockNumber>) -> Self {
         Self::Height(value)
+    }
+}
+impl<T: frame_system::Config> From<InclusionReceipt<T::BlockNumber>> for PortalExecution<T> {
+    fn from(value: InclusionReceipt<T::BlockNumber>) -> Self {
+        Self::Inclusion(value)
     }
 }
 impl<T: frame_system::Config> From<Bytes> for PortalExecution<T> {
@@ -161,6 +167,7 @@ impl<T: frame_system::Config> Into<Bytes> for PortalExecution<T> {
         match self {
             PortalExecution::Header(x) => x.encode(),
             PortalExecution::Height(x) => x.encode(),
+            PortalExecution::Inclusion(x) => x.encode(),
             PortalExecution::BlockNumber(x) => x.encode(),
             PortalExecution::Data(x) => x.encode(),
             PortalExecution::Switched(x) => x.encode(),
@@ -439,7 +446,7 @@ pub mod tests {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let portal_call = PrecompileArgs::GetLatestFinalizedHeader(chain_id);
         let encoded_portal_call = portal_call.encode();
-        println!("Call: {:?}", encoded_portal_call);
+        println!("Call: {encoded_portal_call:?}");
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
                 .unwrap();
