@@ -455,7 +455,7 @@ mod tests {
                     steps_cnt: (0, 1),
                     xtx_id: <Test as frame_system::Config>::Hash::decode(
                         &mut &hex::decode(
-                            "e0f81c92f7ec3253b2bc5356d5bd928792d40f3022c38ce088553dc8f5bb32c0"
+                            "d2097ea5ba9ae6f4484fa960dbc0f82a6ac5a08e4c0785cff0b95d510a97ce18"
                         )
                         .unwrap()[..]
                     )
