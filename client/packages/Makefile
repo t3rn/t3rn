@@ -16,7 +16,10 @@ submit_headers_roco_x3:
 submit_side_effects:
 	cd cli; ts-node index.ts submit-side-effects config/transfer.ts;
 
-start_executor:
+start_executor_nohup:
 	cd executor; yarn; nohup yarn start > /tmp/t3rn_packages_test_executor.out 2>&1 &
 
-test_confirm_xtx: register_roco start_executor submit_headers_roco submit_side_effects submit_headers_roco_x3
+start_executor:
+	cd executor; yarn; yarn start;
+
+test_confirm_xtx: register_roco submit_headers_roco submit_side_effects submit_headers_roco_x3
