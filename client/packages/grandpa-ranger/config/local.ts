@@ -1,3 +1,24 @@
+export interface Config {
+	circuit: {
+		rpc1: {
+			ws: string,
+			http: string,
+		},
+		rpc2: {
+			ws: string,
+			http: string,
+		},
+		signer: string,
+	},
+	target: {
+		rpc1: { ws: string, }
+		rpc2: { ws: string, }
+	},
+	rangeBreak: number,
+	targetGatewayId: string
+	circuitSigner: string,
+}
+
 export default {
 	circuit: {
 		rpc1: {

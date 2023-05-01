@@ -130,28 +130,28 @@ export class Prometheus {
 
 	startServer() {
 		const server = http.createServer(async (req, res) => {
-		  try {
-			if (req.url === '/metrics') {
-			  res.setHeader('Content-Type', this.register.contentType);
-			  const metrics = await this.register.metrics();
-			  res.end(metrics);
-			} else if (req.url === '/status') {
-			  res.setHeader('Content-Type', 'text/plain');
-			  res.statusCode = this.circuitActive && this.targetActive ? 200 : 500;
-			  res.end(JSON.stringify({circuitActive: this.circuitActive, targetActive: this.targetActive}));
-			} else {
-			  res.statusCode = 404;
-			  res.end('Not found.');
+			try {
+				if (req.url === '/metrics') {
+					res.setHeader('Content-Type', this.register.contentType);
+					const metrics = await this.register.metrics();
+					res.end(metrics);
+				} else if (req.url === '/status') {
+					res.setHeader('Content-Type', 'text/plain');
+					res.statusCode = this.circuitActive && this.targetActive ? 200 : 500;
+					res.end(JSON.stringify({ circuitActive: this.circuitActive, targetActive: this.targetActive }));
+				} else {
+					res.statusCode = 404;
+					res.end('Not found.');
+				}
+			} catch (error) {
+				res.statusCode = 500;
+				res.end(error.toString());
 			}
-		  } catch (error) {
-			res.statusCode = 500;
-			res.end(error.toString());
-		  }
 		});
 
 		const port = 8080;
 		server.listen(port, () => {
-		  console.log(`Metrics server listening on port ${port}`);
+			console.log(`Metrics server listening on port ${port}`);
 		});
 	}
 
