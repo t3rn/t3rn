@@ -1,14 +1,15 @@
-import {generateRange} from "./collect";
+import { generateRange } from "./collect";
 
 require('dotenv').config()
 import { Connection } from './connection';
 import { cryptoWaitReady } from "@t3rn/sdk"
 import { Prometheus } from "./prometheus";
+import { Config } from "../config/local";
 
 class GrandpaRanger {
 	circuit: Connection;
 	target: Connection;
-	config: any;
+	config: Config;
 	prometheus: Prometheus;
 
 	constructor(config: any) {
@@ -41,15 +42,15 @@ class GrandpaRanger {
 				return resolve()
 			})
 
-		if(batches.length > 0) {
+		if (batches.length > 0) {
 			// calculate the total number of elements in the batches elements
 			const totalElements = batches.reduce((acc, curr) => acc + curr.range.length, 0)
 
 			this.submitToCircuit(batches)
 				.then((res) => {
-					console.log({"status": "Submitted", "range_size": totalElements, "circuit_block": res})
+					console.log({ "status": "Submitted", "range_size": totalElements, "circuit_block": res })
 					this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
-					this.prometheus.successes.inc({rangeSize: totalElements, circuitBlock: res, timestamp: Date.now()})
+					this.prometheus.successes.inc({ rangeSize: totalElements, circuitBlock: res, timestamp: Date.now() })
 					this.prometheus.successCount.inc(1)
 					const latestHeight = parseInt(batches[batches.length - 1].signed_header.number)
 					this.prometheus.circuitHeight.set(latestHeight)
@@ -58,27 +59,27 @@ class GrandpaRanger {
 				.catch((e) => {
 					console.log(e);
 					this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
-					this.prometheus.errors.inc({rangeSize: totalElements, timestamp: Date.now()})
+					this.prometheus.errors.inc({ rangeSize: totalElements, timestamp: Date.now() })
 					this.prometheus.errorCount.inc(1)
 					return resolve() // resolve, as we don't want to stop the loop
 				})
 		} else {
-			console.log({"status": "skipped", "range_size": 0, "circuit_block": 0})
+			console.log({ "status": "skipped", "range_size": 0, "circuit_block": 0 })
 		}
 	}
 
 	async submitToCircuit(range: any[]) {
 		// limit to 10 batches per tx
-		if(range.length > 10) {
+		if (range.length > 10) {
 			range = range.slice(0, 10);
 		}
 		return new Promise(async (resolve, reject) => {
 			try {
-				if(this.circuit.sdk && this.circuit.isActive) {
+				if (this.circuit.sdk && this.circuit.isActive) {
 					let tx = this.circuit.sdk.circuit.tx.createBatch(range.map(args => {
 						let submit;
 						// select the correct submit function based on the targetGatewayId
-						if(this.config.targetGatewayId === "roco") {
+						if (this.config.targetGatewayId === "roco") {
 							submit = this.circuit.client.tx.rococoBridge.submitHeaders
 						} else if (this.config.targetGatewayId === "ksma") {
 							submit = this.circuit.client.tx.kusamaBridge.submitHeaders
@@ -100,14 +101,14 @@ class GrandpaRanger {
 					// we should prob have some retry logic here instead
 					throw new Error(`Circuit client is not active!`)
 				}
-			} catch(err) {
+			} catch (err) {
 				reject(err)
 			}
 		})
 	}
 
 	async scheduleRangeSubmission() {
-		while(true) {
+		while (true) {
 			await new Promise((resolve, _reject) => {
 				console.log(`Starting new range submission loop: ${new Date().toISOString()}`)
 				setTimeout(
@@ -126,8 +127,8 @@ class GrandpaRanger {
 
 
 (async () => {
-	let config: any;
-	if(process.env.PROFILE === 'prod') {
+	let config: Config;
+	if (process.env.PROFILE === 'prod') {
 		config = require('../config/prod.ts').default;
 	} else {
 		config = require('../config/local.ts').default;

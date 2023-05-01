@@ -1,9 +1,10 @@
-import {Connection} from "./connection";
-import {ApiPromise, Encodings} from "@t3rn/sdk";
+import { Connection } from "./connection";
+import { ApiPromise, Encodings } from "@t3rn/sdk";
 const axios = require('axios').default;
-import {Prometheus} from "./prometheus";
+import { Prometheus } from "./prometheus";
 
-export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection, prometheus: Prometheus): Promise<any[]> => {
+export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection, prometheus: Prometheus): Promise<TransactionArguments[]> => {
+
 	return new Promise(async (resolve, reject) => {
 		try {
 			const circuitHeight = await currentGatewayHeight(circuitConnection, config.targetGatewayId)
@@ -12,24 +13,31 @@ export const generateRange = async (config: any, circuitConnection: Connection, 
 			prometheus.circuitHeight.set(circuitHeight)
 			prometheus.targetHeight.set(targetHeight)
 
-			if(targetHeight > circuitHeight) {
+			if (targetHeight > circuitHeight) {
 				let batches = await generateBatchProof(circuitConnection.client, targetConnection.client, config.targetGatewayId, circuitHeight + 1, targetHeight)
 				return resolve(batches)
 			} else {
 				throw new Error("No new blocks to submit")
-
 			}
 
-		} catch(error) {
+		} catch (error) {
 			return reject(error)
 		}
 	})
 }
 
-const generateBatchProof = async (circuitClient: ApiPromise, targetClient: ApiPromise, targetGatewayId: string, from: number, to: number): Promise<any[]> => {
+// TODO: add types
+interface TransactionArguments {
+	gatewayId: any,
+	signed_header: any,
+	range: any,
+	justification: any
+}
 
-	let transactionArguments: any[] = [];
-	while(from < to) {
+const generateBatchProof = async (circuitClient: ApiPromise, targetClient: ApiPromise, targetGatewayId: string, from: number, to: number): Promise<TransactionArguments[]> => {
+
+	let transactionArguments: TransactionArguments[] = [];
+	while (from < to) {
 		// get finalityProof element of epoch that contains block #from
 		const finalityProof = await targetClient.rpc.grandpa.proveFinality(from)
 		// decode finality proof
@@ -43,7 +51,7 @@ const generateBatchProof = async (circuitClient: ApiPromise, targetClient: ApiPr
 		justification = Encodings.Substrate.Decoders.justificationDecode(justification);
 
 		//push to transaction queue
-		transactionArguments.push({gatewayId: circuitClient.createType("ChainId", targetGatewayId), signed_header, range, justification})
+		transactionArguments.push({ gatewayId: circuitClient.createType("ChainId", targetGatewayId), signed_header, range, justification })
 		from = parseInt(signed_header.number.toJSON()) + 1
 	}
 	return transactionArguments;
@@ -57,7 +65,7 @@ const currentTargetHeight = async (connection: Connection): Promise<number> => {
 	return header.number.toNumber();
 }
 
-const currentGatewayHeight = async (client: Connection, targetGatewayId: string)=> {
+const currentGatewayHeight = async (client: Connection, targetGatewayId: string) => {
 	return axios.post(client.currentProvider().http, {
 		jsonrpc: '2.0',
 		method: 'portal_fetchHeadHeight',
@@ -65,19 +73,19 @@ const currentGatewayHeight = async (client: Connection, targetGatewayId: string)
 		id: 1
 	}, {
 		headers: {
-		'Content-Type': 'application/json'
+			'Content-Type': 'application/json'
 		}
 	})
-	.then(response => {
-	  	return response.data.result;
-	})
-	.catch(error => {
-		throw new Error(`Gateway height couldnt be fetched! Err: ${error.toString()}`)
-	})
+		.then(response => {
+			return response.data.result;
+		})
+		.catch(error => {
+			throw new Error(`Gateway height couldnt be fetched! Err: ${error.toString()}`)
+		})
 }
 
 const getHeader = async (client: ApiPromise, height: number) => {
-    return (await client.rpc.chain.getHeader(
-        await client.rpc.chain.getBlockHash(height)
-    )).toJSON()
+	return (await client.rpc.chain.getHeader(
+		await client.rpc.chain.getBlockHash(height)
+	)).toJSON()
 }
