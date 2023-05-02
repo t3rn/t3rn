@@ -68,6 +68,17 @@ impl<T: Config>
         SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
     }
 
+    fn get_settlements_by_role(
+        role: CircuitRole,
+    ) -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)> {
+        let mut settlements =
+            SettlementsPerRound::<T>::iter_prefix_values(T::Clock::current_round());
+        settlements
+            .filter(|settlement| settlement.role == role)
+            .map(|settlement| (settlement.recipient.clone(), settlement))
+            .collect()
+    }
+
     fn bump_contracts_registry_nonce() -> Result<T::Hash, DispatchError> {
         let execution_id = ContractsRegistryExecutionNonce::<T>::get();
         ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
