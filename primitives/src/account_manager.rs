@@ -58,9 +58,7 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
         request_charge: RequestCharge<Account, Balance, AssetId>,
     ) -> Result<Balance, DispatchError>;
     /// Send batch deposits to a recipient via the escrow
-    fn deposit_batch(
-        batch: Vec<(Hash, RequestCharge<Account, Balance, AssetId>)>,
-    ) -> DispatchResult;
+    fn deposit_batch(batch: &[(Hash, RequestCharge<Account, Balance, AssetId>)]) -> DispatchResult;
     /// Send funds to a recipient via the escrow
     fn deposit(
         charge_id: Hash,
