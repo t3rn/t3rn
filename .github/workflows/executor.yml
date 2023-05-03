@@ -26,10 +26,10 @@ jobs:
         with:
           node-version: 18
 
-      - run: cd .. && make
+      - run: cd .. && make all
       - run: yarn
-      - run: npm ci
-      - run: npm test
+      - run: yarn ci
+      - run: yarn test
 
   deploy:
     name: Deploy Executor

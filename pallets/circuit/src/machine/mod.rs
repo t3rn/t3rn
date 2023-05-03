@@ -16,6 +16,7 @@ pub mod test_extra;
 pub mod test_extra_stress;
 
 use sp_std::marker::PhantomData;
+use t3rn_primitives::SpeedMode;
 
 pub struct Machine<T: Config> {
     _phantom: PhantomData<T>,
@@ -75,6 +76,7 @@ impl<T: Config> Machine<T> {
         let (xtx_id, xtx) = XExecSignal::<T::AccountId, T::BlockNumber>::setup_fresh::<T>(
             requester,
             timeouts_at,
+            SpeedMode::Finalized,
             delay_steps_at,
         );
 

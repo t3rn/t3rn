@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.13.0-rc.0] - 2023-04-30
+### :sparkles: New Features
+- [`7bd6dad`](https://github.com/t3rn/t3rn/commit/7bd6dad3027512220c6422521fa59c6e42b3d312) - add and check against SFX Speed Modes at confirm *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`3f13b16`](https://github.com/t3rn/t3rn/commit/3f13b16a0027e1ee0baf3c16b81b3004b34191b6) - extend 3vm local trigger with SpeedMode *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`2ab8754`](https://github.com/t3rn/t3rn/commit/2ab87549c14f4a313806b9a86b67e97ad16ae8f2) - use xtx set speed mode at submission *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`574076c`](https://github.com/t3rn/t3rn/commit/574076c8e0ca91defaa16c2fc183de4f7f4f40b6) - roco cli config *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :recycle: Refactors
+- [`9106118`](https://github.com/t3rn/t3rn/commit/91061180c8b1c5471d3cb67afdffc40ecadfb4c1) - return InclusionReceipt out of Portal and use for SpeedMode *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`97a87bc`](https://github.com/t3rn/t3rn/commit/97a87bc1ab87dadaca7034cf906a909bfc3c8fb1) - move speed modes check to LightClients *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :white_check_mark: Tests
+- [`1fea573`](https://github.com/t3rn/t3rn/commit/1fea573485362d7d715b33a7405131426a471e89) - change test params from seqential to speed modes *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`2960862`](https://github.com/t3rn/t3rn/commit/296086214edd33ded51e81b1834e707c018e1f7d) - cover speed mode satisfied with tests *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`f78e91d`](https://github.com/t3rn/t3rn/commit/f78e91d6eeebdd926361990e83c76e35c7ea85ad) - modify test-skip-verification flag positions in Circuit *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`a6980cd`](https://github.com/t3rn/t3rn/commit/a6980cd8cf4e90c4d3f429d32b6237f7c184b091) - rm test-skip-verification from default Circuit flags *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`3fcfd2e`](https://github.com/t3rn/t3rn/commit/3fcfd2e246d9a25eb447365d7b0b75a62a9502a4) - cover initialize, reads and speed_modes in Portal *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`51588dc`](https://github.com/t3rn/t3rn/commit/51588dcd570cd95f817ff451930186c3a0d0bb54) - add test-skip-verifcation feature flag and revamp confirm *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`8da6419`](https://github.com/t3rn/t3rn/commit/8da6419568ad36781001cc7bc529123525036baa) - lint project files *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`db5e1e5`](https://github.com/t3rn/t3rn/commit/db5e1e500be6f4c126c0d03da39e27868bf74ce5) - move SpeedModes to root primitives *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`dff3ab5`](https://github.com/t3rn/t3rn/commit/dff3ab5c65c07daa23eeeb3a616fe172065c6c9f) - rebuild client packages to support SpeedModes *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`1ac7dd9`](https://github.com/t3rn/t3rn/commit/1ac7dd92da01f8eb575e7fd616a4f0ce83721f23) - add test-skip-verification feature flag to CI *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`af90fea`](https://github.com/t3rn/t3rn/commit/af90fea561ec412dd3a90c9cc71e996a37561c22) - handle result of Assets::resolve in t0rn handle_credit *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`b1bf094`](https://github.com/t3rn/t3rn/commit/b1bf09442108c27ba69988cd5bc3c2a2878382bd) - decrease Fast Rational Finalised Grandpa offsets to 0 *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`5b3cbaa`](https://github.com/t3rn/t3rn/commit/5b3cbaa16786f7f9fb9c8db93b641073eaad628e) - fix client SFX confirmation with executors+rangers *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.12.4-rc.0] - 2023-04-26
 ### :wrench: Chores
 - [`756c63e`](https://github.com/t3rn/t3rn/commit/756c63e09672cdd036377097371e17d1ce95b34b) - removes unused modules *(PR [#895](https://github.com/t3rn/t3rn/pull/895) by [@petscheit](https://github.com/petscheit))*
@@ -941,3 +972,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.11.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.10.4-rc.0...v1.11.0-rc.0
 [v1.12.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.11.0-rc.0...v1.12.0-rc.0
 [v1.12.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.12.3-rc.0...v1.12.4-rc.0
+[v1.13.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.12.8-rc.0...v1.13.0-rc.0

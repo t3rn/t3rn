@@ -30,6 +30,7 @@ use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
+    ensure,
     traits::{Currency, ExistenceRequirement::AllowDeath, Get},
     weights::Weight,
     RuntimeDebug,
@@ -41,9 +42,10 @@ use frame_system::{
 };
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
-    KeyTypeId,
+    DispatchError, KeyTypeId,
 };
 use sp_std::{convert::TryInto, vec, vec::Vec};
+use t3rn_primitives::portal::InclusionReceipt;
 
 pub use t3rn_types::{
     bid::SFXBid,
@@ -68,6 +70,7 @@ use crate::machine::{Machine, *};
 pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
+
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 #[cfg(test)]
@@ -116,6 +119,7 @@ pub mod pallet {
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         portal::Portal,
         xdns::Xdns,
+        SpeedMode,
     };
     use t3rn_types::migrations::v13::FullSideEffectV13;
 
@@ -432,7 +436,10 @@ pub mod pallet {
             Ok(local_state_execution_view)
         }
 
-        fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+        fn on_local_trigger(
+            origin: &OriginFor<T>,
+            trigger: LocalTrigger<T>,
+        ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
             log::debug!(
                 target: "runtime::circuit",
                 "Handling on_local_trigger xtx: {:?}, contract: {:?}, side_effects: {:?}",
@@ -440,6 +447,7 @@ pub mod pallet {
                 trigger.contract,
                 trigger.submitted_side_effects
             );
+
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
@@ -480,7 +488,7 @@ pub mod pallet {
                 },
             )?;
 
-            Ok(())
+            Self::load_local_state(origin, Some(xtx_id))
         }
 
         fn on_signal(origin: &OriginFor<T>, signal: ExecutionSignal<T::Hash>) -> DispatchResult {
@@ -500,11 +508,13 @@ pub mod pallet {
         /// Used by other pallets that want to create the exec order
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
-            <Self as OnLocalTrigger<T, BalanceOf<T>>>::on_local_trigger(
-                &origin,
-                LocalTrigger::<T>::decode(&mut &trigger[..])
-                    .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
-            )
+            let _execution_state_view =
+                <Self as OnLocalTrigger<T, BalanceOf<T>>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::<T>::decode(&mut &trigger[..])
+                        .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
+                )?;
+            Ok(())
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
@@ -552,12 +562,14 @@ pub mod pallet {
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
-            _sequential: bool,
+            speed_mode: SpeedMode,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Setup: new xtx context with SFX validation
             let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+
+            fresh_xtx.xtx.set_speed_mode(speed_mode);
             // Compile: apply the new state post squaring up and emit
             Machine::<T>::compile(
                 &mut fresh_xtx,
@@ -996,99 +1008,86 @@ impl<T: Config> Pallet<T> {
 
     fn confirm(
         xtx_id: XExecSignalId<T>,
-        step_side_effects: &mut Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-        >,
+        step_side_effects: &mut Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         sfx_id: &SideEffectId<T>,
-        confirmation: &ConfirmedSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-    ) -> Result<(), &'static str> {
-        fn confirm_order<T: Config>(
-            xtx_id: XExecSignalId<T>,
-            sfx_id: SideEffectId<T>,
-            confirmation: &ConfirmedSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            step_side_effects: &mut Vec<
-                FullSideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
-                >,
-            >,
-        ) -> Result<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            &'static str,
-        > {
-            // Double check there are some side effects for that Xtx - should have been checked at API level tho already
-            if step_side_effects.is_empty() {
-                return Err("Xtx has an empty single step.")
-            }
-
-            // Find sfx object index in the current step
-            match step_side_effects
-                .iter()
-                .position(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == sfx_id)
-            {
-                Some(index) => {
-                    // side effect found in current step
-                    if step_side_effects[index].confirmed.is_none() {
-                        // side effect unconfirmed currently
-                        step_side_effects[index].confirmed = Some(confirmation.clone());
-                        Ok(step_side_effects[index].clone())
-                    } else {
-                        Err("Side Effect already confirmed")
-                    }
-                },
-                None => Err("Unable to find matching Side Effect in given Xtx to confirm"),
-            }
+        confirmation: &ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+    ) -> Result<(), DispatchError> {
+        // Double check there are some side effects for that Xtx - should have been checked at API level tho already
+        if step_side_effects.is_empty() {
+            return Err(DispatchError::Other("Xtx has an empty single step."))
         }
 
-        // confirm order of current season, by passing the side_effects of it to confirm order.
-        let fsx = confirm_order::<T>(xtx_id, *sfx_id, confirmation, step_side_effects)?;
+        let fsx_opt = step_side_effects
+            .iter_mut()
+            .find(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == *sfx_id);
 
+        let fsx = match fsx_opt {
+            Some(fsx) if fsx.confirmed.is_none() => {
+                fsx.confirmed = Some(confirmation.clone());
+                fsx.clone()
+            },
+            Some(_) => return Err(DispatchError::Other("Side Effect already confirmed")),
+            None =>
+                return Err(DispatchError::Other(
+                    "Unable to find matching Side Effect in given Xtx to confirm",
+                )),
+        };
         log::debug!("Order confirmed!");
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
-        let encoded_event_params = <T as Config>::Portal::verify_event_inclusion(
+        #[cfg(not(feature = "test-skip-verification"))]
+        let inclusion_receipt = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
             confirmation.inclusion_data.clone(),
             Some(fsx.submission_target_height), // this enforces the submission height check!
         )
-        .map_err(|_| "SideEffect confirmation of inclusion failed")?;
+        .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
-        // ToDo: handle misbehaviour
-        log::debug!("SFX confirmation params: {:?}", encoded_event_params);
+        log::debug!("Inclusion confirmed!");
 
-        let sfx_abi: SFXAbi =
-            match <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action) {
-                Some(sfx_abi) => sfx_abi,
-                None => return Err("Unable to find matching Side Effect descriptor in XDNS"),
-            };
+        let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
+
+        #[cfg(not(feature = "test-skip-verification"))]
+        ensure!(
+            T::Portal::header_speed_mode_satisfied(
+                fsx.input.target,
+                inclusion_receipt.including_header.clone(),
+                xtx.speed_mode,
+            )?,
+            "Speed mode not satisfied"
+        );
+
+        log::debug!("Speed mode satisfied!");
+
+        // ToDo: handle misbehavior
+        #[cfg(not(feature = "test-skip-verification"))]
+        log::debug!(
+            "SFX confirmation inclusion receipt: {:?}",
+            inclusion_receipt
+        );
+
+        let sfx_abi =
+            <T as Config>::Xdns::get_sfx_abi(&fsx.input.target, fsx.input.action).ok_or({
+                DispatchError::Other("Unable to find matching Side Effect descriptor in XDNS")
+            })?;
+
+        #[cfg(feature = "test-skip-verification")]
+        let inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
+            message: confirmation.inclusion_data.clone(),
+            including_header: [0u8; 32].encode(),
+            height: T::BlockNumber::zero(),
+        }; // Empty encoded_event_params for testing purposes
 
         fsx.input.confirm(
             sfx_abi,
-            encoded_event_params,
+            inclusion_receipt.message,
             // todo: store the codec info in gateway's records and use it here
             &Codec::Scale,
             &Codec::Scale,
         )?;
 
-        log::debug!("confirmation plug ok");
+        log::debug!("Confirmation success");
 
         Ok(())
     }

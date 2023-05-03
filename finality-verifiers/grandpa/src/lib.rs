@@ -52,7 +52,7 @@ use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::{vec, vec::Vec};
 
-mod types;
+pub mod types;
 
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 
@@ -101,6 +101,7 @@ use crate::types::{
     RelaychainInclusionProof, RelaychainRegistrationData,
 };
 use frame_system::pallet_prelude::*;
+use t3rn_primitives::light_client::InclusionReceipt;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -664,10 +665,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Vec<u8>, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
-        let (payload_proof, encoded_payload, header) = if is_relaychain {
+        let (payload_proof, encoded_payload, header, header_hash) = if is_relaychain {
             let proof: RelaychainInclusionProof<BridgedHeader<T, I>> =
                 Decode::decode(&mut &*encoded_inclusion_proof)
                     .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
@@ -680,7 +681,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 executed_after_creation::<T, I>(submission_target_height, &header)?;
             }
 
-            (proof.payload_proof, proof.encoded_payload, header)
+            (
+                proof.payload_proof,
+                proof.encoded_payload,
+                header,
+                proof.block_hash,
+            )
         } else {
             let proof: ParachainInclusionProof<BridgedHeader<T, I>> =
                 Decode::decode(&mut &*encoded_inclusion_proof)
@@ -692,10 +698,22 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                     .ok_or(Error::<T, I>::ParachainEntryNotFound)?,
                 submission_target_height,
             )?;
-            (proof.payload_proof, proof.encoded_payload, header)
+            (
+                proof.payload_proof,
+                proof.encoded_payload,
+                header,
+                proof.relay_block_hash,
+            )
         };
 
-        verify_event_storage_proof::<T, I>(payload_proof, header, encoded_payload)
+        let message =
+            verify_event_storage_proof::<T, I>(payload_proof, header.clone(), encoded_payload)?;
+
+        Ok(InclusionReceipt::<T::BlockNumber> {
+            height: to_local_block_number::<T, I>(*header.number())?,
+            including_header: header_hash.encode(),
+            message,
+        })
     }
 
     pub fn get_latest_finalized_header() -> Option<Vec<u8>> {
@@ -914,7 +932,7 @@ pub mod tests {
 }
 
 #[cfg(all(feature = "testing", test))]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::mock::{
         run_test, test_header, test_header_range, test_header_with_correct_parent, AccountId,

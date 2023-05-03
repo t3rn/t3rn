@@ -90,3 +90,5 @@ std = [
   "pallet-xbi-portal/std",
 ]
 try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime" ]
+
+test-skip-verification = [ ]

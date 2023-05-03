@@ -13,6 +13,13 @@
             "EVM"
         ]
     },
+    "SpeedMode": {
+        "_enum": [
+            "Fast",
+            "Rational",
+            "Finalized"
+        ]
+    },
     "GatewayType": {
         "_enum": {
             "ProgrammableInternal": "u32",

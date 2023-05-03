@@ -14,6 +14,7 @@ use circuit_runtime_pallets::pallet_circuit::{
     state::{Cause, CircuitStatus, LocalXtxCtx},
     Config, Error, XExecSignal,
 };
+use t3rn_primitives::SpeedMode;
 use t3rn_types::sfx::{ConfirmedSideEffect, FullSideEffect};
 
 use t3rn_primitives::xtx::LocalState;
@@ -250,6 +251,7 @@ pub fn check_all_single_xtx_state_correct(
             delay_steps_at: None,
             requester_nonce,
             steps_cnt: expected_steps_cnt,
+            speed_mode: SpeedMode::Finalized,
         })
     );
     let local_ctx = Machine::<Runtime>::load_xtx(xtx_id).unwrap();
@@ -273,6 +275,7 @@ pub fn check_all_state_revert(
             delay_steps_at: None,
             requester_nonce,
             steps_cnt: (0, 1),
+            speed_mode: SpeedMode::Finalized,
         })
     );
 

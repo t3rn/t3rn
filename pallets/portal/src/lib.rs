@@ -16,7 +16,7 @@ use t3rn_primitives::{
     self,
     portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
-    ChainId, GatewayVendor, TokenInfo,
+    ChainId, GatewayVendor, SpeedMode, TokenInfo,
 };
 pub mod weights;
 
@@ -24,6 +24,7 @@ pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
 use frame_support::transactional;
+use t3rn_primitives::portal::InclusionReceipt;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -152,46 +153,61 @@ pub fn match_light_client_by_gateway_id<T: Config>(
 
 impl<T: Config> Portal<T> for Pallet<T> {
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_header()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_header())
     }
 
     fn get_latest_finalized_height(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_height()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_height())
     }
 
     fn get_latest_updated_height(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_updated_height()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_updated_height())
     }
 
     fn get_current_epoch(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.get_current_epoch()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_current_epoch())
     }
 
     fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.read_fast_confirmation_offset()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_fast_confirmation_offset())
     }
 
     fn read_rational_confirmation_offset(
         gateway_id: ChainId,
     ) -> Result<T::BlockNumber, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.read_rational_confirmation_offset()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_rational_confirmation_offset())
+    }
+
+    fn read_finalized_confirmation_offset(
+        gateway_id: ChainId,
+    ) -> Result<T::BlockNumber, DispatchError> {
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_finalized_confirmation_offset())
     }
 
     fn read_epoch_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.read_epoch_offset()
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_epoch_offset())
+    }
+
+    fn header_speed_mode_satisfied(
+        gateway_id: [u8; 4],
+        header: Bytes,
+        speed_mode: SpeedMode,
+    ) -> Result<bool, DispatchError> {
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?
+            .header_speed_mode_satisfied(header, speed_mode))
     }
 
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
             gateway_id,
             message,
@@ -203,7 +219,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_state_inclusion(
             gateway_id,
             message,
@@ -215,7 +231,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
-    ) -> Result<Bytes, DispatchError> {
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_tx_inclusion(
             gateway_id,
             message,
@@ -229,8 +245,8 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        let encoded_ingress =
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+        let mut inclusion_check =
             Self::verify_state_inclusion(gateway_id, message, submission_target_height)?;
 
         let in_codec = match_vendor_with_codec(
@@ -238,7 +254,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
         );
 
-        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+        let recoded_message = recode_bytes_with_descriptor(
+            inclusion_check.message,
+            abi_descriptor,
+            in_codec,
+            out_codec,
+        )?;
+        inclusion_check.message = recoded_message;
+
+        Ok(inclusion_check)
     }
 
     fn verify_tx_inclusion_and_recode(
@@ -247,8 +271,8 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        let encoded_ingress =
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+        let mut inclusion_check =
             Self::verify_tx_inclusion(gateway_id, message, submission_target_height)?;
 
         let in_codec = match_vendor_with_codec(
@@ -256,7 +280,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
         );
 
-        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+        let recoded_message = recode_bytes_with_descriptor(
+            inclusion_check.message,
+            abi_descriptor,
+            in_codec,
+            out_codec,
+        )?;
+        inclusion_check.message = recoded_message;
+
+        Ok(inclusion_check)
     }
 
     fn verify_event_inclusion_and_recode(
@@ -265,8 +297,8 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
-    ) -> Result<Bytes, DispatchError> {
-        let encoded_ingress =
+    ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+        let mut inclusion_check =
             Self::verify_event_inclusion(gateway_id, message, submission_target_height)?;
 
         let in_codec = match_vendor_with_codec(
@@ -274,7 +306,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?,
         );
 
-        recode_bytes_with_descriptor(encoded_ingress, abi_descriptor, in_codec, out_codec)
+        let recoded_message = recode_bytes_with_descriptor(
+            inclusion_check.message,
+            abi_descriptor,
+            in_codec,
+            out_codec,
+        )?;
+        inclusion_check.message = recoded_message;
+
+        Ok(inclusion_check)
     }
 
     fn initialize(

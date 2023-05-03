@@ -38,6 +38,7 @@ use sp_std::{marker::PhantomData, mem, prelude::*};
 use t3rn_primitives::{
     account_manager::Outcome,
     threevm::{ModuleOperations, Precompile, PrecompileArgs, Remuneration, ThreeVm},
+    SpeedMode,
 };
 use t3rn_sdk_primitives::state::SideEffects;
 
@@ -1078,15 +1079,16 @@ where
 
             // First we check if volatile
             if T::ThreeVm::volatile_check(executable.get_type()).is_ok() {
-                let side_effects: Result<
-                    SideEffects<T::AccountId, BalanceOf<T>, T::Hash>,
+                let args: Result<
+                    (SideEffects<T::AccountId, BalanceOf<T>, T::Hash>, SpeedMode),
                     codec::Error,
                 > = Decode::decode(&mut &input_data[..]);
 
-                if let Ok(side_effects) = side_effects {
+                if let Ok((side_effects, speed_mode)) = args {
                     T::ThreeVm::invoke(PrecompileArgs::SubmitSideEffects(
                         RawOrigin::Signed(self.caller().clone()).into(),
                         side_effects,
+                        speed_mode,
                     ))?;
                     Ok(ExecReturnValue {
                         flags: ReturnFlags::empty(),
