@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.15.0-rc.0] - 2023-05-03
+### :sparkles: New Features
+- [`894d5da`](https://github.com/t3rn/t3rn/commit/894d5daf12c7cacdbc68f1a2ca7b3429b462721a) - implement scaffold of Portal precompile to evm *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`e0c829c`](https://github.com/t3rn/t3rn/commit/e0c829c067fe34a0a431b93d1e6abff5161ff22a) - create and test ABI for portal precompile enum *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`81a71af`](https://github.com/t3rn/t3rn/commit/81a71af9bfcce040c06f4d1b00a1d3fcf89bc1e8) - implement Portal precompile based on Enum recoding *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`3c30442`](https://github.com/t3rn/t3rn/commit/3c30442b407c6fbee7b7355276e455bc2d4e434a) - implement PortalReadApi trait in Portal *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`2d8aa79`](https://github.com/t3rn/t3rn/commit/2d8aa79c4886ff91f2d63b60b55876d49799a18a) - add Portal Precompile to CustomPrecompiles utils *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`425f450`](https://github.com/t3rn/t3rn/commit/425f450930a08d5f8e5174c16be5e829d60f6318) - move portal precompile into 3vm *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`3383a6e`](https://github.com/t3rn/t3rn/commit/3383a6e0de41ffdf5284cc8e1a51cfbcdc0d6ad3) - connect evm to portal *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`76f5ff4`](https://github.com/t3rn/t3rn/commit/76f5ff43bfed0058eaff7e615aca0e2c0b0ab8a3) - add portal precompile *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`4c4b42e`](https://github.com/t3rn/t3rn/commit/4c4b42e7e681b9c2fabcf4d7374a1929a2d5d8bd) - make codec byte index more ergonomic *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+
+### :bug: Bug Fixes
+- [`b3db09e`](https://github.com/t3rn/t3rn/commit/b3db09e7b6443695cc0e034164807c92f469ba3f) - implement from over into trait for Portal::Inclusion *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`2c5dd6a`](https://github.com/t3rn/t3rn/commit/2c5dd6a39ce9f7c33a5801a1d2542e923b20b81c) - add missing imports after merge with development *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :recycle: Refactors
+- [`0b285a8`](https://github.com/t3rn/t3rn/commit/0b285a86fcb722e55e13452a18f2ab6e1729d51d) - move precompile to within the module *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+
+### :white_check_mark: Tests
+- [`5c2ebf5`](https://github.com/t3rn/t3rn/commit/5c2ebf56d08e326cf1ae4648a0adf52cbfe95f21) - add mini-mock runtime available for pallets to use *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`2d62ad8`](https://github.com/t3rn/t3rn/commit/2d62ad88948893b658cdb4756c38b37d258bebec) - add cases for from-rlp 32b words decoding to enum *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`92dd5c1`](https://github.com/t3rn/t3rn/commit/92dd5c1d641350c5718dc233c91c65d8ddb768b9) - make compile *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`fe5ae79`](https://github.com/t3rn/t3rn/commit/fe5ae7998f3bfd4802f7e1b95f52575cb2b79dc1) - fix invoke submit sfx 3vm precompile test exp *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`3f154f4`](https://github.com/t3rn/t3rn/commit/3f154f4252668bd630d7de2fedb7521278024881) - add confirm single SFX zombienet test *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`60fb346`](https://github.com/t3rn/t3rn/commit/60fb346d86f5ce27bd7d2fa03afc5a6cb3470529) - rewrite xtx confirm zombienet test to shell *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`96f9264`](https://github.com/t3rn/t3rn/commit/96f92646bba350311516dd8a39239e868674db06) - lint types files and correct empty buf ensure *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+- [`66d6563`](https://github.com/t3rn/t3rn/commit/66d6563a889bdb71387d53ed44c593963ddb11d0) - turn off raw invocations for non-abi-enabled functionality *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+- [`6cf8e45`](https://github.com/t3rn/t3rn/commit/6cf8e45a589e3205ff32b34fe0e9e2b4bcc6a4e3) - add logging to portal *(commit by [@AwesomeIbex](https://github.com/AwesomeIbex))*
+
+
 ## [v1.14.0-rc.0] - 2023-05-03
 ### :recycle: Refactors
 - [`edbbf13`](https://github.com/t3rn/t3rn/commit/edbbf13641f8ccd36d308793fa4994d7455438af) - rm redundant finalize + claim behaviour; optimize batch *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -979,3 +1012,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.12.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.12.3-rc.0...v1.12.4-rc.0
 [v1.13.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.12.8-rc.0...v1.13.0-rc.0
 [v1.14.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.13.0-rc.0...v1.14.0-rc.0
+[v1.15.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.14.0-rc.0...v1.15.0-rc.0
