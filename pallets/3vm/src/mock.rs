@@ -241,10 +241,10 @@ impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
     type Event = Event;
-    type FastConfirmationOffset = ConstU32<3u32>;
-    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type FastConfirmationOffset = ConstU32<0u32>;
+    type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
-    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
 
@@ -252,10 +252,10 @@ impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
     type Event = Event;
-    type FastConfirmationOffset = ConstU32<3u32>;
-    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type FastConfirmationOffset = ConstU32<0u32>;
+    type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
-    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
 
@@ -263,10 +263,10 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
     type Event = Event;
-    type FastConfirmationOffset = ConstU32<3u32>;
-    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type FastConfirmationOffset = ConstU32<0u32>;
+    type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
-    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
 

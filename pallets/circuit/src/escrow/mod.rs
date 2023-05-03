@@ -164,6 +164,7 @@ pub mod test {
 
     use frame_support::{assert_ok, traits::Currency};
     use frame_system::{EventRecord, Phase};
+    use t3rn_primitives::SpeedMode;
 
     use circuit_mock_runtime::test_utils::*;
 
@@ -188,7 +189,7 @@ pub mod test {
         valid_transfer_side_effect.target = [3, 3, 3, 3];
         let side_effects = vec![valid_transfer_side_effect.clone()];
 
-        let sequential = true;
+        let speed_mode = SpeedMode::Finalized;
 
         ExtBuilder::default()
             .with_standard_sfx_abi()
@@ -202,7 +203,7 @@ pub mod test {
                 assert_ok!(Circuit::on_extrinsic_trigger(
                     origin,
                     side_effects,
-                    sequential,
+                    speed_mode,
                 ));
 
                 let _xtx_id: sp_core::H256 =
@@ -262,7 +263,7 @@ pub mod test {
         valid_transfer_side_effect.target = [3, 3, 3, 3];
         let side_effects = vec![valid_transfer_side_effect.clone()];
 
-        let sequential = true;
+        let speed_mode = SpeedMode::Finalized;
 
         ExtBuilder::default()
             .with_standard_sfx_abi()
@@ -277,7 +278,7 @@ pub mod test {
                 assert_ok!(Circuit::on_extrinsic_trigger(
                     origin,
                     side_effects,
-                    sequential,
+                    speed_mode,
                 ));
 
                 assert_ok!(Escrow::<Runtime>::exec(

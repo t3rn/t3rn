@@ -10,6 +10,7 @@
     "fmt": "npx prettier --no-semi --tab-width 4 --print-width 140 --write config/*.ts src/*.ts src/**/*.ts src/**/**/*.ts",
     "build-docs": "yarn fmt && npx typedoc && cp -R docs ../../../docs/executor",
     "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "ci": "npx ci",
     "test-single": "mocha -r ts-node/register"
   },
   "exclude": [
@@ -31,6 +32,7 @@
     "pino": "^8.11.0",
     "pino-pretty": "^10.0.0",
     "rxjs": "^7.5.7",
+    "standard": "^17.0.0",
     "ts-mockito": "^2.6.1",
     "ts-node": "^10.9.1",
     "typedoc": "^0.24.6",

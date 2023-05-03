@@ -6748,7 +6748,6 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "t3rn-abi",
- "t3rn-light-client-commons",
  "t3rn-primitives",
 ]
 
@@ -12316,7 +12315,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.12.8-rc.0"
+version = "1.13.0-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12391,7 +12390,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.12.8-rc.0"
+version = "1.13.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12508,21 +12507,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-sdk-primitives",
-]
-
-[[package]]
-name = "t3rn-light-client-commons"
-version = "1.5.0-rc.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
- "t3rn-abi",
 ]
 
 [[package]]
@@ -12687,7 +12671,6 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-abi",
- "t3rn-light-client-commons",
  "t3rn-sdk-primitives",
  "t3rn-types 1.5.0-rc.0",
 ]

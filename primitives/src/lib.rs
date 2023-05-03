@@ -17,7 +17,7 @@
 //! A crate that hosts a common definitions that are relevant for the pallet-contracts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
@@ -35,7 +35,7 @@ use sp_runtime::{
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 // pub use orml_traits;
 
-use sp_std::{convert::TryFrom, prelude::*, vec};
+use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 
@@ -153,6 +153,15 @@ pub struct GatewayGenesisConfig {
 pub enum TokenInfo {
     Substrate(SubstrateToken),
     Ethereum(EthereumToken),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Default, Decode, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum SpeedMode {
+    Fast,
+    Rational,
+    #[default]
+    Finalized,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
