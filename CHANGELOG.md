@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.14.0-rc.0] - 2023-05-03
+### :recycle: Refactors
+- [`edbbf13`](https://github.com/t3rn/t3rn/commit/edbbf13641f8ccd36d308793fa4994d7455438af) - rm redundant finalize + claim behaviour; optimize batch *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.13.0-rc.0] - 2023-04-30
 ### :sparkles: New Features
 - [`7bd6dad`](https://github.com/t3rn/t3rn/commit/7bd6dad3027512220c6422521fa59c6e42b3d312) - add and check against SFX Speed Modes at confirm *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -973,3 +978,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.12.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.11.0-rc.0...v1.12.0-rc.0
 [v1.12.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.12.3-rc.0...v1.12.4-rc.0
 [v1.13.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.12.8-rc.0...v1.13.0-rc.0
+[v1.14.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.13.0-rc.0...v1.14.0-rc.0
