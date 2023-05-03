@@ -94,29 +94,51 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
-        pub fn claim(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn claim(
+            origin: OriginFor<T>,
+            role_to_claim: Option<CircuitRole>, // Add this parameter
+        ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let pending_claims =
-                PendingClaims::<T>::get(&who).ok_or(Error::<T>::NoPendingClaims)?;
+            PendingClaims::<T>::try_mutate(who.clone(), |maybe_pending_claims| {
+                let pending_claims = maybe_pending_claims
+                    .take()
+                    .ok_or(Error::<T>::NoPendingClaims)?;
 
-            let mut total_claim = BalanceOf::<T>::zero();
-            for claim in &pending_claims {
-                total_claim = total_claim
-                    .checked_add(&claim.total_round_claim)
-                    .ok_or(Error::<T>::ArithmeticOverflow)?;
-            }
+                // Filter by the specified role if provided
+                let claims_to_process = match role_to_claim {
+                    Some(role) => pending_claims
+                        .clone()
+                        .into_iter()
+                        .filter(|claim| claim.role == role)
+                        .collect::<Vec<_>>(),
+                    None => pending_claims.clone(),
+                };
 
-            ensure!(
-                total_claim > BalanceOf::<T>::zero(),
-                Error::<T>::NoPendingClaims
-            );
+                let mut total_claim = BalanceOf::<T>::zero();
+                for claim in &claims_to_process {
+                    total_claim = total_claim
+                        .checked_add(&claim.total_round_claim)
+                        .ok_or(Error::<T>::ArithmeticOverflow)?;
+                }
 
-            T::Currency::deposit_into_existing(&who, total_claim)?;
-            PendingClaims::<T>::remove(&who);
+                ensure!(
+                    total_claim > BalanceOf::<T>::zero(),
+                    Error::<T>::NoPendingClaims
+                );
 
-            Self::deposit_event(Event::Claimed(who, total_claim));
-            Ok(().into())
+                T::Currency::deposit_into_existing(&who, total_claim)?;
+
+                *maybe_pending_claims = Some(
+                    pending_claims
+                        .into_iter()
+                        .filter(|claim| !claims_to_process.contains(claim))
+                        .collect(),
+                );
+
+                Self::deposit_event(Event::Claimed(who, total_claim));
+                Ok(().into())
+            })
         }
     }
 
