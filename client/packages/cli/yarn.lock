@@ -773,7 +773,7 @@
   integrity sha512-qZYpuE6n+mwew+X71dOur/CbMXj6rNW27o63JeJwdQH/GvcSKm3JLNhd+bGzwUKg0D/zD30Qc6p4JykArzM+tA==
 
 "@t3rn/sdk@../sdk":
-  version "0.1.4"
+  version "0.1.5"
   dependencies:
     "@polkadot/api" "^9.2.4"
 

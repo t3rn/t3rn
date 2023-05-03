@@ -47,8 +47,10 @@ export class Tx {
 
   async signAndSendSafe(tx:  SubmittableExtrinsic): Promise<string> {
     let nonce = await this.api.rpc.system.accountNextIndex(this.signer.address);
+
+    let exportObj = null;
     if(this.exportMode) {
-      new ExtrinsicExport(tx)
+      exportObj = new ExtrinsicExport(tx)
     }
     return new Promise((resolve, reject) =>
       tx.signAndSend(
@@ -57,8 +59,10 @@ export class Tx {
         async ({ dispatchError, status }) => {
           if (dispatchError?.isModule) {
             let err = this.api.registry.findMetaError(dispatchError.asModule);
+            exportObj?.addErr(dispatchError);
             reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
           } else if (dispatchError) {
+            exportObj?.addErr(dispatchError);
             reject(Error(dispatchError.toString()));
           } else if (status.isInBlock) {
             resolve(status.asInBlock);
@@ -68,7 +72,11 @@ export class Tx {
     ).then((blockHash: any) =>
       this.api.rpc.chain
         .getBlock(blockHash)
-        .then((r) => r.block.header.number.toString())
+        .then((r) => {
+          const number = r.block.header.number
+          exportObj?.addSubmissionHeight(number.toNumber());
+          return number.toString()
+        })
     );
   }
 
