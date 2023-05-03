@@ -1,5 +1,5 @@
 import "@polkadot/api-augment"; // DO NOT REMOVE THIS LINE
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 
 import types from "./config/types.json";
@@ -19,8 +19,7 @@ import { Circuit, Tx } from "./circuit";
  */
 
 export class Sdk {
-  /*RPC url of the circuit */
-  rpcUrl: string;
+  provider: WsProvider;
   /* ApiPromise instance of the circuit */
   client: ApiPromise;
   /* Mapping for looking up Gateway instances via ID */
@@ -31,14 +30,21 @@ export class Sdk {
   circuit: Circuit;
   /* Circuit signer */
   signer: any;
+  exportMode: boolean;
 
   /**
-   * @param rpcUrl - The RPC URL of the node to connect to
+   * @param provider - RPC url or WsProvider instance of circuit
    * @param circuitSigner - The signer to use for signing transactions
+   * @param exportMode
    */
-  constructor(rpcUrl: string, circuitSigner: any) {
-    this.rpcUrl = rpcUrl;
+  constructor(provider: string | WsProvider, circuitSigner: any, exportMode: boolean = false) {
     this.signer = circuitSigner;
+    if( typeof provider === "string") {
+      this.provider = new WsProvider(provider);
+    } else {
+      this.provider = provider;
+    }
+    this.exportMode = exportMode;
   }
 
   /**
@@ -48,15 +54,15 @@ export class Sdk {
   async init(): Promise<ApiPromise> {
     await cryptoWaitReady()
     this.client = await ApiPromise.create({
-      provider: new WsProvider(this.rpcUrl),
+      provider: this.provider,
       types: types as any,
       rpc: rpc as any,
     });
     this.gateways = await initGateways(this.client);
-    this.circuit = new Circuit(this.client, this.signer);
+    this.circuit = new Circuit(this.client, this.signer, this.exportMode);
 
     return this.client;
   }
 }
 
-export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils};
+export { Encodings, Converters, Types, Gateway, Circuit, Tx, Utils, ApiPromise, WsProvider, Keyring, cryptoWaitReady};

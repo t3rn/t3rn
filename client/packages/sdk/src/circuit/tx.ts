@@ -1,5 +1,5 @@
 import { ApiPromise } from "@polkadot/api";
-
+import { ExtrinsicExport } from "../export";
 // @ts-ignore
 import {
   // @ts-ignore
@@ -9,6 +9,7 @@ import {
   // @ts-ignore
   u128,
 } from "@polkadot/types/lookup";
+import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 
 /**
  * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
@@ -17,15 +18,18 @@ import {
 export class Tx {
   api: ApiPromise;
   signer: any;
+  exportMode: boolean;
 
   /**
    * @param api - The ApiPromise instance
    * @param signer - The signer to use for signing Transactions
+   * @param exportMode
    */
 
-  constructor(api: ApiPromise, signer: any) {
+  constructor(api: ApiPromise, signer: any, exportMode: boolean) {
     this.api = api;
     this.signer = signer;
+    this.exportMode = exportMode;
   }
 
   /**
@@ -41,9 +45,11 @@ export class Tx {
    * @returns The block height the transaction was included in
    */
 
-  async signAndSendSafe(tx: any): Promise<string> {
+  async signAndSendSafe(tx:  SubmittableExtrinsic): Promise<string> {
     let nonce = await this.api.rpc.system.accountNextIndex(this.signer.address);
-
+    if(this.exportMode) {
+      new ExtrinsicExport(tx)
+    }
     return new Promise((resolve, reject) =>
       tx.signAndSend(
         this.signer,
