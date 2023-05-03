@@ -43,7 +43,7 @@ class CircuitCLI {
                 ? keyring.addFromUri("//Alice")
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
 
-        this.sdk = new Sdk(process.env.CIRCUIT_WS || "ws://localhost:9944", this.signer)
+        this.sdk = new Sdk(process.env.CIRCUIT_WS || "ws://localhost:9944", this.signer, true)
         // @ts-ignore suddenly this is not working
         this.circuit = await this.sdk.init();
     }
@@ -65,7 +65,6 @@ class CircuitCLI {
                 // @ts-ignore
                 data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
             }
-            console.log("data", data)
             const registrationData: any = await register(this.circuit, data)
 
             const tx = this.circuit.tx.portal.registerGateway(
@@ -260,7 +259,7 @@ class CircuitCLI {
         const transactionArgs: any = onExtrinsicTrigger(this.circuit, data.sideEffects, data.speedMode, this.signer.address, this.sdk)
         const tx = this.circuit.tx.circuit.onExtrinsicTrigger(transactionArgs.sideEffects, false)
 
-        const submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
+        const submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx as any)
             .then(height => {
                 logger.info("Success: SideEffects submitted!!")
                 return height

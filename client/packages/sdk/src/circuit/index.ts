@@ -19,12 +19,14 @@ export class Circuit {
   /**
    * @param api - The ApiPromise instance
    * @param signer - The signer to use for signing transactions
+   * @param exportMode - if the export mode is enabled
    */
 
-  constructor(api: ApiPromise, signer: any) {
+  constructor(api: ApiPromise, signer: any, exportMode: boolean) {
     this.api = api;
     this.signer = signer;
-    this.tx = new Tx(this.api, this.signer);
+    console.log("exportMode: " + exportMode)
+    this.tx = new Tx(this.api, this.signer, exportMode);
   }
 
   /**
