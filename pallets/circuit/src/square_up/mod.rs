@@ -59,7 +59,7 @@ impl<T: Config> SquareUp<T> {
             })
             .collect::<Vec<(T::Hash, RequestCharge<T::AccountId, BalanceOf<T>, u32>)>>();
 
-        <T as Config>::AccountManager::deposit_batch(request_charges)?;
+        <T as Config>::AccountManager::deposit_batch(request_charges.as_slice())?;
 
         // Ensure that all deposits were successful and left associated under the SFX id.
         // This is a sanity check, as the next step during status transition to "Ready"

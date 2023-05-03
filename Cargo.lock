@@ -1155,6 +1155,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types 1.5.0-rc.0",
 ]
@@ -5826,11 +5827,13 @@ dependencies = [
  "pallet-xbi-portal",
  "pallet-xdns",
  "parity-scale-codec",
+ "rlp",
  "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
 ]
@@ -6507,6 +6510,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
 ]
@@ -7071,6 +7075,27 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-rewards"
+version = "1.9.0-rc.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.2.2",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-mini-mock-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -8959,6 +8984,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "portal-precompile"
+version = "1.5.0-rc.0"
+dependencies = [
+ "fp-evm 3.0.0-dev",
+ "frame-support",
+ "frame-system",
+ "pallet-evm 0.1.0",
+ "pallet-portal",
+ "parity-scale-codec",
+ "rlp",
+ "sp-std",
+ "t3rn-mini-mock-runtime",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8969,6 +9010,8 @@ name = "precompile-util"
 version = "1.0.0"
 dependencies = [
  "fp-evm 3.0.0-dev",
+ "frame-system",
+ "pallet-evm 0.1.0",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -8978,8 +9021,11 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
+ "parity-scale-codec",
+ "portal-precompile",
  "sp-core",
  "sp-std",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -12316,7 +12362,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.13.0-rc.0"
+version = "1.12.8-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12391,7 +12437,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.13.0-rc.0"
+version = "1.12.8-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12474,6 +12520,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "t3rn-abi",
  "t3rn-primitives",
  "t3rn-types 1.5.0-rc.0",
  "xcm",
@@ -12508,6 +12555,39 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-sdk-primitives",
+]
+
+[[package]]
+name = "t3rn-mini-mock-runtime"
+version = "1.5.0-rc.0"
+dependencies = [
+ "bytes",
+ "circuit-runtime-types",
+ "ethabi",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.3.4",
+ "num",
+ "num-traits",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-contracts 4.0.0-dev",
+ "pallet-grandpa-finality-verifier",
+ "pallet-portal",
+ "pallet-timestamp",
+ "pallet-xdns",
+ "parity-scale-codec",
+ "rlp",
+ "rlp-derive",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-abi",
+ "t3rn-primitives",
 ]
 
 [[package]]
