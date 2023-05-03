@@ -1,4 +1,7 @@
 import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
+import * as fs from "fs";
+import * as process from "process";
+require('dotenv').config()
 
 interface ExtrinsicParam {
 	name: string,
@@ -13,26 +16,19 @@ export class ExtrinsicExport {
 	method: string
 	args: ExtrinsicParam[] = [];
 	submissionHeight: number
+	error: string;
 
-
-
-  	constructor(tx: SubmittableExtrinsic) {
+	constructor(tx: SubmittableExtrinsic) {
 		this.tx = tx
 		this.handleParams()
-  	}
+	}
 
-  	async handleParams() {
-		console.log("exporting transaction:")
-		// console.log(this.tx.method.toHuman(true))
+	handleParams() {
 		const decoded = this.tx.method.toHuman(true)
 		// @ts-ignore
 		this.section = decoded.section.toString()
 		// @ts-ignore
 		this.method = decoded.method.toString()
-
-		// @ts-ignore
-		this.decodedArgs = this.tx.method.toPrimitive().args
-
 
 		const args = this.tx.method.args;
 		// @ts-ignore
@@ -47,10 +43,30 @@ export class ExtrinsicExport {
 			}
 			this.args.push(param)
 		}
+	}
+	addErr(dispatchError: any) {
+		this.error = dispatchError.toHex()
+		this.toJSON()
+	}
 
-		console.log("section:", this.section)
-		console.log("method:", this.method)
-		console.log("args:", this.args)
+	addSubmissionHeight(height: number) {
+		this.submissionHeight = height
+		this.toJSON()
+	}
 
-  	}
+	toJSON() {
+		const json = JSON.stringify({
+			section: this.section,
+			method: this.method,
+			args: this.args,
+			submissionHeight: this.submissionHeight,
+			error: this.error
+		}, null, 4);
+
+		const fileName = `/${this.submissionHeight}_${this.section}_${this.method}.json`
+		const path = process.env.EXPORT_PATH || "./exports"
+
+		fs.writeFileSync(`${path}${fileName}`, json);
+
+	}
 }
