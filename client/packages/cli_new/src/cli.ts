@@ -29,7 +29,7 @@ program
 
 program
   .command("submit")
-  .option("-e, --extrinsic <file-path>", "Path to the extrinsc JSON file")
+  .option("-s, --sfx <file-path>", "Path to the sfx JSON file")
   .option(
     "-h, --headers <gateway_id>",
     "Submit the latest headers of a gateway to portal. All available finalized headers will be added."

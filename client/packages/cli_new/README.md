@@ -65,7 +65,7 @@ pnpm cli submit [options]
 
 Options:
 
-- **-e, --extrinsic \<file-path\>**: Path to the extrinsic JSON file
+- **-s, --sfx \<file-path\>**: Path to the sfx JSON file
 - **-h, --headers \<gateway_id\>**: Submit the latest headers of a gateway to portal. All available finalized headers will be added.
 
 ### set-operational
@@ -112,6 +112,6 @@ pnpm cli init -t
 # Register the roco gateway
 pnpm cli register -g roco
 
-# Submit the transfer extrinsic
-pnpm cli submit -t transfer.json
+# Submit a transfer
+pnpm cli submit -s transfer.json
 ```
