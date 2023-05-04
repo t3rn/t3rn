@@ -9,6 +9,7 @@ import { ExtrinsicSchema, Extrinsic } from "@/schemas/extrinsic.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { getConfig } from "@/utils/config.ts"
 import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup"
+import { Circuit } from "@/types.ts"
 
 export const spinner = ora()
 
@@ -83,7 +84,7 @@ export const submitSfx = async (extrinsic: Extrinsic) => {
 }
 
 export const buildSfx = (
-  circuitApi: Awaited<ReturnType<typeof createCircuitContext>>["circuit"],
+  circuitApi: Circuit,
   sideEffects: Extrinsic["sideEffects"],
   sequential: boolean,
   sdk: Sdk
