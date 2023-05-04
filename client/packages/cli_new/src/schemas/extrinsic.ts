@@ -1,8 +1,8 @@
 import { z } from "zod"
-import { TransferSideEffectSchema } from "./transfer.ts"
+import { SideEffectSchema } from "./sfx.ts"
 
 export const ExtrinsicSchema = z.object({
-  sideEffects: z.array(TransferSideEffectSchema),
+  sideEffects: z.array(SideEffectSchema),
   sequential: z.boolean({
     required_error: "Sequential is required",
     invalid_type_error: "Sequential must be a boolean",
