@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-export const TransferSideEffectSchema = z.object({
+export const SideEffectSchema = z.object({
   target: z.string({
     required_error: "Target is required",
     invalid_type_error: "Target must be a string",

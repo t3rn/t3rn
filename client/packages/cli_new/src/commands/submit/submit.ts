@@ -1,10 +1,10 @@
 import { Args } from "@/types.ts"
-import { handleSubmitExtrinsicCmd } from "./extrinsic.ts"
+import { handleSubmitSfxCmd } from "./sfx.ts"
 import { handleSubmitHeadersCmd } from "./headers.ts"
 
-export const handleSubmitCmd = async (args: Args<"extrinsic" | "headers">) => {
-  if (args.extrinsic) {
-    return handleSubmitExtrinsicCmd(args.extrinsic)
+export const handleSubmitCmd = async (args: Args<"sfx" | "headers">) => {
+  if (args.sfx) {
+    return handleSubmitSfxCmd(args.sfx)
   }
 
   if (args.headers) {

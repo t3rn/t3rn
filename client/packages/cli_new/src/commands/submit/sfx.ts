@@ -12,25 +12,25 @@ import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup"
 
 export const spinner = ora()
 
-export const handleSubmitExtrinsicCmd = (extrinsicFile: string) => {
-  const unvalidatedExtrinsic = readExtrinsicFile(extrinsicFile)
+export const handleSubmitSfxCmd = (sfxFile: string) => {
+  const unvalidatedExtrinsic = readSfxFile(sfxFile)
 
   if (!unvalidatedExtrinsic) {
     process.exit(1)
   }
 
   const extrinsic = validate(ExtrinsicSchema, unvalidatedExtrinsic, {
-    configFileName: extrinsicFile,
+    configFileName: sfxFile,
   })
 
   if (!extrinsic) {
     process.exit(1)
   }
 
-  submitExtrinsic(extrinsic)
+  submitSfx(extrinsic)
 }
 
-export const readExtrinsicFile = (filePath: string) => {
+export const readSfxFile = (filePath: string) => {
   if (!existsSync(filePath)) {
     log("ERROR", `File ${filePath} does not exist`)
     return
@@ -44,7 +44,7 @@ export const readExtrinsicFile = (filePath: string) => {
   }
 }
 
-export const submitExtrinsic = async (extrinsic: Extrinsic) => {
+export const submitSfx = async (extrinsic: Extrinsic) => {
   const config = getConfig()
 
   spinner.text = "Submitting extrinsic..."
@@ -55,7 +55,7 @@ export const submitExtrinsic = async (extrinsic: Extrinsic) => {
   }
 
   const { circuit, sdk } = await createCircuitContext()
-  const transactionArgs = buildExtrinsic(
+  const transactionArgs = buildSfx(
     circuit,
     extrinsic.sideEffects,
     extrinsic.sequential,
@@ -82,7 +82,7 @@ export const submitExtrinsic = async (extrinsic: Extrinsic) => {
   }
 }
 
-export const buildExtrinsic = (
+export const buildSfx = (
   circuitApi: Awaited<ReturnType<typeof createCircuitContext>>["circuit"],
   sideEffects: Extrinsic["sideEffects"],
   sequential: boolean,
@@ -100,7 +100,6 @@ export const buildExtrinsic = (
           value: sdk.gateways[data.target].floatToBn(parseFloat(data.amount)),
           maxReward: sdk.circuit.floatToBn(parseFloat(data.reward)),
           insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
-          nonce: 0,
         })
         return obj
       })
