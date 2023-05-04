@@ -373,7 +373,7 @@ pub mod pallet {
             amount: BalanceOf<T>,
         ) -> DispatchResult {
             let nominator = ensure_signed(origin)?;
-            Self::do_nominate(nominator.clone(), attester.clone(), amount);
+            Self::do_nominate(nominator.clone(), attester.clone(), amount)?;
             Self::deposit_event(Event::Nominated(nominator, attester, amount));
             Ok(())
         }
