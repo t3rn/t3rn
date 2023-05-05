@@ -1,7 +1,7 @@
 use super::*;
 
 /// Block type as expected by this runtime.
-pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
     frame_system::CheckNonZeroSender<Runtime>,
@@ -14,9 +14,10 @@ pub type SignedExtra = (
     pallet_asset_tx_payment::ChargeAssetTxPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+    sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+pub type CheckedExtrinsic = sp_runtime::generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 where
