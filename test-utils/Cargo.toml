@@ -11,7 +11,7 @@ version = "0.1.0"
 #pallet-circuit-portal  = { version = "1.0.0-alpha.0", path = "../pallets/circuit-portal" }
 #relay-substrate-client = { version = "0.1.0", path = "../relayers/client-substrate" }
 #
-#sp-core    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-core    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 #sp-std     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 #
