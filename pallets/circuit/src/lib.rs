@@ -58,7 +58,7 @@ pub use t3rn_primitives::{
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
     gateway::{GatewayABIConfig, HasherAlgo as HA},
-    portal::{HeightResult, InclusionReceipt, Portal},
+    portal::{HeightResult, Portal},
     volatile::LocalState,
     xdns::Xdns,
     xtx::{Xtx, XtxId},

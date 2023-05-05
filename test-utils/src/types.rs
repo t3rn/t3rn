@@ -1,14 +1,12 @@
-#![recursion_limit = "256"]
-use circuit_mock_runtime::{Balances, Circuit, ExtBuilder, Portal, Sudo, *};
+use circuit_mock_runtime::{Circuit, Sudo, *};
 use circuit_runtime_types::{AccountId, Balance};
-use codec::{Decode, Encode};
-use frame_support::{assert_err, assert_noop, assert_ok};
-use frame_system::{EventRecord, RawOrigin};
+use codec::Decode;
+
 use hex;
 use serde::Deserialize;
-use serde_json;
+
 use sp_core::{sr25519, Pair};
-use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo, DispatchResult};
+use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
 pub use t3rn_primitives::SpeedMode;
 pub use t3rn_types::{
     bid::SFXBid,
@@ -16,10 +14,7 @@ pub use t3rn_types::{
     sfx::{ConfirmedSideEffect, HardenedSideEffect, SecurityLvl, SideEffect, SideEffectId},
 };
 
-use subxt;
 type Call = circuit_mock_runtime::Call;
-#[subxt::subxt(runtime_metadata_path = "metadata.scale")]
-pub mod polkadot {}
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -78,10 +73,10 @@ pub fn replay_and_evaluate_extrinsic<Runtime>(param: &ExtrinsicParam) -> Result<
             "sudo" => {
                 let call = decode_call(&param.args[0])?;
                 match Sudo::sudo(get_signer(&param.signer), Box::new(call)) {
-                    Ok(_) => verify_extrinsic_success::<Runtime>(&param)?,
+                    Ok(_) => verify_extrinsic_success::<Runtime>(param)?,
                     Err(err) => verify_extrinsic_error::<Runtime>(
                         ErrorWrapper::DispatchPostInfo(err),
-                        &param,
+                        param,
                     )?,
                 }
                 verify_event_log::<Runtime>(&param.events)?;
@@ -125,8 +120,8 @@ fn verify_extrinsic_error<T>(
 fn advance_to_block(block: Option<u32>) {
     System::reset_events();
     if let Some(height) = block {
-        System::set_block_number(height.into());
-        <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(height.into());
+        System::set_block_number(height);
+        <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(height);
     }
 }
 
@@ -142,7 +137,7 @@ fn verify_extrinsic_success<T>(extrinsic_params: &ExtrinsicParam) -> Result<(), 
 fn verify_event_log<T>(events: &Vec<EncodedEvent>) -> Result<(), DispatchError> {
     let event_log = System::events();
     let expected_events = events
-        .into_iter()
+        .iter()
         .filter_map(|event| {
             if event.section == "sudo" {
                 None // ignore sudo events for now
