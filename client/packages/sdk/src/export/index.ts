@@ -10,16 +10,26 @@ interface ExtrinsicParam {
 	decoded: any
 }
 
+interface EventParam {
+	section: string,
+	method: string,
+	encoded: string,
+	decoded: any
+}
+
 export class ExtrinsicExport {
 	tx: SubmittableExtrinsic
 	section: string
 	method: string
 	args: ExtrinsicParam[] = [];
-	submissionHeight: number
-	error: string;
+	events: EventParam[] = [];
+	submissionHeight: number = 0;
+	address: string;
+	error: string = "";
 
-	constructor(tx: SubmittableExtrinsic) {
+	constructor(tx: SubmittableExtrinsic, address: string) {
 		this.tx = tx
+		this.address = address;
 		this.handleParams()
 	}
 
@@ -38,14 +48,27 @@ export class ExtrinsicExport {
 			const param: ExtrinsicParam = {
 				name: paramDesc[i].name,
 				rustType: paramDesc[i].typeName,
-				encoded: args[i].toHex(),
-				decoded: args[i].toPrimitive()
+				encoded: args[i].toHex().substring(2), // remove 0x prefix
+				decoded: JSON.stringify(args[i].toPrimitive())
 			}
 			this.args.push(param)
 		}
 	}
+
+	addEvent(event: any) {
+		const decoded = event.toHuman(true);
+		const eventType: EventParam = {
+			section: decoded.section,
+			method: decoded.method,
+			encoded: event.toHex().substring(2), // remove 0x prefix
+			decoded: JSON.stringify(decoded)
+		}
+
+		this.events.push(eventType)
+	}
+
 	addErr(dispatchError: any) {
-		this.error = dispatchError.toHex()
+		this.error = dispatchError.toHex().substring(2)
 		this.toJSON()
 	}
 
@@ -60,7 +83,9 @@ export class ExtrinsicExport {
 			method: this.method,
 			args: this.args,
 			submissionHeight: this.submissionHeight,
-			error: this.error
+			signer: this.address,
+			error: this.error,
+			events: this.events
 		}, null, 4);
 
 		const fileName = `/${this.submissionHeight}_${this.section}_${this.method}.json`
