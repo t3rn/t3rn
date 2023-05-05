@@ -1,0 +1,65 @@
+{
+    "section": "circuit",
+    "method": "onExtrinsicTrigger",
+    "args": [
+        {
+            "name": "sideEffects",
+            "rustType": "Vec<SideEffect>",
+            "encoded": "04726f636f0080ca3961240000000000000000000000e876481700000000000000000000007472616e0880fc68ae55f42dcfd8060f1f67ec3c68a7dc3bce702f1ddb3d3551baf4e52f1a7d4000e40b54020000000000000000000000000000",
+            "decoded": "[{\"target\":\"roco\",\"maxReward\":40000000000000,\"insurance\":100000000000,\"action\":\"tran\",\"encodedArgs\":[\"0xfc68ae55f42dcfd8060f1f67ec3c68a7dc3bce702f1ddb3d3551baf4e52f1a7d\",\"0x00e40b54020000000000000000000000\"],\"signature\":\"\",\"enforceExecutor\":null,\"rewardAssetId\":null}]"
+        },
+        {
+            "name": "speedMode",
+            "rustType": "SpeedMode",
+            "encoded": "00",
+            "decoded": "\"Fast\""
+        }
+    ],
+    "submissionHeight": 7,
+    "signer": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+    "error": "",
+    "events": [
+        {
+            "section": "balances",
+            "method": "Withdraw",
+            "encoded": "0a08d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27dff3ab808000000000000000000000000",
+            "decoded": "{\"method\":\"Withdraw\",\"section\":\"balances\",\"docs\":[\"Some amount was withdrawn from the account (e.g. for transaction fees).\"],\"index\":\"0x0a08\",\"data\":{\"who\":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\",\"amount\":\"146,291,455\"}}"
+        },
+        {
+            "section": "balances",
+            "method": "Withdraw",
+            "encoded": "0a08d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0080ca39612400000000000000000000",
+            "decoded": "{\"method\":\"Withdraw\",\"section\":\"balances\",\"docs\":[\"Some amount was withdrawn from the account (e.g. for transaction fees).\"],\"index\":\"0x0a08\",\"data\":{\"who\":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\",\"amount\":\"40,000,000,000,000\"}}"
+        },
+        {
+            "section": "accountManager",
+            "method": "DepositReceived",
+            "encoded": "7d026d1b7877d5112e9bf4ef614584d0d3491a6d994cff34e0fbced455a3dd4a89a7d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d000080ca39612400000000000000000000",
+            "decoded": "{\"method\":\"DepositReceived\",\"section\":\"accountManager\",\"docs\":[],\"index\":\"0x7d02\",\"data\":{\"chargeId\":\"0x6d1b7877d5112e9bf4ef614584d0d3491a6d994cff34e0fbced455a3dd4a89a7\",\"payee\":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\",\"recipient\":null,\"amount\":\"40,000,000,000,000\"}}"
+        },
+        {
+            "section": "circuit",
+            "method": "NewSideEffectsAvailable",
+            "encoded": "6c12d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27ddcf525f28a5efed04e5794652da44a2b0f044c38e9af788b97f9c557c411428704726f636f0080ca3961240000000000000000000000e876481700000000000000000000007472616e0880fc68ae55f42dcfd8060f1f67ec3c68a7dc3bce702f1ddb3d3551baf4e52f1a7d4000e40b54020000000000000000000000000000046d1b7877d5112e9bf4ef614584d0d3491a6d994cff34e0fbced455a3dd4a89a7",
+            "decoded": "{\"method\":\"NewSideEffectsAvailable\",\"section\":\"circuit\",\"docs\":[],\"index\":\"0x6c12\",\"data\":[\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\",\"0xdcf525f28a5efed04e5794652da44a2b0f044c38e9af788b97f9c557c4114287\",[{\"target\":\"roco\",\"maxReward\":\"40,000,000,000,000\",\"insurance\":\"100,000,000,000\",\"action\":\"tran\",\"encodedArgs\":[\"0xfc68ae55f42dcfd8060f1f67ec3c68a7dc3bce702f1ddb3d3551baf4e52f1a7d\",\"0x00e40b54020000000000000000000000\"],\"signature\":\"\",\"enforceExecutor\":null,\"rewardAssetId\":null}],[\"0x6d1b7877d5112e9bf4ef614584d0d3491a6d994cff34e0fbced455a3dd4a89a7\"]]}"
+        },
+        {
+            "section": "circuit",
+            "method": "XTransactionReceivedForExec",
+            "encoded": "6c0adcf525f28a5efed04e5794652da44a2b0f044c38e9af788b97f9c557c4114287",
+            "decoded": "{\"method\":\"XTransactionReceivedForExec\",\"section\":\"circuit\",\"docs\":[],\"index\":\"0x6c0a\",\"data\":[\"0xdcf525f28a5efed04e5794652da44a2b0f044c38e9af788b97f9c557c4114287\"]}"
+        },
+        {
+            "section": "transactionPayment",
+            "method": "TransactionFeePaid",
+            "encoded": "0b00d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27dff3ab80800000000000000000000000000000000000000000000000000000000",
+            "decoded": "{\"method\":\"TransactionFeePaid\",\"section\":\"transactionPayment\",\"docs\":[\"A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee,\",\"has been paid by `who`.\"],\"index\":\"0x0b00\",\"data\":{\"who\":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\",\"actualFee\":\"146,291,455\",\"tip\":\"0\"}}"
+        },
+        {
+            "section": "system",
+            "method": "ExtrinsicSuccess",
+            "encoded": "000000879303000000000000",
+            "decoded": "{\"method\":\"ExtrinsicSuccess\",\"section\":\"system\",\"docs\":[\"An extrinsic completed successfully.\"],\"index\":\"0x0000\",\"data\":{\"dispatchInfo\":{\"weight\":\"60,000,000\",\"class\":\"Normal\",\"paysFee\":\"Yes\"}}}"
+        }
+    ]
+}
