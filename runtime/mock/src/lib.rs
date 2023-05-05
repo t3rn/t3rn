@@ -9,14 +9,12 @@ use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::impl_opaque_keys;
 use sp_std::convert::{TryFrom, TryInto};
-
+pub mod signed_extrinsics_config;
 pub use circuit_runtime_pallets::*;
 pub use circuit_runtime_types::*;
 
 pub type AccountId = sp_runtime::AccountId32;
-pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
-pub type Block = frame_system::mocking::MockBlock<Runtime>;
-
+pub use crate::signed_extrinsics_config::*;
 mod accounts_config;
 mod circuit_config;
 mod consensus_aura_config;
