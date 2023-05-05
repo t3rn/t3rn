@@ -40,6 +40,7 @@ sp-core          = { git = "https://github.com/paritytech/substrate", branch = '
 sp-io            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-runtime       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-version       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+circuit-test-utils = { path = "../../test-utils" }
 
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", features = [ "testing" ] }
 

@@ -1,12 +1,14 @@
 #[cfg(test)]
 mod tests {
     use circuit_mock_runtime::{ExtBuilder, Portal, *};
+    use circuit_test_utils::types::*;
     use codec::Encode;
     use frame_support::assert_ok;
     use pallet_grandpa_finality_verifier::{
         bridges::test_utils::{authorities, test_header_with_correct_parent},
         types::RelaychainRegistrationData,
     };
+    use std::fs;
 
     use sp_core::H256;
     use t3rn_primitives::{
@@ -406,6 +408,28 @@ mod tests {
             GatewayVendor::Kusama,
             Some(get_test_initialize_genesis_data()),
         );
+    }
+
+    #[test]
+    fn run_e2e_tests() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                let mut paths: Vec<_> = fs::read_dir("fixtures/")
+                    .unwrap()
+                    .map(|r| r.unwrap())
+                    .collect();
+                paths.sort_by_key(|dir| dir.path());
+
+                for entry in paths {
+                    let path = entry.path();
+                    let file = fs::read_to_string(&path).unwrap();
+                    let data: ExtrinsicParam = serde_json::from_str(&file).unwrap();
+                    assert_ok!(replay_and_evaluate_extrinsic::<Runtime>(&data));
+                }
+            })
     }
 
     #[test]
