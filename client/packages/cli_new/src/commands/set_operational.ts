@@ -24,7 +24,7 @@ export const handleSetOperational = async (id: string, enabled: boolean) => {
   spinner.start("Setting gateway operational...")
 
   try {
-    const transactionArgs = setGatewayOperational(gateway, enabled)
+    const transactionArgs = setGatewayOperational(gateway.id, enabled)
     const { circuit, sdk } = await createCircuitContext()
     const transaction = circuit.tx.portal.setOperational(
       transactionArgs.gatewayId,
@@ -45,17 +45,9 @@ export const handleSetOperational = async (id: string, enabled: boolean) => {
   }
 }
 
-export const setGatewayOperational = (gateway: Gateway, enabled: boolean) => {
-  switch (gateway.registrationData.verificationVendor) {
-    case "Rococo":
-    case "Substrate":
-      return {
-        gatewayId: createType("ChainId", gateway.id),
-        operational: createType("bool", enabled),
-      }
-    default:
-      throw new Error(
-        `SetOperational not available for Vendor ${gateway.registrationData.verificationVendor}`
-      )
+export const setGatewayOperational = (gatewayId: string, enabled: boolean) => {
+  return {
+    gatewayId: createType("ChainId", gatewayId),
+    operational: createType("bool", enabled),
   }
 }
