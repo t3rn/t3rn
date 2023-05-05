@@ -22,7 +22,6 @@ impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 where
     Call: From<C>,
 {
-    // type Extrinsic = TestXt<Call, ()>;
     type Extrinsic = UncheckedExtrinsic;
     type OverarchingCall = Call;
 }
