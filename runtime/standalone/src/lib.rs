@@ -89,11 +89,11 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system,
+        Sudo: pallet_sudo,
         RandomnessCollectiveFlip: pallet_randomness_collective_flip,
         Timestamp: pallet_timestamp,
         Aura: pallet_aura,
         Grandpa: pallet_grandpa,
-        Sudo: pallet_sudo,
         Utility: pallet_utility,
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 122,
 
