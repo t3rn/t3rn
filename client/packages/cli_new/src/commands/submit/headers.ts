@@ -11,15 +11,15 @@ import { Encodings } from "@t3rn/sdk"
 export const spinner = ora()
 export const progressBar = new SingleBar({}, Presets.shades_classic)
 
-export const handleSubmitHeadersCmd = async (gateway_id: string) => {
+export const handleSubmitHeadersCmd = async (gatewayId: string) => {
   const config = getConfig()
   if (!config) {
     process.exit(1)
   }
 
-  const gateway = config.gateways.find((g) => g.id === gateway_id)
+  const gateway = config.gateways.find((g) => g.id === gatewayId)
   if (!gateway) {
-    log("ERROR", `Gateway with id ${gateway_id} not found in config`)
+    log("ERROR", `Gateway with id ${gatewayId} not found in config`)
     process.exit(1)
   }
 
@@ -31,13 +31,14 @@ export const handleSubmitHeadersCmd = async (gateway_id: string) => {
   const { circuit, sdk } = await createCircuitContext()
 
   try {
-    const transactionArguments = await getHeaders(circuit, gateway, gateway_id)
+    const transactionArguments = await getHeaders(circuit, gateway)
 
-    spinner.start(`Submitting headers for ${gateway_id}`)
+    spinner.start(`Submitting headers for ${gatewayId}`)
 
+    const bridge = getBridge(circuit, gatewayId)
     const tx = sdk.circuit.tx.createBatch(
       transactionArguments.map((args) => {
-        return circuit.tx.rococoBridge.submitHeaders(
+        return bridge.submitHeaders(
           args.range,
           args.signed_header,
           args.justification
@@ -47,7 +48,7 @@ export const handleSubmitHeadersCmd = async (gateway_id: string) => {
     await sdk.circuit.tx.signAndSendSafe(tx)
 
     spinner.succeed(
-      colorLogMsg("SUCCESS", `Header range submitted for ${gateway_id}!`)
+      colorLogMsg("SUCCESS", `Header range submitted for ${gatewayId}!`)
     )
     process.exit(0)
   } catch (e) {
@@ -58,18 +59,16 @@ export const handleSubmitHeadersCmd = async (gateway_id: string) => {
   }
 }
 
-export const getHeaders = async (
-  circuit: Circuit,
-  gateway: Gateway,
-  gatewayId: string
-) => {
+export const getHeaders = async (circuit: Circuit, gateway: Gateway) => {
   switch (gateway.registrationData.verificationVendor) {
-    case "Rococo": {
+    case "Kusama":
+    case "Rococo":
+    case "Polkadot": {
       const targetApi = await ApiPromise.create({
         provider: new WsProvider(gateway.rpc),
       })
 
-      return getRelayChainHeaders(circuit, targetApi, gatewayId)
+      return getRelayChainHeaders(circuit, targetApi, gateway.id)
     }
     default:
       throw new Error(
@@ -78,12 +77,34 @@ export const getHeaders = async (
   }
 }
 
+export const getBridge = (circuit: Circuit, gatewayId: string) => {
+  const config = getConfig()
+  if (!config) {
+    return
+  }
+
+  const gateway = config.gateways.find((g) => g.id === gatewayId)
+  if (!gateway) {
+    return
+  }
+
+  const verificationVendor = gateway.registrationData.verificationVendor
+  switch (verificationVendor) {
+    case "Kusama":
+      return circuit.query.kusamaBridge
+    case "Rococo":
+      return circuit.query.rococoBridge
+    case "Polkadot":
+      return circuit.query.polkadotBridge
+  }
+}
+
 const getRelayChainHeaders = async (
   circuit: Circuit,
   target: ApiPromise,
   gatewayId: string
 ) => {
-  const from = (await getGatewayHeight(circuit)) + 1
+  const from = (await getGatewayHeight(circuit, gatewayId)) + 1
   const to = await getTargetCurrentHeight(target)
   const transactionArguments = await generateBatchProof(
     circuit,
@@ -98,9 +119,10 @@ const getRelayChainHeaders = async (
     : transactionArguments
 }
 
-const getGatewayHeight = async (circuit: Circuit) => {
-  const hash = await circuit.query.rococoBridge.bestFinalizedHash()
-  const height = await circuit.query.rococoBridge.importedHeaders(hash.toJSON())
+const getGatewayHeight = async (circuit: Circuit, gatewayId: string) => {
+  const bridge = getBridge(circuit, gatewayId)
+  const hash = await bridge.bestFinalizedHash()
+  const height = await bridge.importedHeaders(hash.toJSON())
 
   if (height.toJSON()) {
     //@ts-expect-error - TS doesn't know that height.toJSON() has a number property
