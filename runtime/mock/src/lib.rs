@@ -3,9 +3,11 @@ use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit, GatewayABI
 
 use codec::Encode;
 
-use frame_support::pallet_prelude::GenesisBuild;
-
-use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
+use frame_support::{
+    pallet_prelude::{GenesisBuild, Weight},
+    traits::KeyOwnerProofSystem,
+};
+use pallet_sudo::GenesisConfig as SudoGenesisConfig;
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::impl_opaque_keys;
 use sp_std::convert::{TryFrom, TryInto};
@@ -363,6 +365,9 @@ impl ExtBuilder {
         let mut t = frame_system::GenesisConfig::default()
             .build_storage::<Runtime>()
             .expect("Frame system builds valid default genesis config");
+
+        let sudo_genesis_config = SudoGenesisConfig::<Runtime> { key: Some(ALICE) };
+        sudo_genesis_config.assimilate_storage(&mut t).unwrap();
 
         pallet_balances::GenesisConfig::<Runtime> { balances: vec![] }
             .assimilate_storage(&mut t)
