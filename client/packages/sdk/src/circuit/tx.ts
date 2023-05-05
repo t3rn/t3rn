@@ -50,13 +50,16 @@ export class Tx {
 
     let exportObj = null;
     if(this.exportMode) {
-      exportObj = new ExtrinsicExport(tx)
+      exportObj = new ExtrinsicExport(tx, this.signer.address)
     }
     return new Promise((resolve, reject) =>
       tx.signAndSend(
         this.signer,
         { nonce },
-        async ({ dispatchError, status }) => {
+        async ({ dispatchError, status, events }) => {
+          events.forEach(({ event }) => {
+            exportObj?.addEvent(event);
+          });
           if (dispatchError?.isModule) {
             let err = this.api.registry.findMetaError(dispatchError.asModule);
             exportObj?.addErr(dispatchError);
