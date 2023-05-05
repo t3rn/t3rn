@@ -60,10 +60,8 @@ export const handleSubmitHeadersCmd = async (gatewayId: string) => {
 }
 
 export const getHeaders = async (circuit: Circuit, gateway: Gateway) => {
-  switch (gateway.registrationData.verificationVendor) {
-    case "Kusama":
-    case "Rococo":
-    case "Polkadot": {
+  switch (gateway.registrationData.executionVendor) {
+    case "Substrate": {
       const targetApi = await ApiPromise.create({
         provider: new WsProvider(gateway.rpc),
       })
