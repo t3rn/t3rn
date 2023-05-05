@@ -23,13 +23,13 @@ export class ExtrinsicExport {
 	method: string
 	args: ExtrinsicParam[] = [];
 	events: EventParam[] = [];
-	submissionHeight: number = 0;
-	address: string;
+	submissionHeight: number;
+	signer: string;
 	error: string = "";
 
 	constructor(tx: SubmittableExtrinsic, address: string) {
 		this.tx = tx
-		this.address = address;
+		this.signer = address;
 		this.handleParams()
 	}
 
@@ -83,12 +83,12 @@ export class ExtrinsicExport {
 			method: this.method,
 			args: this.args,
 			submissionHeight: this.submissionHeight,
-			signer: this.address,
+			signer: this.signer,
 			error: this.error,
 			events: this.events
 		}, null, 4);
 
-		const fileName = `/${this.submissionHeight}_${this.section}_${this.method}.json`
+		const fileName = `/${Date.now()}_${this.section}_${this.method}.json`
 		const path = process.env.EXPORT_PATH || "./exports"
 
 		fs.writeFileSync(`${path}${fileName}`, json);

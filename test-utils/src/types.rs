@@ -7,6 +7,7 @@ use frame_system::{EventRecord, RawOrigin};
 use hex;
 use serde::Deserialize;
 use serde_json;
+use sp_core::{sr25519, Pair};
 use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo, DispatchResult};
 pub use t3rn_primitives::SpeedMode;
 pub use t3rn_types::{
@@ -23,6 +24,7 @@ pub mod polkadot {}
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ExtrinsicParam {
+    pub signer: String,
     pub section: String,
     pub method: String,
     pub args: Vec<EncodedArg>,
@@ -58,12 +60,15 @@ pub enum ErrorWrapper {
 }
 
 pub fn replay_and_evaluate_extrinsic<Runtime>(param: &ExtrinsicParam) -> Result<(), DispatchError> {
+    // update the chain to the submission height, and trigger clock
+    advance_to_block(param.submission_height);
+
     match param.section.as_str() {
         "circuit" => match param.method.as_str() {
             "onExtrinsicTrigger" => {
                 let sfxs = decode_side_effect(&param.args[0])?;
                 let speed_mode = decode_speed_mode(&param.args[1])?;
-                let _ = Circuit::on_extrinsic_trigger(Origin::signed(ALICE), sfxs, speed_mode);
+                let _ = Circuit::on_extrinsic_trigger(get_signer(&param.signer), sfxs, speed_mode);
                 verify_event_log::<Runtime>(&param.events)?;
                 Ok(())
             },
@@ -72,7 +77,7 @@ pub fn replay_and_evaluate_extrinsic<Runtime>(param: &ExtrinsicParam) -> Result<
         "sudo" => match param.method.as_str() {
             "sudo" => {
                 let call = decode_call(&param.args[0])?;
-                match Sudo::sudo(Origin::signed(ALICE), Box::new(call)) {
+                match Sudo::sudo(get_signer(&param.signer), Box::new(call)) {
                     Ok(_) => verify_extrinsic_success::<Runtime>(&param)?,
                     Err(err) => verify_extrinsic_error::<Runtime>(
                         ErrorWrapper::DispatchPostInfo(err),
@@ -90,15 +95,14 @@ pub fn replay_and_evaluate_extrinsic<Runtime>(param: &ExtrinsicParam) -> Result<
 
 fn verify_extrinsic_error<T>(
     error: ErrorWrapper,
-    extrinsic_params: &ExtrinsicParam,
+    params: &ExtrinsicParam,
 ) -> Result<(), DispatchError> {
-    if extrinsic_params.error.is_empty() {
+    if params.error.is_empty() {
         return Err(DispatchError::Other("Received Error was not expected!"))
     }
     match error {
         ErrorWrapper::Dispatch(error) => {
-            let expected_error =
-                DispatchError::decode(&mut extrinsic_params.error.as_slice()).unwrap();
+            let expected_error = DispatchError::decode(&mut params.error.as_slice()).unwrap();
             if error != expected_error {
                 return Err(DispatchError::Other(
                     "Received Error does not match expected error!",
@@ -107,8 +111,7 @@ fn verify_extrinsic_error<T>(
         },
         ErrorWrapper::DispatchPostInfo(DispatchErrorWithPostInfo { error, .. }) => {
             // Client side seems to always give me DispatchError
-            let expected_error =
-                DispatchError::decode(&mut extrinsic_params.error.as_slice()).unwrap();
+            let expected_error = DispatchError::decode(&mut params.error.as_slice()).unwrap();
             if error != expected_error {
                 return Err(DispatchError::Other(
                     "Received Error does not match expected error!",
@@ -117,6 +120,14 @@ fn verify_extrinsic_error<T>(
         },
     }
     Ok(())
+}
+
+fn advance_to_block(block: Option<u32>) {
+    System::reset_events();
+    if let Some(height) = block {
+        System::set_block_number(height.into());
+        <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(height.into());
+    }
 }
 
 fn verify_extrinsic_success<T>(extrinsic_params: &ExtrinsicParam) -> Result<(), DispatchError> {
@@ -174,4 +185,17 @@ pub fn decode_side_effect(
 fn decode_call(input: &EncodedArg) -> Result<Call, DispatchError> {
     Call::decode(&mut input.encoded.as_slice())
         .map_err(|_| DispatchError::Other("Call decoding error!"))
+}
+
+pub fn get_signer(address: &String) -> Origin {
+    let seed = match address.as_str() {
+        "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" => "//Alice",
+        "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" => "//Bob",
+        "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y" => "//Charlie",
+        _ => panic!("Unknown signer!"),
+    };
+
+    let private_key = sr25519::Pair::from_string(seed, None).unwrap();
+    let public_key = private_key.public();
+    Origin::signed(AccountId32::from(public_key))
 }

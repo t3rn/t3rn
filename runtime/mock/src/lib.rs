@@ -7,6 +7,7 @@ use frame_support::{
     pallet_prelude::{GenesisBuild, Weight},
     traits::KeyOwnerProofSystem,
 };
+use hex_literal::hex;
 use pallet_sudo::GenesisConfig as SudoGenesisConfig;
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::impl_opaque_keys;
@@ -366,7 +367,11 @@ impl ExtBuilder {
             .build_storage::<Runtime>()
             .expect("Frame system builds valid default genesis config");
 
-        let sudo_genesis_config = SudoGenesisConfig::<Runtime> { key: Some(ALICE) };
+        let sudo_genesis_config = SudoGenesisConfig::<Runtime> {
+            key: Some(AccountId::new(hex!(
+                "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+            ))), // the actual key with //Alice seed
+        };
         sudo_genesis_config.assimilate_storage(&mut t).unwrap();
 
         pallet_balances::GenesisConfig::<Runtime> { balances: vec![] }
