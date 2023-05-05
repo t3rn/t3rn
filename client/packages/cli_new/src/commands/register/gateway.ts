@@ -46,19 +46,20 @@ const registerGateway = async (gatewayData: Required<Gateway>) => {
     "T3rnPrimitivesExecutionVendor",
     gatewayData.registrationData.executionVendor
   )
-  const codec: T3rnAbiRecodeCodec = createType("T3rnAbiRecodeCodec", "Scale")
+  const codec: T3rnAbiRecodeCodec = createType(
+    "T3rnAbiRecodeCodec",
+    gatewayData.registrationData.runtimeCodec
+  )
   const registrant = null
   const escrowAccounts = null
-  const allowedSideEffects = circuit.createType("Vec<AllowedSideEffect>", [
-    ["tran", 4],
-  ])
-  const tokenInfo = circuit.createType("TokenInfo", {
-    Substrate: {
-      symbol: "ROC",
-      decimals: 12,
-      id: 42,
-    },
-  })
+  const allowedSideEffects = circuit.createType(
+    "Vec<AllowedSideEffect>",
+    gatewayData.registrationData.allowedSideEffects
+  )
+  const tokenInfo = circuit.createType(
+    "TokenInfo",
+    gatewayData.registrationData.tokenInfo
+  )
   const registrationData = await getRegistrationData(circuit, gatewayData)
 
   if (!registrationData) {
