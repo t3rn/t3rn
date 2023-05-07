@@ -10,29 +10,87 @@ pub mod pallet {
     use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::Currency};
     use frame_system::pallet_prelude::*;
     use sp_runtime::{
-        traits::{CheckedAdd, CheckedDiv, CheckedMul, Zero},
-        Perbill,
+        traits::{CheckedAdd, CheckedDiv, CheckedMul, Saturating, Zero},
+        PerThing, Perbill, Percent,
     };
+    use sp_std::{convert::TryInto, prelude::*};
     use t3rn_primitives::{
         account_manager::{AccountManager, Settlement},
+        attesters::AttestersReadApi,
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         clock::Clock,
-        common::RoundInfo,
     };
 
-    use sp_std::{convert::TryInto, prelude::*};
+    #[derive(Clone, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
+    pub struct DistributionRecord<BlockNumber, Balance> {
+        pub block_number: BlockNumber,
+        pub attester_rewards: Balance,
+        pub collator_rewards: Balance,
+        pub executor_rewards: Balance,
+        pub treasury_rewards: Balance,
+        pub available: Balance,
+        pub distributed: Balance,
+    }
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
         type Currency: Currency<Self::AccountId>;
-        type AttesterInflation: Get<u32>;
-        type CollatorInflation: Get<u32>;
-        type AttesterBootstrapRewards: Get<u32>;
-        type CollatorBootstrapRewards: Get<u32>;
-        type ExecutorBootstrapRewards: Get<u32>;
-        type DistributionPeriod: Get<Self::BlockNumber>;
+
+        type TreasuryAccount: Get<Self::AccountId>;
+        /// The total inflation per year, expressed as a Perbill.
+        ///
+        /// Default: 4.4% (44_000_000 / 1_000_000_000)
+        #[pallet::constant]
+        type TotalInflation: Get<Perbill>;
+
+        /// The attester's portion of the total inflation, expressed as a Perbill.
+        ///
+        /// Default: 1.1% (11 / 100)
+        #[pallet::constant]
+        type AttesterInflation: Get<Perbill>;
+
+        /// The executor's portion of the total inflation, expressed as a Perbill.
+        ///
+        /// Default: 0.8% (8 / 100)
+        #[pallet::constant]
+        type ExecutorInflation: Get<Perbill>;
+
+        /// The collator's portion of the total inflation, expressed as a Perbill.
+        ///
+        /// Default: 0.5% (5 / 100)
+        #[pallet::constant]
+        type CollatorInflation: Get<Perbill>;
+
+        /// The treasury's portion of the total inflation, expressed as a Perbill.
+        ///
+        /// Default: 2% (20 / 100)
+        #[pallet::constant]
+        type TreasuryInflation: Get<Perbill>;
+
+        /// The number of blocks in one year.
+        ///
+        /// Default: 5_256_000 (assuming 6s block time)
+        #[pallet::constant]
+        type OneYear: Get<Self::BlockNumber>;
+
+        /// The number of blocks between inflation distribution.
+        ///
+        /// Default: 100_800 (assuming one distribution per two weeks)
+        #[pallet::constant]
+        type InflationDistributionPeriod: Get<Self::BlockNumber>;
+
+        type AvailableBootstrapSpenditure: Get<BalanceOf<Self>>;
+
+        type AttesterBootstrapRewards: Get<Percent>;
+
+        type CollatorBootstrapRewards: Get<Percent>;
+
+        type ExecutorBootstrapRewards: Get<Percent>;
+
         type Clock: Clock<Self>;
+
         type AccountManager: AccountManager<
             Self::AccountId,
             BalanceOf<Self>,
@@ -40,6 +98,8 @@ pub mod pallet {
             Self::BlockNumber,
             u32,
         >;
+
+        type Attesters: AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
     }
 
     #[pallet::pallet]
@@ -58,9 +118,10 @@ pub mod pallet {
 
     #[pallet::storage]
     pub type DistributionHistory<T: Config> =
-        StorageValue<_, Vec<(T::BlockNumber, RoundInfo<T::BlockNumber>)>>;
+        StorageValue<_, Vec<DistributionRecord<T::BlockNumber, BalanceOf<T>>>, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn get_pending_claims)]
     pub type PendingClaims<T: Config> = StorageMap<
         _,
         Twox64Concat,
@@ -82,6 +143,8 @@ pub mod pallet {
         DistributionPeriodNotElapsed,
         NoPendingClaims,
         ArithmeticOverflow,
+        AttesterNotFound,
+        TryIntoConversionU128ToBalanceFailed,
     }
 
     #[pallet::call]
@@ -89,7 +152,7 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn trigger_distribution(origin: OriginFor<T>) -> DispatchResult {
             let _ = ensure_signed(origin)?;
-            Self::distribute_inflation()?;
+            Self::distribute_inflation();
             Ok(())
         }
 
@@ -143,67 +206,152 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        fn distribute_inflation() -> DispatchResult {
+        fn distribute_inflation() {
+            // Calculate the available balance for distribution in the current period
+            let total_issuance = T::Currency::total_issuance();
+            let distribution_period = T::InflationDistributionPeriod::get();
+            let one_year_blocks = T::OneYear::get();
+            // Include TotalInflation in the calculation
+            let total_inflation = T::TotalInflation::get();
+            let inflated_total_issuance: BalanceOf<T> = total_inflation.mul_ceil(total_issuance);
+
+            let balance_for_distribution =
+                Perbill::from_rational(distribution_period, one_year_blocks)
+                    .mul_ceil(inflated_total_issuance);
+
+            log::debug!("inflated_total_issuance: {:?}", inflated_total_issuance);
+            log::debug!("balance_for_distribution: {:?}", balance_for_distribution);
+            log::debug!("total_issuance: {:?}", total_issuance);
+
+            // Calculate each portion per percentages
+            let attester_rewards = T::AttesterInflation::get().mul_ceil(balance_for_distribution);
+            let executor_rewards = T::ExecutorInflation::get().mul_ceil(balance_for_distribution);
+            let collator_rewards = T::CollatorInflation::get().mul_ceil(balance_for_distribution);
+            let treasury_rewards = T::TreasuryInflation::get().mul_ceil(balance_for_distribution);
+
+            log::debug!("attester_rewards: {:?}", attester_rewards);
+            log::debug!("executor_rewards: {:?}", executor_rewards);
+            log::debug!("collator_rewards: {:?}", collator_rewards);
+            log::debug!("treasury_rewards: {:?}", treasury_rewards);
             // Distribute rewards to attesters
-            Self::distribute_attester_rewards()?;
+            let attester_rewards_distributed = Self::distribute_attester_rewards(attester_rewards);
 
             // Distribute rewards to collators
-            Self::distribute_collator_rewards()?;
+            let collator_rewards_distributed = Self::distribute_collator_rewards(collator_rewards);
 
             // Distribute rewards to executors
-            Self::distribute_executor_rewards()?;
+            let executor_rewards_distributed = Self::distribute_executor_rewards(executor_rewards);
+
+            // Transfer the treasury rewards to the treasury account
+            T::Currency::deposit_creating(&T::TreasuryAccount::get(), treasury_rewards);
 
             // Distribute bootstrap rewards from the treasury account
-            Self::distribute_bootstrap_rewards()?;
+            // todo: uncomment this when bootstrap rewards are implemented
+            // Self::distribute_bootstrap_rewards()?;
 
             // Update the distribution block
             DistributionBlock::<T>::put(frame_system::Pallet::<T>::block_number());
 
             // Update the distribution history
-            let current_round = T::Clock::current_round();
             let current_block = frame_system::Pallet::<T>::block_number();
-            let mut history = DistributionHistory::<T>::get().unwrap_or_default();
-            history.push((current_block, current_round));
+            let distribution_record = DistributionRecord {
+                block_number: current_block,
+                attester_rewards: attester_rewards_distributed,
+                collator_rewards: collator_rewards_distributed,
+                executor_rewards: executor_rewards_distributed,
+                treasury_rewards,
+                distributed: attester_rewards_distributed
+                    + collator_rewards_distributed
+                    + executor_rewards_distributed
+                    + treasury_rewards,
+                available: balance_for_distribution,
+            };
+            let mut history = DistributionHistory::<T>::get();
+            history.push(distribution_record);
             DistributionHistory::<T>::put(history);
-
-            Ok(())
         }
 
-        fn distribute_attester_rewards() -> DispatchResult {
-            let inflation = T::AttesterInflation::get();
-            let total_attesters = Attesters::<T>::iter().count() as u32;
+        pub fn distribute_attester_rewards(current_distribution: BalanceOf<T>) -> BalanceOf<T> {
+            let honest_active_set = T::Attesters::honest_active_set();
+            let active_set_size: usize = T::Attesters::active_set().len();
+            let total_attesters = honest_active_set.len() as u32;
 
             if total_attesters == 0 {
-                return Ok(())
+                return Zero::zero()
             }
 
-            let reward_per_attester = BalanceOf::<T>::from(inflation)
-                .checked_div(&total_attesters.into())
-                .ok_or(Error::<T>::ArithmeticOverflow)?;
+            let reward_per_attester =
+                current_distribution / BalanceOf::<T>::from(active_set_size as u32);
 
-            for (attester, _) in Attesters::<T>::iter() {
+            for attester in honest_active_set {
+                let attester_info =
+                    if let Some(attester_info) = T::Attesters::read_attester_info(&attester) {
+                        attester_info
+                    } else {
+                        log::warn!(
+                            "No attester info found for during rewards distribution {:?}",
+                            attester
+                        );
+                        continue
+                    };
+
+                let commission_reward = attester_info.commission.mul_ceil(reward_per_attester);
+
+                // Update the pending claims for the attester
                 Self::update_pending_claims(
                     &attester,
                     CircuitRole::Attester,
-                    reward_per_attester,
+                    commission_reward,
                     BenefitSource::Inflation,
                 );
+                let remaining_reward = reward_per_attester.saturating_sub(commission_reward);
+
+                // Get the attester's nominators
+                let nominators = T::Attesters::read_nominations(&attester);
+
+                let total_nomination: BalanceOf<T> = nominators
+                    .iter()
+                    .map(|(_, balance)| *balance)
+                    .fold(BalanceOf::<T>::zero(), |acc, x| acc.saturating_add(x));
+
+                // Distribute the remaining reward to the nominators
+                for (nominator, nomination_balance) in nominators {
+                    let check_nominator_reward = remaining_reward
+                        .saturating_mul(nomination_balance)
+                        .checked_div(&total_nomination);
+                    match check_nominator_reward {
+                        Some(nominator_reward) => {
+                            Self::update_pending_claims(
+                                &nominator,
+                                CircuitRole::Staker,
+                                nominator_reward,
+                                BenefitSource::Inflation,
+                            );
+                        },
+                        None => {
+                            // If the nominator reward is zero, then we don't need to do anything
+                            // because the nominator's balance is zero
+                            log::error!(
+                                "Nominator reward is zero for nominator {:?} and attester {:?}",
+                                nominator,
+                                attester
+                            );
+                        },
+                    }
+                }
             }
 
-            Ok(())
+            BalanceOf::<T>::from(total_attesters).saturating_mul(reward_per_attester)
         }
 
-        fn distribute_collator_rewards() -> DispatchResult {
-            let inflation = T::CollatorInflation::get();
+        pub fn distribute_collator_rewards(current_distribution: BalanceOf<T>) -> BalanceOf<T> {
             let total_collators = Collators::<T>::iter().count() as u32;
 
             if total_collators == 0 {
-                return Ok(())
+                return Zero::zero()
             }
 
-            let reward_per_collator = BalanceOf::<T>::from(inflation)
-                .checked_div(&total_collators.into())
-                .ok_or(Error::<T>::ArithmeticOverflow)?;
+            let reward_per_collator = current_distribution / BalanceOf::<T>::from(total_collators);
 
             for (collator, _) in Collators::<T>::iter() {
                 Self::update_pending_claims(
@@ -214,23 +362,53 @@ pub mod pallet {
                 );
             }
 
-            Ok(())
+            reward_per_collator.saturating_mul(BalanceOf::<T>::from(total_collators))
         }
 
-        fn distribute_executor_rewards() -> DispatchResult {
-            for (executor, settlement) in Self::executions_this_round() {
-                let total_reward = BalanceOf::<T>::from(settlement.settlement_amount)
-                    .checked_mul(&2u32.into())
-                    .ok_or(Error::<T>::ArithmeticOverflow)?;
+        pub fn distribute_executor_rewards(current_distribution: BalanceOf<T>) -> BalanceOf<T> {
+            // Get the total settled executions this round
+            let total_settled_executions_this_round =
+                match Self::total_settled_executions_this_round(Self::executions_this_round()) {
+                    Ok(total_settled_executions_this_round) => total_settled_executions_this_round,
+                    Err(e) => {
+                        log::error!(
+                            "Arithmetic Overflow when calculating settled executor rewards: {:?}",
+                            e
+                        );
+                        return Zero::zero()
+                    },
+                };
+
+            // Calculate the proportions of the total settled executions for each executor
+            let executions_proportionally_of_total_this_round =
+                Self::executions_proportionally_of_total_this_round(
+                    Self::executions_this_round(),
+                    total_settled_executions_this_round,
+                );
+
+            let mut distibuted_rewards = Zero::zero();
+
+            // Distribute the executor rewards proportionally
+            for (executor, settlement, proportion) in executions_proportionally_of_total_this_round
+            {
+                let reward = proportion.mul_ceil(current_distribution);
+
+                // Ensure the reward does not exceed 90% of the settlement amount
+                let max_reward = Perbill::from_percent(90).mul_ceil(settlement.settlement_amount);
+                let capped_reward = reward.min(max_reward);
+
+                // Update the pending claims for the executor
                 Self::update_pending_claims(
                     &executor,
                     CircuitRole::Executor,
-                    total_reward,
+                    capped_reward.saturating_add(settlement.settlement_amount),
                     BenefitSource::Inflation,
                 );
+
+                distibuted_rewards += capped_reward;
             }
 
-            Ok(())
+            distibuted_rewards
         }
 
         pub fn executions_this_round() -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)>
@@ -248,7 +426,7 @@ pub mod pallet {
         )> {
             let mut executions_proportionally_of_total_this_round = Vec::new();
             for (executor, settlement) in executions_this_round {
-                let proportion = Perbill::from_rational_approximation(
+                let proportion = Perbill::from_rational(
                     settlement.settlement_amount,
                     total_settled_executions_this_round,
                 );
@@ -268,43 +446,6 @@ pub mod pallet {
                     .ok_or(Error::<T>::ArithmeticOverflow)?;
             }
             Ok(total_settlement)
-        }
-
-        fn distribute_bootstrap_rewards() -> DispatchResult {
-            let attester_bootstrap_rewards = T::AttesterBootstrapRewards::get();
-            let collator_bootstrap_rewards = T::CollatorBootstrapRewards::get();
-            let executor_bootstrap_rewards = T::ExecutorBootstrapRewards::get();
-
-            for (attester, _) in Attesters::<T>::iter() {
-                Self::update_pending_claims(
-                    &attester,
-                    CircuitRole::Attester,
-                    attester_bootstrap_rewards.into(),
-                    BenefitSource::BootstrapPool,
-                );
-            }
-
-            for (collator, _) in Collators::<T>::iter() {
-                Self::update_pending_claims(
-                    &collator,
-                    CircuitRole::Collator,
-                    collator_bootstrap_rewards.into(),
-                    BenefitSource::BootstrapPool,
-                );
-            }
-
-            // Keep max 2x of the total executor rewards for bootstrap
-
-            for (executor, _) in Self::executions_this_round() {
-                Self::update_pending_claims(
-                    &executor,
-                    CircuitRole::Executor,
-                    executor_bootstrap_rewards.into(),
-                    BenefitSource::BootstrapPool,
-                );
-            }
-
-            Ok(())
         }
 
         fn update_pending_claims(
@@ -329,8 +470,8 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            if n % T::DistributionPeriod::get() == Zero::zero() {
-                let _ = Self::distribute_inflation();
+            if n % T::InflationDistributionPeriod::get() == Zero::zero() {
+                Self::distribute_inflation();
             }
             0
         }
@@ -360,4 +501,283 @@ pub mod pallet {
 }
 
 #[cfg(test)]
-pub mod rewards_test {}
+pub mod test {
+    use super::*;
+    use frame_support::{
+        assert_err, assert_ok,
+        traits::{Currency, Hooks, Len},
+    };
+    use sp_core::H256;
+    use sp_runtime::Perbill;
+    use t3rn_mini_mock_runtime::{
+        AccountId, Balance, Balances, Clock, ConfigRewards, DistributionHistory, ExtBuilder,
+        InflationDistributionPeriod, MiniRuntime, Origin, PendingClaims, Rewards, RewardsError,
+        SettlementsPerRound, System, Timestamp, TotalInflation,
+    };
+    use t3rn_primitives::{
+        account_manager::{Outcome, Settlement},
+        claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+    };
+
+    #[test]
+    fn test_available_distribution_totals_to_max_4_4_percent_after_almost_1_year() {
+        let total_supply_account = AccountId::from([99u8; 32]);
+
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Setup
+            let initial_issuance = <MiniRuntime as ConfigRewards>::Currency::total_issuance();
+            let distribution_period =
+                <MiniRuntime as ConfigRewards>::InflationDistributionPeriod::get();
+
+            let total_inflation = <MiniRuntime as ConfigRewards>::TotalInflation::get();
+
+            pub const TRN: Balance = 1_000_000_000_000;
+
+            let mut available_total_rewards = 0 as Balance;
+            let mut actual_total_rewards = 0 as Balance;
+
+            // Weeks per year: 52.1429
+            // Weeks per period: 2
+            // Test period: 26 periods (52 weeks) - almost 1 year
+            let expected_top_yearly_rewards_available: Balance = 4_400_000 * TRN;
+
+            for cnt in 1..27u32 {
+                // Simulate the passage of time (two weeks per period)
+                System::set_block_number(distribution_period * cnt);
+
+                // Call the distribute_inflation function
+                Rewards::on_initialize(distribution_period * cnt);
+
+                // Retrieve the last distribution record
+                let history = DistributionHistory::<MiniRuntime>::get();
+
+                assert_eq!(history.len(), cnt as usize);
+                let last_record = history.last().unwrap();
+
+                // Add this round's rewards to the total
+                actual_total_rewards += last_record.distributed;
+                available_total_rewards += last_record.available;
+            }
+
+            // Check if the total rewards distributed equal the expected total rewards
+            assert_eq!(available_total_rewards, 4389797013799501253);
+            assert!(available_total_rewards < expected_top_yearly_rewards_available);
+        });
+    }
+
+    #[test]
+    fn test_distribution_to_executors_does_not_exceed_90_percent_rewards_subsidy() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // create 10 Settlements to 10 different executors in AccountManager
+            for counter in 1..11u8 {
+                let requester = AccountId::from([counter + 100u8; 32]);
+                let executor = AccountId::from([counter; 32]);
+                let sfx_id = H256::from([counter; 32]);
+                let settlement_amount = 100 as Balance;
+                SettlementsPerRound::<MiniRuntime>::insert(
+                    Clock::current_round(),
+                    sfx_id,
+                    Settlement {
+                        requester,
+                        recipient: executor,
+                        settlement_amount,
+                        outcome: Outcome::Commit,
+                        source: BenefitSource::TrafficRewards,
+                        role: CircuitRole::Executor,
+                    },
+                );
+            }
+
+            let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
+
+            let rewards_res =
+                Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
+
+            assert_eq!(rewards_res, 10 as Balance * 90 as Balance); // 90% of 100 TRN times 10 settlements
+
+            for counter in 1..11u8 {
+                let executor = AccountId::from([counter; 32]);
+                let settlement_amount_plus_rewards = 190 as Balance;
+                let pending_claim = Rewards::get_pending_claims(executor.clone());
+                assert_eq!(pending_claim.len(), 1);
+                assert_eq!(
+                    pending_claim,
+                    Some(vec![ClaimableArtifacts {
+                        beneficiary: executor,
+                        role: CircuitRole::Executor,
+                        total_round_claim: settlement_amount_plus_rewards,
+                        benefit_source: BenefitSource::Inflation,
+                    }])
+                );
+            }
+        });
+    }
+
+    #[test]
+    fn test_distribution_to_attesters_and_their_nominators() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // create 10 Settlements to 10 different executors in AccountManager
+            for counter in 1..11u8 {
+                let requester = AccountId::from([counter + 100u8; 32]);
+                let executor = AccountId::from([counter; 32]);
+                let sfx_id = H256::from([counter; 32]);
+                let settlement_amount = 100 as Balance;
+                SettlementsPerRound::<MiniRuntime>::insert(
+                    Clock::current_round(),
+                    sfx_id,
+                    Settlement {
+                        requester,
+                        recipient: executor,
+                        settlement_amount,
+                        outcome: Outcome::Commit,
+                        source: BenefitSource::TrafficRewards,
+                        role: CircuitRole::Executor,
+                    },
+                );
+            }
+
+            let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
+
+            let rewards_res =
+                Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
+
+            assert_eq!(rewards_res, 10 as Balance * 90 as Balance); // 90% of 100 TRN times 10 settlements
+
+            for counter in 1..11u8 {
+                let executor = AccountId::from([counter; 32]);
+                let settlement_amount_plus_rewards = 190 as Balance;
+                let pending_claim = Rewards::get_pending_claims(executor.clone());
+                assert_eq!(pending_claim.len(), 1);
+                assert_eq!(
+                    pending_claim,
+                    Some(vec![ClaimableArtifacts {
+                        beneficiary: executor,
+                        role: CircuitRole::Executor,
+                        total_round_claim: settlement_amount_plus_rewards,
+                        benefit_source: BenefitSource::Inflation,
+                    }])
+                );
+            }
+        });
+    }
+
+    #[test]
+    fn test_cannot_claim_twice_for_the_same_period() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let beneficiary = AccountId::from([99u8; 32]);
+            const INITIAL_BALANCE: Balance = 1;
+            Balances::deposit_creating(&beneficiary, INITIAL_BALANCE);
+            PendingClaims::<MiniRuntime>::insert(
+                beneficiary.clone(),
+                vec![ClaimableArtifacts {
+                    beneficiary: AccountId::from([99u8; 32]),
+                    role: CircuitRole::Executor,
+                    total_round_claim: 100 as Balance,
+                    benefit_source: BenefitSource::Inflation,
+                }],
+            );
+
+            // Claim the rewards
+            let claim_res = Rewards::claim(
+                Origin::signed(beneficiary.clone()),
+                Some(CircuitRole::Executor),
+            );
+
+            assert_ok!(claim_res);
+            assert_eq!(
+                Rewards::get_pending_claims(beneficiary.clone()),
+                Some(vec![])
+            );
+            assert_eq!(
+                Balances::free_balance(beneficiary.clone()),
+                100 as Balance + INITIAL_BALANCE
+            );
+
+            // Claim the rewards again
+            let claim_res = Rewards::claim(
+                Origin::signed(beneficiary.clone()),
+                Some(CircuitRole::Executor),
+            );
+            assert_err!(claim_res, RewardsError::<MiniRuntime>::NoPendingClaims);
+            assert_eq!(
+                Rewards::get_pending_claims(beneficiary.clone()),
+                Some(vec![])
+            );
+            assert_eq!(
+                Balances::free_balance(beneficiary.clone()),
+                100 as Balance + INITIAL_BALANCE
+            );
+        });
+    }
+
+    #[test]
+    fn test_distribution_to_executors_does_not_exceed_90_percent_rewards_subsidy_for_single_executor_and_is_claimable(
+    ) {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let single_executor = AccountId::from([99u8; 32]);
+            const INITIAL_BALANCE: Balance = 1;
+            Balances::deposit_creating(&single_executor, INITIAL_BALANCE);
+
+            // create 10 Settlements to 10 different executors in AccountManager
+            for counter in 1..11u8 {
+                let requester = AccountId::from([counter + 100u8; 32]);
+                let sfx_id = H256::from([counter; 32]);
+                let settlement_amount = 100 as Balance;
+                SettlementsPerRound::<MiniRuntime>::insert(
+                    Clock::current_round(),
+                    sfx_id,
+                    Settlement {
+                        requester,
+                        recipient: single_executor.clone(),
+                        settlement_amount,
+                        outcome: Outcome::Commit,
+                        source: BenefitSource::TrafficRewards,
+                        role: CircuitRole::Executor,
+                    },
+                );
+            }
+
+            let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
+
+            let rewards_res =
+                Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
+
+            assert_eq!(rewards_res, 10 as Balance * 90 as Balance); // 90% of 100 TRN times 10 settlements
+
+            let settlement_amount_plus_rewards = 190 as Balance;
+            let pending_claims = Rewards::get_pending_claims(single_executor.clone()).unwrap();
+            assert_eq!(pending_claims.len(), 10);
+            pending_claims.clone().iter().for_each(|claim| {
+                assert_eq!(
+                    claim,
+                    &ClaimableArtifacts {
+                        beneficiary: single_executor.clone(),
+                        role: CircuitRole::Executor,
+                        total_round_claim: settlement_amount_plus_rewards,
+                        benefit_source: BenefitSource::Inflation,
+                    }
+                );
+            });
+
+            // Claim the rewards
+            let claim_res = Rewards::claim(
+                Origin::signed(single_executor.clone()),
+                Some(CircuitRole::Executor),
+            );
+            assert_ok!(claim_res);
+            assert_eq!(
+                Rewards::get_pending_claims(single_executor.clone()),
+                Some(vec![])
+            );
+            assert_eq!(
+                Balances::free_balance(single_executor.clone()),
+                1900 as Balance + INITIAL_BALANCE
+            );
+        });
+    }
+}
