@@ -567,6 +567,56 @@ pub mod test {
     }
 
     #[test]
+    fn test_distribution_to_executors_subsidies_settlement_proportionally_with_others() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // create 10 Settlements to 10 different executors in AccountManager
+            for counter in 1..11u8 {
+                let requester = AccountId::from([counter + 100u8; 32]);
+                let executor = AccountId::from([counter; 32]);
+                let sfx_id = H256::from([counter; 32]);
+                let settlement_amount = 100 as Balance;
+                SettlementsPerRound::<MiniRuntime>::insert(
+                    Clock::current_round(),
+                    sfx_id,
+                    Settlement {
+                        requester,
+                        recipient: executor,
+                        settlement_amount,
+                        outcome: Outcome::Commit,
+                        source: BenefitSource::TrafficRewards,
+                        role: CircuitRole::Executor,
+                    },
+                );
+            }
+
+            let available_rewards_10x_less_of_total_settlements = 100 as Balance;
+
+            let rewards_res = Rewards::distribute_executor_rewards(
+                available_rewards_10x_less_of_total_settlements,
+            );
+
+            assert_eq!(rewards_res, available_rewards_10x_less_of_total_settlements); // All rewards are distributed to executors
+
+            for counter in 1..11u8 {
+                let executor = AccountId::from([counter; 32]);
+                let settlement_amount_plus_rewards = 110 as Balance;
+                let pending_claim = Rewards::get_pending_claims(executor.clone());
+                assert_eq!(pending_claim.len(), 1);
+                assert_eq!(
+                    pending_claim,
+                    Some(vec![ClaimableArtifacts {
+                        beneficiary: executor,
+                        role: CircuitRole::Executor,
+                        total_round_claim: settlement_amount_plus_rewards,
+                        benefit_source: BenefitSource::Inflation,
+                    }])
+                );
+            }
+        });
+    }
+
+    #[test]
     fn test_distribution_to_executors_does_not_exceed_90_percent_rewards_subsidy() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
