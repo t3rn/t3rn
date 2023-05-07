@@ -22,17 +22,17 @@ pub mod pallet {
     use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, sr25519};
     use sp_runtime::{
         traits::{Saturating, Zero},
-        RuntimeAppPublic,
+        Perbill, Percent, RuntimeAppPublic,
     };
+    use t3rn_primitives::common::{RoundIndex, RoundInfo};
 
     use sp_std::{convert::TryInto, prelude::*};
 
     use sp_runtime::traits::Verify;
-
-    // Key types for attester crypto
-    pub const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
-    pub const ED25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"edat");
-    pub const SR25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"srat");
+    pub use t3rn_primitives::attesters::{
+        AttesterInfo, AttestersReadApi, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
+        SR25519_ATTESTER_KEY_TYPE_ID,
+    };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub enum AttestationFor {
@@ -44,6 +44,13 @@ pub mod pallet {
         Pending,
         Timeout,
         Approved,
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub enum Slash<BlockNumber> {
+        LateOrNoSubmissionAtBlocks(Vec<BlockNumber>),
+        // Permanent slash
+        Permanent,
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -110,8 +117,10 @@ pub mod pallet {
         type MaxBatchSize: Get<u32>;
         type RewardMultiplier: Get<BalanceOf<Self>>;
         type CommitmentRewardSource: Get<Self::AccountId>;
+        type SlashAccount: Get<Self::AccountId>;
         type Currency: ReservableCurrency<Self::AccountId>;
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+        type DefaultCommission: Get<Percent>;
     }
 
     #[pallet::pallet]
@@ -139,6 +148,20 @@ pub mod pallet {
     pub type ActiveSet<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn pending_slashes)]
+    pub type PendingSlashes<T: Config> =
+        StorageMap<_, Identity, T::AccountId, Vec<Slash<T::BlockNumber>>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn pending_unnominations)]
+    pub type PendingUnnominations<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        Vec<(T::AccountId, BalanceOf<T>, BlockNumberFor<T>)>,
+    >;
+
+    #[pallet::storage]
     #[pallet::getter(fn attestations)]
     pub type Attestations<T: Config> =
         StorageMap<_, Identity, T::Hash, Attestation<T::AccountId, Vec<u8>>>;
@@ -150,8 +173,14 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn nominations)]
-    pub type Nominations<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, (T::AccountId, BalanceOf<T>)>;
+    pub type Nominations<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId, // Attester
+        Blake2_128Concat,
+        T::AccountId, // Nominator
+        BalanceOf<T>,
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn fast_confirmation_cost)]
@@ -177,6 +206,7 @@ pub mod pallet {
         NotActiveSet,
         NotInCurrentCommittee,
         NotRegistered,
+        NoNominationFound,
         AlreadyNominated,
         NominatorNotEnoughBalance,
         MissingNominations,
@@ -194,6 +224,7 @@ pub mod pallet {
             ecdsa_key: [u8; 33],
             ed25519_key: [u8; 32],
             sr25519_key: [u8; 32],
+            custom_commission: Option<Percent>,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
 
@@ -203,12 +234,18 @@ pub mod pallet {
                 Error::<T>::AlreadyRegistered
             );
 
+            let commission = match custom_commission {
+                Some(commission) => commission,
+                None => T::DefaultCommission::get(),
+            };
+
             Attesters::<T>::insert(
                 &account_id,
                 AttesterInfo {
                     key_ec: ecdsa_key,
                     key_ed: ed25519_key,
                     key_sr: sr25519_key,
+                    commission,
                 },
             );
 
@@ -248,6 +285,25 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::InvalidSignature)?;
 
             // todo: slash the attester if the signature is invalid
+            if !is_verified {
+                let slash: Vec<Slash<T::BlockNumber>> = match PendingSlashes::<T>::get(&account_id)
+                {
+                    Some(already_pending) => {
+                        let mut already_pending = already_pending;
+                        already_pending.extend_from_slice(&[Slash::Permanent]);
+                        already_pending
+                    },
+                    None => vec![Slash::Permanent],
+                };
+                // Apply permanent slash for colluding attestor
+                PendingSlashes::<T>::insert(&account_id, slash);
+            }
+
+            ensure!(
+                PendingSlashes::<T>::get(&account_id).is_none(),
+                Error::<T>::AttestationSignatureInvalid
+            );
+
             ensure!(is_verified, Error::<T>::AttestationSignatureInvalid);
 
             match attestation_for {
@@ -373,9 +429,72 @@ pub mod pallet {
             amount: BalanceOf<T>,
         ) -> DispatchResult {
             let nominator = ensure_signed(origin)?;
-            Self::do_nominate(nominator.clone(), attester.clone(), amount);
+            Self::do_nominate(nominator.clone(), attester.clone(), amount)?;
             Self::deposit_event(Event::Nominated(nominator, attester, amount));
             Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn unnominate(origin: OriginFor<T>, attester: T::AccountId) -> DispatchResult {
+            let nominator = ensure_signed(origin)?;
+
+            // Read the nominations for the given attester
+            let nominations = Self::read_nominations(&attester);
+
+            // Find the nomination for the current nominator
+            let nomination = nominations
+                .iter()
+                .find(|(nominator_id, _)| nominator_id == &nominator)
+                .ok_or(Error::<T>::NoNominationFound)?;
+
+            // Check if the nominator has an existing nomination
+            ensure!(nomination.0 == nominator, Error::<T>::NoNominationFound);
+
+            let amount = nomination.1;
+
+            // Calculate the block number when the unnomination can be processed
+            let unlock_block = frame_system::Pallet::<T>::block_number()
+                + T::ShufflingFrequency::get() * 2u32.into();
+
+            // Store the pending unnomination
+            PendingUnnominations::<T>::mutate(&nominator, |pending_unnominations| {
+                let pending_unnominations = pending_unnominations.get_or_insert_with(|| Vec::new());
+                pending_unnominations.push((attester.clone(), amount, unlock_block));
+            });
+
+            Ok(())
+        }
+    }
+
+    impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>> for Pallet<T> {
+        fn previous_committee() -> Vec<T::AccountId> {
+            PreviousCommittee::<T>::get()
+        }
+
+        fn current_committee() -> Vec<T::AccountId> {
+            CurrentCommittee::<T>::get()
+        }
+
+        fn active_set() -> Vec<T::AccountId> {
+            ActiveSet::<T>::get()
+        }
+
+        fn honest_active_set() -> Vec<T::AccountId> {
+            let active_set = ActiveSet::<T>::get();
+            active_set
+                .into_iter()
+                .filter(|a| !PendingSlashes::<T>::contains_key(a))
+                .collect()
+        }
+
+        fn read_attester_info(attester: &T::AccountId) -> Option<AttesterInfo> {
+            Attesters::<T>::get(attester)
+        }
+
+        fn read_nominations(for_attester: &T::AccountId) -> Vec<(T::AccountId, BalanceOf<T>)> {
+            Nominations::<T>::iter_prefix(for_attester)
+                .map(|(nominator, balance)| (nominator, balance))
+                .collect()
         }
     }
 
@@ -384,37 +503,62 @@ pub mod pallet {
             T::CommitteeSize::get() as usize
         }
 
+        fn update_sorted_nominated_attesters(
+            attester: &T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> bool {
+            let mut all_indices_match = true;
+            SortedNominatedAttesters::<T>::mutate(|attesters| {
+                if let Some(index) = attesters.iter().position(|(a, _n)| a == attester) {
+                    let total_nomination = attesters[index].1 - amount;
+                    if total_nomination.is_zero() {
+                        attesters.remove(index);
+                    } else {
+                        attesters[index] = (attester.clone(), total_nomination);
+                    }
+
+                    // Sort the attesters by their nomination amount
+                    attesters.sort_by(|(_a1, n1), (_a2, n2)| n2.cmp(n1));
+
+                    // Keep only the top 32 attesters in the list
+                    attesters.truncate(32);
+                } else {
+                    log::warn!("Attester not found while updating sorted nominated attesters");
+                    all_indices_match = false
+                }
+            });
+            all_indices_match
+        }
+
         pub fn do_nominate(
             nominator: T::AccountId,
             attester: T::AccountId,
             amount: BalanceOf<T>,
         ) -> DispatchResult {
-            let mut nomination = match Nominations::<T>::get(&attester) {
-                Some(nomination) => nomination,
-                None => (attester.clone(), Zero::zero()),
-            };
-
             // Check if nominator has enough balance
             ensure!(
                 T::Currency::free_balance(&nominator) >= amount,
                 Error::<T>::NominatorNotEnoughBalance
             );
 
-            nomination.1 += amount;
+            let current_nomination =
+                Nominations::<T>::get(&attester, &nominator).unwrap_or(Zero::zero());
 
-            let nomination_amount = nomination.1;
-
-            // Update the nomination storage item
-            Nominations::<T>::insert(&attester, nomination);
+            let new_nomination = current_nomination + amount;
+            Nominations::<T>::insert(&attester, &nominator, new_nomination);
 
             // Update the sorted list of nominated attesters
             SortedNominatedAttesters::<T>::try_mutate(|attesters| {
+                let total_nomination = Nominations::<T>::iter_prefix(&attester)
+                    .map(|(_, balance)| balance)
+                    .fold(Zero::zero(), |acc, balance| acc + balance);
+
                 if let Some(index) = attesters.iter().position(|(a, _n)| a == &attester) {
                     // Update the existing nomination amount
-                    attesters[index] = (attester.clone(), nomination_amount);
+                    attesters[index] = (attester.clone(), total_nomination);
                 } else {
                     // Add the new attester to the list
-                    attesters.push((attester.clone(), nomination_amount));
+                    attesters.push((attester.clone(), total_nomination));
                 }
 
                 // Sort the attesters by their nomination amount
@@ -477,25 +621,92 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
+            println!(
+                "len on-init nomination: len{:?}",
+                Nominations::<T>::iter().count()
+            );
+
             // Check if a shuffling round has passed
             if (n % T::ShufflingFrequency::get()).is_zero() {
+                let mut aggregated_weight: Weight = 0;
+
+                // Process pending unnominations
+                aggregated_weight += T::DbWeight::get().reads(1);
+                for (nominator, pending_unnominations) in PendingUnnominations::<T>::iter() {
+                    println!("nominator: {:?}", nominator);
+                    let mut pending_unnominations = pending_unnominations.clone();
+                    let mut pending_unnominations_updated = false;
+                    let mut indices_to_remove = Vec::new();
+
+                    for (index, (attester, amount, unlock_block)) in
+                        pending_unnominations.iter().enumerate()
+                    {
+                        println!("unlock_block: {:?}", unlock_block);
+                        if unlock_block <= &n {
+                            println!("unlock_block2: {:?}", unlock_block);
+
+                            // Save the index to be removed later
+                            indices_to_remove.push(index);
+                            pending_unnominations_updated = true;
+
+                            // Unreserve the nominated amount in the nominator's account
+                            T::Currency::unreserve(&nominator, *amount);
+                            aggregated_weight += T::DbWeight::get().writes(1);
+
+                            // Remove the nomination from storage
+                            Nominations::<T>::remove(&attester, &nominator);
+                            aggregated_weight += T::DbWeight::get().writes(1);
+
+                            println!("rm nomination: len{:?}", Nominations::<T>::iter().count());
+                            println!(
+                                "nomination: {:?}",
+                                Nominations::<T>::get(&attester, &nominator)
+                            );
+                            // Update the sorted list of nominated attesters
+                            let _ = Self::update_sorted_nominated_attesters(&attester, *amount);
+                            aggregated_weight += T::DbWeight::get().writes(1);
+                        }
+                    }
+
+                    // Remove the pending unnomination from the list
+                    for &index in indices_to_remove.iter().rev() {
+                        println!("index: {:?}", index);
+                        pending_unnominations.remove(index);
+                    }
+
+                    // Update the pending unnominations storage item if necessary
+                    if pending_unnominations_updated {
+                        if pending_unnominations.is_empty() {
+                            println!("remove: {:?}", nominator);
+                            PendingUnnominations::<T>::remove(&nominator);
+                        } else {
+                            println!("insert: {:?}", nominator);
+                            PendingUnnominations::<T>::insert(&nominator, pending_unnominations);
+                        }
+                        aggregated_weight += T::DbWeight::get().writes(1);
+                    }
+                }
+
                 // Update the active set of attesters
                 ActiveSet::<T>::put(
                     SortedNominatedAttesters::<T>::get()
                         .iter()
+                        .filter(|(account_id, _)| PendingSlashes::<T>::get(account_id).is_none())
                         .take(32)
                         .cloned()
                         .map(|(account_id, _balance)| account_id)
                         .collect::<Vec<T::AccountId>>(),
                 );
+                aggregated_weight += T::DbWeight::get().reads_writes(1, 1);
 
                 // Call shuffle_committee
                 if !Self::shuffle_committee() {
                     log::error!("Failed to shuffle committee");
-                    return T::DbWeight::get().reads_writes(2, 2)
+                    aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
                 }
+                aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
 
-                return T::DbWeight::get().reads_writes(5, 5)
+                return aggregated_weight
             }
             0
         }
@@ -522,44 +733,6 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {}
     }
-
-    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
-    pub struct AttesterInfo {
-        pub key_ed: [u8; 32],
-        pub key_ec: [u8; 33],
-        pub key_sr: [u8; 32],
-    }
-
-    impl AttesterInfo {
-        pub fn verify_attestation_signature(
-            &self,
-            key_type: KeyTypeId,
-            message: &Vec<u8>,
-            signature: &[u8],
-        ) -> Result<bool, DispatchError> {
-            match key_type {
-                ECDSA_ATTESTER_KEY_TYPE_ID => {
-                    let ecdsa_sig = ecdsa::Signature::from_slice(signature)
-                        .ok_or::<DispatchError>("InvalidSignature".into())?;
-                    let ecdsa_public = ecdsa::Public::from_raw(self.key_ec);
-                    Ok(ecdsa_public.verify(message, &ecdsa_sig))
-                },
-                ED25519_ATTESTER_KEY_TYPE_ID => {
-                    let ed25519_sig = ed25519::Signature::from_slice(signature)
-                        .ok_or::<DispatchError>("InvalidSignature".into())?;
-                    let ed25519_public = ed25519::Public::from_raw(self.key_ed);
-                    Ok(ed25519_public.verify(message, &ed25519_sig))
-                },
-                SR25519_ATTESTER_KEY_TYPE_ID => {
-                    let sr25519_sig = sr25519::Signature::from_slice(signature)
-                        .ok_or::<DispatchError>("InvalidSignature".into())?;
-                    let sr25519_public = sr25519::Public::from_raw(self.key_sr);
-                    Ok(sr25519_public.verify(message, &sr25519_sig))
-                },
-                _ => Err("InvalidKeyTypeId".into()),
-            }
-        }
-    }
 }
 
 #[cfg(test)]
@@ -575,15 +748,23 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
+    use t3rn_primitives::attesters::AttestersReadApi;
 
+    use frame_support::traits::Len;
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
-        AttestersStore, Balances, BatchStatus, Batches, ConfigAttesters, CurrentCommittee,
-        ExtBuilder, MiniRuntime, Nominations, Origin, PreviousCommittee, SortedNominatedAttesters,
+        AttestersStore, Balance, Balances, BatchStatus, Batches, BlockNumber, ConfigAttesters,
+        ConfigRewards, CurrentCommittee, ExtBuilder, MiniRuntime, Nominations, Origin,
+        PendingSlashes, PendingUnnominations, PreviousCommittee, Rewards, SortedNominatedAttesters,
+        System,
+    };
+    use t3rn_primitives::{
+        account_manager::{Outcome, Settlement},
+        claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
     };
 
-    fn register_attester_with_single_private_key(secret_key: [u8; 32]) {
+    pub fn register_attester_with_single_private_key(secret_key: [u8; 32]) {
         // Register an attester
         let attester = AccountId::from(secret_key);
 
@@ -599,6 +780,7 @@ pub mod attesters_test {
             ecdsa_key.try_into().unwrap(),
             ed25519_key.try_into().unwrap(),
             sr25519_key.try_into().unwrap(),
+            None,
         ));
 
         // Run to active set selection
@@ -835,7 +1017,7 @@ pub mod attesters_test {
                 let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator),
+                    Origin::signed(nominator.clone()),
                     attester.clone(),
                     amount
                 ));
@@ -849,16 +1031,181 @@ pub mod attesters_test {
             assert_eq!(active_set.len(), 32);
             let top_nominated_attesters = SortedNominatedAttesters::<MiniRuntime>::get();
             for (i, (attester, _nominated_stake)) in top_nominated_attesters.iter().enumerate() {
-                let nomination = Nominations::<MiniRuntime>::get(attester).unwrap();
-                assert_eq!(nomination.0, *attester);
+                let nominations = Attesters::read_nominations(&attester);
+                let total_nomination: Balance =
+                    nominations.iter().map(|(_nominator, amount)| *amount).sum();
                 assert_eq!(
-                    nomination.1,
+                    total_nomination,
                     1000u128 + 64 + 10 - i as u128, // where 10 is the self-bond for attesters
-                    "attester: {:?}, nomination: {}",
+                    "attester: {:?}, total_nomination: {}",
                     attester,
-                    nomination.1
+                    total_nomination
                 );
             }
+        });
+    }
+
+    #[test]
+    fn attester_nomination_generates_claimable_inflation_rewards_for_attesters_and_nominators() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Register 64 attesters
+            let mut attesters = Vec::new();
+
+            for counter in 1..65u8 {
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+                attesters.push(attester);
+            }
+
+            // Nominate the attesters
+            for counter in 1..65u128 {
+                let nominator = AccountId::from([(counter + 1) as u8; 32]);
+                let attester = attesters[(counter - 1) as usize].clone();
+                let amount = 1000u128 + counter;
+                let _ = Balances::deposit_creating(&nominator, amount);
+                assert_ok!(Attesters::nominate(
+                    Origin::signed(nominator.clone()),
+                    attester.clone(),
+                    amount
+                ));
+            }
+
+            Attesters::on_initialize(400);
+
+            // Trigger inflation rewards distribution
+            let distribution_period =
+                <MiniRuntime as ConfigRewards>::InflationDistributionPeriod::get();
+            System::set_block_number(distribution_period);
+            Rewards::on_initialize(distribution_period);
+            // Check claimable rewards for attesters
+            for counter in 1..65u128 {
+                let attester = attesters[(counter - 1) as usize].clone();
+                let claimable_rewards = Rewards::get_pending_claims(&attester);
+                let one_period_claimable_reward = 1000u128 + 64 + 10 - counter;
+                assert_eq!(
+                    claimable_rewards,
+                    Some(vec![ClaimableArtifacts {
+                        beneficiary: attester.clone(),
+                        role: CircuitRole::Attester,
+                        total_round_claim: one_period_claimable_reward,
+                        benefit_source: BenefitSource::Inflation,
+                    }])
+                );
+            }
+
+            // Check claimable rewards for nominators
+            for counter in 1..65u128 {
+                let nominator = AccountId::from([(counter + 1) as u8; 32]);
+                let claimable_rewards = Rewards::get_pending_claims(&nominator);
+                let one_period_claimable_reward = 1000u128 + 64 + 10 - counter;
+                assert_eq!(
+                    claimable_rewards,
+                    Some(vec![ClaimableArtifacts {
+                        beneficiary: nominator.clone(),
+                        role: CircuitRole::Staker,
+                        total_round_claim: one_period_claimable_reward,
+                        benefit_source: BenefitSource::Inflation,
+                    }])
+                );
+            }
+        });
+    }
+
+    #[test]
+    fn attester_unnomination() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Register 3 attesters
+            let mut attesters = Vec::new();
+
+            for counter in 1..4u8 {
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+                attesters.push(attester);
+            }
+
+            // Nominate the attesters
+            let nominator = AccountId::from([250; 32]);
+            let _ = Balances::deposit_creating(&nominator, 3000);
+
+            for attester in &attesters {
+                assert_ok!(Attesters::nominate(
+                    Origin::signed(nominator.clone()),
+                    attester.clone(),
+                    1000
+                ));
+            }
+
+            // Unnominate one attester
+            let attester_to_unnominate = attesters[1].clone();
+            assert_ok!(Attesters::unnominate(
+                Origin::signed(nominator.clone()),
+                attester_to_unnominate.clone()
+            ));
+
+            // Verify that the unnomination is pending and nominations are not updated yet
+            let pending_unnominations = PendingUnnominations::<MiniRuntime>::get(&nominator);
+            assert_eq!(pending_unnominations.len(), 1);
+            let pending_unnominations = pending_unnominations.unwrap();
+            assert_eq!(pending_unnominations[0].0, attester_to_unnominate);
+
+            // Still 2 nominations - the unnomination is not yet processed
+            let nominations = Attesters::read_nominations(&attester_to_unnominate);
+            assert_eq!(nominations.len(), 2);
+        });
+    }
+
+    #[test]
+    fn on_initialize_logic_unnominate_larger_set() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Register 64 attesters
+            let mut attesters = Vec::new();
+
+            for counter in 1..65u8 {
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+                attesters.push(attester);
+            }
+
+            // Nominate the attesters with different stakes
+            let nominator = AccountId::from([250; 32]);
+            let _ = Balances::deposit_creating(&nominator, 128_000_000);
+
+            for (i, attester) in attesters.iter().enumerate() {
+                for _ in 0..2 {
+                    assert_ok!(Attesters::nominate(
+                        Origin::signed(nominator.clone()),
+                        attester.clone(),
+                        1000 + i as Balance
+                    ));
+                }
+            }
+
+            // Unnominate one attester
+            let attester_to_unnominate = attesters[1].clone();
+            assert_ok!(Attesters::unnominate(
+                Origin::signed(nominator.clone()),
+                attester_to_unnominate.clone()
+            ));
+
+            // Check if the attester_to_unnominate is in the active set
+            assert!(ActiveSet::<MiniRuntime>::get().contains(&attester_to_unnominate));
+
+            // Move to the block where unnomination is processed
+            let unlock_block: BlockNumber = 3 * 400; // 1 is the current block number, 5 is the ShufflingFrequency
+            System::set_block_number(unlock_block.into());
+
+            // Call on_initialize
+            Attesters::on_initialize(unlock_block.into());
+
+            // Verify that the active set is updated correctly
+            let active_set = ActiveSet::<MiniRuntime>::get();
+            assert_eq!(active_set.len(), 32);
+
+            // Check if the attester_to_unnominate is removed from the active set
+            assert!(!active_set.contains(&attester_to_unnominate));
         });
     }
 }
