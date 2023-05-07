@@ -872,6 +872,7 @@ declare module '@polkadot/api-base/types/errors' {
        * The contract could not be found in the registry
        **/
       ContractNotFound: AugmentedError<ApiType>;
+      DownstreamCircuit: AugmentedError<ApiType>;
       /**
        * A user exceeded the bounce threshold for submitting signals
        **/

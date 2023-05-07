@@ -1,14 +1,14 @@
 import "@t3rn/types"
 import { createType } from "@t3rn/types"
 import ora from "ora"
-import { Sdk } from "@t3rn/sdk"
 import { existsSync, readFileSync } from "fs"
+import { Sdk } from "@t3rn/sdk"
+import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup"
 import { validate } from "@/utils/fns.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"
-import { ExtrinsicSchema, Extrinsic } from "@/schemas/extrinsic.ts"
+import { ExtrinsicSchema, Extrinsic, SpeedMode } from "@/schemas/extrinsic.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { getConfig } from "@/utils/config.ts"
-import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup"
 import { Circuit } from "@/types.ts"
 
 export const spinner = ora()
@@ -59,14 +59,14 @@ export const submitSfx = async (extrinsic: Extrinsic) => {
   const transactionArgs = buildSfx(
     circuit,
     extrinsic.sideEffects,
-    extrinsic.sequential,
+    extrinsic.speed_mode,
     sdk
   )
 
   try {
     const transaction = circuit.tx.circuit.onExtrinsicTrigger(
       transactionArgs.sideEffects,
-      transactionArgs.sequential
+      transactionArgs.speed_mode
     )
     const submissionHeight = await sdk.circuit.tx.signAndSendSafe(transaction)
     spinner.stopAndPersist({
@@ -86,7 +86,7 @@ export const submitSfx = async (extrinsic: Extrinsic) => {
 export const buildSfx = (
   circuitApi: Circuit,
   sideEffects: Extrinsic["sideEffects"],
-  sequential: boolean,
+  speedMode: SpeedMode,
   sdk: Sdk
 ) => {
   return {
@@ -106,6 +106,6 @@ export const buildSfx = (
       })
       // @ts-expect-error - TS doesn't know that we are creating a type here
     ).toJSON(),
-    sequential: circuitApi.createType("bool", sequential),
+    speed_mode: circuitApi.createType("T3rnPrimitivesSpeedMode", speedMode),
   }
 }

@@ -10,5 +10,5 @@ export default {
       reward: "40", // in TRN
     },
   ],
-  sequential: false,
+  speed_mode: "Fast",
 }
