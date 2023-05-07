@@ -41,6 +41,7 @@ use sp_std::{prelude::*, vec};
 use std::fmt::Debug;
 
 pub mod account_manager;
+pub mod attesters;
 pub mod circuit;
 pub mod claimable;
 pub mod clock;
