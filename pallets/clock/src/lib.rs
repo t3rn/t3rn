@@ -229,5 +229,9 @@ pub mod pallet {
         fn current_round() -> RoundInfo<T::BlockNumber> {
             Self::current_round()
         }
+
+        fn round_duration() -> T::BlockNumber {
+            T::RoundDuration::get()
+        }
     }
 }
