@@ -3,8 +3,15 @@ use frame_support::RuntimeDebug;
 pub use pallet_attesters::{
     ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations,
     Attesters as AttestersStore, BatchStatus, Batches, Config as ConfigAttesters, CurrentCommittee,
-    Error as AttestersError, Nominations, PreviousCommittee, SortedNominatedAttesters,
+    Error as AttestersError, Nominations, PendingSlashes, PendingUnnominations, PreviousCommittee,
+    SortedNominatedAttesters,
 };
+
+pub use pallet_account_manager::{
+    Config as ConfigAccountManager, Error as AccountManagerError, Event as AccountManagerEvent,
+    SettlementsPerRound,
+};
+
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{
@@ -12,10 +19,15 @@ use pallet_grandpa_finality_verifier::{
     },
 };
 use pallet_portal::Error as PortalError;
+pub use pallet_rewards::{
+    Config as ConfigRewards, DistributionBlock, DistributionHistory, Error as RewardsError,
+    PendingClaims,
+};
 use sp_core::H256;
 use sp_runtime::{
     generic, parameter_types,
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    traits::{BlakeTwo256, ConstU32, ConstU8, ConvertInto, IdentityLookup},
+    Perbill, Percent,
 };
 use t3rn_primitives::GatewayVendor;
 pub type AccountId = sp_runtime::AccountId32;
@@ -37,9 +49,13 @@ frame_support::construct_runtime!(
         Balances: pallet_balances = 2,
         Timestamp: pallet_timestamp = 3,
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 4,
+        Assets: pallet_assets = 5,
 
         XDNS: pallet_xdns = 100,
         Attesters: pallet_attesters = 101,
+        Rewards: pallet_rewards = 102,
+        AccountManager: pallet_account_manager = 103,
+        Clock: pallet_clock = 104,
         // Portal
         Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
@@ -49,21 +65,114 @@ frame_support::construct_runtime!(
 );
 
 parameter_types! {
-    pub const CommitmentRewardSource: AccountId = AccountId::new([51u8; 32]);
-    pub const RewardMultiplier: Balance = 1;
+    pub const AssetDeposit: Balance = 1; // 1 UNIT deposit to create asset
+    pub const ApprovalDeposit: Balance = 1;
+    pub const AssetsStringLimit: u32 = 50;
+    /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
+    // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
+    pub const MetadataDepositBase: Balance = 0;
+    pub const MetadataDepositPerByte: Balance = 0;
+    pub const AssetAccountDeposit: Balance = 0;
 }
 
+impl pallet_assets::Config for MiniRuntime {
+    type ApprovalDeposit = ApprovalDeposit;
+    type AssetAccountDeposit = AssetAccountDeposit;
+    type AssetDeposit = AssetDeposit;
+    type AssetId = u32;
+    type Balance = Balance;
+    type Currency = Balances;
+    type Event = Event;
+    type Extra = ();
+    type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
+    type Freezer = ();
+    type MetadataDepositBase = MetadataDepositBase;
+    type MetadataDepositPerByte = MetadataDepositPerByte;
+    type StringLimit = AssetsStringLimit;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const EscrowAccount: AccountId = AccountId::new([51u8; 32]);
+}
+
+impl pallet_account_manager::Config for MiniRuntime {
+    type AssetBalanceOf = ConvertInto;
+    type AssetId = u32;
+    type Assets = Assets;
+    type Clock = Clock;
+    type Currency = Balances;
+    type EscrowAccount = EscrowAccount;
+    type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type Time = Timestamp;
+    type WeightInfo = ();
+}
+
+impl pallet_clock::Config for MiniRuntime {
+    type AccountManager = AccountManager;
+    type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
+    type OnInitializeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
+    type RoundDuration = ConstU32<400>;
+}
+use t3rn_primitives::monetary::TRN;
+
+parameter_types! {
+    pub const TotalInflation: Perbill = Perbill::from_parts(4_400_0000); // 4.4%
+    pub const AttesterInflation: Perbill = Perbill::from_parts(1_100_0000); // 1.1%
+    pub const ExecutorInflation: Perbill = Perbill::from_parts(0_800_0000); // 0.8%
+    pub const CollatorInflation: Perbill = Perbill::from_parts(0_500_0000); // 0.5%
+    pub const TreasuryInflation: Perbill = Perbill::from_parts(2_000_0000); // 2%
+    pub const AttesterBootstrapRewards: Percent = Percent::from_parts(40); // 40%
+    pub const CollatorBootstrapRewards: Percent = Percent::from_parts(20); // 20%
+    pub const ExecutorBootstrapRewards: Percent = Percent::from_parts(40); // 40%
+    pub const OneYear: BlockNumber = 2_628_000; // (365.25 * 24 * 60 * 60) / 12; assuming 12s block time
+    pub const InflationDistributionPeriod: BlockNumber = 100_800; // (14 * 24 * 60 * 60) / 12; assuming one distribution per two weeks
+    pub const TreasuryAccount: AccountId = AccountId::new([51u8; 32]);
+    pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
+}
+
+impl pallet_rewards::Config for MiniRuntime {
+    type AccountManager = AccountManager;
+    type AttesterBootstrapRewards = AttesterBootstrapRewards;
+    type AttesterInflation = AttesterInflation;
+    type Attesters = Attesters;
+    type AvailableBootstrapSpenditure = AvailableBootstrapSpenditure;
+    type Clock = Clock;
+    type CollatorBootstrapRewards = CollatorBootstrapRewards;
+    type CollatorInflation = CollatorInflation;
+    type Currency = Balances;
+    type Event = Event;
+    type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
+    type ExecutorInflation = ExecutorInflation;
+    type InflationDistributionPeriod = InflationDistributionPeriod;
+    type OneYear = OneYear;
+    type TotalInflation = TotalInflation;
+    type TreasuryAccount = TreasuryAccount;
+    type TreasuryInflation = TreasuryInflation;
+}
+
+parameter_types! {
+    pub const DefaultCommission: Percent = Percent::from_percent(10);
+    pub const CommitmentRewardSource: AccountId = AccountId::new([51u8; 32]);
+    pub const SlashAccount: AccountId = AccountId::new([51u8; 32]);
+    pub const RewardMultiplier: Balance = 1;
+}
 impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
     type CommitmentRewardSource = CommitmentRewardSource;
     type CommitteeSize = ConstU32<32>;
     type Currency = Balances;
+    type DefaultCommission = DefaultCommission;
     type Event = Event;
     type MaxBatchSize = ConstU32<128>;
     type RandomnessSource = RandomnessCollectiveFlip;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;
+    type SlashAccount = SlashAccount;
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for MiniRuntime {}
@@ -407,6 +516,7 @@ pub struct ExtBuilder {
     known_gateway_records: Vec<GatewayRecord<AccountId>>,
     standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     known_contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
+    balances: Vec<(AccountId, Balance)>,
 }
 
 impl ExtBuilder {
@@ -428,14 +538,25 @@ impl ExtBuilder {
         self
     }
 
+    pub fn balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
+        self.balances = balances;
+        self
+    }
+
     pub fn build(self) -> sp_io::TestExternalities {
         let mut t = frame_system::GenesisConfig::default()
             .build_storage::<MiniRuntime>()
             .expect("Frame system builds valid default genesis config");
 
-        pallet_balances::GenesisConfig::<MiniRuntime> { balances: vec![] }
-            .assimilate_storage(&mut t)
-            .expect("Pallet balances storage can be assimilated");
+        const TRN: Balance = 1_000_000_000_000;
+        const TOTAL_SUPPLY: Balance = (TRN as u128) * 100_000_000; // 100 million TRN
+        const GENESIS_ACCOUNT_ID: AccountId = AccountId::new([0u8; 32]);
+
+        pallet_balances::GenesisConfig::<MiniRuntime> {
+            balances: vec![(GENESIS_ACCOUNT_ID, TOTAL_SUPPLY)],
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet balances storage can be assimilated");
 
         pallet_xdns::GenesisConfig::<MiniRuntime> {
             known_xdns_records: vec![],

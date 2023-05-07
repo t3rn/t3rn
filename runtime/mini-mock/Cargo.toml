@@ -43,10 +43,13 @@ pallet-balances   = { git = "https://github.com/paritytech/substrate.git", branc
 pallet-assets     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 pallet-contracts  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 pallet-timestamp  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+pallet-clock = { path = "../../pallets/clock" }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../../pallets/portal" }
 pallet-xdns                      = { path = "../../pallets/xdns" }
-pallet-attesters                  = { path = "../../pallets/attesters" }
+pallet-account-manager           = { path = "../../pallets/account-manager" }
+pallet-attesters                 = { path = "../../pallets/attesters" }
+pallet-rewards                   = { path = "../../pallets/rewards" }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }
 
