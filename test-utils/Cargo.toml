@@ -16,4 +16,5 @@ frame-system       = { default-features = false, git = "https://github.com/parit
 serde = "1.0.160"
 serde_json = "1.0.96"
 hex = "0.4.3"
+hex-literal = "0.4.1"
 codec       = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
