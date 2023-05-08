@@ -18,17 +18,14 @@ pub mod pallet {
         traits::{Currency, ExistenceRequirement, Randomness, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
-    use sp_application_crypto::RuntimePublic;
-    use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, sr25519};
+
     use sp_runtime::{
         traits::{Saturating, Zero},
-        Perbill, Percent, RuntimeAppPublic,
+        Percent,
     };
-    use t3rn_primitives::common::{RoundIndex, RoundInfo};
 
     use sp_std::{convert::TryInto, prelude::*};
 
-    use sp_runtime::traits::Verify;
     pub use t3rn_primitives::attesters::{
         AttesterInfo, AttestersReadApi, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
         SR25519_ATTESTER_KEY_TYPE_ID,
@@ -121,6 +118,8 @@ pub mod pallet {
         type Currency: ReservableCurrency<Self::AccountId>;
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         type DefaultCommission: Get<Percent>;
+        type MinNominatorBond: Get<BalanceOf<Self>>;
+        type MinAttesterBond: Get<BalanceOf<Self>>;
     }
 
     #[pallet::pallet]
@@ -209,6 +208,8 @@ pub mod pallet {
         NoNominationFound,
         AlreadyNominated,
         NominatorNotEnoughBalance,
+        NominatorBondTooSmall,
+        AttesterBondTooSmall,
         MissingNominations,
         BatchNotFound,
         BatchAlreadyCommitted,
@@ -227,6 +228,12 @@ pub mod pallet {
             custom_commission: Option<Percent>,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
+
+            // Check min. self-nomination bond
+            ensure!(
+                self_nominate_amount >= T::MinAttesterBond::get(),
+                Error::<T>::AttesterBondTooSmall
+            );
 
             // Ensure the attester is not already registered
             ensure!(
@@ -429,6 +436,13 @@ pub mod pallet {
             amount: BalanceOf<T>,
         ) -> DispatchResult {
             let nominator = ensure_signed(origin)?;
+
+            // Check min. nomination amount
+            ensure!(
+                amount >= T::MinNominatorBond::get(),
+                Error::<T>::NominatorBondTooSmall
+            );
+
             Self::do_nominate(nominator.clone(), attester.clone(), amount)?;
             Self::deposit_event(Event::Nominated(nominator, attester, amount));
             Ok(())
@@ -458,7 +472,7 @@ pub mod pallet {
 
             // Store the pending unnomination
             PendingUnnominations::<T>::mutate(&nominator, |pending_unnominations| {
-                let pending_unnominations = pending_unnominations.get_or_insert_with(|| Vec::new());
+                let pending_unnominations = pending_unnominations.get_or_insert_with(Vec::new);
                 pending_unnominations.push((attester.clone(), amount, unlock_block));
             });
 
@@ -645,11 +659,11 @@ pub mod pallet {
                             aggregated_weight += T::DbWeight::get().writes(1);
 
                             // Remove the nomination from storage
-                            Nominations::<T>::remove(&attester, &nominator);
+                            Nominations::<T>::remove(attester, &nominator);
                             aggregated_weight += T::DbWeight::get().writes(1);
 
                             // Update the sorted list of nominated attesters
-                            let _ = Self::update_sorted_nominated_attesters(&attester, *amount);
+                            let _ = Self::update_sorted_nominated_attesters(attester, *amount);
                             aggregated_weight += T::DbWeight::get().writes(1);
                         }
                     }
@@ -738,14 +752,10 @@ pub mod attesters_test {
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
         AttestersStore, Balance, Balances, BatchStatus, Batches, BlockNumber, ConfigAttesters,
-        ConfigRewards, CurrentCommittee, ExtBuilder, MiniRuntime, Nominations, Origin,
-        PendingSlashes, PendingUnnominations, PreviousCommittee, Rewards, SortedNominatedAttesters,
-        System,
+        ConfigRewards, CurrentCommittee, ExtBuilder, MiniRuntime, Origin, PendingUnnominations,
+        PreviousCommittee, Rewards, SortedNominatedAttesters, System,
     };
-    use t3rn_primitives::{
-        account_manager::{Outcome, Settlement},
-        claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
-    };
+    use t3rn_primitives::claimable::{BenefitSource, CircuitRole, ClaimableArtifacts};
 
     pub fn register_attester_with_single_private_key(secret_key: [u8; 32]) {
         // Register an attester
@@ -1013,22 +1023,20 @@ pub mod attesters_test {
             assert_eq!(active_set.len(), 32);
             let top_nominated_attesters = SortedNominatedAttesters::<MiniRuntime>::get();
             for (i, (attester, _nominated_stake)) in top_nominated_attesters.iter().enumerate() {
-                let nominations = Attesters::read_nominations(&attester);
+                let nominations = Attesters::read_nominations(attester);
                 let total_nomination: Balance =
                     nominations.iter().map(|(_nominator, amount)| *amount).sum();
                 assert_eq!(
                     total_nomination,
                     1000u128 + 64 + 10 - i as u128, // where 10 is the self-bond for attesters
-                    "attester: {:?}, total_nomination: {}",
-                    attester,
-                    total_nomination
+                    "attester: {attester:?}, total_nomination: {total_nomination}"
                 );
             }
         });
     }
 
     #[test]
-    fn attester_nomination_generates_claimable_inflation_rewards_for_attesters_and_nominators() {
+    fn attester_nomination_generates_equal_inflation_rewards_for_attesters_and_nominators() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
             // Register 64 attesters
@@ -1040,9 +1048,9 @@ pub mod attesters_test {
                 attesters.push(attester);
             }
 
-            // Nominate the attesters
+            // Nominate the attesters from separate nominators accounts
             for counter in 1..65u128 {
-                let nominator = AccountId::from([(counter + 1) as u8; 32]);
+                let nominator = AccountId::from([(64 + counter + 1) as u8; 32]);
                 let attester = attesters[(counter - 1) as usize].clone();
                 let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
@@ -1059,28 +1067,51 @@ pub mod attesters_test {
             let distribution_period =
                 <MiniRuntime as ConfigRewards>::InflationDistributionPeriod::get();
             System::set_block_number(distribution_period);
-            Rewards::on_initialize(distribution_period);
-            // Check claimable rewards for attesters
-            for counter in 1..65u128 {
-                let attester = attesters[(counter - 1) as usize].clone();
+            let equal_distribution: Balance = 32 * 1000u128;
+            // check consumed all available rewards
+            assert_eq!(
+                Rewards::distribute_attester_rewards(equal_distribution),
+                equal_distribution
+            );
+
+            // Check claimable rewards for attesters - only the top 32 set should be able to claim
+            for counter in 1..33u128 {
+                let attester = attesters[(64 - counter) as usize].clone();
                 let claimable_rewards = Rewards::get_pending_claims(&attester);
-                let one_period_claimable_reward = 1000u128 + 64 + 10 - counter;
+                // 10% default commission rate of 32 x 1000u128 available rewards to distribute across 32x active set attesters
+                let _one_period_claimable_reward = 100u128;
                 assert_eq!(
                     claimable_rewards,
-                    Some(vec![ClaimableArtifacts {
-                        beneficiary: attester.clone(),
-                        role: CircuitRole::Attester,
-                        total_round_claim: one_period_claimable_reward,
-                        benefit_source: BenefitSource::Inflation,
-                    }])
+                    Some(vec![
+                        ClaimableArtifacts {
+                            beneficiary: attester.clone(),
+                            role: CircuitRole::Attester,
+                            total_round_claim: 100, // that's reward as an attester with 10% commission of 1000
+                            benefit_source: BenefitSource::Inflation
+                        },
+                        ClaimableArtifacts {
+                            beneficiary: attester,
+                            role: CircuitRole::Staker,
+                            total_round_claim: 8, // that's reward as a self-bonded staker
+                            benefit_source: BenefitSource::Inflation
+                        },
+                    ])
                 );
             }
 
-            // Check claimable rewards for nominators
-            for counter in 1..65u128 {
-                let nominator = AccountId::from([(counter + 1) as u8; 32]);
+            // The attesters outside of top 32 should not be able to claim
+            for counter in 33..65u128 {
+                let attester = attesters[(64 - counter) as usize].clone();
+                let claimable_rewards = Rewards::get_pending_claims(&attester);
+                assert_eq!(claimable_rewards, None);
+            }
+
+            // Check claimable rewards for nominators that voted for the 32 top attesters
+            for counter in 33..65u128 {
+                let nominator = AccountId::from([(64 + counter + 1) as u8; 32]);
                 let claimable_rewards = Rewards::get_pending_claims(&nominator);
-                let one_period_claimable_reward = 1000u128 + 64 + 10 - counter;
+                let one_period_claimable_reward = 1000u128 - 100 - 9; // 1000 - 100 (attester reward) - 9 (self-bonded staker reward)
+                println!("checking for nominator: {nominator:?}");
                 assert_eq!(
                     claimable_rewards,
                     Some(vec![ClaimableArtifacts {
@@ -1090,6 +1121,14 @@ pub mod attesters_test {
                         benefit_source: BenefitSource::Inflation,
                     }])
                 );
+            }
+
+            // Check nominators that not voted for the 32 top attesters - they should not be able to claim
+            for counter in 1..33u128 {
+                let nominator = AccountId::from([(64 + counter + 1) as u8; 32]);
+                let claimable_rewards = Rewards::get_pending_claims(&nominator);
+                println!("checking for nominator: {nominator:?}");
+                assert_eq!(claimable_rewards, None,);
             }
         });
     }
@@ -1168,7 +1207,7 @@ pub mod attesters_test {
             // Unnominate one attester
             let attester_to_unnominate = attesters[1].clone();
             assert_ok!(Attesters::unnominate(
-                Origin::signed(nominator.clone()),
+                Origin::signed(nominator),
                 attester_to_unnominate.clone()
             ));
 
@@ -1177,10 +1216,10 @@ pub mod attesters_test {
 
             // Move to the block where unnomination is processed
             let unlock_block: BlockNumber = 3 * 400; // 1 is the current block number, 5 is the ShufflingFrequency
-            System::set_block_number(unlock_block.into());
+            System::set_block_number(unlock_block);
 
             // Call on_initialize
-            Attesters::on_initialize(unlock_block.into());
+            Attesters::on_initialize(unlock_block);
 
             // Verify that the active set is updated correctly
             let active_set = ActiveSet::<MiniRuntime>::get();

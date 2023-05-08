@@ -159,7 +159,10 @@ parameter_types! {
     pub const CommitmentRewardSource: AccountId = AccountId::new([51u8; 32]);
     pub const SlashAccount: AccountId = AccountId::new([51u8; 32]);
     pub const RewardMultiplier: Balance = 1;
+    pub const MinAttesterBond: Balance = 1;
+    pub const MinNominatorBond: Balance = 1;
 }
+
 impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
@@ -169,6 +172,8 @@ impl pallet_attesters::Config for MiniRuntime {
     type DefaultCommission = DefaultCommission;
     type Event = Event;
     type MaxBatchSize = ConstU32<128>;
+    type MinAttesterBond = MinAttesterBond;
+    type MinNominatorBond = MinNominatorBond;
     type RandomnessSource = RandomnessCollectiveFlip;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;

@@ -137,6 +137,8 @@ parameter_types! {
     // TODO: update me to be better
     pub const EscrowAccount: AccountId = AccountId::new([51_u8; 32]);
     pub const RewardMultiplier: Balance = 1;
+    pub const MinNominatorBond: Balance = 1;
+    pub const MinAttesterBond: Balance = 1;
     pub const DefaultCommission: Percent = Percent::from_percent(10);
 }
 
@@ -149,6 +151,8 @@ impl pallet_attesters::Config for Runtime {
     type DefaultCommission = DefaultCommission;
     type Event = Event;
     type MaxBatchSize = ConstU32<128>;
+    type MinAttesterBond = MinAttesterBond;
+    type MinNominatorBond = MinNominatorBond;
     type RandomnessSource = RandomnessCollectiveFlip;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;
