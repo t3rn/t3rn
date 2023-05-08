@@ -621,11 +621,6 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            println!(
-                "len on-init nomination: len{:?}",
-                Nominations::<T>::iter().count()
-            );
-
             // Check if a shuffling round has passed
             if (n % T::ShufflingFrequency::get()).is_zero() {
                 let mut aggregated_weight: Weight = 0;
@@ -633,7 +628,6 @@ pub mod pallet {
                 // Process pending unnominations
                 aggregated_weight += T::DbWeight::get().reads(1);
                 for (nominator, pending_unnominations) in PendingUnnominations::<T>::iter() {
-                    println!("nominator: {:?}", nominator);
                     let mut pending_unnominations = pending_unnominations.clone();
                     let mut pending_unnominations_updated = false;
                     let mut indices_to_remove = Vec::new();
@@ -641,10 +635,7 @@ pub mod pallet {
                     for (index, (attester, amount, unlock_block)) in
                         pending_unnominations.iter().enumerate()
                     {
-                        println!("unlock_block: {:?}", unlock_block);
                         if unlock_block <= &n {
-                            println!("unlock_block2: {:?}", unlock_block);
-
                             // Save the index to be removed later
                             indices_to_remove.push(index);
                             pending_unnominations_updated = true;
@@ -657,11 +648,6 @@ pub mod pallet {
                             Nominations::<T>::remove(&attester, &nominator);
                             aggregated_weight += T::DbWeight::get().writes(1);
 
-                            println!("rm nomination: len{:?}", Nominations::<T>::iter().count());
-                            println!(
-                                "nomination: {:?}",
-                                Nominations::<T>::get(&attester, &nominator)
-                            );
                             // Update the sorted list of nominated attesters
                             let _ = Self::update_sorted_nominated_attesters(&attester, *amount);
                             aggregated_weight += T::DbWeight::get().writes(1);
@@ -670,17 +656,14 @@ pub mod pallet {
 
                     // Remove the pending unnomination from the list
                     for &index in indices_to_remove.iter().rev() {
-                        println!("index: {:?}", index);
                         pending_unnominations.remove(index);
                     }
 
                     // Update the pending unnominations storage item if necessary
                     if pending_unnominations_updated {
                         if pending_unnominations.is_empty() {
-                            println!("remove: {:?}", nominator);
                             PendingUnnominations::<T>::remove(&nominator);
                         } else {
-                            println!("insert: {:?}", nominator);
                             PendingUnnominations::<T>::insert(&nominator, pending_unnominations);
                         }
                         aggregated_weight += T::DbWeight::get().writes(1);
@@ -977,7 +960,6 @@ pub mod attesters_test {
 
             // Check if the attestations have been added to the batch
             let batches = Batches::<MiniRuntime>::get(target).expect("Batches should exist");
-            println!("Batches: {batches:?}");
             let first_batch = batches.first().expect("First batch should exist");
             assert_eq!(first_batch.attestations.len(), 32);
             assert_eq!(first_batch.status, BatchStatus::Pending);

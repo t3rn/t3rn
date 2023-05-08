@@ -179,6 +179,7 @@ fn testnet_genesis(
         aura: AuraConfig {
             authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
         },
+        rewards: Default::default(),
         grandpa: GrandpaConfig {
             authorities: initial_authorities
                 .iter()

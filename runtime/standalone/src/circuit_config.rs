@@ -1,7 +1,5 @@
 use crate::*;
 
-use sp_std::vec;
-
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
@@ -12,7 +10,8 @@ use pallet_grandpa_finality_verifier::{
 };
 use pallet_portal::Error as PortalError;
 use sp_core::H256;
-use sp_std::boxed::Box;
+use sp_runtime::Percent;
+use sp_std::{boxed::Box, vec};
 
 use sp_runtime::{
     traits::{BlakeTwo256, Convert, One},
@@ -131,6 +130,7 @@ parameter_types! {
     // TODO: update me to be better
     pub const EscrowAccount: AccountId = AccountId::new([51_u8; 32]);
     pub const RewardMultiplier: Balance = 1;
+    pub const DefaultCommission: Percent = Percent::from_percent(10);
 }
 
 impl pallet_attesters::Config for Runtime {
@@ -139,11 +139,49 @@ impl pallet_attesters::Config for Runtime {
     type CommitmentRewardSource = EscrowAccount;
     type CommitteeSize = ConstU32<16>;
     type Currency = Balances;
+    type DefaultCommission = DefaultCommission;
     type Event = Event;
     type MaxBatchSize = ConstU32<128>;
     type RandomnessSource = RandomnessCollectiveFlip;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;
+    type SlashAccount = EscrowAccount;
+}
+
+use t3rn_primitives::monetary::TRN;
+
+parameter_types! {
+    pub const TotalInflation: Perbill = Perbill::from_parts(4_400_0000); // 4.4%
+    pub const AttesterInflation: Perbill = Perbill::from_parts(1_100_0000); // 1.1%
+    pub const ExecutorInflation: Perbill = Perbill::from_parts(0_800_0000); // 0.8%
+    pub const CollatorInflation: Perbill = Perbill::from_parts(0_500_0000); // 0.5%
+    pub const TreasuryInflation: Perbill = Perbill::from_parts(2_000_0000); // 2%
+    pub const AttesterBootstrapRewards: Percent = Percent::from_parts(40); // 40%
+    pub const CollatorBootstrapRewards: Percent = Percent::from_parts(20); // 20%
+    pub const ExecutorBootstrapRewards: Percent = Percent::from_parts(40); // 40%
+    pub const OneYear: BlockNumber = 2_628_000; // (365.25 * 24 * 60 * 60) / 12; assuming 12s block time
+    pub const InflationDistributionPeriod: BlockNumber = 100_800; // (14 * 24 * 60 * 60) / 12; assuming one distribution per two weeks
+    pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
+}
+
+impl pallet_rewards::Config for Runtime {
+    type AccountManager = AccountManager;
+    type AttesterBootstrapRewards = AttesterBootstrapRewards;
+    type AttesterInflation = AttesterInflation;
+    type Attesters = Attesters;
+    type AvailableBootstrapSpenditure = AvailableBootstrapSpenditure;
+    type Clock = Clock;
+    type CollatorBootstrapRewards = CollatorBootstrapRewards;
+    type CollatorInflation = CollatorInflation;
+    type Currency = Balances;
+    type Event = Event;
+    type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
+    type ExecutorInflation = ExecutorInflation;
+    type InflationDistributionPeriod = InflationDistributionPeriod;
+    type OneYear = OneYear;
+    type TotalInflation = TotalInflation;
+    type TreasuryAccount = EscrowAccount;
+    type TreasuryInflation = TreasuryInflation;
 }
 
 impl pallet_xdns::Config for Runtime {

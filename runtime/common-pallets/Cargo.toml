@@ -92,7 +92,8 @@ t3rn-types   = { default-features = false, path = "../../types", features = [ "r
 # t3rn pallets
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
 pallet-asset-registry            = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
-pallet-attesters                   = { path = "../../pallets/attesters", default-features = false }
+pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
+pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
@@ -137,6 +138,7 @@ std = [
   "pallet-aura/std",
   "pallet-assets/std",
   "pallet-attesters/std",
+  "pallet-rewards/std",
   "pallet-asset-registry/std",
   "pallet-asset-tx-payment/std",
   "pallet-authorship/std",
@@ -236,6 +238,7 @@ runtime-benchmarks = [
   "pallet-xbi-portal/runtime-benchmarks",
   "pallet-xdns/runtime-benchmarks",
   "pallet-attesters/runtime-benchmarks",
+  "pallet-rewards/runtime-benchmarks",
   "polkadot-parachain/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
   "xcm-executor/runtime-benchmarks",
@@ -266,6 +269,7 @@ try-runtime = [
   "pallet-clock/try-runtime",
   "pallet-xdns/try-runtime",
   "pallet-attesters/try-runtime",
+  "pallet-rewards/try-runtime",
   "pallet-contracts-registry/try-runtime",
   "pallet-circuit/try-runtime",
   "pallet-grandpa/try-runtime",
