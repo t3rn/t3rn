@@ -4,21 +4,22 @@ const url = require('url')
 export class Prometheus {
 	circuitActive: boolean
 	targetActive: boolean
-	targetDisconnectCounter: any
-	circuitDisconnectCounter: any
+	targetDisconnectsTotal: any
+	circuitDisconnectsTotal: any
 	register: any;
 	circuitHeight: any
 	targetHeight: any
 	nextSubmission: any
-	successCount: any
-	errorCount: any
+	successesTotal: any
+	errorsTotal: any
 	circuitDisconnected: any
 	targetDisconnected: any
-	rangeBreak: any
-	errors: any
-	successes: any
+	rangeInterval: any
+	up: any
+	target: string
 
-	constructor() {
+	constructor(target: string) {
+		this.target = target;
 		const Registry = client.Registry;
 		this.register = new Registry();
 		this.createMetrics()
@@ -31,7 +32,8 @@ export class Prometheus {
 			{
 				name: 'circuit_height',
 				help: 'The header height stored on circuit',
-				registers: [this.register]
+				registers: [this.register],
+				labelNames: ['target']
 			}
 		);
 
@@ -39,7 +41,8 @@ export class Prometheus {
 			{
 				name: 'target_height',
 				help: 'The current header height on the target',
-				registers: [this.register]
+				registers: [this.register],
+				labelNames: ['target']
 			}
 		);
 
@@ -47,41 +50,26 @@ export class Prometheus {
 			{
 				name: 'next_submission',
 				help: 'Unix timestamp of the next scheduled submission',
-				registers: [this.register]
+				registers: [this.register],
+				labelNames: ['target']
 			}
 		)
 
-		this.successes = new client.Counter(
+		this.successesTotal = new client.Counter(
 			{
-				name: 'successes',
-				help: 'Information on the latest successful submissions',
-				registers: [this.register],
-				labelNames: ['rangeSize', 'timestamp', 'circuitBlock']
-			}
-		);
-
-		this.successCount = new client.Counter(
-			{
-				name: 'success_counter',
+				name: 'successes_total',
 				help: 'Number of successful submissions',
 				registers: [this.register],
+				labelNames: ['target']
 			}
 		)
 
-		this.errors = new client.Counter(
+		this.errorsTotal = new client.Counter(
 			{
-				name: 'errors',
-				help: 'Information on the latest errored submissions',
-				registers: [this.register],
-				labelNames: ['rangeSize', 'timestamp']
-			}
-		);
-
-		this.errorCount = new client.Counter(
-			{
-				name: 'error_counter',
+				name: 'errors_total',
 				help: 'Number of errored submissions',
 				registers: [this.register],
+				labelNames: ['target']
 			}
 		)
 
@@ -90,15 +78,16 @@ export class Prometheus {
 				name: 'circuit_disconnect',
 				help: 'Information on circuit disconnections',
 				registers: [this.register],
-				labelNames: ['endpoint', 'timestamp']
+				labelNames: ['endpoint', 'target']
 			}
 		)
 
-		this.circuitDisconnectCounter = new client.Counter(
+		this.circuitDisconnectsTotal = new client.Counter(
 			{
-				name: 'circuit_disconnect_counter',
+				name: 'circuit_disconnects_total',
 				help: 'Number of times circuit rpc server has disconnected',
 				registers: [this.register],
+				labelNames: ['target']
 			}
 		)
 
@@ -107,22 +96,31 @@ export class Prometheus {
 				name: 'target_disconnect',
 				help: 'Information on target disconnections',
 				registers: [this.register],
-				labelNames: ['endpoint', 'timestamp']
+				labelNames: ['endpoint', 'target']
 			}
 		)
 
-		this.targetDisconnectCounter = new client.Counter(
+		this.targetDisconnectsTotal = new client.Counter(
 			{
-				name: 'target_disconnect_counter',
+				name: 'target_disconnects_total',
 				help: 'Number of times target rpc server has disconnected',
 				registers: [this.register],
+				labelNames: ['target']
 			}
 		)
 
-		this.rangeBreak = new client.Counter({
-			name: 'range_loop',
+		this.rangeInterval = new client.Counter({
+			name: 'range_interval',
 			help: 'The number of seconds between each range submission',
-			registers: [this.register]
+			registers: [this.register],
+			labelNames: ['target']
+		})
+
+		this.up = new client.Counter({
+			name: 'server_up',
+			help: 'If the server initialized successfully',
+			registers: [this.register],
+			labelNames: ['target']
 		})
 
 		this.startServer()
@@ -152,6 +150,7 @@ export class Prometheus {
 		const port = 8080;
 		server.listen(port, () => {
 		  console.log(`Metrics server listening on port ${port}`);
+		  this.up.inc({target: this.target}, 1)
 		});
 	}
 

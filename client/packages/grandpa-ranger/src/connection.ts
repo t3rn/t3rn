@@ -12,13 +12,15 @@ export class Connection {
 	sdk: Sdk | undefined;
 	signer: any;
 	prometheus: Prometheus;
+	target: string;
 
-	constructor(rpc1: any, rpc2: any, isCircuit: boolean, prometheus: Prometheus, signer?: string) {
+	constructor(rpc1: any, rpc2: any, isCircuit: boolean, prometheus: Prometheus, target: string, signer?: string) {
 		this.rpc1 = rpc1;
 		this.rpc2 = rpc2;
 		this.usingPrimaryRpc = true;
 		this.isCircuit = isCircuit;
 		this.prometheus = prometheus;
+		this.target = target;
 		if(signer) {
 			const keyring = new Keyring({ type: 'sr25519' });
 			this.signer = keyring.addFromMnemonic(signer);
@@ -34,12 +36,12 @@ export class Connection {
 			} catch(e) {
 				const endpoint = this.usingPrimaryRpc ? this.rpc1.ws : this.rpc2.ws
 				this.isCircuit ?
-					this.prometheus.circuitDisconnected.inc({endpoint, timestamp: Date.now()}) :
-					this.prometheus.targetDisconnected.inc({endpoint, timestamp: Date.now()});
+					this.prometheus.circuitDisconnected.inc({endpoint, target: this.target}) :
+					this.prometheus.targetDisconnected.inc({endpoint, target: this.target});
 
 				this.isCircuit ?
-					this.prometheus.circuitDisconnectCounter.inc(1) :
-					this.prometheus.targetDisconnectCounter.inc(1);
+					this.prometheus.circuitDisconnectsTotal.inc({target: this.target}, 1) :
+					this.prometheus.targetDisconnectsTotal.inc({target: this.target}, 1);
 
 				this.usingPrimaryRpc = !this.usingPrimaryRpc; // toggle connection
 				console.log(`Retrying in 2 second with ${this.currentProvider().ws}`)

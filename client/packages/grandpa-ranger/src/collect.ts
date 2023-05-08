@@ -3,14 +3,14 @@ import {ApiPromise, Encodings} from "@t3rn/sdk";
 const axios = require('axios').default;
 import {Prometheus} from "./prometheus";
 
-export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection, prometheus: Prometheus): Promise<any[]> => {
+export const generateRange = async (config: any, circuitConnection: Connection, targetConnection: Connection, prometheus: Prometheus, target: string): Promise<any[]> => {
 	return new Promise(async (resolve, reject) => {
 		try {
 			const circuitHeight = await currentGatewayHeight(circuitConnection, config.targetGatewayId)
 			const targetHeight = await currentTargetHeight(targetConnection)
 
-			prometheus.circuitHeight.set(circuitHeight)
-			prometheus.targetHeight.set(targetHeight)
+			prometheus.circuitHeight.set({target}, circuitHeight)
+			prometheus.targetHeight.set({target}, targetHeight)
 
 			if(targetHeight > circuitHeight) {
 				let batches = await generateBatchProof(circuitConnection.client, targetConnection.client, config.targetGatewayId, circuitHeight + 1, targetHeight)
