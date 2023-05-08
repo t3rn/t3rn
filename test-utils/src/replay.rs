@@ -16,7 +16,7 @@ pub use t3rn_types::{
 
 type Call = circuit_mock_runtime::Call;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExtrinsicParam {
     pub signer: String,
@@ -29,7 +29,7 @@ pub struct ExtrinsicParam {
     pub error: Vec<u8>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EncodedArg {
     pub name: String,
@@ -39,7 +39,7 @@ pub struct EncodedArg {
     pub decoded: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EncodedEvent {
     pub section: String,
@@ -61,9 +61,13 @@ pub fn replay_and_evaluate_extrinsic<Runtime>(param: &ExtrinsicParam) -> Result<
     match param.section.as_str() {
         "circuit" => match param.method.as_str() {
             "onExtrinsicTrigger" => {
-                let sfxs = decode_side_effect(&param.args[0])?;
-                let speed_mode = decode_speed_mode(&param.args[1])?;
-                let _ = Circuit::on_extrinsic_trigger(get_signer(&param.signer), sfxs, speed_mode);
+                let sfxs = decode_side_effect(&param.args[0].encoded)?;
+                let speed_mode = decode_speed_mode(&param.args[1].encoded)?;
+                match Circuit::on_extrinsic_trigger(get_signer(&param.signer), sfxs, speed_mode) {
+                    Ok(_) => verify_extrinsic_success::<Runtime>(param)?,
+                    Err(err) =>
+                        { verify_extrinsic_error(ErrorWrapper::DispatchPostInfo(err), param) }?,
+                };
                 verify_event_log::<Runtime>(&param.events)?;
                 Ok(())
             },
@@ -71,15 +75,26 @@ pub fn replay_and_evaluate_extrinsic<Runtime>(param: &ExtrinsicParam) -> Result<
         },
         "sudo" => match param.method.as_str() {
             "sudo" => {
-                let call = decode_call(&param.args[0])?;
+                let call = decode_call(&param.args[0].encoded)?;
                 match Sudo::sudo(get_signer(&param.signer), Box::new(call)) {
                     Ok(_) => verify_extrinsic_success::<Runtime>(param)?,
-                    Err(err) => verify_extrinsic_error::<Runtime>(
-                        ErrorWrapper::DispatchPostInfo(err),
-                        param,
-                    )?,
+                    Err(err) => verify_extrinsic_error(ErrorWrapper::DispatchPostInfo(err), param)?,
                 }
                 verify_event_log::<Runtime>(&param.events)?;
+                Ok(())
+            },
+            _ => panic!("Unknown Method!"),
+        },
+        "utility" => match param.method.as_str() {
+            "batch" => {
+                let batch = decode_batch(&param.args[0].encoded)?;
+                match Utility::batch(get_signer(&param.signer), batch) {
+                    Ok(_) => {
+                        println!("Batch success");
+                        verify_extrinsic_success::<Runtime>(param)
+                    }?,
+                    Err(err) => verify_extrinsic_error(ErrorWrapper::DispatchPostInfo(err), param)?,
+                };
                 Ok(())
             },
             _ => panic!("Unknown Method!"),
@@ -88,36 +103,30 @@ pub fn replay_and_evaluate_extrinsic<Runtime>(param: &ExtrinsicParam) -> Result<
     }
 }
 
-fn verify_extrinsic_error<T>(
+pub fn verify_extrinsic_error(
     error: ErrorWrapper,
     params: &ExtrinsicParam,
 ) -> Result<(), DispatchError> {
     if params.error.is_empty() {
         return Err(DispatchError::Other("Received Error was not expected!"))
     }
-    match error {
-        ErrorWrapper::Dispatch(error) => {
-            let expected_error = DispatchError::decode(&mut params.error.as_slice()).unwrap();
-            if error != expected_error {
-                return Err(DispatchError::Other(
-                    "Received Error does not match expected error!",
-                ))
-            }
-        },
-        ErrorWrapper::DispatchPostInfo(DispatchErrorWithPostInfo { error, .. }) => {
-            // Client side seems to always give me DispatchError
-            let expected_error = DispatchError::decode(&mut params.error.as_slice()).unwrap();
-            if error != expected_error {
-                return Err(DispatchError::Other(
-                    "Received Error does not match expected error!",
-                ))
-            }
-        },
+    let received_error = match error {
+        ErrorWrapper::Dispatch(error) => error,
+        ErrorWrapper::DispatchPostInfo(DispatchErrorWithPostInfo { error, .. }) => error,
+    };
+
+    // It seems like client side export is always done as DispatchError
+    let expected_error = DispatchError::decode(&mut params.error.as_slice()).unwrap();
+    if received_error != expected_error {
+        return Err(DispatchError::Other(
+            "Received Error does not match expected error!",
+        ))
     }
+
     Ok(())
 }
 
-fn advance_to_block(block: Option<u32>) {
+pub fn advance_to_block(block: Option<u32>) {
     System::reset_events();
     if let Some(height) = block {
         System::set_block_number(height);
@@ -164,22 +173,27 @@ fn verify_event_log<T>(events: &Vec<EncodedEvent>) -> Result<(), DispatchError> 
     Ok(())
 }
 
-pub fn decode_speed_mode(input: &EncodedArg) -> Result<SpeedMode, DispatchError> {
-    SpeedMode::decode(&mut input.encoded.as_slice())
+pub fn decode_speed_mode(input: &Vec<u8>) -> Result<SpeedMode, DispatchError> {
+    SpeedMode::decode(&mut input.as_slice())
         .map_err(|_| DispatchError::Other("SpeedMode deocding error!"))
 }
 
 pub fn decode_side_effect(
-    input: &EncodedArg,
+    input: &Vec<u8>,
 ) -> Result<Vec<SideEffect<AccountId, Balance>>, DispatchError> {
-    let result: Vec<SideEffect<AccountId, Balance>> = Decode::decode(&mut input.encoded.as_slice())
+    let result: Vec<SideEffect<AccountId, Balance>> = Decode::decode(&mut input.as_slice())
         .map_err(|_| DispatchError::Other("SideEffect decoding error!"))?;
     Ok(result)
 }
 
-fn decode_call(input: &EncodedArg) -> Result<Call, DispatchError> {
-    Call::decode(&mut input.encoded.as_slice())
-        .map_err(|_| DispatchError::Other("Call decoding error!"))
+fn decode_call(input: &Vec<u8>) -> Result<Call, DispatchError> {
+    Call::decode(&mut input.as_slice()).map_err(|_| DispatchError::Other("Call decoding error!"))
+}
+
+fn decode_batch(input: &Vec<u8>) -> Result<Vec<Call>, DispatchError> {
+    let result: Vec<Call> = Decode::decode(&mut input.as_slice())
+        .map_err(|_| DispatchError::Other("Batch decoding error!"))?;
+    Ok(result)
 }
 
 pub fn get_signer(address: &String) -> Origin {
