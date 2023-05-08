@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.16.0-rc.0] - 2023-05-08
+### :sparkles: New Features
+- [`5015a14`](https://github.com/t3rn/t3rn/commit/5015a148272366afd6ea8a04aa5699626f252146) - decode and export tx params *(commit by [@petscheit](https://github.com/petscheit))*
+- [`ffdeeb9`](https://github.com/t3rn/t3rn/commit/ffdeeb98e0767667c0c654042ef35be04439466b) - add file export logic *(commit by [@petscheit](https://github.com/petscheit))*
+- [`91f3ee6`](https://github.com/t3rn/t3rn/commit/91f3ee67f5c37bd29f29fc7347477a491cab0b5e) - add event to export functionality *(commit by [@petscheit](https://github.com/petscheit))*
+- [`dbcc5a2`](https://github.com/t3rn/t3rn/commit/dbcc5a21f76c6002f70572201eedc1753d682e48) - add decoding, submission, and evaluation logic as new test util *(commit by [@petscheit](https://github.com/petscheit))*
+- [`47caf63`](https://github.com/t3rn/t3rn/commit/47caf63e3390b02ff2edbed95225b8c5b60e5b1a) - impl block forwarding and address lookup logic *(commit by [@petscheit](https://github.com/petscheit))*
+- [`a1ec253`](https://github.com/t3rn/t3rn/commit/a1ec253b3cda65ac0a7b85767c81ad12682a2adc) - impl demo test in portal *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :bug: Bug Fixes
+- [`7fa4fe5`](https://github.com/t3rn/t3rn/commit/7fa4fe537664202875817ea2eff98387a6bac4b7) - missing import in circuit *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :wrench: Chores
+- [`8263846`](https://github.com/t3rn/t3rn/commit/8263846d44b3f26cf71e75d33a84e7aeb5364c8f) - remove old fixtures *(commit by [@petscheit](https://github.com/petscheit))*
+- [`ce3173a`](https://github.com/t3rn/t3rn/commit/ce3173aeb902547837d5c068cf64714eacdeca69) - align unchecked extrisics impl across runtimes *(commit by [@petscheit](https://github.com/petscheit))*
+- [`0cef536`](https://github.com/t3rn/t3rn/commit/0cef536b70ffcc2a6fdcc3aeadd813ed0a8c19bd) - add sudo key to mock *(commit by [@petscheit](https://github.com/petscheit))*
+- [`6f63066`](https://github.com/t3rn/t3rn/commit/6f63066952fc95c3fe203a1cbc3b3abaa7167acd) - align sudo pallet index between mock & standalone *(commit by [@petscheit](https://github.com/petscheit))*
+- [`355fff6`](https://github.com/t3rn/t3rn/commit/355fff6bb2a38ad048589b4402817f207e99b4ab) - unused mock-data & add demo fixtures *(commit by [@petscheit](https://github.com/petscheit))*
+- [`8b178f2`](https://github.com/t3rn/t3rn/commit/8b178f22ac2f9925069e7abaaa16d8cdfdd42492) - clippy *(commit by [@petscheit](https://github.com/petscheit))*
+- [`cece16f`](https://github.com/t3rn/t3rn/commit/cece16f1553a26073640173c6e29a53a0ffff1cd) - remove deactivated e2e tests *(commit by [@petscheit](https://github.com/petscheit))*
+- [`31aae1b`](https://github.com/t3rn/t3rn/commit/31aae1b575590be0f659c145646c6abca1136f56) - remove redundant comment line from standalone *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.15.0-rc.0] - 2023-05-03
 ### :sparkles: New Features
 - [`894d5da`](https://github.com/t3rn/t3rn/commit/894d5daf12c7cacdbc68f1a2ca7b3429b462721a) - implement scaffold of Portal precompile to evm *(commit by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1013,3 +1036,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.13.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.12.8-rc.0...v1.13.0-rc.0
 [v1.14.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.13.0-rc.0...v1.14.0-rc.0
 [v1.15.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.14.0-rc.0...v1.15.0-rc.0
+[v1.16.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.15.1-rc.0...v1.16.0-rc.0
