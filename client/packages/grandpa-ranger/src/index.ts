@@ -13,9 +13,9 @@ class GrandpaRanger {
 
 	constructor(config: any) {
 		this.config = config;
-		this.prometheus = new Prometheus();
-		this.prometheus.rangeBreak.inc(this.config.rangeBreak);
-		this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
+		this.prometheus = new Prometheus(this.config.targetGatewayId);
+		this.prometheus.rangeInterval.inc({target: this.target}, this.config.rangeInterval);
+		this.prometheus.nextSubmission.set({target: this.target}, Date.now() + this.config.rangeInterval * 1000);
 	}
 
 	async start() {
@@ -25,16 +25,16 @@ class GrandpaRanger {
 
 	async connectClients() {
 		await cryptoWaitReady()
-		this.circuit = new Connection(this.config.circuit.rpc1, this.config.circuit.rpc2, true, this.prometheus, this.config.circuitSigner);
+		this.circuit = new Connection(this.config.circuit.rpc1, this.config.circuit.rpc2, true, this.prometheus, this.config.targetGatewayId, this.config.circuitSigner);
 		this.circuit.connect();
-		this.target = new Connection(this.config.target.rpc1, this.config.target.rpc2, false, this.prometheus);
+		this.target = new Connection(this.config.target.rpc1, this.config.target.rpc2, false, this.prometheus, this.config.targetGatewayId);
 		this.target.connect();
 	}
 
 	async collectAndSubmit(resolve: any) {
 		if (!this.circuit.isActive || !this.target.isActive) return resolve() // skip if either client is not active
 
-		let batches = await generateRange(this.config, this.circuit, this.target, this.prometheus)
+		let batches = await generateRange(this.config, this.circuit, this.target, this.prometheus, this.config.targetGatewayId)
 			.catch((e) => {
 				console.log(e);
 				// potentially we want to introduce a retry logic here
@@ -48,18 +48,16 @@ class GrandpaRanger {
 			this.submitToCircuit(batches)
 				.then((res) => {
 					console.log({"status": "Submitted", "range_size": totalElements, "circuit_block": res})
-					this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
-					this.prometheus.successes.inc({rangeSize: totalElements, circuitBlock: res, timestamp: Date.now()})
-					this.prometheus.successCount.inc(1)
+					this.prometheus.nextSubmission.set({target: this.config.targetGatewayId}, Date.now() + this.config.rangeInterval * 1000);
+					this.prometheus.successesTotal.inc({target: this.config.targetGatewayId}, 1)
 					const latestHeight = parseInt(batches[batches.length - 1].signed_header.number)
 					this.prometheus.circuitHeight.set(latestHeight)
 					return resolve()
 				})
 				.catch((e) => {
 					console.log(e);
-					this.prometheus.nextSubmission.set(Date.now() + this.config.rangeBreak * 1000);
-					this.prometheus.errors.inc({rangeSize: totalElements, timestamp: Date.now()})
-					this.prometheus.errorCount.inc(1)
+					this.prometheus.nextSubmission.set({target: this.config.targetGatewayId}, Date.now() + this.config.rangeInterval * 1000);
+					this.prometheus.errorsTotal.inc({target: this.config.targetGatewayId}, 1)
 					return resolve() // resolve, as we don't want to stop the loop
 				})
 		} else {
@@ -115,7 +113,7 @@ class GrandpaRanger {
 						this.collectAndSubmit(resolve)
 							.catch(() => resolve) // we should never get here with the setup above
 					},
-					this.config.rangeBreak * 1000
+					this.config.rangeInterval * 1000
 				)
 			})
 		}
