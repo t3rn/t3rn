@@ -1,6 +1,6 @@
  all:
-	cd types; npm i; npm build;
-	cd sdk; npm i; npm build;
+	cd types; npm i; npm run build;
+	cd sdk; npm i; npm run build;
 	cd cli; npm add @t3rn/sdk; npm i;
 	cd executor; npm add @t3rn/sdk; npm add @t3rn/types; npm upgrade @t3rn/sdk; npm upgrade @t3rn/types; npm i;
 

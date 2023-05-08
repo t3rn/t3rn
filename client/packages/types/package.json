@@ -19,20 +19,20 @@
     "dist/**/*"
   ],
   "scripts": {
-    "prepublishOnly": "yarn clean && yarn build",
-    "prepack": "yarn clean && yarn build",
-    "compile": "yarn compile:code && yarn compile:typings",
+    "prepublishOnly": "npm run clean && npm run build",
+    "prepack": "npm run clean && npm run build",
+    "compile": "npm run compile:code && npm run compile:typings",
     "compile:code": "tsup",
     "compile:typings": "tsc ",
     "clean": "git clean -xdf -e node_modules",
-    "build": "yarn generate:all && yarn compile",
+    "build": "npm run generate:all && npm run compile",
     "lint": "eslint ./ --ext .ts",
     "format": "prettier ./ --write",
-    "checks": "yarn build && madge --circular ./ && prettier ./ --check && yarn lint",
+    "checks": "npm run build && madge --circular ./ && prettier ./ --check && npm run lint",
     "load:meta": "curl -s -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://127.0.0.1:9933 > metadata-t3rn.json",
-    "generate:interfaces": "yarn ts-node node_modules/.bin/polkadot-types-from-defs --package . --input ./src/augment --endpoint metadata-t3rn.json  && rm ./src/augment/index.ts ./src/augment/types.ts",
-    "generate:meta": "yarn ts-node node_modules/.bin/polkadot-types-from-chain --package . --endpoint metadata-t3rn.json --output ./src/augment --strict",
-    "generate:all": "yarn generate:interfaces && yarn generate:meta"
+    "generate:interfaces": "ts-node node_modules/.bin/polkadot-types-from-defs --package . --input ./src/augment --endpoint metadata-t3rn.json  && rm ./src/augment/index.ts ./src/augment/types.ts",
+    "generate:meta": "ts-node node_modules/.bin/polkadot-types-from-chain --package . --endpoint metadata-t3rn.json --output ./src/augment --strict",
+    "generate:all": "npm run generate:interfaces && npm run generate:meta"
   },
   "dependencies": {
     "@polkadot/api": "8.9.1",
