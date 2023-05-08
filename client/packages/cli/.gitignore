@@ -1,2 +1,3 @@
 node_modules
-exports
+.t3rnrc.json
+transfer.json
