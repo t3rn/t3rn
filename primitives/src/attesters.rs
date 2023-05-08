@@ -1,7 +1,6 @@
-use crate::common::RoundInfo;
 use frame_support::pallet_prelude::*;
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
-use sp_runtime::{traits::Zero, Percent};
+use sp_runtime::Percent;
 use sp_std::prelude::*;
 
 // Key types for attester crypto

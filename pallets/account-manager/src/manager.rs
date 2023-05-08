@@ -71,8 +71,7 @@ impl<T: Config>
     fn get_settlements_by_role(
         role: CircuitRole,
     ) -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)> {
-        let mut settlements =
-            SettlementsPerRound::<T>::iter_prefix_values(T::Clock::current_round());
+        let settlements = SettlementsPerRound::<T>::iter_prefix_values(T::Clock::current_round());
         settlements
             .filter(|settlement| settlement.role == role)
             .map(|settlement| (settlement.recipient.clone(), settlement))

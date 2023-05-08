@@ -26,7 +26,7 @@ pub use pallet_rewards::{
 use sp_core::H256;
 use sp_runtime::{
     generic, parameter_types,
-    traits::{BlakeTwo256, ConstU32, ConstU8, ConvertInto, IdentityLookup},
+    traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup},
     Perbill, Percent,
 };
 use t3rn_primitives::GatewayVendor;
@@ -120,11 +120,11 @@ impl pallet_clock::Config for MiniRuntime {
 use t3rn_primitives::monetary::TRN;
 
 parameter_types! {
-    pub const TotalInflation: Perbill = Perbill::from_parts(4_400_0000); // 4.4%
-    pub const AttesterInflation: Perbill = Perbill::from_parts(1_100_0000); // 1.1%
-    pub const ExecutorInflation: Perbill = Perbill::from_parts(0_800_0000); // 0.8%
-    pub const CollatorInflation: Perbill = Perbill::from_parts(0_500_0000); // 0.5%
-    pub const TreasuryInflation: Perbill = Perbill::from_parts(2_000_0000); // 2%
+    pub const TotalInflation: Perbill = Perbill::from_parts(44_000_000); // 4.4%
+    pub const AttesterInflation: Perbill = Perbill::from_parts(11_000_000); // 1.1%
+    pub const ExecutorInflation: Perbill = Perbill::from_parts(08_000_000); // 0.8%
+    pub const CollatorInflation: Perbill = Perbill::from_parts(05_000_000); // 0.5%
+    pub const TreasuryInflation: Perbill = Perbill::from_parts(20_000_000); // 2%
     pub const AttesterBootstrapRewards: Percent = Percent::from_parts(40); // 40%
     pub const CollatorBootstrapRewards: Percent = Percent::from_parts(20); // 20%
     pub const ExecutorBootstrapRewards: Percent = Percent::from_parts(40); // 40%
@@ -554,7 +554,7 @@ impl ExtBuilder {
             .expect("Frame system builds valid default genesis config");
 
         const TRN: Balance = 1_000_000_000_000;
-        const TOTAL_SUPPLY: Balance = (TRN as u128) * 100_000_000; // 100 million TRN
+        const TOTAL_SUPPLY: Balance = TRN * 100_000_000; // 100 million TRN
         const GENESIS_ACCOUNT_ID: AccountId = AccountId::new([0u8; 32]);
 
         pallet_balances::GenesisConfig::<MiniRuntime> {

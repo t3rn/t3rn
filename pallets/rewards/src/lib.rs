@@ -166,7 +166,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000)]
         pub fn trigger_distribution(origin: OriginFor<T>) -> DispatchResult {
-            let _ = ensure_signed(origin)?;
+            ensure_root(origin)?;
             Self::distribute_inflation();
             Ok(())
         }
@@ -565,11 +565,9 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             let mut weight: Weight = 0;
-            //Clock::hourly_
-            // Clock::weekly
-            // if n % T::Clock::round_duration() == Zero::zero() {
-            weight += Self::process_accumulated_settlements();
-            // }
+            if n % T::Clock::round_duration() == Zero::zero() {
+                weight += Self::process_accumulated_settlements();
+            }
             if n % T::InflationDistributionPeriod::get() == Zero::zero() {
                 Self::distribute_inflation();
                 weight += T::DbWeight::get().reads_writes(8, 8)
