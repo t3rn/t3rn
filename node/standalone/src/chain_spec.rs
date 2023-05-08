@@ -222,3 +222,25 @@ fn testnet_genesis(
         maintenance_mode: Default::default(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_start_in_maintenance_mode_is_false() {
+        let gen = testnet_genesis(
+            Default::default(),
+            Default::default(),
+            sp_runtime::AccountId32::new([0; 32]),
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            Default::default(),
+        );
+        assert!(
+            !gen.maintenance_mode.start_in_maintenance_mode,
+            "start_in_maintenance_mode should be false by default"
+        );
+    }
+}
