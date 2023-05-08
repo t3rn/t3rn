@@ -4,6 +4,9 @@
 	cd cli; npm add @t3rn/sdk; npm i;
 	cd executor; npm add @t3rn/sdk; npm add @t3rn/types; npm upgrade @t3rn/sdk; npm upgrade @t3rn/types; npm i;
 
+ test:
+	cd executor; npm add @t3rn/sdk; npm add @t3rn/types; npm upgrade @t3rn/sdk; npm upgrade @t3rn/types; npm run test
+
 register_roco:
 	cd cli; ts-node index.ts register roco;
 

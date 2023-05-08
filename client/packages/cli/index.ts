@@ -259,7 +259,7 @@ class CircuitCLI {
         const transactionArgs: any = onExtrinsicTrigger(this.circuit, data.sideEffects, data.speedMode, this.signer.address, this.sdk)
         const tx = this.circuit.tx.circuit.onExtrinsicTrigger(transactionArgs.sideEffects, false)
 
-        const submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx as any)
+        const submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
             .then(height => {
                 logger.info("Success: SideEffects submitted!!")
                 return height
