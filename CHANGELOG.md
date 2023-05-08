@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.16.2-rc.0] - 2023-05-08
+### :bug: Bug Fixes
+- [`77a811c`](https://github.com/t3rn/t3rn/commit/77a811c609f267728c84a15723861e735aa8a48e) - remove incompatible executor tests *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :white_check_mark: Tests
+- [`8e26283`](https://github.com/t3rn/t3rn/commit/8e26283bc79c9d968f918009fb1acc2e2b5ac8b3) - add tests to test-util *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :wrench: Chores
+- [`a09e23f`](https://github.com/t3rn/t3rn/commit/a09e23f86e3326544c281c356151a802c0416f23) - removes old fixtures *(commit by [@petscheit](https://github.com/petscheit))*
+- [`45370d6`](https://github.com/t3rn/t3rn/commit/45370d64b2a57f7f6f157b8282f08419621a7cd6) - rename testing util to replay *(commit by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.16.0-rc.0] - 2023-05-08
 ### :sparkles: New Features
 - [`5015a14`](https://github.com/t3rn/t3rn/commit/5015a148272366afd6ea8a04aa5699626f252146) - decode and export tx params *(commit by [@petscheit](https://github.com/petscheit))*
@@ -1037,3 +1049,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.14.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.13.0-rc.0...v1.14.0-rc.0
 [v1.15.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.14.0-rc.0...v1.15.0-rc.0
 [v1.16.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.15.1-rc.0...v1.16.0-rc.0
+[v1.16.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.16.1-rc.0...v1.16.2-rc.0
