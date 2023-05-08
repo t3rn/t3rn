@@ -27,9 +27,7 @@ jobs:
           node-version: 18
 
       - run: cd .. && make all
-      - run: yarn
-      - run: yarn ci
-      - run: yarn test
+      - run: npm run test
 
   deploy:
     name: Deploy Executor
