@@ -18,8 +18,8 @@
   ],
   "dependencies": {
     "@polkadot/api": "^10.4.1",
-    "@t3rn/sdk": "../sdk",
-    "@t3rn/types": "../types",
+    "@t3rn/sdk": "file:../sdk",
+    "@t3rn/types": "file:../types",
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.16.0",

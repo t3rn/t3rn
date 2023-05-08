@@ -1,8 +1,8 @@
  all:
-	cd types; yarn; yarn link; yarn build;
-	cd sdk; yarn; yarn link; yarn build;
-	cd cli; yarn link @t3rn/sdk; yarn;
-	cd executor; yarn link @t3rn/sdk; yarn link @t3rn/types; yarn upgrade @t3rn/sdk; yarn upgrade @t3rn/types; yarn;
+	cd types; npm i; npm build;
+	cd sdk; npm i; npm build;
+	cd cli; npm add @t3rn/sdk; npm i;
+	cd executor; npm add @t3rn/sdk; npm add @t3rn/types; npm upgrade @t3rn/sdk; npm upgrade @t3rn/types; npm i;
 
 register_roco:
 	cd cli; ts-node index.ts register roco;
@@ -17,9 +17,9 @@ submit_side_effects:
 	cd cli; ts-node index.ts submit-side-effects config/transfer.ts;
 
 start_executor_nohup:
-	cd executor; yarn; nohup yarn start > /tmp/t3rn_packages_test_executor.out 2>&1 &
+	cd executor; npm; nohup npm start > /tmp/t3rn_packages_test_executor.out 2>&1 &
 
 start_executor:
-	cd executor; yarn; yarn start;
+	cd executor; npm; npm start;
 
 test_confirm_xtx: register_roco submit_headers_roco submit_side_effects submit_headers_roco_x3
