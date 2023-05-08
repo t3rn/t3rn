@@ -15,7 +15,7 @@ describe('Basic CircuitRelayer setup', () => {
     });
 
     // TODO: Incorrect values, check.
-    const sdk = new Sdk("test", "0000");
+    const sdk = new Sdk("ws://test", "0000");
     const cr = new CircuitRelayer(sdk);
 
     it('should have a method called "bidSfx"', () => {
@@ -27,7 +27,7 @@ describe('Basic CircuitRelayer setup', () => {
 describe('Circuit relayer functionality', () => {
     // TODO: properly finish this
     it('should be able to build and submit an sfxBid to the circuit', () => {
-        const sdk = new Sdk("test", "0000");
+        const sdk = new Sdk("ws://test", "0000");
         const cr = new CircuitRelayer(sdk);
         cr.bidSfx("0x123", new BN(100));
     })
