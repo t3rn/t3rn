@@ -11,7 +11,7 @@ import { BiddingEngine } from "../bidding"
 import { EventEmitter } from "events"
 import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
 import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
-import {InclusionProof} from "../gateways/types"
+import { InclusionProof } from "../gateways/types"
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"]
@@ -94,7 +94,7 @@ export class SideEffect extends EventEmitter {
     /** If the executor leading the bid changes, store the change */
     changedBidLeader = false
     /** Value of the last bid */
-    lastBids: number[] = [];
+    lastBids: number[] = []
 
     // SideEffect data
     id: string
@@ -180,7 +180,7 @@ export class SideEffect extends EventEmitter {
             this.biddingEngine = biddingEngine
             this.circuitSignerAddress = circuitSignerAddress
             this.logger = logger
-            this.vendor = this.gateway.vendor;
+            this.vendor = this.gateway.vendor
         }
     }
 
@@ -397,10 +397,10 @@ export class SideEffect extends EventEmitter {
      * @param bidAmount Amount of the incoming bid
      */
     processBid(signer: string, bidAmount: number) {
-        // Add the executor bid to the list 
-        this.biddingEngine.storeWhoBidOnWhat(this.id, signer);
+        // Add the executor bid to the list
+        this.biddingEngine.storeWhoBidOnWhat(this.id, signer)
         // Add how much it bid
-        this.lastBids.push(bidAmount);
+        this.lastBids.push(bidAmount)
 
         // if this is not own bid, update reward and isBidder
         if (signer !== this.circuitSignerAddress) {
@@ -434,7 +434,7 @@ export class SideEffect extends EventEmitter {
 
     /** If the SFX required  */
     addHeaderProof(headerProof: string, blockHash: any) {
-        this.inclusionProof.header_proof = {trieNodes: headerProof}
+        this.inclusionProof.header_proof = { trieNodes: headerProof }
         this.inclusionProof.block_hash = blockHash
     }
 

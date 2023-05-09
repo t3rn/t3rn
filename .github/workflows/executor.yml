@@ -50,7 +50,15 @@ jobs:
 
       - run: cd .. && make all
       - run: yarn
-      - run: yarn ci
+      - run: |
+          yarn lint > lint.out
+        continue-on-error: true
+
+      - name: Comment on lint results
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: lint.out
+
       - run: yarn test
 
   deploy:

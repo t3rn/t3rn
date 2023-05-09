@@ -57,17 +57,13 @@ export class CoingeckoPricing {
         const ids = Object.keys(this.assets)
         for (let i = 0; i < ids.length; i++) {
             await axios
-                .get(
-                    config.pricing.coingecko.endpoint +
-                    this.assets[ids[i]] +
-                    config.pricing.coingecko.endpointDefaults
-                )
+                .get(config.pricing.coingecko.endpoint + this.assets[ids[i]] + config.pricing.coingecko.endpointDefaults)
                 .then((res) => {
                     const price = parseFloat(res.data.market_data.current_price["usd"])
                     if (price !== this.prices[ids[i]].getValue()) {
                         this.prices[ids[i]].next(price)
                     }
-                    return new Promise((resolve) => setTimeout(resolve, 2000));
+                    return new Promise((resolve) => setTimeout(resolve, 2000))
                 })
                 .catch((err) => {
                     console.log("Failed fetching prices due to ->", err.toString())

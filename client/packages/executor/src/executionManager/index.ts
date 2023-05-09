@@ -1,17 +1,17 @@
-import {Execution} from "./execution"
-import {Notification, NotificationType, SideEffect} from "./sideEffect"
+import { Execution } from "./execution"
+import { Notification, NotificationType, SideEffect } from "./sideEffect"
 import Estimator from "../gateways/substrate/estimator"
-import {SubstrateRelayer} from "../gateways/substrate/relayer"
-import {PriceEngine} from "../pricing"
-import {StrategyEngine} from "../strategy"
-import {Sdk} from "@t3rn/sdk"
-import {BiddingEngine} from "../bidding"
-import {CircuitListener, ListenerEventData, ListenerEvents} from "../circuit/listener"
-import {ApiPromise} from "@polkadot/api"
-import {CircuitRelayer} from "../circuit/relayer"
-import {RelayerEventData, RelayerEvents} from "../gateways/types"
-import {XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types"
-import {Gateway} from "../../config/config"
+import { SubstrateRelayer } from "../gateways/substrate/relayer"
+import { PriceEngine } from "../pricing"
+import { StrategyEngine } from "../strategy"
+import { Sdk } from "@t3rn/sdk"
+import { BiddingEngine } from "../bidding"
+import { CircuitListener, ListenerEventData, ListenerEvents } from "../circuit/listener"
+import { ApiPromise } from "@polkadot/api"
+import { CircuitRelayer } from "../circuit/relayer"
+import { RelayerEventData, RelayerEvents } from "../gateways/types"
+import { XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
+import { Gateway } from "../../config/config"
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -102,7 +102,7 @@ export class ExecutionManager {
     }
 
     initializeVendors(vendors: string[]) {
-        for(let i = 0; i < vendors.length; i++) {
+        for (let i = 0; i < vendors.length; i++) {
             this.queue[vendors[i]] = {
                 blockHeight: 0,
                 isBidding: [],
@@ -123,13 +123,13 @@ export class ExecutionManager {
 
             const config = gatewayConfig.find((g) => g.id === entry.id)
 
-            if(!config) { // skip over gateways we have no configs for
-                continue;
+            if (!config) {
+                // skip over gateways we have no configs for
+                continue
             }
             if (entry.executionVendor === "Substrate") {
                 // initialize gateway relayer
                 const relayer = new SubstrateRelayer()
-
 
                 await relayer.setup(config, this.logger)
 
@@ -167,8 +167,10 @@ export class ExecutionManager {
 
                             const blockHash = await this.relayers[eventData.target].getBlockHash(eventData.blockNumber)
 
-                            this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects.get(eventData.sfxId)?.addHeaderProof(proof.toJSON().proof, blockHash)
-                            break;
+                            this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects
+                                .get(eventData.sfxId)
+                                ?.addHeaderProof(proof.toJSON().proof, blockHash)
+                            break
                         case RelayerEvents.SfxExecutionError:
                             // ToDo figure out how to handle this
                             break
