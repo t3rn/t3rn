@@ -4078,18 +4078,6 @@ dependencies = [
 
 [[package]]
 name = "jsonrpc-derive"
-version = "15.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99a847f9ec7bb52149b2786a17c9cb260d6effc6b8eeb8c16b343a487a7563a3"
-dependencies = [
- "proc-macro-crate 0.1.5",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "jsonrpc-derive"
 version = "18.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b939a78fa820cdfcb7ee7484466746a7377760970f6f9c6fe19f9edcc8a38d2"
@@ -6391,7 +6379,7 @@ dependencies = [
  "frame-system",
  "jsonrpc-core 15.1.0",
  "jsonrpc-core-client 15.1.0",
- "jsonrpc-derive 15.1.0",
+ "jsonrpc-derive",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "parity-scale-codec",
@@ -6420,7 +6408,7 @@ version = "4.0.0-dev"
 dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-core-client 18.0.0",
- "jsonrpc-derive 18.0.0",
+ "jsonrpc-derive",
  "jsonrpsee",
  "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-rpc-runtime-api",
