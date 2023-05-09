@@ -15,7 +15,7 @@ const jestConfig: JestConfigWithTsJest = {
       },
     ],
   },
-  transformIgnorePatterns: ["<rootDir>/node_modules/"],
+  transformIgnorePatterns: [".*/node_modules/"],
 }
 
 export default jestConfig
