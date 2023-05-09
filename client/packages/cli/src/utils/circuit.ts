@@ -1,5 +1,4 @@
-import { ApiPromise, Keyring } from "@polkadot/api"
-import { Sdk } from "@t3rn/sdk"
+import { Sdk, ApiPromise, Keyring } from "@t3rn/sdk"
 
 export type CircuitContext = {
   circuit: ApiPromise

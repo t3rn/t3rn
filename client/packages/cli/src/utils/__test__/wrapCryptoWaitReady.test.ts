@@ -1,11 +1,11 @@
 import { describe, expect, test } from "@jest/globals"
 import type { MockedFunction } from "jest-mock"
-import { cryptoWaitReady } from "@polkadot/util-crypto"
+import { cryptoWaitReady } from "@t3rn/sdk"
 import { wrapCryptoWaitReady } from "../fns.ts"
 
 type MockedCryptoWaitReady = MockedFunction<typeof cryptoWaitReady>
 
-jest.mock("@polkadot/util-crypto", () => ({
+jest.mock("@t3rn/sdk", () => ({
   cryptoWaitReady: jest.fn(),
 }))
 

@@ -16,5 +16,12 @@ module.exports = {
   plugins: ["@typescript-eslint", "prettier"],
   rules: {
     semi: ["error", "never"],
+    "@typescript-eslint/ban-ts-comment": [
+      "error",
+      {
+        "ts-ignore": "allow-with-description",
+        "minimumDescriptionLength": 3
+      }
+    ]
   },
 }

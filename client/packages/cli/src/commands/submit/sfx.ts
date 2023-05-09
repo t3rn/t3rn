@@ -90,6 +90,7 @@ export const buildSfx = (
   sdk: Sdk
 ) => {
   return {
+    // @ts-ignore - A weird error that I don't understand
     sideEffects: createType(
       "Vec<T3rnTypesSfxSideEffect>",
       sideEffects.map((data) => {
@@ -104,7 +105,7 @@ export const buildSfx = (
         })
         return obj
       })
-      // @ts-expect-error - TS doesn't know that we are creating a type here
+      // @ts-ignore - TS doesn't know that we are creating a type here
     ).toJSON(),
     speed_mode: circuitApi.createType("T3rnPrimitivesSpeedMode", speedMode),
   }

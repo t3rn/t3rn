@@ -1,6 +1,6 @@
 import z from "zod"
 import figlet from "figlet"
-import { cryptoWaitReady } from "@polkadot/util-crypto"
+import { cryptoWaitReady } from "@t3rn/sdk"
 import { log } from "./log.ts"
 import cleanStack from "clean-stack"
 import { CONFIG_FILE } from "@/consts.ts"

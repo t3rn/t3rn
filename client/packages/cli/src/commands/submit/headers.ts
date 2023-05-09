@@ -4,9 +4,8 @@ import { getConfig } from "@/utils/config.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { Gateway } from "@/schemas/setup.ts"
-import { ApiPromise, WsProvider } from "@polkadot/api"
 import { Circuit } from "@/types.ts"
-import { Encodings } from "@t3rn/sdk"
+import { Encodings, ApiPromise, WsProvider } from "@t3rn/sdk"
 
 export const spinner = ora()
 export const progressBar = new SingleBar({}, Presets.shades_classic)
@@ -123,7 +122,7 @@ const getGatewayHeight = async (circuit: Circuit, gatewayId: string) => {
   const height = await bridge.importedHeaders(hash.toJSON())
 
   if (height.toJSON()) {
-    //@ts-expect-error - TS doesn't know that height.toJSON() has a number property
+    //@ts-ignore - TS doesn't know that height.toJSON() has a number property
     return height.toJSON().number
   }
 
@@ -182,9 +181,9 @@ const generateBatchProof = async (
     const range = circuit.createType("Vec<Header>", headers)
 
     logMsg.batches.push({
-      // @ts-expect-error - TS doesn't know that range is a Vec<Header>
+      // @ts-ignore - TS doesn't know that range is a Vec<Header>
       targetFrom: range[0].number.toNumber(),
-      // @ts-expect-error - TS doesn't know that range is a Vec<Header>
+      // @ts-ignore - TS doesn't know that range is a Vec<Header>
       targetTo: range[range.length - 1].number.toNumber(),
     })
     justification =

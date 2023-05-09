@@ -8,7 +8,7 @@ const jestConfig: JestConfigWithTsJest = {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
   transform: {
-    "^.+\\.m?[tj]sx?$": [
+    "^.+\\.m?[t]sx?$": [
       "ts-jest",
       {
         useESM: true,

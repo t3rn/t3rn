@@ -9,6 +9,7 @@
     "node": ">=14.16"
   },
   "scripts": {
+    "preinstall": "npx -y only-allow pnpm",
     "cli": "pnpm build && node dist/cli.cjs",
     "build": "tsup src/cli.ts",
     "lint": "eslint --ext .ts src",
@@ -19,10 +20,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@polkadot/api": "^8.9.1",
-    "@polkadot/keyring": "^10.0.1",
-    "@polkadot/types": "^8.9.1",
-    "@polkadot/util-crypto": "^10.0.1",
     "@t3rn/sdk": "link:../sdk",
     "@t3rn/types": "../types",
     "chalk": "^4.1.2",
@@ -35,6 +32,7 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
+    "@polkadot/types": "^8.9.1",
     "@jest/globals": "^29.5.0",
     "@types/cli-progress": "^3.11.0",
     "@types/figlet": "^1.5.5",
@@ -53,10 +51,5 @@
     "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
     "typescript": "5.0.4"
-  },
-  "compilerOptions": {
-    "types": [
-      "@polkadot/util-crypto"
-    ]
   }
 }

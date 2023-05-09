@@ -1,7 +1,6 @@
 import "@t3rn/types"
 import ora from "ora"
-import { Encodings } from "@t3rn/sdk"
-import { ApiPromise, WsProvider } from "@polkadot/api"
+import { Encodings, ApiPromise, WsProvider } from "@t3rn/sdk"
 import fetch from "node-fetch"
 import { createType } from "@t3rn/types"
 import {
@@ -75,11 +74,11 @@ const registerGateway = async (gatewayData: Required<Gateway>) => {
   const tx = circuit.tx.portal.registerGateway(
     gatewayId,
     tokenId,
-    //@ts-expect-error - TS doesn't know about the type
+    //@ts-ignore - TS doesn't know about the type
     verificationVendor.toJSON(),
-    //@ts-expect-error - TS doesn't know about the type
+    //@ts-ignore - TS doesn't know about the type
     executionVendor.toJSON(),
-    //@ts-expect-error - TS doesn't know about the type
+    //@ts-ignore - TS doesn't know about the type
     codec.toJSON(),
     registrant,
     escrowAccounts,
