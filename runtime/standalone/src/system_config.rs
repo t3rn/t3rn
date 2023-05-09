@@ -355,11 +355,13 @@ impl pallet_maintenance_mode::Config for Runtime {
 mod tests {
     use super::*;
     use core::hash::Hash;
+    use pallet_circuit::Outcome;
     use sp_runtime::{AccountId32, MultiAddress};
     use t3rn_primitives::{claimable::BenefitSource, GatewayVendor, TokenInfo};
 
+    /// Test that the calls that are allowed in base mode can be called
     #[test]
-    fn base_call_filter_returns_true_with_allowed_calls() {
+    fn base_call_filter_works_with_allowed_and_disallowed() {
         // System support
         let call = frame_system::Call::remark { remark: vec![] }.into();
         assert!(BaseCallFilter::contains(&call));
@@ -367,13 +369,43 @@ mod tests {
         let call = pallet_timestamp::Call::set { now: 0 }.into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_identity::Call::add_registrar {
+        let prev_call = pallet_identity::Call::add_registrar {
             account: AccountId32::new([0; 32]),
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&prev_call));
+
+        // Monetary
+        let call = pallet_account_manager::Call::finalize {
+            charge_id: Default::default(),
+            outcome: Outcome::Commit,
+            maybe_recipient: Default::default(),
+            maybe_actual_fees: Default::default(),
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        // Monetary
+        let call = pallet_xdns::Call::purge_gateway {
+            requester: AccountId32::new([0; 32]),
+            gateway_id: Default::default(),
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_contracts_registry::Call::purge {
+            requester: AccountId32::new([0; 32]),
+            contract_id: Default::default(),
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_circuit::Call::bid_sfx {
+            sfx_id: Default::default(),
+            bid_amount: 0,
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
         let call = pallet_balances::Call::transfer {
             dest: MultiAddress::Address32([0; 32]),
             value: 0,
@@ -414,9 +446,11 @@ mod tests {
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
+    }
 
-        // Not allowed calls
-
+    /// Test that the calls that are not allowed in maintenance mode cannot be called
+    #[test]
+    fn maintenance_call_filter_works_with_allowed_and_disallowed() {
         let call = pallet_identity::Call::add_registrar {
             account: AccountId32::new([0; 32]),
         }
