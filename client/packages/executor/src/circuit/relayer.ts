@@ -7,7 +7,7 @@ import { BN } from "@polkadot/util"
 import { Sdk } from "@t3rn/sdk"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { T3rnTypesSfxConfirmedSideEffect } from "@polkadot/types/lookup"
-const fs = require("fs")
+import fs from "fs"
 
 /**
  * Class responsible for submitting any type of transaction to the circuit. All communication with the circuit is done through the circuit relayer.

@@ -1,11 +1,8 @@
 import { expect } from 'chai';
 import { CircuitRelayer } from '../src/circuit/relayer';
-import { Sdk, WsProvider } from "@t3rn/sdk";
+import { Sdk } from "@t3rn/sdk";
 import { BN } from "@polkadot/util"
-import { MockProvider } from '@polkadot/rpc-provider/mock';
-import { TypeRegistry } from '@polkadot/types/create/registry';
-import { Registry } from '@polkadot/types/types/registry';
-import { mock, instance, when } from 'ts-mockito';
+import { mock } from 'ts-mockito';
 
 // Include basic testing and the check for the methods in the next block
 describe('Basic CircuitRelayer setup', () => {

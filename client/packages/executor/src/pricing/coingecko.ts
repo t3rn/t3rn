@@ -1,6 +1,6 @@
 import { config } from "../../config/config"
 import { BehaviorSubject } from "rxjs"
-const axios = require("axios")
+import axios from "axios"
 
 /**
  * MVP implementation of sourcing prices from coingecko
