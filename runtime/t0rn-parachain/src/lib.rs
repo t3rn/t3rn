@@ -185,6 +185,9 @@ construct_runtime!(
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
 
+        // Handy utilities
+        MaintenanceMode: pallet_maintenance_mode = 140,
+
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 
