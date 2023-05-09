@@ -354,14 +354,16 @@ impl pallet_maintenance_mode::Config for Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use codec::Compact;
     use core::hash::Hash;
     use pallet_circuit::Outcome;
+    use pallet_grandpa_finality_verifier::bridges::header_chain::justification::GrandpaJustification;
     use sp_runtime::{AccountId32, MultiAddress};
     use t3rn_primitives::{claimable::BenefitSource, GatewayVendor, TokenInfo};
 
     /// Test that the calls that are allowed in base mode can be called
     #[test]
-    fn base_call_filter_works_with_allowed_and_disallowed() {
+    fn base_filter_works_with_allowed_and_disallowed_calls() {
         // System support
         let call = frame_system::Call::remark { remark: vec![] }.into();
         assert!(BaseCallFilter::contains(&call));
@@ -440,17 +442,71 @@ mod tests {
         .into();
         assert!(BaseCallFilter::contains(&call));
 
+        let call = pallet_3vm_contracts::Call::call {
+            dest: MultiAddress::Address32([0; 32]),
+            data: vec![],
+            gas_limit: 0,
+            value: 0,
+            storage_deposit_limit: Some(Compact(0)),
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
         // Admin
         let call = pallet_sudo::Call::sudo {
             call: Box::new(frame_system::Call::remark { remark: vec![] }.into()),
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
+
+        // Anything else
+        // assert!(!BaseCallFilter::contains(_));
     }
 
     /// Test that the calls that are not allowed in maintenance mode cannot be called
     #[test]
-    fn maintenance_call_filter_works_with_allowed_and_disallowed() {
+    fn maintenance_filter_works_with_allowed_and_disallowed_calls() {
+        let call = frame_system::Call::remark { remark: vec![] }.into();
+        assert!(MaintenanceFilter::contains(&call));
+
+        let call = pallet_utility::Call::as_derivative {
+            index: 0,
+            call: Box::new(call),
+        }
+        .into();
+        assert!(MaintenanceFilter::contains(&call));
+
+        let call = pallet_balances::Call::transfer {
+            dest: MultiAddress::Address32([0; 32]),
+            value: 0,
+        }
+        .into();
+        assert!(MaintenanceFilter::contains(&call));
+
+        let call = pallet_assets::Call::create {
+            id: Default::default(),
+            admin: MultiAddress::Address32([0; 32]),
+            min_balance: 0,
+        }
+        .into();
+        assert!(MaintenanceFilter::contains(&call));
+
+        let call = pallet_timestamp::Call::set { now: 0 }.into();
+        assert!(MaintenanceFilter::contains(&call));
+
+        let call = pallet_sudo::Call::sudo {
+            call: Box::new(frame_system::Call::remark { remark: vec![] }.into()),
+        }
+        .into();
+        assert!(MaintenanceFilter::contains(&call));
+
+        let call = pallet_3vm_evm::Call::withdraw {
+            address: Default::default(),
+            value: 0,
+        }
+        .into();
+        assert!(!MaintenanceFilter::contains(&call));
+
         let call = pallet_identity::Call::add_registrar {
             account: AccountId32::new([0; 32]),
         }
@@ -493,5 +549,8 @@ mod tests {
         }
         .into();
         assert!(!MaintenanceFilter::contains(&call));
+
+        // Anything else
+        // assert!(!MaintenanceFilter::contains(_));
     }
 }
