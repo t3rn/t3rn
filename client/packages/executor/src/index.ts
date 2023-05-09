@@ -14,10 +14,9 @@ import { SideEffect, Notification, NotificationType, TxOutput, TxStatus } from "
 import { Execution } from "./executionManager/execution"
 import { CircuitListener, ListenerEvents, ListenerEventData } from "./circuit/listener"
 import { CircuitRelayer } from "./circuit/relayer"
-// @ts-ignore
-import { T3rnPrimitivesXdnsXdnsRecord } from "@polkadot/types/lookup"
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-const pino = require("pino")
+import pino from "pino"
+
 const logger = pino(
     {
         level: process.env.LOG_LEVEL || "info",

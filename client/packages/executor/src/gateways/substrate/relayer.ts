@@ -7,8 +7,8 @@ import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
 import { InclusionProof, RelayerEventData, RelayerEvents } from "../types"
 import Estimator from "./estimator"
 import { CostEstimator, Estimate } from "./estimator/cost"
-import { Utils } from "@t3rn/sdk";
-import {Gateway} from "../../../config/config";
+import { Utils } from "@t3rn/sdk"
+import { Gateway } from "../../../config/config"
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -42,10 +42,9 @@ export class SubstrateRelayer extends EventEmitter {
         const keyring = new Keyring({ type: "sr25519" })
         this.signer = config.signerKey ? keyring.addFromMnemonic(config.signerKey) : keyring.addFromUri("//Executor//default")
 
-        if(config.nativeId) this.nativeId = config.nativeId;
+        if (config.nativeId) this.nativeId = config.nativeId
 
         this.nonce = await this.fetchNonce(this.client, this.signer.address)
-
     }
 
     /**
@@ -73,13 +72,13 @@ export class SubstrateRelayer extends EventEmitter {
     async executeTx(sfx: SideEffect) {
         this.logger.info(`Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`)
         const tx: SubmittableExtrinsic = this.buildTx(sfx)
-        let nonce = this.nonce
+        const nonce = this.nonce
         this.nonce += 1 // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
         return new Promise<void>((resolve, reject) =>
             tx.signAndSend(this.signer, { nonce }, async ({ dispatchError, status, events }) => {
                 if (dispatchError?.isModule) {
                     // something went wrong and we can decode the error
-                    let err = this.client.registry.findMetaError(dispatchError.asModule)
+                    const err = this.client.registry.findMetaError(dispatchError.asModule)
                     this.logger.info(`Execution failed SFX: ${sfx.humanId}`)
                     this.emit("Event", <RelayerEventData>{
                         type: RelayerEvents.SfxExecutionError,
@@ -137,11 +136,11 @@ export class SubstrateRelayer extends EventEmitter {
             block_hash: blockHash,
         }
 
-        if(sfx.target !== "roco") {
-            let blockNumber = await this.fetchCorrespondingRelaychainHeaderNumber(blockHash)
-                .catch((err) => { // this should never happen
-                    console.log(err)
-                })
+        if (sfx.target !== "roco") {
+            const blockNumber = await this.fetchCorrespondingRelaychainHeaderNumber(blockHash).catch((err) => {
+                // this should never happen
+                console.log(err)
+            })
 
             this.emit("Event", <RelayerEventData>{
                 type: RelayerEvents.HeaderInclusionProofRequest,
@@ -151,10 +150,10 @@ export class SubstrateRelayer extends EventEmitter {
                 data: this.nativeId,
             })
 
-              // Add the inclusion proof to the SFX object
+            // Add the inclusion proof to the SFX object
             sfx.executedOnTarget(inclusionData, this.signer.addressRaw, blockNumber as number)
             // if we have a parachain SFX we need to submit on the relaychain block height
-            return blockNumber as number;
+            return blockNumber as number
         }
 
         // Add the inclusion proof to the SFX object
@@ -163,21 +162,21 @@ export class SubstrateRelayer extends EventEmitter {
         return blockNumber.toNumber()
     }
 
-     /**
+    /**
      * Fetches the block number of the relaychain block, containing the parachain block
      *
      * @param parachainBlockHash block hash of the parachain
      * @returns Block number of the relaychain block
      */
     async fetchCorrespondingRelaychainHeaderNumber(parachainBlockHash: any): Promise<number> {
-        const parachainBlock = await this.client.rpc.chain.getBlock(parachainBlockHash);
+        const parachainBlock = await this.client.rpc.chain.getBlock(parachainBlockHash)
 
         // ToDo: we should verify that this block is correct. Could be done by running a state query on the relaychain, decoding the block and ensuring the height is correct
-        for(let i = 0; i < parachainBlock.block.extrinsics.length; i++) {
+        for (let i = 0; i < parachainBlock.block.extrinsics.length; i++) {
             const extrinsic = parachainBlock.block.extrinsics[i]
-            if(extrinsic.method.method === "setValidationData" && extrinsic.method.section === "parachainSystem") {
+            if (extrinsic.method.method === "setValidationData" && extrinsic.method.section === "parachainSystem") {
                 // @ts-ignore
-                return extrinsic.method.args[0].validationData.relayParentNumber.toNumber() + 2; // im not exactly sure why we need to add 2 here, +1 makes sense as its parent.
+                return extrinsic.method.args[0].validationData.relayParentNumber.toNumber() + 2 // im not exactly sure why we need to add 2 here, +1 makes sense as its parent.
             }
         }
 

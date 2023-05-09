@@ -11,7 +11,7 @@ import { BiddingEngine } from "../bidding"
 import { EventEmitter } from "events"
 import { floatToBn, toFloat } from "@t3rn/sdk/dist/src/circuit"
 import { bnToFloat } from "@t3rn/sdk/dist/src/converters/amounts"
-import {InclusionProof} from "../gateways/types"
+import { InclusionProof } from "../gateways/types"
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"]
@@ -24,7 +24,7 @@ export const EventMapper = ["Transfer", "MultiTransfer"]
  */
 export type TxOutput = {
     /** Output amount as integer */
-    amount: BigInt
+    amount: bigint
     /** Output amount in human-readable float */
     amountHuman: number
     /** Output asset tickker */
@@ -87,14 +87,14 @@ export class SideEffect extends EventEmitter {
     /** Executor address on circuit */
     circuitSignerAddress: string
     /** Is currently the winning bidder of the SFX */
-    isBidder: boolean = false
+    isBidder = false
     /** The minimum profit in USD required for executing this SFX. Number is computed by strategy engine */
-    minProfitUsd: number = 0
+    minProfitUsd = 0
 
     /** If the executor leading the bid changes, store the change */
-    changedBidLeader: boolean = false
+    changedBidLeader = false
     /** Value of the last bid */
-    lastBids: number[] = [];
+    lastBids: number[] = []
 
     // SideEffect data
     id: string
@@ -113,7 +113,7 @@ export class SideEffect extends EventEmitter {
     /** Required data for confirming the inclusion on circuit. contains encoded payload, inclusionProof, and blockHash */
     inclusionProof: InclusionProof
     /** The block number in which the SFX was included on the target */
-    targetInclusionHeight: number = 0
+    targetInclusionHeight = 0
     /** The address of this SFXs executor */
     executor: string
 
@@ -131,11 +131,11 @@ export class SideEffect extends EventEmitter {
 
     subscriptions: any[] = []
     /** Tx cost in USD */
-    txCostUsd: number = 0
+    txCostUsd = 0
     /** Cost of output assets in USD */
-    txOutputCostUsd: number = 0
+    txOutputCostUsd = 0
     /** Total reward value in USD. This is not profit, as it includes the payment for the assets that are being spent/output by the executor */
-    rewardUsd: number = 0
+    rewardUsd = 0
 
     /** Tx receipt of the execution on target */
     txReceipt: any // store tx receipt
@@ -180,7 +180,7 @@ export class SideEffect extends EventEmitter {
             this.biddingEngine = biddingEngine
             this.circuitSignerAddress = circuitSignerAddress
             this.logger = logger
-            this.vendor = this.gateway.vendor;
+            this.vendor = this.gateway.vendor
         }
     }
 
@@ -397,10 +397,10 @@ export class SideEffect extends EventEmitter {
      * @param bidAmount Amount of the incoming bid
      */
     processBid(signer: string, bidAmount: number) {
-        // Add the executor bid to the list 
-        this.biddingEngine.storeWhoBidOnWhat(this.id, signer);
+        // Add the executor bid to the list
+        this.biddingEngine.storeWhoBidOnWhat(this.id, signer)
         // Add how much it bid
-        this.lastBids.push(bidAmount);
+        this.lastBids.push(bidAmount)
 
         // if this is not own bid, update reward and isBidder
         if (signer !== this.circuitSignerAddress) {
@@ -434,7 +434,7 @@ export class SideEffect extends EventEmitter {
 
     /** If the SFX required  */
     addHeaderProof(headerProof: string, blockHash: any) {
-        this.inclusionProof.header_proof = {trieNodes: headerProof}
+        this.inclusionProof.header_proof = { trieNodes: headerProof }
         this.inclusionProof.block_hash = blockHash
     }
 
@@ -483,7 +483,7 @@ export class SideEffect extends EventEmitter {
         })
     }
 
-    private addLog(msg: any, debug: boolean = true) {
+    private addLog(msg: any, debug = true) {
         msg.component = "SFX"
         msg.sfxId = this.id
         msg.xtxId = this.xtxId

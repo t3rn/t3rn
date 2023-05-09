@@ -34,7 +34,7 @@
   },
   "homepage": "https://github.com/t3rn/t3rn",
   "dependencies": {
-    "@polkadot/api": "^9.2.4",
+    "@polkadot/api": "^8.9.1",
     "dotenv": "^16.0.3"
   },
   "main": "./dist/src/index.js",

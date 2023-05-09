@@ -86,7 +86,7 @@ export class StrategyEngine {
      * @param xtx Object of XTX to be evaluated
      */
     evaluateXtx(xtx: Execution): void | Error {
-        for (let [_id, sfx] of xtx.sideEffects) {
+        for (const [_id, sfx] of xtx.sideEffects) {
             const strategy = this.xtxStrategies[sfx.target]
             try {
                 this.minInsuranceAmountRejected(sfx, strategy)

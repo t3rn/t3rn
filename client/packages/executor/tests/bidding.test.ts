@@ -4,7 +4,8 @@ import { config } from "../config/config"
 import { expect } from 'chai';
 import { mock, instance, when } from 'ts-mockito';
 import { BehaviorSubject } from 'rxjs';
-const pino = require("pino")
+import pino from 'pino';
+
 describe('Bidding: Configuration loading', () => {
     it('Correct config values are loaded', () => {
         const be = new BiddingEngine(pino());
@@ -189,8 +190,8 @@ describe("Bidding: check helper functions", () => {
 
     it("should clean up stored values sfx and bidder ids", () => {
         // ARANGE
-        const sfxId: string = "sfxId1";
-        const bidderId: string = "bidderId1";
+        const sfxId = "sfxId1";
+        const bidderId = "bidderId1";
 
         const be = new BiddingEngine(pino());
         const mockedSideEffect: SideEffect = mock(SideEffect);

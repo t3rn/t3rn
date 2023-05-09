@@ -1,4 +1,4 @@
-import { createType } from "@t3rn/types";
+import { createType } from "@t3rn/types"
 import { EventEmitter } from "events"
 import { ApiPromise } from "@polkadot/api"
 import { SideEffect } from "../executionManager/sideEffect"
@@ -7,7 +7,7 @@ import { BN } from "@polkadot/util"
 import { Sdk } from "@t3rn/sdk"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
 import { T3rnTypesSfxConfirmedSideEffect } from "@polkadot/types/lookup"
-const fs = require("fs")
+import fs from "fs"
 
 /**
  * Class responsible for submitting any type of transaction to the circuit. All communication with the circuit is done through the circuit relayer.
@@ -52,7 +52,8 @@ export class CircuitRelayer extends EventEmitter {
         const txs: SubmittableExtrinsic[] = sfxs.map((sfx) => this.createConfirmTx(sfx))
         if (txs.length > 1) {
             // only batch if more than one tx
-            return this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createBatch(txs))
+            const batch = await this.sdk.circuit.tx.createBatch(txs)
+            return this.sdk.circuit.tx.signAndSendSafe(batch)
         } else {
             return this.sdk.circuit.tx.signAndSendSafe(txs[0])
         }
@@ -64,9 +65,9 @@ export class CircuitRelayer extends EventEmitter {
      * @param sfx The SideEffect to confirm
      */
     createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
-        let inclusionData;
+        let inclusionData
 
-        if(sfx.target === "roco") {
+        if (sfx.target === "roco") {
             inclusionData = this.api.createType("RelaychainInclusionProof", {
                 encoded_payload: sfx.inclusionProof.encoded_payload,
                 payload_proof: sfx.inclusionProof.payload_proof,
@@ -81,24 +82,21 @@ export class CircuitRelayer extends EventEmitter {
             })
         }
 
-        const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType(
-            "T3rnTypesSfxConfirmedSideEffect",
-            {
-                err: null,
-                output: null,
-                inclusionData: inclusionData.toHex(),
-                executioner: sfx.executor,
-                receivedAt: 0,
-                cost: null,
-            }
-        )
+        const confirmedSideEffect: T3rnTypesSfxConfirmedSideEffect = createType("T3rnTypesSfxConfirmedSideEffect", {
+            err: null,
+            output: null,
+            inclusionData: inclusionData.toHex(),
+            executioner: sfx.executor,
+            receivedAt: 0,
+            cost: null,
+        })
 
         return this.api.tx.circuit.confirmSideEffect(sfx.id, confirmedSideEffect.toJSON())
     }
 }
 
 // in combination with transfer.ts
-let indexes = [7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 9999, 111111, 222222, 33333, 444444]
+const indexes = [7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 9999, 111111, 222222, 33333, 444444]
 let counter = 0
 export const exportData = (data: any, fileName: string, transactionType: string) => {
     let deepCopy
@@ -108,7 +106,7 @@ export const exportData = (data: any, fileName: string, transactionType: string)
     } else {
         deepCopy = { ...data }
     }
-    let encoded = encodeExport(deepCopy, transactionType)
+    const encoded = encodeExport(deepCopy, transactionType)
     fs.writeFile("exports/" + indexes[counter] + "-" + fileName, JSON.stringify(encoded, null, 4), (err) => {
         if (err) {
             console.log("Err", err)
@@ -131,8 +129,8 @@ export const encodeExport = (data: any, transactionType: string) => {
 }
 
 const iterateEncode = (data: any, transactionType: string) => {
-    let keys = Object.keys(data)
-    let result = {}
+    const keys = Object.keys(data)
+    const result = {}
     if (keys.includes("initialU8aLength")) {
         // this is a polkadot/apiPromise object
         return {

@@ -51,6 +51,14 @@ jobs:
       - run: cd .. && make all
       - run: yarn
       - run: yarn ci
+      - run: |
+          yarn lint > lint.out || true
+
+      - name: Comment on lint results
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: client/packages/executor/lint.out
+
       - run: yarn test
 
   deploy:
