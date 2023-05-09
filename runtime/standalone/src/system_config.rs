@@ -354,7 +354,9 @@ impl pallet_maintenance_mode::Config for Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sp_runtime::MultiAddress;
+    use core::hash::Hash;
+    use sp_runtime::{AccountId32, MultiAddress};
+    use t3rn_primitives::{claimable::BenefitSource, GatewayVendor, TokenInfo};
 
     #[test]
     fn base_call_filter_returns_true_with_allowed_calls() {
@@ -366,7 +368,7 @@ mod tests {
         assert!(BaseCallFilter::contains(&call));
 
         let call = pallet_identity::Call::add_registrar {
-            account: sp_runtime::AccountId32::new([0; 32]),
+            account: AccountId32::new([0; 32]),
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
@@ -412,5 +414,50 @@ mod tests {
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
+
+        // Not allowed calls
+
+        let call = pallet_identity::Call::add_registrar {
+            account: AccountId32::new([0; 32]),
+        }
+        .into();
+        assert!(!MaintenanceFilter::contains(&call));
+
+        let call = pallet_treasury::Call::reject_proposal { proposal_id: 0 }.into();
+        assert!(!MaintenanceFilter::contains(&call));
+
+        let call = pallet_account_manager::Call::deposit {
+            charge_id: Default::default(),
+            payee: AccountId32::new([0; 32]),
+            charge_fee: 0,
+            offered_reward: 0,
+            source: BenefitSource::BootstrapPool,
+            role: pallet_circuit::CircuitRole::Relayer,
+            recipient: Default::default(),
+            maybe_asset_id: Default::default(),
+        }
+        .into();
+        assert!(!MaintenanceFilter::contains(&call));
+
+        let call = pallet_xdns::Call::purge_gateway {
+            requester: AccountId32::new([0; 32]),
+            gateway_id: Default::default(),
+        }
+        .into();
+        assert!(!MaintenanceFilter::contains(&call));
+
+        let call = pallet_contracts_registry::Call::purge {
+            requester: AccountId32::new([0; 32]),
+            contract_id: Default::default(),
+        }
+        .into();
+        assert!(!MaintenanceFilter::contains(&call));
+
+        let call = pallet_circuit::Call::bid_sfx {
+            sfx_id: Default::default(),
+            bid_amount: 0,
+        }
+        .into();
+        assert!(!MaintenanceFilter::contains(&call));
     }
 }
