@@ -51,8 +51,7 @@ jobs:
       - run: cd .. && make all
       - run: yarn
       - run: |
-          yarn lint > lint.out
-        continue-on-error: true
+          yarn lint > lint.out || true
 
       - name: Comment on lint results
         uses: mshick/add-pr-comment@v2
