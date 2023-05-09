@@ -6,6 +6,7 @@ import { BN } from "@polkadot/util"
 export async function getStorage(api: ApiPromise, parameters: any) {
     const res = await api.rpc.state.getStorage(parameters.key)
     return {
+        // @ts-ignore
         // { value: '0x1c86d8cbffffffffffffffffffffffff', status: true }
         // We may have to change it later down the line.
         value: res.toHex(),
