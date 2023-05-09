@@ -189,8 +189,8 @@ describe("Bidding: check helper functions", () => {
 
     it("should clean up stored values sfx and bidder ids", () => {
         // ARANGE
-        const sfxId: string = "sfxId1";
-        const bidderId: string = "bidderId1";
+        const sfxId = "sfxId1";
+        const bidderId = "bidderId1";
 
         const be = new BiddingEngine(pino());
         const mockedSideEffect: SideEffect = mock(SideEffect);

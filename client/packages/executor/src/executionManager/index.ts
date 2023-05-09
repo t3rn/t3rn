@@ -329,7 +329,7 @@ export class ExecutionManager {
         // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
         let readyByHeight: string[] = []
         // stores the block height of the SideEffects that are ready to be confirmed. Needed for clearing the queue
-        let batchBlocks: string[] = []
+        const batchBlocks: string[] = []
         const queuedBlocks = Object.keys(this.queue[vendor].isConfirming)
         // we check which headers are available and collect the SFX ids
         for (let i = 0; i < queuedBlocks.length; i++) {
@@ -495,7 +495,7 @@ export class ExecutionManager {
         this.biddingEngine.cleanUp(id)
     }
 
-    private addLog(msg: object, debug: boolean = true) {
+    private addLog(msg: object, debug = true) {
         msg["component"] = "ExecutionManager"
 
         if (debug) {

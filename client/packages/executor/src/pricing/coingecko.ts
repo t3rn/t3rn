@@ -23,7 +23,7 @@ export class CoingeckoPricing {
     /** Flag for finishing tests when debuging */
     debugFlag: boolean
 
-    constructor(updateFrequency?: number, debugFlag: boolean = false) {
+    constructor(updateFrequency?: number, debugFlag = false) {
         // Get the frequency when instantiating the class
         if (updateFrequency) {
             this.updateFrequency = updateFrequency
@@ -41,7 +41,7 @@ export class CoingeckoPricing {
 
     /** Read the config file to initialize the list of assets we want to track */
     getTrackingAssets() {
-        let keys = Object.keys(config.assets)
+        const keys = Object.keys(config.assets)
         for (let i = 0; i < keys.length; i++) {
             config.assets[keys[i]].forEach((asset) => {
                 if (asset.priceSource === "coingecko") {

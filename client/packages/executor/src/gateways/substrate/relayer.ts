@@ -73,13 +73,13 @@ export class SubstrateRelayer extends EventEmitter {
     async executeTx(sfx: SideEffect) {
         this.logger.info(`Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`)
         const tx: SubmittableExtrinsic = this.buildTx(sfx)
-        let nonce = this.nonce
+        const nonce = this.nonce
         this.nonce += 1 // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
         return new Promise<void>((resolve, reject) =>
             tx.signAndSend(this.signer, { nonce }, async ({ dispatchError, status, events }) => {
                 if (dispatchError?.isModule) {
                     // something went wrong and we can decode the error
-                    let err = this.client.registry.findMetaError(dispatchError.asModule)
+                    const err = this.client.registry.findMetaError(dispatchError.asModule)
                     this.logger.info(`Execution failed SFX: ${sfx.humanId}`)
                     this.emit("Event", <RelayerEventData>{
                         type: RelayerEvents.SfxExecutionError,
@@ -138,7 +138,7 @@ export class SubstrateRelayer extends EventEmitter {
         }
 
         if(sfx.target !== "roco") {
-            let blockNumber = await this.fetchCorrespondingRelaychainHeaderNumber(blockHash)
+            const blockNumber = await this.fetchCorrespondingRelaychainHeaderNumber(blockHash)
                 .catch((err) => { // this should never happen
                     console.log(err)
                 })

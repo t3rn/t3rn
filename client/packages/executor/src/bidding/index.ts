@@ -46,7 +46,7 @@ export class BiddingEngine {
      */
     computeBid(sfx: SideEffect): number {
         const scenario = this.checkScenario(sfx)
-        let bid: number = 0
+        let bid = 0
         switch (scenario) {
             case Scenario.noBidAndNoCompetition:
                 bid = this.computeNoBidAndNoCompetition(sfx)
@@ -192,7 +192,7 @@ export class BiddingEngine {
      */
     storeWhoBidOnWhat(sfxId: string, bidderId: string) {
         if (this.whoBidsOnWhat) {
-            let previousBidderIds = this.whoBidsOnWhat.get(sfxId)
+            const previousBidderIds = this.whoBidsOnWhat.get(sfxId)
             if (previousBidderIds) {
                 previousBidderIds.push(bidderId);
                 this.whoBidsOnWhat.set(sfxId, previousBidderIds);

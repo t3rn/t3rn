@@ -98,7 +98,7 @@ export class CircuitRelayer extends EventEmitter {
 }
 
 // in combination with transfer.ts
-let indexes = [7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 9999, 111111, 222222, 33333, 444444]
+const indexes = [7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 9999, 111111, 222222, 33333, 444444]
 let counter = 0
 export const exportData = (data: any, fileName: string, transactionType: string) => {
     let deepCopy
@@ -108,7 +108,7 @@ export const exportData = (data: any, fileName: string, transactionType: string)
     } else {
         deepCopy = { ...data }
     }
-    let encoded = encodeExport(deepCopy, transactionType)
+    const encoded = encodeExport(deepCopy, transactionType)
     fs.writeFile("exports/" + indexes[counter] + "-" + fileName, JSON.stringify(encoded, null, 4), (err) => {
         if (err) {
             console.log("Err", err)
@@ -131,8 +131,8 @@ export const encodeExport = (data: any, transactionType: string) => {
 }
 
 const iterateEncode = (data: any, transactionType: string) => {
-    let keys = Object.keys(data)
-    let result = {}
+    const keys = Object.keys(data)
+    const result = {}
     if (keys.includes("initialU8aLength")) {
         // this is a polkadot/apiPromise object
         return {
