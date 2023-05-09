@@ -180,7 +180,7 @@ export class ExecutionManager {
                 // skip over gateways we have no configs for
                 continue
             }
-            if (entry.executionVendor === "Substrate") {
+            if ((entry as any).executionVendor === "Substrate") {
                 // initialize gateway relayer
                 const relayer = new SubstrateRelayer()
 
