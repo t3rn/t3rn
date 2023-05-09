@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.17.0-rc.0] - 2023-05-09
+### :sparkles: New Features
+- [`76ae0e5`](https://github.com/t3rn/t3rn/commit/76ae0e578eed48af8a10a1796b05fcf9dc19623b) - add fault tolerant ws connection handler *(commit by [@petscheit](https://github.com/petscheit))*
+- [`a2f0c7f`](https://github.com/t3rn/t3rn/commit/a2f0c7f1de77c82a547df950f7c7323f52855c64) - portal rpc reimplemented *(commit by [@petscheit](https://github.com/petscheit))*
+- [`b5ed30b`](https://github.com/t3rn/t3rn/commit/b5ed30bbdc664d0010478910e6ef68ed49dde4ea) - connect fetch_head_height to portal properly *(commit by [@petscheit](https://github.com/petscheit))*
+- [`3f630bf`](https://github.com/t3rn/t3rn/commit/3f630bfb79b2d520b29f3105db2cdcc1eefaae68) - imple header collection and circuit submission logic *(commit by [@petscheit](https://github.com/petscheit))*
+- [`7b739b2`](https://github.com/t3rn/t3rn/commit/7b739b2138cd6cae7386a0f1890743e59e018025) - impl prometheus metrics *(commit by [@petscheit](https://github.com/petscheit))*
+- [`e1d0380`](https://github.com/t3rn/t3rn/commit/e1d038098fd809ef6780ceddfe0e0e2b12fc7522) - impl prometheus status endpoint *(commit by [@petscheit](https://github.com/petscheit))*
+- [`a1b4d1c`](https://github.com/t3rn/t3rn/commit/a1b4d1c1fc852da4c02c05ea13b63b36223b708c) - impl dynamic http selection for circuit & add final prometheus counter *(commit by [@petscheit](https://github.com/petscheit))*
+
+### :wrench: Chores
+- [`87d35f5`](https://github.com/t3rn/t3rn/commit/87d35f5ef4b5c5078eb61ce2ce44be6d922cd83e) - checkin package files *(commit by [@petscheit](https://github.com/petscheit))*
+- [`cbc7f72`](https://github.com/t3rn/t3rn/commit/cbc7f72c9f2e90e928e9dcba588e02dc40b10f98) - update lock *(commit by [@petscheit](https://github.com/petscheit))*
+- [`9dbfd20`](https://github.com/t3rn/t3rn/commit/9dbfd20b7e41488154c528df3b17a20ab8e268cb) - impl change requests *(commit by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.16.2-rc.0] - 2023-05-08
 ### :bug: Bug Fixes
 - [`77a811c`](https://github.com/t3rn/t3rn/commit/77a811c609f267728c84a15723861e735aa8a48e) - remove incompatible executor tests *(commit by [@petscheit](https://github.com/petscheit))*
@@ -1050,3 +1066,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.15.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.14.0-rc.0...v1.15.0-rc.0
 [v1.16.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.15.1-rc.0...v1.16.0-rc.0
 [v1.16.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.16.1-rc.0...v1.16.2-rc.0
+[v1.17.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.16.4-rc.0...v1.17.0-rc.0
