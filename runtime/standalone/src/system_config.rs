@@ -355,11 +355,9 @@ impl pallet_maintenance_mode::Config for Runtime {
 mod tests {
     use super::*;
     use codec::Compact;
-    use core::hash::Hash;
     use pallet_circuit::Outcome;
-    use pallet_grandpa_finality_verifier::bridges::header_chain::justification::GrandpaJustification;
     use sp_runtime::{AccountId32, MultiAddress};
-    use t3rn_primitives::{claimable::BenefitSource, GatewayVendor, TokenInfo};
+    use t3rn_primitives::claimable::BenefitSource;
 
     /// Test that the calls that are allowed in base mode can be called
     #[test]
@@ -455,6 +453,21 @@ mod tests {
         // Admin
         let call = pallet_sudo::Call::sudo {
             call: Box::new(frame_system::Call::remark { remark: vec![] }.into()),
+        }
+        .into();
+        assert!(BaseCallFilter::contains(&call));
+
+        let call = pallet_portal::Call::register_gateway {
+            gateway_id: Default::default(),
+            token_id: Default::default(),
+            verification_vendor: Default::default(),
+            execution_vendor: Default::default(),
+            codec: Default::default(),
+            registrant: Default::default(),
+            escrow_account: Default::default(),
+            allowed_side_effects: Default::default(),
+            token_props: Default::default(),
+            encoded_registration_data: Default::default(),
         }
         .into();
         assert!(BaseCallFilter::contains(&call));
