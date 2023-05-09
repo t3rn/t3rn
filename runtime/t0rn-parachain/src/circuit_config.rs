@@ -331,11 +331,13 @@ parameter_types! {
     pub const GenesisValidatorsRoot: [u8; 32] = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
     pub const SlotsPerEpoch: u32 = 32;
     pub const EpochsPerSyncCommitteeTerm: u32 = 256;
+    pub const HeadersToStoreEth: u32 = 50400 + 1; // 1 week + 1. We want a multiple of 32 + 1.
 }
 
 impl pallet_eth2_finality_verifier::Config for Runtime {
     type EpochsPerSyncCommitteeTerm = EpochsPerSyncCommitteeTerm;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEth;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();

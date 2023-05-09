@@ -105,7 +105,7 @@ pallet-portal                    = { path = "../../pallets/portal", default-feat
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "create-standalone-pallet", default-features = false }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
 pallet-asset-registry            = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 pallet-xbi-portal                = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 
