@@ -51,6 +51,7 @@ jobs:
       - run: cd .. && make all
       - run: yarn
       - run: yarn ci
+      - run: yarn fmt
       - run: |
           yarn lint > lint.out || true
 
