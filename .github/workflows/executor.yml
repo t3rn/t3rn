@@ -22,8 +22,11 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
+          # TODO: executor is dependent on types and SDK, so we need to check them as well
+          # TODOL can be removed when we have npm packages
           filters: |
             src:
+            - "client/packages/**/*.ts"
             - "client/packages/executor/**/*.ts"
             - "client/packages/executor/**/*.json"
             - ".github/workflows/executor.yml"
