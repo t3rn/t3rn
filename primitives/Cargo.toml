@@ -30,7 +30,7 @@ sp-version            = { git = "https://github.com/paritytech/substrate", branc
 
 #bridges
 finality-grandpa    = { version = "0.16", default-features = false }
-hash-db             = { version = "0.15.2", default-features = false }
+hash-db             = { version = "0.16.0", default-features = false }
 num-traits          = { version = "0.2", default-features = false }
 sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.27' }
