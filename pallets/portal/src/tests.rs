@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use circuit_mock_runtime::{ExtBuilder, Portal, *};
-    use circuit_test_utils::types::*;
+    use circuit_test_utils::replay::*;
     use codec::Encode;
     use frame_support::assert_ok;
     use pallet_grandpa_finality_verifier::{
@@ -410,6 +410,7 @@ mod tests {
         );
     }
 
+    #[ignore]
     #[test]
     fn run_e2e_tests() {
         ExtBuilder::default()

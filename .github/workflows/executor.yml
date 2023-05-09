@@ -2,18 +2,40 @@ name: Executor
 
 on:
   pull_request:
-    paths:
-      - "client/packages/executor/**/*.ts"
-      - "client/packages/executor/**/*.json"
-      - ".github/workflows/executor.yml"
   push:
     branches:
       - development
   merge_group:
 
 jobs:
+  # This job checks if files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+            - "client/packages/executor/**/*.ts"
+            - "client/packages/executor/**/*.json"
+            - ".github/workflows/executor.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
   test-executor:
     name: Test Executor
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
     defaults:
       run:
         working-directory: client/packages/executor

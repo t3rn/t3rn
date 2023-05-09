@@ -1,1 +1,4 @@
-pub mod types;
+pub mod replay;
+
+#[cfg(test)]
+mod tests;

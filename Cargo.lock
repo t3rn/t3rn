@@ -1170,6 +1170,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
+ "hex-literal 0.4.1",
  "parity-scale-codec",
  "serde",
  "serde_json",
@@ -12383,7 +12384,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.15.1-rc.0"
+version = "1.16.4-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12458,7 +12459,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.15.1-rc.0"
+version = "1.16.4-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
