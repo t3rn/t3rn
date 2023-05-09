@@ -47,7 +47,7 @@ t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 
 [dev-dependencies]
 assert_matches    = "1"
-env_logger        = "0.9"
+env_logger        = "0.10"
 glob              = "0.3"
 hex-literal       = "0.3"
 pretty_assertions = "1"
