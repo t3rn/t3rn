@@ -1125,6 +1125,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
+ "pallet-maintenance-mode",
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
@@ -6851,6 +6852,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-maintenance-mode"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/moonbeam-pallets?branch=polkadot-v0.9.27#031758abddf0073ce4249004e0a11e2af1034c88"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-membership"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27#5bfdbab8ba28523ef10e365627fed64ef2b77cbf"
@@ -12501,6 +12517,7 @@ dependencies = [
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
+ "pallet-maintenance-mode",
  "pallet-membership",
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",

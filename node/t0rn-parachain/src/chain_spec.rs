@@ -1,4 +1,6 @@
-use circuit_parachain_runtime::{AccountId, AuraId, EvmConfig, Signature, SudoConfig, XDNSConfig};
+use circuit_parachain_runtime::{
+    AccountId, AuraId, EvmConfig, MaintenanceModeConfig, Signature, SudoConfig, XDNSConfig,
+};
 use cumulus_primitives_core::ParaId;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -385,5 +387,29 @@ fn testnet_genesis(
                 })
                 .collect(),
         },
+        maintenance_mode: MaintenanceModeConfig {
+            start_in_maintenance_mode: false,
+        },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_start_in_maintenance_mode_is_false() {
+        let gen = testnet_genesis(
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            sp_runtime::AccountId32::new([0; 32]),
+            Default::default(),
+            Default::default(),
+        );
+        assert!(
+            !gen.maintenance_mode.start_in_maintenance_mode,
+            "start_in_maintenance_mode should be false"
+        );
     }
 }
