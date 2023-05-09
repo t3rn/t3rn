@@ -1,7 +1,7 @@
 all:
 	cd types; yarn; yarn link; yarn build;
 	cd sdk; yarn; yarn link; yarn build;
-	cd cli; pnpm add @t3rn/sdk; pnpm i;
+	cd cli; yarn add @t3rn/sdk; yarn;
 	cd executor; yarn link @t3rn/sdk; yarn link @t3rn/types; yarn upgrade @t3rn/sdk; yarn upgrade @t3rn/types; yarn;
 
 clean:

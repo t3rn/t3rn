@@ -4,22 +4,22 @@
   "description": "",
   "exports": "dist/cli.cjs",
   "type": "module",
-  "packageManager": "^pnpm@6.32.4",
   "engines": {
     "node": ">=14.16"
   },
   "scripts": {
-    "preinstall": "npx -y only-allow pnpm",
-    "cli": "pnpm build && node dist/cli.cjs",
+    "preinstall": "npx -y only-allow yarn",
+    "cli": "yarn build && node dist/cli.cjs",
     "build": "tsup src/cli.ts",
     "lint": "eslint --ext .ts src",
-    "ci": "rm -rf node_modules && rm pnpm-lock.yaml && pnpm install",
+    "ci": "rm -rf node_modules && rm yarn.lock && yarn",
     "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@polkadot/types": "^8.9.1",
     "@t3rn/sdk": "link:../sdk",
     "@t3rn/types": "../types",
     "chalk": "^4.1.2",
@@ -32,7 +32,6 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
-    "@polkadot/types": "^8.9.1",
     "@jest/globals": "^29.5.0",
     "@types/cli-progress": "^3.11.0",
     "@types/figlet": "^1.5.5",

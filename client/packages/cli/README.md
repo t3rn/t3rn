@@ -7,8 +7,8 @@ A CLI tool for interacting with the t3rn circuit.
 The CLI is yet to be published to NPM, so you must manually install the dependencies and build the CLI from the source. To do so, run the command below to install the CLI dependencies:
 
 ```
-npm i --global pnpm
-pnpm i
+npm i -g yarn
+yarn i
 ```
 
 ## Setup
@@ -16,7 +16,7 @@ pnpm i
 To start using the cli, you need to generate a `.t3rnrc.json` config file.
 
 ```
-pnpm cli init -c
+yarn cli init -c
 ```
 
 By using this command, you will create a configuration file that is already set up for you in your current working directory.
@@ -32,7 +32,7 @@ The `init` command is used to generate a config or transfer template.
 Usage:
 
 ```bash
-pnpm cli init [options]
+yarn cli init [options]
 ```
 
 Options:
@@ -47,7 +47,7 @@ The `register` command is used to register a gateway with the t3rn circuit.
 Usage:
 
 ```bash
-pnpm cli register [options]
+yarn cli register [options]
 ```
 
 Options:
@@ -61,7 +61,7 @@ The `submit` command is used to submit an extrinsic to the t3rn circuit.
 Usage:
 
 ```bash
-pnpm cli submit [options]
+yarn cli submit [options]
 ```
 
 Options:
@@ -76,7 +76,7 @@ The `set-operational` command is used to set a gateway as operational.
 Usage:
 
 ```bash
-pnpm cli set-operational [gateway_id] [operational]
+yarn cli set-operational [gateway_id] [operational]
 ```
 
 Arguments:
@@ -89,7 +89,7 @@ Arguments:
 The `bid` command is used to bid on an execution as an executor.
 
 ```bash
-pnpm cli [sfxId] [amount]
+yarn cli [sfxId] [amount]
 ```
 
 Arguments:
@@ -105,14 +105,14 @@ Use the following commands to submit a sample transfer:
 
 ```bash
 # Generate config file
-pnpm cli init -c
+yarn cli init -c
 
 # Generate a sample transfer file
-pnpm cli init -t
+yarn cli init -t
 
 # Register the roco gateway
-pnpm cli register -g roco
+yarn cli register -g roco
 
 # Submit a transfer
-pnpm cli submit -s transfer.json
+yarn cli submit -s transfer.json
 ```
