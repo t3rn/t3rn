@@ -1,0 +1,30 @@
+name: CLI
+
+on:
+  pull_request:
+    paths:
+      - "client/packages/cli/**/*.ts"
+      - "client/packages/cli/**/*.json"
+      - ".github/workflows/cli.yml"
+  merge_group:
+
+jobs:
+  test-cli:
+    name: Test CLI
+    defaults:
+      run:
+        working-directory: client/packages/cli
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NVMRC }}
+
+      - name: Read .nvmrc
+        run: echo NVMRC=`cat .nvmrc` >> $GITHUB_ENV
+
+      - run: cd .. && make all
+      - run: pnpm test
