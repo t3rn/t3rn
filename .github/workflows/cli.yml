@@ -2,15 +2,37 @@ name: CLI
 
 on:
   pull_request:
-    paths:
-      - "client/packages/cli/**/*.ts"
-      - "client/packages/cli/**/*.json"
-      - ".github/workflows/cli.yml"
   merge_group:
 
 jobs:
+  # This job checks if files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+            - "client/packages/cli/**/*.ts"
+            - "client/packages/cli/**/*.json"
+            - ".github/workflows/cli.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
   test-cli:
     name: Test CLI
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
     defaults:
       run:
         working-directory: client/packages/cli
@@ -19,12 +41,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Read .nvmrc
+        run: echo NVMRC=`cat .nvmrc` >> $GITHUB_ENV
+
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NVMRC }}
-
-      - name: Read .nvmrc
-        run: echo NVMRC=`cat .nvmrc` >> $GITHUB_ENV
 
       - run: cd .. && make all
       - run: pnpm test
