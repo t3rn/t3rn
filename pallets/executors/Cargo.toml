@@ -26,7 +26,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-std     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
 
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
-t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.5", default-features = false }
 t3rn-types          = { path = "../../types", default-features = false }
 t3rn-abi          = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 

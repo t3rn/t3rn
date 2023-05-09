@@ -12796,9 +12796,9 @@ dependencies = [
 
 [[package]]
 name = "t3rn-sdk-primitives"
-version = "0.1.1-rc.4"
+version = "0.1.1-rc.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7a7d125fd0360376e83222134e2dad6f3eed9d5f5b42c24923cf601bd42e7a3"
+checksum = "0933428fa80fc225cce5eed35be29f941fd47d815bc809b914ecf5168abf6a7e"
 dependencies = [
  "arrayvec 0.7.2",
  "cfg-if 1.0.0",
@@ -13334,7 +13334,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.6",
  "rand 0.8.5",
  "static_assertions",

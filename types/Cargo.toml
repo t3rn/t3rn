@@ -35,7 +35,7 @@ serde_json  = "1.0.41"
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-runtime  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-t3rn-sdk-primitives = { version = "=0.1.1-rc.4" }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.5" }
 circuit-runtime-types = { path = "../runtime/common-types" }
 
 [features]
