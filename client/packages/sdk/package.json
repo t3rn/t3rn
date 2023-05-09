@@ -17,7 +17,8 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "tsc -b --verbose",
+    "clean:build": "rm -rf ./dist",
+    "build": "yarn clean:build && tsc -b --verbose",
     "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk"
   },
   "keywords": [
