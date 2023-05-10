@@ -2,19 +2,8 @@
   "name": "@t3rn/sdk",
   "version": "0.1.5",
   "description": "t3rn's client side SDK",
-  "main": "./dist/src/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/src/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
-    }
-  },
   "files": [
-    "dist/**/*"
+    "dist"
   ],
   "repository": {
     "type": "git",
@@ -28,9 +17,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "ci": "rm -rf node_modules && rm yarn.lock && yarn",
-    "clean:build": "rm -rf ./dist",
-    "build": "yarn clean:build && tsup",
+    "build": "tsc -b --verbose",
     "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk"
   },
   "keywords": [
@@ -47,13 +34,12 @@
   },
   "homepage": "https://github.com/t3rn/t3rn",
   "dependencies": {
-    "@polkadot/api": "8.9.1",
-    "@polkadot/api-augment": "8.9.1",
-    "bn.js": "^5.2.1",
+    "@polkadot/api": "^8.9.1",
     "dotenv": "^16.0.3"
   },
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "devDependencies": {
-    "tsup": "^6.7.0",
     "typedoc": "^0.23.21",
     "typescript": "^4.9.4"
   }

@@ -19,7 +19,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@t3rn/sdk": "link:../sdk",
+    "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
     "chalk": "^4.1.2",
     "clean-stack": "^3.0.1",
