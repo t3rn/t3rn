@@ -1,11 +1,12 @@
 import ora from "ora"
+import fetch from "node-fetch"
 import { SingleBar, Presets } from "cli-progress"
+import { Encodings, ApiPromise, WsProvider } from "@t3rn/sdk"
 import { getConfig } from "@/utils/config.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { Gateway } from "@/schemas/setup.ts"
 import { Circuit } from "@/types.ts"
-import { Encodings, ApiPromise, WsProvider } from "@t3rn/sdk"
 
 export const spinner = ora()
 export const progressBar = new SingleBar({}, Presets.shades_classic)
@@ -52,7 +53,7 @@ export const handleSubmitHeadersCmd = async (gatewayId: string) => {
     process.exit(0)
   } catch (e) {
     spinner.fail(
-      colorLogMsg("ERROR", `Failed to submit headers for ${gateway}: ${e}`)
+      colorLogMsg("ERROR", `Failed to submit headers for ${gateway.name}: ${e}`)
     )
     process.exit(1)
   }
@@ -88,11 +89,11 @@ export const getBridge = (circuit: Circuit, gatewayId: string) => {
   const verificationVendor = gateway.registrationData.verificationVendor
   switch (verificationVendor) {
     case "Kusama":
-      return circuit.query.kusamaBridge
+      return circuit.tx.kusamaBridge
     case "Rococo":
-      return circuit.query.rococoBridge
+      return circuit.tx.rococoBridge
     case "Polkadot":
-      return circuit.query.polkadotBridge
+      return circuit.tx.polkadotBridge
   }
 }
 
@@ -101,7 +102,7 @@ const getRelayChainHeaders = async (
   target: ApiPromise,
   gatewayId: string
 ) => {
-  const from = (await getGatewayHeight(circuit, gatewayId)) + 1
+  const from = (await getGatewayHeight(gatewayId)) + 1
   const to = await getTargetCurrentHeight(target)
   const transactionArguments = await generateBatchProof(
     circuit,
@@ -116,17 +117,33 @@ const getRelayChainHeaders = async (
     : transactionArguments
 }
 
-const getGatewayHeight = async (circuit: Circuit, gatewayId: string) => {
-  const bridge = getBridge(circuit, gatewayId)
-  const hash = await bridge.bestFinalizedHash()
-  const height = await bridge.importedHeaders(hash.toJSON())
-
-  if (height.toJSON()) {
-    //@ts-ignore - TS doesn't know that height.toJSON() has a number property
-    return height.toJSON().number
+const getGatewayHeight = async (gatewayId: string) => {
+  const config = getConfig()
+  const body = {
+    jsonrpc: "2.0",
+    method: "portal_fetchHeadHeight",
+    params: [Array.from(new TextEncoder().encode(gatewayId))],
+    id: 1,
   }
 
-  throw new Error("Gateway not Registered!")
+  const response = await fetch(config.circuit.http, {
+    method: "post",
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
+  })
+  const responseData = (await response.json()) as {
+    jsonrpc: string
+    result: number
+    id: number
+  }
+
+  if (response.status !== 200) {
+    throw new Error(
+      "Oops! Get gateway height RPC response error, status: " + response.status
+    )
+  }
+
+  return responseData.result
 }
 
 const getTargetCurrentHeight = async (target: ApiPromise) => {
@@ -161,21 +178,15 @@ const generateBatchProof = async (
   progressBar.start(to - from, 0)
 
   while (from <= to) {
-    if (logMsg.batches.length > 0) {
-      const progress = logMsg.batches[logMsg.batches.length - 1]
-      const delta = progress.targetTo - progress.targetFrom
-      progressBar.increment(logMsg.batches.length === 1 ? delta * 2 : delta)
-    }
-
-    // Get finalityProof element of epoch that contains block #from
+    // get finalityProof element of epoch that contains block #from
     const finalityProof = await target.rpc.grandpa.proveFinality(from)
 
-    // Decode finality proof
+    // decode finality proof
     let { justification, headers } =
       Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
     const signed_header = headers.pop()
 
-    // Query from header again, as its not part of the proof then concat
+    // query from header again, as its not part of the proof then concat
     headers = [await getTargetHeader(target, from), ...headers]
 
     const range = circuit.createType("Vec<Header>", headers)
@@ -189,7 +200,6 @@ const generateBatchProof = async (
     justification =
       Encodings.Substrate.Decoders.justificationDecode(justification)
 
-    // Push to transaction queue
     transactionArguments.push({
       gatewayId: circuit.createType("ChainId", gatewayId),
       signed_header,
@@ -197,8 +207,15 @@ const generateBatchProof = async (
       justification,
     })
 
-    // Increment from
+    // increment from
     from = parseInt(signed_header.number.toJSON()) + 1
+
+    // update progress bar
+    if (logMsg.batches.length > 0) {
+      const progress = logMsg.batches[logMsg.batches.length - 1]
+      const delta = progress.targetTo - progress.targetFrom
+      progressBar.increment(logMsg.batches.length === 1 ? delta * 2 : delta)
+    }
   }
 
   progressBar.stop()
