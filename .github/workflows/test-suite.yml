@@ -1,0 +1,83 @@
+name: Test Suite
+
+on:
+  pull_request:
+  push:
+    branches:
+      - development
+  merge_group:
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
+
+env:
+  RUST_BACKTRACE: 1
+  RUSTC_WRAPPER: sccache
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  # This job checks if circuit files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without circuit changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    # We don't need to run this job on every push to development branch
+    if: ${{ !(contains(github.event.head_commit.message, 'build(release):')) }}
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+              - ".github/workflows/test-suite.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
+  build-test:
+    name: Generate Tests & Test
+    runs-on: [self-hosted, rust]
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: ⚙ Install rust toolchain defined in rust-toolchain.toml
+        run: rustup show
+
+      - name: 📑 Build CLI
+        run: |
+          # Build
+          cd client/packages
+          make all
+
+      - name: 📑 Run node standalone
+        run: |
+          # Run node standalone
+          cd node/standalone
+          make all&
+          echo "NODE_STANDALONE_PID=$!" >> $GITHUB_ENV
+
+      - name: 📑 Run ranger
+        run: |
+          # Run node standalone
+          cd client/packages/cli
+          ts-node index.ts register roco
+
+          ls -lah
+          
+          # Run ranger
+
+          # Run executor
