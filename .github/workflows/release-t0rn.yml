@@ -8,7 +8,7 @@ on:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "**/Cargo.lock"
-      - "**/release-t0rn.yml"
+      - "**/runtime-upgrade-t0rn.yml"
 
 env:
   PARACHAIN_NAME: t0rn
