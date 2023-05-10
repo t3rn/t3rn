@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.19.0-rc.0] - 2023-05-10
+### :bug: Bug Fixes
+- [`c287158`](https://github.com/t3rn/t3rn/commit/c28715874b7c73c32b8742061754a35a9423d4fb) - cli shoud not have set-operational [skip release] *(PR [#948](https://github.com/t3rn/t3rn/pull/948) by [@3h4x](https://github.com/3h4x))*
+
+### :recycle: Refactors
+- [`d79c770`](https://github.com/t3rn/t3rn/commit/d79c770cfae73e0f65bc64d3f38e9227c91f2ca8) - cli revamp *(PR [#881](https://github.com/t3rn/t3rn/pull/881) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.18.0-rc.0] - 2023-05-09
 ### :sparkles: New Features
 - [`6ade20c`](https://github.com/t3rn/t3rn/commit/6ade20cb4e85127683f3cfe19008756b358f9624) - add maintenance mode to runtime *(PR [#882](https://github.com/t3rn/t3rn/pull/882) by [@palozano](https://github.com/palozano))*
@@ -1073,3 +1081,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.16.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.16.1-rc.0...v1.16.2-rc.0
 [v1.17.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.16.4-rc.0...v1.17.0-rc.0
 [v1.18.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.17.1-rc.0...v1.18.0-rc.0
+[v1.19.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.18.2-rc.0...v1.19.0-rc.0
