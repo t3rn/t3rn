@@ -1,13 +1,12 @@
 import ora from "ora"
+import fetch from "node-fetch"
 import { SingleBar, Presets } from "cli-progress"
+import { Encodings, ApiPromise, WsProvider } from "@t3rn/sdk"
 import { getConfig } from "@/utils/config.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { Gateway } from "@/schemas/setup.ts"
-import { ApiPromise, WsProvider } from "@polkadot/api"
 import { Circuit } from "@/types.ts"
-import { Encodings } from "@t3rn/sdk"
-import fetch from "node-fetch"
 
 export const spinner = ora()
 export const progressBar = new SingleBar({}, Presets.shades_classic)
@@ -54,7 +53,7 @@ export const handleSubmitHeadersCmd = async (gatewayId: string) => {
     process.exit(0)
   } catch (e) {
     spinner.fail(
-      colorLogMsg("ERROR", `Failed to submit headers for ${gateway}: ${e}`)
+      colorLogMsg("ERROR", `Failed to submit headers for ${gateway.name}: ${e}`)
     )
     process.exit(1)
   }
@@ -103,7 +102,7 @@ const getRelayChainHeaders = async (
   target: ApiPromise,
   gatewayId: string
 ) => {
-  const from = (await getGatewayHeight(circuit, gatewayId)) + 1
+  const from = (await getGatewayHeight(gatewayId)) + 1
   const to = await getTargetCurrentHeight(target)
   const transactionArguments = await generateBatchProof(
     circuit,
@@ -118,28 +117,33 @@ const getRelayChainHeaders = async (
     : transactionArguments
 }
 
-const getGatewayHeight = async (circuit: Circuit, gatewayId: string) => {
+const getGatewayHeight = async (gatewayId: string) => {
   const config = getConfig()
-
   const body = {
-      jsonrpc: '2.0',
-      method: 'portal_fetchHeadHeight',
-      params: [Array.from(new TextEncoder().encode(gatewayId))],
-      id: 1
+    jsonrpc: "2.0",
+    method: "portal_fetchHeadHeight",
+    params: [Array.from(new TextEncoder().encode(gatewayId))],
+    id: 1,
   }
 
-  return fetch(config.circuit.http, {
-      method: 'post',
-      body: JSON.stringify(body),
-      headers: {'Content-Type': 'application/json'},
+  const response = await fetch(config.circuit.http, {
+    method: "post",
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
   })
-  .then(response => response.json())
-  .then(data => {
-    return data.result
-  })
-  .catch(error => {
-      throw new Error(`Gateway height couldn't be fetched! Err: ${error.toString()}`);
-  })
+  const responseData = (await response.json()) as {
+    jsonrpc: string
+    result: number
+    id: number
+  }
+
+  if (response.status !== 200) {
+    throw new Error(
+      "Oops! Get gateway height RPC response error, status: " + response.status
+    )
+  }
+
+  return responseData.result
 }
 
 const getTargetCurrentHeight = async (target: ApiPromise) => {
@@ -174,35 +178,28 @@ const generateBatchProof = async (
   progressBar.start(to - from, 0)
 
   while (from <= to) {
-    if (logMsg.batches.length > 0) {
-      const progress = logMsg.batches[logMsg.batches.length - 1]
-      const delta = progress.targetTo - progress.targetFrom
-      progressBar.increment(logMsg.batches.length === 1 ? delta * 2 : delta)
-    }
-
-    // Get finalityProof element of epoch that contains block #from
+    // get finalityProof element of epoch that contains block #from
     const finalityProof = await target.rpc.grandpa.proveFinality(from)
 
-    // Decode finality proof
+    // decode finality proof
     let { justification, headers } =
       Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
     const signed_header = headers.pop()
 
-    // Query from header again, as its not part of the proof then concat
+    // query from header again, as its not part of the proof then concat
     headers = [await getTargetHeader(target, from), ...headers]
 
     const range = circuit.createType("Vec<Header>", headers)
 
     logMsg.batches.push({
-      // @ts-expect-error - TS doesn't know that range is a Vec<Header>
+      // @ts-ignore - TS doesn't know that range is a Vec<Header>
       targetFrom: range[0].number.toNumber(),
-      // @ts-expect-error - TS doesn't know that range is a Vec<Header>
+      // @ts-ignore - TS doesn't know that range is a Vec<Header>
       targetTo: range[range.length - 1].number.toNumber(),
     })
     justification =
       Encodings.Substrate.Decoders.justificationDecode(justification)
 
-    // Push to transaction queue
     transactionArguments.push({
       gatewayId: circuit.createType("ChainId", gatewayId),
       signed_header,
@@ -210,8 +207,15 @@ const generateBatchProof = async (
       justification,
     })
 
-    // Increment from
+    // increment from
     from = parseInt(signed_header.number.toJSON()) + 1
+
+    // update progress bar
+    if (logMsg.batches.length > 0) {
+      const progress = logMsg.batches[logMsg.batches.length - 1]
+      const delta = progress.targetTo - progress.targetFrom
+      progressBar.increment(logMsg.batches.length === 1 ? delta * 2 : delta)
+    }
   }
 
   progressBar.stop()
