@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.18.0-rc.0] - 2023-05-09
+### :sparkles: New Features
+- [`6ade20c`](https://github.com/t3rn/t3rn/commit/6ade20cb4e85127683f3cfe19008756b358f9624) - add maintenance mode to runtime *(PR [#882](https://github.com/t3rn/t3rn/pull/882) by [@palozano](https://github.com/palozano))*
+
+
 ## [v1.17.0-rc.0] - 2023-05-09
 ### :sparkles: New Features
 - [`76ae0e5`](https://github.com/t3rn/t3rn/commit/76ae0e578eed48af8a10a1796b05fcf9dc19623b) - add fault tolerant ws connection handler *(commit by [@petscheit](https://github.com/petscheit))*
@@ -1067,3 +1072,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.16.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.15.1-rc.0...v1.16.0-rc.0
 [v1.16.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.16.1-rc.0...v1.16.2-rc.0
 [v1.17.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.16.4-rc.0...v1.17.0-rc.0
+[v1.18.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.17.1-rc.0...v1.18.0-rc.0
