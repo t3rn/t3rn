@@ -7,6 +7,7 @@ import { Gateway } from "@/schemas/setup.ts"
 import { ApiPromise, WsProvider } from "@polkadot/api"
 import { Circuit } from "@/types.ts"
 import { Encodings } from "@t3rn/sdk"
+const axios = require('axios').default;
 
 export const spinner = ora()
 export const progressBar = new SingleBar({}, Presets.shades_classic)
@@ -35,7 +36,8 @@ export const handleSubmitHeadersCmd = async (gatewayId: string) => {
 
     spinner.start(`Submitting headers for ${gatewayId}`)
 
-    const bridge = getBridge(circuit, gatewayId)
+    const bridge = getBridge(circuit, gatewayId, false)
+    console.log(bridge)
     const tx = sdk.circuit.tx.createBatch(
       transactionArguments.map((args) => {
         return bridge.submitHeaders(
@@ -118,16 +120,23 @@ const getRelayChainHeaders = async (
 }
 
 const getGatewayHeight = async (circuit: Circuit, gatewayId: string) => {
-  const bridge = getBridge(circuit, gatewayId)
-  const hash = await bridge.bestFinalizedHash()
-  const height = await bridge.importedHeaders(hash.toJSON())
-
-  if (height.toJSON()) {
-    //@ts-expect-error - TS doesn't know that height.toJSON() has a number property
-    return height.toJSON().number
-  }
-
-  throw new Error("Gateway not Registered!")
+  const config = getConfig()
+  return axios.post(config.circuit.http, {
+      jsonrpc: '2.0',
+      method: 'portal_fetchHeadHeight',
+      params: [Array.from(new TextEncoder().encode(gatewayId))],
+      id: 1
+	}, {
+      headers: {
+      'Content-Type': 'application/json'
+      }
+	})
+	.then(response => {
+      return response.data.result
+	})
+	.catch(error => {
+      throw new Error(`Gateway height couldnt be fetched! Err: ${error.toString()}`)
+	})
 }
 
 const getTargetCurrentHeight = async (target: ApiPromise) => {
