@@ -69,21 +69,6 @@ Options:
 - **-s, --sfx \<file-path\>**: Path to the sfx JSON file
 - **-h, --headers \<gateway_id\>**: Submit the latest headers of a gateway to portal. All available finalized headers will be added.
 
-### set-operational
-
-The `set-operational` command is used to set a gateway as operational.
-
-Usage:
-
-```bash
-yarn cli set-operational [gateway_id] [operational]
-```
-
-Arguments:
-
-- **gateway_id \<string\>**: The gateway ID
-- **operational \<bool\>**: The operational status
-
 ### bid
 
 The `bid` command is used to bid on an execution as an executor.
