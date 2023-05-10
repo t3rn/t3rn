@@ -71,6 +71,18 @@ jobs:
       - name: 🚀 t0rn Runtime Upgrade
         run: |
           ./scripts/upgrade-runtime-set-code.sh ${{ secrets.RUNTIME_UPGRADE_SEED }} ${{ env.PUSHED_TAG }} ${{ env.PARACHAIN_NAME }}
+          
+      - name: 📟 Send Telegram Message
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_T0RN_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🚀 t0rn Runtime Upgrade
+            
+            Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ env.PUSHED_TAG }}
+            Monitoring: https://monitoring.t3rn.io/d/HyX9GHGVz/chain-statistics?orgId=1&refresh=1m&var-parachain=${{ env.PARACHAIN_NAME }}&var-region=All
+            This github action run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
   ranger-deploy:
     runs-on: self-hosted

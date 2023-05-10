@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  push:
+
+env:
+  PARACHAIN_NAME: t0rn
+
+jobs:
+  runtime-upgrade:
+    runs-on: self-hosted
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: Set variables 
+        run: |
+          echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+          # PUSHED_TAG is not available yet in the env, so we need to use GITHUB_REF
+          echo "WASM_RELEASE_ASSET=${{ env.PARACHAIN_NAME }}-parachain-runtime-${GITHUB_REF/refs\/tags\//}.compact.compressed.wasm" >> $GITHUB_ENV
+
+      - name: 📟 Send Telegram Message
+        uses: appleboy/telegram-action@v0.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_T0RN_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🚀 t0rn Runtime Upgrade
+            
+            Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ env.PUSHED_TAG }}
+            Monitoring: https://monitoring.t3rn.io/d/HyX9GHGVz/chain-statistics?orgId=1&refresh=1m&var-parachain=${{ env.PARACHAIN_NAME }}&var-region=All
+            This github action run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
