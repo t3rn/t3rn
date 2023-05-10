@@ -1,17 +1,53 @@
 {
-  "name": "cli",
+  "name": "@t3rn/cli",
   "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
+  "description": "",
+  "exports": "dist/cli.cjs",
+  "type": "module",
+  "engines": {
+    "node": ">=14.16"
+  },
+  "scripts": {
+    "preinstall": "npx -y only-allow yarn",
+    "cli": "yarn build && node dist/cli.cjs",
+    "build": "tsup src/cli.ts",
+    "lint": "eslint --ext .ts src",
+    "ci": "rm -rf node_modules && rm yarn.lock && yarn",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "@polkadot/api": "^8.9.1",
-    "@polkadot/keyring": "^10.0.1",
     "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
-    "axios": "^0.27.2",
-    "bn.js": "^5.2.1",
-    "commander": "^9.4.0",
-    "pino": "^8.10.0",
-    "pino-pretty": "^9.2.0"
+    "chalk": "^4.1.2",
+    "clean-stack": "^3.0.1",
+    "cli-progress": "^3.12.0",
+    "commander": "^10.0.0",
+    "figlet": "^1.6.0",
+    "node-fetch": "^2.6.9",
+    "ora": "^5.4.1",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.5.0",
+    "@types/cli-progress": "^3.11.0",
+    "@types/figlet": "^1.5.5",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.11",
+    "@types/node-fetch": "^2.6.3",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "@typescript-eslint/parser": "^5.58.0",
+    "eslint": "^8.38.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "jest": "^29.5.0",
+    "jest-mock": "^29.5.0",
+    "prettier": "^2.8.7",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
+    "tsup": "^6.7.0",
+    "typescript": "5.0.4"
   }
 }

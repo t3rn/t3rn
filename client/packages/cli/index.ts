@@ -1,7 +1,6 @@
 import config from "./config/setup"
 import { ApiPromise, Keyring } from'@polkadot/api';
 import { register } from "./commands/register/register";
-import { setOperational } from "./commands/operational";
 import {onExtrinsicTrigger} from "./commands/onExtrinsicTrigger";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";

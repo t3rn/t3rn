@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
-    "ci": "npx ci",
+    "ci": "rm -rf node_modules && rm yarn.lock && yarn",
     "dev": "LOG_LEVEL=debug ts-node src/index.ts | npx pino-pretty -c -S",
     "export": "LOG_LEVEL=debug yarn start >> logger.log",
     "fmt": "npx prettier --no-semi --tab-width 4 --print-width 140 --write config/*.ts src/*.ts src/**/*.ts src/**/**/*.ts",
