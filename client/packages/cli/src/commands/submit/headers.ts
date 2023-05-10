@@ -4,8 +4,10 @@ import { getConfig } from "@/utils/config.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { Gateway } from "@/schemas/setup.ts"
+import { ApiPromise, WsProvider } from "@polkadot/api"
 import { Circuit } from "@/types.ts"
-import { Encodings, ApiPromise, WsProvider } from "@t3rn/sdk"
+import { Encodings } from "@t3rn/sdk"
+import fetch from "node-fetch"
 
 export const spinner = ora()
 export const progressBar = new SingleBar({}, Presets.shades_classic)
@@ -88,11 +90,11 @@ export const getBridge = (circuit: Circuit, gatewayId: string) => {
   const verificationVendor = gateway.registrationData.verificationVendor
   switch (verificationVendor) {
     case "Kusama":
-      return circuit.query.kusamaBridge
+      return circuit.tx.kusamaBridge
     case "Rococo":
-      return circuit.query.rococoBridge
+      return circuit.tx.rococoBridge
     case "Polkadot":
-      return circuit.query.polkadotBridge
+      return circuit.tx.polkadotBridge
   }
 }
 
@@ -117,16 +119,27 @@ const getRelayChainHeaders = async (
 }
 
 const getGatewayHeight = async (circuit: Circuit, gatewayId: string) => {
-  const bridge = getBridge(circuit, gatewayId)
-  const hash = await bridge.bestFinalizedHash()
-  const height = await bridge.importedHeaders(hash.toJSON())
+  const config = getConfig()
 
-  if (height.toJSON()) {
-    //@ts-ignore - TS doesn't know that height.toJSON() has a number property
-    return height.toJSON().number
+  const body = {
+      jsonrpc: '2.0',
+      method: 'portal_fetchHeadHeight',
+      params: [Array.from(new TextEncoder().encode(gatewayId))],
+      id: 1
   }
 
-  throw new Error("Gateway not Registered!")
+  return fetch(config.circuit.http, {
+      method: 'post',
+      body: JSON.stringify(body),
+      headers: {'Content-Type': 'application/json'},
+  })
+  .then(response => response.json())
+  .then(data => {
+    return data.result
+  })
+  .catch(error => {
+      throw new Error(`Gateway height couldn't be fetched! Err: ${error.toString()}`);
+  })
 }
 
 const getTargetCurrentHeight = async (target: ApiPromise) => {
@@ -181,9 +194,9 @@ const generateBatchProof = async (
     const range = circuit.createType("Vec<Header>", headers)
 
     logMsg.batches.push({
-      // @ts-ignore - TS doesn't know that range is a Vec<Header>
+      // @ts-expect-error - TS doesn't know that range is a Vec<Header>
       targetFrom: range[0].number.toNumber(),
-      // @ts-ignore - TS doesn't know that range is a Vec<Header>
+      // @ts-expect-error - TS doesn't know that range is a Vec<Header>
       targetTo: range[range.length - 1].number.toNumber(),
     })
     justification =
