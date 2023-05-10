@@ -19,7 +19,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@polkadot/types": "^8.9.1",
     "@t3rn/sdk": "link:../sdk",
     "@t3rn/types": "../types",
     "chalk": "^4.1.2",

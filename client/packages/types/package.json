@@ -23,6 +23,7 @@
     "prepublishOnly": "yarn clean && yarn build",
     "prepack": "yarn clean && yarn build",
     "compile": "yarn compile:code && yarn compile:typings",
+    "ci": "rm -rf node_modules && rm yarn.lock && yarn",
     "compile:code": "tsup",
     "compile:typings": "tsc ",
     "clean": "git clean -xdf -e node_modules",
@@ -36,9 +37,6 @@
     "generate:all": "yarn generate:interfaces && yarn generate:meta"
   },
   "dependencies": {
-    "@polkadot/api": "^8.9.1",
-    "@polkadot/keyring": "^9.5.1",
-    "@polkadot/types": "^8.9.1",
     "@types/lodash": "^4.14.157",
     "lodash": "^4.17.15",
     "moment": "^2.24.0"
