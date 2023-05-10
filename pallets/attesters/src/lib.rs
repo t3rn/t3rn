@@ -34,6 +34,31 @@ pub mod pallet {
         SR25519_ATTESTER_KEY_TYPE_ID,
     };
 
+    pub type Signature65b = [u8; 65];
+    pub type PublicKeyEcdsa33b = [u8; 33];
+    pub const COMMITTEE_SIZE: usize = 32;
+
+    pub type CommitteeTransition = [u32; COMMITTEE_SIZE];
+    pub type AttestersAdded = Vec<([u8; 33], u32)>;
+    pub type BatchConfirmedSfxId = Vec<H256>;
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
+    pub enum BatchStatus {
+        Pending,
+        ReadyForSubmission,
+        Committed,
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub struct BatchMessage<BlockNumber> {
+        batch_sfx: Option<BatchConfirmedSfxId>,
+        next_committee: Option<CommitteeTransition>,
+        new_attesters: Option<AttestersAdded>, // 33b ecdsa public key, index of attester
+        signatures: Vec<Signature65b>,
+        status: BatchStatus,
+        created: BlockNumber,
+    }
+
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub enum AttestationFor {
         SFX,
@@ -52,13 +77,6 @@ pub mod pallet {
         LateOrNoSubmissionAtBlocks(Vec<BlockNumber>),
         // Permanent slash
         Permanent,
-    }
-
-    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
-    pub enum BatchStatus {
-        Pending,
-        ReadyForSubmission,
-        Committed,
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -99,23 +117,38 @@ pub mod pallet {
             }
         }
 
-        fn hash_attestation_subjects_with_keccak(&mut self) -> [u8; 32] {
-            let messages = self
-                .attestations
-                .iter()
-                .map(|a| &a.subject_id_32b.0)
-                .collect::<Vec<&[u8; 32]>>();
-
-            let mut keccak = Keccak::v256();
-            let mut output = [0u8; 32];
-
-            for message in messages.as_slice() {
-                keccak.update(&message[..]); // Convert the reference to an array to a slice
-            }
-            keccak.finalize(&mut output);
-
-            self.hash = H256::from(output);
-            output
+        /// The hash of the batch is the hash of the subjects of the attestations
+        /// The contract will use this hash to check if the batch has been submitted:
+        /// pragma solidity ^0.8.0;
+        ///
+        /// contract BatchVerifier {
+        ///     function verifyBatchHash(bytes[] memory signatures, bytes32 expectedHash) public pure returns (bool) {
+        ///         bytes memory concatenatedSignatures;
+        ///         for (uint256 i = 0; i < signatures.length; i++) {
+        ///             concatenatedSignatures = abi.encodePacked(concatenatedSignatures, signatures[i]);
+        ///         }
+        ///         bytes32 computedHash = keccak256(concatenatedSignatures);
+        ///         return computedHash == expectedHash;
+        ///     }
+        /// }
+        fn hash_signatures_with_keccak(&mut self) -> [u8; 32] {
+            [0u8; 32]
+            // let messages: Vec<Vec<u8>> = self
+            //     .attestations
+            //     .iter()
+            //     .map(|a| a.signature.2)
+            //     .collect::<Vec<Vec<u8>>>();
+            //
+            // let mut keccak = Keccak::v256();
+            // let mut output = [0u8; 32];
+            //
+            // for message in messages.as_slice() {
+            //     keccak.update(&message[..]); // Convert the reference to an array to a slice
+            // }
+            // keccak.finalize(&mut output);
+            //
+            // self.hash = H256::from(output);
+            // output
         }
     }
 
@@ -124,7 +157,7 @@ pub mod pallet {
         pub for_: AttestationFor,
         pub status: AttestationStatus,
         pub signature: Vec<(Attester, u32, Signature)>,
-        pub subject_id_32b: H256,
+        pub signatures_hash: H256,
     }
 
     impl<Attester, Signature> Default for Attestation<Attester, Signature> {
@@ -133,7 +166,7 @@ pub mod pallet {
                 for_: AttestationFor::SFX,
                 status: AttestationStatus::Pending,
                 signature: Vec::new(),
-                subject_id_32b: H256::zero(),
+                signatures_hash: H256::zero(),
             }
         }
     }
@@ -186,6 +219,35 @@ pub mod pallet {
         StorageMap<_, Identity, T::AccountId, Vec<Slash<T::BlockNumber>>>;
 
     #[pallet::storage]
+    #[pallet::getter(fn attestation_targets)]
+    pub type AttestationTargets<T: Config> = StorageValue<_, Vec<[u8; 4]>, ValueQuery>;
+
+    // #[pallet::storage]
+    // #[pallet::getter(fn next_batches)]
+    // pub type NextBatches<T: Config> =
+    //     StorageMap<_, Identity, [u8; 4], BatchMessage<T::BlockNumber>>;
+    //
+    // #[pallet::storage]
+    // #[pallet::getter(fn batches_to_sign)]
+    // pub type BatchesToSign<T: Config> =
+    //     StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
+    //
+    // #[pallet::storage]
+    // #[pallet::getter(fn batches_to_confirm)]
+    // pub type BatchesToConfirm<T: Config> =
+    //     StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
+    //
+    // #[pallet::storage]
+    // #[pallet::getter(fn batches)]
+    // pub type Batches<T: Config> =
+    //     StorageMap<_, Identity, [u8; 4], Vec<Batch<T::AccountId, Vec<u8>, T::BlockNumber>>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn batches)]
+    pub type Batches<T: Config> =
+        StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
+
+    #[pallet::storage]
     #[pallet::getter(fn pending_unnominations)]
     pub type PendingUnnominations<T: Config> = StorageMap<
         _,
@@ -198,11 +260,6 @@ pub mod pallet {
     #[pallet::getter(fn attestations)]
     pub type Attestations<T: Config> =
         StorageMap<_, Identity, T::Hash, Attestation<T::AccountId, Vec<u8>>>;
-
-    #[pallet::storage]
-    #[pallet::getter(fn batches)]
-    pub type Batches<T: Config> =
-        StorageMap<_, Identity, [u8; 4], Vec<Batch<T::AccountId, Vec<u8>, T::BlockNumber>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn nominations)]
@@ -391,44 +448,16 @@ pub mod pallet {
 
             attestation.for_ = attestation_for;
             attestation.status = status.clone();
-            attestation.subject_id_32b = attestation_key_32b;
+            attestation.signatures_hash = attestation_key_32b;
 
             Attestations::<T>::insert(attestation_key, attestation.clone());
 
             // Add attestation to the batch
-            let mut target_batches = Batches::<T>::get(target).unwrap_or_default();
-            let current_block = frame_system::Pallet::<T>::block_number();
-
-            if target_batches.is_empty() {
-                // Create a new batch if there are no batches yet
-                let new_batch = Batch::new(target, frame_system::Pallet::<T>::block_number());
-                target_batches.push(new_batch);
-            } else {
-                let is_full = target_batches.last().map_or(false, |b| {
-                    b.attestations.len() >= T::MaxBatchSize::get() as usize
-                });
-                let interval_passed = target_batches.last().map_or(false, |b| {
-                    current_block - b.created >= T::BatchingWindow::get()
-                });
-
-                if is_full || interval_passed {
-                    // Create a new batch
-                    let new_batch = Batch::new(target, frame_system::Pallet::<T>::block_number());
-                    target_batches.push(new_batch);
-                }
-            }
-
-            // Add the attestation to the last batch
-            if let Some(last_batch) = target_batches.last_mut() {
-                last_batch.attestations.push(attestation.clone());
-
-                // Update the Ethereum hash of the batch
-                last_batch.hash_attestation_subjects_with_keccak();
-
-                if last_batch.attestations.len() >= T::MaxBatchSize::get() as usize {
-                    last_batch.status = BatchStatus::ReadyForSubmission;
-                }
-            }
+            let target_batches = Self::add_attestation_to_batch(
+                target,
+                attestation.clone(),
+                <frame_system::Pallet<T>>::block_number(),
+            )?;
 
             // Save the updated batches
             Batches::<T>::insert(target, target_batches);
@@ -664,6 +693,47 @@ pub mod pallet {
             Ok(())
         }
 
+        fn add_attestation_to_batch(
+            target: [u8; 4],
+            attestation: Attestation<T::AccountId, Vec<u8>>,
+            current_block: T::BlockNumber,
+        ) -> Result<Vec<Batch<T::AccountId, Vec<u8>, T::BlockNumber>>, DispatchError> {
+            let mut target_batches = Batches::<T>::get(target).unwrap_or_default();
+
+            match target_batches.last_mut() {
+                Some(last_batch) => {
+                    // Check if a new batch needs to be created
+                    let is_full = last_batch.attestations.len() >= T::MaxBatchSize::get() as usize;
+                    let interval_passed =
+                        current_block - last_batch.created >= T::BatchingWindow::get();
+
+                    if is_full || interval_passed {
+                        let new_batch =
+                            Batch::new(target, frame_system::Pallet::<T>::block_number());
+                        target_batches.push(new_batch);
+                    }
+
+                    if let Some(last_batch) = target_batches.last_mut() {
+                        last_batch.attestations.push(attestation.clone());
+
+                        // Update the Ethereum hash of the batch
+                        last_batch.hash_signatures_with_keccak();
+
+                        if last_batch.attestations.len() >= T::MaxBatchSize::get() as usize {
+                            last_batch.status = BatchStatus::ReadyForSubmission;
+                        }
+                    }
+                },
+                None => {
+                    // Create a new batch if there are no batches yet
+                    let new_batch = Batch::new(target, frame_system::Pallet::<T>::block_number());
+                    target_batches.push(new_batch);
+                },
+            }
+
+            Ok(target_batches)
+        }
+
         fn shuffle_committee() -> bool {
             let active_set = ActiveSet::<T>::get();
             let active_set_size = active_set.len();
@@ -779,6 +849,83 @@ pub mod pallet {
 
                 return aggregated_weight
             }
+
+            if n % T::BatchingWindow::get() == T::BlockNumber::zero() {
+                // Check if there any pending attestations to submit with the current batch
+                for target in AttestationTargets::<T>::get() {
+                    // If a batch exists, update its status and move it to BatchesToSign
+                    if let Some(mut batch) = Batches::<T>::get(target).last_mut() {
+                        if batch.status == BatchStatus::Pending {
+                            batch.status = BatchStatus::ReadyForSubmission;
+                        }
+                    }
+
+                    // Create new batch for next window
+                    Batches::<T>::mutate(target, |batches| {
+                        batches.push(BatchMessage {
+                            batch_sfx: None,
+                            next_committee: None,
+                            new_attesters: None,
+                            signatures: Vec::new(),
+                            status: BatchStatus::Pending,
+                            created: n,
+                        })
+                    });
+                }
+            }
+
+            // if n % T::BatchingWindow::get() == T::BlockNumber::zero() {
+            //     // Check if there any pending attestations to submit with the current batch
+            //     for target in AttestationTargets::<T>::get() {
+            //         match NextBatches::<T>::get(target) {
+            //             Some(mut batch) => {
+            //                 batch.status = BatchStatus::Pending;
+            //                 BatchesToSign::<T>::mutate(target, |batches| match batches {
+            //                     Some(batches) => batches.push(batch),
+            //                     None => *batches = Some(vec![batch]),
+            //                 });
+            //                 NextBatches::<T>::insert(
+            //                     target,
+            //                     BatchMessage {
+            //                         batch_sfx: None,
+            //                         next_committee: None,
+            //                         new_attesters: None,
+            //                         signatures: Vec::new(),
+            //                         status: BatchStatus::Pending,
+            //                         created: n,
+            //                     },
+            //                 );
+            //             },
+            //             None => {
+            //                 log::debug!("No batch to submit for target {:?}", target);
+            //             },
+            //         }
+            //         match BatchesToSign::<T>::get(target) {
+            //             Some(batches) =>
+            //                 for batch in batches.iter() {
+            //                     // Check if the batch is ready to be confirmed
+            //                     if batch.status > BatchStatus::Pending {
+            //                         BatchesToSign::<T>::mutate(target, |batches| match batches {
+            //                             Some(batches) =>
+            //                                 batches.retain(|b| b.batch_sfx != batch.batch_sfx),
+            //                             None => (),
+            //                         });
+            //                         BatchesToConfirm::<T>::mutate(
+            //                             target,
+            //                             |batches| match batches {
+            //                                 Some(batches) => batches.push(batch.clone()),
+            //                                 None => *batches = Some(vec![batch.clone()]),
+            //                             },
+            //                         );
+            //                     }
+            //                     log::debug!("Batch to sign: {:?}", batch);
+            //                 },
+            //             None => {
+            //                 log::debug!("No batch to submit for target {:?}", target);
+            //             },
+            //         }
+            //     }
+            // }
             0
         }
     }
