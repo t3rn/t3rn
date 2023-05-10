@@ -736,18 +736,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
         None
     }
-
-    pub fn get_latest_finalized_height() -> Option<Vec<u8>> {
-        if let Some(header_hash) = <BestFinalizedHash<T, I>>::get() {
-            if let Some(header) = <ImportedHeaders<T, I>>::get(header_hash) {
-                return Some(header.number().encode())
-            } else {
-                None
-            }
-        } else {
-            Some(vec![0]) // ToDo this is here more for testing.
-        }
-    }
 }
 
 /// Verifies a given storage proof. Returns the encoded entry that is proven

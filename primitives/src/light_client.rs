@@ -35,21 +35,10 @@ pub struct LightClientHeartbeat<T: frame_system::Config> {
 pub trait LightClient<T: frame_system::Config> {
     fn get_latest_finalized_header(&self) -> HeaderResult;
 
-    fn get_latest_finalized_height(&self) -> HeightResult<T::BlockNumber>;
-
-    fn get_latest_updated_height(&self) -> HeightResult<T::BlockNumber>;
-
+    fn get_fast_height(&self) -> HeightResult<T::BlockNumber>;
+    fn get_rational_height(&self) -> HeightResult<T::BlockNumber>;
+    fn get_finalized_height(&self) -> HeightResult<T::BlockNumber>;
     fn get_latest_heartbeat(&self) -> Result<LightClientHeartbeat<T>, DispatchError>;
-
-    fn read_fast_confirmation_offset(&self) -> T::BlockNumber;
-
-    fn read_rational_confirmation_offset(&self) -> T::BlockNumber;
-
-    fn read_finalized_confirmation_offset(&self) -> T::BlockNumber;
-
-    fn get_current_epoch(&self) -> HeightResult<T::BlockNumber>;
-
-    fn read_epoch_offset(&self) -> T::BlockNumber;
 
     fn initialize(
         &self,

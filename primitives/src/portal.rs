@@ -30,29 +30,31 @@ pub struct RegistrationData {
 pub trait Portal<T: frame_system::Config> {
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError>;
 
-    fn get_latest_finalized_height(
+    fn get_finalized_height(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
 
-    fn get_latest_updated_height(
+    fn get_rational_height(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
 
-    fn get_current_epoch(
-        gateway_id: ChainId,
-    ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
+    fn get_fast_height(gateway_id: ChainId) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
 
-    fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError>;
-
-    fn read_rational_confirmation_offset(
-        gateway_id: ChainId,
-    ) -> Result<T::BlockNumber, DispatchError>;
-
-    fn read_finalized_confirmation_offset(
-        gateway_id: ChainId,
-    ) -> Result<T::BlockNumber, DispatchError>;
-
-    fn read_epoch_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError>;
+    // fn get_current_epoch(
+    //     gateway_id: ChainId,
+    // ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
+    //
+    // fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError>;
+    //
+    // fn read_rational_confirmation_offset(
+    //     gateway_id: ChainId,
+    // ) -> Result<T::BlockNumber, DispatchError>;
+    //
+    // fn read_finalized_confirmation_offset(
+    //     gateway_id: ChainId,
+    // ) -> Result<T::BlockNumber, DispatchError>;
+    //
+    // fn read_epoch_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError>;
 
     fn header_speed_mode_satisfied(
         gateway_id: [u8; 4],
@@ -179,12 +181,9 @@ impl<T: frame_system::Config> Into<Bytes> for PortalExecution<T> {
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub enum PrecompileArgs {
     GetLatestFinalizedHeader(ChainId),
-    GetLatestFinalizedHeight(ChainId),
-    GetLatestUpdatedHeight(ChainId),
-    GetCurrentEpoch(ChainId),
-    ReadFastConfirmationOffset(ChainId),
-    ReadRationalConfirmationOffset(ChainId),
-    ReadEpochOffset(ChainId),
+    GetFinalizedHeight(ChainId),
+    GetRationalHeight(ChainId),
+    GetFastHeight(ChainId),
     VerifyEventInclusion([u8; 4], Bytes),
     VerifyStateInclusion([u8; 4], Bytes),
     VerifyTxInclusion([u8; 4], Bytes),
@@ -194,12 +193,9 @@ impl PrecompileArgs {
     pub fn descriptor() -> Vec<u8> {
         b"PrecompileArgs:Enum(\
                 GetLatestFinalizedHeader:Bytes4,\
-                GetLatestFinalizedHeight:Bytes4,\
-                GetLatestUpdatedHeight:Bytes4,\
-                GetCurrentEpoch:Bytes4,\
-                ReadFastConfirmationOffset:Bytes4,\
-                ReadRationalConfirmationOffset:Bytes4,\
-                ReadEpochOffset:Bytes4,\
+                GetFinalizedHeight:Bytes4,\
+                GetRationalHeight:Bytes4,\
+                GetFastHeight:Bytes4,\
                 VerifyEventInclusion:Tuple(Bytes4,Bytes),\
                 VerifyStateInclusion:Tuple(Bytes4,Bytes),\
                 VerifyTxInclusion:Tuple(Bytes4,Bytes),\
@@ -271,14 +267,9 @@ pub mod tests {
                 Some(b"PrecompileArgs".to_vec()),
                 vec![
                     Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeader".to_vec()))),
-                    Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeight".to_vec()))),
-                    Box::new(Abi::Bytes4(Some(b"GetLatestUpdatedHeight".to_vec()))),
-                    Box::new(Abi::Bytes4(Some(b"GetCurrentEpoch".to_vec()))),
-                    Box::new(Abi::Bytes4(Some(b"ReadFastConfirmationOffset".to_vec()))),
-                    Box::new(Abi::Bytes4(Some(
-                        b"ReadRationalConfirmationOffset".to_vec()
-                    ))),
-                    Box::new(Abi::Bytes4(Some(b"ReadEpochOffset".to_vec()))),
+                    Box::new(Abi::Bytes4(Some(b"GetFinalizedHeight".to_vec()))),
+                    Box::new(Abi::Bytes4(Some(b"GetRationalHeight".to_vec()))),
+                    Box::new(Abi::Bytes4(Some(b"GetFastHeight".to_vec()))),
                     Box::new(Abi::Tuple(
                         Some(b"VerifyEventInclusion".to_vec()),
                         (Box::new(Abi::Bytes4(None)), Box::new(Abi::Bytes(None))),
@@ -314,107 +305,53 @@ pub mod tests {
     }
 
     #[test]
-    fn portal_precompile_selects_enum_for_get_latest_finalized_height() {
+    fn portal_precompile_selects_enum_for_get_finalized_height() {
         let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PrecompileArgs::GetLatestFinalizedHeight([1u8; 4]).encode(),
+            PrecompileArgs::GetFinalizedHeight([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
 
         assert_eq!(
             filled_abi,
-            FilledAbi::Bytes4(Some(b"GetLatestFinalizedHeight".to_vec()), vec![1u8; 4])
+            FilledAbi::Bytes4(Some(b"GetFinalizedHeight".to_vec()), vec![1u8; 4])
         )
     }
 
     #[test]
-    fn portal_precompile_selects_enum_for_get_latest_updated_height() {
+    fn portal_precompile_selects_enum_for_get_rational_height() {
         let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PrecompileArgs::GetLatestUpdatedHeight([1u8; 4]).encode(),
+            PrecompileArgs::GetRationalHeight([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
 
         assert_eq!(
             filled_abi,
-            FilledAbi::Bytes4(Some(b"GetLatestUpdatedHeight".to_vec()), vec![1u8; 4])
+            FilledAbi::Bytes4(Some(b"GetRationalHeight".to_vec()), vec![1u8; 4])
         )
     }
 
     #[test]
-    fn portal_precompile_selects_enum_for_get_current_epoch() {
+    fn portal_precompile_selects_enum_for_get_fast_height() {
         let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PrecompileArgs::GetCurrentEpoch([1u8; 4]).encode(),
+            PrecompileArgs::GetFastHeight([1u8; 4]).encode(),
             Codec::Scale,
         )
         .unwrap();
 
         assert_eq!(
             filled_abi,
-            FilledAbi::Bytes4(Some(b"GetCurrentEpoch".to_vec()), vec![1u8; 4])
-        )
-    }
-
-    #[test]
-    fn portal_precompile_selects_enum_for_read_fast_confirmation_offset() {
-        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
-
-        let filled_abi = FilledAbi::try_fill_abi(
-            portal_precompile_interface,
-            PrecompileArgs::ReadFastConfirmationOffset([1u8; 4]).encode(),
-            Codec::Scale,
-        )
-        .unwrap();
-
-        assert_eq!(
-            filled_abi,
-            FilledAbi::Bytes4(Some(b"ReadFastConfirmationOffset".to_vec()), vec![1u8; 4])
-        )
-    }
-
-    #[test]
-    fn portal_precompile_selects_enum_for_read_rational_confirmation_offset() {
-        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
-
-        let filled_abi = FilledAbi::try_fill_abi(
-            portal_precompile_interface,
-            PrecompileArgs::ReadRationalConfirmationOffset([1u8; 4]).encode(),
-            Codec::Scale,
-        )
-        .unwrap();
-
-        assert_eq!(
-            filled_abi,
-            FilledAbi::Bytes4(
-                Some(b"ReadRationalConfirmationOffset".to_vec()),
-                vec![1u8; 4]
-            )
-        )
-    }
-
-    #[test]
-    fn portal_precompile_selects_enum_for_read_epoch_offset() {
-        let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
-
-        let filled_abi = FilledAbi::try_fill_abi(
-            portal_precompile_interface,
-            PrecompileArgs::ReadEpochOffset([1u8; 4]).encode(),
-            Codec::Scale,
-        )
-        .unwrap();
-
-        assert_eq!(
-            filled_abi,
-            FilledAbi::Bytes4(Some(b"ReadEpochOffset".to_vec()), vec![1u8; 4])
+            FilledAbi::Bytes4(Some(b"GetFastHeight".to_vec()), vec![1u8; 4])
         )
     }
 
@@ -458,9 +395,9 @@ pub mod tests {
     }
 
     #[test]
-    fn test_get_latest_finalized_height_recodes_correctly_to_scale() {
+    fn test_get_finalized_height_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = PrecompileArgs::GetLatestFinalizedHeight(chain_id);
+        let portal_call = PrecompileArgs::GetFinalizedHeight(chain_id);
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -468,14 +405,14 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::GetLatestFinalizedHeight(chain_id)
+            PrecompileArgs::GetFinalizedHeight(chain_id)
         );
     }
 
     #[test]
-    fn test_get_latest_updated_height_recodes_correctly_to_scale() {
+    fn test_get_rational_height_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = PrecompileArgs::GetLatestUpdatedHeight(chain_id);
+        let portal_call = PrecompileArgs::GetRationalHeight(chain_id);
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -483,68 +420,20 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::GetLatestUpdatedHeight(chain_id)
+            PrecompileArgs::GetRationalHeight(chain_id)
         );
     }
 
     #[test]
-    fn test_get_current_epoch_recodes_correctly_to_scale() {
+    fn test_get_fast_height_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = PrecompileArgs::GetCurrentEpoch(chain_id);
+        let portal_call = PrecompileArgs::GetFastHeight(chain_id);
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
                 .unwrap();
 
-        assert_eq!(
-            recoded_portal_call,
-            PrecompileArgs::GetCurrentEpoch(chain_id)
-        );
-    }
-
-    #[test]
-    fn test_read_epoch_offset_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = PrecompileArgs::ReadEpochOffset(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call =
-            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
-                .unwrap();
-
-        assert_eq!(
-            recoded_portal_call,
-            PrecompileArgs::ReadEpochOffset(chain_id)
-        );
-    }
-
-    #[test]
-    fn test_read_fast_confirmation_offset_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = PrecompileArgs::ReadFastConfirmationOffset(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call =
-            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
-                .unwrap();
-
-        assert_eq!(
-            recoded_portal_call,
-            PrecompileArgs::ReadFastConfirmationOffset(chain_id)
-        );
-    }
-
-    #[test]
-    fn test_read_rational_confirmation_offset_recodes_correctly_to_scale() {
-        let chain_id: [u8; 4] = [9, 9, 9, 9];
-        let portal_call = PrecompileArgs::ReadRationalConfirmationOffset(chain_id);
-        let encoded_portal_call = portal_call.encode();
-        let recoded_portal_call =
-            PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
-                .unwrap();
-
-        assert_eq!(
-            recoded_portal_call,
-            PrecompileArgs::ReadRationalConfirmationOffset(chain_id)
-        );
+        assert_eq!(recoded_portal_call, PrecompileArgs::GetFastHeight(chain_id));
     }
 
     #[test]
