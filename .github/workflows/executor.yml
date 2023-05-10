@@ -8,7 +8,8 @@ on:
   merge_group:
 
 permissions:
-  issues: write
+  contents: read
+  pull-requests: write
 
 jobs:
   # This job checks if files has been modified.
