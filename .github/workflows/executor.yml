@@ -7,6 +7,9 @@ on:
       - development
   merge_group:
 
+permissions:
+  issues: write
+
 jobs:
   # This job checks if files has been modified.
   # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
