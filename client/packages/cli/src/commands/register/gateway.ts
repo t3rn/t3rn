@@ -39,15 +39,15 @@ const registerGateway = async (gatewayData: Required<Gateway>) => {
   const tokenId = createType("[u8; 4]", gatewayData.tokenId)
   const verificationVendor: T3rnPrimitivesGatewayVendor = createType(
     "T3rnPrimitivesGatewayVendor",
-    gatewayData.registrationData.verificationVendor
+    gatewayData.registrationData.verificationVendor as never
   )
   const executionVendor: T3rnPrimitivesExecutionVendor = createType(
     "T3rnPrimitivesExecutionVendor",
-    gatewayData.registrationData.executionVendor
+    gatewayData.registrationData.executionVendor as never
   )
   const codec: T3rnAbiRecodeCodec = createType(
     "T3rnAbiRecodeCodec",
-    gatewayData.registrationData.runtimeCodec
+    gatewayData.registrationData.runtimeCodec as never
   )
   const registrant = null
   const escrowAccounts = null
