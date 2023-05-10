@@ -2,7 +2,7 @@ all:
 	cd types; yarn; yarn link; yarn build;
 	cd sdk; yarn; yarn link; yarn build;
 	cd cli; yarn add ../sdk; yarn;
-	cd executor; yarn link ../sdk; yarn link ../types; yarn upgrade ../sdk; yarn upgrade ../types; yarn;
+	cd executor; yarn add ../sdk; yarn add ../types; yarn;
 
 clean:
 	find . -type d -name node_modules | xargs rm -rf {}\;

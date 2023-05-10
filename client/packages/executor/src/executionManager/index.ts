@@ -480,7 +480,7 @@ export class ExecutionManager {
       sfx.gateway.ticker
     );
 
-    const txOutput = sfx.getTxOutputs();
+    const txOutput = sfx.getTxOutputs()!;
     // get tx output cost. E.g. tran 1 Eth this returns the current price of Eth
     const txOutputPriceSubject = this.priceEngine.getAssetPrice(txOutput.asset);
     // get price of the reward asset

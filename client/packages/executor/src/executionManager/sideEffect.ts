@@ -273,7 +273,7 @@ export class SideEffect extends EventEmitter {
       this.nativeAssetPrice.getValue();
     this.txCostUsd = txCostUsd;
     const txOutputCostUsd =
-      this.txOutputAssetPrice.getValue() * this.getTxOutputs().amountHuman;
+      this.txOutputAssetPrice.getValue() * this.getTxOutputs()!.amountHuman;
     this.txOutputCostUsd = txOutputCostUsd;
     const rewardValueUsd =
       this.rewardAssetPrice.getValue() * this.reward.getValue();
@@ -350,9 +350,10 @@ export class SideEffect extends EventEmitter {
    */
   execute(): any[] {
     switch (this.action) {
-      case SfxType.Transfer: {
+      case SfxType.Transfer:
         return this.getTransferArguments();
-      }
+      default:
+        return [];
     }
   }
 
@@ -361,7 +362,7 @@ export class SideEffect extends EventEmitter {
    *
    * @returns TxOutput.
    */
-  getTxOutputs(): TxOutput {
+  getTxOutputs(): TxOutput | undefined {
     switch (this.action) {
       case SfxType.Transfer: {
         const amount = this.getTransferArguments()[1];
@@ -371,6 +372,8 @@ export class SideEffect extends EventEmitter {
           asset: this.gateway.ticker,
         };
       }
+      default:
+        return;
     }
   }
 
@@ -494,7 +497,6 @@ export class SideEffect extends EventEmitter {
       case "tran": {
         this.action = SfxType.Transfer;
         return true;
-        break;
       }
       default: {
         return false;
