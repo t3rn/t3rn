@@ -20,7 +20,7 @@ class InstanceManager {
   }
 
   async setup() {
-    await this.relayer.setup(config.circuit.rpc)
+    await this.relayer.setup(config.circuit.ws)
     await this.initializeRelaychainListeners()
     // await this.initializeParachainListeners()
     await this.initializeEventListeners()

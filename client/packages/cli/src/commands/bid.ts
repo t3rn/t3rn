@@ -31,6 +31,7 @@ export const handleBidCmd = async (sfxId: string, amount: number) => {
         `Bid successfully placed on side effect ${sfxId} for ${amount}`
       ),
     })
+    process.exit(0)
   } catch (error) {
     spinner.fail(colorLogMsg("ERROR", error))
     process.exit(1)
