@@ -4,7 +4,6 @@ import { handleInitCmd } from "./commands/init.ts"
 import { wrapCryptoWaitReady } from "./utils/fns.ts"
 import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
-import { handleSetOperational } from "./commands/set_operational.ts"
 import { handleBidCmd } from "./commands/bid.ts"
 
 const program = new Command()
@@ -36,13 +35,6 @@ program
   )
   .description("Submit an extrinic to the t3rn circuit")
   .action(wrapCryptoWaitReady(handleSubmitCmd))
-
-program
-  .command("set-operational")
-  .argument("gateway_id <string>", "gateway_id as specified in setup.ts")
-  .argument("operational <bool>", "gateway_id as specified in setup.ts")
-  .description("Set a gateway operational")
-  .action(wrapCryptoWaitReady(handleSetOperational))
 
 program
   .command("bid")
