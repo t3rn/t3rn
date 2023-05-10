@@ -24,9 +24,6 @@ A list of the supported transactions.
 #### Register Gateway:
 Currently, the registration for relaychains is only supported. The registration can be executed by running: `ts-node index.ts register roco`. Note that `roco` matches the gatewayId as specified in the configs.
 
-#### setOperational:
-to use a newly registered gateway, it must be set operations. This can be done with: `ts-node index.ts setOperational roco true`
-
 #### Transfer:
 A simple transfer, currently only supporting nativ substrate assets. 
 
