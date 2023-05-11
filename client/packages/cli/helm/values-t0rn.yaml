@@ -1,0 +1,12 @@
+jobs:
+  - name: ranger
+    env:
+      - name: CIRCUIT_WS
+        value: wss://ws.t0rn.io
+      - name: LOG_LEVEL
+        value: debug
+    schedule: "*/5 * * * *"
+    args:
+    - submit
+    - -g roco
+    activeDeadlineSeconds: 300
