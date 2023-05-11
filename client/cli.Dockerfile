@@ -12,6 +12,8 @@ ADD packages/cli /app/cli
 RUN cd /app/cli && yarn 
 
 ADD packages/cli/tsconfig.json /app/cli/
+ADD cli_entrypoint.sh /app/cli/entrypoint.sh
+RUN chmod +x /app/cli/entrypoint.sh
 
 WORKDIR /app/cli
 
@@ -19,4 +21,6 @@ WORKDIR /app/cli
 RUN chown -R node /app
 USER node
 
-ENTRYPOINT ["yarn", "cli"]
+RUN yarn cli init -c
+
+ENTRYPOINT ["/app/cli/entrypoint.sh"]
