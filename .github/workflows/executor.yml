@@ -59,6 +59,7 @@ jobs:
       - run: yarn
       - run: yarn ci
       - run: yarn fmt
+      - run: yarn build-docs
       - run: |
           yarn lint > lint.out || true
 
