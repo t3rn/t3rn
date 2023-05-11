@@ -661,7 +661,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         Ok(())
     }
 
-    pub fn submit_encoded_headers(encoded_header_data: Vec<u8>) -> Result<Vec<u8>, DispatchError> {
+    pub fn submit_encoded_headers(encoded_header_data: Vec<u8>) -> Result<(), DispatchError> {
         ensure_operational_single::<T, I>()?;
         let data: GrandpaHeaderData<BridgedHeader<T, I>> =
             Decode::decode(&mut &*encoded_header_data)
@@ -672,7 +672,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             data.signed_header,
             data.justification,
         )?;
-        Ok(vec![])
+        Ok(())
     }
 
     pub fn confirm_event_inclusion(

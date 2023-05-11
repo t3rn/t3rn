@@ -9,11 +9,10 @@ use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
 #[cfg(test)]
 mod tests;
 
-use pallet_grandpa_finality_verifier::light_clients::LightClient;
-
 use t3rn_abi::types::Bytes;
 use t3rn_primitives::{
     self,
+    light_client::LightClient,
     portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
     ChainId, GatewayVendor, SpeedMode, TokenInfo,

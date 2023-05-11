@@ -313,7 +313,7 @@ impl_runtime_apis! {
 
     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
-            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_latest_updated_height(chain_id);
+            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_fast_height(chain_id);
 
             match res {
                 Ok(HeightResult::Height(height)) => Some(height.into()),
