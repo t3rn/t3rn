@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.19.2-rc.0] - 2023-05-11
+### :bug: Bug Fixes
+- [`770b2eb`](https://github.com/t3rn/t3rn/commit/770b2eb364f65ae686291c9634c1b76a6ba3ee1a) - executor docs build issue [skip release] *(PR [#959](https://github.com/t3rn/t3rn/pull/959) by [@ahkohd](https://github.com/ahkohd))*
+
+
 ## [v1.19.1-rc.0] - 2023-05-11
 ### :bug: Bug Fixes
 - [`2486c27`](https://github.com/t3rn/t3rn/commit/2486c27e3a14b4531ff0367b2aa57dcc567de28a) - submit headers & bid process.exit *(PR [#952](https://github.com/t3rn/t3rn/pull/952) by [@3h4x](https://github.com/3h4x))*
@@ -1088,3 +1093,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.18.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.17.1-rc.0...v1.18.0-rc.0
 [v1.19.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.18.2-rc.0...v1.19.0-rc.0
 [v1.19.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.0-rc.0...v1.19.1-rc.0
+[v1.19.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.1-rc.0...v1.19.2-rc.0
