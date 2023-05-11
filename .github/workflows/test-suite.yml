@@ -64,13 +64,13 @@ jobs:
         with:
           node-version: ${{ env.NVMRC }}
 
-      - name: 📑 Build CLI
+      - name: 🏭 Build CLI
         run: |
           # Build
           cd client/packages
           make all
 
-      - name: 📑 Run node standalone
+      - name: 🏭 Run Node Standalone
         run: |
           # Run node standalone
           cd node/standalone
@@ -78,20 +78,28 @@ jobs:
           make run&
           echo "NODE_STANDALONE_PID=$!" >> $GITHUB_ENV
 
-      - name: 📐 Run ranger
+      - name: 📐 Run Ranger
         run: |
           cd client/packages/cli
           echo $(pwd)
           ls -lah
 
           yarn cli init -c
-          cli register -g roco
-
-          
-          # Run ranger
+          yarn cli register -g roco
 
           # Run executor
 
+      - name: 🍳 Prepare Tests
+        run: |
+          mkdir -p pallets/portal/fixtures
+          cp client/packages/cli/exports/* pallets/portal/fixtures
+          ls -lah pallets/portal/fixtures
+
+      - name: 🧪 Run Tests
+        run: |
+          cd pallets/portal
+          cargo test
+        
       - name: 💀 Kill Node Standalone
         if: always()
         run: |

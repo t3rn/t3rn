@@ -410,7 +410,6 @@ mod tests {
         );
     }
 
-    #[ignore]
     #[test]
     fn run_e2e_tests() {
         ExtBuilder::default()
