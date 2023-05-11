@@ -21,6 +21,4 @@ WORKDIR /app/cli
 RUN chown -R node /app
 USER node
 
-RUN yarn cli init -c
-
 ENTRYPOINT ["/app/cli/entrypoint.sh"]
