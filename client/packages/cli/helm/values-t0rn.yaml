@@ -10,5 +10,6 @@ jobs:
     schedule: "*/5 * * * *"
     args:
     - submit
-    - -h roco
+    - -h
+    - roco
     activeDeadlineSeconds: 300
