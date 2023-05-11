@@ -74,16 +74,19 @@ jobs:
         run: |
           # Run node standalone
           cd node/standalone
-          make all&
+          make build
+          make run&
           echo "NODE_STANDALONE_PID=$!" >> $GITHUB_ENV
 
       - name: 📐 Run ranger
         run: |
           cd client/packages/cli
+          echo $(pwd)
+          ls -lah
+
           yarn cli init -c
           cli register -g roco
 
-          ls -lah
           
           # Run ranger
 
