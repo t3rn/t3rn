@@ -15,4 +15,8 @@ ADD packages/cli/tsconfig.json /app/cli/
 
 WORKDIR /app/cli
 
+# node is default user with UID 1000 in this image
+RUN chown -R node /app
+USER node
+
 ENTRYPOINT ["yarn", "cli"]

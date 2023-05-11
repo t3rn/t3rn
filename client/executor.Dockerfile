@@ -13,4 +13,8 @@ RUN cd /app/executor && yarn
 
 WORKDIR /app/executor
 
+# node is default user with UID 1000 in this image
+RUN chown -R node /app
+USER node
+
 CMD ["yarn", "start"]
