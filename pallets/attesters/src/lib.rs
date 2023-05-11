@@ -30,33 +30,103 @@ pub mod pallet {
     use sp_std::{convert::TryInto, prelude::*};
 
     pub use t3rn_primitives::attesters::{
-        AttesterInfo, AttestersReadApi, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
-        SR25519_ATTESTER_KEY_TYPE_ID,
+        AttesterInfo, AttestersChange, AttestersReadApi, AttestersWriteApi, BatchConfirmedSfxId,
+        CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
+        ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-
-    pub type Signature65b = [u8; 65];
-    pub type PublicKeyEcdsa33b = [u8; 33];
-    pub const COMMITTEE_SIZE: usize = 32;
-
-    pub type CommitteeTransition = [u32; COMMITTEE_SIZE];
-    pub type AttestersAdded = Vec<([u8; 33], u32)>;
-    pub type BatchConfirmedSfxId = Vec<H256>;
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
-        Pending,
-        ReadyForSubmission,
+        PendingMessage,
+        PendingAttestation,
+        ReadyForSubmissionByMajority,
+        ReadyForSubmissionFullyApproved,
+        PendingSubmission,
         Committed,
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct BatchMessage<BlockNumber> {
-        batch_sfx: Option<BatchConfirmedSfxId>,
-        next_committee: Option<CommitteeTransition>,
-        new_attesters: Option<AttestersAdded>, // 33b ecdsa public key, index of attester
-        signatures: Vec<Signature65b>,
-        status: BatchStatus,
-        created: BlockNumber,
+        pub batch_sfx: Option<BatchConfirmedSfxId>,
+        pub next_committee: Option<CommitteeTransition>,
+        pub new_attesters: Option<AttestersChange>,
+        pub ban_attesters: Option<AttestersChange>,
+        pub remove_attesters: Option<AttestersChange>,
+        pub signatures: Vec<(u32, Signature65b)>,
+        pub status: BatchStatus,
+        pub created: BlockNumber,
+    }
+
+    // Add the following method to `BatchMessage` struct
+    impl<BlockNumber> BatchMessage<BlockNumber> {
+        fn message(&self) -> Vec<u8> {
+            let mut encoded_message = Vec::new();
+            if let Some(ref sfx) = self.batch_sfx {
+                sfx.encode_to(&mut encoded_message);
+                // Remove first 1 byte if the message is not empty to strip the SCALE-vector length prefix
+                if encoded_message.len() > 0 {
+                    encoded_message.remove(0);
+                }
+            }
+            if let Some(ref committee) = self.next_committee {
+                committee.encode_to(&mut encoded_message);
+            }
+            if let Some(ref attestors) = self.new_attesters {
+                attestors.encode_to(&mut encoded_message);
+            }
+            if let Some(ref attestors) = self.ban_attesters {
+                attestors.encode_to(&mut encoded_message);
+            }
+            if let Some(ref attestors) = self.remove_attesters {
+                attestors.encode_to(&mut encoded_message);
+            }
+
+            encoded_message
+        }
+
+        fn message_hash(&self) -> H256 {
+            let mut keccak = Keccak::v256();
+
+            if let Some(ref sfx) = self.batch_sfx {
+                let mut sorted_sfx = sfx.clone();
+                sorted_sfx.sort();
+
+                let mut no_prefix_sorted_sfx_bytes: Vec<u8> = Vec::new();
+
+                for sfx in sorted_sfx {
+                    no_prefix_sorted_sfx_bytes.extend(sfx.as_bytes());
+                }
+
+                keccak.update(&no_prefix_sorted_sfx_bytes);
+            }
+
+            println!("input committee: {:?}", &self.next_committee);
+
+            if let Some(committee) = self.next_committee {
+                // let encoded_committee: CommitteeTransition = committee;
+                println!("input committee: {:?}", &committee.encode());
+                keccak.update(&committee.encode());
+            }
+
+            if let Some(ref attestors) = self.new_attesters {
+                let encoded_attestors = attestors.encode();
+                keccak.update(&encoded_attestors);
+            }
+
+            if let Some(ref attestors) = self.ban_attesters {
+                let encoded_attestors = attestors.encode();
+                keccak.update(&encoded_attestors);
+            }
+
+            if let Some(ref attestors) = self.remove_attesters {
+                let encoded_attestors = attestors.encode();
+                keccak.update(&encoded_attestors);
+            }
+
+            let mut res: [u8; 32] = [0; 32];
+            keccak.finalize(&mut res);
+            H256::from(res)
+        }
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -81,7 +151,7 @@ pub mod pallet {
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct TargetBatchInclusionProof {
-        pub batch_hash: H256,
+        pub target_batch_message: Vec<u8>,
         pub inclusion_proof: Vec<u8>,
     }
 
@@ -100,7 +170,7 @@ pub mod pallet {
                 attestations: Vec::new(),
                 target: [0u8; 4],
                 created: Zero::zero(),
-                status: BatchStatus::Pending,
+                status: BatchStatus::PendingMessage,
                 hash: H256::zero(),
             }
         }
@@ -112,7 +182,7 @@ pub mod pallet {
                 attestations: Vec::new(),
                 target,
                 created: now,
-                status: BatchStatus::Pending,
+                status: BatchStatus::PendingMessage,
                 hash: H256::zero(),
             }
         }
@@ -222,15 +292,14 @@ pub mod pallet {
     #[pallet::getter(fn attestation_targets)]
     pub type AttestationTargets<T: Config> = StorageValue<_, Vec<[u8; 4]>, ValueQuery>;
 
-    // #[pallet::storage]
-    // #[pallet::getter(fn next_batches)]
-    // pub type NextBatches<T: Config> =
-    //     StorageMap<_, Identity, [u8; 4], BatchMessage<T::BlockNumber>>;
-    //
-    // #[pallet::storage]
-    // #[pallet::getter(fn batches_to_sign)]
-    // pub type BatchesToSign<T: Config> =
-    //     StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
+    #[pallet::storage]
+    #[pallet::getter(fn next_batches)]
+    pub type NextBatch<T: Config> = StorageMap<_, Identity, [u8; 4], BatchMessage<T::BlockNumber>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn batches_to_sign)]
+    pub type BatchesToSign<T: Config> =
+        StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
     //
     // #[pallet::storage]
     // #[pallet::getter(fn batches_to_confirm)]
@@ -288,6 +357,7 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        AttesterNotFound,
         InvalidSignature,
         InvalidMessage,
         InvalidTargetInclusionProof,
@@ -306,6 +376,11 @@ pub mod pallet {
         MissingNominations,
         BatchHashMismatch,
         BatchNotFound,
+        SfxAlreadyRequested,
+        AddAttesterAlreadyRequested,
+        RemoveAttesterAlreadyRequested,
+        NextCommitteeAlreadyRequested,
+        BanAttesterAlreadyRequested,
         BatchAlreadyCommitted,
         CommitteeSizeTooLarge,
     }
@@ -354,8 +429,41 @@ pub mod pallet {
             );
 
             // Self nominate in order to be part of the active set selection
-            Self::do_nominate(account_id.clone(), account_id, self_nominate_amount)?;
+            Self::do_nominate(account_id.clone(), account_id.clone(), self_nominate_amount)?;
 
+            Self::deposit_event(Event::AttesterRegistered(account_id.clone()));
+
+            Self::request_add_attesters_attestation(&account_id)?;
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn remove_attestation_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
+            ensure_root(origin)?;
+
+            let mut targets = AttestationTargets::<T>::get();
+
+            // Remove target if exists
+            if !targets.contains(&target) {
+                targets.retain(|&x| x != target);
+            }
+
+            AttestationTargets::<T>::put(targets);
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn add_attestation_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
+            ensure_root(origin)?;
+
+            let mut targets = AttestationTargets::<T>::get();
+
+            // Add target if doesn't exist yet
+            if !targets.contains(&target) {
+                targets.push(target);
+            }
+
+            AttestationTargets::<T>::put(targets);
             Ok(())
         }
 
@@ -365,7 +473,6 @@ pub mod pallet {
             message: Vec<u8>,
             signature: Vec<u8>,
             target: [u8; 4],
-            attestation_for: AttestationFor,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
 
@@ -386,6 +493,10 @@ pub mod pallet {
 
             let is_verified = attester
                 .verify_attestation_signature(ECDSA_ATTESTER_KEY_TYPE_ID, &message, &signature)
+                .map_err(|_| Error::<T>::InvalidSignature)?;
+
+            let signature_65b: [u8; 65] = signature
+                .try_into()
                 .map_err(|_| Error::<T>::InvalidSignature)?;
 
             if !is_verified {
@@ -409,60 +520,49 @@ pub mod pallet {
 
             ensure!(is_verified, Error::<T>::AttestationSignatureInvalid);
 
-            // Check if attestation makes sense from the protocol perspective
-            let (attestation_key, attestation_key_32b): (T::Hash, H256) = match attestation_for {
-                AttestationFor::SFX => {
-                    let sfx_hash: T::Hash = Decode::decode(&mut &message[..])
-                        .map_err(|_| Error::<T>::InvalidMessage)?;
+            Batches::<T>::try_mutate(target, |batches| {
+                match batches {
+                    Some(batches) => {
+                        let batch_option = batches.iter_mut().find(|batch| {
+                            batch.status == BatchStatus::PendingAttestation
+                                && batch.message() == message
+                        });
 
-                    let sfx_hash_32b: H256 =
-                        H256::decode(&mut &message[..]).map_err(|_| Error::<T>::InvalidMessage)?;
+                        let batch = match batch_option {
+                            Some(batch) => batch,
+                            None =>
+                                return Err::<(), DispatchError>(Error::<T>::BatchNotFound.into()),
+                        };
 
-                    (sfx_hash, sfx_hash_32b)
-                },
-            };
+                        // Check if the attester has already signed the batch
+                        ensure!(
+                            !batch
+                                .signatures
+                                .iter()
+                                .any(|(attester_index, _)| *attester_index == attester.index),
+                            Error::<T>::AttestationDoubleSignAttempt
+                        );
 
-            let mut attestation = Attestations::<T>::get(attestation_key).unwrap_or_default();
+                        // Add signature to the batch
+                        batch.signatures.push((attester.index, signature_65b));
 
-            // Check if the attester has already signed the attestation
-            ensure!(
-                !attestation
-                    .signature
-                    .iter()
-                    .any(|(attester, _, _)| attester == &account_id),
-                Error::<T>::AttestationDoubleSignAttempt
-            );
+                        // Update the status of the batch
+                        let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
+                        let full_approval = T::ActiveSetSize::get() as usize;
+                        if batch.signatures.len() >= quorum {
+                            batch.status = BatchStatus::ReadyForSubmissionByMajority;
+                        }
+                        if batch.signatures.len() >= full_approval {
+                            batch.status = BatchStatus::ReadyForSubmissionFullyApproved;
+                        }
 
-            attestation
-                .signature
-                .push((account_id.clone(), attester.index, signature));
+                        Self::deposit_event(Event::AttestationSubmitted(account_id));
 
-            let status = if attestation.signature.len() < (T::ActiveSetSize::get() * 2 / 3) as usize
-            {
-                AttestationStatus::Pending
-            } else if attestation.signature.len() == T::ActiveSetSize::get() as usize {
-                AttestationStatus::FullyApproved
-            } else {
-                AttestationStatus::MajorityApproved
-            };
-
-            attestation.for_ = attestation_for;
-            attestation.status = status.clone();
-            attestation.signatures_hash = attestation_key_32b;
-
-            Attestations::<T>::insert(attestation_key, attestation.clone());
-
-            // Add attestation to the batch
-            let target_batches = Self::add_attestation_to_batch(
-                target,
-                attestation.clone(),
-                <frame_system::Pallet<T>>::block_number(),
-            )?;
-
-            // Save the updated batches
-            Batches::<T>::insert(target, target_batches);
-
-            Self::deposit_event(Event::AttestationSubmitted(account_id));
+                        Ok(())
+                    },
+                    None => return Err(Error::<T>::BatchNotFound.into()),
+                }
+            })?;
 
             Ok(())
         }
@@ -487,12 +587,13 @@ pub mod pallet {
 
                         // Verify that the submitted Ethereum batch hash matches the one stored in the pallet
                         ensure!(
-                            batch.hash == target_inclusion_proof.batch_hash,
+                            batch.message() == target_inclusion_proof.target_batch_message,
                             Error::<T>::BatchHashMismatch
                         );
 
                         match batch.status {
-                            BatchStatus::Pending | BatchStatus::ReadyForSubmission => {
+                            BatchStatus::ReadyForSubmissionByMajority
+                            | BatchStatus::ReadyForSubmissionFullyApproved => {
                                 batch.status = BatchStatus::Committed;
                                 Ok(Some(batches.clone()))
                             },
@@ -583,6 +684,137 @@ pub mod pallet {
         }
     }
 
+    impl<T: Config> AttestersWriteApi<T::AccountId, Error<T>> for Pallet<T> {
+        fn request_sfx_attestation(target: TargetId, sfx_id: H256) -> Result<(), Error<T>> {
+            NextBatch::<T>::try_mutate(target, |next_batch| {
+                if let Some(ref mut next_batch) = next_batch {
+                    if let Some(ref mut batch_sfx) = &mut next_batch.batch_sfx {
+                        if batch_sfx.contains(&sfx_id) {
+                            return Err(Error::<T>::SfxAlreadyRequested)
+                        } else {
+                            batch_sfx.push(sfx_id);
+                        }
+                    } else {
+                        next_batch.batch_sfx = Some(vec![sfx_id]);
+                    }
+                    Ok(())
+                } else {
+                    Err(Error::<T>::BatchNotFound)
+                }
+            })
+        }
+
+        fn request_add_attesters_attestation(new_attester: &T::AccountId) -> Result<(), Error<T>> {
+            let attester_info =
+                Attesters::<T>::get(&new_attester).ok_or(Error::<T>::AttesterNotFound)?;
+
+            let attester_key_index = (attester_info.key_ec, attester_info.index);
+
+            for target in AttestationTargets::<T>::get() {
+                NextBatch::<T>::try_mutate(target, |next_batch| {
+                    let next_batch = next_batch.as_mut().ok_or(Error::<T>::BatchNotFound)?;
+
+                    match &mut next_batch.new_attesters {
+                        Some(attesters) => {
+                            ensure!(
+                                !attesters.contains(&attester_key_index),
+                                Error::<T>::AddAttesterAlreadyRequested
+                            );
+                            attesters.push(attester_key_index);
+                        },
+                        None => {
+                            next_batch.new_attesters = Some(vec![attester_key_index]);
+                        },
+                    }
+                    Ok(())
+                })?;
+            }
+
+            Ok(())
+        }
+
+        fn request_ban_attesters_attestation(ban_attester: &T::AccountId) -> Result<(), Error<T>> {
+            let attester_info =
+                Attesters::<T>::get(&ban_attester).ok_or(Error::<T>::AttesterNotFound)?;
+
+            let attester_key_index = (attester_info.key_ec, attester_info.index);
+
+            for target in AttestationTargets::<T>::get() {
+                NextBatch::<T>::try_mutate(target, |next_batch| {
+                    let next_batch = next_batch.as_mut().ok_or(Error::<T>::BatchNotFound)?;
+
+                    match &mut next_batch.ban_attesters {
+                        Some(attesters) => {
+                            ensure!(
+                                !attesters.contains(&attester_key_index),
+                                Error::<T>::BanAttesterAlreadyRequested
+                            );
+                            attesters.push(attester_key_index);
+                        },
+                        None => {
+                            next_batch.ban_attesters = Some(vec![attester_key_index]);
+                        },
+                    }
+                    Ok(())
+                })?;
+            }
+
+            Ok(())
+        }
+
+        fn request_remove_attesters_attestation(
+            remove_attesters: &T::AccountId,
+        ) -> Result<(), Error<T>> {
+            let attester_info =
+                Attesters::<T>::get(&remove_attesters).ok_or(Error::<T>::AttesterNotFound)?;
+
+            let attester_key_index = (attester_info.key_ec, attester_info.index);
+
+            for target in AttestationTargets::<T>::get() {
+                NextBatch::<T>::try_mutate(target, |next_batch| {
+                    let next_batch = next_batch.as_mut().ok_or(Error::<T>::BatchNotFound)?;
+
+                    match &mut next_batch.remove_attesters {
+                        Some(attesters) => {
+                            ensure!(
+                                !attesters.contains(&attester_key_index),
+                                Error::<T>::RemoveAttesterAlreadyRequested
+                            );
+                            attesters.push(attester_key_index);
+                        },
+                        None => {
+                            next_batch.remove_attesters = Some(vec![attester_key_index]);
+                        },
+                    }
+                    Ok(())
+                })?;
+            }
+
+            Ok(())
+        }
+
+        fn request_next_committee_attestation(
+            next_committee: CommitteeTransition,
+        ) -> Result<(), Error<T>> {
+            for target in AttestationTargets::<T>::get() {
+                NextBatch::<T>::try_mutate(target, |next_batch| {
+                    if let Some(ref mut next_batch) = next_batch {
+                        match &next_batch.next_committee {
+                            Some(_) => Err(Error::<T>::NextCommitteeAlreadyRequested),
+                            None => {
+                                next_batch.next_committee = Some(next_committee.clone());
+                                Ok(())
+                            },
+                        }
+                    } else {
+                        Err(Error::<T>::BatchNotFound)
+                    }
+                })?;
+            }
+
+            Ok(())
+        }
+    }
     impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>> for Pallet<T> {
         fn previous_committee() -> Vec<T::AccountId> {
             PreviousCommittee::<T>::get()
@@ -618,6 +850,62 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         pub fn committee_size() -> usize {
             T::CommitteeSize::get() as usize
+        }
+
+        pub fn get_batches(
+            target: TargetId,
+            by_status: BatchStatus,
+        ) -> Vec<BatchMessage<T::BlockNumber>> {
+            // Get the batches to sign
+            match Batches::<T>::get(target) {
+                Some(batches) => batches
+                    .iter()
+                    .filter(|b| b.status == by_status)
+                    .cloned()
+                    .collect(),
+                None => vec![],
+            }
+        }
+
+        pub fn get_batch_by_message(
+            target: TargetId,
+            message: Vec<u8>,
+        ) -> Option<BatchMessage<T::BlockNumber>> {
+            match Batches::<T>::get(target) {
+                Some(batches) => batches.iter().find(|&b| b.message() == message).cloned(),
+                None => None,
+            }
+        }
+
+        pub fn get_batch_by_message_hash(
+            target: TargetId,
+            message_hash: H256,
+        ) -> Option<BatchMessage<T::BlockNumber>> {
+            match Batches::<T>::get(target) {
+                Some(batches) => batches
+                    .iter()
+                    .find(|&b| b.message_hash() == message_hash)
+                    .cloned(),
+                None => None,
+            }
+        }
+
+        pub fn get_latest_batch_to_sign(target: TargetId) -> Option<BatchMessage<T::BlockNumber>> {
+            let mut batches = Self::get_batches(target, BatchStatus::PendingAttestation);
+            batches.sort_by(|a, b| b.created.cmp(&a.created));
+            batches.iter().next().cloned()
+        }
+
+        pub fn get_latest_batch_to_sign_hash(target: TargetId) -> Option<H256> {
+            let mut batches = Self::get_batches(target, BatchStatus::PendingAttestation);
+            batches.sort_by(|a, b| b.created.cmp(&a.created));
+            batches.iter().map(|b| b.message_hash()).next()
+        }
+
+        pub fn get_latest_batch_to_sign_message(target: TargetId) -> Option<Vec<u8>> {
+            let mut batches = Self::get_batches(target, BatchStatus::PendingAttestation);
+            batches.sort_by(|a, b| b.created.cmp(&a.created));
+            batches.iter().map(|b| b.message()).next()
         }
 
         fn update_sorted_nominated_attesters(
@@ -693,46 +981,46 @@ pub mod pallet {
             Ok(())
         }
 
-        fn add_attestation_to_batch(
-            target: [u8; 4],
-            attestation: Attestation<T::AccountId, Vec<u8>>,
-            current_block: T::BlockNumber,
-        ) -> Result<Vec<Batch<T::AccountId, Vec<u8>, T::BlockNumber>>, DispatchError> {
-            let mut target_batches = Batches::<T>::get(target).unwrap_or_default();
-
-            match target_batches.last_mut() {
-                Some(last_batch) => {
-                    // Check if a new batch needs to be created
-                    let is_full = last_batch.attestations.len() >= T::MaxBatchSize::get() as usize;
-                    let interval_passed =
-                        current_block - last_batch.created >= T::BatchingWindow::get();
-
-                    if is_full || interval_passed {
-                        let new_batch =
-                            Batch::new(target, frame_system::Pallet::<T>::block_number());
-                        target_batches.push(new_batch);
-                    }
-
-                    if let Some(last_batch) = target_batches.last_mut() {
-                        last_batch.attestations.push(attestation.clone());
-
-                        // Update the Ethereum hash of the batch
-                        last_batch.hash_signatures_with_keccak();
-
-                        if last_batch.attestations.len() >= T::MaxBatchSize::get() as usize {
-                            last_batch.status = BatchStatus::ReadyForSubmission;
-                        }
-                    }
-                },
-                None => {
-                    // Create a new batch if there are no batches yet
-                    let new_batch = Batch::new(target, frame_system::Pallet::<T>::block_number());
-                    target_batches.push(new_batch);
-                },
-            }
-
-            Ok(target_batches)
-        }
+        // fn add_attestation_to_batch(
+        //     target: [u8; 4],
+        //     attestation: Attestation<T::AccountId, Vec<u8>>,
+        //     current_block: T::BlockNumber,
+        // ) -> Result<Vec<Batch<T::AccountId, Vec<u8>, T::BlockNumber>>, DispatchError> {
+        //     let mut target_batches = Batches::<T>::get(target).unwrap_or_default();
+        //
+        //     match target_batches.last_mut() {
+        //         Some(last_batch) => {
+        //             // Check if a new batch needs to be created
+        //             let is_full = last_batch.attestations.len() >= T::MaxBatchSize::get() as usize;
+        //             let interval_passed =
+        //                 current_block - last_batch.created >= T::BatchingWindow::get();
+        //
+        //             if is_full || interval_passed {
+        //                 let new_batch =
+        //                     Batch::new(target, frame_system::Pallet::<T>::block_number());
+        //                 target_batches.push(new_batch);
+        //             }
+        //
+        //             if let Some(last_batch) = target_batches.last_mut() {
+        //                 last_batch.attestations.push(attestation.clone());
+        //
+        //                 // Update the Ethereum hash of the batch
+        //                 last_batch.hash_signatures_with_keccak();
+        //
+        //                 if last_batch.attestations.len() >= T::MaxBatchSize::get() as usize {
+        //                     last_batch.status = BatchStatus::ReadyForSubmission;
+        //                 }
+        //             }
+        //         },
+        //         None => {
+        //             // Create a new batch if there are no batches yet
+        //             let new_batch = Batch::new(target, frame_system::Pallet::<T>::block_number());
+        //             target_batches.push(new_batch);
+        //         },
+        //     }
+        //
+        //     Ok(target_batches)
+        // }
 
         fn shuffle_committee() -> bool {
             let active_set = ActiveSet::<T>::get();
@@ -850,82 +1138,50 @@ pub mod pallet {
                 return aggregated_weight
             }
 
-            if n % T::BatchingWindow::get() == T::BlockNumber::zero() {
+            if (n % T::BatchingWindow::get()).is_zero() {
+                println!("Batching window: {}", n);
                 // Check if there any pending attestations to submit with the current batch
                 for target in AttestationTargets::<T>::get() {
-                    // If a batch exists, update its status and move it to BatchesToSign
-                    if let Some(mut batch) = Batches::<T>::get(target).last_mut() {
-                        if batch.status == BatchStatus::Pending {
-                            batch.status = BatchStatus::ReadyForSubmission;
+                    let new_next_batch = BatchMessage {
+                        batch_sfx: None,
+                        next_committee: None,
+                        new_attesters: None,
+                        remove_attesters: None,
+                        ban_attesters: None,
+                        signatures: Vec::new(),
+                        status: BatchStatus::PendingMessage,
+                        created: n,
+                    };
+                    if let Some(mut next_batch) = NextBatch::<T>::get(target) {
+                        // Check if batch has pending messages to attest for
+                        if next_batch.message().len().is_zero() {
+                            // Leave the batch empty if it has no messages
+                        } else {
+                            next_batch.status = BatchStatus::PendingAttestation;
+                            // Push the batch to the batches vector
+                            Batches::<T>::append(target, next_batch);
+                            // Create a new empty batch for the next window
+                            NextBatch::<T>::insert(target, new_next_batch);
                         }
+                    } else {
+                        // Create a new empty batch for the next window
+                        NextBatch::<T>::insert(target, new_next_batch);
                     }
 
-                    // Create new batch for next window
+                    // If a batch exists, update its status
                     Batches::<T>::mutate(target, |batches| {
-                        batches.push(BatchMessage {
-                            batch_sfx: None,
-                            next_committee: None,
-                            new_attesters: None,
-                            signatures: Vec::new(),
-                            status: BatchStatus::Pending,
-                            created: n,
-                        })
+                        if let Some(batches) = batches {
+                            for batch in batches.iter_mut() {
+                                if batch.status == BatchStatus::ReadyForSubmissionByMajority
+                                    || batch.status == BatchStatus::ReadyForSubmissionFullyApproved
+                                {
+                                    batch.status = BatchStatus::PendingSubmission;
+                                }
+                            }
+                        }
                     });
                 }
             }
-
-            // if n % T::BatchingWindow::get() == T::BlockNumber::zero() {
-            //     // Check if there any pending attestations to submit with the current batch
-            //     for target in AttestationTargets::<T>::get() {
-            //         match NextBatches::<T>::get(target) {
-            //             Some(mut batch) => {
-            //                 batch.status = BatchStatus::Pending;
-            //                 BatchesToSign::<T>::mutate(target, |batches| match batches {
-            //                     Some(batches) => batches.push(batch),
-            //                     None => *batches = Some(vec![batch]),
-            //                 });
-            //                 NextBatches::<T>::insert(
-            //                     target,
-            //                     BatchMessage {
-            //                         batch_sfx: None,
-            //                         next_committee: None,
-            //                         new_attesters: None,
-            //                         signatures: Vec::new(),
-            //                         status: BatchStatus::Pending,
-            //                         created: n,
-            //                     },
-            //                 );
-            //             },
-            //             None => {
-            //                 log::debug!("No batch to submit for target {:?}", target);
-            //             },
-            //         }
-            //         match BatchesToSign::<T>::get(target) {
-            //             Some(batches) =>
-            //                 for batch in batches.iter() {
-            //                     // Check if the batch is ready to be confirmed
-            //                     if batch.status > BatchStatus::Pending {
-            //                         BatchesToSign::<T>::mutate(target, |batches| match batches {
-            //                             Some(batches) =>
-            //                                 batches.retain(|b| b.batch_sfx != batch.batch_sfx),
-            //                             None => (),
-            //                         });
-            //                         BatchesToConfirm::<T>::mutate(
-            //                             target,
-            //                             |batches| match batches {
-            //                                 Some(batches) => batches.push(batch.clone()),
-            //                                 None => *batches = Some(vec![batch.clone()]),
-            //                             },
-            //                         );
-            //                     }
-            //                     log::debug!("Batch to sign: {:?}", batch);
-            //                 },
-            //             None => {
-            //                 log::debug!("No batch to submit for target {:?}", target);
-            //             },
-            //         }
-            //     }
-            // }
             0
         }
     }
@@ -949,7 +1205,22 @@ pub mod pallet {
     // The build of genesis for the pallet.
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        fn build(&self) {}
+        fn build(&self) {
+            for target in AttestationTargets::<T>::get() {
+                let new_batch_message = BatchMessage {
+                    batch_sfx: None,
+                    next_committee: None,
+                    new_attesters: None,
+                    remove_attesters: None,
+                    ban_attesters: None,
+                    signatures: Vec::new(),
+                    status: BatchStatus::PendingMessage,
+                    created: frame_system::Pallet::<T>::block_number(),
+                };
+                // Create new batch for next window
+                NextBatch::<T>::insert(target, new_batch_message.clone());
+            }
+        }
     }
 }
 
@@ -959,27 +1230,32 @@ pub mod attesters_test {
         TargetBatchInclusionProof, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
         SR25519_ATTESTER_KEY_TYPE_ID,
     };
+    use sp_runtime::traits::BlockNumberProvider;
+
     use codec::Encode;
     use frame_support::{
-        assert_ok,
-        traits::{Currency, Get, Hooks},
+        assert_err, assert_noop, assert_ok,
+        traits::{Currency, Get, Hooks, Len},
         StorageValue,
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use t3rn_primitives::attesters::AttestersReadApi;
 
-    use frame_support::traits::Len;
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, AttestationFor, AttestationStatus, Attesters, AttestersError,
-        AttestersStore, Balance, Balances, BatchStatus, Batches, BlockNumber, ConfigAttesters,
-        ConfigRewards, CurrentCommittee, ExtBuilder, MiniRuntime, Origin, PendingUnnominations,
-        PreviousCommittee, Rewards, SortedNominatedAttesters, System,
+        AccountId, ActiveSet, AttestationFor, AttestationStatus, AttestationTargets, Attesters,
+        AttestersError, AttestersStore, Balance, Balances, BatchMessage, BatchStatus, Batches,
+        BlockNumber, ConfigAttesters, ConfigRewards, CurrentCommittee, ExtBuilder, MiniRuntime,
+        NextBatch, Origin, PendingUnnominations, PreviousCommittee, Rewards,
+        SortedNominatedAttesters, System,
     };
-    use t3rn_primitives::claimable::{BenefitSource, CircuitRole, ClaimableArtifacts};
+    use t3rn_primitives::{
+        attesters::{AttesterInfo, AttestersReadApi, AttestersWriteApi, CommitteeTransition},
+        claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+    };
+    use tiny_keccak::{Hasher, Keccak};
 
-    pub fn register_attester_with_single_private_key(secret_key: [u8; 32]) {
+    pub fn register_attester_with_single_private_key(secret_key: [u8; 32]) -> AttesterInfo {
         // Register an attester
         let attester = AccountId::from(secret_key);
 
@@ -990,16 +1266,53 @@ pub mod attesters_test {
         let _ = Balances::deposit_creating(&attester, 100u128);
 
         assert_ok!(Attesters::register_attester(
-            Origin::signed(attester),
+            Origin::signed(attester.clone()),
             10u128,
-            ecdsa_key.try_into().unwrap(),
-            ed25519_key.try_into().unwrap(),
-            sr25519_key.try_into().unwrap(),
+            ecdsa_key.clone().try_into().unwrap(),
+            ed25519_key.clone().try_into().unwrap(),
+            sr25519_key.clone().try_into().unwrap(),
             None,
         ));
 
         // Run to active set selection
         Attesters::on_initialize(400u32);
+
+        let attester_info: AttesterInfo = AttestersStore::<MiniRuntime>::get(&attester).unwrap();
+        assert_eq!(attester_info.key_ed.encode(), ed25519_key);
+        assert_eq!(attester_info.key_ec.encode(), ecdsa_key);
+        assert_eq!(attester_info.key_sr.encode(), sr25519_key);
+        attester_info
+    }
+
+    pub fn add_target_and_transition_to_next_batch(target: [u8; 4]) -> BlockNumber {
+        Attesters::add_attestation_target(Origin::root(), target);
+        let current_block: BlockNumber = System::block_number();
+        let batching_window: BlockNumber = <MiniRuntime as ConfigAttesters>::BatchingWindow::get();
+
+        // calculate the closest multiple of batching_window
+        let closest_block = ((current_block / batching_window) + 1) * batching_window;
+
+        System::set_block_number(closest_block);
+
+        // assert_eq!(NextBatch::<MiniRuntime>::get(target), None);
+        // Transition to the next batch
+        System::set_block_number(closest_block);
+        Attesters::on_initialize(closest_block);
+        assert_eq!(
+            NextBatch::<MiniRuntime>::get(target),
+            Some(BatchMessage {
+                batch_sfx: None,
+                next_committee: None,
+                new_attesters: None,
+                remove_attesters: None,
+                ban_attesters: None,
+                signatures: Vec::new(),
+                status: BatchStatus::PendingMessage,
+                created: closest_block,
+            })
+        );
+
+        closest_block
     }
 
     #[test]
@@ -1010,13 +1323,20 @@ pub mod attesters_test {
         });
     }
 
-    fn sign_and_submit_attestation(
+    fn sign_and_submit_sfx_attestation(
         attester: AccountId,
         message: [u8; 32],
         key_type: KeyTypeId,
         target: [u8; 4],
         secret_key: [u8; 32],
-    ) {
+    ) -> Vec<u8> {
+        let current_block_1 = add_target_and_transition_to_next_batch(target);
+
+        let sfx_id_a = H256::from(message);
+        assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
+
+        let current_block_2 = add_target_and_transition_to_next_batch(target);
+
         let signature: Vec<u8> = match key_type {
             ECDSA_ATTESTER_KEY_TYPE_ID =>
                 ecdsa::Pair::from_seed(&secret_key).sign(&message).encode(),
@@ -1032,10 +1352,11 @@ pub mod attesters_test {
         assert_ok!(Attesters::submit_attestation(
             Origin::signed(attester),
             message.to_vec(),
-            signature,
+            signature.clone(),
             target,
-            AttestationFor::SFX,
         ));
+
+        signature
     }
 
     #[test]
@@ -1044,10 +1365,10 @@ pub mod attesters_test {
         ext.execute_with(|| {
             // Register an attester
             let attester = AccountId::from([1; 32]);
-            register_attester_with_single_private_key([1u8; 32]);
+            let attester_info = register_attester_with_single_private_key([1u8; 32]);
             // Submit an attestation signed with the Ed25519 key
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            sign_and_submit_attestation(
+            let signature = sign_and_submit_sfx_attestation(
                 attester,
                 message,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -1055,10 +1376,18 @@ pub mod attesters_test {
                 [1u8; 32],
             );
 
-            let attestation =
-                Attesters::attestations(H256::from(*b"message_that_needs_attestation32"))
-                    .expect("Attestation should exist");
-            assert_eq!(attestation.status, AttestationStatus::Pending);
+            let mut latest_batch = Attesters::get_latest_batch_to_sign([0u8; 4]);
+            assert!(latest_batch.is_some());
+
+            let latest_batch_some = latest_batch.unwrap();
+            assert_eq!(latest_batch_some.status, BatchStatus::PendingAttestation);
+
+            // Attesters::attestations(H256::from(*b"message_that_needs_attestation32"))
+            //     .expect("Attestation should exist");
+            assert_eq!(
+                latest_batch_some.signatures,
+                vec![(attester_info.index, signature.try_into().unwrap())]
+            );
         });
     }
 
@@ -1071,7 +1400,7 @@ pub mod attesters_test {
             register_attester_with_single_private_key([1u8; 32]);
             // Submit an attestation signed with the Ed25519 key
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            sign_and_submit_attestation(
+            sign_and_submit_sfx_attestation(
                 attester.clone(),
                 message,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -1081,16 +1410,331 @@ pub mod attesters_test {
 
             let same_signature_again = ecdsa::Pair::from_seed(&[1u8; 32]).sign(&message).encode();
 
-            frame_support::assert_err!(
+            assert_err!(
                 Attesters::submit_attestation(
                     Origin::signed(attester),
                     message.to_vec(),
                     same_signature_again,
                     [0, 0, 0, 0],
-                    AttestationFor::SFX,
                 ),
                 AttestersError::<MiniRuntime>::AttestationDoubleSignAttempt
             );
+        });
+    }
+
+    #[test]
+    fn test_adding_sfx_moves_next_batch_to_pending_attestation() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: [u8; 4] = [0, 0, 0, 0];
+            let current_block_1 = add_target_and_transition_to_next_batch(target);
+
+            let sfx_id_a = H256::repeat_byte(1);
+            assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
+
+            let current_block_2 = add_target_and_transition_to_next_batch(target);
+
+            assert_eq!(
+                Attesters::get_batches(target, BatchStatus::PendingAttestation),
+                vec![BatchMessage {
+                    batch_sfx: Some(vec![sfx_id_a]),
+                    next_committee: None,
+                    new_attesters: None,
+                    ban_attesters: None,
+                    remove_attesters: None,
+                    signatures: vec![],
+                    status: BatchStatus::PendingAttestation,
+                    created: current_block_1,
+                }]
+            );
+        });
+    }
+
+    #[test]
+    fn test_pending_attestation_batch_with_single_sfx_yields_correct_message_hash() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: [u8; 4] = [0, 0, 0, 0];
+            let current_block_1 = add_target_and_transition_to_next_batch(target);
+
+            let sfx_id_a = H256::repeat_byte(1);
+            assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
+
+            let current_block_2 = add_target_and_transition_to_next_batch(target);
+
+            assert_eq!(
+                Attesters::get_latest_batch_to_sign_message(target),
+                Some(sfx_id_a.encode())
+            );
+
+            let mut keccak = Keccak::v256();
+            keccak.update(&sfx_id_a.encode());
+            let mut res: [u8; 32] = [0; 32];
+            keccak.finalize(&mut res);
+            let expected_keccak_sfx_hash = H256::from(res);
+            assert_eq!(
+                Attesters::get_latest_batch_to_sign_hash(target),
+                Some(expected_keccak_sfx_hash)
+            );
+        });
+    }
+
+    #[test]
+    fn test_pending_attestation_batch_with_committee_transition_yields_correct_message_hash() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: [u8; 4] = [0, 0, 0, 0];
+            let current_block_1 = add_target_and_transition_to_next_batch(target);
+
+            let committee_transition: CommitteeTransition = [
+                1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
+                14u32, 15u32, 16u32, 17u32, 18u32, 19u32, 20u32, 21u32, 22u32, 23u32, 24u32, 25u32,
+                26u32, 27u32, 28u32, 29u32, 30u32, 31u32, 32u32,
+            ];
+
+            assert_ok!(Attesters::request_next_committee_attestation(
+                committee_transition
+            ));
+
+            let sfx_id_a = H256::repeat_byte(1);
+            assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
+
+            let add_attester = AccountId::from([1; 32]);
+            register_attester_with_single_private_key([1u8; 32]);
+            assert_eq!(
+                Attesters::request_add_attesters_attestation(&add_attester)
+                    .unwrap_err()
+                    .encode(),
+                AttestersError::<MiniRuntime>::AddAttesterAlreadyRequested.encode()
+            );
+
+            let remove_attester = AccountId::from([2; 32]);
+            register_attester_with_single_private_key([2u8; 32]);
+            assert_ok!(Attesters::request_remove_attesters_attestation(
+                &remove_attester
+            ));
+            let ban_attester = AccountId::from([3; 32]);
+            register_attester_with_single_private_key([3u8; 32]);
+            assert_ok!(Attesters::request_ban_attesters_attestation(&ban_attester));
+
+            let current_block_2 = add_target_and_transition_to_next_batch(target);
+
+            assert_eq!(
+                Attesters::get_latest_batch_to_sign(target),
+                Some(BatchMessage {
+                    batch_sfx: Some(vec![sfx_id_a]),
+                    next_committee: Some(committee_transition),
+                    new_attesters: Some(vec![
+                        (
+                            [
+                                3, 27, 132, 197, 86, 123, 18, 100, 64, 153, 93, 62, 213, 170, 186,
+                                5, 101, 215, 30, 24, 52, 96, 72, 25, 255, 156, 23, 245, 233, 213,
+                                221, 7, 143
+                            ],
+                            0
+                        ),
+                        (
+                            [
+                                2, 77, 75, 108, 209, 54, 16, 50, 202, 155, 210, 174, 185, 217, 0,
+                                170, 77, 69, 217, 234, 216, 10, 201, 66, 51, 116, 196, 81, 167, 37,
+                                77, 7, 102
+                            ],
+                            1
+                        ),
+                        (
+                            [
+                                2, 83, 31, 230, 6, 129, 52, 80, 61, 39, 35, 19, 50, 39, 200, 103,
+                                172, 143, 166, 200, 60, 83, 126, 154, 68, 195, 197, 189, 189, 203,
+                                31, 227, 55
+                            ],
+                            2
+                        )
+                    ]),
+                    remove_attesters: Some(vec![(
+                        [
+                            2, 77, 75, 108, 209, 54, 16, 50, 202, 155, 210, 174, 185, 217, 0, 170,
+                            77, 69, 217, 234, 216, 10, 201, 66, 51, 116, 196, 81, 167, 37, 77, 7,
+                            102
+                        ],
+                        1
+                    ),]),
+                    ban_attesters: Some(vec![(
+                        [
+                            2, 83, 31, 230, 6, 129, 52, 80, 61, 39, 35, 19, 50, 39, 200, 103, 172,
+                            143, 166, 200, 60, 83, 126, 154, 68, 195, 197, 189, 189, 203, 31, 227,
+                            55
+                        ],
+                        2
+                    )]),
+                    signatures: vec![],
+                    status: BatchStatus::PendingAttestation,
+                    created: current_block_1,
+                })
+            );
+
+            assert_eq!(
+                Attesters::get_latest_batch_to_sign_message(target),
+                Some(vec![
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0,
+                    6, 0, 0, 0, 7, 0, 0, 0, 8, 0, 0, 0, 9, 0, 0, 0, 10, 0, 0, 0, 11, 0, 0, 0, 12,
+                    0, 0, 0, 13, 0, 0, 0, 14, 0, 0, 0, 15, 0, 0, 0, 16, 0, 0, 0, 17, 0, 0, 0, 18,
+                    0, 0, 0, 19, 0, 0, 0, 20, 0, 0, 0, 21, 0, 0, 0, 22, 0, 0, 0, 23, 0, 0, 0, 24,
+                    0, 0, 0, 25, 0, 0, 0, 26, 0, 0, 0, 27, 0, 0, 0, 28, 0, 0, 0, 29, 0, 0, 0, 30,
+                    0, 0, 0, 31, 0, 0, 0, 32, 0, 0, 0, 12, 3, 27, 132, 197, 86, 123, 18, 100, 64,
+                    153, 93, 62, 213, 170, 186, 5, 101, 215, 30, 24, 52, 96, 72, 25, 255, 156, 23,
+                    245, 233, 213, 221, 7, 143, 0, 0, 0, 0, 2, 77, 75, 108, 209, 54, 16, 50, 202,
+                    155, 210, 174, 185, 217, 0, 170, 77, 69, 217, 234, 216, 10, 201, 66, 51, 116,
+                    196, 81, 167, 37, 77, 7, 102, 1, 0, 0, 0, 2, 83, 31, 230, 6, 129, 52, 80, 61,
+                    39, 35, 19, 50, 39, 200, 103, 172, 143, 166, 200, 60, 83, 126, 154, 68, 195,
+                    197, 189, 189, 203, 31, 227, 55, 2, 0, 0, 0, 4, 2, 83, 31, 230, 6, 129, 52, 80,
+                    61, 39, 35, 19, 50, 39, 200, 103, 172, 143, 166, 200, 60, 83, 126, 154, 68,
+                    195, 197, 189, 189, 203, 31, 227, 55, 2, 0, 0, 0, 4, 2, 77, 75, 108, 209, 54,
+                    16, 50, 202, 155, 210, 174, 185, 217, 0, 170, 77, 69, 217, 234, 216, 10, 201,
+                    66, 51, 116, 196, 81, 167, 37, 77, 7, 102, 1, 0, 0, 0
+                ])
+            );
+
+            assert_eq!(
+                Attesters::get_latest_batch_to_sign_hash(target),
+                Some(
+                    hex_literal::hex!(
+                        "b6b73fb1c00b1d498da0d140eddebd31ff25d0cf04e1af88f935462c292c74e7"
+                    )
+                    .into()
+                )
+            );
+        });
+    }
+
+    #[test]
+    fn test_pending_attestation_batch_with_all_attestations_ordered_yields_correct_message_hash() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: [u8; 4] = [0, 0, 0, 0];
+            let current_block_1 = add_target_and_transition_to_next_batch(target);
+
+            let committee_transition: CommitteeTransition = [
+                1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
+                14u32, 15u32, 16u32, 17u32, 18u32, 19u32, 20u32, 21u32, 22u32, 23u32, 24u32, 25u32,
+                26u32, 27u32, 28u32, 29u32, 30u32, 31u32, 32u32,
+            ];
+
+            assert_ok!(Attesters::request_next_committee_attestation(
+                committee_transition
+            ));
+
+            let current_block_2 = add_target_and_transition_to_next_batch(target);
+
+            assert_eq!(
+                Attesters::get_latest_batch_to_sign_message(target),
+                Some(committee_transition.encode())
+            );
+
+            let mut keccak = Keccak::v256();
+            keccak.update(&committee_transition.encode());
+            let mut res: [u8; 32] = [0; 32];
+            keccak.finalize(&mut res);
+            let expected_keccak_hash = H256::from(res);
+            assert_eq!(
+                Attesters::get_latest_batch_to_sign_hash(target),
+                Some(expected_keccak_hash)
+            );
+        });
+    }
+
+    #[test]
+    fn test_adding_2_same_sfx_to_next_batch_is_impossible() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: [u8; 4] = [0, 0, 0, 0];
+            add_target_and_transition_to_next_batch(target);
+
+            let sfx_id_a = H256::repeat_byte(1);
+            assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
+
+            assert_eq!(
+                Attesters::request_sfx_attestation(target, sfx_id_a)
+                    .unwrap_err()
+                    .encode(),
+                AttestersError::<MiniRuntime>::SfxAlreadyRequested.encode(),
+            );
+        });
+    }
+
+    #[test]
+    fn test_adding_2_sfx_to_next_batch_and_transition_to_pending_attestation() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: [u8; 4] = [0, 0, 0, 0];
+            assert_eq!(NextBatch::<MiniRuntime>::get(target), None);
+            let current_block = add_target_and_transition_to_next_batch(target);
+
+            let sfx_id_a = H256::repeat_byte(1);
+            assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
+
+            // Verify that the attestation is added to the next batch
+            let next_batch = NextBatch::<MiniRuntime>::get(target).unwrap();
+            assert_eq!(next_batch.batch_sfx, Some(vec![sfx_id_a]));
+
+            // Add another SFX to the next batch
+            let sfx_id_b = H256::repeat_byte(2);
+            assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_b));
+            let next_batch = NextBatch::<MiniRuntime>::get(target).unwrap();
+            assert_eq!(next_batch.batch_sfx, Some(vec![sfx_id_a, sfx_id_b]));
+
+            let mut empty_batch = BatchMessage {
+                batch_sfx: None,
+                next_committee: None,
+                new_attesters: None,
+                ban_attesters: None,
+                remove_attesters: None,
+                signatures: vec![],
+                status: BatchStatus::PendingMessage,
+                created: current_block,
+            };
+            let current_block: BlockNumber = System::block_number();
+            let batching_window: BlockNumber =
+                <MiniRuntime as ConfigAttesters>::BatchingWindow::get();
+
+            // Transition to the next batch
+            System::set_block_number(batching_window * 2);
+            Attesters::on_initialize(batching_window * 2);
+            let next_batch = NextBatch::<MiniRuntime>::get(target).unwrap();
+            assert_eq!(next_batch.batch_sfx, None);
+
+            // Verify that batches by status are correct
+            assert_eq!(
+                Attesters::get_batches(target, BatchStatus::PendingMessage),
+                vec![]
+            );
+            assert_eq!(
+                Attesters::get_batches(target, BatchStatus::PendingAttestation),
+                vec![BatchMessage {
+                    batch_sfx: Some(vec![sfx_id_a, sfx_id_b]),
+                    next_committee: None,
+                    new_attesters: None,
+                    ban_attesters: None,
+                    remove_attesters: None,
+                    signatures: vec![],
+                    status: BatchStatus::PendingAttestation,
+                    created: batching_window,
+                }]
+            );
+            assert_eq!(
+                Attesters::get_batches(target, BatchStatus::PendingSubmission),
+                vec![]
+            );
+            assert_eq!(
+                Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved),
+                vec![]
+            );
+            assert_eq!(
+                Attesters::get_batches(target, BatchStatus::ReadyForSubmissionByMajority),
+                vec![]
+            );
+            empty_batch.created = batching_window * 2;
+            assert_eq!(NextBatch::<MiniRuntime>::get(target), Some(empty_batch));
         });
     }
 
@@ -1153,7 +1797,7 @@ pub mod attesters_test {
                 register_attester_with_single_private_key([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
                 let message: [u8; 32] = *b"message_that_needs_attestation32";
-                sign_and_submit_attestation(
+                sign_and_submit_sfx_attestation(
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -1181,7 +1825,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
-                sign_and_submit_attestation(
+                sign_and_submit_sfx_attestation(
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -1193,11 +1837,11 @@ pub mod attesters_test {
             // Check if the attestations have been added to the batch
             let batches = Batches::<MiniRuntime>::get(target).expect("Batches should exist");
             let first_batch = batches.first().expect("First batch should exist");
-            assert_eq!(first_batch.attestations.len(), 32);
-            assert_eq!(first_batch.status, BatchStatus::Pending);
+            assert_eq!(first_batch.signatures.len(), 32);
+            assert_eq!(first_batch.status, BatchStatus::PendingMessage);
 
             let fake_batch_confirmation = TargetBatchInclusionProof {
-                batch_hash: H256::zero(),
+                target_batch_message: vec![],
                 inclusion_proof: vec![],
             };
 
@@ -1213,7 +1857,7 @@ pub mod attesters_test {
             // Check if the batch status has been updated to Committed
             let batches = Batches::<MiniRuntime>::get(target).expect("Batches should exist");
             let first_batch = batches.first().expect("First batch should exist");
-            assert_eq!(first_batch.status, BatchStatus::Pending);
+            assert_eq!(first_batch.status, BatchStatus::PendingMessage);
         });
     }
 
