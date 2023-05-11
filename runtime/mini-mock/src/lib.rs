@@ -1,10 +1,10 @@
 use codec::{Decode, Encode};
 use frame_support::RuntimeDebug;
 pub use pallet_attesters::{
-    ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations,
-    Attesters as AttestersStore, BatchStatus, Batches, Config as ConfigAttesters, CurrentCommittee,
-    Error as AttestersError, Nominations, PendingSlashes, PendingUnnominations, PreviousCommittee,
-    SortedNominatedAttesters,
+    ActiveSet, Attestation, AttestationFor, AttestationStatus, AttestationTargets, Attestations,
+    Attesters as AttestersStore, BatchMessage, BatchStatus, Batches, Config as ConfigAttesters,
+    CurrentCommittee, Error as AttestersError, NextBatch, Nominations, PendingSlashes,
+    PendingUnnominations, PreviousCommittee, SortedNominatedAttesters,
 };
 
 mod treasuries_config;
