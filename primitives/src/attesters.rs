@@ -1,7 +1,9 @@
 use frame_support::pallet_prelude::*;
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
+use sp_core::H256;
 use sp_runtime::Percent;
 use sp_std::prelude::*;
+use t3rn_types::sfx::TargetId;
 
 // Key types for attester crypto
 pub const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
@@ -14,6 +16,7 @@ pub struct AttesterInfo {
     pub key_ec: [u8; 33],
     pub key_sr: [u8; 32],
     pub commission: Percent,
+    pub index: u32,
 }
 
 impl AttesterInfo {
@@ -47,6 +50,23 @@ impl AttesterInfo {
     }
 }
 
+pub type Signature65b = [u8; 65];
+pub type PublicKeyEcdsa33b = [u8; 33];
+pub const COMMITTEE_SIZE: usize = 32;
+
+pub type CommitteeTransition = [u32; COMMITTEE_SIZE];
+pub type AttestersChange = Vec<([u8; 33], u32)>;
+pub type BatchConfirmedSfxId = Vec<H256>;
+
+pub trait AttestersWriteApi<Account, Error> {
+    fn request_sfx_attestation(target: TargetId, sfx_id: H256) -> Result<(), Error>;
+    fn request_add_attesters_attestation(add_attester: &Account) -> Result<(), Error>;
+    fn request_ban_attesters_attestation(ban_attesters: &Account) -> Result<(), Error>;
+    fn request_remove_attesters_attestation(remove_attesters: &Account) -> Result<(), Error>;
+    fn request_next_committee_attestation(next_committee: CommitteeTransition)
+        -> Result<(), Error>;
+}
+
 pub trait AttestersReadApi<Account, Balance> {
     fn previous_committee() -> Vec<Account>;
     fn current_committee() -> Vec<Account>;
@@ -59,27 +79,31 @@ pub trait AttestersReadApi<Account, Balance> {
 pub struct AttestersReadApiEmptyMock<Account, Balance> {
     _phantom: PhantomData<(Account, Balance)>,
 }
-//
-// impl<Account, Balance> AttestersReadApi<Account, Balance>
-//     for AttestersReadApiEmptyMock<Account, Balance>
-// {
-//     fn previous_committee() -> Vec<Account> {
-//         vec![]
-//     }
-//
-//     fn current_committee() -> Vec<Account> {
-//         vec![]
-//     }
-//
-//     fn active_set() -> Vec<Account> {
-//         vec![]
-//     }
-//
-//     fn honest_active_set() -> Vec<Account> {
-//         vec![]
-//     }
-//
-//     fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)> {
-//         vec![]
-//     }
-// }
+
+impl<Account, Balance> AttestersReadApi<Account, Balance>
+    for AttestersReadApiEmptyMock<Account, Balance>
+{
+    fn previous_committee() -> Vec<Account> {
+        vec![]
+    }
+
+    fn current_committee() -> Vec<Account> {
+        vec![]
+    }
+
+    fn active_set() -> Vec<Account> {
+        vec![]
+    }
+
+    fn honest_active_set() -> Vec<Account> {
+        vec![]
+    }
+
+    fn read_attester_info(attester: &Account) -> Option<AttesterInfo> {
+        None
+    }
+
+    fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)> {
+        vec![]
+    }
+}
