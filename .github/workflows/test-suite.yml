@@ -98,7 +98,7 @@ jobs:
       - name: 🧪 Run Tests
         run: |
           cd pallets/portal
-          cargo test
+          cargo test -- --ignored
         
       - name: 💀 Kill Node Standalone
         if: always()
