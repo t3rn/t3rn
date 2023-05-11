@@ -26,10 +26,12 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
-          # TODO: executor is dependent on types and SDK, so we need to check them as well
-          # TODOL can be removed when we have npm packages
+          # TODO: can be removed when we have npm packages
+          # - "client/packages/**/*.ts"
+
           filters: |
             src:
+            - "client/executor.Dockerfile"
             - "client/packages/**/*.ts"
             - "client/packages/executor/**/*.ts"
             - "client/packages/executor/**/*.json"
@@ -69,6 +71,11 @@ jobs:
           message-path: client/packages/executor/lint.out
 
       - run: yarn test
+
+      - name: Build Docker
+        working-directory: ./client
+        run: |
+          docker build . -f executor.Dockerfile
 
   deploy:
     name: Deploy Executor

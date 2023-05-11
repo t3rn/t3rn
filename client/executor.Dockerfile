@@ -1,4 +1,4 @@
-FROM node:18.12
+FROM node:20.1
 
 RUN npm install -g typescript
 

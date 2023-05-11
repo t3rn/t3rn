@@ -1,4 +1,4 @@
-FROM node:18.12
+FROM node:20.1
 
 RUN npm install -g typescript ts-node
 
@@ -11,8 +11,8 @@ RUN cd /app/types && yarn install && yarn build
 ADD packages/cli /app/cli
 RUN cd /app/cli && yarn 
 
-ADD packages/tsconfig.json /app/cli/
+ADD packages/cli/tsconfig.json /app/cli/
 
 WORKDIR /app/cli
 
-ENTRYPOINT ["ts-node", "index.ts"]
+ENTRYPOINT ["yarn", "cli"]
