@@ -55,6 +55,15 @@ jobs:
       - run: cd .. && make all
       - run: yarn test
 
+  build-docker:
+    name: Build Docker CLI
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
       - name: Build Docker
         working-directory: ./client
         run: |
