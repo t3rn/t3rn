@@ -1,11 +1,10 @@
 name: Test Suite
 
 on:
-  pull_request:
-  push:
-    branches:
-      - development
   merge_group:
+  pull_request:
+    types: [opened, labeled, synchronize]
+
 
 # Automatically cancel older in-progress jobs on the same branch
 concurrency:
@@ -22,8 +21,8 @@ jobs:
   # Using paths in pull request trigger would make this action unpassable for PRs without circuit changes - due to required checks.
   changes:
     runs-on: [self-hosted]
-    # We don't need to run this job on every push to development branch
-    if: ${{ !(contains(github.event.head_commit.message, 'build(release):')) }}
+    # Run it only when e2e label is present in PR or in merge queue
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'e2e') || github.event.pull_request.mergeable }}
     outputs:
       src: ${{ steps.changes.outputs.src }}
 
