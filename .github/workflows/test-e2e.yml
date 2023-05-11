@@ -1,7 +1,8 @@
-name: Test Suite
+name: Test E2E
 
 on:
-  merge_group:
+  # TODO: uncomment when e2e testing is ready
+  # merge_group:
   pull_request:
     types: [opened, labeled, synchronize]
 
@@ -44,8 +45,8 @@ jobs:
         run: |
           echo Detected changes: "${{ steps.changes.outputs.src }}"
 
-  build-test:
-    name: Generate Tests & Test
+  test:
+    name: Generate E2E Tests & Test
     runs-on: [self-hosted, rust]
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
