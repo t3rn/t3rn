@@ -55,12 +55,14 @@ export class SubstrateRelayer extends EventEmitter {
    * @param sideEffect Object
    * @returns SubmittableExtrinsic tx that can be submitted to the target
    */
-  buildTx(sideEffect: SideEffect): SubmittableExtrinsic {
+  buildTx(sideEffect: SideEffect): SubmittableExtrinsic | undefined {
     switch (sideEffect.action) {
       case SfxType.Transfer: {
         const data = sideEffect.execute();
         return this.client.tx.balances.transfer(data[0], data[1]);
       }
+      default:
+        return;
     }
   }
 
@@ -75,7 +77,7 @@ export class SubstrateRelayer extends EventEmitter {
     this.logger.info(
       `Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`
     );
-    const tx: SubmittableExtrinsic = this.buildTx(sfx);
+    const tx = this.buildTx(sfx) as SubmittableExtrinsic;
     const nonce = this.nonce;
     this.nonce += 1; // we optimistically increment the nonce before we go async. If the tx fails, we will decrement it which might be a bad idea
     return new Promise<void>((resolve, reject) =>
