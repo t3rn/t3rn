@@ -212,6 +212,15 @@ impl ExtBuilder {
                     (*b"call", Some(10)),
                 ],
             },
+            GatewayRecord {
+                gateway_id: *b"eth2",
+                verification_vendor: GatewayVendor::Ethereum,
+                execution_vendor: ExecutionVendor::EVM,
+                codec: t3rn_abi::Codec::Rlp,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![(*b"tran", Some(2))],
+            },
         ];
         self
     }

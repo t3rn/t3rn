@@ -2,8 +2,10 @@
 
 use crate::*;
 use sp_runtime::Percent;
+use std::marker::PhantomData;
 
 use circuit_runtime_pallets::{
+    pallet_eth2_finality_verifier::types::Root,
     pallet_grandpa_finality_verifier::light_clients::select_grandpa_light_client_instance,
     pallet_portal::Error as PortalError,
 };
@@ -223,7 +225,9 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
                 select_grandpa_light_client_instance::<Runtime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
-            _ => Err(PortalError::<Runtime>::UnimplementedGatewayVendor),
+            GatewayVendor::Ethereum => Ok(Box::new(
+                pallet_eth2_finality_verifier::Pallet::<Runtime>(PhantomData),
+            )),
         }
     }
 }
@@ -325,15 +329,18 @@ impl pallet_executors::Config for Runtime {
 }
 
 parameter_types! {
-    pub const SyncCommitteeSize: u32 = 512;
-    pub const GenesisValidatorsRoot: [u8; 32] = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
+    pub const HeadersToStoreEthereum: u32 = 64 + 1; // we want a multiple of slots_per_epoch + 1
+    pub const SessionLength: u64 = 5;
+    pub const SyncCommitteeSize: u32 = 26;
+    pub const GenesisValidatorsRoot: Root = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
     pub const SlotsPerEpoch: u32 = 32;
-    pub const EpochsPerSyncCommitteeTerm: u32 = 256;
+    pub const EpochsPerSyncCommitteeTerm: u32 = 2;
 }
 
 impl pallet_eth2_finality_verifier::Config for Runtime {
     type EpochsPerSyncCommitteeTerm = EpochsPerSyncCommitteeTerm;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEthereum;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();

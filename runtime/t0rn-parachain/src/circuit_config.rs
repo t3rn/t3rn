@@ -3,6 +3,7 @@ use crate::{
     Event, Portal, RandomnessCollectiveFlip, Runtime, Timestamp, XDNS,
 };
 use sp_runtime::Percent;
+use sp_std::marker::PhantomData;
 
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
@@ -231,7 +232,9 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
                 select_grandpa_light_client_instance::<Runtime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
-            _ => Err(PortalError::<Runtime>::UnimplementedGatewayVendor),
+            GatewayVendor::Ethereum => Ok(Box::new(
+                pallet_eth2_finality_verifier::Pallet::<Runtime>(PhantomData),
+            )),
         }
     }
 }
