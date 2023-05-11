@@ -96,6 +96,10 @@ export class ExtrinsicExport {
     const fileName = `/${Date.now()}_${this.section}_${this.method}.json`;
     const path = process.env.EXPORT_PATH || "./exports";
 
+    if (!fs.existsSync(path)) {
+      fs.mkdirSync(path);
+    }
+
     fs.writeFileSync(`${path}${fileName}`, json);
   }
 }

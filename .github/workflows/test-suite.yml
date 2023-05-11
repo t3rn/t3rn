@@ -57,6 +57,13 @@ jobs:
       - name: ⚙ Install rust toolchain defined in rust-toolchain.toml
         run: rustup show
 
+      - name: Read .nvmrc
+        run: echo NVMRC=`cat client/packages/.nvmrc` >> $GITHUB_ENV
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NVMRC }}
+
       - name: 📑 Build CLI
         run: |
           # Build
@@ -70,14 +77,19 @@ jobs:
           make all&
           echo "NODE_STANDALONE_PID=$!" >> $GITHUB_ENV
 
-      - name: 📑 Run ranger
+      - name: 📐 Run ranger
         run: |
-          # Run node standalone
           cd client/packages/cli
-          ts-node index.ts register roco
+          yarn cli init -c
+          cli register -g roco
 
           ls -lah
           
           # Run ranger
 
           # Run executor
+
+      - name: 💀 Kill Node Standalone
+        if: always()
+        run: |
+          kill $NODE_STANDALONE_PID
