@@ -1,10 +1,10 @@
-const CIRCUIT_WS_ENDPOINT = process.env.CIRCUIT_WS_ENDPOINT || "ws://127.0.0.1:9944"
-const CIRCUIT_RPC_ENDPOINT = process.env.CIRCUIT_RPC_ENDPOINT || "http://127.0.0.1:9933"
+const WS_CIRCUIT_ENDPOINT = process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944"
+const RPC_CIRCUIT_ENDPOINT = process.env.RPC_CIRCUIT_ENDPOINT || "http://127.0.0.1:9933"
 
 export default {
   circuit: {
-    ws: CIRCUIT_WS_ENDPOINT,
-    http: CIRCUIT_RPC_ENDPOINT,
+    ws: WS_CIRCUIT_ENDPOINT,
+    http: RPC_CIRCUIT_ENDPOINT,
     decimals: 12,
     valueTypeSize: 16, //bytes
   },

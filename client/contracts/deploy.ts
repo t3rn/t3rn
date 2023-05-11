@@ -10,7 +10,7 @@ export const setupSdk = async () =>  {
 	const keyring = new Keyring({ type: "sr25519" })
 	const signer = keyring.addFromUri("//Bob");
 
-	const sdk = new Sdk(process.env.CIRCUIT_WS || "ws://localhost:9944", signer)
+	const sdk = new Sdk(process.env.WS_CIRCUIT_ENDPOINT || "ws://localhost:9944", signer)
 	await sdk.init();
 
 	return { sdk, signer }

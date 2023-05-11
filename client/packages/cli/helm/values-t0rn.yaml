@@ -1,9 +1,9 @@
 jobs:
   - name: ranger
     env:
-      - name: CIRCUIT_WS_ENDPOINT
+      - name: WS_CIRCUIT_ENDPOINT
         value: wss://ws.t0rn.io
-      - name: CIRCUIT_RPC_ENDPOINT
+      - name: RPC_CIRCUIT_ENDPOINT
         value: https://rpc.t0rn.io
       - name: LOG_LEVEL
         value: debug
