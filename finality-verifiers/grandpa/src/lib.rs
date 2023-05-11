@@ -937,8 +937,8 @@ pub mod tests {
 pub mod tests {
     use super::*;
     use crate::mock::{
-        run_test, test_header, test_header_range, test_header_with_correct_parent, AccountId,
-        Origin, TestHeader, TestNumber, TestRuntime,
+        produce_mock_headers_range, run_test, test_header, test_header_range,
+        test_header_with_correct_parent, AccountId, Origin, TestHeader, TestNumber, TestRuntime,
     };
     use bp_runtime::ChainId;
     use bridges::{
@@ -1021,19 +1021,6 @@ pub mod tests {
         init_data: ParachainRegistrationData,
     ) -> Result<ParachainRegistrationData, &'static str> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
-    }
-
-    pub fn produce_mock_headers_range(from: u8, to: u8) -> GrandpaHeaderData<TestHeader> {
-        let headers: Vec<TestHeader> = test_header_range(to.into());
-        let signed_header: &TestHeader = headers.last().unwrap();
-        let justification = make_default_justification(&signed_header.clone());
-        let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec();
-
-        GrandpaHeaderData::<TestHeader> {
-            signed_header: signed_header.clone(),
-            range,
-            justification,
-        }
     }
 
     pub fn submit_headers(from: u8, to: u8) -> Result<GrandpaHeaderData<TestHeader>, &'static str> {

@@ -330,13 +330,14 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(feature = "testing"))]
 pub mod grandpa_light_clients_test {
     use super::*;
     use codec::Encode;
 
     use crate::{
-        bridges::test_utils::authorities, mock::*, tests::produce_mock_headers_range,
+        bridges::test_utils::authorities,
+        mock::{produce_mock_headers_range, *},
         types::RelaychainRegistrationData,
     };
     use frame_support::{assert_ok, traits::OriginTrait};
