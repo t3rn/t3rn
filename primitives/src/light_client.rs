@@ -55,12 +55,6 @@ pub trait LightClient<T: frame_system::Config> {
 
     fn header_speed_mode_satisfied(&self, header: Bytes, speed_mode: SpeedMode) -> bool;
 
-    fn submit_finality_header(
-        &self,
-        origin: OriginFor<T>,
-        encoded_header_data: Bytes,
-    ) -> Result<bool, DispatchError>;
-
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],

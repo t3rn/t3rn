@@ -148,22 +148,6 @@ where
         }
     }
 
-    fn submit_finality_header(
-        &self,
-        origin: OriginFor<T>,
-        encoded_header_data: Bytes,
-    ) -> Result<bool, DispatchError> {
-        match self {
-            PalletInstance::Rococo(pallet) =>
-                pallet.submit_finality_header(origin, encoded_header_data),
-            PalletInstance::Kusama(pallet) =>
-                pallet.submit_finality_header(origin, encoded_header_data),
-            PalletInstance::Polkadot(pallet) =>
-                pallet.submit_finality_header(origin, encoded_header_data),
-            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
-        }
-    }
-
     fn header_speed_mode_satisfied(&self, header: Bytes, speed_mode: SpeedMode) -> bool {
         match self {
             PalletInstance::Rococo(pallet) =>
@@ -292,14 +276,6 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
 
     fn header_speed_mode_satisfied(&self, including_header: Bytes, speed_mode: SpeedMode) -> bool {
         true
-    }
-
-    fn submit_finality_header(
-        &self,
-        _origin: OriginFor<T>,
-        encoded_header_data: Bytes,
-    ) -> Result<bool, DispatchError> {
-        self.submit_encoded_headers(encoded_header_data)
     }
 
     fn verify_event_inclusion(
