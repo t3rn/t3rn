@@ -144,26 +144,21 @@ parameter_types! {
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
 }
 
-pub struct FindAuthorAccountId32;
+pub struct FindAuthorMockRoundRobinRotate32;
 
-impl FindAuthor<AccountId> for FindAuthorAccountId32 {
+impl FindAuthor<AccountId> for FindAuthorMockRoundRobinRotate32 {
     fn find_author<'a, I>(digests: I) -> Option<AccountId>
     where
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
-        let aura_digest = digests
-            .into_iter()
-            .find(|(engine_id, _)| engine_id == &sp_consensus_aura::AURA_ENGINE_ID)
-            .map(|(_, data)| data)
-            .expect("sp_consensus_aura::Error::InvalidAuthorities");
+        // Get current block number
+        let current_block_number = <frame_system::Module<MiniRuntime>>::block_number();
 
-        let aura_author = sp_consensus_aura::sr25519::AuthorityId::decode(&mut &aura_digest[..])
-            .expect("sp_consensus_aura::Error::InvalidAuraDigest");
+        let round_robin_rotate_32: u8 = (current_block_number % 32) as u8;
 
-        Some(AccountId::from(
-            sp_core::sr25519::Public::from_slice(&aura_author.encode())
-                .expect("should encode sr25519 aura id from sp_consensus_aura::sr25519::app_sr25519::Public"),
-        ))
+        let mock_rr_account = AccountId::new([round_robin_rotate_32; 32]);
+
+        Some(mock_rr_account)
     }
 }
 
@@ -180,7 +175,7 @@ impl pallet_rewards::Config for MiniRuntime {
     type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
-    type FindAuthor = FindAuthorAccountId32;
+    type FindAuthor = FindAuthorMockRoundRobinRotate32;
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;

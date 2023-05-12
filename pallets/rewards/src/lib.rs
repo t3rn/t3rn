@@ -848,7 +848,6 @@ pub mod test {
                 System::set_block_number(counter);
                 Rewards::on_initialize(counter);
                 // verify that the block author is noted
-                println!("block author2: {:?}", Rewards::author());
                 let author: AccountId = Rewards::author().unwrap();
                 assert!(AuthorsThisPeriod::<MiniRuntime>::get()
                     .iter()
