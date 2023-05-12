@@ -192,7 +192,6 @@ fn testnet_genesis(
         transaction_payment: Default::default(),
         assets: Default::default(),
         xdns: XDNSConfig {
-            known_xdns_records: vec![],
             known_gateway_records: gateway_records,
             standard_sfx_abi,
         },

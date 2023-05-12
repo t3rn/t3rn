@@ -224,8 +224,8 @@ fn should_error_trying_to_purge_a_missing_xdns_record() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_gateway(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
-                pallet_xdns::pallet::Error::<Runtime>::UnknownXdnsRecord
+                XDNS::purge_gateway_record(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
+                pallet_xdns::pallet::Error::<Runtime>::XdnsRecordNotFound
             );
             assert_eq!(
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
@@ -242,7 +242,11 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_gateway(Origin::<Runtime>::Signed(ALICE).into(), ALICE, *b"gate"),
+                XDNS::purge_gateway_record(
+                    Origin::<Runtime>::Signed(ALICE).into(),
+                    ALICE,
+                    *b"gate"
+                ),
                 DispatchError::BadOrigin
             );
             assert_eq!(
