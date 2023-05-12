@@ -230,6 +230,7 @@ where
         + pallet_3vm_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>
         + pallet_3vm_evm_rpc::EvmRuntimeRPCApi<Block, AccountId, Balance>
         + pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>
+        + pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>
         + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
