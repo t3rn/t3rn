@@ -39,7 +39,7 @@ pallet-assets     = { git = "https://github.com/paritytech/substrate", branch = 
 pallet-contracts  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 pallet-timestamp  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-t3rn-sdk-primitives = { version = "=0.1.1-rc.4" }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.5" }
 circuit-runtime-types = { path = "../../runtime/common-types" }
 
 [features]

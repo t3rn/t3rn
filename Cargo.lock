@@ -1125,6 +1125,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
+ "pallet-maintenance-mode",
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
@@ -6252,7 +6253,7 @@ version = "1.0.0-alpha.0"
 dependencies = [
  "assert_matches",
  "bitflags",
- "env_logger 0.9.3",
+ "env_logger 0.10.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6846,6 +6847,21 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-keyring",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-maintenance-mode"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/moonbeam-pallets?branch=polkadot-v0.9.27#031758abddf0073ce4249004e0a11e2af1034c88"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -11109,18 +11125,18 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.160"
+version = "1.0.162"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb2f3770c8bce3bcda7e149193a069a0f4365bda1fa5cd88e03bca26afc1216c"
+checksum = "71b2f6e1ab5c2b98c05f0f35b236b22e8df7ead6ffbf51d7808da7f8817e7ab6"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.160"
+version = "1.0.162"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "291a097c63d8497e00160b166a967a4a79c64f3facdd01cbd7502231688d77df"
+checksum = "a2a0814352fd64b58489904a44ea8d90cb1a91dcb6b4f5ebabc32c8318e93cb6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -12383,7 +12399,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.16.4-rc.0"
+version = "1.19.2-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12458,7 +12474,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.16.4-rc.0"
+version = "1.19.2-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12501,6 +12517,7 @@ dependencies = [
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
+ "pallet-maintenance-mode",
  "pallet-membership",
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",
@@ -12779,9 +12796,9 @@ dependencies = [
 
 [[package]]
 name = "t3rn-sdk-primitives"
-version = "0.1.1-rc.4"
+version = "0.1.1-rc.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7a7d125fd0360376e83222134e2dad6f3eed9d5f5b42c24923cf601bd42e7a3"
+checksum = "0933428fa80fc225cce5eed35be29f941fd47d815bc809b914ecf5168abf6a7e"
 dependencies = [
  "arrayvec 0.7.2",
  "cfg-if 1.0.0",

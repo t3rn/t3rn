@@ -1,6 +1,6 @@
 import { config } from "../../config/config"
 import { BehaviorSubject } from "rxjs"
-const axios = require("axios")
+import axios from "axios"
 
 /**
  * MVP implementation of sourcing prices from coingecko
@@ -23,7 +23,7 @@ export class CoingeckoPricing {
     /** Flag for finishing tests when debuging */
     debugFlag: boolean
 
-    constructor(updateFrequency?: number, debugFlag: boolean = false) {
+    constructor(updateFrequency?: number, debugFlag = false) {
         // Get the frequency when instantiating the class
         if (updateFrequency) {
             this.updateFrequency = updateFrequency
@@ -41,7 +41,7 @@ export class CoingeckoPricing {
 
     /** Read the config file to initialize the list of assets we want to track */
     getTrackingAssets() {
-        let keys = Object.keys(config.assets)
+        const keys = Object.keys(config.assets)
         for (let i = 0; i < keys.length; i++) {
             config.assets[keys[i]].forEach((asset) => {
                 if (asset.priceSource === "coingecko") {
@@ -57,17 +57,13 @@ export class CoingeckoPricing {
         const ids = Object.keys(this.assets)
         for (let i = 0; i < ids.length; i++) {
             await axios
-                .get(
-                    config.pricing.coingecko.endpoint +
-                    this.assets[ids[i]] +
-                    config.pricing.coingecko.endpointDefaults
-                )
+                .get(config.pricing.coingecko.endpoint + this.assets[ids[i]] + config.pricing.coingecko.endpointDefaults)
                 .then((res) => {
                     const price = parseFloat(res.data.market_data.current_price["usd"])
                     if (price !== this.prices[ids[i]].getValue()) {
                         this.prices[ids[i]].next(price)
                     }
-                    return new Promise((resolve) => setTimeout(resolve, 2000));
+                    return new Promise((resolve) => setTimeout(resolve, 2000))
                 })
                 .catch((err) => {
                     console.log("Failed fetching prices due to ->", err.toString())

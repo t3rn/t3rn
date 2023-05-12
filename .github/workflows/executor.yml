@@ -7,6 +7,10 @@ on:
       - development
   merge_group:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   # This job checks if files has been modified.
   # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
@@ -22,8 +26,11 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
+          # TODO: executor is dependent on types and SDK, so we need to check them as well
+          # TODOL can be removed when we have npm packages
           filters: |
             src:
+            - "client/packages/**/*.ts"
             - "client/packages/executor/**/*.ts"
             - "client/packages/executor/**/*.json"
             - ".github/workflows/executor.yml"
@@ -51,6 +58,16 @@ jobs:
       - run: cd .. && make all
       - run: yarn
       - run: yarn ci
+      - run: yarn fmt
+      - run: yarn build-docs
+      - run: |
+          yarn lint > lint.out || true
+
+      - name: Comment on lint results
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: client/packages/executor/lint.out
+
       - run: yarn test
 
   deploy:

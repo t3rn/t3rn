@@ -1,17 +1,29 @@
 test:
   - "**/test*.rs"
+  - "**/*.test.ts"
 
 "dependencies :deciduous_tree:":
-  - any: ['**/Cargo.lock']
+  - '**/Cargo.lock'
+  - '**/pnpm-lock.yaml'
+  - '**/yarn.lock'
 
 javascript:
   - '**/*.js'
   - '**/*.ts'
+  - '**/.nvmrc'
+  - '**/.prettierrc'
+  - '**/jest.config.ts'
+  - '**/pnpm-lock.yaml'
+  - '**/yarn.lock'
+  - '**/tsconfig.json'
+  - '**/package.json'
 
 "runtime :hammer_and_wrench:":
   - 'runtime/**'
 
 rust:
+  - '**/Cargo.lock'
+  - '**/Cargo.toml'
   - '**/*.rs'
 
 circuit:

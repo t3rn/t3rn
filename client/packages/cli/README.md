@@ -1,35 +1,103 @@
-## t3rn CLI
-A simple CLI tool for interacting with the t3rn circuit.
+# @t3rn/cli
 
-### Setup:
-Before interacting with the t3rn circuit, we need to configure a couple of things. The is done in `config/setup.ts`. 
+A CLI tool for interacting with the t3rn circuit.
 
-#### Circuit Section:
-Here we simply specify the circuit WS endpoint we want to interact with
+## Installation
+
+The CLI is yet to be published to NPM, so you must manually install the dependencies and build the CLI from the source. To do so, run the command below to install the CLI dependencies:
+
 ```
-circuit: {
-    rpc: "ws://127.0.0.1:9944",
-},
+npm i -g yarn
+yarn i
 ```
 
-#### Gateway Section:
-Here we specify the different parameters that describe a gateway. This is important for registrations, but also for handling decimal points, address formats etc. in other transactions
+## Setup
 
-The `transferData` section must also be noted. Here we can specify default values for the transfer command. Currently, fee and receiver can be specified.
+To start using the cli, you need to generate a `.t3rnrc.json` config file.
 
+```
+yarn cli init -c
+```
 
-### Supported Transactions:
-A list of the supported transactions.
+By using this command, you will create a configuration file that is already set up for you in your current working directory.
 
-#### Register Gateway:
-Currently, the registration for relaychains is only supported. The registration can be executed by running: `ts-node index.ts register roco`. Note that `roco` matches the gatewayId as specified in the configs.
+Refer to the [configuration docs](./CONFIG.md) to learn how to configure a `.t3rnrc.json` file.
 
-#### setOperational:
-to use a newly registered gateway, it must be set operations. This can be done with: `ts-node index.ts setOperational roco true`
+## Commands
 
-#### Transfer:
-A simple transfer, currently only supporting nativ substrate assets. 
+### init
 
-`ts-node index.ts transfer roco 0.1 receiver (optinal) fee (optional)`
+The `init` command is used to generate a config or transfer template.
 
-If the optional parameters are omitted, the default values specified in the config will be used. 
+Usage:
+
+```bash
+yarn cli init [options]
+```
+
+Options:
+
+- **-c, --config [file-path]**: Generate a config template
+- **-t, --transfer [file-path]**: Generate a transfer template
+
+### register
+
+The `register` command is used to register a gateway with the t3rn circuit.
+
+Usage:
+
+```bash
+yarn cli register [options]
+```
+
+Options:
+
+- **-g, --gateway \<id\>**: ID of the gateway to register
+
+### submit
+
+The `submit` command is used to submit an extrinsic to the t3rn circuit.
+
+Usage:
+
+```bash
+yarn cli submit [options]
+```
+
+Options:
+
+- **-s, --sfx \<file-path\>**: Path to the sfx JSON file
+- **-h, --headers \<gateway_id\>**: Submit the latest headers of a gateway to portal. All available finalized headers will be added.
+
+### bid
+
+The `bid` command is used to bid on an execution as an executor.
+
+```bash
+yarn cli [sfxId] [amount]
+```
+
+Arguments:
+
+- **sfxId \<string\>**: sfxId of the side effect to bid on
+- **amount \<float\>**: bid amount
+
+## Examples
+
+### Submit transfer
+
+Use the following commands to submit a sample transfer:
+
+```bash
+# Generate config file
+yarn cli init -c
+
+# Generate a sample transfer file
+yarn cli init -t
+
+# Register the roco gateway
+yarn cli register -g roco
+
+# Submit a transfer
+yarn cli submit -s transfer.json
+```

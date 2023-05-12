@@ -1,7 +1,6 @@
 import config from "./config/setup"
 import { ApiPromise, Keyring } from'@polkadot/api';
 import { register } from "./commands/register/register";
-import { setOperational } from "./commands/operational";
 import {onExtrinsicTrigger} from "./commands/onExtrinsicTrigger";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";
@@ -114,45 +113,6 @@ class CircuitCLI {
         }
     }
 
-    async setOperational(id: string, operational: boolean, exportArgs: boolean, exportName: string) {
-        const data = config.gateways.find(elem => elem.id === id)
-        if (data) {
-            const transactionArgs = await setOperational(this.circuit, data, operational)
-            const tx = this.circuit.tx.portal.setOperational(transactionArgs?.gatewayId, transactionArgs?.operational);
-            let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(this.sdk.circuit.tx.createSudo(tx))
-                .then(() => {
-                    logger.info("Success: Operational status set!")
-                     this.addLog({
-                         success: true,
-                         msg: "Operational status set!",
-                         gatewayId: transactionArgs?.gatewayId
-                    })
-                })
-                .catch(err => {
-                    logger.info("Error: setOperational Failed! Err:", err)
-                     this.addLog({
-                         success: false,
-                         msg: "setOperational Failed!",
-                         err,
-                         gatewayId: transactionArgs?.gatewayId
-                    })
-                    this.error()
-                })
-
-            if (exportArgs) {
-                const fileName = `./exports/` + exportName + '.json';
-                // @ts-ignore
-                await this.exportData([transactionArgs], fileName, "set-operational", submissionHeight)
-            } else {
-                this.close()
-            }
-
-        } else {
-            logger.debug(`Config or argument for ${process.argv[3]} not found!`)
-            this.error();
-        }
-    }
-
     async submitHeaders(id: string, exportArgs: boolean, exportName: string) {
         const gatewayData = config.gateways.find(elem => elem.id === id)
         if(gatewayData) {
@@ -215,7 +175,7 @@ class CircuitCLI {
         if(gatewayData) {
             if(data.to === '') data.to = gatewayData.transferData.receiver;
             const transactionArgs: any = onExtrinsicTrigger(this.circuit, [data], sequential, this.signer.address, this.sdk)
-            const tx = this.circuit.tx.circuit.onExtrinsicTrigger(transactionArgs.sideEffects, 0, false)
+            const tx = this.circuit.tx.circuit.onExtrinsicTrigger(transactionArgs.sideEffects, false)
             // @ts-ignore
             let submissionHeight = await this.sdk.circuit.tx.signAndSendSafe(tx)
                 .then(height => {
@@ -341,19 +301,6 @@ program.command('register')
           let cli = new CircuitCLI();
           await cli.setup()
           cli.register(id, options.export, options.output)
-      });
-
-program.command('set-operational')
-      .description('Activate/deactivate a gateway')
-      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
-      .argument('operational <bool>', 'gateway_id as specified in setup.ts')
-      .option('-e, --export', 'export the transaction arguments as JSON', false)
-      .option('-o, --output <string>', 'specify the filename of the export', "export")
-      .action(async (id, operational, options) => {
-          let cli = new CircuitCLI();
-          await cli.setup()
-          operational = operational === "true" ? true : false;
-          cli.setOperational(id, operational, options.export, options.output)
       });
 
 program.command('submit-headers')

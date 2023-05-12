@@ -16,7 +16,7 @@ use sp_std::{prelude::*, vec};
 
 use t3rn_primitives::{
     account_manager::{RequestCharge, Settlement},
-    claimable::{CircuitRole, ClaimableArtifacts},
+    claimable::ClaimableArtifacts,
     clock::Clock,
     common::RoundInfo,
 };
@@ -366,7 +366,11 @@ mod tests {
     pub use frame_support::traits::Currency;
 
     use sp_core::H256;
-    use t3rn_primitives::{claimable::BenefitSource, common::RoundInfo, Balance};
+    use t3rn_primitives::{
+        claimable::{BenefitSource, CircuitRole},
+        common::RoundInfo,
+        Balance,
+    };
 
     const DEFAULT_BALANCE: Balance = 1_000_000;
 

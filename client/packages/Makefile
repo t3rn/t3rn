@@ -1,8 +1,11 @@
- all:
+all:
 	cd types; yarn; yarn link; yarn build;
 	cd sdk; yarn; yarn link; yarn build;
-	cd cli; yarn link @t3rn/sdk; yarn;
-	cd executor; yarn link @t3rn/sdk; yarn link @t3rn/types; yarn upgrade @t3rn/sdk; yarn upgrade @t3rn/types; yarn;
+	cd cli; yarn add ../sdk; yarn;
+	cd executor; yarn add ../sdk; yarn add ../types; yarn;
+
+clean:
+	find . -type d -name node_modules | xargs rm -rf {}\;
 
 register_roco:
 	cd cli; ts-node index.ts register roco;

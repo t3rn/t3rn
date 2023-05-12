@@ -4,6 +4,11 @@ on:
   push:
     branches:
     - development
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/runtime-upgrade-t0rn.yml"
 
 env:
   PARACHAIN_NAME: t0rn
