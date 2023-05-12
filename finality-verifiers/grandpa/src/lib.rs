@@ -283,6 +283,20 @@ pub mod pallet {
             Pallet::<T, I>::verify_and_store_headers(range, signed_header, justification)?;
             Ok(().into())
         }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub fn reset(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let _ = ensure_root(origin)?;
+            <EverInitialized<T, I>>::kill();
+            <BestFinalizedHash<T, I>>::kill();
+            <InitialHash<T, I>>::kill();
+            <ImportedHashesPointer<T, I>>::kill(); // one ahead of first value
+            <RelayChainId<T, I>>::kill();
+            <CurrentAuthoritySet<T, I>>::kill();
+            <IsHalted<T, I>>::kill();
+            <PalletOwner<T, I>>::kill();
+            Ok(().into())
+        }
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
