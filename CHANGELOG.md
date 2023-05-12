@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.20.0-rc.0] - 2023-05-12
+### :sparkles: New Features
+- [`897781b`](https://github.com/t3rn/t3rn/commit/897781b205ad49c3134df18b7c4741e21425dd0f) - standalone grandpa ranger *(PR [#914](https://github.com/t3rn/t3rn/pull/914) by [@petscheit](https://github.com/petscheit))*
+- [`bf9fa77`](https://github.com/t3rn/t3rn/commit/bf9fa772c79c5bf506d91edee3481c1a6e21d5f0) - impl grandpa reset + xnds cleanup *(PR [#964](https://github.com/t3rn/t3rn/pull/964) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.19.2-rc.0] - 2023-05-11
 ### :bug: Bug Fixes
 - [`770b2eb`](https://github.com/t3rn/t3rn/commit/770b2eb364f65ae686291c9634c1b76a6ba3ee1a) - executor docs build issue [skip release] *(PR [#959](https://github.com/t3rn/t3rn/pull/959) by [@ahkohd](https://github.com/ahkohd))*
@@ -1094,3 +1100,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.19.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.18.2-rc.0...v1.19.0-rc.0
 [v1.19.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.0-rc.0...v1.19.1-rc.0
 [v1.19.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.1-rc.0...v1.19.2-rc.0
+[v1.20.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.2-rc.0...v1.20.0-rc.0
