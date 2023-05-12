@@ -63,8 +63,7 @@ pub trait AttestersWriteApi<Account, Error> {
     fn request_add_attesters_attestation(add_attester: &Account) -> Result<(), Error>;
     fn request_ban_attesters_attestation(ban_attesters: &Account) -> Result<(), Error>;
     fn request_remove_attesters_attestation(remove_attesters: &Account) -> Result<(), Error>;
-    fn request_next_committee_attestation(next_committee: CommitteeTransition)
-        -> Result<(), Error>;
+    fn request_next_committee_attestation(next_committee: CommitteeTransition);
 }
 
 pub trait AttestersReadApi<Account, Balance> {
@@ -99,11 +98,11 @@ impl<Account, Balance> AttestersReadApi<Account, Balance>
         vec![]
     }
 
-    fn read_attester_info(attester: &Account) -> Option<AttesterInfo> {
+    fn read_attester_info(_attester: &Account) -> Option<AttesterInfo> {
         None
     }
 
-    fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)> {
+    fn read_nominations(_for_attester: &Account) -> Vec<(Account, Balance)> {
         vec![]
     }
 }
