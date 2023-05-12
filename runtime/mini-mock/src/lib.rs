@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use frame_support::RuntimeDebug;
+use frame_support::{traits::FindAuthor, RuntimeDebug};
 pub use pallet_attesters::{
     ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations,
     Attesters as AttestersStore, BatchStatus, Batches, Config as ConfigAttesters, CurrentCommittee,
@@ -13,6 +13,8 @@ pub use pallet_account_manager::{
     Config as ConfigAccountManager, Error as AccountManagerError, Event as AccountManagerEvent,
     SettlementsPerRound,
 };
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_runtime::ConsensusEngineId;
 
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
@@ -22,10 +24,10 @@ use pallet_grandpa_finality_verifier::{
 };
 use pallet_portal::Error as PortalError;
 pub use pallet_rewards::{
-    Config as ConfigRewards, DistributionBlock, DistributionHistory, Error as RewardsError,
-    PendingClaims,
+    Authors, AuthorsThisPeriod, Config as ConfigRewards, DistributionBlock, DistributionHistory,
+    Error as RewardsError, PendingClaims,
 };
-use sp_core::H256;
+use sp_core::{ByteArray, H256};
 use sp_runtime::{
     generic, parameter_types,
     traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup},
@@ -142,6 +144,29 @@ parameter_types! {
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
 }
 
+pub struct FindAuthorAccountId32;
+
+impl FindAuthor<AccountId> for FindAuthorAccountId32 {
+    fn find_author<'a, I>(digests: I) -> Option<AccountId>
+    where
+        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    {
+        let aura_digest = digests
+            .into_iter()
+            .find(|(engine_id, _)| engine_id == &sp_consensus_aura::AURA_ENGINE_ID)
+            .map(|(_, data)| data)
+            .expect("sp_consensus_aura::Error::InvalidAuthorities");
+
+        let aura_author = sp_consensus_aura::sr25519::AuthorityId::decode(&mut &aura_digest[..])
+            .expect("sp_consensus_aura::Error::InvalidAuraDigest");
+
+        Some(AccountId::from(
+            sp_core::sr25519::Public::from_slice(&aura_author.encode())
+                .expect("should encode sr25519 aura id from sp_consensus_aura::sr25519::app_sr25519::Public"),
+        ))
+    }
+}
+
 impl pallet_rewards::Config for MiniRuntime {
     type AccountManager = AccountManager;
     type AttesterBootstrapRewards = AttesterBootstrapRewards;
@@ -155,6 +180,7 @@ impl pallet_rewards::Config for MiniRuntime {
     type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
+    type FindAuthor = FindAuthorAccountId32;
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;

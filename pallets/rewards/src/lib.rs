@@ -7,11 +7,15 @@ pub mod pallet {
     use super::*;
     t3rn_primitives::reexport_currency_types!();
     use codec::Encode;
-    use frame_support::{dispatch::DispatchResult, pallet_prelude::*, traits::Currency};
+    use frame_support::{
+        dispatch::DispatchResult,
+        pallet_prelude::*,
+        traits::{Currency, FindAuthor},
+    };
     use frame_system::pallet_prelude::*;
     use sp_runtime::{
         traits::{CheckedAdd, CheckedDiv, Saturating, Zero},
-        PerThing, Perbill, Percent,
+        Perbill, Percent,
     };
     use sp_std::{collections::btree_map::BTreeMap, convert::TryInto, prelude::*};
     use t3rn_primitives::{
@@ -21,6 +25,8 @@ pub mod pallet {
         clock::Clock as ClockTrait,
         TreasuryAccount, TreasuryAccountProvider,
     };
+
+    pub const MAX_AUTHORS: u32 = 512;
 
     #[derive(Clone, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
     pub struct DistributionRecord<BlockNumber, Balance> {
@@ -38,6 +44,9 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         type Currency: Currency<Self::AccountId>;
+
+        /// Find the author of a block.
+        type FindAuthor: FindAuthor<Self::AccountId>;
 
         type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
         /// The total inflation per year, expressed as a Perbill.
@@ -107,6 +116,16 @@ pub mod pallet {
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
+
+    pub type AuthorCount<Author> = BTreeMap<Author, u32>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn authors)]
+    pub type Authors<T: Config> = StorageValue<_, AuthorCount<T::AccountId>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn authors_this_period)]
+    pub type AuthorsThisPeriod<T: Config> = StorageValue<_, AuthorCount<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
     pub type Attesters<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u32>;
@@ -395,24 +414,31 @@ pub mod pallet {
         }
 
         pub fn distribute_collator_rewards(current_distribution: BalanceOf<T>) -> BalanceOf<T> {
-            let total_collators = Collators::<T>::iter().count() as u32;
+            let authors_this_period = AuthorsThisPeriod::<T>::get();
 
-            if total_collators == 0 {
+            if authors_this_period.is_empty() {
                 return Zero::zero()
             }
 
-            let reward_per_collator = current_distribution / BalanceOf::<T>::from(total_collators);
+            let mut total_distributed: BalanceOf<T> = Zero::zero();
 
-            for (collator, _) in Collators::<T>::iter() {
+            for (author, block_count) in authors_this_period {
+                let this_author_reward: BalanceOf<T> = Perbill::from_rational(
+                    T::BlockNumber::from(block_count),
+                    T::InflationDistributionPeriod::get(),
+                )
+                .mul_ceil(current_distribution);
+
                 Self::update_pending_claims(
-                    &collator,
+                    &author,
                     CircuitRole::Collator,
-                    reward_per_collator,
+                    this_author_reward,
                     BenefitSource::Inflation,
                 );
+                total_distributed = total_distributed.saturating_add(this_author_reward);
             }
 
-            reward_per_collator.saturating_mul(BalanceOf::<T>::from(total_collators))
+            total_distributed
         }
 
         pub fn distribute_executor_rewards(current_distribution: BalanceOf<T>) -> BalanceOf<T> {
@@ -517,6 +543,51 @@ pub mod pallet {
             T::AccountManager::get_settlements_by_role(CircuitRole::Executor)
         }
 
+        pub fn author() -> Option<T::AccountId> {
+            let digest = <frame_system::Pallet<T>>::digest();
+            let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
+            T::FindAuthor::find_author(pre_runtime_digests).map(|a| a)
+        }
+
+        pub fn process_author() -> bool {
+            if let Some(author) = Self::author() {
+                AuthorsThisPeriod::<T>::mutate(|authors| {
+                    *authors.entry(author).or_insert(0) += 1;
+                    // If we have more authors than MAX_AUTHORS, remove the author with the least blocks
+                    if authors.len() > (MAX_AUTHORS as usize) {
+                        let min_count = authors.values().min().cloned().unwrap_or_default();
+                        let least_blocks_authors: Vec<T::AccountId> = authors
+                            .iter()
+                            .filter_map(|(author, count)| {
+                                if *count == min_count {
+                                    Some(author.clone())
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+                        for author in least_blocks_authors {
+                            authors.remove(&author);
+                            if authors.len() <= (MAX_AUTHORS as usize) {
+                                return false
+                            }
+                        }
+                    }
+                    true
+                });
+            }
+            false
+        }
+
+        pub fn process_authors_this_period() {
+            Authors::<T>::mutate(|authors| {
+                for (author, count) in AuthorsThisPeriod::<T>::get().iter() {
+                    *authors.entry(author.clone()).or_insert(0) += count;
+                }
+                AuthorsThisPeriod::<T>::kill();
+            });
+        }
+
         pub fn executions_proportionally_of_total_this_round(
             executions_this_round: Vec<(T::AccountId, BalanceOf<T>)>,
             total_settled_executions_this_round: BalanceOf<T>,
@@ -574,9 +645,15 @@ pub mod pallet {
             }
             if n % T::InflationDistributionPeriod::get() == Zero::zero() {
                 Self::distribute_inflation();
-                weight += T::DbWeight::get().reads_writes(8, 8)
+                weight += T::DbWeight::get().reads_writes(8, 8);
+                Self::process_authors_this_period();
+                weight += T::DbWeight::get().reads_writes(2, 2);
             }
 
+            // Every block, check if we have a new author
+            if Self::process_author() {
+                weight += T::DbWeight::get().reads_writes(2, 2);
+            }
             weight
         }
     }
@@ -610,7 +687,6 @@ pub mod pallet {
 
 #[cfg(test)]
 pub mod test {
-
     use frame_support::{
         assert_err, assert_ok,
         traits::{Currency, Hooks, Len},
@@ -618,8 +694,9 @@ pub mod test {
     use sp_core::H256;
 
     use t3rn_mini_mock_runtime::{
-        AccountId, Balance, Balances, Clock, ConfigRewards, DistributionHistory, ExtBuilder,
-        MiniRuntime, Origin, PendingClaims, Rewards, RewardsError, SettlementsPerRound, System,
+        AccountId, Authors, AuthorsThisPeriod, Balance, Balances, Clock, ConfigRewards,
+        DistributionHistory, ExtBuilder, MiniRuntime, Origin, PendingClaims, Rewards, RewardsError,
+        SettlementsPerRound, System,
     };
     use t3rn_primitives::{
         account_manager::{Outcome, Settlement},
@@ -756,6 +833,27 @@ pub mod test {
                         },
                     ])
                 );
+            }
+        });
+    }
+
+    #[test]
+    fn test_block_authors_distribution() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let distribution_period =
+                <MiniRuntime as ConfigRewards>::InflationDistributionPeriod::get();
+
+            for counter in 1..distribution_period + 1 {
+                System::set_block_number(counter);
+                Rewards::on_initialize(counter);
+                // verify that the block author is noted
+                println!("block author2: {:?}", Rewards::author());
+                let author: AccountId = Rewards::author().unwrap();
+                assert!(AuthorsThisPeriod::<MiniRuntime>::get()
+                    .iter()
+                    .find(|&(a, c)| a == &author)
+                    .is_some());
             }
         });
     }
