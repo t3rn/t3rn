@@ -1,0 +1,46 @@
+name: Cliff
+
+on:
+  push:
+    # tags:
+    # - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
+
+jobs:
+  create-changelog:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          gpg_private_key: ${{ secrets.T3RN_CI_GPG_PRIVATE_KEY }}
+          
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v2
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Print the changelog
+        run: cat "${{ steps.git-cliff.outputs.changelog }}"
+
+      - name: Comment Next Tag
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            ### :sparkles: Changelog according to current commits
+            ##  "${{ steps.git-cliff.outputs.changelog }}"
+          message-id: semantic-version-${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
