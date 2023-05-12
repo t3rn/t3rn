@@ -11,13 +11,19 @@ import {
 import { Config, Gateway } from "@/schemas/setup.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
+import { getConfig } from "@/utils/config.ts"
 
 export const spinner = ora()
 
 export const handleRegisterGateway = async (
-  config: Config,
-  gatewayId: string
+  gatewayId: string,
+  exportMode: boolean
 ) => {
+  const config = getConfig()
+  if (!config) {
+    process.exit(1)
+  }
+
   const foundGateway = config.gateways.find(
     (g) => g.id.toLowerCase() === gatewayId.toLowerCase()
   )
@@ -29,11 +35,15 @@ export const handleRegisterGateway = async (
 
   spinner.text = `Registering ${foundGateway.name} gateway...`
   spinner.start()
-  await registerGateway(foundGateway as Required<Gateway>)
+
+  await registerGateway(foundGateway as Required<Gateway>, exportMode)
 }
 
-const registerGateway = async (gatewayData: Required<Gateway>) => {
-  const { circuit, sdk } = await createCircuitContext()
+const registerGateway = async (
+  gatewayData: Required<Gateway>,
+  exportMode: boolean
+) => {
+  const { circuit, sdk } = await createCircuitContext(exportMode)
 
   const gatewayId = createType("[u8; 4]", gatewayData.id)
   const tokenId = createType("[u8; 4]", gatewayData.tokenId)

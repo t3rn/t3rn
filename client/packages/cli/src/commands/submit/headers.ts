@@ -11,7 +11,10 @@ import { Circuit } from "@/types.ts"
 export const spinner = ora()
 export const progressBar = new SingleBar({}, Presets.shades_classic)
 
-export const handleSubmitHeadersCmd = async (gatewayId: string) => {
+export const handleSubmitHeadersCmd = async (
+  gatewayId: string,
+  exportMode: boolean
+) => {
   const config = getConfig()
   if (!config) {
     process.exit(1)
@@ -28,7 +31,7 @@ export const handleSubmitHeadersCmd = async (gatewayId: string) => {
     process.exit(1)
   }
 
-  const { circuit, sdk } = await createCircuitContext()
+  const { circuit, sdk } = await createCircuitContext(exportMode)
 
   try {
     const transactionArguments = await getHeaders(circuit, gateway)

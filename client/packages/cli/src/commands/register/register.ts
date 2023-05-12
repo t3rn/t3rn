@@ -1,14 +1,12 @@
 import { Args } from "@/types.ts"
-import { getConfig } from "@/utils/config.ts"
+import { log } from "@/utils/log.ts"
 import { handleRegisterGateway } from "./gateway.ts"
 
-export const handleRegisterCmd = async (args: Args<"gateway">) => {
-  const config = getConfig()
-  if (!config) {
-    process.exit(1)
+export const handleRegisterCmd = async (args: Args<"gateway" | "export">) => {
+  if (args.gateway) {
+    return await handleRegisterGateway(args.gateway, Boolean(args.export))
   }
 
-  if (args.gateway) {
-    return await handleRegisterGateway(config, args.gateway)
-  }
+  log("ERROR", "No option provided!")
+  process.exit(1)
 }
