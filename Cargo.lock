@@ -12423,6 +12423,7 @@ dependencies = [
  "log",
  "pallet-contracts-rpc",
  "pallet-evm-rpc",
+ "pallet-portal-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
  "pallet-xdns-rpc",
