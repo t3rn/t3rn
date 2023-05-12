@@ -126,7 +126,7 @@ const getGatewayHeight = async (gatewayId: string) => {
     id: 1,
   }
 
-  const response = await fetch(config.circuit.http, {
+  const response = await fetch(process.env.RPC_CIRCUIT_ENDPOINT || config.circuit.http, {
     method: "post",
     body: JSON.stringify(body),
     headers: { "Content-Type": "application/json" },
