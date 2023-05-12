@@ -51,7 +51,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::monetary::MILLIT3RN;
+use t3rn_primitives::{light_client::HeightResult, monetary::MILLIT3RN};
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;
@@ -399,6 +399,17 @@ impl_runtime_apis! {
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
             // deprecated
             None
+        }
+    }
+
+     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
+        fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
+            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_latest_updated_height(chain_id);
+
+            match res {
+                Ok(HeightResult::Height(height)) => Some(height.into()),
+                _ => None,
+            }
         }
     }
 
