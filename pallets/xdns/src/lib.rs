@@ -159,27 +159,17 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             if !<Gateways<T>>::contains_key(gateway_id) {
-                Err(Error::<T>::UnknownXdnsRecord.into())
+                Err(Error::<T>::XdnsRecordNotFound.into())
             } else {
                 <Gateways<T>>::remove(gateway_id);
-                Self::deposit_event(Event::<T>::GatewayRecordPurged(requester, gateway_id));
-                Ok(().into())
-            }
-        }
+                // remove all tokens associated with this gateway
+                Tokens::<T>::iter_values()
+                    .filter(|token| token.gateway_id == gateway_id)
+                    .for_each(|token| {
+                        <Tokens<T>>::remove(token.token_id);
+                    });
 
-        /// Removes a gateway from the onchain registry. Root only access.
-        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
-        pub fn purge_gateway(
-            origin: OriginFor<T>,
-            requester: T::AccountId,
-            gateway_id: [u8; 4],
-        ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-            if !<XDNSRegistry<T>>::contains_key(gateway_id) {
-                Err(Error::<T>::UnknownXdnsRecord.into())
-            } else {
-                <XDNSRegistry<T>>::remove(gateway_id);
-                Self::deposit_event(Event::<T>::XdnsRecordPurged(requester, gateway_id));
+                Self::deposit_event(Event::<T>::GatewayRecordPurged(requester, gateway_id));
                 Ok(().into())
             }
         }
@@ -192,8 +182,6 @@ pub mod pallet {
         GatewayRecordStored([u8; 4]),
         /// \[token_4b_id, gateway_4b_id\]
         TokenRecordStored([u8; 4], [u8; 4]),
-        /// \[gateway_id\]
-        XdnsRecordStored([u8; 4]),
         /// \[requester, gateway_record_id\]
         GatewayRecordPurged(T::AccountId, [u8; 4]),
         /// \[requester, xdns_record_id\]
@@ -207,16 +195,12 @@ pub mod pallet {
     pub enum Error<T> {
         /// Stored gateway has already been added before
         GatewayRecordAlreadyExists,
+        /// XDNS Record not found
+        XdnsRecordNotFound,
         /// Stored token has already been added before
         TokenRecordAlreadyExists,
-        /// Stored xdns_record has already been added before
-        XdnsRecordAlreadyExists,
-        /// Access of unknown xdns_record
-        UnknownXdnsRecord,
         /// Gateway Record not found
         GatewayRecordNotFound,
-        /// Xdns Record not found
-        XdnsRecordNotFound,
         /// SideEffectABI already exists
         SideEffectABIAlreadyExists,
         /// SideEffectABI not found
@@ -250,12 +234,6 @@ pub mod pallet {
     pub type SFXABIRegistry<T: Config> =
         StorageDoubleMap<_, Identity, TargetId, Identity, Sfx4bId, SFXAbi>;
 
-    /// The pre-validated composable xdns_records on-chain registry.
-    #[pallet::storage]
-    #[pallet::getter(fn xdns_registry)]
-    pub type XDNSRegistry<T: Config> =
-        StorageMap<_, Identity, [u8; 4], XdnsRecord<T::AccountId>, OptionQuery>;
-
     #[pallet::storage]
     #[pallet::getter(fn gateways)]
     pub type Gateways<T: Config> =
@@ -268,7 +246,6 @@ pub mod pallet {
     // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub known_xdns_records: Vec<XdnsRecord<T::AccountId>>,
         pub known_gateway_records: Vec<GatewayRecord<T::AccountId>>,
         pub standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     }
@@ -278,7 +255,6 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                known_xdns_records: Default::default(),
                 known_gateway_records: Default::default(),
                 standard_sfx_abi: Default::default(),
             }
@@ -321,11 +297,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Xdns<T> for Pallet<T> {
-        /// Fetches all known XDNS records
-        fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
-            XDNSRegistry::<T>::iter_values().collect()
-        }
-
         /// Fetches all known Gateway records
         fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>> {
             Gateways::<T>::iter_values().collect()

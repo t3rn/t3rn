@@ -189,6 +189,23 @@ fn should_purge_a_gateway_record_successfully() {
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT
             );
+
+            assert_ok!(XDNS::add_new_token(
+                *b"gate",
+                *b"gate",
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert_eq!(
+                pallet_xdns::Tokens::<Runtime>::iter_values()
+                    .filter(|token| token.gateway_id == *b"gate")
+                    .count(),
+                1
+            );
             assert_ok!(XDNS::purge_gateway_record(
                 Origin::<Runtime>::Root.into(),
                 ALICE,
@@ -199,6 +216,12 @@ fn should_purge_a_gateway_record_successfully() {
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT - 1
             );
             assert!(pallet_xdns::Gateways::<Runtime>::get(b"gate").is_none());
+            assert_eq!(
+                pallet_xdns::Tokens::<Runtime>::iter_values()
+                    .filter(|token| token.gateway_id == *b"gate")
+                    .count(),
+                0
+            );
         });
 }
 
@@ -224,8 +247,8 @@ fn should_error_trying_to_purge_a_missing_xdns_record() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_gateway(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
-                pallet_xdns::pallet::Error::<Runtime>::UnknownXdnsRecord
+                XDNS::purge_gateway_record(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
+                pallet_xdns::pallet::Error::<Runtime>::XdnsRecordNotFound
             );
             assert_eq!(
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
@@ -242,7 +265,11 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_gateway(Origin::<Runtime>::Signed(ALICE).into(), ALICE, *b"gate"),
+                XDNS::purge_gateway_record(
+                    Origin::<Runtime>::Signed(ALICE).into(),
+                    ALICE,
+                    *b"gate"
+                ),
                 DispatchError::BadOrigin
             );
             assert_eq!(

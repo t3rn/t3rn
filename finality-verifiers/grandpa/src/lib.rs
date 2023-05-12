@@ -283,6 +283,20 @@ pub mod pallet {
             Pallet::<T, I>::verify_and_store_headers(range, signed_header, justification)?;
             Ok(().into())
         }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub fn reset(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let _ = ensure_root(origin)?;
+            <EverInitialized<T, I>>::kill();
+            <BestFinalizedHash<T, I>>::kill();
+            <InitialHash<T, I>>::kill();
+            <ImportedHashesPointer<T, I>>::kill(); // one ahead of first value
+            <RelayChainId<T, I>>::kill();
+            <CurrentAuthoritySet<T, I>>::kill();
+            <IsHalted<T, I>>::kill();
+            <PalletOwner<T, I>>::kill();
+            Ok(().into())
+        }
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -1183,6 +1197,29 @@ pub mod tests {
             assert_noop!(
                 initialize_relaychain(Origin::root()),
                 "chain_id already initialized"
+            );
+        })
+    }
+
+    #[test]
+    fn root_can_reset_pallet() {
+        run_test(|| {
+            let _ = initialize_relaychain(Origin::root());
+            let _ = Pallet::<TestRuntime>::reset(Origin::root());
+            assert_eq!(EverInitialized::<TestRuntime>::get(), false);
+            assert_eq!(BestFinalizedHash::<TestRuntime>::get(), None);
+            assert_eq!(InitialHash::<TestRuntime>::get(), None);
+            assert_eq!(ImportedHashesPointer::<TestRuntime>::get(), None);
+            assert_eq!(RelayChainId::<TestRuntime>::get(), None);
+            assert_eq!(CurrentAuthoritySet::<TestRuntime>::get(), None);
+            assert_eq!(IsHalted::<TestRuntime>::get(), false);
+            assert_eq!(PalletOwner::<TestRuntime>::get(), None);
+            //can re-register
+            assert_ok!(initialize_relaychain(Origin::root()));
+
+            assert_noop!(
+                Pallet::<TestRuntime>::reset(Origin::signed(1)),
+                DispatchError::BadOrigin
             );
         })
     }

@@ -191,9 +191,6 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 }
 
 pub trait Xdns<T: frame_system::Config> {
-    /// Fetches all known XDNS records
-    fn fetch_records() -> Vec<XdnsRecord<T::AccountId>>;
-
     fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>>;
 
     fn add_new_token(

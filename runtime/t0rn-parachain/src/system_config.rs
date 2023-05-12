@@ -192,11 +192,7 @@ impl Contains<Call> for BaseCallFilter {
             Call::XBIPortal(_) => true,
             Call::AssetRegistry(_) => true,
             // t3rn pallets
-            Call::XDNS(method) => matches!(
-                method,
-                pallet_xdns::Call::purge_gateway { .. }
-                    | pallet_xdns::Call::purge_gateway_record { .. }
-            ),
+            Call::XDNS(method) => matches!(method, pallet_xdns::Call::purge_gateway_record { .. }),
             Call::ContractsRegistry(method) => matches!(
                 method,
                 pallet_contracts_registry::Call::add_new_contract { .. }
@@ -388,7 +384,7 @@ mod tests {
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_xdns::Call::purge_gateway {
+        let call = pallet_xdns::Call::purge_gateway_record {
             requester: AccountId32::new([0; 32]),
             gateway_id: Default::default(),
         }
@@ -545,7 +541,7 @@ mod tests {
         .into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call = pallet_xdns::Call::purge_gateway {
+        let call = pallet_xdns::Call::purge_gateway_record {
             requester: AccountId32::new([0; 32]),
             gateway_id: Default::default(),
         }

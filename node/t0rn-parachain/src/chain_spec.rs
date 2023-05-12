@@ -360,7 +360,6 @@ fn testnet_genesis(
             key: Some(root_key),
         },
         xdns: XDNSConfig {
-            known_xdns_records: vec![],
             known_gateway_records: vec![],
             standard_sfx_abi,
         },
