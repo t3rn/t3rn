@@ -68,38 +68,3 @@ jobs:
         working-directory: ./client
         run: |
           docker build . -f cli.Dockerfile
-
-  # TODO: tmp to see if it works
-  ranger-deploy:
-    runs-on: self-hosted
-    steps:
-      - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-  
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-  
-      - name: Build ranger
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: test-t0rn-ranger
-          IMAGE_TAG: ${{ github.sha }}
-        working-directory: ./client
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f cli.Dockerfile
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: EKS
-        run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
-
-      - name: Helm Upgrade
-        working-directory: ./client/packages/cli
-        run: helm upgrade ranger helm -n ranger -f helm/values-t0rn.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-ranger"
