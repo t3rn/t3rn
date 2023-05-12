@@ -1,0 +1,15 @@
+jobs:
+  - name: ranger
+    env:
+      - name: WS_CIRCUIT_ENDPOINT
+        value: wss://ws.t0rn.io
+      - name: RPC_CIRCUIT_ENDPOINT
+        value: https://rpc.t0rn.io
+      - name: LOG_LEVEL
+        value: debug
+    schedule: "*/5 * * * *"
+    args:
+    - submit
+    - -h
+    - roco
+    activeDeadlineSeconds: 300
