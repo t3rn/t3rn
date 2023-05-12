@@ -71,7 +71,7 @@ pub mod pallet {
 
         /// The number of blocks in one year.
         ///
-        /// Default: 5_256_000 (assuming 6s block time)
+        /// Default: 2_628_000 (assuming 12s block time)
         #[pallet::constant]
         type OneYear: Get<Self::BlockNumber>;
 

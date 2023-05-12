@@ -60,7 +60,7 @@ pub mod pallet {
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct Batch<Attester, Signature, BlockNumber> {
         pub attestations: Vec<Attestation<Attester, Signature>>,
-        pub target: [u8; 4],
+        pub target: TargetId,
         pub created: BlockNumber,
         pub status: BatchStatus,
     }
@@ -77,7 +77,7 @@ pub mod pallet {
     }
 
     impl<Attester, Signature, BlockNumber> Batch<Attester, Signature, BlockNumber> {
-        pub fn new(target: [u8; 4], now: BlockNumber) -> Self {
+        pub fn new(target: TargetId, now: BlockNumber) -> Self {
             Self {
                 attestations: Vec::new(),
                 target,
@@ -168,7 +168,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn batches)]
     pub type Batches<T: Config> =
-        StorageMap<_, Identity, [u8; 4], Vec<Batch<T::AccountId, Vec<u8>, T::BlockNumber>>>;
+        StorageMap<_, Identity, TargetId, Vec<Batch<T::AccountId, Vec<u8>, T::BlockNumber>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn nominations)]
@@ -184,7 +184,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn fast_confirmation_cost)]
     pub type FastConfirmationCost<T: Config> =
-        StorageMap<_, Blake2_128Concat, [u8; 4], BalanceOf<T>>;
+        StorageMap<_, Blake2_128Concat, TargetId, BalanceOf<T>>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -267,7 +267,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             message: Vec<u8>,
             signature: Vec<u8>,
-            target: [u8; 4],
+            target: TargetId,
             attestation_for: AttestationFor,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
@@ -390,7 +390,7 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn commit_batch(
             origin: OriginFor<T>,
-            target: [u8; 4],
+            target: TargetId,
             batch_index: u32,
         ) -> DispatchResult {
             let submitter = ensure_signed(origin)?;
@@ -735,7 +735,8 @@ pub mod pallet {
 #[cfg(test)]
 pub mod attesters_test {
     use super::{
-        ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
+        TargetId, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
+        SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use codec::Encode;
     use frame_support::{
@@ -792,7 +793,7 @@ pub mod attesters_test {
         attester: AccountId,
         message: [u8; 32],
         key_type: KeyTypeId,
-        target: [u8; 4],
+        target: TargetId,
         secret_key: [u8; 32],
     ) {
         let signature: Vec<u8> = match key_type {
@@ -951,7 +952,7 @@ pub mod attesters_test {
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [1u8; 4];
+            let target: TargetId = [1u8; 4];
             let message: [u8; 32] = *b"message_that_needs_attestation32";
 
             for counter in 1..33u8 {
