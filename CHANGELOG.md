@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.20.1-rc.0] - 2023-05-12
+### :bug: Bug Fixes
+- [`9367cb7`](https://github.com/t3rn/t3rn/commit/9367cb71c174d4f18e40493f5092ed0ff02d6e1d) - expose portal rpc endpoint in t0rn runtime *(PR [#967](https://github.com/t3rn/t3rn/pull/967) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.20.0-rc.0] - 2023-05-12
 ### :sparkles: New Features
 - [`897781b`](https://github.com/t3rn/t3rn/commit/897781b205ad49c3134df18b7c4741e21425dd0f) - standalone grandpa ranger *(PR [#914](https://github.com/t3rn/t3rn/pull/914) by [@petscheit](https://github.com/petscheit))*
@@ -1101,3 +1106,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.19.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.0-rc.0...v1.19.1-rc.0
 [v1.19.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.1-rc.0...v1.19.2-rc.0
 [v1.20.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.2-rc.0...v1.20.0-rc.0
+[v1.20.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.20.0-rc.0...v1.20.1-rc.0
