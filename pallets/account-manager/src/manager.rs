@@ -16,7 +16,7 @@ use sp_std::{prelude::*, vec};
 
 use t3rn_primitives::{
     account_manager::{RequestCharge, Settlement},
-    claimable::ClaimableArtifacts,
+    claimable::{CircuitRole, ClaimableArtifacts},
     clock::Clock,
     common::RoundInfo,
 };

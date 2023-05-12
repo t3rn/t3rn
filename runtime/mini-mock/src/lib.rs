@@ -564,7 +564,6 @@ impl ExtBuilder {
         .expect("Pallet balances storage can be assimilated");
 
         pallet_xdns::GenesisConfig::<MiniRuntime> {
-            known_xdns_records: vec![],
             known_gateway_records: self.known_gateway_records,
             standard_sfx_abi: self.standard_sfx_abi,
         }
