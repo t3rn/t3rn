@@ -65,7 +65,9 @@ export const submitSfx = async (extrinsic: Extrinsic, exportMode: boolean) => {
 
   try {
     const transaction = circuit.tx.circuit.onExtrinsicTrigger(
-      transactionArgs.sideEffects,
+      transactionArgs.sideEffects as Parameters<
+        typeof circuit.tx.circuit.onExtrinsicTrigger
+      >[0],
       transactionArgs.speed_mode
     )
     const submissionHeight = await sdk.circuit.tx.signAndSendSafe(transaction)
