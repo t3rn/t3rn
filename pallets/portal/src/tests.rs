@@ -410,8 +410,8 @@ mod tests {
         );
     }
 
-    #[ignore]
     #[test]
+    #[ignore]
     fn run_e2e_tests() {
         ExtBuilder::default()
             .with_standard_sfx_abi()

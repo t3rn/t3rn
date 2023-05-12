@@ -1,0 +1,106 @@
+name: Test E2E
+
+on:
+  # TODO: uncomment when e2e testing is ready
+  # merge_group:
+  pull_request:
+    types: [opened, labeled, synchronize]
+
+
+# Automatically cancel older in-progress jobs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
+
+env:
+  RUST_BACKTRACE: 1
+  RUSTC_WRAPPER: sccache
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  # This job checks if circuit files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without circuit changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    # Run it only when e2e label is present in PR or in merge queue
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'e2e') || github.event.pull_request.mergeable }}
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - "**/*.rs"
+              - "**/Cargo.toml"
+              - "**/Cargo.lock"
+              - ".github/workflows/test-suite.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
+  test:
+    name: Generate E2E Tests & Test
+    runs-on: [self-hosted, rust]
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: ⚙ Install rust toolchain defined in rust-toolchain.toml
+        run: rustup show
+
+      - name: Read .nvmrc
+        run: echo NVMRC=`cat client/packages/.nvmrc` >> $GITHUB_ENV
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NVMRC }}
+
+      - name: 🏭 Build CLI
+        run: |
+          # Build
+          cd client/packages
+          make all
+
+      - name: 🏭 Run Node Standalone
+        run: |
+          # Run node standalone
+          cd node/standalone
+          make build
+          make run&
+          echo "NODE_STANDALONE_PID=$!" >> $GITHUB_ENV
+
+      - name: 📐 Run Ranger
+        run: |
+          cd client/packages/cli
+          echo $(pwd)
+          ls -lah
+
+          yarn cli init -c
+          yarn cli register -g roco
+
+          # Run executor
+
+      - name: 🍳 Prepare Tests
+        run: |
+          mkdir -p pallets/portal/fixtures
+          cp client/packages/cli/exports/* pallets/portal/fixtures
+          ls -lah pallets/portal/fixtures
+
+      - name: 🧪 Run Tests
+        run: |
+          cd pallets/portal
+          cargo test -- --ignored
+        
+      - name: 💀 Kill Node Standalone
+        if: always()
+        run: |
+          kill $NODE_STANDALONE_PID

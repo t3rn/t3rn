@@ -4,7 +4,6 @@ test:
 
 "dependencies :deciduous_tree:":
   - '**/Cargo.lock'
-  - '**/pnpm-lock.yaml'
   - '**/yarn.lock'
 
 javascript:
@@ -13,7 +12,6 @@ javascript:
   - '**/.nvmrc'
   - '**/.prettierrc'
   - '**/jest.config.ts'
-  - '**/pnpm-lock.yaml'
   - '**/yarn.lock'
   - '**/tsconfig.json'
   - '**/package.json'
