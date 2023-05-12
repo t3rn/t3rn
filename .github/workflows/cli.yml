@@ -19,10 +19,11 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: changes
         with:
-          # TODO: executor is dependent on types and SDK, so we need to check them as well
-          # TODOL can be removed when we have npm packages
+          # TODO: can be removed when we have npm packages
+          # - "client/packages/**/*.ts"
           filters: |
             src:
+            - "client/cli.Dockerfile"
             - "client/packages/**/*.ts"
             - "client/packages/cli/**/*.ts"
             - "client/packages/cli/**/*.json"
@@ -52,4 +53,18 @@ jobs:
           node-version: ${{ env.NVMRC }}
 
       - run: cd .. && make all
-      - run: pnpm test
+      - run: yarn test
+
+  build-docker:
+    name: Build Docker CLI
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Docker
+        working-directory: ./client
+        run: |
+          docker build . -f cli.Dockerfile

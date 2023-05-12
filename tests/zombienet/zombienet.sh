@@ -224,7 +224,7 @@ spawn_executor_and_run_tests() {
     fi
     echo "Executor started ✅"
     echo "Running make::test_confirm_xtx sending single SFX on top of Rococo header ranges ⏳"
-    CIRCUIT_WS=ws://127.0.0.1:9940 WS_CIRCUIT_ENDPOINT=ws://127.0.0.1:9940 make test_confirm_xtx -C ../../client/packages
+    WS_CIRCUIT_ENDPOINT=ws://127.0.0.1:9940 make test_confirm_xtx -C ../../client/packages
     if [ $? -ne 0 ]; then
         # The test failed
         echo "zombienet.sh: test_confirm_xtx failed ❌"
