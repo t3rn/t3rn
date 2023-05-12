@@ -162,6 +162,13 @@ pub mod pallet {
                 Err(Error::<T>::XdnsRecordNotFound.into())
             } else {
                 <Gateways<T>>::remove(gateway_id);
+                // remove all tokens associated with this gateway
+                Tokens::<T>::iter_values()
+                    .filter(|token| token.gateway_id == gateway_id)
+                    .for_each(|token| {
+                        <Tokens<T>>::remove(token.token_id);
+                    });
+
                 Self::deposit_event(Event::<T>::GatewayRecordPurged(requester, gateway_id));
                 Ok(().into())
             }
