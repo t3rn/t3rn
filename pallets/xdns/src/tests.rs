@@ -189,6 +189,23 @@ fn should_purge_a_gateway_record_successfully() {
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT
             );
+
+            assert_ok!(XDNS::add_new_token(
+                *b"gate",
+                *b"gate",
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert_eq!(
+                pallet_xdns::Tokens::<Runtime>::iter_values()
+                    .filter(|token| token.gateway_id == *b"gate")
+                    .count(),
+                1
+            );
             assert_ok!(XDNS::purge_gateway_record(
                 Origin::<Runtime>::Root.into(),
                 ALICE,
@@ -199,6 +216,12 @@ fn should_purge_a_gateway_record_successfully() {
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT - 1
             );
             assert!(pallet_xdns::Gateways::<Runtime>::get(b"gate").is_none());
+            assert_eq!(
+                pallet_xdns::Tokens::<Runtime>::iter_values()
+                    .filter(|token| token.gateway_id == *b"gate")
+                    .count(),
+                0
+            );
         });
 }
 

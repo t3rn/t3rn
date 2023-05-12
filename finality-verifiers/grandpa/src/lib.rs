@@ -1202,6 +1202,29 @@ pub mod tests {
     }
 
     #[test]
+    fn root_can_reset_pallet() {
+        run_test(|| {
+            let _ = initialize_relaychain(Origin::root());
+            let _ = Pallet::<TestRuntime>::reset(Origin::root());
+            assert_eq!(EverInitialized::<TestRuntime>::get(), false);
+            assert_eq!(BestFinalizedHash::<TestRuntime>::get(), None);
+            assert_eq!(InitialHash::<TestRuntime>::get(), None);
+            assert_eq!(ImportedHashesPointer::<TestRuntime>::get(), None);
+            assert_eq!(RelayChainId::<TestRuntime>::get(), None);
+            assert_eq!(CurrentAuthoritySet::<TestRuntime>::get(), None);
+            assert_eq!(IsHalted::<TestRuntime>::get(), false);
+            assert_eq!(PalletOwner::<TestRuntime>::get(), None);
+            //can re-register
+            assert_ok!(initialize_relaychain(Origin::root()));
+
+            assert_noop!(
+                Pallet::<TestRuntime>::reset(Origin::signed(1)),
+                DispatchError::BadOrigin
+            );
+        })
+    }
+
+    #[test]
     fn pallet_owner_may_change_owner() {
         run_test(|| {
             let default_gateway: ChainId = *b"pdot";
