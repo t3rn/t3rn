@@ -186,21 +186,21 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn attestation_targets)]
-    pub type AttestationTargets<T: Config> = StorageValue<_, Vec<[u8; 4]>, ValueQuery>;
+    pub type AttestationTargets<T: Config> = StorageValue<_, Vec<TargetId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn next_batches)]
-    pub type NextBatch<T: Config> = StorageMap<_, Identity, [u8; 4], BatchMessage<T::BlockNumber>>;
+    pub type NextBatch<T: Config> = StorageMap<_, Identity, TargetId, BatchMessage<T::BlockNumber>>;
 
     #[pallet::storage]
     #[pallet::getter(fn batches_to_sign)]
     pub type BatchesToSign<T: Config> =
-        StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
+        StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn batches)]
     pub type Batches<T: Config> =
-        StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
+        StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_unnominations)]
@@ -225,15 +225,15 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn fast_confirmation_cost)]
     pub type FastConfirmationCost<T: Config> =
-        StorageMap<_, Blake2_128Concat, [u8; 4], BalanceOf<T>>;
+        StorageMap<_, Blake2_128Concat, TargetId, BalanceOf<T>>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         AttesterRegistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
-        NewAttestationBatch([u8; 4], BatchMessage<T::BlockNumber>),
-        NewConfirmationBatch([u8; 4], BatchMessage<T::BlockNumber>),
+        NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
+        NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>),
         Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
     }
 
@@ -356,7 +356,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             message: Vec<u8>,
             signature: Vec<u8>,
-            target: [u8; 4],
+            target: TargetId,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
 
@@ -460,7 +460,7 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn commit_batch(
             origin: OriginFor<T>,
-            target: [u8; 4],
+            target: TargetId,
             batch_index: u32,
             target_inclusion_proof_encoded: Vec<u8>, // Add this parameter to accept Ethereum batch hash
         ) -> DispatchResult {
@@ -517,7 +517,7 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn set_confirmation_cost(
             origin: OriginFor<T>,
-            target: [u8; 4],
+            target: TargetId,
             cost: BalanceOf<T>,
         ) -> DispatchResult {
             ensure_root(origin)?;
@@ -1100,8 +1100,8 @@ pub mod pallet {
 #[cfg(test)]
 pub mod attesters_test {
     use super::{
-        TargetBatchInclusionProof, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
-        SR25519_ATTESTER_KEY_TYPE_ID,
+        TargetBatchInclusionProof, TargetId, ECDSA_ATTESTER_KEY_TYPE_ID,
+        ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use sp_runtime::traits::BlockNumberProvider;
 
@@ -1156,7 +1156,7 @@ pub mod attesters_test {
         attester_info
     }
 
-    pub fn add_target_and_transition_to_next_batch(target: [u8; 4]) -> BlockNumber {
+    pub fn add_target_and_transition_to_next_batch(target: TargetId) -> BlockNumber {
         Attesters::add_attestation_target(Origin::root(), target);
         let current_block: BlockNumber = System::block_number();
         let batching_window: BlockNumber = <MiniRuntime as ConfigAttesters>::BatchingWindow::get();
@@ -1199,7 +1199,7 @@ pub mod attesters_test {
         attester: AccountId,
         message: [u8; 32],
         key_type: KeyTypeId,
-        target: [u8; 4],
+        target: TargetId,
         secret_key: [u8; 32],
     ) -> Vec<u8> {
         // Check if batch with message exists and if not create one
@@ -1302,7 +1302,7 @@ pub mod attesters_test {
     fn test_adding_sfx_moves_next_batch_to_pending_attestation() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             let current_block_1 = add_target_and_transition_to_next_batch(target);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -1330,7 +1330,7 @@ pub mod attesters_test {
     fn test_pending_attestation_batch_with_single_sfx_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             let _current_block_1 = add_target_and_transition_to_next_batch(target);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -1359,7 +1359,7 @@ pub mod attesters_test {
     fn test_pending_attestation_batch_with_committee_transition_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             let current_block_1 = add_target_and_transition_to_next_batch(target);
 
             let committee_transition: CommitteeTransition = [
@@ -1485,7 +1485,7 @@ pub mod attesters_test {
     fn test_pending_attestation_batch_with_all_attestations_ordered_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             let _current_block_1 = add_target_and_transition_to_next_batch(target);
 
             let committee_transition: CommitteeTransition = [
@@ -1519,7 +1519,7 @@ pub mod attesters_test {
     fn test_adding_2_same_sfx_to_next_batch_is_impossible() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             add_target_and_transition_to_next_batch(target);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -1538,7 +1538,7 @@ pub mod attesters_test {
     fn test_adding_2_sfx_to_next_batch_and_transition_to_pending_attestation() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             assert_eq!(NextBatch::<MiniRuntime>::get(target), None);
             let current_block = add_target_and_transition_to_next_batch(target);
 
@@ -1718,7 +1718,7 @@ pub mod attesters_test {
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [1u8; 4];
+            let target: TargetId = [1u8; 4];
             let message: [u8; 32] = *b"message_that_needs_attestation32";
 
             for counter in 1..33u8 {
