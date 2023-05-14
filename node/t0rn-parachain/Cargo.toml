@@ -5,7 +5,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 name       = "t0rn-parachain-collator"
 repository = 'https://github.com/t3rn/t3rn'
-version    = "1.20.1-rc.0"
+version    = "1.21.0-rc.0"
 
 [[bin]]
 name = "t0rn-collator"
@@ -24,6 +24,7 @@ serde        = { version = "1.0", features = [ "derive" ] }
 circuit-parachain-runtime = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime" }
 pallet-xdns               = { path = "../../pallets/xdns" } # TODO: the pallet shouldnt be imported in the node, expose primitives or export the type from runtime
 pallet-xdns-rpc           = { path = "../../pallets/xdns/rpc" }
+pallet-portal-rpc           = { path = "../../pallets/portal/rpc" }
 t3rn-primitives           = { path = "../../primitives" }
 t3rn-types                = { path = "../../types" }
 t3rn-abi                 = { path = "../../types/abi" }
