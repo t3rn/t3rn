@@ -193,7 +193,7 @@ impl pallet_rewards::Config for Runtime {
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;
-    type TreasuryAccount = EscrowAccount;
+    type TreasuryAccounts = Runtime;
     type TreasuryInflation = TreasuryInflation;
 }
 

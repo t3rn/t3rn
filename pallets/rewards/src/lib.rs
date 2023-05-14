@@ -19,6 +19,7 @@ pub mod pallet {
         attesters::AttestersReadApi,
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         clock::Clock as ClockTrait,
+        TreasuryAccount, TreasuryAccountProvider,
     };
 
     #[derive(Clone, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
@@ -38,7 +39,7 @@ pub mod pallet {
 
         type Currency: Currency<Self::AccountId>;
 
-        type TreasuryAccount: Get<Self::AccountId>;
+        type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
         /// The total inflation per year, expressed as a Perbill.
         ///
         /// Default: 4.4% (44_000_000 / 1_000_000_000)
@@ -289,7 +290,10 @@ pub mod pallet {
             let executor_rewards_distributed = Self::distribute_executor_rewards(executor_rewards);
 
             // Transfer the treasury rewards to the treasury account
-            T::Currency::deposit_creating(&T::TreasuryAccount::get(), treasury_rewards);
+            T::Currency::deposit_creating(
+                &T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Parachain),
+                treasury_rewards,
+            );
 
             // Distribute bootstrap rewards from the treasury account
             // todo: uncomment this when bootstrap rewards are implemented
@@ -620,6 +624,7 @@ pub mod test {
     use t3rn_primitives::{
         account_manager::{Outcome, Settlement},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+        TreasuryAccount, TreasuryAccountProvider,
     };
 
     #[test]
@@ -629,11 +634,8 @@ pub mod test {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
             // Setup
-            let _initial_issuance = <MiniRuntime as ConfigRewards>::Currency::total_issuance();
             let distribution_period =
                 <MiniRuntime as ConfigRewards>::InflationDistributionPeriod::get();
-
-            let _total_inflation = <MiniRuntime as ConfigRewards>::TotalInflation::get();
 
             pub const TRN: Balance = 1_000_000_000_000;
 
@@ -666,6 +668,36 @@ pub mod test {
             // Check if the total rewards distributed equal the expected total rewards
             assert_eq!(available_total_rewards, 4389797013799501253);
             assert!(available_total_rewards < expected_top_yearly_rewards_available);
+        });
+    }
+
+    #[test]
+    fn test_inflation_benefits_parachain_treasury_account() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Setup
+            let distribution_period =
+                <MiniRuntime as ConfigRewards>::InflationDistributionPeriod::get();
+
+            // Simulate the passage of time (two weeks per period)
+            System::set_block_number(distribution_period);
+
+            // Call the distribute_inflation function
+            Rewards::on_initialize(distribution_period);
+
+            // Retrieve the last distribution record
+            let history = DistributionHistory::<MiniRuntime>::get();
+            let last_record = history.last().unwrap();
+
+            let treasury_account =
+                <MiniRuntime as TreasuryAccountProvider<AccountId>>::get_treasury_account(
+                    TreasuryAccount::Parachain,
+                );
+            // Check if the total rewards distributed equal the expected total rewards
+            assert_eq!(
+                last_record.treasury_rewards,
+                Balances::total_balance(&treasury_account)
+            );
         });
     }
 

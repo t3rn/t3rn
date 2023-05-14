@@ -139,7 +139,6 @@ parameter_types! {
     pub const ExecutorBootstrapRewards: Percent = Percent::from_parts(40); // 40%
     pub const OneYear: BlockNumber = 2_628_000; // (365.25 * 24 * 60 * 60) / 12; assuming 12s block time
     pub const InflationDistributionPeriod: BlockNumber = 100_800; // (14 * 24 * 60 * 60) / 12; assuming one distribution per two weeks
-    pub const TreasuryAccount: AccountId = AccountId::new([51u8; 32]);
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
 }
 
@@ -159,7 +158,7 @@ impl pallet_rewards::Config for MiniRuntime {
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;
-    type TreasuryAccount = TreasuryAccount;
+    type TreasuryAccounts = MiniRuntime;
     type TreasuryInflation = TreasuryInflation;
 }
 
