@@ -41,4 +41,9 @@ export const SideEffectSchema = z.object({
     .refine((value) => !isNaN(parseFloat(value)) && parseFloat(value) >= 0, {
       message: "Reward must be a non-negative number",
     }),
+  enforceExecutioner: z
+    .string({
+      invalid_type_error: "Enforce executioner must be a string",
+    })
+    .optional(),
 })

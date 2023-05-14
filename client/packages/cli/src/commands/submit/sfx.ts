@@ -102,6 +102,7 @@ export const buildSfx = (
           value: sdk.gateways[data.target].floatToBn(parseFloat(data.amount)),
           maxReward: sdk.circuit.floatToBn(parseFloat(data.reward)),
           insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
+          enforceExecutioner: data.enforceExecutioner,
         })
         return obj
       })
