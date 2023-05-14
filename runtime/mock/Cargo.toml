@@ -46,7 +46,7 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch 
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-version          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+pallet-treasury     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 # Mock only
 sp-io = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }

@@ -42,7 +42,12 @@ t3rn-abi = { path = "../../types/abi" }
 pallet-balances   = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 pallet-assets     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 pallet-contracts  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+
+# for mini-mock runtime
 pallet-timestamp  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+pallet-treasury   = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+
+# t3rn pallets
 pallet-clock = { path = "../../pallets/clock" }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../../pallets/portal" }

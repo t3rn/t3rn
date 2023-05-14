@@ -7,6 +7,8 @@ pub use pallet_attesters::{
     SortedNominatedAttesters,
 };
 
+mod treasuries_config;
+
 pub use pallet_account_manager::{
     Config as ConfigAccountManager, Error as AccountManagerError, Event as AccountManagerEvent,
     SettlementsPerRound,
@@ -50,7 +52,13 @@ frame_support::construct_runtime!(
         Timestamp: pallet_timestamp = 3,
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 4,
         Assets: pallet_assets = 5,
-
+        // Treasuries
+        Treasury: pallet_treasury = 13, // Keep old treasury index for backwards compatibility
+        EscrowTreasury: pallet_treasury::<Instance1> = 16,
+        FeeTreasury: pallet_treasury::<Instance2> = 17,
+        ParachainTreasury: pallet_treasury::<Instance3> = 18,
+        SlashTreasury: pallet_treasury::<Instance4> = 19,
+        // t3rn
         XDNS: pallet_xdns = 100,
         Attesters: pallet_attesters = 101,
         Rewards: pallet_rewards = 102,
@@ -61,6 +69,7 @@ frame_support::construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+
     }
 );
 
@@ -122,8 +131,8 @@ use t3rn_primitives::monetary::TRN;
 parameter_types! {
     pub const TotalInflation: Perbill = Perbill::from_parts(44_000_000); // 4.4%
     pub const AttesterInflation: Perbill = Perbill::from_parts(11_000_000); // 1.1%
-    pub const ExecutorInflation: Perbill = Perbill::from_parts(08_000_000); // 0.8%
-    pub const CollatorInflation: Perbill = Perbill::from_parts(05_000_000); // 0.5%
+    pub const ExecutorInflation: Perbill = Perbill::from_parts(8_000_000); // 0.8%
+    pub const CollatorInflation: Perbill = Perbill::from_parts(5_000_000); // 0.5%
     pub const TreasuryInflation: Perbill = Perbill::from_parts(20_000_000); // 2%
     pub const AttesterBootstrapRewards: Percent = Percent::from_parts(40); // 40%
     pub const CollatorBootstrapRewards: Percent = Percent::from_parts(20); // 20%

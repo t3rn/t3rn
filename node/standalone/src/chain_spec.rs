@@ -176,6 +176,10 @@ fn testnet_genesis(
                 .collect(),
         },
         treasury: Default::default(),
+        escrow_treasury: Default::default(),
+        fee_treasury: Default::default(),
+        parachain_treasury: Default::default(),
+        slash_treasury: Default::default(),
         aura: AuraConfig {
             authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
         },

@@ -12,6 +12,7 @@ pub mod contracts_config;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
+pub mod treasuries_config;
 pub mod xbi_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
@@ -149,9 +150,15 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
         Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
-        Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 13,
         AccountManager: pallet_account_manager = 14,
         AssetTxPayment: pallet_asset_tx_payment = 15,
+
+        // Treasuries
+        Treasury: pallet_treasury = 13, // Keep old treasury index for backwards compatibility
+        EscrowTreasury: pallet_treasury::<Instance1> = 16,
+        FeeTreasury: pallet_treasury::<Instance2> = 17,
+        ParachainTreasury: pallet_treasury::<Instance3> = 18,
+        SlashTreasury: pallet_treasury::<Instance4> = 19,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,

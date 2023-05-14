@@ -67,19 +67,19 @@ fn handles_error_verification_correctly() {
 
         // Dispatch works
         assert_ok!(verify_extrinsic_error(
-            ErrorWrapper::Dispatch(error.clone()),
-            &param.clone()
+            ErrorWrapper::Dispatch(error),
+            &param
         ));
 
-        let error = DispatchErrorWithPostInfo {
+        let _error = DispatchErrorWithPostInfo {
             error: DispatchError::BadOrigin,
             post_info: Default::default(),
         };
 
-        let mut error = DispatchError::BadOrigin;
+        let error = DispatchError::BadOrigin;
         // DispatchWithPostInfo works
         assert_ok!(verify_extrinsic_error(
-            ErrorWrapper::Dispatch(error.clone()),
+            ErrorWrapper::Dispatch(error),
             &param
         ));
 

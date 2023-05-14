@@ -157,8 +157,8 @@ use t3rn_primitives::monetary::TRN;
 parameter_types! {
     pub const TotalInflation: Perbill = Perbill::from_parts(44_000_000); // 4.4%
     pub const AttesterInflation: Perbill = Perbill::from_parts(11_000_000); // 1.1%
-    pub const ExecutorInflation: Perbill = Perbill::from_parts(08_000_000); // 0.8%
-    pub const CollatorInflation: Perbill = Perbill::from_parts(05_000_000); // 0.5%
+    pub const ExecutorInflation: Perbill = Perbill::from_parts(8_000_000); // 0.8%
+    pub const CollatorInflation: Perbill = Perbill::from_parts(5_000_000); // 0.5%
     pub const TreasuryInflation: Perbill = Perbill::from_parts(20_000_000); // 2%
     pub const AttesterBootstrapRewards: Percent = Percent::from_parts(40); // 40%
     pub const CollatorBootstrapRewards: Percent = Percent::from_parts(20); // 20%

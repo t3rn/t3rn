@@ -93,6 +93,22 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
+pub enum TreasuryAccount {
+    #[default]
+    Treasury,
+    Escrow,
+    Fee,
+    Parachain,
+    Slash,
+}
+
+pub trait TreasuryAccountProvider<Account> {
+    fn get_treasury_account(treasury_account: TreasuryAccount) -> Account;
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub enum GatewayVendor {
     Polkadot,
     Kusama,

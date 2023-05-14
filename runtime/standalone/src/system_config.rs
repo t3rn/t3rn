@@ -9,14 +9,12 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU32, Contains, NeverEnsureOrigin, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
-        OnRuntimeUpgrade,
+        ConstU32, Contains, OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade,
     },
-    PalletId,
 };
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
-use sp_runtime::{traits::*, Permill};
+use sp_runtime::traits::*;
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -148,33 +146,6 @@ impl pallet_asset_tx_payment::Config for Runtime {
         pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
         CreditToBlockAuthor,
     >;
-}
-
-parameter_types! {
-    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
-    pub const MaxApprovals: u32 = 10;
-    pub const ProposalBond: Permill = Permill::from_percent(1);
-    pub const SpendPeriod: u32 = 60 / 12;
-    pub const ProposalBondMinimum: u128 = 1_000_000_000_000_u128;
-}
-
-impl pallet_treasury::Config for Runtime {
-    type ApproveOrigin = EnsureRoot<AccountId>;
-    type Burn = ();
-    type BurnDestination = ();
-    type Currency = Balances;
-    type Event = Event;
-    type MaxApprovals = MaxApprovals;
-    type OnSlash = Treasury;
-    type PalletId = TreasuryId;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMaximum = ();
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type RejectOrigin = EnsureRoot<AccountId>;
-    type SpendFunds = ();
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
-    type SpendPeriod = SpendPeriod;
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -417,7 +388,7 @@ mod tests {
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_treasury::Call::propose_spend {
+        let call = pallet_treasury::Call::<Runtime, ()>::propose_spend {
             value: 0,
             beneficiary: MultiAddress::Address32([0; 32]),
         }
@@ -522,7 +493,7 @@ mod tests {
         .into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call = pallet_treasury::Call::reject_proposal { proposal_id: 0 }.into();
+        let call = pallet_treasury::Call::<Runtime, ()>::reject_proposal { proposal_id: 0 }.into();
         assert!(!MaintenanceFilter::contains(&call));
 
         let call = pallet_account_manager::Call::deposit {

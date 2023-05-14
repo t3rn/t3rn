@@ -652,8 +652,8 @@ mod tests {
                 execution_id, Outcome::UnexpectedFailure, None, None,
             ));
 
-            let one_percent_charge_amt = charge_amt / 100;
-            let fifty_percent_charge_amt = charge_amt / 100 * 50;
+            let _one_percent_charge_amt = charge_amt / 100;
+            let _fifty_percent_charge_amt = charge_amt / 100 * 50;
 
             // User gets 100% of their reward back if the circuit fails unexpectedly
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE);

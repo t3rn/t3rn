@@ -286,7 +286,7 @@ pub mod pallet {
 
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn reset(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            let _ = ensure_root(origin)?;
+            ensure_root(origin)?;
             <EverInitialized<T, I>>::kill();
             <BestFinalizedHash<T, I>>::kill();
             <InitialHash<T, I>>::kill();
