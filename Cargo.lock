@@ -1245,15 +1245,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cloudabi"
-version = "0.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
-dependencies = [
- "bitflags",
-]
-
-[[package]]
 name = "cmake"
 version = "0.1.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2715,28 +2706,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "failure"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d32e9bd16cc02eae7db7ef620b392808b89f6a5e16bb3497d159c6b92a0f4f86"
-dependencies = [
- "backtrace",
- "failure_derive",
-]
-
-[[package]]
-name = "failure_derive"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa4da3c766cd7a0db8242e326e9e4e081edd567072893ed320008189715366a4"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
- "synstructure",
-]
-
-[[package]]
 name = "fake-simd"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2819,7 +2788,7 @@ checksum = "8a3de6e8d11b22ff9edc6d916f890800597d60f8b2da1caf2955c274638d6412"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
- "redox_syscall 0.2.16",
+ "redox_syscall",
  "windows-sys 0.45.0",
 ]
 
@@ -4003,22 +3972,6 @@ dependencies = [
 
 [[package]]
 name = "jsonrpc-client-transports"
-version = "15.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "489b9c612e60c766f751ab40fcb43cbb55a1e10bb44a9b4307ed510ca598cbd7"
-dependencies = [
- "failure",
- "futures 0.1.31",
- "jsonrpc-core 15.1.0",
- "jsonrpc-pubsub 15.1.0",
- "log",
- "serde",
- "serde_json",
- "url 1.7.2",
-]
-
-[[package]]
-name = "jsonrpc-client-transports"
 version = "18.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2b99d4207e2a04fb4581746903c2bb7eb376f88de9c699d0f3e10feeac0cd3a"
@@ -4026,7 +3979,7 @@ dependencies = [
  "derive_more",
  "futures 0.3.28",
  "jsonrpc-core 18.0.0",
- "jsonrpc-pubsub 18.0.0",
+ "jsonrpc-pubsub",
  "log",
  "serde",
  "serde_json",
@@ -4063,21 +4016,12 @@ dependencies = [
 
 [[package]]
 name = "jsonrpc-core-client"
-version = "15.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f764902d7b891344a0acb65625f32f6f7c6db006952143bd650209fbe7d94db"
-dependencies = [
- "jsonrpc-client-transports 15.1.0",
-]
-
-[[package]]
-name = "jsonrpc-core-client"
 version = "18.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b51da17abecbdab3e3d4f26b01c5ec075e88d3abe3ab3b05dc9aa69392764ec0"
 dependencies = [
  "futures 0.3.28",
- "jsonrpc-client-transports 18.0.0",
+ "jsonrpc-client-transports",
 ]
 
 [[package]]
@@ -4102,19 +4046,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "jsonrpc-pubsub"
-version = "15.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "639558e0604013be9787ae52f798506ae42bf4220fe587bdc5625871cc8b9c77"
-dependencies = [
- "jsonrpc-core 15.1.0",
- "log",
- "parking_lot 0.10.2",
- "rand 0.7.3",
- "serde",
 ]
 
 [[package]]
@@ -5137,15 +5068,6 @@ name = "linux-raw-sys"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
-
-[[package]]
-name = "lock_api"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4da24a77a3d8a6d4862d95f72e6fdb9c09a643ecdb402d754004a557f2bec75"
-dependencies = [
- "scopeguard",
-]
 
 [[package]]
 name = "lock_api"
@@ -6415,7 +6337,7 @@ version = "1.0.0-aplha.0"
 dependencies = [
  "frame-system",
  "jsonrpc-core 15.1.0",
- "jsonrpc-core-client 15.1.0",
+ "jsonrpc-core-client",
  "jsonrpc-derive 15.1.0",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
@@ -6444,7 +6366,7 @@ name = "pallet-contracts-rpc"
 version = "4.0.0-dev"
 dependencies = [
  "jsonrpc-core 18.0.0",
- "jsonrpc-core-client 18.0.0",
+ "jsonrpc-core-client",
  "jsonrpc-derive 18.0.0",
  "jsonrpsee",
  "pallet-contracts-primitives 5.0.0",
@@ -7695,22 +7617,12 @@ checksum = "427c3892f9e783d91cc128285287e70a59e206ca452770ece88a76f7a3eddd72"
 
 [[package]]
 name = "parking_lot"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3a704eb390aafdc107b0e392f56a82b668e3a71366993b5340f5833fd62505e"
-dependencies = [
- "lock_api 0.3.4",
- "parking_lot_core 0.7.3",
-]
-
-[[package]]
-name = "parking_lot"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
 dependencies = [
  "instant",
- "lock_api 0.4.9",
+ "lock_api",
  "parking_lot_core 0.8.6",
 ]
 
@@ -7720,22 +7632,8 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3742b2c103b9f06bc9fff0a37ff4912935851bee6d36f3c02bcc755bcfec228f"
 dependencies = [
- "lock_api 0.4.9",
+ "lock_api",
  "parking_lot_core 0.9.7",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b93f386bb233083c799e6e642a9d73db98c24a5deeb95ffc85bf281255dffc98"
-dependencies = [
- "cfg-if 0.1.10",
- "cloudabi",
- "libc",
- "redox_syscall 0.1.57",
- "smallvec",
- "winapi",
 ]
 
 [[package]]
@@ -7747,7 +7645,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "instant",
  "libc",
- "redox_syscall 0.2.16",
+ "redox_syscall",
  "smallvec",
  "winapi",
 ]
@@ -7760,7 +7658,7 @@ checksum = "9069cbb9f99e3a5083476ccb29ceb1de18b9118cafa53e90c9551235de2b9521"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
- "redox_syscall 0.2.16",
+ "redox_syscall",
  "smallvec",
  "windows-sys 0.45.0",
 ]
@@ -9500,12 +9398,6 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.1.57"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41cc0f7e4d5d4544e8861606a285bb08d3e70712ccc7d2b84d7c0ccfaf4b05ce"
-
-[[package]]
-name = "redox_syscall"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
@@ -9520,7 +9412,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b033d837a7cf162d7993aded9304e30a83213c648b6e389db233191f891e5c2b"
 dependencies = [
  "getrandom 0.2.8",
- "redox_syscall 0.2.16",
+ "redox_syscall",
  "thiserror",
 ]
 
@@ -12921,7 +12813,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "fastrand",
  "libc",
- "redox_syscall 0.2.16",
+ "redox_syscall",
  "remove_dir_all",
  "winapi",
 ]
@@ -13390,9 +13282,9 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.6",
- "rand 0.7.3",
+ "rand 0.8.5",
  "static_assertions",
 ]
 
