@@ -1,7 +1,6 @@
 //! Runtime utilities
-use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit, GatewayABIConfig};
-
-use codec::Encode;
+#![recursion_limit = "256"]
+use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
 
 use frame_support::{
     pallet_prelude::{GenesisBuild, Weight},
@@ -24,6 +23,7 @@ mod consensus_aura_config;
 mod contracts_config;
 mod system_no_version_config;
 pub mod test_utils;
+mod treasuries_config;
 mod xbi_config;
 
 pub type RococoLightClient = ();
@@ -53,15 +53,24 @@ frame_support::construct_runtime!(
         Balances: pallet_balances = 10,
         TransactionPayment: pallet_transaction_payment = 11,
         Assets: pallet_assets = 12,
-        AssetTxPayment: pallet_asset_tx_payment = 13,
-        Authorship: pallet_authorship = 14,
+        AssetTxPayment: pallet_asset_tx_payment = 14,
+        Authorship: pallet_authorship = 15,
+
+        // Treasuries
+        Treasury: pallet_treasury = 13, // Keep old treasury index for backwards compatibility
+        EscrowTreasury: pallet_treasury::<Instance1> = 16,
+        FeeTreasury: pallet_treasury::<Instance2> = 17,
+        ParachainTreasury: pallet_treasury::<Instance3> = 18,
+        SlashTreasury: pallet_treasury::<Instance4> = 19,
 
         // Circuit
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
+        Attesters: pallet_attesters::{Pallet, Call, Config<T>, Storage, Event<T>} = 101,
+        Rewards: pallet_rewards::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
+
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Treasury: pallet_treasury = 109,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
         Executors: pallet_executors = 111,
 
@@ -87,13 +96,11 @@ frame_support::construct_runtime!(
     }
 );
 
-use t3rn_types::gateway::{CryptoAlgo, HasherAlgo};
-
 use t3rn_abi::SFXAbi;
 use t3rn_primitives::{
     contracts_registry::RegistryContract,
-    xdns::{GatewayRecord, Parachain, XdnsRecord},
-    ExecutionVendor, GatewayType, GatewayVendor, SubstrateToken, TokenInfo,
+    xdns::{GatewayRecord, XdnsRecord},
+    ExecutionVendor, GatewayVendor,
 };
 use t3rn_types::sfx::Sfx4bId;
 

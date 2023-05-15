@@ -4,16 +4,14 @@ use frame_support::{
     parameter_types,
     traits::{
         fungibles::{Balanced, CreditOf},
-        ConstU32, ConstU8, NeverEnsureOrigin,
+        ConstU32, ConstU8,
     },
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
-    PalletId,
 };
-use frame_system::EnsureRoot;
+
 use sp_runtime::{
     generic,
     traits::{AccountIdLookup, BlakeTwo256, ConvertInto},
-    Permill,
 };
 
 // Configure FRAME pallets to include in runtime.
@@ -146,33 +144,6 @@ impl pallet_asset_tx_payment::Config for Runtime {
         pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
         CreditToBlockAuthor,
     >;
-}
-
-parameter_types! {
-    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
-    pub const MaxApprovals: u32 = 10;
-    pub const ProposalBond: Permill = Permill::from_percent(1);
-    pub const SpendPeriod: u32 = 60 / 12;
-    pub const ProposalBondMinimum: u128 = 1_000_000_000_000_u128;
-}
-
-impl pallet_treasury::Config for Runtime {
-    type ApproveOrigin = EnsureRoot<AccountId>;
-    type Burn = ();
-    type BurnDestination = ();
-    type Currency = Balances;
-    type Event = Event;
-    type MaxApprovals = MaxApprovals;
-    type OnSlash = Treasury;
-    type PalletId = TreasuryId;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMaximum = ();
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type RejectOrigin = EnsureRoot<AccountId>;
-    type SpendFunds = ();
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
-    type SpendPeriod = SpendPeriod;
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {

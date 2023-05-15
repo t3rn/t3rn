@@ -50,6 +50,8 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
     fn no_charge_or_fail(charge_id: Hash) -> Result<(), DispatchError>;
     /// Lookup charge by Id and fail if not found
     fn get_settlement(charge_id: Hash) -> Option<Settlement<Account, Balance>>;
+    /// Get all settlements by role in the current round
+    fn get_settlements_by_role(role: CircuitRole) -> Vec<(Account, Settlement<Account, Balance>)>;
     /// Bump contracts registry nonce in Account Manager nonce state and return charge request Id
     fn bump_contracts_registry_nonce() -> Result<Hash, DispatchError>;
     /// Validate deposit goes through

@@ -327,7 +327,13 @@ fn testnet_genesis(
                 .collect(),
         },
         treasury: Default::default(),
+        escrow_treasury: Default::default(),
+        fee_treasury: Default::default(),
+        parachain_treasury: Default::default(),
+        slash_treasury: Default::default(),
         assets: Default::default(),
+        attesters: Default::default(),
+        rewards: Default::default(),
         parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
         collator_selection: circuit_parachain_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),

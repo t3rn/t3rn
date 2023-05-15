@@ -27,7 +27,7 @@ use crate::{
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
-    storage::child::{self, ChildInfo, KillStorageResult},
+    storage::child::{self, ChildInfo},
     traits::Get,
     weights::Weight,
 };

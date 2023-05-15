@@ -970,6 +970,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-aura",
  "pallet-authorship",
  "pallet-babe",
@@ -992,6 +993,7 @@ dependencies = [
  "pallet-portal-rpc-runtime-api",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
+ "pallet-rewards",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -1110,6 +1112,7 @@ dependencies = [
  "pallet-account-manager",
  "pallet-asset-tx-payment",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -1129,6 +1132,7 @@ dependencies = [
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
+ "pallet-rewards",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -5959,6 +5963,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-attesters"
+version = "1.9.0-rc.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.2.2",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-mini-mock-runtime",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27#5bfdbab8ba28523ef10e365627fed64ef2b77cbf"
@@ -7133,6 +7158,27 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-rewards"
+version = "1.9.0-rc.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.2.2",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-mini-mock-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -12504,6 +12550,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -12524,6 +12571,7 @@ dependencies = [
  "pallet-portal-rpc-runtime-api",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
+ "pallet-rewards",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -12609,12 +12657,18 @@ dependencies = [
  "hex-literal 0.3.4",
  "num",
  "num-traits",
+ "pallet-account-manager",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-balances",
+ "pallet-clock",
  "pallet-contracts 4.0.0-dev",
  "pallet-grandpa-finality-verifier",
  "pallet-portal",
+ "pallet-randomness-collective-flip",
+ "pallet-rewards",
  "pallet-timestamp",
+ "pallet-treasury",
  "pallet-xdns",
  "parity-scale-codec",
  "rlp",
@@ -12623,6 +12677,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "t3rn-abi",
