@@ -13,7 +13,7 @@ import { Circuit } from "@/types.ts"
 
 export const spinner = ora()
 
-export const handleSubmitSfxCmd = (sfxFile: string) => {
+export const handleSubmitSfxCmd = (sfxFile: string, exportMode: boolean) => {
   const unvalidatedExtrinsic = readSfxFile(sfxFile)
 
   if (!unvalidatedExtrinsic) {
@@ -28,7 +28,7 @@ export const handleSubmitSfxCmd = (sfxFile: string) => {
     process.exit(1)
   }
 
-  submitSfx(extrinsic)
+  submitSfx(extrinsic, exportMode)
 }
 
 export const readSfxFile = (filePath: string) => {
@@ -45,7 +45,7 @@ export const readSfxFile = (filePath: string) => {
   }
 }
 
-export const submitSfx = async (extrinsic: Extrinsic) => {
+export const submitSfx = async (extrinsic: Extrinsic, exportMode: boolean) => {
   const config = getConfig()
 
   spinner.text = "Submitting extrinsic..."
@@ -55,7 +55,7 @@ export const submitSfx = async (extrinsic: Extrinsic) => {
     process.exit(1)
   }
 
-  const { circuit, sdk } = await createCircuitContext()
+  const { circuit, sdk } = await createCircuitContext(exportMode)
   const transactionArgs = buildSfx(
     circuit,
     extrinsic.sideEffects,
@@ -65,7 +65,9 @@ export const submitSfx = async (extrinsic: Extrinsic) => {
 
   try {
     const transaction = circuit.tx.circuit.onExtrinsicTrigger(
-      transactionArgs.sideEffects,
+      transactionArgs.sideEffects as Parameters<
+        typeof circuit.tx.circuit.onExtrinsicTrigger
+      >[0],
       transactionArgs.speed_mode
     )
     const submissionHeight = await sdk.circuit.tx.signAndSendSafe(transaction)

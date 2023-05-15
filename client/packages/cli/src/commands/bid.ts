@@ -1,3 +1,4 @@
+import { Args } from "@/types.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { getConfig } from "@/utils/config.ts"
 import { colorLogMsg } from "@/utils/log.ts"
@@ -6,14 +7,17 @@ import ora from "ora"
 
 const spinner = ora()
 
-export const handleBidCmd = async (sfxId: string, amount: number) => {
+export const handleBidCmd = async (
+  sfxId: string,
+  amount: number,
+  options: Args<"export">
+) => {
   const config = getConfig()
-
   if (!config) {
     process.exit(1)
   }
 
-  const { circuit, sdk } = await createCircuitContext()
+  const { circuit, sdk } = await createCircuitContext(Boolean(options.export))
   const bidArgs = bid(circuit, sdk, sfxId, amount)
 
   spinner.start(colorLogMsg("INFO", `Bidding on side effect ${sfxId}...`))
