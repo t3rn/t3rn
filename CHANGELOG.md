@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.22.0-rc.0] - 2023-05-15
+### :sparkles: New Features
+- [`1e87f21`](https://github.com/t3rn/t3rn/commit/1e87f21435d4584fc28c9ffff7f3a3f226d73d38) - implement export extrinsic data to file *(PR [#969](https://github.com/t3rn/t3rn/pull/969) by [@ahkohd](https://github.com/ahkohd))*
+- [`b5855ee`](https://github.com/t3rn/t3rn/commit/b5855ee38e7e361653ccd5ed9d784311f675b79d) - implement inflation rewards to attesters and executors *(PR [#918](https://github.com/t3rn/t3rn/pull/918) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.21.0-rc.0] - 2023-05-12
 ### :sparkles: New Features
 - [`6b24f01`](https://github.com/t3rn/t3rn/commit/6b24f019dde78e52301b5cad11f2fa74ea1287ab) - activate portal rpc service in t0rn runtime *(PR [#968](https://github.com/t3rn/t3rn/pull/968) by [@petscheit](https://github.com/petscheit))*
@@ -1113,3 +1119,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.20.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.19.2-rc.0...v1.20.0-rc.0
 [v1.20.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.20.0-rc.0...v1.20.1-rc.0
 [v1.21.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.20.1-rc.0...v1.21.0-rc.0
+[v1.22.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.21.0-rc.0...v1.22.0-rc.0
