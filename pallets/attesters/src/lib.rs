@@ -231,6 +231,8 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         AttesterRegistered(T::AccountId),
+        AttesterDeregistrationScheduled(T::AccountId, T::BlockNumber),
+        AttesterDeregistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
         NewAttestationBatch([u8; 4], BatchMessage<T::BlockNumber>),
         NewConfirmationBatch([u8; 4], BatchMessage<T::BlockNumber>),
@@ -317,6 +319,39 @@ pub mod pallet {
             Self::deposit_event(Event::AttesterRegistered(account_id.clone()));
 
             Self::request_add_attesters_attestation(&account_id)?;
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn deregister_attester(origin: OriginFor<T>) -> DispatchResult {
+            let attester = ensure_signed(origin)?;
+
+            // Ensure the attester is registered
+            ensure!(
+                Attesters::<T>::contains_key(&attester),
+                Error::<T>::NotRegistered
+            );
+
+            // Retreive the self-nomination amount
+            let self_nomination =
+                Nominations::<T>::get(&attester, &attester).unwrap_or(Zero::zero());
+
+            // Schedule self-denomination
+            // Calculate the block number when the unnomination can be processed after 2 x shuffling frequency
+            let unlock_block = frame_system::Pallet::<T>::block_number()
+                + T::ShufflingFrequency::get() * 2u32.into();
+
+            // Store the pending unnomination
+            PendingUnnominations::<T>::mutate(&attester, |pending_unnominations| {
+                let pending_unnominations = pending_unnominations.get_or_insert_with(Vec::new);
+                pending_unnominations.push((attester.clone(), self_nomination, unlock_block));
+            });
+
+            Self::deposit_event(Event::AttesterDeregistrationScheduled(
+                attester,
+                unlock_block,
+            ));
 
             Ok(())
         }
@@ -564,7 +599,7 @@ pub mod pallet {
 
             let amount = nomination.1;
 
-            // Calculate the block number when the unnomination can be processed
+            // Calculate the block number when the unnomination can be processed after 2 x shuffling frequency
             let unlock_block = frame_system::Pallet::<T>::block_number()
                 + T::ShufflingFrequency::get() * 2u32.into();
 
@@ -950,6 +985,47 @@ pub mod pallet {
                             indices_to_remove.push(index);
                             pending_unnominations_updated = true;
 
+                            // Check if this is self-deregistration
+                            if &nominator == attester {
+                                // Retreive the self-nomination amount
+                                let self_nomination = Nominations::<T>::get(attester, attester)
+                                    .unwrap_or(Zero::zero());
+
+                                if self_nomination.saturating_sub(*amount)
+                                    < T::MinAttesterBond::get()
+                                {
+                                    // Handle full self-deregistration with releasing all the nominator's funds
+                                    for nomination in Nominations::<T>::iter_prefix(attester) {
+                                        let (nominator, amount) = nomination;
+                                        // Remove the nomination from storage
+                                        Nominations::<T>::remove(attester, &nominator);
+                                        // Unreserve the nominated amount in the nominator's account
+                                        T::Currency::unreserve(&nominator, amount);
+                                        aggregated_weight += T::DbWeight::get().writes(2);
+                                    }
+                                    // Remove the attester from the list of attesters
+                                    Attesters::<T>::remove(attester);
+                                    aggregated_weight += T::DbWeight::get().writes(1);
+                                    SortedNominatedAttesters::<T>::mutate(|attesters| {
+                                        if let Some(index) =
+                                            attesters.iter().position(|(a, _n)| a == attester)
+                                        {
+                                            attesters.remove(index);
+                                        }
+                                    });
+                                    aggregated_weight += T::DbWeight::get().writes(1);
+
+                                    PendingUnnominations::<T>::remove(attester);
+                                    aggregated_weight += T::DbWeight::get().writes(1);
+
+                                    Self::deposit_event(Event::AttesterDeregistered(
+                                        attester.clone(),
+                                    ));
+
+                                    continue
+                                }
+                            }
+
                             // Unreserve the nominated amount in the nominator's account
                             T::Currency::unreserve(&nominator, *amount);
                             aggregated_weight += T::DbWeight::get().writes(1);
@@ -1103,7 +1179,6 @@ pub mod attesters_test {
         TargetBatchInclusionProof, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
         SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use sp_runtime::traits::BlockNumberProvider;
 
     use codec::Encode;
     use frame_support::{
@@ -1118,14 +1193,60 @@ pub mod attesters_test {
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, Attesters, AttestersError, AttestersStore, Balance, Balances,
         BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards, CurrentCommittee,
-        ExtBuilder, MiniRuntime, NextBatch, Origin, PendingUnnominations, PreviousCommittee,
-        Rewards, SortedNominatedAttesters, System,
+        ExtBuilder, MiniRuntime, NextBatch, Nominations, Origin, PendingUnnominations,
+        PreviousCommittee, Rewards, SortedNominatedAttesters, System,
     };
     use t3rn_primitives::{
         attesters::{AttesterInfo, AttestersReadApi, AttestersWriteApi, CommitteeTransition},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
     };
     use tiny_keccak::{Hasher, Keccak};
+
+    pub fn deregister_attester(attester: AccountId) {
+        // Assert that attester is register prior to deregistration
+        assert!(AttestersStore::<MiniRuntime>::get(&attester).is_some(),);
+
+        let self_nomination_amount = Nominations::<MiniRuntime>::get(&attester, &attester).unwrap();
+
+        assert!(self_nomination_amount > <MiniRuntime as ConfigAttesters>::MinAttesterBond::get());
+
+        let attester_balance_prior = Balances::free_balance(&attester);
+
+        let _all_nominations_prior =
+            Nominations::<MiniRuntime>::iter_prefix(&attester).collect::<Vec<_>>();
+
+        assert_ok!(Attesters::deregister_attester(Origin::signed(
+            attester.clone()
+        ),));
+
+        // Check Pending Unnomination is created
+        assert!(PendingUnnominations::<MiniRuntime>::get(&attester).is_some());
+
+        // Check Pending Unnomination is created with entire self-nomination amount
+        assert_eq!(
+            PendingUnnominations::<MiniRuntime>::get(&attester).unwrap(),
+            vec![(attester.clone(), self_nomination_amount, 801u32)],
+        );
+
+        // Run to active to unlock block = 2 x shuffling frequency + next window
+        Attesters::on_initialize(1200u32);
+
+        // Assert that attester is deregistered
+        assert!(AttestersStore::<MiniRuntime>::get(&attester).is_none(),);
+
+        // Assume not in active set
+        assert!(!ActiveSet::<MiniRuntime>::get()
+            .iter()
+            .any(|x| x == &attester));
+
+        // Assume deposit is returned to attester
+        assert_eq!(
+            Balances::free_balance(&attester),
+            attester_balance_prior + self_nomination_amount
+        )
+
+        // ToDo: Assume nominations are returned to nominators
+    }
 
     pub fn register_attester_with_single_private_key(secret_key: [u8; 32]) -> AttesterInfo {
         // Register an attester
@@ -1192,6 +1313,17 @@ pub mod attesters_test {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
             register_attester_with_single_private_key([1u8; 32]);
+        });
+    }
+
+    #[test]
+    fn deregister_attester_releases_all_funds() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
+            let attester_account_id = AccountId::from([1u8; 32]);
+
+            deregister_attester(attester_account_id);
         });
     }
 
