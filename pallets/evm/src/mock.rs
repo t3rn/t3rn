@@ -73,9 +73,7 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type BlockNumber = u32;
     type BlockWeights = ();
-    type RuntimeCall = RuntimeCall;
     type DbWeight = ();
-    type RuntimeEvent = RuntimeEvent;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Header = generic::Header<u32, BlakeTwo256>;
@@ -85,8 +83,10 @@ impl frame_system::Config for Test {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type RuntimeOrigin = RuntimeOrigin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();
@@ -99,11 +99,11 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -142,7 +142,6 @@ impl crate::Config for Test {
     type CallOrigin = EnsureSigned<Self>;
     type ChainId = ();
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated;
     type GasWeightMapping = ();
@@ -150,6 +149,7 @@ impl crate::Config for Test {
     type PrecompilesType = ();
     type PrecompilesValue = ();
     type Runner = crate::runner::stack::Runner<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 }

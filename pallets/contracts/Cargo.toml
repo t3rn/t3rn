@@ -13,15 +13,16 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-bitflags         = { workspace = true }
-codec      = { workspace = true, package = "parity-scale-codec" }
-hex              = { workspace = true }
-log              = { workspace = true }
-scale-info       = { workspace = true }
-serde            = { workspace = true, optional = true, features = [ "derive" ] }
-smallvec         = { workspace = true }
-wasm-instrument  = { workspace = true }
-wasmi-validation = { workspace = true }
+bitflags        = { workspace = true }
+codec           = { workspace = true, package = "parity-scale-codec" }
+hex             = { workspace = true }
+log             = { workspace = true }
+scale-info      = { workspace = true }
+serde           = { workspace = true, optional = true, features = [ "derive" ] }
+smallvec        = { workspace = true }
+wasm-instrument = { workspace = true }
+wasmi           = { workspace = true }
+wasmparser      = { workspace = true }
 
 # Enabled by benchmarks
 frame-benchmarking = { workspace = true, optional = true }
@@ -34,6 +35,7 @@ frame-system  = { workspace = true }
 
 pallet-contracts-primitives = { default-features = false, path = "primitives" }
 pallet-contracts-proc-macro = { workspace = true }
+sp-api                      = { workspace = true }
 sp-core                     = { workspace = true }
 sp-io                       = { workspace = true }
 sp-runtime                  = { workspace = true }
@@ -93,11 +95,13 @@ std = [
   "sp-core/std",
   "sp-runtime/std",
   "sp-io/std",
+  "sp-api/std",
   "sp-std/std",
   "frame-support/std",
   "frame-system/std",
   "wasm-instrument/std",
-  "wasmi-validation/std",
+  "wasmi/std",
+  "wasmparser/std",
   "pallet-contracts-primitives/std",
   "pallet-contracts-proc-macro/full",
   "log/std",

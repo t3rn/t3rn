@@ -64,9 +64,7 @@ impl system::Config for Test {
     type BlockLength = ();
     type BlockNumber = u32;
     type BlockWeights = ();
-    type RuntimeCall = RuntimeCall;
     type DbWeight = ();
-    type RuntimeEvent = RuntimeEvent;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Header = Header;
@@ -76,8 +74,10 @@ impl system::Config for Test {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type RuntimeOrigin = RuntimeOrigin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ConstU16<42>;
     type SystemWeightInfo = ();
     type Version = ();
@@ -92,11 +92,11 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
-    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ConstU64<1>;
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -112,9 +112,9 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_utility::Config for Test {
+    type PalletsOrigin = OriginCaller;
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
-    type PalletsOrigin = OriginCaller;
     type WeightInfo = ();
 }
 
@@ -142,12 +142,12 @@ impl pallet_assets::Config for Test {
     type AssetId = u32;
     type Balance = Balance;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Extra = ();
     type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
 }
@@ -159,8 +159,8 @@ impl pallet_3vm::Config for Test {
     type ContractsRegistry = ContractsRegistry;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type RuntimeEvent = RuntimeEvent;
     type OnLocalTrigger = Circuit;
+    type RuntimeEvent = RuntimeEvent;
     type SignalBounceThreshold = ConstU32<2>;
 }
 
@@ -178,8 +178,8 @@ impl pallet_account_manager::Config for Test {
     type Clock = t3rn_primitives::clock::ClockMock<Self>;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = ();
 }
@@ -191,12 +191,12 @@ parameter_types! {
 impl pallet_circuit::Config for Test {
     type AccountManager = AccountManager;
     type Balances = Balances;
-    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<1024>;
-    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = CircuitPortal;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = CircuitTargetId;

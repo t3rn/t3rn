@@ -120,9 +120,9 @@ parameter_types! {
 }
 
 impl pallet_session::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type Keys = SessionKeys;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+    type RuntimeEvent = RuntimeEvent;
     // Essentially just Aura, but lets be pedantic.
     type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type SessionManager = CollatorSelection;
@@ -154,13 +154,13 @@ pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl pallet_collator_selection::Config for Runtime {
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     // should be a multiple of session or things will get inconsistent
     type KickThreshold = Period;
     type MaxCandidates = MaxCandidates;
     type MaxInvulnerables = MaxInvulnerables;
     type MinCandidates = MinCandidates;
     type PotId = PotId;
+    type RuntimeEvent = RuntimeEvent;
     type UpdateOrigin = CollatorSelectionUpdateOrigin;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
@@ -178,9 +178,9 @@ impl pallet_preimage::Config for Runtime {
     type BaseDeposit = PreImageBaseDeposit;
     type ByteDeposit = PreImageByteDeposit;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type MaxSize = PreimageMaxSize;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
 
@@ -192,15 +192,15 @@ parameter_types! {
 }
 
 impl pallet_scheduler::Config for Runtime {
-    type RuntimeCall = RuntimeCall;
-    type RuntimeEvent = RuntimeEvent;
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type MaximumWeight = MaximumSchedulerWeight;
     type NoPreimagePostponement = NoPreimagePostponement;
-    type RuntimeOrigin = RuntimeOrigin;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type PalletsOrigin = OriginCaller;
     type PreimageProvider = Preimage;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
@@ -218,7 +218,6 @@ impl pallet_treasury::Config for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type MaxApprovals = MaxApprovals;
     type OnSlash = Treasury;
     type PalletId = TreasuryId;
@@ -226,6 +225,7 @@ impl pallet_treasury::Config for Runtime {
     type ProposalBondMaximum = ();
     type ProposalBondMinimum = ProposalBondMinimum;
     type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type SpendFunds = ();
     type SpendOrigin = NeverEnsureOrigin<Balance>;
     type SpendPeriod = SpendPeriod;

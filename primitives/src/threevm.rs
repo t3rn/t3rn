@@ -24,7 +24,10 @@ where
     Balance: Encode + Decode,
 {
     GetState(T::RuntimeOrigin, GetState<T>),
-    SubmitSideEffects(T::RuntimeOrigin, SideEffects<T::AccountId, Balance, T::Hash>),
+    SubmitSideEffects(
+        T::RuntimeOrigin,
+        SideEffects<T::AccountId, Balance, T::Hash>,
+    ),
     Signal(T::RuntimeOrigin, ExecutionSignal<T::Hash>),
 }
 

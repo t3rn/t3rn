@@ -34,7 +34,6 @@ parameter_types! {
 impl pallet_xbi_portal::Config for Runtime {
     type AssetRegistry = AssetRegistry;
     type Assets = Assets;
-    type RuntimeCall = RuntimeCall;
     // type SelfAccountId = XbiSovereign;
     // type Callback = XBIPortalRuntimeEntry;
     type Callback = ();
@@ -44,13 +43,14 @@ impl pallet_xbi_portal::Config for Runtime {
     type Contracts = Contracts;
     type Currency = Balances;
     type DeFi = ();
-    type RuntimeEvent = RuntimeEvent;
     type Evm = Evm;
     type ExpectedBlockTimeMs = ConstU32<6000>;
     type FeeConversion = ConstantMultiplier<u128, ConstU128<10u128>>;
     type NotificationWeight = ConstU64<1_000_000_000>;
     type ParachainId = ConstU32<3333>;
     type ReserveBalanceCustodian = XbiSovereign;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type TimeoutChecksLimit = ConstU32<3000>;
     type Xcm = XcmRouter;
     type XcmSovereignOrigin = XbiSovereign;
@@ -217,12 +217,12 @@ impl xcm_executor::Config for XcmConfig {
     type AssetTransactor = AssetTransactors;
     type AssetTrap = PolkadotXcm;
     type Barrier = Barrier;
-    type RuntimeCall = RuntimeCall;
     type IsReserve = NativeAsset;
     type IsTeleporter = TrustedTeleporters;
     type LocationInverter = LocationInverter<Ancestry>;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type ResponseHandler = PolkadotXcm;
+    type RuntimeCall = RuntimeCall;
     type SubscriptionService = PolkadotXcm;
     // FIXME: should be using asset_registry
     type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
@@ -238,11 +238,11 @@ parameter_types! {
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
     type DmpMessageHandler = DmpQueue;
-    type RuntimeEvent = RuntimeEvent;
     type OnSystemEvent = ();
     type OutboundXcmpMessageSource = XcmpQueue;
     type ReservedDmpWeight = ReservedDmpWeight;
     type ReservedXcmpWeight = ReservedXcmpWeight;
+    type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type XcmpMessageHandler = XcmpQueue;
 }
@@ -251,16 +251,16 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ChannelInfo = ParachainSystem;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type RuntimeEvent = RuntimeEvent;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type VersionWrapper = ();
     type WeightInfo = ();
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -285,10 +285,10 @@ pub type XcmRouter = (
 impl pallet_xcm::Config for Runtime {
     // ^ Override for AdvertisedXcmVersion default
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-    type RuntimeCall = RuntimeCall;
-    type RuntimeEvent = RuntimeEvent;
     type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
     type LocationInverter = LocationInverter<Ancestry>;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;

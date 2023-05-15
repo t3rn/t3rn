@@ -16,8 +16,8 @@ impl pallet_account_manager::Config for Runtime {
     type Clock = Clock;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = ();
 }
@@ -42,12 +42,12 @@ impl pallet_assets::Config for Runtime {
     type AssetId = circuit_runtime_types::AssetId;
     type Balance = Balance;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type Extra = ();
     type ForceOrigin = EnsureRoot<AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
 }

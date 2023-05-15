@@ -31,7 +31,9 @@ pub use frame_support::{
         StorageInfo,
     },
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
+        constants::{
+            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
+        },
         IdentityFee, Weight,
     },
     StorageValue,
@@ -70,13 +72,13 @@ parameter_types! {
 impl pallet_identity::Config for Runtime {
     type BasicDeposit = BasicDeposit;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type FieldDeposit = FieldDeposit;
     type ForceOrigin = EnsureRoot<AccountId>;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type MaxSubAccounts = MaxSubAccounts;
     type RegistrarOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type Slashed = ();
     type SubAccountDeposit = SubAccountDeposit;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;

@@ -70,14 +70,13 @@ impl pallet_3vm::Config for Runtime {
     type ContractsRegistry = ContractsRegistry;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type RuntimeEvent = RuntimeEvent;
     type OnLocalTrigger = Circuit;
+    type RuntimeEvent = RuntimeEvent;
     type SignalBounceThreshold = ConstU32<2>;
 }
 
 impl pallet_3vm_contracts::Config for Runtime {
     type AddressGenerator = pallet_3vm_contracts::DefaultAddressGenerator;
-    type RuntimeCall = RuntimeCall;
     /// The safest default is to allow no calls at all.
     ///
     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -92,8 +91,9 @@ impl pallet_3vm_contracts::Config for Runtime {
     type DeletionWeightLimit = DeletionWeightLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
-    type RuntimeEvent = RuntimeEvent;
     type Randomness = RandomnessCollectiveFlip;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type Schedule = Schedule;
     type ThreeVm = ThreeVm;
     type Time = Timestamp;
@@ -158,7 +158,6 @@ impl pallet_3vm_evm::Config for Runtime {
     type CallOrigin = EnsureAddressTruncated;
     type ChainId = ChainId;
     type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
     type FeeCalculator = FixedGasPrice;
     // BaseFee pallet may be better from frontier TODO
     type FindAuthor = FindAuthorTruncated<Aura>;
@@ -167,6 +166,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type PrecompilesType = evm_precompile_util::Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
     type WithdrawOrigin = EnsureAddressTruncated;
 }

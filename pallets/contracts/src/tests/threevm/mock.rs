@@ -25,8 +25,8 @@ mod threevm_mock {
         type ContractsRegistry = ContractsRegistry;
         type Currency = Balances;
         type EscrowAccount = EscrowAccount;
-        type RuntimeEvent = RuntimeEvent;
         type OnLocalTrigger = Circuit;
+        type RuntimeEvent = RuntimeEvent;
         type SignalBounceThreshold = ConstU32<2>;
     }
 
@@ -60,12 +60,12 @@ mod threevm_mock {
         type AssetId = u32;
         type Balance = Balance;
         type Currency = Balances;
-        type RuntimeEvent = RuntimeEvent;
         type Extra = ();
         type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
         type Freezer = ();
         type MetadataDepositBase = MetadataDepositBase;
         type MetadataDepositPerByte = MetadataDepositPerByte;
+        type RuntimeEvent = RuntimeEvent;
         type StringLimit = AssetsStringLimit;
         type WeightInfo = ();
     }
@@ -77,8 +77,8 @@ mod threevm_mock {
         type Clock = t3rn_primitives::clock::ClockMock<Self>;
         type Currency = Balances;
         type EscrowAccount = EscrowAccount;
-        type RuntimeEvent = RuntimeEvent;
         type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+        type RuntimeEvent = RuntimeEvent;
         type Time = Timestamp;
         type WeightInfo = ();
     }
@@ -90,12 +90,12 @@ mod threevm_mock {
     impl pallet_circuit::Config for Test {
         type AccountManager = AccountManager;
         type Balances = Balances;
-        type RuntimeCall = RuntimeCall;
         type Currency = Balances;
         type DeletionQueueLimit = ConstU32<1024>;
-        type RuntimeEvent = RuntimeEvent;
         type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
         type Portal = CircuitPortal;
+        type RuntimeCall = RuntimeCall;
+        type RuntimeEvent = RuntimeEvent;
         type SFXBiddingPeriod = ConstU32<3>;
         type SelfAccountId = CircuitAccountId;
         type SelfGatewayId = CircuitTargetId;

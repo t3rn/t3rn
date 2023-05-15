@@ -101,13 +101,13 @@ impl xcm_executor::Config for XcmConfig {
     type AssetTransactor = LocalAssetTransactor;
     type AssetTrap = PolkadotXcm;
     type Barrier = Barrier;
-    type RuntimeCall = RuntimeCall;
     type IsReserve = NativeAsset;
     type IsTeleporter = ();
     // Teleporting is disabled.
     type LocationInverter = LocationInverter<Ancestry>;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type ResponseHandler = PolkadotXcm;
+    type RuntimeCall = RuntimeCall;
     type SubscriptionService = PolkadotXcm;
     type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
@@ -129,10 +129,10 @@ pub type XcmRouter = (
 impl pallet_xcm::Config for Runtime {
     // ^ Override for AdvertisedXcmVersion default
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-    type RuntimeCall = RuntimeCall;
-    type RuntimeEvent = RuntimeEvent;
     type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
     type LocationInverter = LocationInverter<Ancestry>;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
@@ -160,15 +160,15 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ChannelInfo = ParachainSystem;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type RuntimeEvent = RuntimeEvent;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type VersionWrapper = PolkadotXcm;
     type WeightInfo = ();
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }

@@ -727,7 +727,13 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
 ) -> Result<Vec<u8>, &'static str> {
     let root = get_header_roots::<T, I>(header, trie_type)?;
     let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
-    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &root, key.as_ref(), None, None) {
+    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(
+        &db,
+        &root,
+        key.as_ref(),
+        None,
+        None,
+    ) {
         Ok(Some(value)) => Ok(value),
         _ => Err(Error::<T, I>::InvalidStorageProof.into()),
     }

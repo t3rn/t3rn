@@ -120,11 +120,11 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
 
 impl pallet_clock::Config for Runtime {
     type AccountManager = AccountManager;
-    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
     type RoundDuration = ConstU32<500u32>;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_xdns::Config for Runtime {
@@ -191,12 +191,12 @@ parameter_types! {
 impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
     type Balances = Balances;
-    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<100u32>;
-    type RuntimeEvent = RuntimeEvent;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3u32>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = SelfGatewayId;

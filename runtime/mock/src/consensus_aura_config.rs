@@ -28,8 +28,6 @@ impl pallet_aura::Config for Runtime {
 use pallet_grandpa::AuthorityId as GrandpaId;
 
 impl pallet_grandpa::Config for Runtime {
-    type RuntimeCall = RuntimeCall;
-    type RuntimeEvent = RuntimeEvent;
     type HandleEquivocation = ();
     type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
         KeyTypeId,
@@ -39,5 +37,7 @@ impl pallet_grandpa::Config for Runtime {
         <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
     type KeyOwnerProofSystem = ();
     type MaxAuthorities = ConstU32<32>;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
