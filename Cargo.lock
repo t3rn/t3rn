@@ -6713,7 +6713,7 @@ name = "pallet-evm-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
  "ethereum 0.14.0",
- "ethereum-types 0.13.1",
+ "ethereum-types 0.14.1",
  "fp-evm 3.0.0-dev",
  "parity-scale-codec",
  "scale-info",
@@ -13392,7 +13392,7 @@ checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if 0.1.10",
  "digest 0.10.6",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
