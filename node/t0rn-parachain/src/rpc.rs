@@ -12,7 +12,7 @@ use circuit_parachain_runtime::{
 };
 use pallet_3vm_contracts_rpc::{Contracts, ContractsApiServer};
 use pallet_3vm_evm_rpc::{Evm, EvmApiServer};
-use pallet_portal_rpc::{Portal, PortalApiServer};
+use pallet_portal_rpc::PortalApiServer;
 use pallet_xdns_rpc::{Xdns, XdnsApiServer};
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};

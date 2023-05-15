@@ -13,7 +13,7 @@ pub use pallet_account_manager::{
     Config as ConfigAccountManager, Error as AccountManagerError, Event as AccountManagerEvent,
     SettlementsPerRound,
 };
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+
 use sp_runtime::ConsensusEngineId;
 
 use pallet_grandpa_finality_verifier::{
@@ -27,7 +27,7 @@ pub use pallet_rewards::{
     Authors, AuthorsThisPeriod, Config as ConfigRewards, DistributionBlock, DistributionHistory,
     Error as RewardsError, PendingClaims,
 };
-use sp_core::{ByteArray, H256};
+use sp_core::H256;
 use sp_runtime::{
     generic, parameter_types,
     traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup},
@@ -147,7 +147,7 @@ parameter_types! {
 pub struct FindAuthorMockRoundRobinRotate32;
 
 impl FindAuthor<AccountId> for FindAuthorMockRoundRobinRotate32 {
-    fn find_author<'a, I>(digests: I) -> Option<AccountId>
+    fn find_author<'a, I>(_digests: I) -> Option<AccountId>
     where
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {

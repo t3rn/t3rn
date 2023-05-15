@@ -546,7 +546,7 @@ pub mod pallet {
         pub fn author() -> Option<T::AccountId> {
             let digest = <frame_system::Pallet<T>>::digest();
             let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
-            T::FindAuthor::find_author(pre_runtime_digests).map(|a| a)
+            T::FindAuthor::find_author(pre_runtime_digests)
         }
 
         pub fn process_author() -> bool {
@@ -838,22 +838,111 @@ pub mod test {
     }
 
     #[test]
+    fn test_block_authors_distribution_after_512_blocks() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let mut expected_blocks_produced_round_robin: u32 = 1;
+            for counter in 1..512 + 1 {
+                System::set_block_number(counter);
+                Rewards::on_initialize(counter);
+                // verify that the block author is noted
+                let author: AccountId = Rewards::author().unwrap();
+                let authors_this_period = AuthorsThisPeriod::<MiniRuntime>::get();
+                let noted_author = authors_this_period.iter().find(|&(a, _c)| a == &author);
+
+                assert!(noted_author.is_some());
+
+                if (counter - 1) % 32 == 0 && counter != 1 {
+                    expected_blocks_produced_round_robin += 1;
+                }
+
+                assert_eq!(
+                    noted_author.unwrap().1,
+                    &expected_blocks_produced_round_robin
+                );
+            }
+        });
+    }
+
+    #[test]
     fn test_block_authors_distribution() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
             let distribution_period =
                 <MiniRuntime as ConfigRewards>::InflationDistributionPeriod::get();
-
-            for counter in 1..distribution_period + 1 {
+            let mut expected_blocks_produced_round_robin: u32 = 1;
+            let mut keep_counter: u32 = 0;
+            for counter in 1..distribution_period {
                 System::set_block_number(counter);
                 Rewards::on_initialize(counter);
                 // verify that the block author is noted
                 let author: AccountId = Rewards::author().unwrap();
-                assert!(AuthorsThisPeriod::<MiniRuntime>::get()
-                    .iter()
-                    .find(|&(a, c)| a == &author)
-                    .is_some());
+                let authors_this_period = AuthorsThisPeriod::<MiniRuntime>::get();
+
+                let noted_author = authors_this_period.iter().find(|&(a, _c)| a == &author);
+
+                assert!(noted_author.is_some());
+
+                if (counter - 1) % 32 == 0 && counter != 1 {
+                    expected_blocks_produced_round_robin += 1;
+                }
+
+                assert_eq!(
+                    noted_author.unwrap().1,
+                    &expected_blocks_produced_round_robin
+                );
+
+                keep_counter = counter;
             }
+
+            // Next block should distribute the rewards
+            System::set_block_number(keep_counter + 1);
+            Rewards::on_initialize(keep_counter + 1);
+
+            let authors_this_period = AuthorsThisPeriod::<MiniRuntime>::get();
+            assert_eq!(authors_this_period.len(), 1);
+            assert_eq!(
+                authors_this_period.last_key_value(),
+                Some((&AccountId::new([0u8; 32]), &1))
+            );
+
+            for author in Authors::<MiniRuntime>::get().iter() {
+                let produced_by_author = author.1;
+                // 32 authors in round robin - some of them produced 3150 blocks, some of them 3149
+                assert!(
+                    produced_by_author == &(expected_blocks_produced_round_robin - 1)
+                        || produced_by_author == &(expected_blocks_produced_round_robin)
+                );
+
+                let author_pending_claim = Rewards::get_pending_claims(author.0);
+                assert!(author_pending_claim.is_some());
+                let author_pending_claim = author_pending_claim.unwrap();
+                assert_eq!(author_pending_claim.len(), 1);
+                let author_pending_claim = author_pending_claim.first().unwrap();
+                assert_eq!(author_pending_claim.beneficiary, author.0.clone(),);
+                assert_eq!(author_pending_claim.role, CircuitRole::Collator);
+                assert_eq!(
+                    author_pending_claim.benefit_source,
+                    BenefitSource::Inflation
+                );
+                // 26361491056934 is the total amount of rewards for 3150 blocks - 1 block more was produced by the first author
+                // 26369862750000 is the total amount of rewards for 3149 blocks - 1 block less was produced by the rest
+                if author_pending_claim.beneficiary == AccountId::new([0u8; 32]) {
+                    assert_eq!(author_pending_claim.total_round_claim, 26361491056934);
+                } else {
+                    assert_eq!(author_pending_claim.total_round_claim, 26369862750000);
+                }
+            }
+
+            // As per the above, the first author should get 26361491056934 + 31 other authors 26369862750000
+            let distribution_history = DistributionHistory::<MiniRuntime>::get();
+            assert!(distribution_history.last().is_some());
+            let last_distribution_entry = distribution_history.last().unwrap();
+
+            assert_eq!(
+                last_distribution_entry.collator_rewards,
+                (31 * 26369862750000 as Balance) + 26361491056934 as Balance
+            );
         });
     }
 
