@@ -40,22 +40,6 @@ pub trait Portal<T: frame_system::Config> {
 
     fn get_fast_height(gateway_id: ChainId) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
 
-    // fn get_current_epoch(
-    //     gateway_id: ChainId,
-    // ) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
-    //
-    // fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError>;
-    //
-    // fn read_rational_confirmation_offset(
-    //     gateway_id: ChainId,
-    // ) -> Result<T::BlockNumber, DispatchError>;
-    //
-    // fn read_finalized_confirmation_offset(
-    //     gateway_id: ChainId,
-    // ) -> Result<T::BlockNumber, DispatchError>;
-    //
-    // fn read_epoch_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError>;
-
     fn header_speed_mode_satisfied(
         gateway_id: [u8; 4],
         header: Bytes,
