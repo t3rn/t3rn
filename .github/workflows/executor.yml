@@ -65,13 +65,17 @@ jobs:
       - run: yarn ci
       - run: yarn fmt
       - run: yarn build-docs
-      - run: |
-          yarn lint > lint.out || true
 
-      - name: Comment on lint results
-        uses: mshick/add-pr-comment@v2
+      - name: Save Code Linting Report JSON
+        run: npm run lint:report
+        # Continue to the next step even if this fails
+        continue-on-error: true
+
+      - name: Annotate Code Linting Results
+        uses: ataylorme/eslint-annotate-action@v2
         with:
-          message-path: client/packages/executor/lint.out
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: "eslint_report.json"
 
       - run: yarn test
 
