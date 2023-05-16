@@ -1,29 +1,51 @@
 import { z } from "zod"
 
-export const SideEffectSchema = z.object({
-  target: z.string({
-    required_error: "Target is required",
-    invalid_type_error: "Target must be a string",
-  }),
-  type: z.string({
-    required_error: "Type is required",
-    invalid_type_error: "Type must be a string",
-  }),
+export const TransferEncodedArgsSchema = z.object({
   from: z.string({
     required_error: "From is required",
     invalid_type_error: "From must be a string",
   }),
   to: z.string({
-    required_error: "To is required",
-    invalid_type_error: "To must be a string",
+    required_error: "From is required",
+    invalid_type_error: "From must be a string",
   }),
-  amount: z
+})
+
+export type TransferEncodedArgs = z.infer<typeof TransferEncodedArgsSchema>
+
+export const EncodedArgsSchema = z.custom(
+  (value: any) => {
+    // Try to parse the value with each schema. If any succeeds, return true. If all fail, return false.
+    const schemas = [TransferEncodedArgsSchema]
+    return schemas.some((schema) => {
+      try {
+        schema.parse(value)
+        return true
+      } catch (e) {
+        return false
+      }
+    })
+  },
+  {
+    message:
+      "Encoded args must be a valid encoded args schema i.e (Transfer, Swap)",
+  }
+)
+
+export type EncodedArgs = z.infer<typeof EncodedArgsSchema>
+
+export const SideEffectSchema = z.object({
+  target: z.string({
+    required_error: "Target is required",
+    invalid_type_error: "Target must be a string",
+  }),
+  maxReward: z
     .string({
-      required_error: "Amount is required",
-      invalid_type_error: "Amount must be a string",
+      required_error: "Max reward is required",
+      invalid_type_error: "Max reward must be a string",
     })
     .refine((value) => !isNaN(parseFloat(value)) && parseFloat(value) >= 0, {
-      message: "Amount must be a non-negative number",
+      message: "Max reward must be a non-negative number",
     }),
   insurance: z
     .string({
@@ -33,12 +55,28 @@ export const SideEffectSchema = z.object({
     .refine((value) => !isNaN(parseFloat(value)) && parseFloat(value) >= 0, {
       message: "Insurance must be a non-negative number",
     }),
-  reward: z
+  action: z
     .string({
-      required_error: "Reward is required",
-      invalid_type_error: "Reward must be a string",
+      invalid_type_error: "Action must be a string",
+      required_error: "Action is required",
     })
-    .refine((value) => !isNaN(parseFloat(value)) && parseFloat(value) >= 0, {
-      message: "Reward must be a non-negative number",
+    .length(4, {
+      message: "Action must be of 4 characters",
     }),
+  encodedArgs: z.array(EncodedArgsSchema),
+  signature: z.string({
+    invalid_type_error: "Signature must be a byte string",
+  }),
+  enforceExecutor: z
+    .string({
+      invalid_type_error: "Enforce executor must be a string",
+    })
+    .nullable(),
+  rewardAssetId: z
+    .number({
+      invalid_type_error: "Reward asset id must be a number",
+    })
+    .nullable(),
 })
+
+export type SideEffect = z.infer<typeof SideEffectSchema>
