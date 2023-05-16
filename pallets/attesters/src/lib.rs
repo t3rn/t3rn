@@ -1212,8 +1212,15 @@ pub mod attesters_test {
 
         let attester_balance_prior = Balances::free_balance(&attester);
 
-        let _all_nominations_prior =
-            Nominations::<MiniRuntime>::iter_prefix(&attester).collect::<Vec<_>>();
+        let nominations_state_prior = Nominations::<MiniRuntime>::iter_prefix(&attester)
+            .map(|(nominator, nomination)| {
+                (
+                    nominator.clone(),
+                    nomination,
+                    Balances::free_balance(&nominator),
+                )
+            })
+            .collect::<Vec<(AccountId, Balance, Balance)>>();
 
         assert_ok!(Attesters::deregister_attester(Origin::signed(
             attester.clone()
@@ -1243,9 +1250,15 @@ pub mod attesters_test {
         assert_eq!(
             Balances::free_balance(&attester),
             attester_balance_prior + self_nomination_amount
-        )
+        );
 
-        // ToDo: Assume nominations are returned to nominators
+        // Assume nominators are refunded
+        for (nominator, nomination, nominator_balance_prior) in nominations_state_prior {
+            assert_eq!(
+                Balances::free_balance(&nominator),
+                nominator_balance_prior + nomination
+            )
+        }
     }
 
     pub fn register_attester_with_single_private_key(secret_key: [u8; 32]) -> AttesterInfo {
@@ -1894,6 +1907,36 @@ pub mod attesters_test {
             let batch = Attesters::get_batch_by_message(target, message.encode())
                 .expect("Batch by message should exist");
             assert_eq!(batch.status, BatchStatus::Committed);
+        });
+    }
+
+    #[test]
+    fn attester_deregistration_refunds_to_nominators() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Register 64 attesters
+            let mut attesters = Vec::new();
+
+            for counter in 1..65u8 {
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+                attesters.push(attester);
+            }
+
+            // Nominate the attesters
+            for counter in 1..65u128 {
+                let nominator = AccountId::from([(counter + 1) as u8; 32]);
+                let attester = attesters[(counter - 1) as usize].clone();
+                let amount = 1000u128 + counter;
+                let _ = Balances::deposit_creating(&nominator, amount);
+                assert_ok!(Attesters::nominate(
+                    Origin::signed(nominator.clone()),
+                    attester.clone(),
+                    amount
+                ));
+            }
+
+            deregister_attester(AccountId::from([1; 32]));
         });
     }
 
