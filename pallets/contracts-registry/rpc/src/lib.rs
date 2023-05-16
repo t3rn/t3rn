@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-pub use self::gen_client::Client as ContractsRegistryClient;
+// pub use self::gen_client::Client as ContractsRegistryClient;
 use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
 
@@ -20,7 +20,7 @@ const RUNTIME_ERROR: i64 = 1;
 const CONTRACT_DOESNT_EXIST: i64 = 2;
 const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
 
-#[rpc]
+#[rpc(server)]
 pub trait ContractsRegistryApi<AccountId> {
     /// Returns the contracts searchable by name, author or metadata
     #[rpc(name = "contractsRegistry_fetchContracts")]
