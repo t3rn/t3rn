@@ -201,6 +201,7 @@ std = [
   "pallet-circuit/std",
   "pallet-grandpa/std",
   "pallet-babe/std",
+  "pallet-eth2-finality-verifier/std"
 ]
 
 runtime-benchmarks = [
@@ -243,6 +244,7 @@ runtime-benchmarks = [
   "polkadot-parachain/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
   "xcm-executor/runtime-benchmarks",
+  "pallet-eth2-finality-verifier/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-support/try-runtime",
@@ -281,4 +283,5 @@ try-runtime = [
   "pallet-scheduler/try-runtime",
   "pallet-session/try-runtime",
   "pallet-sudo/try-runtime",
+  "pallet-eth2-finality-verifier/try-runtime",
 ]

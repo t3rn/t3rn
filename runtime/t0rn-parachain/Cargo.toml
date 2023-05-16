@@ -212,6 +212,7 @@ std = [
   "pallet-contracts-registry/std",
   "pallet-circuit/std",
   "circuit-runtime-types/std",
+  "pallet-eth2-finality-verifier/std"
 ]
 
 runtime-benchmarks = [
@@ -252,6 +253,7 @@ runtime-benchmarks = [
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
+  "pallet-eth2-finality-verifier/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -287,4 +289,5 @@ try-runtime = [
   "pallet-xdns/try-runtime",
   "polkadot-runtime-common/try-runtime",
   "t3rn-abi/try-runtime",
+  "pallet-eth2-finality-verifier/try-runtime"
 ]
