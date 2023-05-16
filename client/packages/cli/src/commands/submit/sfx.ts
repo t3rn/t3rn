@@ -100,7 +100,7 @@ export const buildSfx = (
         const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[
           data.action
         ]({
-          ...mapEncodeArgs(data.action, data.encodedArgs as EncodedArgs),
+          ...mapEncodedArgs(data.action, data.encodedArgs as EncodedArgs),
           maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
           insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
           signature: data.signature,
@@ -115,7 +115,7 @@ export const buildSfx = (
   }
 }
 
-export const mapEncodeArgs = (
+export const mapEncodedArgs = (
   action: SideEffect["action"],
   encodedArgs: EncodedArgs
 ) => {
