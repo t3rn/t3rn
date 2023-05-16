@@ -202,10 +202,12 @@ impl pallet_attesters::Config for MiniRuntime {
     type MaxBatchSize = ConstU32<128>;
     type MinAttesterBond = MinAttesterBond;
     type MinNominatorBond = MinNominatorBond;
+    type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = SlashAccount;
+    type Xdns = XDNS;
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for MiniRuntime {}
