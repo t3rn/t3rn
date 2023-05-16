@@ -6,6 +6,9 @@ import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
 
+const withExportMode = (program: Command) =>
+  program.option("-x, --export", "Export extrinsic data to a file")
+
 const program = new Command()
 
 program
@@ -20,27 +23,33 @@ program
   .description("Generate a config or transfer template")
   .action(handleInitCmd)
 
-program
-  .command("register")
-  .option("-g, --gateway <id>", "ID of the gateway to register")
-  .description("Register a gateway with the t3rn circuit")
-  .action(wrapCryptoWaitReady(handleRegisterCmd))
+withExportMode(
+  program
+    .command("register")
+    .option("-g, --gateway <id>", "ID of the gateway to register")
+    .description("Register a gateway with the t3rn circuit")
+    .action(wrapCryptoWaitReady(handleRegisterCmd))
+)
 
-program
-  .command("submit")
-  .option("-s, --sfx <file-path>", "Path to the sfx JSON file")
-  .option(
-    "-h, --headers <gateway_id>",
-    "Submit the latest headers of a gateway to portal. All available finalized headers will be added."
-  )
-  .description("Submit an extrinic to the t3rn circuit")
-  .action(wrapCryptoWaitReady(handleSubmitCmd))
+withExportMode(
+  program
+    .command("submit")
+    .option("-s, --sfx <file-path>", "Path to the sfx JSON file")
+    .option(
+      "-h, --headers <gateway_id>",
+      "Submit the latest headers of a gateway to portal. All available finalized headers will be added."
+    )
+    .description("Submit an extrinic to the t3rn circuit")
+    .action(wrapCryptoWaitReady(handleSubmitCmd))
+)
 
-program
-  .command("bid")
-  .description("Bid on an execution as an Executor")
-  .argument("sfxId <string>", "sfxId of the side effect to bid on")
-  .argument("amount <float>", "bid amount")
-  .action(wrapCryptoWaitReady(handleBidCmd))
+withExportMode(
+  program
+    .command("bid")
+    .description("Bid on an execution as an Executor")
+    .argument("sfxId <string>", "sfxId of the side effect to bid on")
+    .argument("amount <float>", "bid amount")
+    .action(wrapCryptoWaitReady(handleBidCmd))
+)
 
 program.parse(process.argv)

@@ -24,12 +24,9 @@ use t3rn_sdk_primitives::{
     xc::*,
 };
 
-use codec::{Decode, Encode};
-use frame_support::{
-    assert_err, assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency,
-};
-use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
-use t3rn_primitives::xdns::Xdns;
+use codec::Encode;
+use frame_support::{assert_err, assert_ok, traits::Currency};
+use frame_system::{EventRecord, Phase};
 
 use circuit_mock_runtime::test_utils::*;
 use hex_literal::hex;
@@ -37,19 +34,19 @@ pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo, DispatchResult};
+use sp_runtime::AccountId32;
 use sp_std::{
     convert::{TryFrom, TryInto},
     prelude::*,
     str::FromStr,
 };
 use std::fs;
-use t3rn_types::{gateway::*, sfx::*};
+use t3rn_types::sfx::*;
 
 use t3rn_primitives::{
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
     volatile::LocalState,
-    Balance, ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
+    Balance,
 };
 
 use circuit_runtime_pallets::pallet_circuit::Error as circuit_error;

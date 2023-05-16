@@ -71,7 +71,7 @@ where
     module.merge(Contracts::new(client.clone()).into_rpc())?;
     module.merge(Xdns::new(client.clone()).into_rpc())?;
     module.merge(Portal::new(client.clone()).into_rpc())?;
-    module.merge(Evm::new(client.clone()).into_rpc())?;
+    module.merge(Evm::new(client).into_rpc())?;
 
     Ok(module)
 }

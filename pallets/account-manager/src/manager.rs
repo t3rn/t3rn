@@ -16,7 +16,7 @@ use sp_std::{prelude::*, vec};
 
 use t3rn_primitives::{
     account_manager::{RequestCharge, Settlement},
-    claimable::ClaimableArtifacts,
+    claimable::{CircuitRole, ClaimableArtifacts},
     clock::Clock,
     common::RoundInfo,
 };
@@ -66,6 +66,16 @@ impl<T: Config>
 
     fn get_settlement(settlement_id: T::Hash) -> Option<Settlement<T::AccountId, BalanceOf<T>>> {
         SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
+    }
+
+    fn get_settlements_by_role(
+        role: CircuitRole,
+    ) -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)> {
+        let settlements = SettlementsPerRound::<T>::iter_prefix_values(T::Clock::current_round());
+        settlements
+            .filter(|settlement| settlement.role == role)
+            .map(|settlement| (settlement.recipient.clone(), settlement))
+            .collect()
     }
 
     fn bump_contracts_registry_nonce() -> Result<T::Hash, DispatchError> {
@@ -642,8 +652,8 @@ mod tests {
                 execution_id, Outcome::UnexpectedFailure, None, None,
             ));
 
-            let one_percent_charge_amt = charge_amt / 100;
-            let fifty_percent_charge_amt = charge_amt / 100 * 50;
+            let _one_percent_charge_amt = charge_amt / 100;
+            let _fifty_percent_charge_amt = charge_amt / 100 * 50;
 
             // User gets 100% of their reward back if the circuit fails unexpectedly
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE);

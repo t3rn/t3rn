@@ -970,6 +970,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-aura",
  "pallet-authorship",
  "pallet-babe",
@@ -992,6 +993,7 @@ dependencies = [
  "pallet-portal-rpc-runtime-api",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
+ "pallet-rewards",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -1110,6 +1112,7 @@ dependencies = [
  "pallet-account-manager",
  "pallet-asset-tx-payment",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -1129,6 +1132,7 @@ dependencies = [
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
+ "pallet-rewards",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -2821,9 +2825,9 @@ dependencies = [
 
 [[package]]
 name = "finality-grandpa"
-version = "0.16.1"
+version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e24e6c429951433ccb7c87fd528c60084834dcd14763182c1f83291bcde24c34"
+checksum = "36530797b9bf31cd4ff126dcfee8170f86b00cfdcea3269d73133cc0415945c3"
 dependencies = [
  "either",
  "futures 0.3.28",
@@ -3470,9 +3474,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.15"
+version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f9f29bc9dda355256b2916cf526ab02ce0aeaaaf2bad60d65ef3f12f11dd0f4"
+checksum = "d357c7ae988e7d2182f7d7871d0b963962420b0678b0997ce7de72001aeab782"
 dependencies = [
  "bytes",
  "fnv",
@@ -5959,6 +5963,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-attesters"
+version = "1.9.0-rc.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.2.2",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-mini-mock-runtime",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27#5bfdbab8ba28523ef10e365627fed64ef2b77cbf"
@@ -6688,7 +6713,7 @@ name = "pallet-evm-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
  "ethereum 0.14.0",
- "ethereum-types 0.13.1",
+ "ethereum-types 0.14.1",
  "fp-evm 3.0.0-dev",
  "parity-scale-codec",
  "scale-info",
@@ -7133,6 +7158,27 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-rewards"
+version = "1.9.0-rc.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.2.2",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-mini-mock-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -12399,7 +12445,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.21.0-rc.0"
+version = "1.22.3-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12475,7 +12521,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.21.0-rc.0"
+version = "1.22.3-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12504,6 +12550,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -12524,6 +12571,7 @@ dependencies = [
  "pallet-portal-rpc-runtime-api",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
+ "pallet-rewards",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -12609,12 +12657,18 @@ dependencies = [
  "hex-literal 0.3.4",
  "num",
  "num-traits",
+ "pallet-account-manager",
  "pallet-assets",
+ "pallet-attesters",
  "pallet-balances",
+ "pallet-clock",
  "pallet-contracts 4.0.0-dev",
  "pallet-grandpa-finality-verifier",
  "pallet-portal",
+ "pallet-randomness-collective-flip",
+ "pallet-rewards",
  "pallet-timestamp",
+ "pallet-treasury",
  "pallet-xdns",
  "parity-scale-codec",
  "rlp",
@@ -12623,6 +12677,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "t3rn-abi",
@@ -13335,9 +13390,9 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.6",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 

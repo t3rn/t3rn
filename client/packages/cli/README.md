@@ -53,6 +53,7 @@ yarn cli register [options]
 Options:
 
 - **-g, --gateway \<id\>**: ID of the gateway to register
+- **-x, --export**: Export extrinsic data to a file
 
 ### submit
 
@@ -68,6 +69,7 @@ Options:
 
 - **-s, --sfx \<file-path\>**: Path to the sfx JSON file
 - **-h, --headers \<gateway_id\>**: Submit the latest headers of a gateway to portal. All available finalized headers will be added.
+- **-x, --export**: Export extrinsic data to a file
 
 ### bid
 
@@ -81,6 +83,18 @@ Arguments:
 
 - **sfxId \<string\>**: sfxId of the side effect to bid on
 - **amount \<float\>**: bid amount
+
+Options:
+
+- **-x, --export**: Export extrinsic data to a file
+
+### Export
+
+Each command that interacts with the node incorporates the `-x, --export` option. This feature facilitates the export of extrinsic data to a file. By default, this data is directed to the `/exports` directory in your current working environment. To alter this default path, you need to adjust the `EXPORT_PATH` variable. Here's an example:
+
+```bash
+EXPORT_PATH="path/to/folder" yarn cli submit -h roco -x
+```
 
 ## Examples
 

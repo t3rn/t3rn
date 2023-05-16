@@ -51,6 +51,7 @@ members = [
   "pallets/portal/rpc",
   "pallets/portal/rpc/runtime-api",
   "pallets/xdns",
+  "pallets/rewards",
   "pallets/xdns/rpc",
   "pallets/xdns/rpc/runtime-api",
   "primitives",

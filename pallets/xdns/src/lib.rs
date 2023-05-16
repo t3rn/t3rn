@@ -47,7 +47,7 @@ pub mod pallet {
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
-        xdns::{FullGatewayRecord, GatewayRecord, TokenRecord, Xdns, XdnsRecord},
+        xdns::{FullGatewayRecord, GatewayRecord, TokenRecord, Xdns},
         Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};

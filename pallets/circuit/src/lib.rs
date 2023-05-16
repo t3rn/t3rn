@@ -70,7 +70,7 @@ pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
 
-use t3rn_primitives::light_client::InclusionReceipt;
+pub use t3rn_primitives::light_client::InclusionReceipt;
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 #[cfg(test)]

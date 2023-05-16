@@ -17,12 +17,15 @@ num        = { version = "0.4.0" }
 scale-info = { version = "2.1.1",  features = [ "derive" ] }
 serde      = {  version = "1.0", features = [ "derive" ] }
 
+sp-io           = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 sp-core         = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 sp-runtime      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 sp-std          = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 
 frame-system    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 frame-support   = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+
+pallet-insecure-randomness-collective-flip =  { package = "pallet-randomness-collective-flip", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 
 rlp             = { version = "0.5.2",  features = [ "derive" ] }
 
@@ -39,10 +42,19 @@ t3rn-abi = { path = "../../types/abi" }
 pallet-balances   = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 pallet-assets     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 pallet-contracts  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+
+# for mini-mock runtime
 pallet-timestamp  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+pallet-treasury   = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
+
+# t3rn pallets
+pallet-clock = { path = "../../pallets/clock" }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../../pallets/portal" }
-pallet-xdns                    = { path = "../../pallets/xdns" }
+pallet-xdns                      = { path = "../../pallets/xdns" }
+pallet-account-manager           = { path = "../../pallets/account-manager" }
+pallet-attesters                 = { path = "../../pallets/attesters" }
+pallet-rewards                   = { path = "../../pallets/rewards" }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }
 

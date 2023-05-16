@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t0rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.21.0-rc.0"
+version     = "1.22.3-rc.0"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -94,6 +94,8 @@ t3rn-types      = { default-features = false, path = "../../types", features = [
 t3rn-abi        = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 
 # t3rn pallets
+pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
+pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
@@ -202,6 +204,8 @@ std = [
   "t3rn-types/std",
   "t3rn-abi/std",
   # t3rn pallets
+  "pallet-attesters/std",
+  "pallet-rewards/std",
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
   "pallet-treasury/std",
@@ -216,6 +220,8 @@ runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
   "frame-system-benchmarking",
   "frame-system/runtime-benchmarks",
+  "pallet-attesters/runtime-benchmarks",
+  "pallet-rewards/runtime-benchmarks",
   "pallet-account-manager/runtime-benchmarks",
   "pallet-balances/runtime-benchmarks",
   "pallet-contracts-registry/runtime-benchmarks",
@@ -252,6 +258,8 @@ try-runtime = [
   "frame-try-runtime",
   "frame-support/try-runtime",
   "frame-system/try-runtime",
+  "pallet-attesters/try-runtime",
+  "pallet-rewards/try-runtime",
   "pallet-3vm/try-runtime",
   "pallet-account-manager/try-runtime",
   "pallet-asset-registry/try-runtime",

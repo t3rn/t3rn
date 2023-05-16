@@ -12,6 +12,7 @@ pub mod contracts_config;
 pub mod parachain_config;
 pub mod signed_extrinsics_config;
 pub mod system_config;
+pub mod treasuries_config;
 pub mod xbi_config;
 
 pub use crate::{parachain_config::*, signed_extrinsics_config::*};
@@ -71,11 +72,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 54,
-    spec_version: 55,
-    impl_version: 53,
+    authoring_version: 58,
+    spec_version: 59,
+    impl_version: 57,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 54,
+    transaction_version: 58,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -149,9 +150,15 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
         Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
-        Treasury: pallet_treasury::{Pallet, Storage, Config, Event<T>, Call} = 13,
         AccountManager: pallet_account_manager = 14,
         AssetTxPayment: pallet_asset_tx_payment = 15,
+
+        // Treasuries
+        Treasury: pallet_treasury = 13, // Keep old treasury index for backwards compatibility
+        EscrowTreasury: pallet_treasury::<Instance1> = 16,
+        FeeTreasury: pallet_treasury::<Instance2> = 17,
+        ParachainTreasury: pallet_treasury::<Instance3> = 18,
+        SlashTreasury: pallet_treasury::<Instance4> = 19,
 
         // Collator support. The order of these 4 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -170,6 +177,8 @@ construct_runtime!(
 
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
+        Attesters: pallet_attesters::{Pallet, Call, Config<T>, Storage, Event<T>} = 101,
+        Rewards: pallet_rewards::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,

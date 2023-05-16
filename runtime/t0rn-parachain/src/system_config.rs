@@ -420,7 +420,7 @@ mod tests {
         .into();
         assert!(BaseCallFilter::contains(&call));
 
-        let call = pallet_treasury::Call::propose_spend {
+        let call = pallet_treasury::Call::<Runtime, ()>::propose_spend {
             value: 0,
             beneficiary: MultiAddress::Address32([0; 32]),
         }
@@ -525,7 +525,7 @@ mod tests {
         .into();
         assert!(!MaintenanceFilter::contains(&call));
 
-        let call = pallet_treasury::Call::reject_proposal { proposal_id: 0 }.into();
+        let call = pallet_treasury::Call::<Runtime, ()>::reject_proposal { proposal_id: 0 }.into();
         assert!(!MaintenanceFilter::contains(&call));
 
         let call = pallet_account_manager::Call::deposit {
