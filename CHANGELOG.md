@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.22.3-rc.0] - 2023-05-16
+### :bug: Bug Fixes
+- [`27c9b40`](https://github.com/t3rn/t3rn/commit/27c9b40b3e140a6f09213b6e5d2fa975bf99586c) - portal rpc in t0rn runtime *(PR [#978](https://github.com/t3rn/t3rn/pull/978) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.22.0-rc.0] - 2023-05-15
 ### :sparkles: New Features
 - [`1e87f21`](https://github.com/t3rn/t3rn/commit/1e87f21435d4584fc28c9ffff7f3a3f226d73d38) - implement export extrinsic data to file *(PR [#969](https://github.com/t3rn/t3rn/pull/969) by [@ahkohd](https://github.com/ahkohd))*
@@ -1120,3 +1125,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.20.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.20.0-rc.0...v1.20.1-rc.0
 [v1.21.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.20.1-rc.0...v1.21.0-rc.0
 [v1.22.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.21.0-rc.0...v1.22.0-rc.0
+[v1.22.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.22.2-rc.0...v1.22.3-rc.0
