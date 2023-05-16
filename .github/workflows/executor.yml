@@ -68,11 +68,13 @@ jobs:
       - run: yarn build-docs
 
       - name: Save Code Linting Report JSON
+        if: github.event_name == 'pull_request'
         run: npm run lint:report
         # Continue to the next step even if this fails
         continue-on-error: true
 
       - name: Annotate Code Linting Results
+        if: github.event_name == 'pull_request'
         uses: ataylorme/eslint-annotate-action@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
