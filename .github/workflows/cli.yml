@@ -4,6 +4,10 @@ on:
   pull_request:
   merge_group:
 
+permissions:
+  pull-requests: read
+  checks: write
+
 jobs:
   # This job checks if files has been modified.
   # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
@@ -53,6 +57,18 @@ jobs:
           node-version: ${{ env.NVMRC }}
 
       - run: cd .. && make all
+
+      - name: Save Code Linting Report JSON
+        run: npm run lint:report
+        # Continue to the next step even if this fails
+        continue-on-error: true
+
+      - name: Annotate Code Linting Results
+        uses: ataylorme/eslint-annotate-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: client/packages/cli/eslint_report.json
+
       - run: yarn test
 
   build-docker:
