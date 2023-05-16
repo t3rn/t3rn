@@ -10,6 +10,7 @@ import { ExtrinsicSchema, Extrinsic, SpeedMode } from "@/schemas/extrinsic.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { getConfig } from "@/utils/config.ts"
 import { Circuit } from "@/types.ts"
+import { EncodedArgs, SideEffect, TransferEncodedArgs } from "@/schemas/sfx.ts"
 
 export const spinner = ora()
 
@@ -95,19 +96,36 @@ export const buildSfx = (
       "Vec<T3rnTypesSfxSideEffect>",
       sideEffects.map((data) => {
         const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[
-          data.type
+          data.action
         ]({
-          from: data.from,
-          to: data.to,
-          value: sdk.gateways[data.target].floatToBn(parseFloat(data.amount)),
-          maxReward: sdk.circuit.floatToBn(parseFloat(data.reward)),
+          ...mapEncodeArgs(data.action, data.encodedArgs as EncodedArgs),
+          maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
           insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
-          enforceExecutioner: data.enforceExecutioner,
+          signature: data.signature,
+          enforceExecutioner: data.enforceExecutor,
+          rewardAssetId: data.rewardAssetId,
         })
         return obj
       })
       // @ts-ignore - TS doesn't know that we are creating a type here
     ).toJSON(),
     speed_mode: circuitApi.createType("T3rnPrimitivesSpeedMode", speedMode),
+  }
+}
+
+export const mapEncodeArgs = (
+  action: SideEffect["action"],
+  encodedArgs: EncodedArgs
+) => {
+  switch (action) {
+    case "tran": {
+      const args: TransferEncodedArgs = encodedArgs[0]
+      return {
+        from: args.from,
+        to: args.to,
+      }
+    }
+    default:
+      return null
   }
 }
