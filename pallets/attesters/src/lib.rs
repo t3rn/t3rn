@@ -21,6 +21,8 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use sp_core::H256;
+    use t3rn_abi::{recode::Codec, FilledAbi};
+    pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
         traits::{Saturating, Zero},
@@ -34,6 +36,7 @@ pub mod pallet {
         CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
+    use t3rn_primitives::{portal::Portal, xdns::Xdns};
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
@@ -133,8 +136,22 @@ pub mod pallet {
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct TargetBatchInclusionProof {
+        // The batch message that was included in the block
         pub target_batch_message: Vec<u8>,
+        // Signatures received on target
+        pub signatures: Vec<(u32, Signature65b)>,
+        // Inclusion merkle proof of the batch message
         pub inclusion_proof: Vec<u8>,
+    }
+
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+    pub struct TargetBatchDispatchEvent {
+        // Signatures received on target
+        pub signatures: Vec<(u32, Signature65b)>,
+        // Message hash as H256 (32b)
+        pub hash: H256,
+        // The batch message that was included in the block
+        pub message: Vec<u8>,
     }
 
     #[pallet::config]
@@ -153,6 +170,8 @@ pub mod pallet {
         type DefaultCommission: Get<Percent>;
         type MinNominatorBond: Get<BalanceOf<Self>>;
         type MinAttesterBond: Get<BalanceOf<Self>>;
+        type Portal: Portal<Self>;
+        type Xdns: Xdns<Self>;
     }
 
     #[pallet::pallet]
@@ -186,21 +205,21 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn attestation_targets)]
-    pub type AttestationTargets<T: Config> = StorageValue<_, Vec<[u8; 4]>, ValueQuery>;
+    pub type AttestationTargets<T: Config> = StorageValue<_, Vec<TargetId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn next_batches)]
-    pub type NextBatch<T: Config> = StorageMap<_, Identity, [u8; 4], BatchMessage<T::BlockNumber>>;
+    pub type NextBatch<T: Config> = StorageMap<_, Identity, TargetId, BatchMessage<T::BlockNumber>>;
 
     #[pallet::storage]
     #[pallet::getter(fn batches_to_sign)]
     pub type BatchesToSign<T: Config> =
-        StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
+        StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn batches)]
     pub type Batches<T: Config> =
-        StorageMap<_, Identity, [u8; 4], Vec<BatchMessage<T::BlockNumber>>>;
+        StorageMap<_, Identity, TargetId, Vec<BatchMessage<T::BlockNumber>>>;
 
     #[pallet::storage]
     #[pallet::getter(fn pending_unnominations)]
@@ -225,7 +244,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn fast_confirmation_cost)]
     pub type FastConfirmationCost<T: Config> =
-        StorageMap<_, Blake2_128Concat, [u8; 4], BalanceOf<T>>;
+        StorageMap<_, Blake2_128Concat, TargetId, BalanceOf<T>>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -234,8 +253,8 @@ pub mod pallet {
         AttesterDeregistrationScheduled(T::AccountId, T::BlockNumber),
         AttesterDeregistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
-        NewAttestationBatch([u8; 4], BatchMessage<T::BlockNumber>),
-        NewConfirmationBatch([u8; 4], BatchMessage<T::BlockNumber>),
+        NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
+        NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>),
         Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
     }
 
@@ -260,6 +279,7 @@ pub mod pallet {
         MissingNominations,
         BatchHashMismatch,
         BatchNotFound,
+        CollusionWithPermanentSlashDetected,
         BatchFoundWithUnsignableStatus,
         SfxAlreadyRequested,
         AddAttesterAlreadyRequested,
@@ -391,7 +411,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             message: Vec<u8>,
             signature: Vec<u8>,
-            target: [u8; 4],
+            target: TargetId,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
 
@@ -495,64 +515,78 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn commit_batch(
             origin: OriginFor<T>,
-            target: [u8; 4],
-            batch_index: u32,
+            target: TargetId,
             target_inclusion_proof_encoded: Vec<u8>, // Add this parameter to accept Ethereum batch hash
         ) -> DispatchResult {
             let submitter = ensure_signed(origin)?;
 
-            Batches::<T>::try_mutate(target, |batches_option| {
-                if let Some(batches) = batches_option {
-                    let index = batch_index as usize;
-                    if let Some(batch) = batches.get_mut(index) {
-                        // Decode the Ethereum batch hash from the submitted inclusion proof
-                        let target_inclusion_proof: TargetBatchInclusionProof =
-                            Decode::decode(&mut &target_inclusion_proof_encoded[..])
-                                .map_err(|_| Error::<T>::InvalidTargetInclusionProof)?;
+            let target_codec = T::Xdns::get_target_codec(&target)?;
 
-                        // Verify that the submitted Ethereum batch hash matches the one stored in the pallet
-                        ensure!(
-                            batch.message() == target_inclusion_proof.target_batch_message,
-                            Error::<T>::BatchHashMismatch
-                        );
+            // ToDo: Check the source address of the batch ensuring matches Escrow contract address.
+            let _target_escrow_address = T::Xdns::get_escrow_account(&target)?;
 
-                        match batch.status {
-                            BatchStatus::ReadyForSubmissionByMajority
-                            | BatchStatus::ReadyForSubmissionFullyApproved => {
-                                batch.status = BatchStatus::Committed;
-                                Ok(Some(batches.clone()))
-                            },
-                            _ => Err(Error::<T>::BatchAlreadyCommitted),
-                        }
-                    } else {
-                        Err(Error::<T>::BatchNotFound)
-                    }
-                } else {
-                    Err(Error::<T>::BatchNotFound)
-                }
-            })?;
+            let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Struct(\
+                Signatures:Vec(Tuple(Value32,Bytes)),\
+                MessageHash:H256,\
+                Message:Bytes\
+            )"
+            .to_vec();
 
-            // Reward the submitter
-            let fast_confirmation_cost =
-                FastConfirmationCost::<T>::get(target).unwrap_or_else(Zero::zero);
-            let total_reward = fast_confirmation_cost.saturating_mul(T::RewardMultiplier::get());
+            #[cfg(not(feature = "test-skip-verification"))]
+            let escrow_inclusion_receipt =
+                T::Portal::verify_event_inclusion(target, target_inclusion_proof_encoded, None)?;
+            #[cfg(feature = "test-skip-verification")]
+            let escrow_inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
+                height: Zero::zero(),
+                message: target_inclusion_proof_encoded,
+                including_header: [0u8; 32].encode(),
+            };
 
-            if total_reward > Zero::zero() {
-                T::Currency::transfer(
-                    &T::CommitmentRewardSource::get(),
-                    &submitter,
-                    total_reward,
-                    ExistenceRequirement::KeepAlive,
-                )?;
+            #[cfg(not(feature = "test-skip-verification"))]
+            let recoded_batch_event_bytes = FilledAbi::try_fill_abi(
+                escrow_batch_success_descriptor.try_into()?,
+                escrow_inclusion_receipt.message,
+                target_codec.clone(),
+            )?
+            .recode_as(&target_codec, &Codec::Scale)?;
+
+            #[cfg(feature = "test-skip-verification")]
+            let recoded_batch_event_bytes = escrow_inclusion_receipt.message;
+
+            let on_target_batch_event =
+                TargetBatchDispatchEvent::decode(&mut &recoded_batch_event_bytes[..])
+                    .map_err(|_| Error::<T>::InvalidTargetInclusionProof)?;
+
+            let message = on_target_batch_event.message.clone();
+
+            match Self::find_and_update_batch(target, &message) {
+                Err(_e) => {
+                    // At this point we know the valid message has been recorded on target Escrow Smart Contract
+                    // If we can't find the corresponding batch by the message - we have a problem - attesters are colluding.
+                    log::error!(
+                        "Collusion detected on target: {:?} for message: {:?} with hash {:?}",
+                        target,
+                        &message,
+                        on_target_batch_event.hash
+                    );
+                    Self::apply_permanent_attesters_slash(
+                        on_target_batch_event
+                            .signatures
+                            .iter()
+                            .map(|(attester_index, _)| *attester_index)
+                            .collect(),
+                    );
+
+                    Err(Error::<T>::CollusionWithPermanentSlashDetected.into())
+                },
+                Ok(()) => Self::reward_submitter(submitter, target),
             }
-
-            Ok(())
         }
 
         #[pallet::weight(10_000)]
         pub fn set_confirmation_cost(
             origin: OriginFor<T>,
-            target: [u8; 4],
+            target: TargetId,
             cost: BalanceOf<T>,
         ) -> DispatchResult {
             ensure_root(origin)?;
@@ -775,6 +809,120 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         pub fn committee_size() -> usize {
             T::CommitteeSize::get() as usize
+        }
+
+        /// # apply_partial_stake_slash
+        ///
+        /// This function applies a partial slash to the stakes of an attester and its nominators.
+        /// It returns the self-nomination balance of the given attester and the updated nomination balances
+        /// of the nominators with an applied grace percent.
+        ///
+        /// ## Parameters
+        ///
+        /// - `attester`: The account ID of the attester whose stake is being slashed.
+        /// - `nominations`: A vector of tuples where each tuple represents a nominator and its balance.
+        /// - `percent_slash`: The percent of stake to slash from the attester.
+        /// - `percent_nominator_grace`: The percent of stake to slash from the nominators.
+        ///
+        /// ## Returns
+        ///
+        /// This function returns a tuple containing two elements:
+        ///
+        /// - The first element is the self-nomination balance of the attester after the slash has been applied.
+        /// - The second element is a vector of tuples where each tuple represents a nominator and its balance after the slash has been applied.
+        ///
+        /// If the attester is not found in the nominations, the function returns zero as the self-nomination balance
+        /// and an empty vector as the list of nominators.
+        pub fn apply_partial_stake_slash(
+            attester: T::AccountId,
+            nominations: Vec<(T::AccountId, BalanceOf<T>)>,
+            percent_slash: Percent,
+            percent_nominator_grace: Percent,
+        ) -> (BalanceOf<T>, Vec<(T::AccountId, BalanceOf<T>)>) {
+            // Find the attester's self nomination balance or return zero if not found
+            let self_nomination_balance: BalanceOf<T> = nominations
+                .iter()
+                .find_map(|(nominator, balance)| {
+                    if nominator == &attester {
+                        Some(*balance)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| {
+                    log::warn!("Attester not found in nominations");
+                    Zero::zero()
+                });
+
+            if self_nomination_balance.is_zero() {
+                return (Zero::zero(), vec![])
+            }
+
+            // Calculate the amount to slash from the attester
+            let slash_amount = percent_slash.mul_ceil(self_nomination_balance);
+
+            // Update the nominations after slashing
+            let nominators_after_slash = nominations
+                .into_iter()
+                .map(|(nominator, balance)| {
+                    if nominator == attester {
+                        // Subtract the slash amount from the attester's self nomination balance
+                        (nominator, balance.saturating_sub(slash_amount))
+                    } else {
+                        // Subtract the nominator's grace amount from their nomination balance
+                        let nominator_slash_amount = percent_nominator_grace.mul_ceil(balance);
+                        (nominator, balance.saturating_sub(nominator_slash_amount))
+                    }
+                })
+                .collect();
+
+            (
+                self_nomination_balance.saturating_sub(slash_amount),
+                nominators_after_slash,
+            )
+        }
+
+        /// Applies permanent slashes to colluding attesters.
+        fn apply_permanent_attesters_slash(attester_indices: Vec<u32>) {
+            for attester_index in attester_indices {
+                if let Some((account_id, _attester_info)) =
+                    Attesters::<T>::iter().find(|(_, info)| info.index == attester_index)
+                {
+                    PendingSlashes::<T>::insert(&account_id, vec![Slash::Permanent]);
+                } else {
+                    log::error!("Colluding attester index: {:?} not found", attester_index);
+                }
+            }
+        }
+
+        pub fn find_and_update_batch(target: TargetId, message: &Vec<u8>) -> DispatchResult {
+            Batches::<T>::try_mutate(target, |batches_option| {
+                let batches = batches_option.as_mut().ok_or(Error::<T>::BatchNotFound)?;
+                let batch_by_message = batches
+                    .iter_mut()
+                    .find(|batch| &batch.message() == message)
+                    .ok_or(Error::<T>::BatchNotFound)?;
+
+                batch_by_message.status = BatchStatus::Committed;
+                Ok(())
+            })
+        }
+
+        pub fn reward_submitter(submitter: T::AccountId, target: TargetId) -> DispatchResult {
+            let fast_confirmation_cost =
+                FastConfirmationCost::<T>::get(target).unwrap_or(Zero::zero());
+            let total_reward = fast_confirmation_cost.saturating_mul(T::RewardMultiplier::get());
+
+            if total_reward > Zero::zero() {
+                T::Currency::transfer(
+                    &T::CommitmentRewardSource::get(),
+                    &submitter,
+                    total_reward,
+                    ExistenceRequirement::KeepAlive,
+                )?;
+            }
+
+            Ok(())
         }
 
         pub fn get_batches(
@@ -1176,7 +1324,7 @@ pub mod pallet {
 #[cfg(test)]
 pub mod attesters_test {
     use super::{
-        TargetBatchInclusionProof, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
+        TargetId, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
         SR25519_ATTESTER_KEY_TYPE_ID,
     };
 
@@ -1189,16 +1337,20 @@ pub mod attesters_test {
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
 
+    use crate::TargetBatchDispatchEvent;
+
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, Attesters, AttestersError, AttestersStore, Balance, Balances,
         BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards, CurrentCommittee,
-        ExtBuilder, MiniRuntime, NextBatch, Nominations, Origin, PendingUnnominations,
-        PreviousCommittee, Rewards, SortedNominatedAttesters, System,
+        ExtBuilder, MiniRuntime, NextBatch, Nominations, Origin, PendingSlashes,
+        PendingUnnominations, PreviousCommittee, Rewards, SortedNominatedAttesters, System,
     };
     use t3rn_primitives::{
         attesters::{AttesterInfo, AttestersReadApi, AttestersWriteApi, CommitteeTransition},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+        xdns::GatewayRecord,
+        ExecutionVendor, GatewayVendor,
     };
     use tiny_keccak::{Hasher, Keccak};
 
@@ -1290,7 +1442,7 @@ pub mod attesters_test {
         attester_info
     }
 
-    pub fn add_target_and_transition_to_next_batch(target: [u8; 4]) -> BlockNumber {
+    pub fn add_target_and_transition_to_next_batch(target: TargetId) -> BlockNumber {
         Attesters::add_attestation_target(Origin::root(), target);
         let current_block: BlockNumber = System::block_number();
         let batching_window: BlockNumber = <MiniRuntime as ConfigAttesters>::BatchingWindow::get();
@@ -1344,7 +1496,7 @@ pub mod attesters_test {
         attester: AccountId,
         message: [u8; 32],
         key_type: KeyTypeId,
-        target: [u8; 4],
+        target: TargetId,
         secret_key: [u8; 32],
     ) -> Vec<u8> {
         // Check if batch with message exists and if not create one
@@ -1447,7 +1599,7 @@ pub mod attesters_test {
     fn test_adding_sfx_moves_next_batch_to_pending_attestation() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             let current_block_1 = add_target_and_transition_to_next_batch(target);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -1475,7 +1627,7 @@ pub mod attesters_test {
     fn test_pending_attestation_batch_with_single_sfx_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             let _current_block_1 = add_target_and_transition_to_next_batch(target);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -1504,7 +1656,7 @@ pub mod attesters_test {
     fn test_pending_attestation_batch_with_committee_transition_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             let current_block_1 = add_target_and_transition_to_next_batch(target);
 
             let committee_transition: CommitteeTransition = [
@@ -1630,7 +1782,7 @@ pub mod attesters_test {
     fn test_pending_attestation_batch_with_all_attestations_ordered_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             let _current_block_1 = add_target_and_transition_to_next_batch(target);
 
             let committee_transition: CommitteeTransition = [
@@ -1664,7 +1816,7 @@ pub mod attesters_test {
     fn test_adding_2_same_sfx_to_next_batch_is_impossible() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             add_target_and_transition_to_next_batch(target);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -1683,7 +1835,7 @@ pub mod attesters_test {
     fn test_adding_2_sfx_to_next_batch_and_transition_to_pending_attestation() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [0, 0, 0, 0];
+            let target: TargetId = [0, 0, 0, 0];
             assert_eq!(NextBatch::<MiniRuntime>::get(target), None);
             let current_block = add_target_and_transition_to_next_batch(target);
 
@@ -1860,10 +2012,23 @@ pub mod attesters_test {
     }
 
     #[test]
-    fn register_and_submit_32x_attestations_in_ecdsa_with_batching() {
-        let mut ext = ExtBuilder::default().build();
+    fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
+    ) {
+        let target: TargetId = [1u8; 4];
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+
+        let mut ext = ExtBuilder::default()
+            .with_gateway_records(vec![GatewayRecord {
+                gateway_id: target,
+                verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
+                codec: t3rn_abi::Codec::Rlp,
+                registrant: None,
+                escrow_account: Some(mock_escrow_account),
+                allowed_side_effects: vec![],
+            }])
+            .build();
         ext.execute_with(|| {
-            let target: [u8; 4] = [1u8; 4];
             let message: [u8; 32] = *b"message_that_needs_attestation32";
 
             for counter in 1..33u8 {
@@ -1889,24 +2054,97 @@ pub mod attesters_test {
                 BatchStatus::ReadyForSubmissionFullyApproved
             );
 
-            let fake_batch_confirmation = TargetBatchInclusionProof {
-                target_batch_message: message.encode(),
-                inclusion_proof: vec![],
+            let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
+                signatures: first_batch.signatures,
+                hash: H256([0u8; 32]),
+                message: message.encode(),
             };
 
             // Commit the batch
-            let batch_index = 0;
+            let _batch_index = 0;
             assert_ok!(Attesters::commit_batch(
                 Origin::signed(AccountId::from([1; 32])),
                 target,
-                batch_index,
-                fake_batch_confirmation.encode(),
+                mock_valid_batch_confirmation.encode(),
             ));
 
             // Check if the batch status has been updated to Committed
             let batch = Attesters::get_batch_by_message(target, message.encode())
                 .expect("Batch by message should exist");
             assert_eq!(batch.status, BatchStatus::Committed);
+        });
+    }
+
+    #[test]
+    fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
+        let target: TargetId = [1u8; 4];
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+
+        let mut ext = ExtBuilder::default()
+            .with_gateway_records(vec![GatewayRecord {
+                gateway_id: target,
+                verification_vendor: GatewayVendor::Polkadot,
+                execution_vendor: ExecutionVendor::Substrate,
+                codec: t3rn_abi::Codec::Rlp,
+                registrant: None,
+                escrow_account: Some(mock_escrow_account),
+                allowed_side_effects: vec![],
+            }])
+            .build();
+        ext.execute_with(|| {
+            let message: [u8; 32] = *b"message_that_needs_attestation32";
+
+            for counter in 1..33u8 {
+                // Register an attester
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+                // Submit an attestation signed with the Ed25519 key
+                sign_and_submit_sfx_attestation(
+                    attester,
+                    message,
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    target,
+                    [counter; 32],
+                );
+            }
+
+            // Check if the attestations have been added to the batch
+            let first_batch = Attesters::get_batch_by_message(target, message.encode())
+                .expect("Batch by message should exist");
+            assert_eq!(first_batch.signatures.len(), 32);
+            assert_eq!(
+                first_batch.status,
+                BatchStatus::ReadyForSubmissionFullyApproved
+            );
+
+            let colluded_message: [u8; 32] = *b"_message_that_was_colluded_by_32";
+
+            let colluded_batch_confirmation = TargetBatchDispatchEvent {
+                signatures: first_batch.signatures,
+                hash: H256([0u8; 32]),
+                message: colluded_message.encode(),
+            };
+
+            assert_err!(
+                Attesters::commit_batch(
+                    Origin::signed(AccountId::from([1; 32])),
+                    target,
+                    colluded_batch_confirmation.encode(),
+                ),
+                AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
+            );
+
+            // Check if the batch status has not been updated to Committed
+            let batch = Attesters::get_batch_by_message(target, message.encode())
+                .expect("Batch by message should exist");
+
+            assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
+
+            // Check if all of the attesters have been slashed
+            for counter in 1..33u8 {
+                let attester = AccountId::from([counter; 32]);
+                assert!(PendingSlashes::<MiniRuntime>::get(&attester).is_some());
+            }
         });
     }
 

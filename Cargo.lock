@@ -5979,6 +5979,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
+ "t3rn-abi",
  "t3rn-mini-mock-runtime",
  "t3rn-primitives",
  "tiny-keccak",
