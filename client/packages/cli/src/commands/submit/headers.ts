@@ -106,8 +106,6 @@ const getRelayChainHeaders = async (
   gatewayId: string
 ) => {
   const from = (await getGatewayHeight(gatewayId)) + 1
-  // const from = 5355552
-  console.log("from", from)
   const to = await getTargetCurrentHeight(target)
   const transactionArguments = await generateBatchProof(
     circuit,
