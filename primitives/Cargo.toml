@@ -13,7 +13,7 @@ targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
 # This crate should not rely on any of the frame primitives.
-codec      = { workspace = true, package = "parity-scale-codec" }
+codec                 = { workspace = true, package = "parity-scale-codec" }
 ed25519-dalek         = { workspace = true }
 frame-support         = { workspace = true }
 frame-system          = { workspace = true }

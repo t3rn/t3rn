@@ -99,6 +99,16 @@ pub mod weights;
 #[cfg(test)]
 mod tests;
 
+#[cfg(doc)]
+pub use crate::wasm::api_doc;
+pub use crate::{
+    address::{AddressGenerator, DefaultAddressGenerator},
+    exec::{Frame, VarSizedKey as StorageKey},
+    migration::Migration,
+    pallet::*,
+    schedule::{HostFnWeights, InstructionWeights, Limits, Schedule},
+    wasm::Determinism,
+};
 use crate::{
     exec::{AccountIdOf, ExecError, Executable, Stack as ExecStack},
     gas::GasMeter,
@@ -119,26 +129,15 @@ use frame_support::{
 };
 use frame_system::Pallet as System;
 use pallet_contracts_primitives::{
-    Code, CodeUploadResult, CodeUploadReturnValue, ComposableExecReturnValue, ContractAccessError,
-    ContractExecResult, ContractInstantiateResult, ExecReturnValue, GetStorageResult,
-    InstantiateReturnValue, StorageDeposit,
+    Code, CodeUploadResult, CodeUploadReturnValue, ContractAccessError, ContractExecResult,
+    ContractInstantiateResult, ExecReturnValue, GetStorageResult, InstantiateReturnValue,
+    StorageDeposit,
 };
 use scale_info::TypeInfo;
 use smallvec::Array;
 use sp_runtime::traits::{Convert, Hash, Saturating, StaticLookup};
 use sp_std::{fmt::Debug, marker::PhantomData, prelude::*};
-
-pub use crate::{
-    address::{AddressGenerator, DefaultAddressGenerator},
-    exec::{Frame, VarSizedKey as StorageKey},
-    migration::Migration,
-    pallet::*,
-    schedule::{HostFnWeights, InstructionWeights, Limits, Schedule},
-    wasm::Determinism,
-};
-
-#[cfg(doc)]
-pub use crate::wasm::api_doc;
+use t3rn_primitives::threevm::{ModuleOperations, ThreeVm};
 
 type CodeHash<T> = <T as frame_system::Config>::Hash;
 type TrieId = BoundedVec<u8, ConstU32<128>>;
@@ -158,55 +157,6 @@ pub type CurrencyOf<T> = <T as pallet::Config>::Currency;
 /// sentinel because contracts are never allowed to use such a large amount of resources
 /// that this value makes sense for a memory location or length.
 const SENTINEL: u32 = u32::MAX;
-
-/// Provides the contract address generation method.
-///
-/// See [`DefaultAddressGenerator`] for the default implementation.
-pub trait AddressGenerator<T: frame_system::Config> {
-    /// Generate the address of a contract based on the given instantiate parameters.
-    ///
-    /// # Note for implementors
-    /// 1. Make sure that there are no collisions, different inputs never lead to the same output.
-    /// 2. Make sure that the same inputs lead to the same output.
-    /// 3. Changing the implementation through a runtime upgrade without a proper storage migration
-    /// would lead to catastrophic misbehavior.
-    fn generate_address(
-        deploying_address: &T::AccountId,
-        code_hash: &CodeHash<T>,
-        salt: &[u8],
-    ) -> T::AccountId;
-}
-
-/// Default address generator.
-///
-/// This is the default address generator used by contract instantiation. Its result
-/// is only dependant on its inputs. It can therefore be used to reliably predict the
-/// address of a contract. This is akin to the formula of eth's CREATE2 opcode. There
-/// is no CREATE equivalent because CREATE2 is strictly more powerful.
-///
-/// Formula: `hash(deploying_address ++ code_hash ++ salt)`
-pub struct DefaultAddressGenerator;
-
-impl<T> AddressGenerator<T> for DefaultAddressGenerator
-where
-    T: frame_system::Config,
-    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
-{
-    fn generate_address(
-        deploying_address: &T::AccountId,
-        code_hash: &CodeHash<T>,
-        salt: &[u8],
-    ) -> T::AccountId {
-        let buf: Vec<_> = deploying_address
-            .as_ref()
-            .iter()
-            .chain(code_hash.as_ref())
-            .chain(salt)
-            .cloned()
-            .collect();
-        UncheckedFrom::unchecked_from(T::Hashing::hash(&buf))
-    }
-}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -344,7 +294,7 @@ pub mod pallet {
 
         /// Make this pallet 3VM enabled
         type ThreeVm: ThreeVm<Self, BalanceOf<Self>>;
-        
+
         /// The maximum length of a contract code in bytes. This limit applies to the instrumented
         /// version of the code. Therefore `instantiate_with_code` can fail even when supplying
         /// a wasm binary below this maximum size.
@@ -1274,7 +1224,7 @@ impl<T: Config> Pallet<T> {
             let schedule = T::Schedule::get();
             let (extra_deposit, executable) = match code {
                 Code::Upload(binary) => {
-                    let executable = PrefabWasmModule::from_code(
+                    let executable: PrefabWasmModule<T> = PrefabWasmModule::from_code(
                         binary,
                         &schedule,
                         origin.clone(),
@@ -1296,13 +1246,16 @@ impl<T: Config> Pallet<T> {
                 Code::Existing(hash) => {
                     if let Ok(module) =
                         T::ThreeVm::from_registry::<PrefabWasmModule<T>, _>(&hash, |bytes| {
-                            PrefabWasmModule::from_code(bytes, &schedule, origin.clone()).unwrap()
+                            PrefabWasmModule::from_code(
+                                bytes,
+                                &schedule,
+                                origin.clone(),
+                                Determinism::Deterministic,
+                                TryInstantiate::Instantiate,
+                            )
+                            .unwrap()
                         })
                     {
-                        ensure!(
-                            module.code_len() <= schedule.limits.code_len,
-                            <Error<T>>::CodeTooLarge
-                        );
                         T::ThreeVm::instantiate_check(module.get_type())?;
                         (
                             module
@@ -1427,10 +1380,8 @@ sp_api::decl_runtime_apis! {
     }
 }
 
-impl<T: Config> pallet_contracts_primitives::traits::Contracts<T::AccountId, BalanceOf<T>, Weight>
+impl<T: Config> pallet_contracts_primitives::traits::Contracts<T::AccountId, BalanceOf<T>>
     for Pallet<T>
-where
-    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 {
     type Outcome = ContractExecResult<BalanceOf<T>>;
 
@@ -1451,6 +1402,7 @@ where
             storage_deposit_limit,
             data,
             debug,
+            Determinism::Deterministic,
         )
     }
 }

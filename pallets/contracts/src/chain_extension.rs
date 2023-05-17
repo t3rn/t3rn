@@ -70,17 +70,12 @@
 //! [end-to-end example](https://github.com/paritytech/ink/tree/master/examples/rand-extension)
 //! on how to use a chain extension in order to provide new features to ink! contracts.
 
+pub use crate::{exec::Ext, Config};
 use crate::{
     gas::ChargedAmount,
     wasm::{Runtime, RuntimeCosts},
-    Error,
+    BalanceOf, Error,
 };
-use codec::{Decode, MaxEncodedLen};
-use frame_support::weights::Weight;
-use sp_runtime::DispatchError;
-use sp_std::{marker::PhantomData, vec::Vec};
-
-pub use crate::{exec::Ext, Config};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{dispatch::RawOrigin, pallet_prelude::Get, weights::Weight};
 use frame_system::pallet_prelude::OriginFor;
@@ -89,7 +84,6 @@ pub use pallet_contracts_primitives::ReturnFlags;
 pub use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{traits::UniqueSaturatedInto, DispatchError};
 use sp_std::{marker::PhantomData, vec::Vec};
-pub use state::Init as InitState;
 use t3rn_primitives::threevm::{GetState, Precompile, PrecompileArgs};
 use t3rn_sdk_primitives::{
     signal::ExecutionSignal, state::SideEffects, GET_STATE_FUNCTION_CODE,
@@ -175,6 +169,7 @@ impl<C: Config> ChainExtension<C> for Tuple {
         );
         Err(Error::<E::T>::NoChainExtension.into())
     }
+
     fn enabled() -> bool {
         for_tuples!(
             #(
@@ -187,13 +182,14 @@ impl<C: Config> ChainExtension<C> for Tuple {
     }
 }
 
+pub struct ThreeVmExtension;
 
-impl<C: Config> RegisteredChainExtension<C> for () {
-    fn call<E>(func_id: u32, env: Environment<E, InitState>) -> Result<RetVal>
+impl<C: Config> ChainExtension<C> for ThreeVmExtension {
+    fn call<E>(&mut self, env: Environment<E, InitState>) -> Result<RetVal>
     where
         E: Ext<T = C>,
-        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
     {
+        let func_id = env.func_id() as u32;
         log::trace!(
             target: CONTRACTS_LOG_TARGET,
             "[ChainExtension]|call|func_id:{:}",
@@ -215,7 +211,7 @@ impl<C: Config> RegisteredChainExtension<C> for () {
                     None
                 } else {
                     // TODO: allow a modifiable multiplier constant in the config
-                    env.charge_weight(execution_id.encoded_size() as Weight)?;
+                    env.charge_weight(size_to_weight(&execution_id))?;
                     Some(execution_id)
                 };
 
@@ -241,7 +237,9 @@ impl<C: Config> RegisteredChainExtension<C> for () {
                 env.write(
                     &bytes[..],
                     false,
-                    Some(<C as Config>::DepositPerByte::get().unique_saturated_into()),
+                    Some(Weight::from_all(
+                        <C as Config>::DepositPerByte::get().unique_saturated_into(),
+                    )),
                 )?;
 
                 Ok(RetVal::Converging(0))
@@ -254,7 +252,7 @@ impl<C: Config> RegisteredChainExtension<C> for () {
 
                 let origin = RawOrigin::Signed(env.ext().caller().clone());
                 <C as Config>::ThreeVm::invoke(PrecompileArgs::SubmitSideEffects(
-                    C::Origin::from(origin),
+                    C::RuntimeOrigin::from(origin),
                     arg,
                 ))?;
                 Ok(RetVal::Converging(0))
@@ -266,7 +264,10 @@ impl<C: Config> RegisteredChainExtension<C> for () {
                 log::debug!(target: SIGNAL_LOG_TARGET, "submitting signal {:?}", signal);
 
                 let origin = RawOrigin::Signed(env.ext().caller().clone());
-                C::ThreeVm::invoke(PrecompileArgs::Signal(C::Origin::from(origin), signal))?;
+                C::ThreeVm::invoke(PrecompileArgs::Signal(
+                    C::RuntimeOrigin::from(origin),
+                    signal,
+                ))?;
                 Ok(RetVal::Converging(0))
             },
             n => {
@@ -281,12 +282,15 @@ impl<C: Config> RegisteredChainExtension<C> for () {
     }
 }
 
-fn read_from_environment<C, T, E>(env: &mut Environment<E, BufInBufOut>) -> Result<T>
+impl<C: Config> RegisteredChainExtension<C> for () {
+    const ID: u16 = 3330;
+}
+
+fn read_from_environment<C, T, E>(env: &mut Environment<E, BufInBufOutState>) -> Result<T>
 where
     C: Config,
     T: Decode + MaxEncodedLen,
     E: Ext<T = C>,
-    <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
 {
     let bytes = env.read(<T as MaxEncodedLen>::max_encoded_len() as u32)?;
 
@@ -295,16 +299,19 @@ where
             log::error!(target: CONTRACTS_LOG_TARGET, "decoding type failed {:?}", e);
             Error::<C>::DecodingFailed.into()
         })
-        .and_then(|t: T| env.charge_weight(t.encoded_size() as Weight).map(|_| t))
+        .and_then(|t: T| env.charge_weight(size_to_weight(&t)).map(|_| t))
+}
+
+fn size_to_weight<T: Encode>(encodable: &T) -> Weight {
+    Weight::from_ref_time(encodable.encoded_size() as u64)
 }
 
 fn origin_from_environment<C, E>(
-    env: &mut Environment<E, BufInBufOut>,
-) -> <C as frame_system::Config>::Origin
+    env: &mut Environment<E, BufInBufOutState>,
+) -> <C as frame_system::Config>::RuntimeOrigin
 where
     C: Config,
     E: Ext<T = C>,
-    <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
 {
     OriginFor::<C>::from(RawOrigin::Signed(env.ext().caller().clone()))
 }

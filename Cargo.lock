@@ -6845,6 +6845,7 @@ dependencies = [
  "glob",
  "hex",
  "hex-literal 0.3.4",
+ "impl-trait-for-tuples",
  "log",
  "pallet-3vm",
  "pallet-account-manager",
@@ -6878,7 +6879,7 @@ dependencies = [
  "sp-std",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
- "wasm-instrument 0.1.1",
+ "wasm-instrument 0.4.0",
  "wasmi 0.20.0",
  "wasmparser-nostd",
  "wat",
@@ -6913,6 +6914,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-contracts-parity"
+version = "4.0.0-dev"
+dependencies = [
+ "array-bytes 4.2.0",
+ "assert_matches",
+ "bitflags",
+ "env_logger 0.9.3",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "pallet-balances",
+ "pallet-contracts-primitives 5.0.0",
+ "pallet-contracts-proc-macro",
+ "pallet-insecure-randomness-collective-flip",
+ "pallet-timestamp",
+ "pallet-utility",
+ "parity-scale-codec",
+ "pretty_assertions",
+ "rand 0.8.5",
+ "rand_pcg",
+ "scale-info",
+ "serde",
+ "smallvec",
+ "sp-api",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "wasm-instrument 0.4.0",
+ "wasmi 0.20.0",
+ "wasmparser-nostd",
+ "wat",
+]
+
+[[package]]
 name = "pallet-contracts-primitives"
 version = "5.0.0"
 dependencies = [
@@ -6924,6 +6963,7 @@ dependencies = [
  "sp-rpc",
  "sp-runtime",
  "sp-std",
+ "sp-weights",
 ]
 
 [[package]]
@@ -8281,12 +8321,6 @@ name = "parity-send-wrapper"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9777aa91b8ad9dd5aaa04a9b6bcb02c7f1deb952fca5a66034d5e63afc5c6f"
-
-[[package]]
-name = "parity-wasm"
-version = "0.42.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be5e13c266502aadf83426d87d81a0f5d1ef45b8027f5a471c360abfe4bfae92"
 
 [[package]]
 name = "parity-wasm"
@@ -12954,7 +12988,7 @@ source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.3
 dependencies = [
  "impl-serde 0.4.0",
  "parity-scale-codec",
- "parity-wasm 0.45.0",
+ "parity-wasm",
  "scale-info",
  "serde",
  "sp-core-hashing-proc-macro",
@@ -14708,20 +14742,11 @@ dependencies = [
 
 [[package]]
 name = "wasm-instrument"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "962e5b0401bbb6c887f54e69b8c496ea36f704df65db73e81fd5ff8dc3e63a9f"
-dependencies = [
- "parity-wasm 0.42.2",
-]
-
-[[package]]
-name = "wasm-instrument"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa1dafb3e60065305741e83db35c6c2584bb3725b692b5b66148a38d72ace6cd"
 dependencies = [
- "parity-wasm 0.45.0",
+ "parity-wasm",
 ]
 
 [[package]]
@@ -14730,7 +14755,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a47ecb37b9734d1085eaa5ae1a81e60801fd8c28d4cabdd8aedb982021918bc"
 dependencies = [
- "parity-wasm 0.45.0",
+ "parity-wasm",
 ]
 
 [[package]]
@@ -14795,7 +14820,7 @@ version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06c326c93fbf86419608361a2c925a31754cf109da1b8b55737070b4d6669422"
 dependencies = [
- "parity-wasm 0.45.0",
+ "parity-wasm",
  "wasmi-validation",
  "wasmi_core 0.2.1",
 ]
@@ -14818,7 +14843,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91ff416ad1ff0c42e5a926ed5d5fab74c0f098749aa0ad8b2a34b982ce0e867b"
 dependencies = [
- "parity-wasm 0.45.0",
+ "parity-wasm",
 ]
 
 [[package]]

@@ -31,11 +31,11 @@ use frame_support::{
     Blake2_128Concat, BoundedVec, StorageHasher,
 };
 use frame_system::RawOrigin;
-use pallet_contracts_primitives::{ComposableExecReturnValue, ExecReturnValue, ReturnFlags};
+use pallet_contracts_primitives::{ExecReturnValue, ReturnFlags};
 use smallvec::{Array, SmallVec};
-use sp_core::crypto::UncheckedFrom;
-use sp_io::crypto::secp256k1_ecdsa_recover_compressed;
-use sp_runtime::traits::Convert;
+use sp_core::ecdsa::Public as ECDSAPublic;
+use sp_io::{crypto::secp256k1_ecdsa_recover_compressed, hashing::blake2_256};
+use sp_runtime::traits::{Convert, Hash};
 use sp_std::{marker::PhantomData, mem, prelude::*};
 use t3rn_primitives::{
     account_manager::Outcome,
@@ -47,11 +47,39 @@ pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type MomentOf<T> = <<T as Config>::Time as Time>::Moment;
 pub type SeedOf<T> = <T as frame_system::Config>::Hash;
 pub type BlockNumberOf<T> = <T as frame_system::Config>::BlockNumber;
-pub type StorageKey = [u8; 32];
 pub type ExecResult = Result<ExecReturnValue, ExecError>;
 
 /// A type that represents a topic of an event. At the moment a hash is used.
 pub type TopicOf<T> = <T as frame_system::Config>::Hash;
+
+/// Type for fix sized storage key.
+pub type FixSizedKey = [u8; 32];
+
+/// Type for variable sized storage key. Used for transparent hashing.
+pub type VarSizedKey<T> = BoundedVec<u8, <T as Config>::MaxStorageKeyLen>;
+
+/// Trait for hashing storage keys.
+pub trait StorageKey<T>
+where
+    T: Config,
+{
+    fn hash(&self) -> Vec<u8>;
+}
+
+impl<T: Config> StorageKey<T> for FixSizedKey {
+    fn hash(&self) -> Vec<u8> {
+        blake2_256(self.as_slice()).to_vec()
+    }
+}
+
+impl<T> StorageKey<T> for VarSizedKey<T>
+where
+    T: Config,
+{
+    fn hash(&self) -> Vec<u8> {
+        Blake2_128Concat::hash(self.as_slice())
+    }
+}
 
 /// Origin of the error.
 ///
@@ -1216,7 +1244,7 @@ where
                     ))?;
                     Ok(ExecReturnValue {
                         flags: ReturnFlags::empty(),
-                        data: sp_core::Bytes(Vec::new()),
+                        data: Vec::new(),
                     })
                 } else {
                     // FIXME: we just silently fail the decode here, really we shouldnt be trying to do this
@@ -1577,7 +1605,7 @@ mod tests {
         collections::hash_map::{Entry, HashMap},
         rc::Rc,
     };
- 
+
     type System = frame_system::Pallet<Test>;
 
     type MockStack<'a> = Stack<'a, Test, MockExecutable>;

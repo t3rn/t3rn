@@ -50,11 +50,11 @@ use frame_support::dispatch::{DispatchError, DispatchResult};
 use sp_core::Get;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
-use wasmi::{
-    Config as WasmiConfig, Engine, Instance, Linker, Memory, MemoryType, Module, StackLimits, Store,
-};
 use t3rn_primitives::{
     contract_metadata::ContractType, contracts_registry::AuthorInfo, threevm::ModuleOperations,
+};
+use wasmi::{
+    Config as WasmiConfig, Engine, Instance, Linker, Memory, MemoryType, Module, StackLimits, Store,
 };
 
 /// A prepared wasm module ready for execution.
@@ -326,10 +326,7 @@ impl<T: Config> OwnerInfo<T> {
     }
 }
 
-impl<T: Config> Executable<T> for PrefabWasmModule<T>
-where
-    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
-{
+impl<T: Config> Executable<T> for PrefabWasmModule<T> {
     fn from_storage(
         code_hash: CodeHash<T>,
         schedule: &Schedule<T>,

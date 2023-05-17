@@ -52,7 +52,7 @@ rlp              = { version = "0.5.2", features = [ "derive" ], default-feature
 serde            = { default-features = false, version = "1.0", features = [ "derive" ] }
 sha3             = { version = "0.10.1", default-features = false }
 smallvec         = { version = "1.0", default-features = false, features = [ "const_generics" ] }
-wasm-instrument  = { version = "0.1", default-features = false }
+wasm-instrument  = { version = "0.4", default-features = false }
 wasmi            = { version = "0.20", default-features = false }
 wasmi-validation = { version = "0.4", default-features = false }
 wasmparser       = { package = "wasmparser-nostd", version = "0.91", default-features = false }
@@ -114,6 +114,7 @@ sp-std                                     = { git = "https://github.com/parityt
 sp-transaction-pool                        = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-trie                                    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-version                                 = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
+sp-weights                                 = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 
 # Polkadot
 pallet-xcm                 = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
