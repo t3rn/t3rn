@@ -6918,44 +6918,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contracts-parity"
-version = "4.0.0-dev"
-dependencies = [
- "array-bytes 4.2.0",
- "assert_matches",
- "bitflags",
- "env_logger 0.9.3",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "log",
- "pallet-balances",
- "pallet-contracts-primitives 5.0.0",
- "pallet-contracts-proc-macro",
- "pallet-insecure-randomness-collective-flip",
- "pallet-timestamp",
- "pallet-utility",
- "parity-scale-codec",
- "pretty_assertions",
- "rand 0.8.5",
- "rand_pcg",
- "scale-info",
- "serde",
- "smallvec",
- "sp-api",
- "sp-core",
- "sp-io",
- "sp-keystore",
- "sp-runtime",
- "sp-std",
- "wasm-instrument 0.4.0",
- "wasmi 0.20.0",
- "wasmparser-nostd",
- "wat",
-]
-
-[[package]]
 name = "pallet-contracts-primitives"
 version = "5.0.0"
 dependencies = [

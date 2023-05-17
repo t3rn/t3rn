@@ -196,7 +196,6 @@ members = [
   "pallets/circuit",
   "pallets/clock",
   "pallets/contracts",
-  "pallets/contracts-parity",
   "pallets/contracts-registry",
   "pallets/contracts-registry/rpc",
   "pallets/contracts-registry/rpc/runtime-api",
