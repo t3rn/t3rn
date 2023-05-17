@@ -231,7 +231,7 @@ pub mod pallet {
 
     /// This pallet's configuration trait
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_balances::Config {
+    pub trait Config: frame_system::Config {
         /// The Circuit's account id
         #[pallet::constant]
         type SelfAccountId: Get<Self::AccountId>;
