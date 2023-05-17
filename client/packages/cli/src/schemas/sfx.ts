@@ -55,7 +55,17 @@ export const SideEffectSchema = z.object({
     .refine((value) => !isNaN(parseFloat(value)) && parseFloat(value) >= 0, {
       message: "Insurance must be a non-negative number",
     }),
-  action: z.enum(["tran", "swap"]),
+  action: z.enum([
+    "data",
+    "tran",
+    "tass",
+    "swap",
+    "aliq",
+    "rliq",
+    "cevm",
+    "wasm",
+    "cgen",
+  ]),
   encodedArgs: z.array(EncodedArgsSchema),
   signature: z.string({
     invalid_type_error: "Signature must be a byte string",
@@ -76,6 +86,13 @@ export type SideEffect = z.infer<typeof SideEffectSchema>
 
 export type SideEffectAction = SideEffect["action"]
 export const SideEffectActions = {
+  Data: "data",
   Transfer: "tran",
+  TransferAsset: "tass",
   Swap: "swap",
+  AddLiquidity: "aliq",
+  RemoveLiquidity: "rliq",
+  CallEvmContract: "cevm",
+  CallWasmContract: "wasm",
+  CallGenericAbi: "cgen",
 } as const
