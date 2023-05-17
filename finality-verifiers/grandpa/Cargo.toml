@@ -11,7 +11,7 @@ version    = "1.5.0-rc.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-codec      = { workspace = true, package = "parity-scale-codec" }
+codec            = { workspace = true, package = "parity-scale-codec" }
 finality-grandpa = { version = "0.16", default-features = false, features = [ "derive-codec" ] }
 hash-db          = { version = "0.15.2", default-features = false }
 log              = { workspace = true }
@@ -32,15 +32,15 @@ sp-std              = { workspace = true }
 sp-trie             = { workspace = true }
 
 # These are the testing dependencies that we are now selecting via future flag
-ed25519-dalek    = { version = "1.0", features = [ "u64_backend" ], optional = true }
+ed25519-dalek    = { workspace = true, default-features = true, optional = true }
 hex              = { package = "rustc-hex", version = "2.1.0", optional = true }
 hex-literal      = { version = "0.4.1", optional = true }
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', optional = true }
 pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', optional = true }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', optional = true }
 
+t3rn-abi        = { path = "../../types/abi", features = [ "runtime" ], default-features = false }
 t3rn-primitives = { path = "../../primitives", default-features = false }
-t3rn-abi        = { path = "../../types/abi", features = ["runtime"], default-features = false }
 
 t3rn-light-client-commons = { path = "../common", default-features = false }
 

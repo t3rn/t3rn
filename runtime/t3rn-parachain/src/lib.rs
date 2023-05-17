@@ -28,7 +28,7 @@ use frame_support::{
     construct_runtime, parameter_types,
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
-        ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
 };

@@ -15,12 +15,12 @@ targets = [ "x86_64-unknown-linux-gnu" ]
 [dev-dependencies]
 async-std              = { version = "1.6.5", features = [ "attributes", "tokio1" ] }
 async-trait            = "0.1.40"
-jsonrpc-core-client    = { version = "15.1.0", features = [ "http" ] }
+jsonrpc-core-client    = { workspace = true, features = [ "http" ] }
 jsonrpc-runtime-client = { version = "0.1.0", path = "../relayers/jsonrpc-runtime-client" }
 jsonrpsee-types        = "0.2.0"
 relay-substrate-client = { version = "0.1.0", path = "../relayers/client-substrate" }
 
-codec           = { workspace = true,package = "parity-scale-codec",  default-features = true }
+codec           = { workspace = true, package = "parity-scale-codec", default-features = true }
 futures         = { version = "0.3.16", features = [ "compat" ] }
 node-primitives = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sc-client-api   = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }

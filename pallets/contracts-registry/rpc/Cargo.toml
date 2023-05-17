@@ -13,10 +13,10 @@ version     = "1.0.0-aplha.0"
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-codec      = { workspace = true, package = "parity-scale-codec" }
-jsonrpc-core        = "15.0.0"
-jsonrpc-core-client = "15.0.0"
-jsonrpc-derive      = "15.0.0"
+codec               = { workspace = true, package = "parity-scale-codec" }
+jsonrpc-core        = { workspace = true }
+jsonrpc-core-client = { workspace = true }
+jsonrpc-derive      = { workspace = true }
 
 serde = { version = "1.0", features = [ "derive" ] }
 

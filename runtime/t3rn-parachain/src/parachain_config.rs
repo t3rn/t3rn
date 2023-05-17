@@ -3,7 +3,7 @@ use crate::*;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-use frame_support::{traits::NeverEnsureOrigin, PalletId};
+use frame_support::{pallet_prelude::DispatchClass, traits::NeverEnsureOrigin, PalletId};
 use frame_system::EnsureRoot;
 use smallvec::smallvec;
 use sp_runtime::{impl_opaque_keys, Permill};

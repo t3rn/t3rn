@@ -1,11 +1,11 @@
 use crate::{
-    AccountId, AllPalletsWithSystem, Balance, Balances, ParachainInfo, ParachainSystem,
-    PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
+    AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
+    Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use frame_support::{
     match_types, parameter_types,
     traits::{Everything, Nothing},
-    weights::{IdentityFee, Weight},
+    weights::Weight,
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
