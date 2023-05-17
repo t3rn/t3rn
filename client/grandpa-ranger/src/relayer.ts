@@ -9,7 +9,7 @@ import { fetchNonce } from "./util"
 
 export default class Relayer extends EventEmitter {
   static debug = createDebug("relayer")
-  api: ApiPromise;
+  api: ApiPromise
   signer: any
 
   async setup(url: string) {

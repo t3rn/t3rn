@@ -4,13 +4,13 @@ import { ApiPromise } from "@polkadot/api"
 import { BN } from "@polkadot/util"
 
 const registry = new TypeRegistry()
-const type = { type: 'GrandpaJustification<Header>' }
+const type = { type: "GrandpaJustification<Header>" }
 export const decodeJustification = (data: any) => {
-        registry.register(type);
-        const res = createType(registry, type.type as any, data)
+  registry.register(type)
+  const res = createType(registry, type.type as any, data)
 
-        return res.commit.targetNumber.toNumber()
-    }
+  return res.commit.targetNumber.toNumber()
+}
 
 export function formatEvents(
   events: { event: { section: string; method: string; data: any } }[]

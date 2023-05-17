@@ -1,7 +1,8 @@
 {
     "rangeSize": 5,
     "circuit": {
-        "rpc": "ws://127.0.0.1::9944"
+        "ws": "wss://ws.t0rn.io",
+        "rpc": "https://rpc.t0rn.io"
     },
     "relaychains": [{
         "name": "Rococo",

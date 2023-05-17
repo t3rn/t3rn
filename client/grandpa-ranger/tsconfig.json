@@ -1,9 +1,23 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "esModuleInterop": true,
+    "incremental": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
     "moduleResolution": "Node",
-    "skipLibCheck": true
+    "module": "CommonJS",
+    "target": "ES2018",
+    "sourceMap": true,
+    "lib": [
+      "esnext", "es5", "es6"
+    ],
+    "esModuleInterop": true,
+    "alwaysStrict": true,
+    "strictNullChecks": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
   },
-  "include": ["src/**/*.ts",]
+  "exclude": ["node_modules", "dist", "*.d.ts"],
 }
