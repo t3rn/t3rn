@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.23.0-rc.0] - 2023-05-17
+### :sparkles: New Features
+- [`6991de8`](https://github.com/t3rn/t3rn/commit/6991de886f51a092a48ad1c562fb2d723e2e13b6) - add support for enforce executioner field *(PR [#970](https://github.com/t3rn/t3rn/pull/970) by [@ahkohd](https://github.com/ahkohd))*
+- [`6f95446`](https://github.com/t3rn/t3rn/commit/6f95446e54c3a6128659190d40cd5b022cfdbe63) - impl eth2 pallet *(PR [#961](https://github.com/t3rn/t3rn/pull/961) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.22.3-rc.0] - 2023-05-16
 ### :bug: Bug Fixes
 - [`27c9b40`](https://github.com/t3rn/t3rn/commit/27c9b40b3e140a6f09213b6e5d2fa975bf99586c) - portal rpc in t0rn runtime *(PR [#978](https://github.com/t3rn/t3rn/pull/978) by [@petscheit](https://github.com/petscheit))*
@@ -1126,3 +1132,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.21.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.20.1-rc.0...v1.21.0-rc.0
 [v1.22.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.21.0-rc.0...v1.22.0-rc.0
 [v1.22.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.22.2-rc.0...v1.22.3-rc.0
+[v1.23.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.22.3-rc.0...v1.23.0-rc.0
