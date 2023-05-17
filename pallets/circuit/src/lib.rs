@@ -959,8 +959,7 @@ impl<T: Config> Pallet<T> {
                 }
             }
 
-            let submission_target_height = match T::Portal::get_latest_finalized_height(sfx.target)?
-            {
+            let submission_target_height = match T::Portal::get_fast_height(sfx.target)? {
                 HeightResult::Height(block_numer) => block_numer,
                 HeightResult::NotActive =>
                     return Err("SFX validate failed - get_latest_finalized_height returned None"),

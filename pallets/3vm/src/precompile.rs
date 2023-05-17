@@ -235,24 +235,14 @@ pub(crate) fn invoke<T: Config>(
             PortalPrecompileArgs::GetLatestFinalizedHeader(chain_id) =>
                 T::Portal::get_latest_finalized_header(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::GetLatestFinalizedHeight(chain_id) =>
-                T::Portal::get_latest_finalized_height(chain_id)
+            PortalPrecompileArgs::GetFinalizedHeight(chain_id) =>
+                T::Portal::get_finalized_height(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::GetLatestUpdatedHeight(chain_id) =>
-                T::Portal::get_latest_updated_height(chain_id)
+            PortalPrecompileArgs::GetRationalHeight(chain_id) =>
+                T::Portal::get_rational_height(chain_id)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::GetCurrentEpoch(chain_id) =>
-                T::Portal::get_current_epoch(chain_id)
-                    .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::ReadEpochOffset(chain_id) =>
-                T::Portal::read_epoch_offset(chain_id)
-                    .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileArgs::ReadFastConfirmationOffset(chain_id) =>
-                T::Portal::read_fast_confirmation_offset(chain_id)
-                    .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
-            PortalPrecompileArgs::ReadRationalConfirmationOffset(chain_id) =>
-                T::Portal::read_rational_confirmation_offset(chain_id)
-                    .map(|x| PrecompileInvocation::Portal(PortalExecution::BlockNumber(x))),
+            PortalPrecompileArgs::GetFastHeight(chain_id) =>
+                T::Portal::get_fast_height(chain_id).map(|x| PrecompileInvocation::Portal(x.into())),
             PortalPrecompileArgs::VerifyEventInclusion(chain_id, event) =>
                 T::Portal::verify_event_inclusion(chain_id, event, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
