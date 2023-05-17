@@ -13,7 +13,7 @@ version     = { workspace = true }
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 
 [dependencies]
-codec      = { workspace = true, package = "parity-scale-codec" }
+codec       = { workspace = true, package = "parity-scale-codec" }
 hex-literal = { workspace = true, optional = true }
 log         = { workspace = true }
 scale-info  = { workspace = true }
@@ -37,14 +37,13 @@ t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { path = "../../types", default-features = false }
 
 # Smart contracts VMs
-evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
-pallet-3vm                           = { default-features = false, path = "../../pallets/3vm" }
-pallet-3vm-contracts                 = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
-pallet-3vm-contracts-primitives      = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { default-features = false, path = "../../pallets/contracts/rpc/runtime-api", package = "pallet-contracts-rpc-runtime-api" }
-pallet-3vm-evm                       = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
-pallet-3vm-evm-primitives            = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
-pallet-evm-rpc-runtime-api           = { default-features = false, path = "../../pallets/evm/rpc/runtime-api" }
+evm-precompile-util              = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
+pallet-3vm                       = { default-features = false, path = "../../pallets/3vm" }
+pallet-3vm-contracts             = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
+pallet-3vm-contracts-primitives  = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
+pallet-3vm-evm                   = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
+pallet-3vm-evm-primitives        = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
+pallet-evm-rpc-runtime-api       = { default-features = false, path = "../../pallets/evm/rpc/runtime-api" }
 
 # Substrate Dependencies
 frame-executive                            = { workspace = true }
@@ -116,7 +115,6 @@ std = [
   "pallet-3vm-contracts/std",
   # "circuit-runtime-pallets/std",
   "pallet-3vm-contracts-primitives/std",
-  "pallet-3vm-contracts-rpc-runtime-api/std",
   "pallet-3vm-evm/std",
   "pallet-3vm-evm-primitives/std",
   "pallet-evm-rpc-runtime-api/std",

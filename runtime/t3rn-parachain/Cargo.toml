@@ -105,7 +105,6 @@ parachain-info                      = { workspace = true }
 # pallet-3vm                           = { default-features = false, path = "../../pallets/3vm" }
 # pallet-3vm-contracts                 = { default-features = false, path = "../../pallets/contracts", package = "pallet-contracts" }
 # pallet-3vm-contracts-primitives      = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
-# pallet-3vm-contracts-rpc-runtime-api = { default-features = false, path = "../../pallets/contracts/rpc/runtime-api", package = "pallet-contracts-rpc-runtime-api" }
 # pallet-3vm-evm                       = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 # pallet-3vm-evm-primitives            = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
 # pallet-evm-rpc-runtime-api           = { default-features = false, path = "../../pallets/evm/rpc/runtime-api" }
@@ -186,7 +185,6 @@ std = [
   # "pallet-3vm/std",
   # "pallet-3vm-contracts/std",
   # "pallet-3vm-contracts-primitives/std",
-  # "pallet-3vm-contracts-rpc-runtime-api/std",
   # "pallet-3vm-evm/std",
   # "pallet-3vm-evm-primitives/std",
   # "pallet-evm-rpc-runtime-api/std",
