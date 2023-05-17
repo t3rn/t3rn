@@ -29,9 +29,9 @@ jobs:
         with:
           filters: |
             src:
-            - "client/grandpa-ranger.Dockerfile"
-            - "client/grandpa-ranger/**/*.ts"
-            - "client/grandpa-ranger/**/*.json"
+            - "client/packages/grandpa-ranger.Dockerfile"
+            - "client/packages/grandpa-ranger/**/*.ts"
+            - "client/packages/grandpa-ranger/**/*.json"
             - ".github/workflows/grandpa-ranger.yml"
 
       - name: Detected changes
@@ -44,7 +44,7 @@ jobs:
     if: needs.changes.outputs.src == 'true'
     defaults:
       run:
-        working-directory: client/grandpa-ranger
+        working-directory: client/packages/grandpa-ranger
 
     runs-on: self-hosted
     steps:
@@ -71,7 +71,7 @@ jobs:
         uses: ataylorme/eslint-annotate-action@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          report-json: client/grandpa-ranger/eslint_report.json
+          report-json: client/packages/grandpa-ranger/eslint_report.json
         # TODO: uncomment when ready
         continue-on-error: true
 
@@ -115,7 +115,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: test-t0rn-grandpa-ranger
           IMAGE_TAG: ${{ github.sha }}
-        working-directory: ./client
+        working-directory: ./client/packages
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f grandpa-ranger.Dockerfile
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -124,5 +124,5 @@ jobs:
         run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
 
       - name: Helm Upgrade
-        working-directory: ./client/grandpa-ranger
+        working-directory: ./client/packages/grandpa-ranger
         run: helm upgrade grandpa-ranger ./helm -n grandpa-ranger -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-grandpa-ranger"

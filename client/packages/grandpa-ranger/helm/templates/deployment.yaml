@@ -29,8 +29,8 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-            - name: WS_CIRCUIT_ENDPOINT
-              value: "{{ .Values.websocketEndpoint }}"
+            - name: PROFILE
+              value: "{{ .Values.profile }}"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

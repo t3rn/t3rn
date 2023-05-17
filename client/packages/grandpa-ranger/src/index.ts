@@ -127,6 +127,8 @@ class GrandpaRanger {
 	let config: any;
 	if(process.env.PROFILE === 'prod') {
 		config = require('../config/prod.ts').default;
+	} else if(process.env.PROFILE === 't0rn') {
+		config = require('../config/t0rn.ts').default;
 	} else {
 		config = require('../config/local.ts').default;
 	}
