@@ -76,7 +76,7 @@ jobs:
         continue-on-error: true
 
   build-docker:
-    name: Build Docker Executor
+    name: Build Docker Grandpa Ranger
     needs: [changes]
     if: needs.changes.outputs.src == 'true'
 
@@ -90,7 +90,7 @@ jobs:
           docker build . -f grandpa-ranger.Dockerfile
 
   deploy:
-    name: Deploy Executor
+    name: Deploy Grandpa Ranger
     runs-on: self-hosted
     needs: test-grandpa-ranger
     # TODO: uncomment when ready
@@ -115,7 +115,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: test-t0rn-grandpa-ranger
           IMAGE_TAG: ${{ github.sha }}
-        working-directory: ./client/packages
+        working-directory: ./client
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f grandpa-ranger.Dockerfile
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
