@@ -8,7 +8,7 @@ RUN cd /app/sdk && yarn install && yarn build
 ADD packages/grandpa-ranger /app/grandpa-ranger
 RUN cd /app/grandpa-ranger && yarn 
 
-WORKDIR /app/packages/grandpa-ranger
+WORKDIR /app/grandpa-ranger
 
 # node is default user with UID 1000 in this image
 RUN chown -R node /app
