@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 //! Runtime utilities
 #![recursion_limit = "256"]
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
@@ -93,6 +94,7 @@ frame_support::construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        EthereumBridge: pallet_eth2_finality_verifier = 132,
     }
 );
 
@@ -209,6 +211,15 @@ impl ExtBuilder {
                     (*b"wasm", Some(10)),
                     (*b"call", Some(10)),
                 ],
+            },
+            GatewayRecord {
+                gateway_id: *b"eth2",
+                verification_vendor: GatewayVendor::Ethereum,
+                execution_vendor: ExecutionVendor::EVM,
+                codec: t3rn_abi::Codec::Rlp,
+                registrant: None,
+                escrow_account: None,
+                allowed_side_effects: vec![(*b"tran", Some(2))],
             },
         ];
         self

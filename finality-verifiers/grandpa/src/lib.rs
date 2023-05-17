@@ -661,7 +661,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         Ok(())
     }
 
-    pub fn submit_encoded_headers(encoded_header_data: Vec<u8>) -> Result<Vec<u8>, DispatchError> {
+    pub fn submit_encoded_headers(encoded_header_data: Vec<u8>) -> Result<(), DispatchError> {
         ensure_operational_single::<T, I>()?;
         let data: GrandpaHeaderData<BridgedHeader<T, I>> =
             Decode::decode(&mut &*encoded_header_data)
@@ -672,7 +672,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             data.signed_header,
             data.justification,
         )?;
-        Ok(vec![])
+        Ok(())
     }
 
     pub fn confirm_event_inclusion(
@@ -735,18 +735,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             return Some(header_hash.encode())
         }
         None
-    }
-
-    pub fn get_latest_finalized_height() -> Option<Vec<u8>> {
-        if let Some(header_hash) = <BestFinalizedHash<T, I>>::get() {
-            if let Some(header) = <ImportedHeaders<T, I>>::get(header_hash) {
-                return Some(header.number().encode())
-            } else {
-                None
-            }
-        } else {
-            Some(vec![0]) // ToDo this is here more for testing.
-        }
     }
 }
 
@@ -949,8 +937,8 @@ pub mod tests {
 pub mod tests {
     use super::*;
     use crate::mock::{
-        run_test, test_header, test_header_range, test_header_with_correct_parent, AccountId,
-        Origin, TestHeader, TestNumber, TestRuntime,
+        produce_mock_headers_range, run_test, test_header, test_header_range,
+        test_header_with_correct_parent, AccountId, Origin, TestHeader, TestNumber, TestRuntime,
     };
     use bp_runtime::ChainId;
     use bridges::{
@@ -1033,19 +1021,6 @@ pub mod tests {
         init_data: ParachainRegistrationData,
     ) -> Result<ParachainRegistrationData, &'static str> {
         Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
-    }
-
-    pub fn produce_mock_headers_range(from: u8, to: u8) -> GrandpaHeaderData<TestHeader> {
-        let headers: Vec<TestHeader> = test_header_range(to.into());
-        let signed_header: &TestHeader = headers.last().unwrap();
-        let justification = make_default_justification(&signed_header.clone());
-        let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec();
-
-        GrandpaHeaderData::<TestHeader> {
-            signed_header: signed_header.clone(),
-            range,
-            justification,
-        }
     }
 
     pub fn submit_headers(from: u8, to: u8) -> Result<GrandpaHeaderData<TestHeader>, &'static str> {
