@@ -6,11 +6,11 @@ use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
+use sp_core::{crypto::AccountId32, H160};
 use sp_runtime::DispatchError;
-use sp_std::vec::Vec;
-use t3rn_abi::sfx_abi::SFXAbi;
+use sp_std::prelude::*;
+use t3rn_abi::{sfx_abi::SFXAbi, Codec};
 use t3rn_types::sfx::Sfx4bId;
-
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId = [u8; 4];
 
@@ -40,12 +40,125 @@ pub struct TokenRecord {
     pub token_props: TokenInfo,
 }
 
+pub type SubstratePalletSource = u8;
+pub type EVMSource = H160;
+pub type ContractsSource = AccountId32;
+pub type SubstrateEVMSource = (SubstratePalletSource, EVMSource);
+pub type SubstrateContractsSource = (SubstratePalletSource, ContractsSource);
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub enum Source {
+    SubstratePallet(SubstratePalletSource),
+    EVM(EVMSource),
+    Contracts(ContractsSource),
+    SubstrateEVM(SubstrateEVMSource),
+    SubstrateContracts(SubstrateContractsSource),
+}
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct ElasticGatewaySettings {
+    pub settings_bytes: Vec<u8>,
+    pub settings_abi_descriptor: Vec<u8>,
+}
+
+impl Default for ElasticGatewaySettings {
+    fn default() -> Self {
+        Self {
+            settings_bytes: vec![
+                GatewayVendor::Rococo.encode(),
+                ExecutionVendor::Substrate.encode(),
+                Codec::Scale.encode(),
+                0u8.encode(),
+            ]
+            .concat(),
+            settings_abi_descriptor:
+                b"GatewaySettings:Quadruple(FinalityVendor:Byte,ExecutionVendor:Byte,Codec:Byte,Source:Byte)"
+                    .to_vec(),
+        }
+    }
+}
+
+#[test]
+fn test_default_elastic_gateway_settings() {
+    use sp_std::convert::TryInto;
+    use t3rn_abi::{Abi, FilledAbi, RecodeScale};
+
+    let settings = ElasticGatewaySettings::default();
+    assert_eq!(
+        settings.settings_bytes,
+        vec![
+            GatewayVendor::Rococo.encode(),
+            ExecutionVendor::Substrate.encode(),
+            Codec::Scale.encode(),
+            0u8.encode(),
+        ]
+        .concat()
+    );
+
+    assert_eq!(settings.settings_bytes, vec![2, 0, 0, 0]);
+
+    assert_eq!(
+        settings.settings_abi_descriptor,
+        b"GatewaySettings:Quadruple(FinalityVendor:Byte,ExecutionVendor:Byte,Codec:Byte,Source:Byte)"
+            .to_vec()
+    );
+
+    let abi: Abi = settings.settings_abi_descriptor.clone().try_into().unwrap();
+
+    assert_eq!(abi.get_name(), Some(b"GatewaySettings".to_vec()));
+
+    let filled_abi =
+        FilledAbi::try_fill_abi(abi, settings.settings_bytes.clone(), Codec::Scale).unwrap();
+
+    println!("filled_abi: {filled_abi:?}");
+
+    let finality_vendor: GatewayVendor = RecodeScale::try_decode_field_by_name_from_scale(
+        settings.settings_bytes.clone(),
+        settings.settings_abi_descriptor.clone(),
+        b"FinalityVendor".to_vec(),
+    )
+    .unwrap();
+
+    assert_eq!(finality_vendor, GatewayVendor::Rococo);
+
+    let execution_vendor: ExecutionVendor = RecodeScale::try_decode_field_by_name_from_scale(
+        settings.settings_bytes.clone(),
+        settings.settings_abi_descriptor.clone(),
+        b"ExecutionVendor".to_vec(),
+    )
+    .unwrap();
+
+    assert_eq!(execution_vendor, ExecutionVendor::Substrate);
+
+    let codec: Codec = RecodeScale::try_decode_field_by_name_from_scale(
+        settings.settings_bytes.clone(),
+        settings.settings_abi_descriptor.clone(),
+        b"Codec".to_vec(),
+    )
+    .unwrap();
+
+    assert_eq!(codec, Codec::Scale);
+
+    let source: SubstratePalletSource = RecodeScale::try_decode_field_by_name_from_scale(
+        settings.settings_bytes.clone(),
+        settings.settings_abi_descriptor,
+        b"Source".to_vec(),
+    )
+    .unwrap();
+
+    assert_eq!(source, 0u8);
+}
+
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct GatewayRecord<AccountId> {
     /// Gateway 4b Id
     pub gateway_id: ChainId,
+
+    /// ToDo: ElasticGatewaySettings could replace all the fields below: GatewayVendor, ExecutionVendor, Codec, add Source and others if needed for that gateway
 
     /// Verification Vendor / Light Client or internal (XCM/XBI)
     pub verification_vendor: GatewayVendor,

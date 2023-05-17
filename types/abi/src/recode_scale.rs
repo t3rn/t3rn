@@ -6,6 +6,7 @@ use crate::{
 };
 
 use bytes::{Buf, Bytes};
+use codec::Decode;
 use frame_support::ensure;
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
@@ -55,5 +56,25 @@ impl Recode for RecodeScale {
             field_data,
             Codec::Scale,
         )
+    }
+}
+
+impl RecodeScale {
+    pub fn try_decode_field_by_name_from_scale<D: Decode>(
+        data: Vec<u8>,
+        abi_descriptor: Vec<u8>,
+        name: Vec<u8>,
+    ) -> Result<D, DispatchError> {
+        let abi: Abi = abi_descriptor.try_into()?;
+        let filled_abi = FilledAbi::try_fill_abi(abi, data, Codec::Scale)?;
+        let data_by_name = filled_abi
+            .get_data_by_name(&name)
+            .ok_or(DispatchError::Other(
+                "RecodeScale::try_decode_by_name_from_scale - can't access field by given name",
+            ))?;
+
+        D::decode(&mut &data_by_name[..]).map_err(|_| {
+            DispatchError::Other("RecodeScale::try_decode_by_name_from_scale - decoding error")
+        })
     }
 }
