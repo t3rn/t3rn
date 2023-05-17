@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "grandpa-ranger.fullname" . }}
+  labels:
+    {{- include "grandpa-ranger.labels" . | nindent 4 }}
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "grandpa-ranger.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "grandpa-ranger.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "grandpa-ranger.name" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: grandpa-ranger
+          image: "{{ .Values.repository }}:{{ .Values.tag }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: WS_CIRCUIT_ENDPOINT
+              value: "{{ .Values.websocketEndpoint }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
