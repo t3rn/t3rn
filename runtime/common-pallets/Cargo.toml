@@ -103,6 +103,7 @@ pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-ap
 pallet-xbi-portal                = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
 
 # Smart contracts VMs
 evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
@@ -200,6 +201,7 @@ std = [
   "pallet-circuit/std",
   "pallet-grandpa/std",
   "pallet-babe/std",
+  "pallet-eth2-finality-verifier/std"
 ]
 
 runtime-benchmarks = [
@@ -242,6 +244,7 @@ runtime-benchmarks = [
   "polkadot-parachain/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
   "xcm-executor/runtime-benchmarks",
+  "pallet-eth2-finality-verifier/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-support/try-runtime",
@@ -280,4 +283,5 @@ try-runtime = [
   "pallet-scheduler/try-runtime",
   "pallet-session/try-runtime",
   "pallet-sudo/try-runtime",
+  "pallet-eth2-finality-verifier/try-runtime",
 ]
