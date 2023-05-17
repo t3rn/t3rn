@@ -25,10 +25,12 @@ jobs:
         with:
           # TODO: can be removed when we have npm packages
           # - "client/packages/**/*.ts"
+          # - "client/packages/**/*.json"
           filters: |
             src:
             - "client/cli.Dockerfile"
             - "client/packages/**/*.ts"
+            - "client/packages/**/*.json"
             - "client/packages/cli/**/*.ts"
             - "client/packages/cli/**/*.json"
             - ".github/workflows/cli.yml"
