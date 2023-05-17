@@ -103,8 +103,8 @@ impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
         Weight::from_ref_time(7_677_000)
             .saturating_add(Weight::from_ref_time(230_000))
             .saturating_mul(n as u64)
-            .saturating_add(T::DbWeight::get().reads(Weight::from_ref_time(1)))
-            .saturating_add(T::DbWeight::get().writes(Weight::from_ref_time(1)))
+            .saturating_add(T::DbWeight::get().reads(1))
+            .saturating_add(T::DbWeight::get().writes(1))
     }
 }
 
@@ -146,7 +146,7 @@ impl WeightInfo for () {
         Weight::from_ref_time(7_677_000)
             .saturating_add(Weight::from_ref_time(230_000))
             .saturating_mul(n as u64)
-            .saturating_add(RocksDbWeight::get().reads(Weight::from_ref_time(1)))
-            .saturating_add(RocksDbWeight::get().writes(Weight::from_ref_time(1)))
+            .saturating_add(RocksDbWeight::get().reads(1))
+            .saturating_add(RocksDbWeight::get().writes(1))
     }
 }

@@ -81,6 +81,7 @@ use frame_support::{
     weights::{Pays, PostDispatchInfo, Weight},
 };
 use frame_system::RawOrigin;
+use pallet::*;
 use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
@@ -156,9 +157,9 @@ pub mod pallet {
         type BlockHashMapping: BlockHashMapping;
 
         /// Allow the origin to call on behalf of given address.
-        type CallOrigin: EnsureAddressOrigin<Self::Origin>;
+        type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
         /// Allow the origin to withdraw on behalf of given address.
-        type WithdrawOrigin: EnsureAddressOrigin<Self::Origin, Success = Self::AccountId>;
+        type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 
         /// Mapping from address to account id.
         type AddressMapping: AddressMapping<Self::AccountId>;
@@ -166,7 +167,7 @@ pub mod pallet {
         type Currency: Currency<Self::AccountId> + Inspect<Self::AccountId>;
 
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// Precompiles associated with this EVM engine.
         type PrecompilesType: PrecompileSet;
         type PrecompilesValue: Get<Self::PrecompilesType>;
