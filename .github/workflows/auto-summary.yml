@@ -29,4 +29,4 @@ jobs:
           debug: false
           disable_review: false
           review_simple_changes: false
-          review_comment_lgtm: true
+          review_comment_lgtm: false

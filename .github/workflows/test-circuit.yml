@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - development
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
   merge_group:
 
 # Automatically cancel older in-progress jobs on the same branch
@@ -19,11 +23,9 @@ env:
 
 jobs:
   # This job checks if circuit files has been modified.
-  # Using paths in pull request trigger would make this action unpassable for PRs without circuit changes - due to required checks.
+  # Using paths in pull request trigger would make required checks unpassable for PRs without expected changes.
   changes:
     runs-on: [self-hosted]
-    # We don't need to run this job on every push to development branch
-    if: ${{ !(contains(github.event.head_commit.message, 'build(release):')) }}
     outputs:
       src: ${{ steps.changes.outputs.src }}
 
@@ -89,11 +91,11 @@ jobs:
             echo "Clippy found no errors"
           fi
 
-
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: results.sarif
+          wait-for-processing: true
 
       - name: Install nextest
         uses: baptiste0928/cargo-install@v2
