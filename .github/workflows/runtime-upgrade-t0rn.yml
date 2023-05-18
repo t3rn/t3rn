@@ -78,11 +78,11 @@ jobs:
           to: ${{ secrets.TELEGRAM_T0RN_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
-            🚀 t0rn Runtime Upgrade
+            🚀 t0rn Runtime Upgrade ${{ env.PUSHED_TAG }}
             
             Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ env.PUSHED_TAG }}
             Monitoring: https://monitoring.t3rn.io/d/HyX9GHGVz/chain-statistics?orgId=1&refresh=1m&var-parachain=${{ env.PARACHAIN_NAME }}&var-region=All
-            This github action run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Github Action Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
   ranger-deploy:
     runs-on: self-hosted
