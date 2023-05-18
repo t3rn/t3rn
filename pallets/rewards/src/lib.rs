@@ -13,6 +13,7 @@ pub mod pallet {
         traits::{Currency, FindAuthor},
     };
     use frame_system::pallet_prelude::*;
+
     use sp_runtime::{
         traits::{CheckedAdd, CheckedDiv, Saturating, Zero},
         Perbill, Percent,
@@ -555,28 +556,22 @@ pub mod pallet {
                     *authors.entry(author).or_insert(0) += 1;
                     // If we have more authors than MAX_AUTHORS, remove the author with the least blocks
                     if authors.len() > (MAX_AUTHORS as usize) {
-                        let min_count = authors.values().min().cloned().unwrap_or_default();
-                        let least_blocks_authors: Vec<T::AccountId> = authors
+                        let (min_author, _min_count) = authors
                             .iter()
-                            .filter_map(|(author, count)| {
-                                if *count == min_count {
-                                    Some(author.clone())
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect();
-                        for author in least_blocks_authors {
-                            authors.remove(&author);
-                            if authors.len() <= (MAX_AUTHORS as usize) {
-                                return false
-                            }
-                        }
+                            .min_by(|a, b| a.1.cmp(b.1))
+                            .map(|(a, c)| (a.clone(), *c))
+                            .unwrap_or((
+                                T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+                                0u32,
+                            )); // default values won't be used because we know we have more than MAX_AUTHORS authors
+
+                        authors.remove(&min_author);
                     }
                     true
-                });
+                })
+            } else {
+                false
             }
-            false
         }
 
         pub fn process_authors_this_period() {
