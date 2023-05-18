@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.25.0-rc.0] - 2023-05-18
+### :sparkles: New Features
+- [`f45fa58`](https://github.com/t3rn/t3rn/commit/f45fa580e3a44b0a3a88c36ddb8a4e801eb137a4) - distribute inflation rewards to block authors  *(PR [#966](https://github.com/t3rn/t3rn/pull/966) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.24.0-rc.0] - 2023-05-18
 ### :recycle: Refactors
 - [`1311cd9`](https://github.com/t3rn/t3rn/commit/1311cd9d077d76a26447ddff7e511c8841818370) - sfx actions *(PR [#981](https://github.com/t3rn/t3rn/pull/981) by [@ahkohd](https://github.com/ahkohd))*
@@ -1139,3 +1144,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.22.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.22.2-rc.0...v1.22.3-rc.0
 [v1.23.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.22.3-rc.0...v1.23.0-rc.0
 [v1.24.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.23.0-rc.0...v1.24.0-rc.0
+[v1.25.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.24.1-rc.0...v1.25.0-rc.0
