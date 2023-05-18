@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - development
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - ".github/workflows/test-circuit.yml"
   merge_group:
 
 # Automatically cancel older in-progress jobs on the same branch
@@ -19,7 +24,7 @@ env:
 
 jobs:
   # This job checks if circuit files has been modified.
-  # Using paths in pull request trigger would make this action unpassable for PRs without circuit changes - due to required checks.
+  # Using paths in pull request trigger would make required checks unpassable for PRs without circuit changes.
   changes:
     runs-on: [self-hosted]
     outputs:
@@ -37,7 +42,6 @@ jobs:
               - "**/*.rs"
               - "**/Cargo.toml"
               - "**/Cargo.lock"
-              - ".github/workflows/test-circuit.yml"
 
       - name: Detected changes
         run: |
@@ -47,8 +51,7 @@ jobs:
     name: Build & Test Circuit
     runs-on: [self-hosted, rust]
     needs: [changes]
-    # We always need to run it on development branch otherwise code quality checks will fail
-    if: needs.changes.outputs.src == 'true' || github.ref == 'refs/heads/development'
+    if: needs.changes.outputs.src == 'true'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -128,8 +131,7 @@ jobs:
     name: Zombienet Smoke Test
     runs-on: [self-hosted, rust]
     needs: [changes, build-test]
-    # On development zombienet smoke test is ran just before runtime upgrade
-    if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
+    if: needs.changes.outputs.src == 'true'
     steps:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v3
