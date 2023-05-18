@@ -1,6 +1,6 @@
 use crate::{
-    AccountId, AccountManager, Attesters, Balance, Balances, BlockNumber, Call, Circuit, Clock,
-    Event, Portal, RandomnessCollectiveFlip, Runtime, Timestamp, XDNS,
+    AccountId, AccountManager, Attesters, Aura, Balance, Balances, BlockNumber, Call, Circuit,
+    Clock, Event, Portal, RandomnessCollectiveFlip, Runtime, Timestamp, XDNS,
 };
 use sp_runtime::Percent;
 use sp_std::marker::PhantomData;
@@ -182,6 +182,7 @@ impl pallet_rewards::Config for Runtime {
     type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
+    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;
