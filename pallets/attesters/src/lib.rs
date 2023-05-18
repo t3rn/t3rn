@@ -96,8 +96,9 @@ pub mod pallet {
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub enum Slash<BlockNumber> {
+        // Slash for not submitting attestations
         LateOrNoSubmissionAtBlocks(Vec<BlockNumber>),
-        // Permanent slash
+        // Permanent Slash for submitting invalid attestations
         Permanent,
     }
 
