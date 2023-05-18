@@ -22,8 +22,6 @@ jobs:
   # Using paths in pull request trigger would make this action unpassable for PRs without circuit changes - due to required checks.
   changes:
     runs-on: [self-hosted]
-    # We don't need to run this job on every push to development branch
-    if: ${{ !(contains(github.event.head_commit.message, 'build(release):')) }}
     outputs:
       src: ${{ steps.changes.outputs.src }}
 
@@ -49,7 +47,8 @@ jobs:
     name: Build & Test Circuit
     runs-on: [self-hosted, rust]
     needs: [changes]
-    if: needs.changes.outputs.src == 'true'
+    # We always need to run it on development branch otherwise code quality checks will fail
+    if: needs.changes.outputs.src == 'true' || github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -89,11 +88,11 @@ jobs:
             echo "Clippy found no errors"
           fi
 
-
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: results.sarif
+          wait-for-processing: true
 
       - name: Install nextest
         uses: baptiste0928/cargo-install@v2
@@ -129,7 +128,8 @@ jobs:
     name: Zombienet Smoke Test
     runs-on: [self-hosted, rust]
     needs: [changes, build-test]
-    if: needs.changes.outputs.src == 'true'
+    # On development zombienet smoke test is ran just before runtime upgrade
+    if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
     steps:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v3
