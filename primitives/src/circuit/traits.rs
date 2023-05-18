@@ -75,7 +75,13 @@ pub type XExecSignalId<T> = <T as ConfigSystem>::Hash;
 pub type XExecStepSideEffectId<T> = <T as ConfigSystem>::Hash;
 
 pub trait ReadSFX<Hash> {
+    fn get_fsx_of_xtx(xtx_id: Hash) -> Result<Vec<Hash>, DispatchError>;
+
     fn get_fsx_status(fsx_id: Hash) -> Result<CircuitStatus, DispatchError>;
 
     fn get_xtx_status(xtx_id: Hash) -> Result<CircuitStatus, DispatchError>;
+}
+
+pub trait WriteSFX<Hash> {
+    fn try_commit_sfx(sfx_id: Hash) -> DispatchResult;
 }

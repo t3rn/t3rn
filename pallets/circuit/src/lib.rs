@@ -374,10 +374,27 @@ pub mod pallet {
     }
 
     impl<T: Config> ReadSFX<T::Hash> for Pallet<T> {
-        fn get_fsx_status(fsx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
-            let _fsx = FullSideEffects::<T>::get(fsx_id)
-                .ok_or::<DispatchError>(Error::<T>::FSXNotFoundById.into())?;
+        fn get_fsx_of_xtx(xtx_id: T::Hash) -> Result<Vec<T::Hash>, DispatchError> {
+            let full_side_effects = FullSideEffects::<T>::get(xtx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
 
+            let fsx_ids: Vec<T::Hash> = full_side_effects
+                .iter()
+                .flat_map(|fsx_vec| {
+                    fsx_vec.iter().enumerate().flat_map(|(index, fsx)| {
+                        fsx.input
+                            .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
+                            .try_into()
+                            // .map_err(|_| D(Error::<T>::FSXNotFoundById.into()))
+                            .ok()
+                    })
+                })
+                .collect::<Vec<T::Hash>>();
+
+            Ok(fsx_ids)
+        }
+
+        fn get_fsx_status(fsx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
             let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
 

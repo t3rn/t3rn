@@ -4,7 +4,7 @@ use crate::{
     SpeedMode,
 };
 use codec::{Decode, Encode};
-use frame_support::dispatch::{DispatchError, DispatchResult};
+use frame_support::dispatch::DispatchError;
 use frame_system::Config;
 use scale_info::TypeInfo;
 use sp_core::Hasher;
