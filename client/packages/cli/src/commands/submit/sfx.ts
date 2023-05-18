@@ -10,7 +10,12 @@ import { ExtrinsicSchema, Extrinsic, SpeedMode } from "@/schemas/extrinsic.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { getConfig } from "@/utils/config.ts"
 import { Circuit } from "@/types.ts"
-import { EncodedArgs, SideEffect, TransferEncodedArgs } from "@/schemas/sfx.ts"
+import {
+  EncodedArgs,
+  SideEffectAction,
+  SideEffectActions,
+  TransferEncodedArgs,
+} from "@/schemas/sfx.ts"
 
 export const spinner = ora()
 
@@ -116,11 +121,11 @@ export const buildSfx = (
 }
 
 export const mapEncodedArgs = (
-  action: SideEffect["action"],
+  action: SideEffectAction,
   encodedArgs: EncodedArgs
 ) => {
   switch (action) {
-    case "tran": {
+    case SideEffectActions.Transfer: {
       const args: TransferEncodedArgs = encodedArgs[0]
       return {
         from: args.from,
