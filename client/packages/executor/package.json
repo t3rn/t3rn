@@ -23,7 +23,7 @@
     "@polkadot/types": "^8.9.1",
     "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
-    "@types/chai": "^4.3.4",
+    "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.1.0",
     "axios": "^1.4.0",
