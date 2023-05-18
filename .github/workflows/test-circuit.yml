@@ -9,7 +9,6 @@ on:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "**/Cargo.lock"
-      - ".github/workflows/test-circuit.yml"
   merge_group:
 
 # Automatically cancel older in-progress jobs on the same branch
@@ -42,6 +41,7 @@ jobs:
               - "**/*.rs"
               - "**/Cargo.toml"
               - "**/Cargo.lock"
+              - ".github/workflows/test-circuit.yml"
 
       - name: Detected changes
         run: |
