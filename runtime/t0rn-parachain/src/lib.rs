@@ -30,7 +30,10 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 use sp_std::{convert::TryInto, prelude::*};
-use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
+use t3rn_primitives::{
+    xdns::{FullGatewayRecord, GatewayRecord},
+    TreasuryAccountProvider,
+};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -409,6 +412,10 @@ impl_runtime_apis! {
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
             // deprecated
             None
+        }
+
+        fn retreive_treasury_address(treasury_account: t3rn_primitives::TreasuryAccount) -> AccountId {
+            Runtime::get_treasury_account(treasury_account)
         }
     }
 
