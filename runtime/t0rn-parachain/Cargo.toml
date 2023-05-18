@@ -89,25 +89,25 @@ parachain-info                      = { git = 'https://github.com/paritytech/cum
 parachains-common                   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.27', default-features = false }
 
 # t3rn Deps
+t3rn-abi        = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { default-features = false, path = "../../types", features = [ "runtime" ] }
-t3rn-abi        = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 
 # t3rn pallets
-pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
-pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
 pallet-account-manager           = { path = "../../pallets/account-manager", default-features = false }
+pallet-asset-registry            = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
+pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                    = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
+pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
+pallet-xbi-portal                = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
-pallet-asset-registry            = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
-pallet-xbi-portal                = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 
 # Smart contracts VMs
 evm-precompile-util                  = { default-features = false, path = "../../pallets/evm/precompile/util", package = "precompile-util" }
@@ -212,7 +212,7 @@ std = [
   "pallet-contracts-registry/std",
   "pallet-circuit/std",
   "circuit-runtime-types/std",
-  "pallet-eth2-finality-verifier/std"
+  "pallet-eth2-finality-verifier/std",
 ]
 
 runtime-benchmarks = [
@@ -277,6 +277,7 @@ try-runtime = [
   "pallet-contracts-registry/try-runtime",
   "pallet-identity/try-runtime",
   "pallet-membership/try-runtime",
+  "pallet-maintenance-mode/try-runtime",
   "pallet-preimage/try-runtime",
   "pallet-randomness-collective-flip/try-runtime",
   "pallet-scheduler/try-runtime",
@@ -289,5 +290,5 @@ try-runtime = [
   "pallet-xdns/try-runtime",
   "polkadot-runtime-common/try-runtime",
   "t3rn-abi/try-runtime",
-  "pallet-eth2-finality-verifier/try-runtime"
+  "pallet-eth2-finality-verifier/try-runtime",
 ]
