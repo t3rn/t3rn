@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.24.0-rc.0] - 2023-05-18
+### :recycle: Refactors
+- [`1311cd9`](https://github.com/t3rn/t3rn/commit/1311cd9d077d76a26447ddff7e511c8841818370) - sfx actions *(PR [#981](https://github.com/t3rn/t3rn/pull/981) by [@ahkohd](https://github.com/ahkohd))*
+
+
 ## [v1.23.0-rc.0] - 2023-05-17
 ### :sparkles: New Features
 - [`6991de8`](https://github.com/t3rn/t3rn/commit/6991de886f51a092a48ad1c562fb2d723e2e13b6) - add support for enforce executioner field *(PR [#970](https://github.com/t3rn/t3rn/pull/970) by [@ahkohd](https://github.com/ahkohd))*
@@ -1133,3 +1138,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.22.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.21.0-rc.0...v1.22.0-rc.0
 [v1.22.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.22.2-rc.0...v1.22.3-rc.0
 [v1.23.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.22.3-rc.0...v1.23.0-rc.0
+[v1.24.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.23.0-rc.0...v1.24.0-rc.0
