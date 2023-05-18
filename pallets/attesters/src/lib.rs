@@ -25,10 +25,9 @@ pub mod pallet {
     pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
-        traits::{Saturating, Zero},
+        traits::{CheckedAdd, CheckedMul, Saturating, Zero},
         Percent,
     };
-
     use sp_std::{convert::TryInto, prelude::*};
 
     pub use t3rn_primitives::attesters::{
@@ -88,39 +87,7 @@ pub mod pallet {
 
         pub fn message_hash(&self) -> H256 {
             let mut keccak = Keccak::v256();
-
-            if let Some(ref sfx) = self.batch_sfx {
-                let mut sorted_sfx = sfx.clone();
-                sorted_sfx.sort();
-
-                let mut no_prefix_sorted_sfx_bytes: Vec<u8> = Vec::new();
-
-                for sfx in sorted_sfx {
-                    no_prefix_sorted_sfx_bytes.extend(sfx.as_bytes());
-                }
-
-                keccak.update(&no_prefix_sorted_sfx_bytes);
-            }
-
-            if let Some(committee) = self.next_committee {
-                keccak.update(&committee.encode());
-            }
-
-            if let Some(ref attestors) = self.new_attesters {
-                let encoded_attestors = attestors.encode();
-                keccak.update(&encoded_attestors);
-            }
-
-            if let Some(ref attestors) = self.ban_attesters {
-                let encoded_attestors = attestors.encode();
-                keccak.update(&encoded_attestors);
-            }
-
-            if let Some(ref attestors) = self.remove_attesters {
-                let encoded_attestors = attestors.encode();
-                keccak.update(&encoded_attestors);
-            }
-
+            keccak.update(&self.message());
             let mut res: [u8; 32] = [0; 32];
             keccak.finalize(&mut res);
             H256::from(res)
@@ -261,6 +228,7 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         AttesterNotFound,
+        ArithmeticOverflow,
         InvalidSignature,
         InvalidMessage,
         InvalidTargetInclusionProof,
@@ -336,9 +304,9 @@ pub mod pallet {
             // Self nominate in order to be part of the active set selection
             Self::do_nominate(account_id.clone(), account_id.clone(), self_nominate_amount)?;
 
-            Self::deposit_event(Event::AttesterRegistered(account_id.clone()));
-
             Self::request_add_attesters_attestation(&account_id)?;
+
+            Self::deposit_event(Event::AttesterRegistered(account_id.clone()));
 
             Ok(())
         }
@@ -360,7 +328,12 @@ pub mod pallet {
             // Schedule self-denomination
             // Calculate the block number when the unnomination can be processed after 2 x shuffling frequency
             let unlock_block = frame_system::Pallet::<T>::block_number()
-                + T::ShufflingFrequency::get() * 2u32.into();
+                .checked_add(
+                    &T::ShufflingFrequency::get()
+                        .checked_mul(&T::BlockNumber::from(2u32))
+                        .ok_or(Error::<T>::ArithmeticOverflow)?,
+                )
+                .ok_or(Error::<T>::ArithmeticOverflow)?;
 
             // Store the pending unnomination
             PendingUnnominations::<T>::mutate(&attester, |pending_unnominations| {
