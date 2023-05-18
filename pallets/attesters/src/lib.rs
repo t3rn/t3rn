@@ -36,7 +36,7 @@ pub mod pallet {
         CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use t3rn_primitives::{portal::Portal, xdns::Xdns};
+    use t3rn_primitives::{circuit::ReadSFX, portal::Portal, xdns::Xdns, Balance};
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
@@ -88,39 +88,7 @@ pub mod pallet {
 
         pub fn message_hash(&self) -> H256 {
             let mut keccak = Keccak::v256();
-
-            if let Some(ref sfx) = self.batch_sfx {
-                let mut sorted_sfx = sfx.clone();
-                sorted_sfx.sort();
-
-                let mut no_prefix_sorted_sfx_bytes: Vec<u8> = Vec::new();
-
-                for sfx in sorted_sfx {
-                    no_prefix_sorted_sfx_bytes.extend(sfx.as_bytes());
-                }
-
-                keccak.update(&no_prefix_sorted_sfx_bytes);
-            }
-
-            if let Some(committee) = self.next_committee {
-                keccak.update(&committee.encode());
-            }
-
-            if let Some(ref attestors) = self.new_attesters {
-                let encoded_attestors = attestors.encode();
-                keccak.update(&encoded_attestors);
-            }
-
-            if let Some(ref attestors) = self.ban_attesters {
-                let encoded_attestors = attestors.encode();
-                keccak.update(&encoded_attestors);
-            }
-
-            if let Some(ref attestors) = self.remove_attesters {
-                let encoded_attestors = attestors.encode();
-                keccak.update(&encoded_attestors);
-            }
-
+            keccak.update(&*self.message());
             let mut res: [u8; 32] = [0; 32];
             keccak.finalize(&mut res);
             H256::from(res)
@@ -171,6 +139,7 @@ pub mod pallet {
         type MinNominatorBond: Get<BalanceOf<Self>>;
         type MinAttesterBond: Get<BalanceOf<Self>>;
         type Portal: Portal<Self>;
+        type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
         type Xdns: Xdns<Self>;
     }
 

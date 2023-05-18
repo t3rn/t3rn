@@ -63,6 +63,7 @@ frame_support::construct_runtime!(
         Rewards: pallet_rewards = 102,
         AccountManager: pallet_account_manager = 103,
         Clock: pallet_clock = 104,
+        Circuit: pallet_circuit = 105,
         // Portal
         Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
@@ -183,6 +184,7 @@ impl pallet_attesters::Config for MiniRuntime {
     type MinNominatorBond = MinNominatorBond;
     type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
+    type ReadSFX = Circuit;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = SlashAccount;
@@ -277,6 +279,31 @@ impl pallet_xdns::Config for MiniRuntime {
     type Event = Event;
     type Time = Timestamp;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<MiniRuntime>;
+}
+
+parameter_types! {
+    pub const CircuitAccountId: AccountId = AccountId::new([51u8; 32]); // 0x333...3
+    pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
+}
+
+impl pallet_circuit::Config for MiniRuntime {
+    type AccountManager = AccountManager;
+    type Balances = Balances;
+    type Call = Call;
+    type Currency = Balances;
+    type DeletionQueueLimit = ConstU32<100u32>;
+    type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type Portal = Portal;
+    type SFXBiddingPeriod = ConstU32<3u32>;
+    type SelfAccountId = CircuitAccountId;
+    type SelfGatewayId = SelfGatewayId;
+    type SelfParaId = ConstU32<3333u32>;
+    type SignalQueueDepth = ConstU32<5u32>;
+    type WeightInfo = ();
+    type Xdns = XDNS;
+    type XtxTimeoutCheckInterval = ConstU32<10u32>;
+    type XtxTimeoutDefault = ConstU32<400u32>;
 }
 
 impl pallet_portal::Config for MiniRuntime {
