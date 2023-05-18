@@ -426,6 +426,9 @@ impl<T: Config> Machine<T> {
             return false
         }
 
+        let mut mutate_xexec = false;
+        let mut mutate_fsx = false;
+
         match (old_status, new_status) {
             (CircuitStatus::Requested, CircuitStatus::Reserved | CircuitStatus::PendingBidding) => {
                 let steps_side_effects_ids: Vec<(
