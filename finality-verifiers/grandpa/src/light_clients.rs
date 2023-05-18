@@ -1,12 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::{to_local_block_number, BridgedBlockHash, Config, Pallet};
-use codec::{Decode, Encode};
-use frame_support::traits::Get;
+use crate::{to_local_block_number, Config, Pallet};
+use codec::Encode;
+
 use frame_system::pallet_prelude::OriginFor;
 pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
 
-use crate::pallet::ImportedHeaders;
 use sp_runtime::{traits::Header, DispatchError};
 use sp_std::marker::PhantomData;
 use t3rn_abi::types::Bytes;
@@ -274,7 +273,11 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         Ok(true)
     }
 
-    fn header_speed_mode_satisfied(&self, including_header: Bytes, speed_mode: SpeedMode) -> bool {
+    fn header_speed_mode_satisfied(
+        &self,
+        _including_header: Bytes,
+        _speed_mode: SpeedMode,
+    ) -> bool {
         true
     }
 
@@ -311,17 +314,10 @@ pub mod grandpa_light_clients_test {
     use super::*;
     use codec::Encode;
 
-    use crate::{
-        bridges::test_utils::authorities,
-        mock::{produce_mock_headers_range, *},
-        types::RelaychainRegistrationData,
-    };
+    use crate::{bridges::test_utils::authorities, mock::*, types::RelaychainRegistrationData};
     use frame_support::{assert_ok, traits::OriginTrait};
 
-    use crate::{
-        mock::{Origin, TestRuntime},
-        types::GrandpaHeaderData,
-    };
+    use crate::{mock::TestRuntime, types::GrandpaHeaderData};
     use hex_literal::hex;
 
     fn prep_init_data() -> RelaychainRegistrationData<AccountId> {

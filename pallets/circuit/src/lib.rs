@@ -748,6 +748,10 @@ pub mod pallet {
         XTransactionStepFinishedExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
         XTransactionXtxFinishedExecAllSteps(XExecSignalId<T>),
+        // Listeners - users + SDK + +executors + attesters to know FSX is resolved
+        XTransactionFSXCommitted(XExecSignalId<T>),
+        // Listeners - users + SDK + +executors + attesters to know Xtx is fully resolved
+        XTransactionXtxCommitted(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
         XTransactionXtxRevertedAfterTimeOut(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
@@ -857,6 +861,7 @@ pub mod pallet {
         FailedToConvertXBIResult2SFXConfirmation,
         FailedToEnterXBIPortal,
         FailedToExitXBIPortal,
+        FailedToCommitFSX,
         XBIExitFailedOnSFXConfirmation,
         UnsupportedRole,
         InvalidLocalTrigger,
@@ -927,6 +932,8 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
                 CircuitStatus::Reverted(ref _cause) =>
                     Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id)),
+                CircuitStatus::Committed =>
+                    Self::deposit_event(Event::XTransactionXtxCommitted(xtx_id)),
                 CircuitStatus::Killed(ref _cause) =>
                     Self::deposit_event(Event::XTransactionXtxDroppedAtBidding(xtx_id)),
                 _ => {},

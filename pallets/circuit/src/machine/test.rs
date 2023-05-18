@@ -52,7 +52,7 @@ pub mod test {
                 let fsx_ids = <Circuit as ReadSFX<Hash>>::get_fsx_of_xtx(xtx_id).unwrap();
                 assert_eq!(fsx_ids.len(), 1);
                 assert_eq!(
-                    <Circuit as ReadSFX<Hash>>::get_fsx_status(fsx_ids[0].into()),
+                    <Circuit as ReadSFX<Hash>>::get_fsx_status(fsx_ids[0]),
                     Ok(CircuitStatus::Ready)
                 );
             });
@@ -114,7 +114,7 @@ pub mod test {
                 let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
 
                 assert_eq!(
-                    <Circuit as ReadSFX<Hash>>::get_xtx_status(xtx_id.into()),
+                    <Circuit as ReadSFX<Hash>>::get_xtx_status(xtx_id),
                     Ok(CircuitStatus::Ready)
                 );
             });

@@ -1,6 +1,6 @@
 #![recursion_limit = "256"]
 //! Runtime utilities
-#![recursion_limit = "256"]
+
 use circuit_runtime_pallets::pallet_circuit::{self as pallet_circuit};
 
 use frame_support::{

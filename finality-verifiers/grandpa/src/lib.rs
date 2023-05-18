@@ -50,7 +50,7 @@ use frame_system::{ensure_signed, RawOrigin};
 use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
-use sp_std::{vec, vec::Vec};
+use sp_std::vec::Vec;
 
 pub mod types;
 
