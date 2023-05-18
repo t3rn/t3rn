@@ -16,6 +16,7 @@ use sp_runtime::{
 use t3rn_primitives::{
     light_client::HeightResult,
     xdns::{FullGatewayRecord, GatewayRecord},
+    TreasuryAccountProvider,
 };
 
 pub use frame_support::{
@@ -308,6 +309,10 @@ impl_runtime_apis! {
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
             // deprecated
             None
+        }
+
+        fn retreive_treasury_address(treasury_account: t3rn_primitives::TreasuryAccount) -> AccountId {
+            Runtime::get_treasury_account(treasury_account)
         }
     }
 

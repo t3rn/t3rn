@@ -192,6 +192,7 @@ impl pallet_rewards::Config for Runtime {
     type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
+    type FindAuthor = ();
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;
