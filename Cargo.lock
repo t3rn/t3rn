@@ -6989,13 +6989,14 @@ dependencies = [
 name = "pallet-evm"
 version = "1.4.0-rc.0"
 dependencies = [
- "evm 0.35.0",
+ "evm 0.37.0",
  "fp-evm 1.4.0-rc.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
  "hex-literal 0.4.1",
+ "impl-trait-for-tuples",
  "log",
  "pallet-3vm",
  "pallet-account-manager",

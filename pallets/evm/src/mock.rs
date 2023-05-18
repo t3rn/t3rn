@@ -117,11 +117,11 @@ impl pallet_timestamp::Config for Test {
     type WeightInfo = ();
 }
 
-/// Fixed gas price of `0`.
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-    fn min_gas_price() -> U256 {
-        1u128.into()
+    fn min_gas_price() -> (U256, Weight) {
+        // Return some meaningful gas price and weight
+        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
@@ -134,22 +134,54 @@ impl FindAuthor<H160> for FindAuthorTruncated {
         Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
     }
 }
-
+parameter_types! {
+    pub BlockGasLimit: U256 = U256::max_value();
+    pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+    pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
+}
 impl crate::Config for Test {
-    type AddressMapping = StoredHashAddressMapping<Test>;
-    type BlockGasLimit = ();
+    type AddressMapping = IdentityAddressMapping;
+    type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-    type CallOrigin = EnsureSigned<Self>;
+    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type ChainId = ();
     type Currency = Balances;
     type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated;
-    type GasWeightMapping = ();
+    type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
-    type PrecompilesType = ();
-    type PrecompilesValue = ();
+    type OnCreate = ();
+    type PrecompilesType = MockPrecompileSet;
+    type PrecompilesValue = MockPrecompiles;
     type Runner = crate::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
+    type Timestamp = Timestamp;
+    type WeightInfo = ();
+    type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+}
+
+/// Example PrecompileSet with only Identity precompile.
+pub struct MockPrecompileSet;
+
+impl PrecompileSet for MockPrecompileSet {
+    /// Tries to execute a precompile in the precompile set.
+    /// If the provided address is not a precompile, returns None.
+    fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+        let address = handle.code_address();
+
+        if address == H160::from_low_u64_be(1) {
+            return Some(pallet_evm_precompile_simple::Identity::execute(handle))
+        }
+
+        None
+    }
+
+    /// Check if the given address is a precompile. Should only be called to
+    /// perform the check while not executing the precompile afterward, since
+    /// `execute` already performs a check internally.
+    fn is_precompile(&self, address: H160) -> bool {
+        address == H160::from_low_u64_be(1)
+    }
 }

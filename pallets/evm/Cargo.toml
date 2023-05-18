@@ -13,13 +13,14 @@ version     = { workspace = true }
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-evm             = { workspace = true }
-hex             = { workspace = true, features = [ "serde" ] }
-log             = { workspace = true }
-primitive-types = { workspace = true }
-rlp             = { workspace = true }
-serde           = { optional = true, workspace = true }
-sha3            = { workspace = true }
+evm                   = { workspace = true }
+hex                   = { workspace = true, features = [ "serde", "alloc" ] }
+impl-trait-for-tuples = { workspace = true }
+log                   = { workspace = true }
+primitive-types       = { workspace = true }
+rlp                   = { workspace = true }
+serde                 = { optional = true, workspace = true }
+sha3                  = { workspace = true }
 
 codec      = { workspace = true, package = "parity-scale-codec" }
 scale-info = { workspace = true }
@@ -31,7 +32,9 @@ sp-std     = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support      = { workspace = true }
 frame-system       = { workspace = true }
-pallet-timestamp   = { workspace = true }
+
+# hmm is this needed?
+pallet-timestamp = { workspace = true }
 
 fp-evm = { path = "primitives", default-features = false }
 
