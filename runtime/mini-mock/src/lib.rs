@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use frame_support::RuntimeDebug;
+use frame_support::{traits::FindAuthor, RuntimeDebug};
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
     Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, NextBatch, Nominations,
@@ -13,6 +13,8 @@ pub use pallet_account_manager::{
     SettlementsPerRound,
 };
 
+use sp_runtime::ConsensusEngineId;
+
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{
@@ -21,8 +23,8 @@ use pallet_grandpa_finality_verifier::{
 };
 use pallet_portal::Error as PortalError;
 pub use pallet_rewards::{
-    Config as ConfigRewards, DistributionBlock, DistributionHistory, Error as RewardsError,
-    PendingClaims,
+    Authors, AuthorsThisPeriod, Config as ConfigRewards, DistributionBlock, DistributionHistory,
+    Error as RewardsError, PendingClaims,
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -142,6 +144,24 @@ parameter_types! {
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
 }
 
+pub struct FindAuthorMockRoundRobinRotate32;
+
+impl FindAuthor<AccountId> for FindAuthorMockRoundRobinRotate32 {
+    fn find_author<'a, I>(_digests: I) -> Option<AccountId>
+    where
+        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    {
+        // Get current block number
+        let current_block_number = <frame_system::Module<MiniRuntime>>::block_number();
+
+        let round_robin_rotate_32: u8 = (current_block_number % 32) as u8;
+
+        let mock_rr_account = AccountId::new([round_robin_rotate_32; 32]);
+
+        Some(mock_rr_account)
+    }
+}
+
 impl pallet_rewards::Config for MiniRuntime {
     type AccountManager = AccountManager;
     type AttesterBootstrapRewards = AttesterBootstrapRewards;
@@ -155,6 +175,7 @@ impl pallet_rewards::Config for MiniRuntime {
     type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
+    type FindAuthor = FindAuthorMockRoundRobinRotate32;
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;
