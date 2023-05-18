@@ -61,7 +61,7 @@ pub mod pallet {
 
     // Add the following method to `BatchMessage` struct
     impl<BlockNumber> BatchMessage<BlockNumber> {
-        fn message(&self) -> Vec<u8> {
+        pub fn message(&self) -> Vec<u8> {
             let mut encoded_message = Vec::new();
             if let Some(ref sfx) = self.batch_sfx {
                 sfx.encode_to(&mut encoded_message);
@@ -86,7 +86,7 @@ pub mod pallet {
             encoded_message
         }
 
-        fn message_hash(&self) -> H256 {
+        pub fn message_hash(&self) -> H256 {
             let mut keccak = Keccak::v256();
 
             if let Some(ref sfx) = self.batch_sfx {
@@ -408,9 +408,13 @@ pub mod pallet {
 
         #[pallet::weight(10_000)]
         pub fn submit_attestation(
+            // Must be signed by the attester in current Committee
             origin: OriginFor<T>,
-            message: Vec<u8>,
+            // Message being a hash of the batch of attestations to sign
+            message: H256,
+            // Signature of the message
             signature: Vec<u8>,
+            // Target of the attestation
             target: TargetId,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
@@ -431,7 +435,11 @@ pub mod pallet {
             );
 
             let is_verified = attester
-                .verify_attestation_signature(ECDSA_ATTESTER_KEY_TYPE_ID, &message, &signature)
+                .verify_attestation_signature(
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    &message.encode(),
+                    &signature,
+                )
                 .map_err(|_| Error::<T>::InvalidSignature)?;
 
             let signature_65b: [u8; 65] = signature
@@ -465,7 +473,7 @@ pub mod pallet {
                 // Find the batch with the status PendingAttestation and the same message
                 let batch = batches
                     .iter_mut()
-                    .find(|batch| batch.message() == message)
+                    .find(|batch| batch.message_hash() == message)
                     .ok_or(Error::<T>::BatchNotFound)?;
 
                 ensure!(
@@ -1492,13 +1500,14 @@ pub mod attesters_test {
         });
     }
 
-    fn sign_and_submit_sfx_attestation(
+    // Returns H256 message hash + signature as Vec<u8>
+    fn sign_and_submit_sfx_to_latest_attestation(
         attester: AccountId,
         message: [u8; 32],
         key_type: KeyTypeId,
         target: TargetId,
         secret_key: [u8; 32],
-    ) -> Vec<u8> {
+    ) -> (H256, Vec<u8>) {
         // Check if batch with message exists and if not create one
         if Attesters::get_latest_batch_to_sign_message(target).is_none()
             || Attesters::get_latest_batch_to_sign_message(target).unwrap() != message
@@ -1510,26 +1519,29 @@ pub mod attesters_test {
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target);
         }
+        let latest_batch_hash = Attesters::get_latest_batch_to_sign_hash(target).unwrap();
+
         let signature: Vec<u8> = match key_type {
-            ECDSA_ATTESTER_KEY_TYPE_ID =>
-                ecdsa::Pair::from_seed(&secret_key).sign(&message).encode(),
+            ECDSA_ATTESTER_KEY_TYPE_ID => ecdsa::Pair::from_seed(&secret_key)
+                .sign(latest_batch_hash.as_ref())
+                .encode(),
             ED25519_ATTESTER_KEY_TYPE_ID => ed25519::Pair::from_seed(&secret_key)
-                .sign(&message)
+                .sign(latest_batch_hash.as_ref())
                 .encode(),
             SR25519_ATTESTER_KEY_TYPE_ID => sr25519::Pair::from_seed(&secret_key)
-                .sign(&message)
+                .sign(latest_batch_hash.as_ref())
                 .encode(),
             _ => panic!("Invalid key type"),
         };
 
         assert_ok!(Attesters::submit_attestation(
             Origin::signed(attester),
-            message.to_vec(),
+            latest_batch_hash,
             signature.clone(),
             target,
         ));
 
-        signature
+        (latest_batch_hash, signature)
     }
 
     #[test]
@@ -1540,10 +1552,10 @@ pub mod attesters_test {
             let attester = AccountId::from([1; 32]);
             let attester_info = register_attester_with_single_private_key([1u8; 32]);
             // Submit an attestation signed with the Ed25519 key
-            let message: [u8; 32] = *b"message_that_needs_attestation32";
-            let signature = sign_and_submit_sfx_attestation(
+            let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
+            let (_hash, signature) = sign_and_submit_sfx_to_latest_attestation(
                 attester,
-                message,
+                sfx_id_to_sign_on,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
                 [0u8; 4],
                 [1u8; 32],
@@ -1572,21 +1584,23 @@ pub mod attesters_test {
             let attester = AccountId::from([1; 32]);
             register_attester_with_single_private_key([1u8; 32]);
             // Submit an attestation signed with the Ed25519 key
-            let message: [u8; 32] = *b"message_that_needs_attestation32";
-            sign_and_submit_sfx_attestation(
+            let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
+            let (message_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
                 attester.clone(),
-                message,
+                sfx_id_to_sign_on,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
                 [0u8; 4],
                 [1u8; 32],
             );
 
-            let same_signature_again = ecdsa::Pair::from_seed(&[1u8; 32]).sign(&message).encode();
+            let same_signature_again = ecdsa::Pair::from_seed(&[1u8; 32])
+                .sign(message_hash.as_ref())
+                .encode();
 
             assert_err!(
                 Attesters::submit_attestation(
                     Origin::signed(attester),
-                    message.to_vec(),
+                    message_hash,
                     same_signature_again,
                     [0, 0, 0, 0],
                 ),
@@ -1956,23 +1970,23 @@ pub mod attesters_test {
     fn register_and_submit_32x_attestations_in_ecdsa_changes_status_to_approved() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
-            let message: [u8; 32] = *b"message_that_needs_attestation32";
+            let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
 
             for counter in 1..33u8 {
                 // Register an attester
                 let attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
-                sign_and_submit_sfx_attestation(
+                sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    message,
+                    sfx_id_to_sign_on,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     [0u8; 4],
                     [counter; 32],
                 );
             }
 
-            let batch = Attesters::get_batch_by_message([0u8; 4], message.encode())
+            let batch = Attesters::get_batch_by_message([0u8; 4], sfx_id_to_sign_on.encode())
                 .expect("get_batch_by_message should return a batch");
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
         });
@@ -1990,7 +2004,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
-                sign_and_submit_sfx_attestation(
+                sign_and_submit_sfx_to_latest_attestation(
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -2036,7 +2050,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
-                sign_and_submit_sfx_attestation(
+                sign_and_submit_sfx_to_latest_attestation(
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -2048,6 +2062,9 @@ pub mod attesters_test {
             // Check if the attestations have been added to the batch
             let first_batch = Attesters::get_batch_by_message(target, message.encode())
                 .expect("Batch by message should exist");
+
+            let first_batch_hash = first_batch.message_hash();
+
             assert_eq!(first_batch.signatures.len(), 32);
             assert_eq!(
                 first_batch.status,
@@ -2056,12 +2073,11 @@ pub mod attesters_test {
 
             let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
                 signatures: first_batch.signatures,
-                hash: H256([0u8; 32]),
+                hash: first_batch_hash,
                 message: message.encode(),
             };
 
             // Commit the batch
-            let _batch_index = 0;
             assert_ok!(Attesters::commit_batch(
                 Origin::signed(AccountId::from([1; 32])),
                 target,
@@ -2099,7 +2115,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
-                sign_and_submit_sfx_attestation(
+                sign_and_submit_sfx_to_latest_attestation(
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
@@ -2119,9 +2135,11 @@ pub mod attesters_test {
 
             let colluded_message: [u8; 32] = *b"_message_that_was_colluded_by_32";
 
+            let latest_batch_hash = first_batch.message_hash();
+
             let colluded_batch_confirmation = TargetBatchDispatchEvent {
                 signatures: first_batch.signatures,
-                hash: H256([0u8; 32]),
+                hash: latest_batch_hash,
                 message: colluded_message.encode(),
             };
 
