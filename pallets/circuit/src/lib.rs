@@ -373,7 +373,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> ReadSFX<T::Hash> for Pallet<T> {
+    impl<T: Config> ReadSFX<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
         fn get_fsx_of_xtx(xtx_id: T::Hash) -> Result<Vec<T::Hash>, DispatchError> {
             let full_side_effects = FullSideEffects::<T>::get(xtx_id)
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
@@ -381,12 +381,9 @@ pub mod pallet {
             let fsx_ids: Vec<T::Hash> = full_side_effects
                 .iter()
                 .flat_map(|fsx_vec| {
-                    fsx_vec.iter().enumerate().flat_map(|(index, fsx)| {
+                    fsx_vec.iter().enumerate().map(|(index, fsx)| {
                         fsx.input
                             .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
-                            .try_into()
-                            // .map_err(|_| D(Error::<T>::FSXNotFoundById.into()))
-                            .ok()
                     })
                 })
                 .collect::<Vec<T::Hash>>();
@@ -399,6 +396,38 @@ pub mod pallet {
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
 
             Self::get_xtx_status(xtx_id)
+        }
+
+        // Look up the FSX by its ID and return the FSX if it exists
+        fn get_fsx(
+            fsx_id: T::Hash,
+        ) -> Result<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>, DispatchError>
+        {
+            let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            let full_side_effects = FullSideEffects::<T>::get(xtx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            // Early return on empty vector
+            if full_side_effects.is_empty() {
+                return Err(Error::<T>::FSXNotFoundById.into())
+            }
+
+            for fsx_step in &full_side_effects {
+                for (index, fsx) in fsx_step.iter().enumerate() {
+                    if fsx
+                        .input
+                        .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
+                        == fsx_id
+                    {
+                        // Return a reference instead of a clone
+                        return Ok(fsx.clone())
+                    }
+                }
+            }
+
+            Err(Error::<T>::FSXNotFoundById.into())
         }
 
         fn get_xtx_status(xtx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {

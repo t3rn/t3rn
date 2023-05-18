@@ -1,6 +1,8 @@
 #[cfg(test)]
 pub mod test {
-    use circuit_mock_runtime::{Balances, Circuit, ExtBuilder, Hash, Runtime};
+    use circuit_mock_runtime::{
+        AccountId, Balance, Balances, BlockNumber, Circuit, ExtBuilder, Hash, Runtime,
+    };
     use circuit_runtime_pallets::pallet_circuit::{
         machine::{Machine, PrecompileResult},
         state::{Cause, CircuitStatus},
@@ -18,6 +20,55 @@ pub mod test {
         tests::ESCROW_ACCOUNT,
     };
     use hex_literal::hex;
+
+    #[test]
+    fn read_sfx_api_get_fsx_if_xtx_exists() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                stage_single();
+
+                let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
+
+                let fsx_ids =
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
+                        xtx_id,
+                    )
+                    .unwrap();
+                assert_eq!(fsx_ids.len(), 1);
+                assert_ok!(<Circuit as ReadSFX<
+                    Hash,
+                    AccountId,
+                    Balance,
+                    BlockNumber,
+                >>::get_fsx(fsx_ids[0]),);
+            });
+    }
+
+    #[test]
+    fn read_sfx_api_errors_get_fsx_if_xtx_does_not_exist() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                stage_single();
+                assert_err!(
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx(
+                        hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
+                            .into(),
+                    ),
+                    DispatchError::Module(ModuleError {
+                        index: 108,
+                        error: [56, 0, 0, 0],
+                        message: Some("XtxNotFound")
+                    })
+                );
+            });
+    }
+
     #[test]
     fn read_sfx_api_fsx_ids_for_xtx_which_exists() {
         ExtBuilder::default()
@@ -30,7 +81,9 @@ pub mod test {
                 let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
 
                 assert_eq!(
-                    <Circuit as ReadSFX<Hash>>::get_fsx_of_xtx(xtx_id),
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
+                        xtx_id
+                    ),
                     Ok(vec![hex!(
                         "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
                     )
@@ -49,10 +102,16 @@ pub mod test {
                 stage_single();
 
                 let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
-                let fsx_ids = <Circuit as ReadSFX<Hash>>::get_fsx_of_xtx(xtx_id).unwrap();
+                let fsx_ids =
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
+                        xtx_id,
+                    )
+                    .unwrap();
                 assert_eq!(fsx_ids.len(), 1);
                 assert_eq!(
-                    <Circuit as ReadSFX<Hash>>::get_fsx_status(fsx_ids[0]),
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_status(
+                        fsx_ids[0]
+                    ),
                     Ok(CircuitStatus::Ready)
                 );
             });
@@ -67,7 +126,7 @@ pub mod test {
             .execute_with(|| {
                 stage_single();
                 assert_err!(
-                    <Circuit as ReadSFX<Hash>>::get_fsx_status(
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_status(
                         hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
                             .into()
                     ),
@@ -89,7 +148,7 @@ pub mod test {
             .execute_with(|| {
                 stage_single();
                 assert_err!(
-                    <Circuit as ReadSFX<Hash>>::get_fsx_of_xtx(
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
                         hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
                             .into()
                     ),
@@ -114,7 +173,9 @@ pub mod test {
                 let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
 
                 assert_eq!(
-                    <Circuit as ReadSFX<Hash>>::get_xtx_status(xtx_id),
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_xtx_status(
+                        xtx_id
+                    ),
                     Ok(CircuitStatus::Ready)
                 );
             });
@@ -130,7 +191,7 @@ pub mod test {
                 stage_single();
 
                 assert_err!(
-                    <Circuit as ReadSFX<Hash>>::get_xtx_status(
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_xtx_status(
                         hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
                             .into()
                     ),

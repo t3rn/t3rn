@@ -5,7 +5,7 @@ use frame_system::{pallet_prelude::OriginFor, Config as ConfigSystem};
 use sp_std::{fmt::Debug, vec::Vec};
 
 use t3rn_sdk_primitives::signal::ExecutionSignal;
-use t3rn_types::sfx::HardenedSideEffect;
+use t3rn_types::{fsx::FullSideEffect, sfx::HardenedSideEffect};
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalTrigger<T: ConfigSystem> {
     /// Id of the contract which generated the side effects
@@ -74,14 +74,14 @@ pub trait OnLocalTrigger<T: ConfigSystem, Balance> {
 pub type XExecSignalId<T> = <T as ConfigSystem>::Hash;
 pub type XExecStepSideEffectId<T> = <T as ConfigSystem>::Hash;
 
-pub trait ReadSFX<Hash> {
+pub trait ReadSFX<Hash, Account, Balance, BlockNumber> {
     fn get_fsx_of_xtx(xtx_id: Hash) -> Result<Vec<Hash>, DispatchError>;
 
     fn get_fsx_status(fsx_id: Hash) -> Result<CircuitStatus, DispatchError>;
 
-    fn get_xtx_status(xtx_id: Hash) -> Result<CircuitStatus, DispatchError>;
-}
+    fn get_fsx(
+        fsx_id: Hash,
+    ) -> Result<FullSideEffect<Account, BlockNumber, Balance>, DispatchError>;
 
-pub trait WriteSFX<Hash> {
-    fn try_commit_sfx(sfx_id: Hash) -> DispatchResult;
+    fn get_xtx_status(xtx_id: Hash) -> Result<CircuitStatus, DispatchError>;
 }
