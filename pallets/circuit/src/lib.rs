@@ -116,7 +116,7 @@ pub mod pallet {
     };
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
-        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
+        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX},
         portal::Portal,
         xdns::Xdns,
         SpeedMode,
@@ -370,6 +370,70 @@ pub mod pallet {
                 }
             })
             .unwrap_or(0)
+        }
+    }
+
+    impl<T: Config> ReadSFX<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
+        fn get_fsx_of_xtx(xtx_id: T::Hash) -> Result<Vec<T::Hash>, DispatchError> {
+            let full_side_effects = FullSideEffects::<T>::get(xtx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            let fsx_ids: Vec<T::Hash> = full_side_effects
+                .iter()
+                .flat_map(|fsx_vec| {
+                    fsx_vec.iter().enumerate().map(|(index, fsx)| {
+                        fsx.input
+                            .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
+                    })
+                })
+                .collect::<Vec<T::Hash>>();
+
+            Ok(fsx_ids)
+        }
+
+        fn get_fsx_status(fsx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
+            let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            Self::get_xtx_status(xtx_id)
+        }
+
+        // Look up the FSX by its ID and return the FSX if it exists
+        fn get_fsx(
+            fsx_id: T::Hash,
+        ) -> Result<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>, DispatchError>
+        {
+            let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            let full_side_effects = FullSideEffects::<T>::get(xtx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            // Early return on empty vector
+            if full_side_effects.is_empty() {
+                return Err(Error::<T>::FSXNotFoundById.into())
+            }
+
+            for fsx_step in &full_side_effects {
+                for (index, fsx) in fsx_step.iter().enumerate() {
+                    if fsx
+                        .input
+                        .generate_id::<SystemHashing<T>>(xtx_id.as_ref(), index as u32)
+                        == fsx_id
+                    {
+                        // Return a reference instead of a clone
+                        return Ok(fsx.clone())
+                    }
+                }
+            }
+
+            Err(Error::<T>::FSXNotFoundById.into())
+        }
+
+        fn get_xtx_status(xtx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
+            XExecSignals::<T>::get(xtx_id)
+                .map(|xtx| xtx.status)
+                .ok_or(Error::<T>::XtxNotFound.into())
         }
     }
 
@@ -713,6 +777,10 @@ pub mod pallet {
         XTransactionStepFinishedExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
         XTransactionXtxFinishedExecAllSteps(XExecSignalId<T>),
+        // Listeners - users + SDK + +executors + attesters to know FSX is resolved
+        XTransactionFSXCommitted(XExecSignalId<T>),
+        // Listeners - users + SDK + +executors + attesters to know Xtx is fully resolved
+        XTransactionXtxCommitted(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
         XTransactionXtxRevertedAfterTimeOut(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
@@ -811,6 +879,7 @@ pub mod pallet {
         DeterminedForbiddenXtxStatus,
         SideEffectIsAlreadyScheduledToExecuteOverXBI,
         FSXNotFoundById,
+        XtxNotFound,
         LocalSideEffectExecutionNotApplicable,
         LocalExecutionUnauthorized,
         OnLocalTriggerFailedToSetupXtx,
@@ -821,6 +890,7 @@ pub mod pallet {
         FailedToConvertXBIResult2SFXConfirmation,
         FailedToEnterXBIPortal,
         FailedToExitXBIPortal,
+        FailedToCommitFSX,
         XBIExitFailedOnSFXConfirmation,
         UnsupportedRole,
         InvalidLocalTrigger,
@@ -891,6 +961,8 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
                 CircuitStatus::Reverted(ref _cause) =>
                     Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id)),
+                CircuitStatus::Committed =>
+                    Self::deposit_event(Event::XTransactionXtxCommitted(xtx_id)),
                 CircuitStatus::Killed(ref _cause) =>
                     Self::deposit_event(Event::XTransactionXtxDroppedAtBidding(xtx_id)),
                 _ => {},
@@ -920,7 +992,7 @@ impl<T: Config> Pallet<T> {
 
     fn validate(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
     ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
             vec![];
@@ -1297,7 +1369,7 @@ impl<T: Config> Pallet<T> {
 
     pub fn recover_local_ctx_by_sfx_id(
         sfx_id: SideEffectId<T>,
-    ) -> Result<LocalXtxCtx<T>, Error<T>> {
+    ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
             .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
         Machine::<T>::load_xtx(xtx_id)

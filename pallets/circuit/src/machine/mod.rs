@@ -66,7 +66,7 @@ impl<T: Config> Machine<T> {
     pub fn setup(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
-    ) -> Result<LocalXtxCtx<T>, Error<T>> {
+    ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         // ToDo: Introduce default delay
         let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
             T::XtxTimeoutDefault::get() + frame_system::Pallet::<T>::block_number(),
@@ -107,7 +107,10 @@ impl<T: Config> Machine<T> {
     pub fn kill(
         xtx_id: XtxId<T>,
         cause: Cause,
-        infallible_post_update: impl FnOnce((CircuitStatus, CircuitStatus), &LocalXtxCtx<T>),
+        infallible_post_update: impl FnOnce(
+            (CircuitStatus, CircuitStatus),
+            &LocalXtxCtx<T, BalanceOf<T>>,
+        ),
     ) -> bool {
         let mut local_ctx = match Self::load_xtx(xtx_id) {
             Ok(ctx) => ctx,
@@ -123,7 +126,10 @@ impl<T: Config> Machine<T> {
     pub fn revert(
         xtx_id: XtxId<T>,
         cause: Cause,
-        infallible_post_update: impl FnOnce((CircuitStatus, CircuitStatus), &LocalXtxCtx<T>),
+        infallible_post_update: impl FnOnce(
+            (CircuitStatus, CircuitStatus),
+            &LocalXtxCtx<T, BalanceOf<T>>,
+        ),
     ) -> bool {
         let mut local_ctx = match Self::load_xtx(xtx_id) {
             Ok(ctx) => ctx,
@@ -137,7 +143,7 @@ impl<T: Config> Machine<T> {
     }
 
     pub fn compile_infallible(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
         infallible_precompile: impl FnOnce(
             &mut Vec<
                 FullSideEffect<
@@ -153,7 +159,10 @@ impl<T: Config> Machine<T> {
             // requester
             T::AccountId,
         ) -> PrecompileResult<T>,
-        infallible_post_update: impl FnOnce((CircuitStatus, CircuitStatus), &LocalXtxCtx<T>),
+        infallible_post_update: impl FnOnce(
+            (CircuitStatus, CircuitStatus),
+            &LocalXtxCtx<T, BalanceOf<T>>,
+        ),
     ) -> bool {
         Self::compile(
             local_ctx,
@@ -172,7 +181,7 @@ impl<T: Config> Machine<T> {
             | -> Result<PrecompileResult<T>, Error<T>> {
                 Ok(infallible_precompile(fsx, local_state, steps_count, status, requester))
             },
-            |status_change, local_ctx: &LocalXtxCtx<T>| -> Result<(), Error<T>> {
+            |status_change, local_ctx: &LocalXtxCtx<T, BalanceOf<T>>| -> Result<(), Error<T>> {
                 infallible_post_update(status_change, local_ctx);
                 Ok(())
             }
@@ -184,7 +193,7 @@ impl<T: Config> Machine<T> {
     // - confirm_side_effect
     // - confirm side effect via XBI
     pub fn compile(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
         precompile: impl FnOnce(
             &mut Vec<
                 FullSideEffect<
@@ -201,7 +210,7 @@ impl<T: Config> Machine<T> {
         ) -> Result<PrecompileResult<T>, Error<T>>,
         post_update: impl FnOnce(
             (CircuitStatus, CircuitStatus),
-            &LocalXtxCtx<T>,
+            &LocalXtxCtx<T, BalanceOf<T>>,
         ) -> Result<(), Error<T>>,
     ) -> Result<bool, Error<T>> {
         let mut current_fsx = Self::read_current_step_fsx(local_ctx).clone();
@@ -278,7 +287,7 @@ impl<T: Config> Machine<T> {
         Ok(Self::apply(local_ctx, status_change))
     }
 
-    pub fn load_xtx(xtx_id: XtxId<T>) -> Result<LocalXtxCtx<T>, Error<T>> {
+    pub fn load_xtx(xtx_id: XtxId<T>) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         let xtx = <pallet::Pallet<T> as Store>::XExecSignals::get(xtx_id)
             .ok_or(Error::<T>::XtxDoesNotExist)?;
         let full_side_effects = <pallet::Pallet<T> as Store>::FullSideEffects::get(xtx_id)
@@ -295,7 +304,7 @@ impl<T: Config> Machine<T> {
     }
 
     fn update_current_step_fsx(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
         updated_fsx: &Vec<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -321,7 +330,7 @@ impl<T: Config> Machine<T> {
     }
 
     pub fn read_current_step_fsx(
-        local_ctx: &LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T, BalanceOf<T>>,
     ) -> &Vec<
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -343,7 +352,7 @@ impl<T: Config> Machine<T> {
 
     // Following methods aren't exposed to Pallet - internal use by compile only
     fn check_bump_steps(
-        local_ctx: &LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T, BalanceOf<T>>,
         status_change: (CircuitStatus, CircuitStatus),
     ) -> (u32, u32) {
         let (prev_status, new_status) = status_change;
@@ -372,7 +381,7 @@ impl<T: Config> Machine<T> {
 
     // Update should have all of the info accessible in LocalXtxCtx to transition between next states.
     fn update_status(
-        local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
         enforce_new_status: Option<CircuitStatus>,
     ) -> Result<(CircuitStatus, CircuitStatus), Error<T>> {
         let current_status = local_ctx.xtx.status.clone();
@@ -383,13 +392,16 @@ impl<T: Config> Machine<T> {
             _ => {},
         }
 
-        let mut new_status = CircuitStatus::determine_xtx_status::<T>(&local_ctx.full_side_effects);
+        let mut new_status =
+            CircuitStatus::determine_xtx_status::<T, BalanceOf<T>>(&local_ctx.full_side_effects);
 
-        new_status = CircuitStatus::check_transition(
+        new_status = CircuitStatus::check_transition::<T>(
             current_status.clone(),
             new_status,
             enforce_new_status,
-        )?;
+        )
+        .map_err(|_e| Error::<T>::UpdateStateTransitionDisallowed)?;
+
         local_ctx.xtx.steps_cnt =
             Self::check_bump_steps(local_ctx, (current_status.clone(), new_status.clone()));
         local_ctx.xtx.status = new_status.clone();
@@ -397,7 +409,10 @@ impl<T: Config> Machine<T> {
         Ok((current_status, new_status))
     }
 
-    fn apply(local_ctx: &LocalXtxCtx<T>, status_change: (CircuitStatus, CircuitStatus)) -> bool {
+    fn apply(
+        local_ctx: &LocalXtxCtx<T, BalanceOf<T>>,
+        status_change: (CircuitStatus, CircuitStatus),
+    ) -> bool {
         let (old_status, new_status) = (status_change.0, status_change.1);
 
         // Assume no op. for equal statuses - although this should be caught before apply by disallowed state transitions.
