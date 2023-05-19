@@ -6034,8 +6034,10 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "t3rn-abi",
  "t3rn-mini-mock-runtime",
  "t3rn-primitives",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -12785,6 +12787,7 @@ dependencies = [
  "pallet-attesters",
  "pallet-aura",
  "pallet-balances",
+ "pallet-circuit",
  "pallet-clock",
  "pallet-contracts 4.0.0-dev",
  "pallet-grandpa-finality-verifier",
