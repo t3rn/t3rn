@@ -150,6 +150,7 @@ impl pallet_attesters::Config for Runtime {
     type MinNominatorBond = MinNominatorBond;
     type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
+    type ReadSFX = Circuit;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = EscrowAccount;

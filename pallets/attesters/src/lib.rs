@@ -35,9 +35,7 @@ pub mod pallet {
         CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use t3rn_primitives::{
-        circuit::ReadSFX, portal::Portal, transfers::escrow_transfer, xdns::Xdns, ExecutionVendor,
-    };
+    use t3rn_primitives::{circuit::ReadSFX, portal::Portal, xdns::Xdns, ExecutionVendor};
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
@@ -143,6 +141,7 @@ pub mod pallet {
         type MinNominatorBond: Get<BalanceOf<Self>>;
         type MinAttesterBond: Get<BalanceOf<Self>>;
         type Portal: Portal<Self>;
+        type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
         type Xdns: Xdns<Self>;
     }
 
@@ -248,8 +247,6 @@ pub mod pallet {
         NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
         NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>),
         Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
-        NewTargetActivated(TargetId),
-        AttesterAgreedToNewTarget(T::AccountId, TargetId, Vec<u8>),
     }
 
     #[pallet::error]
