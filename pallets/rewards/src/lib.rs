@@ -1297,6 +1297,7 @@ pub mod test {
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
                 SLASH_TREASURY_BALANCE,
             );
+
             let fsx = FullSideEffect {
                 input: SideEffect {
                     enforce_executor: Some(executor.clone()),
