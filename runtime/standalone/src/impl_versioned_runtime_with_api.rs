@@ -16,6 +16,7 @@ use sp_runtime::{
 use t3rn_primitives::{
     light_client::HeightResult,
     xdns::{FullGatewayRecord, GatewayRecord},
+    TreasuryAccountProvider,
 };
 
 pub use frame_support::{
@@ -309,11 +310,15 @@ impl_runtime_apis! {
             // deprecated
             None
         }
+
+        fn retreive_treasury_address(treasury_account: t3rn_primitives::TreasuryAccount) -> AccountId {
+            Runtime::get_treasury_account(treasury_account)
+        }
     }
 
     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
-            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_latest_updated_height(chain_id);
+            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_fast_height(chain_id);
 
             match res {
                 Ok(HeightResult::Height(height)) => Some(height.into()),

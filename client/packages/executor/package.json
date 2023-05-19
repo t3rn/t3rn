@@ -10,6 +10,7 @@
     "export": "LOG_LEVEL=debug yarn start >> logger.log",
     "fmt": "npx prettier --no-semi --tab-width 4 --print-width 140 --write config/*.ts src/*.ts src/**/*.ts src/**/**/*.ts",
     "lint": "eslint . --ext .ts",
+    "lint:report": "eslint . --ext .ts --output-file eslint_report.json --format json",
     "start": "ts-node src/index.ts | npx pino-pretty -c -S",
     "test": "mocha -r ts-node/register 'tests/**/*.ts'",
     "test-single": "mocha -r ts-node/register"
@@ -18,13 +19,13 @@
     "./tests/"
   ],
   "dependencies": {
-    "@polkadot/api": "^8.9.1",
+    "@polkadot/api": "^10.7.1",
     "@polkadot/types": "^8.9.1",
     "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
-    "@types/chai": "^4.3.4",
+    "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.1.0",
+    "@types/node": "^20.2.1",
     "axios": "^1.4.0",
     "bn.js": "^5.2.1",
     "chai": "^4.3.7",

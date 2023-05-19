@@ -1,19 +1,25 @@
 #[cfg(test)]
 mod tests {
+    use ::pallet_eth2_finality_verifier::{
+        mock::{gen_epoch_data, gen_init_data},
+        types::EthereumInitializationData,
+    };
     use circuit_mock_runtime::{ExtBuilder, Portal, *};
     use circuit_test_utils::replay::*;
     use codec::Encode;
     use frame_support::assert_ok;
     use pallet_grandpa_finality_verifier::{
         bridges::test_utils::{authorities, test_header_with_correct_parent},
+        mock::produce_mock_headers_range,
         types::RelaychainRegistrationData,
     };
     use std::fs;
 
     use sp_core::H256;
+
     use t3rn_primitives::{
         portal::{HeaderResult, HeightResult, Portal as PortalT},
-        GatewayVendor, SpeedMode,
+        EthereumToken, ExecutionVendor, GatewayVendor, SpeedMode, TokenInfo,
     };
 
     fn get_test_initialize_genesis_data() -> RelaychainRegistrationData<AccountId> {
@@ -27,9 +33,10 @@ mod tests {
         }
     }
 
-    fn test_initialize_grandpa_light_client(
+    fn test_initialize_and_submit_grandpa(
         vendor: GatewayVendor,
         registration_data: RelaychainRegistrationData<AccountId>,
+        submission_data: Vec<u8>,
     ) {
         ExtBuilder::default()
             .with_standard_sfx_abi()
@@ -42,110 +49,237 @@ mod tests {
                     GatewayVendor::Polkadot => *b"pdot",
                     _ => unreachable!(),
                 };
-                let result =
-                    Portal::initialize(Origin::root(), gateway_id, registration_data.encode());
+                assert_ok!(Portal::initialize(
+                    Origin::root(),
+                    gateway_id,
+                    registration_data.encode()
+                ));
+
+                let result = Portal::get_latest_finalized_header(gateway_id);
+
+                assert_ok!(result);
+
+                match Portal::get_latest_finalized_header(gateway_id) {
+                    Ok(HeaderResult::Header(header)) => {
+                        assert_eq!(
+                            header,
+                            [
+                                220, 221, 137, 146, 125, 138, 52, 142, 0, 37, 126, 30, 204, 134,
+                                23, 244, 94, 219, 81, 24, 239, 255, 62, 162, 249, 150, 27, 42, 217,
+                                183, 105, 10
+                            ]
+                        );
+                    },
+                    _ => panic!("Header not found"),
+                }
+
+                assert_eq!(
+                    Portal::get_finalized_height(gateway_id),
+                    Ok(HeightResult::Height(0))
+                );
+
+                assert_eq!(
+                    Portal::get_rational_height(gateway_id),
+                    Ok(HeightResult::Height(0))
+                );
+
+                assert_eq!(
+                    Portal::get_fast_height(gateway_id),
+                    Ok(HeightResult::Height(0))
+                );
+
+                assert_ok!(Portal::submit_encoded_headers(gateway_id, submission_data));
+                match Portal::get_latest_finalized_header(gateway_id) {
+                    Ok(HeaderResult::Header(header)) => {
+                        assert_eq!(
+                            header,
+                            [
+                                172, 9, 75, 83, 28, 226, 187, 127, 149, 100, 145, 226, 203, 67, 35,
+                                94, 211, 209, 132, 186, 118, 10, 175, 12, 86, 9, 184, 148, 239,
+                                120, 180, 177
+                            ]
+                        );
+                    },
+                    _ => panic!("Header not found"),
+                }
+
+                assert_eq!(
+                    Portal::get_finalized_height(gateway_id),
+                    Ok(HeightResult::Height(5))
+                );
+
+                assert_eq!(
+                    Portal::get_rational_height(gateway_id),
+                    Ok(HeightResult::Height(5))
+                );
+
+                assert_eq!(
+                    Portal::get_fast_height(gateway_id),
+                    Ok(HeightResult::Height(5))
+                );
+            });
+    }
+
+    #[test]
+    fn test_initialize_and_submit_ethereum() {
+        let (
+            checkpoint,
+            current_sync_committee,
+            next_sync_committee,
+            beacon_header,
+            execution_payload,
+        ) = gen_init_data([0; 32]);
+
+        let registration_data = EthereumInitializationData {
+            checkpoint,
+            current_sync_committee,
+            next_sync_committee,
+            beacon_header,
+            execution_payload,
+        };
+
+        let submission_data = gen_epoch_data(1, 32, 64, None, None, None);
+
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                assert_ok!(Portal::initialize(
+                    Origin::root(),
+                    *b"eth2",
+                    registration_data.encode()
+                ));
+
+                assert_eq!(
+                    Portal::get_latest_finalized_header(*b"eth2"),
+                    Ok(HeaderResult::NotActive)
+                ); // need to submit first epoch
+
+                assert_eq!(
+                    Portal::get_finalized_height(*b"eth2"),
+                    Ok(HeightResult::Height(0))
+                );
+
+                assert_eq!(
+                    Portal::get_rational_height(*b"eth2"),
+                    Ok(HeightResult::Height(0))
+                );
+
+                assert_eq!(
+                    Portal::get_fast_height(*b"eth2"),
+                    Ok(HeightResult::Height(100031))
+                );
+
+                assert_ok!(Portal::submit_encoded_headers(
+                    *b"eth2",
+                    submission_data.encode()
+                ));
+
+                assert_eq!(
+                    Portal::get_latest_finalized_header(*b"eth2"),
+                    Ok(HeaderResult::Header(
+                        [
+                            144, 163, 180, 61, 137, 204, 211, 16, 77, 115, 89, 213, 158, 230, 226,
+                            77, 9, 214, 195, 52, 108, 239, 200, 228, 85, 103, 219, 172, 62, 150,
+                            199, 68
+                        ]
+                        .into()
+                    ))
+                ); // need to submit first epoch
+
+                assert_eq!(
+                    Portal::get_finalized_height(*b"eth2"),
+                    Ok(HeightResult::Height(100031))
+                );
+
+                assert_eq!(
+                    Portal::get_rational_height(*b"eth2"),
+                    Ok(HeightResult::Height(100031))
+                );
+
+                assert_eq!(
+                    Portal::get_fast_height(*b"eth2"),
+                    Ok(HeightResult::Height(100063))
+                );
+            });
+    }
+
+    fn test_register_ethereum_light_client() {
+        let (
+            checkpoint,
+            current_sync_committee,
+            next_sync_committee,
+            beacon_header,
+            execution_payload,
+        ) = gen_init_data([0; 32]);
+
+        let registration_data = EthereumInitializationData {
+            checkpoint,
+            current_sync_committee,
+            next_sync_committee,
+            beacon_header,
+            execution_payload,
+        };
+
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .build()
+            .execute_with(|| {
+                let result = Portal::register_gateway(
+                    Origin::root(),
+                    [0u8; 4],
+                    [0u8; 4],
+                    GatewayVendor::Ethereum,
+                    ExecutionVendor::EVM,
+                    t3rn_abi::Codec::Rlp,
+                    None,
+                    None,
+                    vec![(*b"tran", None)],
+                    TokenInfo::Ethereum(EthereumToken {
+                        address: Some([0u8; 20]),
+                        decimals: 0,
+                        symbol: vec![0u8; 1],
+                    }),
+                    registration_data.encode(),
+                );
 
                 assert_ok!(result);
             });
     }
 
     #[test]
-    fn test_initialize_rococo() {
-        test_initialize_grandpa_light_client(
+    fn test_register_ethereum() {
+        test_register_ethereum_light_client();
+    }
+
+    #[test]
+    fn test_initialize_and_submit_rococo() {
+        let data = produce_mock_headers_range(1, 5);
+        test_initialize_and_submit_grandpa(
             GatewayVendor::Rococo,
             get_test_initialize_genesis_data(),
+            data.encode(),
         );
     }
 
     #[test]
-    fn test_initialize_kusama() {
-        test_initialize_grandpa_light_client(
+    fn test_initialize_and_submit_kusama() {
+        let data = produce_mock_headers_range(1, 5);
+        test_initialize_and_submit_grandpa(
             GatewayVendor::Kusama,
             get_test_initialize_genesis_data(),
+            data.encode(),
         );
     }
 
     #[test]
-    fn test_initialize_polkadot() {
-        test_initialize_grandpa_light_client(
+    fn test_initialize_and_submit_polkadot() {
+        let data = produce_mock_headers_range(1, 5);
+        test_initialize_and_submit_grandpa(
             GatewayVendor::Polkadot,
             get_test_initialize_genesis_data(),
-        );
-    }
-
-    fn test_get_latest_finalized_header(
-        vendor: GatewayVendor,
-        maybe_registration_data: Option<RelaychainRegistrationData<AccountId>>,
-    ) {
-        ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_default_xdns_records()
-            .build()
-            .execute_with(|| {
-                let gateway_id = match vendor {
-                    GatewayVendor::Rococo => [0, 0, 0, 0],
-                    GatewayVendor::Kusama => *b"ksma",
-                    GatewayVendor::Polkadot => *b"pdot",
-                    _ => unreachable!(),
-                };
-                if let Some(registration_data) = maybe_registration_data.clone() {
-                    let result =
-                        Portal::initialize(Origin::root(), gateway_id, registration_data.encode());
-                    assert_ok!(result);
-                }
-                let result = Portal::get_latest_finalized_header(gateway_id);
-
-                assert_ok!(result.clone());
-
-                if let Some(_registration_data) = maybe_registration_data {
-                    assert_eq!(
-                        result,
-                        Ok(HeaderResult::Header(vec![
-                            220, 221, 137, 146, 125, 138, 52, 142, 0, 37, 126, 30, 204, 134, 23,
-                            244, 94, 219, 81, 24, 239, 255, 62, 162, 249, 150, 27, 42, 217, 183,
-                            105, 10
-                        ]))
-                    );
-                }
-            });
-    }
-
-    #[test]
-    fn test_get_latest_finalized_header_rococo() {
-        test_get_latest_finalized_header(GatewayVendor::Rococo, None);
-    }
-
-    #[test]
-    fn test_get_latest_finalized_header_kusama() {
-        test_get_latest_finalized_header(GatewayVendor::Kusama, None);
-    }
-
-    #[test]
-    fn test_get_latest_finalized_header_polkadot() {
-        test_get_latest_finalized_header(GatewayVendor::Polkadot, None);
-    }
-
-    #[test]
-    fn test_get_latest_finalized_header_rococo_with_initialize() {
-        test_get_latest_finalized_header(
-            GatewayVendor::Rococo,
-            Some(get_test_initialize_genesis_data()),
-        );
-    }
-
-    #[test]
-    fn test_get_latest_finalized_header_kusama_with_initialize() {
-        test_get_latest_finalized_header(
-            GatewayVendor::Kusama,
-            Some(get_test_initialize_genesis_data()),
-        );
-    }
-
-    #[test]
-    fn test_get_latest_finalized_header_polkadot_with_initialize() {
-        test_get_latest_finalized_header(
-            GatewayVendor::Polkadot,
-            Some(get_test_initialize_genesis_data()),
+            data.encode(),
         );
     }
 
@@ -161,7 +295,7 @@ mod tests {
                     GatewayVendor::Polkadot => *b"pdot",
                     _ => unreachable!(),
                 };
-                let result = Portal::get_latest_finalized_height(gateway_id);
+                let result = Portal::get_finalized_height(gateway_id);
                 assert_ok!(result.clone());
                 assert_eq!(result.unwrap(), HeightResult::Height(0));
             });
@@ -180,38 +314,6 @@ mod tests {
     #[test]
     fn test_get_latest_finalized_height_polkadot() {
         test_get_latest_finalized_height(GatewayVendor::Polkadot);
-    }
-
-    fn test_get_current_epoch(vendor: GatewayVendor) {
-        ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_default_xdns_records()
-            .build()
-            .execute_with(|| {
-                let gateway_id = match vendor {
-                    GatewayVendor::Rococo => [0, 0, 0, 0],
-                    GatewayVendor::Kusama => *b"ksma",
-                    GatewayVendor::Polkadot => *b"pdot",
-                    _ => unreachable!(),
-                };
-                let result = Portal::get_current_epoch(gateway_id);
-                assert_ok!(result);
-            });
-    }
-
-    #[test]
-    fn test_get_current_epoch_rococo() {
-        test_get_current_epoch(GatewayVendor::Rococo);
-    }
-
-    #[test]
-    fn test_get_current_epoch_kusama() {
-        test_get_current_epoch(GatewayVendor::Kusama);
-    }
-
-    #[test]
-    fn test_get_current_epoch_polkadot() {
-        test_get_current_epoch(GatewayVendor::Polkadot);
     }
 
     #[test]
@@ -245,153 +347,6 @@ mod tests {
                 let result = Portal::turn_on(origin, gateway_id);
                 assert_ok!(result);
             });
-    }
-
-    #[test]
-    fn test_read_fast_confirmation_offset_rococo() {
-        test_read_fast_confirmation_offset(GatewayVendor::Rococo);
-    }
-
-    #[test]
-    fn test_read_fast_confirmation_offset_kusama() {
-        test_read_fast_confirmation_offset(GatewayVendor::Kusama);
-    }
-
-    #[test]
-    fn test_read_fast_confirmation_offset_polkadot() {
-        test_read_fast_confirmation_offset(GatewayVendor::Polkadot);
-    }
-
-    #[test]
-    fn test_read_rational_confirmation_offset_rococo() {
-        test_read_rational_confirmation_offset(GatewayVendor::Rococo);
-    }
-
-    #[test]
-    fn test_read_rational_confirmation_offset_kusama() {
-        test_read_rational_confirmation_offset(GatewayVendor::Kusama);
-    }
-
-    #[test]
-    fn test_read_rational_confirmation_offset_polkadot() {
-        test_read_rational_confirmation_offset(GatewayVendor::Polkadot);
-    }
-
-    fn test_read_rational_confirmation_offset(vendor: GatewayVendor) {
-        ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_default_xdns_records()
-            .build()
-            .execute_with(|| {
-                let gateway_id = match vendor {
-                    GatewayVendor::Rococo => [0, 0, 0, 0],
-                    GatewayVendor::Kusama => *b"ksma",
-                    GatewayVendor::Polkadot => *b"pdot",
-                    _ => unreachable!(),
-                };
-                let result = Portal::read_rational_confirmation_offset(gateway_id);
-                assert_ok!(result);
-                assert_eq!(result.unwrap(), 0);
-            });
-    }
-
-    #[test]
-    fn test_read_finalized_confirmation_offset_rococo() {
-        test_read_finalized_confirmation_offset(GatewayVendor::Rococo);
-    }
-
-    #[test]
-    fn test_read_finalized_confirmation_offset_kusama() {
-        test_read_finalized_confirmation_offset(GatewayVendor::Kusama);
-    }
-
-    #[test]
-    fn test_read_finalized_confirmation_offset_polkadot() {
-        test_read_finalized_confirmation_offset(GatewayVendor::Polkadot);
-    }
-
-    fn test_read_finalized_confirmation_offset(vendor: GatewayVendor) {
-        ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_default_xdns_records()
-            .build()
-            .execute_with(|| {
-                let gateway_id = match vendor {
-                    GatewayVendor::Rococo => [0, 0, 0, 0],
-                    GatewayVendor::Kusama => *b"ksma",
-                    GatewayVendor::Polkadot => *b"pdot",
-                    _ => unreachable!(),
-                };
-                let result = Portal::read_finalized_confirmation_offset(gateway_id);
-                assert_ok!(result);
-                assert_eq!(result.unwrap(), 0);
-            });
-    }
-
-    #[test]
-    fn test_read_epoch_offset_rococo() {
-        test_read_epoch_offset(GatewayVendor::Rococo);
-    }
-
-    #[test]
-    fn test_read_epoch_offset_kusama() {
-        test_read_epoch_offset(GatewayVendor::Kusama);
-    }
-
-    #[test]
-    fn test_read_epoch_offset_polkadot() {
-        test_read_epoch_offset(GatewayVendor::Polkadot);
-    }
-
-    fn test_read_epoch_offset(vendor: GatewayVendor) {
-        ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_default_xdns_records()
-            .build()
-            .execute_with(|| {
-                let gateway_id = match vendor {
-                    GatewayVendor::Rococo => [0, 0, 0, 0],
-                    GatewayVendor::Kusama => *b"ksma",
-                    GatewayVendor::Polkadot => *b"pdot",
-                    _ => unreachable!(),
-                };
-                let result = Portal::read_epoch_offset(gateway_id);
-                assert_ok!(result);
-                assert_eq!(result.unwrap(), 2400);
-            });
-    }
-
-    fn test_read_fast_confirmation_offset(vendor: GatewayVendor) {
-        ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_default_xdns_records()
-            .build()
-            .execute_with(|| {
-                let gateway_id = match vendor {
-                    GatewayVendor::Rococo => [0, 0, 0, 0],
-                    GatewayVendor::Kusama => *b"ksma",
-                    GatewayVendor::Polkadot => *b"pdot",
-                    _ => unreachable!(),
-                };
-                let result = Portal::read_fast_confirmation_offset(gateway_id);
-                assert_ok!(result);
-                assert_eq!(result.unwrap(), 0);
-            });
-    }
-
-    #[test]
-    fn test_header_speed_mode_satisfied_rococo() {
-        test_header_speed_mode_satisfied(GatewayVendor::Rococo, None);
-    }
-
-    #[test]
-    fn test_header_speed_mode_satisfied_kusama() {
-        test_header_speed_mode_satisfied(GatewayVendor::Kusama, None);
-    }
-
-    #[test]
-    fn test_header_speed_mode_satisfied_polkadot() {
-        test_header_speed_mode_satisfied(GatewayVendor::Polkadot, None);
     }
 
     #[test]

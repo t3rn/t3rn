@@ -37,7 +37,9 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
 use crate::{
+    bridges::test_utils::make_default_justification,
     light_clients::{KusamaInstance, PolkadotInstance, RococoInstance},
+    types::GrandpaHeaderData,
     BestFinalizedHash, Config, ImportedHeaders,
 };
 
@@ -177,18 +179,18 @@ pub fn run_test<T>(test: impl FnOnce() -> T) -> T {
     sp_io::TestExternalities::new(Default::default()).execute_with(test)
 }
 
-#[cfg(all(feature = "testing", test))]
+#[cfg(all(feature = "testing"))]
 pub fn test_header(num: TestNumber) -> TestHeader {
     // We wrap the call to avoid explicit type annotations in our tests
     crate::bridges::test_utils::test_header(num)
 }
 
-#[cfg(all(feature = "testing", test))]
+#[cfg(all(feature = "testing"))]
 pub fn test_header_with_correct_parent(num: TestNumber, parent_hash: Option<H256>) -> TestHeader {
     crate::bridges::test_utils::test_header_with_correct_parent(num, parent_hash)
 }
 
-#[cfg(all(feature = "testing", test))]
+#[cfg(all(feature = "testing"))]
 pub fn test_header_range(to: u32) -> Vec<TestHeader> {
     let mut headers: Vec<TestHeader> = vec![];
     let mut parent_hash = None;
@@ -210,4 +212,17 @@ pub fn brute_seed_block_1(_gateway_id: [u8; 4]) {
     <ImportedHeaders<TestRuntime>>::insert::<H256, TestHeader>(block_hash_1, header_1);
 
     <BestFinalizedHash<TestRuntime>>::put(block_hash_1);
+}
+
+pub fn produce_mock_headers_range(from: u8, to: u8) -> GrandpaHeaderData<TestHeader> {
+    let headers: Vec<TestHeader> = test_header_range(to.into());
+    let signed_header: &TestHeader = headers.last().unwrap();
+    let justification = make_default_justification(&signed_header.clone());
+    let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec();
+
+    GrandpaHeaderData::<TestHeader> {
+        signed_header: signed_header.clone(),
+        range,
+        justification,
+    }
 }

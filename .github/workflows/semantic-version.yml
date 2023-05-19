@@ -3,6 +3,11 @@ name: Semantic Version
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/runtime-upgrade-t0rn.yml"
 
 permissions:
   pull-requests: write

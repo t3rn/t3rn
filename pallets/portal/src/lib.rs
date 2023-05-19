@@ -9,11 +9,10 @@ use t3rn_abi::recode::{recode_bytes_with_descriptor, Codec};
 #[cfg(test)]
 mod tests;
 
-use pallet_grandpa_finality_verifier::light_clients::LightClient;
-
 use t3rn_abi::types::Bytes;
 use t3rn_primitives::{
     self,
+    light_client::LightClient,
     portal::{HeaderResult, HeightResult, Portal},
     xdns::Xdns,
     ChainId, GatewayVendor, SpeedMode, TokenInfo,
@@ -158,49 +157,23 @@ impl<T: Config> Portal<T> for Pallet<T> {
         Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_header())
     }
 
-    fn get_latest_finalized_height(
+    fn get_finalized_height(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
         log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
-        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_height())
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_finalized_height())
     }
 
-    fn get_latest_updated_height(
+    fn get_rational_height(
         gateway_id: ChainId,
     ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        log::debug!(target: "portal", "Getting latest updated height for gateway id {:?}", gateway_id);
-        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_updated_height())
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_rational_height())
     }
 
-    fn get_current_epoch(
-        gateway_id: ChainId,
-    ) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
-        log::debug!(target: "portal", "Getting current epoch for gateway id {:?}", gateway_id);
-        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_current_epoch())
-    }
-
-    fn read_fast_confirmation_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
-        log::debug!(target: "portal", "Reading fast confirmation offset for gateway id {:?}", gateway_id);
-        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_fast_confirmation_offset())
-    }
-
-    fn read_rational_confirmation_offset(
-        gateway_id: ChainId,
-    ) -> Result<T::BlockNumber, DispatchError> {
-        log::debug!(target: "portal", "Reading rational confirmation offset for gateway id {:?}", gateway_id);
-        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_rational_confirmation_offset())
-    }
-
-    fn read_finalized_confirmation_offset(
-        gateway_id: ChainId,
-    ) -> Result<T::BlockNumber, DispatchError> {
-        log::debug!(target: "portal", "Reading rational confirmation offset for gateway id {:?}", gateway_id);
-        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_finalized_confirmation_offset())
-    }
-
-    fn read_epoch_offset(gateway_id: ChainId) -> Result<T::BlockNumber, DispatchError> {
-        log::debug!(target: "portal", "Reading epoch offset for gateway id {:?}", gateway_id);
-        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.read_epoch_offset())
+    fn get_fast_height(gateway_id: ChainId) -> Result<HeightResult<T::BlockNumber>, DispatchError> {
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_fast_height())
     }
 
     fn header_speed_mode_satisfied(

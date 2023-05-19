@@ -16,7 +16,7 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 codec       = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
 hex-literal = { version = "0.3", optional = true }
 log         = { version = "0.4", default-features = false }
-scale-info  = { version = "2.1.1", default-features = false, features = [ "derive" ] }
+scale-info  = { version = "2.7.0", default-features = false, features = [ "derive" ] }
 serde       = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
 
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot.git", default-features = false, branch = "release-v0.9.27" }
@@ -34,9 +34,9 @@ pallet-portal                             = { path = "../../pallets/portal", def
 pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-
-t3rn-primitives = { default-features = false, path = "../../primitives" }
-t3rn-types   = { path = "../../types", default-features = false }
+pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
+t3rn-primitives                           = { default-features = false, path = "../../primitives" }
+t3rn-types                                = { path = "../../types", default-features = false }
 t3rn-abi   = { path = "../../types/abi", default-features = false }
 
 # Smart contracts VMs
@@ -123,6 +123,7 @@ std = [
   "pallet-3vm/std",
   "pallet-3vm-contracts/std",
   # "circuit-runtime-pallets/std",
+  "pallet-eth2-finality-verifier/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
   "pallet-3vm-evm/std",
@@ -187,6 +188,7 @@ runtime-benchmarks = [
   "pallet-3vm-evm/runtime-benchmarks",
   "pallet-grandpa/runtime-benchmarks",
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
+  "pallet-eth2-finality-verifier/runtime-benchmarks",
   "pallet-identity/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",

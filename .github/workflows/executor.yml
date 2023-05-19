@@ -10,10 +10,11 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  checks: write
 
 jobs:
   # This job checks if files has been modified.
-  # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
+  # Using paths in pull request trigger would make required checks unpassable for PRs without expected changes.
   changes:
     runs-on: [self-hosted]
     outputs:
@@ -28,11 +29,13 @@ jobs:
         with:
           # TODO: can be removed when we have npm packages
           # - "client/packages/**/*.ts"
+          # - "client/packages/**/*.json"
 
           filters: |
             src:
             - "client/executor.Dockerfile"
             - "client/packages/**/*.ts"
+            - "client/packages/**/*.json"
             - "client/packages/executor/**/*.ts"
             - "client/packages/executor/**/*.json"
             - ".github/workflows/executor.yml"
@@ -65,13 +68,19 @@ jobs:
       - run: yarn ci
       - run: yarn fmt
       - run: yarn build-docs
-      - run: |
-          yarn lint > lint.out || true
 
-      - name: Comment on lint results
-        uses: mshick/add-pr-comment@v2
+      - name: Save Code Linting Report JSON
+        if: github.event_name == 'pull_request'
+        run: npm run lint:report
+        # Continue to the next step even if this fails
+        continue-on-error: true
+
+      - name: Annotate Code Linting Results
+        if: github.event_name == 'pull_request'
+        uses: ataylorme/eslint-annotate-action@v2
         with:
-          message-path: client/packages/executor/lint.out
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: client/packages/executor/eslint_report.json
 
       - run: yarn test
 

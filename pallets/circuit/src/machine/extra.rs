@@ -21,18 +21,20 @@ pub fn no_mangle<T: Config>(
 
 pub fn no_post_updates<T: Config>(
     _status_change: (CircuitStatus, CircuitStatus),
-    _local_ctx: &LocalXtxCtx<T>,
+    _local_ctx: &LocalXtxCtx<T, BalanceOf<T>>,
 ) -> Result<(), Error<T>> {
     Ok(())
 }
 
 pub fn infallible_no_post_updates<T: Config>(
     _status_change: (CircuitStatus, CircuitStatus),
-    _local_ctx: &LocalXtxCtx<T>,
+    _local_ctx: &LocalXtxCtx<T, BalanceOf<T>>,
 ) {
 }
 
-pub fn validate_fsx_against_xtx<T: Config>(local_ctx: &LocalXtxCtx<T>) -> Result<(), Error<T>> {
+pub fn validate_fsx_against_xtx<T: Config>(
+    local_ctx: &LocalXtxCtx<T, BalanceOf<T>>,
+) -> Result<(), Error<T>> {
     for fsx_step in local_ctx.full_side_effects.iter() {
         for fsx in fsx_step.iter() {
             if local_ctx.xtx.status >= CircuitStatus::Ready {

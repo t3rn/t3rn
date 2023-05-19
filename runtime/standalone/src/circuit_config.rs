@@ -1,6 +1,8 @@
 use crate::*;
+use sp_std::marker::PhantomData;
 
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
+use pallet_eth2_finality_verifier;
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{
@@ -181,6 +183,7 @@ impl pallet_rewards::Config for Runtime {
     type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
+    type FindAuthor = ();
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;
@@ -222,7 +225,9 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
                 select_grandpa_light_client_instance::<Runtime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<Runtime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<Runtime>>),
-            _ => Err(PortalError::<Runtime>::UnimplementedGatewayVendor),
+            GatewayVendor::Ethereum => Ok(Box::new(
+                pallet_eth2_finality_verifier::Pallet::<Runtime>(PhantomData),
+            )),
         }
     }
 }
@@ -314,5 +319,22 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const SyncCommitteeSize: u32 = 512;
+    pub const GenesisValidatorsRoot: [u8; 32] = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
+    pub const SlotsPerEpoch: u32 = 32;
+    pub const EpochsPerSyncCommitteeTerm: u32 = 256;
+    pub const HeadersToStoreEth: u32 = 50400 + 1; // 1 week + 1. We want a multiple of 32 + 1.
+}
+
+impl pallet_eth2_finality_verifier::Config for Runtime {
+    type EpochsPerSyncCommitteeTerm = EpochsPerSyncCommitteeTerm;
+    type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEth;
+    type SlotsPerEpoch = SlotsPerEpoch;
+    type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();
 }

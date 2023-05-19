@@ -26,7 +26,7 @@ use sp_runtime::DispatchError;
 use t3rn_primitives::{
     xdns::Xdns, EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo,
 };
-const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 7;
+const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
 const STANDARD_SFX_ABI_COUNT: usize = 7;
 
 #[test]

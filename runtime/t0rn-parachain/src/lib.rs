@@ -30,7 +30,10 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 use sp_std::{convert::TryInto, prelude::*};
-use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
+use t3rn_primitives::{
+    xdns::{FullGatewayRecord, GatewayRecord},
+    TreasuryAccountProvider,
+};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -72,11 +75,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 58,
-    spec_version: 59,
-    impl_version: 57,
+    authoring_version: 64,
+    spec_version: 65,
+    impl_version: 63,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 58,
+    transaction_version: 64,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -193,6 +196,7 @@ construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        EthereumBridge: pallet_eth2_finality_verifier = 132,
 
         // Handy utilities
         MaintenanceMode: pallet_maintenance_mode = 140,
@@ -409,11 +413,15 @@ impl_runtime_apis! {
             // deprecated
             None
         }
+
+        fn retreive_treasury_address(treasury_account: t3rn_primitives::TreasuryAccount) -> AccountId {
+            Runtime::get_treasury_account(treasury_account)
+        }
     }
 
      impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_head_height(chain_id: ChainId) -> Option<u128> {
-            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_latest_updated_height(chain_id);
+            let res = <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_fast_height(chain_id);
 
             match res {
                 Ok(HeightResult::Height(height)) => Some(height.into()),
