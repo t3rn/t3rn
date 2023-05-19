@@ -43,6 +43,7 @@ pub mod pallet {
         PendingAttestation,
         ReadyForSubmissionByMajority,
         ReadyForSubmissionFullyApproved,
+        Repatriated,
         Committed,
     }
 
@@ -156,6 +157,12 @@ pub mod pallet {
 
     #[pallet::storage]
     pub type PreviousCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+    #[pallet::storage]
+    pub type CurrentRetributionPerSFXPercentage<T: Config> = StorageValue<_, Percent, ValueQuery>;
+
+    #[pallet::storage]
+    pub type CurrentSlashTreasuryBalance<T: Config> = StorageValue<_, Percent, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn sorted_nominated_attesters)]
@@ -303,11 +310,11 @@ pub mod pallet {
             );
 
             // Self nominate in order to be part of the active set selection
-            Self::do_nominate(account_id.clone(), account_id.clone(), self_nominate_amount)?;
+            Self::do_nominate(&account_id, &account_id, self_nominate_amount)?;
 
             Self::request_add_attesters_attestation(&account_id)?;
 
-            Self::deposit_event(Event::AttesterRegistered(account_id.clone()));
+            Self::deposit_event(Event::AttesterRegistered(account_id));
 
             Ok(())
         }
@@ -592,7 +599,7 @@ pub mod pallet {
                 Error::<T>::NominatorBondTooSmall
             );
 
-            Self::do_nominate(nominator.clone(), attester.clone(), amount)?;
+            Self::do_nominate(&nominator, &attester, amount)?;
             Self::deposit_event(Event::Nominated(nominator, attester, amount));
             Ok(())
         }
@@ -991,29 +998,29 @@ pub mod pallet {
         }
 
         pub fn do_nominate(
-            nominator: T::AccountId,
-            attester: T::AccountId,
+            nominator: &T::AccountId,
+            attester: &T::AccountId,
             amount: BalanceOf<T>,
         ) -> DispatchResult {
             // Check if nominator has enough balance
             ensure!(
-                T::Currency::free_balance(&nominator) >= amount,
+                T::Currency::free_balance(nominator) >= amount,
                 Error::<T>::NominatorNotEnoughBalance
             );
 
             let current_nomination =
-                Nominations::<T>::get(&attester, &nominator).unwrap_or(Zero::zero());
+                Nominations::<T>::get(attester, nominator).unwrap_or(Zero::zero());
 
             let new_nomination = current_nomination + amount;
-            Nominations::<T>::insert(&attester, &nominator, new_nomination);
+            Nominations::<T>::insert(attester, nominator, new_nomination);
 
             // Update the sorted list of nominated attesters
             SortedNominatedAttesters::<T>::try_mutate(|attesters| {
-                let total_nomination = Nominations::<T>::iter_prefix(&attester)
+                let total_nomination = Nominations::<T>::iter_prefix(attester)
                     .map(|(_, balance)| balance)
                     .fold(Zero::zero(), |acc, balance| acc + balance);
 
-                if let Some(index) = attesters.iter().position(|(a, _n)| a == &attester) {
+                if let Some(index) = attesters.iter().position(|(a, _n)| a == attester) {
                     // Update the existing nomination amount
                     attesters[index] = (attester.clone(), total_nomination);
                 } else {
@@ -1031,7 +1038,7 @@ pub mod pallet {
             })?;
 
             // Lock the nomination amount in the nominator's account
-            T::Currency::reserve(&nominator, amount)?;
+            T::Currency::reserve(nominator, amount)?;
 
             Ok(())
         }
@@ -1091,100 +1098,159 @@ pub mod pallet {
 
             full_shuffle
         }
+
+        pub fn process_next_batch_window(
+            n: T::BlockNumber,
+            mut aggregated_weight: Weight,
+        ) -> Weight {
+            let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
+
+            for target in AttestationTargets::<T>::get() {
+                let new_next_batch = BatchMessage {
+                    batch_sfx: None,
+                    next_committee: None,
+                    new_attesters: None,
+                    remove_attesters: None,
+                    ban_attesters: None,
+                    signatures: Vec::new(),
+                    status: BatchStatus::PendingMessage,
+                    created: n,
+                };
+                if let Some(mut next_batch) = NextBatch::<T>::get(target) {
+                    // Check if batch has pending messages to attest for
+                    if next_batch.message().len().is_zero() {
+                        // Leave the batch empty if it has no messages
+                    } else {
+                        next_batch.status = BatchStatus::PendingAttestation;
+                        // Push the batch to the batches vector
+                        Batches::<T>::append(target, &next_batch);
+                        // Create a new empty batch for the next window
+                        NextBatch::<T>::insert(target, new_next_batch);
+
+                        Self::deposit_event(Event::NewAttestationBatch(target, next_batch));
+                    }
+                } else {
+                    // Create a new empty batch for the next window
+                    NextBatch::<T>::insert(target, new_next_batch);
+                }
+
+                // If a batch exists, update its status
+                Batches::<T>::mutate(target, |batches| {
+                    if let Some(batches) = batches {
+                        for mut batch in batches.iter_mut() {
+                            if batch.status == BatchStatus::PendingAttestation
+                                && batch.signatures.len() >= quorum
+                            {
+                                batch.status = BatchStatus::ReadyForSubmissionByMajority;
+                                Self::deposit_event(Event::NewConfirmationBatch(
+                                    target,
+                                    batch.clone(),
+                                ));
+                            }
+                        }
+                    }
+                });
+            }
+            aggregated_weight
+        }
+
+        pub fn process_pending_unnominations(
+            n: T::BlockNumber,
+            mut aggregated_weight: Weight,
+        ) -> Weight {
+            aggregated_weight += T::DbWeight::get().reads(1);
+            for (nominator, pending_unnominations) in PendingUnnominations::<T>::iter() {
+                let mut pending_unnominations = pending_unnominations.clone();
+                let mut pending_unnominations_updated = false;
+                let mut indices_to_remove = Vec::new();
+
+                for (index, (attester, amount, unlock_block)) in
+                    pending_unnominations.iter().enumerate()
+                {
+                    if unlock_block <= &n {
+                        // Save the index to be removed later
+                        indices_to_remove.push(index);
+                        pending_unnominations_updated = true;
+
+                        // Check if this is self-deregistration
+                        if &nominator == attester {
+                            // Retreive the self-nomination amount
+                            let self_nomination =
+                                Nominations::<T>::get(attester, attester).unwrap_or(Zero::zero());
+
+                            if self_nomination.saturating_sub(*amount) < T::MinAttesterBond::get() {
+                                // Handle full self-deregistration with releasing all the nominator's funds
+                                for nomination in Nominations::<T>::iter_prefix(attester) {
+                                    let (nominator, amount) = nomination;
+                                    // Remove the nomination from storage
+                                    Nominations::<T>::remove(attester, &nominator);
+                                    // Unreserve the nominated amount in the nominator's account
+                                    T::Currency::unreserve(&nominator, amount);
+                                    aggregated_weight += T::DbWeight::get().writes(2);
+                                }
+                                // Remove the attester from the list of attesters
+                                Attesters::<T>::remove(attester);
+                                aggregated_weight += T::DbWeight::get().writes(1);
+                                SortedNominatedAttesters::<T>::mutate(|attesters| {
+                                    if let Some(index) =
+                                        attesters.iter().position(|(a, _n)| a == attester)
+                                    {
+                                        attesters.remove(index);
+                                    }
+                                });
+                                aggregated_weight += T::DbWeight::get().writes(1);
+
+                                PendingUnnominations::<T>::remove(attester);
+                                aggregated_weight += T::DbWeight::get().writes(1);
+
+                                Self::deposit_event(Event::AttesterDeregistered(attester.clone()));
+
+                                continue
+                            }
+                        }
+
+                        // Unreserve the nominated amount in the nominator's account
+                        T::Currency::unreserve(&nominator, *amount);
+                        aggregated_weight += T::DbWeight::get().writes(1);
+
+                        // Remove the nomination from storage
+                        Nominations::<T>::remove(attester, &nominator);
+                        aggregated_weight += T::DbWeight::get().writes(1);
+
+                        // Update the sorted list of nominated attesters
+                        let _ = Self::update_sorted_nominated_attesters(attester, *amount);
+                        aggregated_weight += T::DbWeight::get().writes(1);
+                    }
+                }
+
+                // Remove the pending unnomination from the list
+                for &index in indices_to_remove.iter().rev() {
+                    pending_unnominations.remove(index);
+                }
+
+                // Update the pending unnominations storage item if necessary
+                if pending_unnominations_updated {
+                    if pending_unnominations.is_empty() {
+                        PendingUnnominations::<T>::remove(&nominator);
+                    } else {
+                        PendingUnnominations::<T>::insert(&nominator, pending_unnominations);
+                    }
+                    aggregated_weight += T::DbWeight::get().writes(1);
+                }
+            }
+
+            aggregated_weight
+        }
     }
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
+            let mut aggregated_weight: Weight = 0;
             // Check if a shuffling round has passed
             if (n % T::ShufflingFrequency::get()).is_zero() {
-                let mut aggregated_weight: Weight = 0;
-
                 // Process pending unnominations
-                aggregated_weight += T::DbWeight::get().reads(1);
-                for (nominator, pending_unnominations) in PendingUnnominations::<T>::iter() {
-                    let mut pending_unnominations = pending_unnominations.clone();
-                    let mut pending_unnominations_updated = false;
-                    let mut indices_to_remove = Vec::new();
-
-                    for (index, (attester, amount, unlock_block)) in
-                        pending_unnominations.iter().enumerate()
-                    {
-                        if unlock_block <= &n {
-                            // Save the index to be removed later
-                            indices_to_remove.push(index);
-                            pending_unnominations_updated = true;
-
-                            // Check if this is self-deregistration
-                            if &nominator == attester {
-                                // Retreive the self-nomination amount
-                                let self_nomination = Nominations::<T>::get(attester, attester)
-                                    .unwrap_or(Zero::zero());
-
-                                if self_nomination.saturating_sub(*amount)
-                                    < T::MinAttesterBond::get()
-                                {
-                                    // Handle full self-deregistration with releasing all the nominator's funds
-                                    for nomination in Nominations::<T>::iter_prefix(attester) {
-                                        let (nominator, amount) = nomination;
-                                        // Remove the nomination from storage
-                                        Nominations::<T>::remove(attester, &nominator);
-                                        // Unreserve the nominated amount in the nominator's account
-                                        T::Currency::unreserve(&nominator, amount);
-                                        aggregated_weight += T::DbWeight::get().writes(2);
-                                    }
-                                    // Remove the attester from the list of attesters
-                                    Attesters::<T>::remove(attester);
-                                    aggregated_weight += T::DbWeight::get().writes(1);
-                                    SortedNominatedAttesters::<T>::mutate(|attesters| {
-                                        if let Some(index) =
-                                            attesters.iter().position(|(a, _n)| a == attester)
-                                        {
-                                            attesters.remove(index);
-                                        }
-                                    });
-                                    aggregated_weight += T::DbWeight::get().writes(1);
-
-                                    PendingUnnominations::<T>::remove(attester);
-                                    aggregated_weight += T::DbWeight::get().writes(1);
-
-                                    Self::deposit_event(Event::AttesterDeregistered(
-                                        attester.clone(),
-                                    ));
-
-                                    continue
-                                }
-                            }
-
-                            // Unreserve the nominated amount in the nominator's account
-                            T::Currency::unreserve(&nominator, *amount);
-                            aggregated_weight += T::DbWeight::get().writes(1);
-
-                            // Remove the nomination from storage
-                            Nominations::<T>::remove(attester, &nominator);
-                            aggregated_weight += T::DbWeight::get().writes(1);
-
-                            // Update the sorted list of nominated attesters
-                            let _ = Self::update_sorted_nominated_attesters(attester, *amount);
-                            aggregated_weight += T::DbWeight::get().writes(1);
-                        }
-                    }
-
-                    // Remove the pending unnomination from the list
-                    for &index in indices_to_remove.iter().rev() {
-                        pending_unnominations.remove(index);
-                    }
-
-                    // Update the pending unnominations storage item if necessary
-                    if pending_unnominations_updated {
-                        if pending_unnominations.is_empty() {
-                            PendingUnnominations::<T>::remove(&nominator);
-                        } else {
-                            PendingUnnominations::<T>::insert(&nominator, pending_unnominations);
-                        }
-                        aggregated_weight += T::DbWeight::get().writes(1);
-                    }
-                }
+                aggregated_weight = Self::process_pending_unnominations(n, aggregated_weight);
 
                 // Update the active set of attesters
                 ActiveSet::<T>::put(
@@ -1210,58 +1276,11 @@ pub mod pallet {
                 return aggregated_weight
             }
 
-            let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
-
             if (n % T::BatchingWindow::get()).is_zero() {
                 // Check if there any pending attestations to submit with the current batch
-                for target in AttestationTargets::<T>::get() {
-                    let new_next_batch = BatchMessage {
-                        batch_sfx: None,
-                        next_committee: None,
-                        new_attesters: None,
-                        remove_attesters: None,
-                        ban_attesters: None,
-                        signatures: Vec::new(),
-                        status: BatchStatus::PendingMessage,
-                        created: n,
-                    };
-                    if let Some(mut next_batch) = NextBatch::<T>::get(target) {
-                        // Check if batch has pending messages to attest for
-                        if next_batch.message().len().is_zero() {
-                            // Leave the batch empty if it has no messages
-                        } else {
-                            next_batch.status = BatchStatus::PendingAttestation;
-                            // Push the batch to the batches vector
-                            Batches::<T>::append(target, &next_batch);
-                            // Create a new empty batch for the next window
-                            NextBatch::<T>::insert(target, new_next_batch);
-
-                            Self::deposit_event(Event::NewAttestationBatch(target, next_batch));
-                        }
-                    } else {
-                        // Create a new empty batch for the next window
-                        NextBatch::<T>::insert(target, new_next_batch);
-                    }
-
-                    // If a batch exists, update its status
-                    Batches::<T>::mutate(target, |batches| {
-                        if let Some(batches) = batches {
-                            for mut batch in batches.iter_mut() {
-                                if batch.status == BatchStatus::PendingAttestation
-                                    && batch.signatures.len() >= quorum
-                                {
-                                    batch.status = BatchStatus::ReadyForSubmissionByMajority;
-                                    Self::deposit_event(Event::NewConfirmationBatch(
-                                        target,
-                                        batch.clone(),
-                                    ));
-                                }
-                            }
-                        }
-                    });
-                }
+                aggregated_weight = Self::process_next_batch_window(n, aggregated_weight);
             }
-            0
+            aggregated_weight
         }
     }
 
