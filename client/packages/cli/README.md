@@ -6,7 +6,7 @@ A CLI tool for interacting with the t3rn circuit.
 
 The CLI is yet to be published to NPM, so you must manually install the dependencies and build the CLI from the source. To do so, run the command below to install the CLI dependencies:
 
-```
+```bash
 npm i -g yarn
 yarn i
 ```
@@ -15,7 +15,7 @@ yarn i
 
 To start using the cli, you need to generate a `.t3rnrc.json` config file.
 
-```
+```bash
 yarn cli init -c
 ```
 
