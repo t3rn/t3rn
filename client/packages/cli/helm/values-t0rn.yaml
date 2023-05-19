@@ -1,4 +1,5 @@
 jobs:
+  # This is replaced by grandpa ranger but left here as an example to show how to run a cli as cronjob
   - name: ranger
     env:
       - name: WS_CIRCUIT_ENDPOINT
