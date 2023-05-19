@@ -35,7 +35,7 @@ pub mod pallet {
         CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use t3rn_primitives::{circuit::ReadSFX, portal::Portal, xdns::Xdns, ExecutionVendor};
+    use t3rn_primitives::{circuit::ReadSFX, portal::Portal, rewards::RewardsWriteApi, xdns::Xdns};
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
@@ -130,6 +130,7 @@ pub mod pallet {
         type ActiveSetSize: Get<u32>;
         type CommitteeSize: Get<u32>;
         type BatchingWindow: Get<Self::BlockNumber>;
+        type RepatriationPeriod: Get<Self::BlockNumber>;
         type ShufflingFrequency: Get<Self::BlockNumber>;
         type MaxBatchSize: Get<u32>;
         type RewardMultiplier: Get<BalanceOf<Self>>;
@@ -141,6 +142,7 @@ pub mod pallet {
         type MinNominatorBond: Get<BalanceOf<Self>>;
         type MinAttesterBond: Get<BalanceOf<Self>>;
         type Portal: Portal<Self>;
+        type Rewards: RewardsWriteApi<Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
         type Xdns: Xdns<Self>;
     }
@@ -1240,10 +1242,53 @@ pub mod pallet {
             full_shuffle
         }
 
-        pub fn process_next_batch_window(
-            n: T::BlockNumber,
-            mut aggregated_weight: Weight,
-        ) -> Weight {
+        pub fn process_repatriations(n: T::BlockNumber, aggregated_weight: Weight) -> Weight {
+            for target in AttestationTargets::<T>::get() {
+                Batches::<T>::mutate(target, |batches| {
+                    let mut repatriated = false;
+                    if let Some(batches) = batches {
+                        batches
+                            .iter_mut()
+                            .filter(|batch| {
+                                batch.status == BatchStatus::PendingAttestation
+                                    && batch.created + T::RepatriationPeriod::get() <= n
+                            })
+                            .for_each(|batch| {
+                                if let Some(batch_sfx) = batch.batch_sfx.as_ref() {
+                                    batch_sfx
+                                        .iter()
+                                        .filter_map(|sfx_id| {
+                                            T::Hash::decode(&mut &sfx_id.as_bytes()[..])
+                                                .map(|sfx_id_as_hash| (sfx_id, sfx_id_as_hash))
+                                                .ok()
+                                        })
+                                        .for_each(|(sfx_id, sfx_id_as_hash)| {
+                                            if let Ok(fsx) = T::ReadSFX::get_fsx(sfx_id_as_hash) {
+                                                if T::Rewards::repatriate_executor_from_slash_treasury(
+                                                    sfx_id, &fsx,
+                                                ) {
+                                                    repatriated = true;
+                                                }
+                                            } else {
+                                                log::warn!(
+                                                    "SFX not found while processing repatriations"
+                                                );
+                                            }
+                                        });
+                                }
+                                if repatriated {
+                                    batch.status = BatchStatus::Repatriated;
+                                } else {
+                                    batch.status = BatchStatus::Expired;
+                                }
+                            });
+                    }
+                });
+            }
+            aggregated_weight
+        }
+
+        pub fn process_next_batch_window(n: T::BlockNumber, aggregated_weight: Weight) -> Weight {
             let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
 
             for target in AttestationTargets::<T>::get() {
@@ -1473,16 +1518,15 @@ pub mod attesters_test {
         TargetId, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
         SR25519_ATTESTER_KEY_TYPE_ID,
     };
+
     use codec::Encode;
     use frame_support::{
         assert_err, assert_ok,
         traits::{Currency, Get, Hooks, Len},
         StorageValue,
     };
-    use sp_application_crypto::{
-        ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic, Ss58Codec,
-    };
-    use sp_core::{H160, H256};
+    use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
+    use sp_core::H256;
     use sp_runtime::traits::BlakeTwo256;
 
     use crate::TargetBatchDispatchEvent;
@@ -1490,14 +1534,16 @@ pub mod attesters_test {
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, Attesters, AttestersError, AttestersStore, Balance, Balances,
         BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards, CurrentCommittee,
-        ExtBuilder, MiniRuntime, NextBatch, Nominations, Origin, PendingSlashes,
-        PendingUnnominations, PreviousCommittee, Rewards, SortedNominatedAttesters, System,
+        ExtBuilder, FullSideEffects, MiniRuntime, NextBatch, Nominations, Origin, PendingSlashes,
+        PendingUnnominations, PreviousCommittee, Rewards, SFX2XTXLinksMap,
+        SortedNominatedAttesters, System,
     };
     use t3rn_primitives::{
         attesters::{AttesterInfo, AttestersReadApi, AttestersWriteApi, CommitteeTransition},
+        circuit::{FullSideEffect, SecurityLvl, SideEffect},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         xdns::GatewayRecord,
-        ExecutionVendor, GatewayVendor,
+        ExecutionVendor, GatewayVendor, TreasuryAccount, TreasuryAccountProvider,
     };
     use tiny_keccak::{Hasher, Keccak};
 
