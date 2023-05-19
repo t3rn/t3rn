@@ -27,15 +27,16 @@ updates:
     directory: client/packages/cli
     schedule:
       interval: daily
-      ignore:
-        - update-types: version-update:semver-patch
+    ignore:
+      - update-types: version-update:semver-patch
+
   - package-ecosystem: npm
     directory: client/packages/executor
     open-pull-requests-limit: 1
     schedule:
       interval: daily
-      ignore:
-        - update-types: version-update:semver-patch
+    ignore:
+      - update-types: version-update:semver-patch
 
   # TODO: uncomment when we have a proper tests for all node applications
   # - package-ecosystem: "npm" 
