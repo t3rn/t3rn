@@ -254,6 +254,8 @@ pub trait Xdns<T: frame_system::Config> {
 
     fn get_verification_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError>;
 
+    fn get_target_codec(chain_id: &ChainId) -> Result<t3rn_abi::Codec, DispatchError>;
+
     fn get_escrow_account(chain_id: &ChainId) -> Result<Vec<u8>, DispatchError>;
 
     fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>>;
