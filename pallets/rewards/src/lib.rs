@@ -10,9 +10,10 @@ pub mod pallet {
     use frame_support::{
         dispatch::DispatchResult,
         pallet_prelude::*,
-        traits::{Currency, FindAuthor},
+        traits::{Currency, ExistenceRequirement, FindAuthor, ReservableCurrency, WithdrawReasons},
     };
     use frame_system::pallet_prelude::*;
+    use sp_core::H256;
 
     use sp_runtime::{
         traits::{CheckedAdd, CheckedDiv, Saturating, Zero},
@@ -22,8 +23,10 @@ pub mod pallet {
     use t3rn_primitives::{
         account_manager::{AccountManager, Settlement},
         attesters::AttestersReadApi,
+        circuit::FullSideEffect,
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         clock::Clock as ClockTrait,
+        rewards::RewardsWriteApi,
         TreasuryAccount, TreasuryAccountProvider,
     };
 
@@ -38,6 +41,15 @@ pub mod pallet {
         pub treasury_rewards: Balance,
         pub available: Balance,
         pub distributed: Balance,
+    }
+
+    #[derive(Clone, Encode, Decode, PartialEq, Eq, Debug, TypeInfo, Default)]
+    pub struct TreasuryBalanceSheet<Balance: Default> {
+        pub treasury: Balance,
+        pub escrow: Balance,
+        pub fee: Balance,
+        pub slash: Balance,
+        pub parachain: Balance,
     }
 
     #[pallet::config]
@@ -100,6 +112,8 @@ pub mod pallet {
 
         type ExecutorBootstrapRewards: Get<Percent>;
 
+        type StartingRepatriationPercentage: Get<Percent>;
+
         type Clock: ClockTrait<Self>;
 
         type AccountManager: AccountManager<
@@ -140,6 +154,15 @@ pub mod pallet {
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
 
     #[pallet::storage]
+    #[pallet::getter(fn estimated_treasury_balance)]
+    pub type EstimatedTreasuryBalance<T: Config> =
+        StorageValue<_, TreasuryBalanceSheet<BalanceOf<T>>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn repatriation_percentage)]
+    pub type RepatriationPercentage<T: Config> = StorageValue<_, Percent, ValueQuery>;
+
+    #[pallet::storage]
     pub type DistributionBlock<T: Config> = StorageValue<_, T::BlockNumber>;
 
     #[pallet::storage]
@@ -171,6 +194,7 @@ pub mod pallet {
         CollatorRewarded(T::AccountId, BalanceOf<T>),
         ExecutorRewarded(T::AccountId, BalanceOf<T>),
         Claimed(T::AccountId, BalanceOf<T>),
+        PendingClaim(T::AccountId, BalanceOf<T>),
     }
 
     #[pallet::error]
@@ -574,6 +598,27 @@ pub mod pallet {
             }
         }
 
+        pub fn process_update_estimated_treasury_balance() {
+            let treasury_balance = TreasuryBalanceSheet {
+                escrow: T::Currency::free_balance(&T::TreasuryAccounts::get_treasury_account(
+                    TreasuryAccount::Escrow,
+                )),
+                slash: T::Currency::free_balance(&T::TreasuryAccounts::get_treasury_account(
+                    TreasuryAccount::Slash,
+                )),
+                treasury: T::Currency::free_balance(&T::TreasuryAccounts::get_treasury_account(
+                    TreasuryAccount::Treasury,
+                )),
+                parachain: T::Currency::free_balance(&T::TreasuryAccounts::get_treasury_account(
+                    TreasuryAccount::Parachain,
+                )),
+                fee: T::Currency::free_balance(&T::TreasuryAccounts::get_treasury_account(
+                    TreasuryAccount::Fee,
+                )),
+            };
+            EstimatedTreasuryBalance::<T>::put(treasury_balance);
+        }
+
         pub fn process_authors_this_period() {
             Authors::<T>::mutate(|authors| {
                 for (author, count) in AuthorsThisPeriod::<T>::get().iter() {
@@ -628,11 +673,81 @@ pub mod pallet {
             let mut pending_claims = PendingClaims::<T>::get(account).unwrap_or_default();
             pending_claims.push(claim);
             PendingClaims::<T>::insert(account, pending_claims);
+            Self::deposit_event(Event::PendingClaim(account.clone(), reward));
+        }
+    }
+
+    impl<T: Config> RewardsWriteApi<T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
+        /// This function is called by the attesters pallet to repatriate the executor of honest SFX
+        /// for attesters not signing on the attestation within the acceptable time limit.
+        /// The repatriation is done on the agreed percentage value of the SlashTreasury, the current percantage is available through the `repatriation_percentage` function.
+        /// Since the percentage and the estimated slash treasury balance are known, the amount of funds to be repatriated can be calculated by executors prior to bidding for SFX on Escrow Targets, with the following formula:
+        /// `amount_to_be_repatriated = slash_treasury_balance * repatriation_percentage`
+        fn repatriate_executor_from_slash_treasury(
+            sfx_id: &H256,
+            fsx: &FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        ) -> bool {
+            if let Some(executor) = &fsx.input.enforce_executor {
+                let treasury_account =
+                    T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Slash);
+                let slash_treasury_balance = T::Currency::free_balance(&treasury_account);
+                let repatriation_percentage = Self::repatriation_percentage();
+                let amount_to_be_repatriated =
+                    repatriation_percentage.mul_ceil(slash_treasury_balance);
+
+                if amount_to_be_repatriated <= T::Currency::minimum_balance() {
+                    log::error!(
+                        "Repatriation for {:?} from slash treasury failed for side effect id: {:?} because amount to be repatriated is less than existential deposit",
+                        amount_to_be_repatriated,
+                        sfx_id
+                    );
+                    return false
+                }
+
+                match T::Currency::ensure_can_withdraw(
+                    &treasury_account,
+                    amount_to_be_repatriated,
+                    WithdrawReasons::TRANSFER,
+                    slash_treasury_balance,
+                ) {
+                    Err(_) => {
+                        log::error!(
+                            "Repatriation for {:?} from slash treasury failed for side effect id: {:?} because treasury balance is not enough",
+                            amount_to_be_repatriated,
+                            sfx_id
+                        );
+                        return false
+                    },
+                    Ok(_) => {
+                        // Decrease slash treasury balance
+                        let _ = T::Currency::withdraw(
+                            &treasury_account,
+                            amount_to_be_repatriated,
+                            WithdrawReasons::TRANSFER,
+                        ExistenceRequirement::KeepAlive,
+                        ).expect("Failed to withdraw from treasury account, this should never happen since we checked the balance before");
+
+                        Self::update_pending_claims(
+                            executor,
+                            CircuitRole::Executor,
+                            amount_to_be_repatriated,
+                            BenefitSource::SlashTreasury,
+                        );
+
+                        return true
+                    },
+                }
+            }
+            false
         }
     }
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_finalize(_n: BlockNumberFor<T>) {
+            Self::process_update_estimated_treasury_balance()
+        }
+
         fn on_initialize(n: T::BlockNumber) -> Weight {
             let mut weight: Weight = 0;
             if n % T::Clock::round_duration() == Zero::zero() {
@@ -656,7 +771,7 @@ pub mod pallet {
     // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        phantom: PhantomData<T>,
+        pub phantom: PhantomData<T>,
     }
 
     // The default value for the genesis config type.
@@ -676,6 +791,7 @@ pub mod pallet {
             IsClaimingHalted::<T>::put(false);
             IsDistributionHalted::<T>::put(false);
             IsSettlementAccumulationHalted::<T>::put(false);
+            RepatriationPercentage::<T>::put(T::StartingRepatriationPercentage::get());
         }
     }
 }
@@ -695,10 +811,11 @@ pub mod test {
     };
     use t3rn_primitives::{
         account_manager::{Outcome, Settlement},
+        circuit::{FullSideEffect, SecurityLvl, SideEffect},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+        rewards::RewardsWriteApi,
         TreasuryAccount, TreasuryAccountProvider,
     };
-
     #[test]
     fn test_available_distribution_totals_to_max_4_4_percent_after_almost_1_year() {
         let _total_supply_account = AccountId::from([99u8; 32]);
@@ -1167,6 +1284,93 @@ pub mod test {
                 Balances::free_balance(single_executor),
                 1900 as Balance + INITIAL_BALANCE
             );
+        });
+    }
+
+    #[test]
+    fn test_successful_repatriate_executor_from_slash_treasury() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let executor = AccountId::from([99u8; 32]);
+            const SLASH_TREASURY_BALANCE: Balance = 100;
+            Balances::deposit_creating(
+                &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
+                SLASH_TREASURY_BALANCE,
+            );
+            let fsx = FullSideEffect {
+                input: SideEffect {
+                    enforce_executor: Some(executor.clone()),
+                    target: [0u8; 4],
+                    max_reward: 1,
+                    insurance: 1,
+                    action: [0u8; 4],
+                    encoded_args: vec![],
+                    signature: vec![],
+                    reward_asset_id: None,
+                },
+                confirmed: None,
+                security_lvl: SecurityLvl::Escrow,
+                submission_target_height: 1,
+                best_bid: None,
+                index: 0,
+            };
+
+            let sfx_id = H256::from([99u8; 32]);
+            assert!(Rewards::repatriate_executor_from_slash_treasury(
+                &sfx_id, &fsx
+            ));
+
+            assert_eq!(
+                Balances::free_balance(&MiniRuntime::get_treasury_account(TreasuryAccount::Slash)),
+                90
+            );
+
+            assert_eq!(
+                Rewards::get_pending_claims(executor.clone()),
+                Some(vec![ClaimableArtifacts {
+                    beneficiary: executor,
+                    role: CircuitRole::Executor,
+                    total_round_claim: 10,
+                    benefit_source: BenefitSource::SlashTreasury,
+                }])
+            );
+        });
+    }
+
+    #[test]
+    fn test_repatriate_executor_from_empty_slash_treasury() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let executor = AccountId::from([99u8; 32]);
+            const SLASH_TREASURY_BALANCE: Balance = 0;
+            Balances::deposit_creating(
+                &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
+                SLASH_TREASURY_BALANCE,
+            );
+            let fsx = FullSideEffect {
+                input: SideEffect {
+                    enforce_executor: Some(executor.clone()),
+                    target: [0u8; 4],
+                    max_reward: 1,
+                    insurance: 1,
+                    action: [0u8; 4],
+                    encoded_args: vec![],
+                    signature: vec![],
+                    reward_asset_id: None,
+                },
+                confirmed: None,
+                security_lvl: SecurityLvl::Escrow,
+                submission_target_height: 1,
+                best_bid: None,
+                index: 0,
+            };
+
+            let sfx_id = H256::from([99u8; 32]);
+            assert!(!Rewards::repatriate_executor_from_slash_treasury(
+                &sfx_id, &fsx
+            ));
+
+            assert_eq!(Rewards::get_pending_claims(executor.clone()), None);
         });
     }
 }
