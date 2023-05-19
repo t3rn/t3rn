@@ -432,6 +432,13 @@ pub mod pallet {
             }
         }
 
+        fn get_target_codec(chain_id: &ChainId) -> Result<Codec, DispatchError> {
+            match <Gateways<T>>::get(chain_id) {
+                Some(rec) => Ok(rec.codec),
+                None => Err(Error::<T>::XdnsRecordNotFound.into()),
+            }
+        }
+
         fn get_escrow_account(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
             match <Gateways<T>>::get(chain_id) {
                 Some(rec) => Ok(rec.escrow_account.encode()),

@@ -11,7 +11,8 @@ version     = "1.9.0-rc.0"
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-frame-support      = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
+tiny-keccak       = "2.0.0"
+frame-support     = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 frame-system      = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27' }
 
 scale-info       = { version = "2.1.1", default-features = false, features = [ "derive" ] }
@@ -28,6 +29,8 @@ sp-application-crypto = { default-features = false, git = "https://github.com/pa
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', optional = true }
 
 t3rn-primitives = { path = "../../primitives", default-features = false }
+t3rn-abi        = { path = "../../types/abi", default-features = false }
+
 [dev-dependencies]
 hex                             = "0.4.2"
 hex-literal                     = "0.2.1"
@@ -47,9 +50,10 @@ std = [
     "frame-support/std",
     "frame-system/std",
     "t3rn-primitives/std",
+    "t3rn-abi/std",
 ]
 
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "t3rn-abi/std" ]
 
 runtime-benchmarks = [
     "frame-benchmarking/runtime-benchmarks",
@@ -57,3 +61,5 @@ runtime-benchmarks = [
     "frame-system/runtime-benchmarks",
     "sp-runtime/runtime-benchmarks"
 ]
+
+test-skip-verification = [ ]

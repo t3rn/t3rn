@@ -6118,8 +6118,10 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "t3rn-abi",
  "t3rn-mini-mock-runtime",
  "t3rn-primitives",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -12652,7 +12654,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.26.0-rc.0"
+version = "1.27.0-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12728,7 +12730,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.26.0-rc.0"
+version = "1.27.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",

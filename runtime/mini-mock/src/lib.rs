@@ -1,10 +1,9 @@
 use codec::{Decode, Encode};
 use frame_support::{traits::FindAuthor, RuntimeDebug};
 pub use pallet_attesters::{
-    ActiveSet, Attestation, AttestationFor, AttestationStatus, Attestations,
-    Attesters as AttestersStore, BatchStatus, Batches, Config as ConfigAttesters, CurrentCommittee,
-    Error as AttestersError, Nominations, PendingSlashes, PendingUnnominations, PreviousCommittee,
-    SortedNominatedAttesters,
+    ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
+    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, NextBatch, Nominations,
+    PendingSlashes, PendingUnnominations, PreviousCommittee, SortedNominatedAttesters,
 };
 
 mod treasuries_config;
@@ -203,10 +202,12 @@ impl pallet_attesters::Config for MiniRuntime {
     type MaxBatchSize = ConstU32<128>;
     type MinAttesterBond = MinAttesterBond;
     type MinNominatorBond = MinNominatorBond;
+    type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = SlashAccount;
+    type Xdns = XDNS;
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for MiniRuntime {}
