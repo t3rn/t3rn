@@ -5,7 +5,7 @@ pub use pallet_attesters::{
     Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, NextBatch, Nominations,
     PendingSlashes, PendingUnnominations, PreviousCommittee, SortedNominatedAttesters,
 };
-
+pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
 mod treasuries_config;
 
 pub use pallet_account_manager::{
@@ -208,7 +208,9 @@ impl pallet_attesters::Config for MiniRuntime {
     type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
     type ReadSFX = Circuit;
+    type RepatriationPeriod = ConstU32<60>;
     type RewardMultiplier = RewardMultiplier;
+    type Rewards = Rewards;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = SlashAccount;
     type Xdns = XDNS;

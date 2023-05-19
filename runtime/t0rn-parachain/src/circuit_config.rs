@@ -1,6 +1,6 @@
 use crate::{
     AccountId, AccountManager, Attesters, Aura, Balance, Balances, BlockNumber, Call, Circuit,
-    Clock, Event, Portal, RandomnessCollectiveFlip, Runtime, Timestamp, XDNS,
+    Clock, Event, Portal, RandomnessCollectiveFlip, Rewards, Runtime, Timestamp, XDNS,
 };
 use sp_runtime::Percent;
 use sp_std::marker::PhantomData;
@@ -150,7 +150,9 @@ impl pallet_attesters::Config for Runtime {
     type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
     type ReadSFX = Circuit;
+    type RepatriationPeriod = ConstU32<60>;
     type RewardMultiplier = RewardMultiplier;
+    type Rewards = Rewards;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = EscrowAccount;
     type Xdns = XDNS;
