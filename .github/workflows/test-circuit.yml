@@ -131,7 +131,7 @@ jobs:
     name: Zombienet Smoke Test
     runs-on: [self-hosted, rust]
     needs: [changes, build-test]
-    if: needs.changes.outputs.src == 'true'
+    if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
     steps:
       - name: ☁️ Checkout git repo
         uses: actions/checkout@v3
