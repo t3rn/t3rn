@@ -28,7 +28,8 @@ updates:
     schedule:
       interval: daily
     ignore:
-      - update-types: version-update:semver-patch
+      - dependency-name: "*"
+        update-types: version-update:semver-patch
 
   - package-ecosystem: npm
     directory: client/packages/executor
@@ -36,7 +37,8 @@ updates:
     schedule:
       interval: daily
     ignore:
-      - update-types: version-update:semver-patch
+      - dependency-name: "*"
+        update-types: version-update:semver-patch
 
   # TODO: uncomment when we have a proper tests for all node applications
   # - package-ecosystem: "npm" 
