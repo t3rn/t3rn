@@ -23,18 +23,22 @@ updates:
     schedule:
       interval: "daily"
 
-  # TODO: uncomment when we have a proper tests for all node applications
-  # - package-ecosystem: "npm" 
-  #   directory: "client/packages/cli"
-  #   schedule:
-  #     interval: "daily"
-
   - package-ecosystem: "npm" 
+    directory: "client/packages/cli"
+    schedule:
+      interval: "daily"
+      ignore:
+      - update-types: "version-update:semver-patch"
+
+  - package-ecosystem: "npm"
     directory: "client/packages/executor"
     open-pull-requests-limit: 1
     schedule:
       interval: "daily"
+      ignore:
+      - update-types: "version-update:semver-patch"
 
+  # TODO: uncomment when we have a proper tests for all node applications
   # - package-ecosystem: "npm" 
   #   directory: "client/packages/sdk"
   #   schedule:
