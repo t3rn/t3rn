@@ -54,6 +54,7 @@ pub mod light_client;
 pub mod match_format;
 pub mod monetary;
 pub mod portal;
+pub mod rewards;
 pub mod signature_caster;
 pub mod storage;
 pub mod threevm;
