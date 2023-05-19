@@ -32,7 +32,7 @@ pub mod test {
     const INITIAL_BALANCE: Balance = 10;
 
     fn stage_single_sfx_xtx() -> (
-        LocalXtxCtx<Runtime>,
+        LocalXtxCtx<Runtime, Balance>,
         Hash,
         SFXBid<AccountId, Balance, AssetId>,
         Hash,
@@ -64,7 +64,7 @@ pub mod test {
     }
 
     fn request_and_bid_single_sfx_xtx(
-        local_ctx: &mut LocalXtxCtx<Runtime>,
+        local_ctx: &mut LocalXtxCtx<Runtime, Balance>,
         bid: &SFXBid<AccountId, Balance, AssetId>,
     ) -> DispatchResult {
         assert_ok!(SquareUp::<Runtime>::try_request(local_ctx));
