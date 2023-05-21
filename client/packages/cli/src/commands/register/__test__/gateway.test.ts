@@ -1,6 +1,7 @@
 import fetch from "node-fetch"
 import { beforeAll, describe } from "@jest/globals"
-import { spinner, fetchLatestAuthoritySetUpdateBlock } from "../gateway.ts"
+import { spinner } from "../gateway.ts"
+import { fetchLatestAuthoritySetUpdateBlock } from "../vendors/substrate.ts"
 
 jest.mock("node-fetch")
 
