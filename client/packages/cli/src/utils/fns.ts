@@ -1,9 +1,9 @@
 import z from "zod"
 import figlet from "figlet"
-import { cryptoWaitReady } from "@t3rn/sdk"
-import { log } from "./log.ts"
 import cleanStack from "clean-stack"
+import { cryptoWaitReady } from "@t3rn/sdk"
 import { CONFIG_FILE } from "@/consts.ts"
+import { log } from "./log.ts"
 
 export const greet = () =>
   console.log(
@@ -40,9 +40,11 @@ export const validate = <T>(
   }
 }
 
+type Args = Array<Record<string, unknown>>
+
 export const wrapCryptoWaitReady =
-  (cb: (...args: any[]) => void) =>
-    async (...args: any[]) => {
+  (cb: (...args: Args) => void) =>
+    async (...args: Args) => {
       try {
         const isReady = await cryptoWaitReady()
 
