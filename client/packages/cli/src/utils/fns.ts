@@ -6,11 +6,9 @@ import { CONFIG_FILE } from "@/consts.ts"
 import { log } from "./log.ts"
 
 export const greet = () =>
-  console.log(
-    figlet.textSync("t3rn CLI", {
-      font: "3D-ASCII",
-    })
-  )
+  figlet.textSync("t3rn CLI", {
+    font: "3D-ASCII",
+  })
 
 export const validate = <T>(
   schema: z.ZodType<T>,
