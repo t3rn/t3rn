@@ -40,7 +40,7 @@ export const validate = <T>(
   }
 }
 
-type Args = Array<Record<string, unknown>>
+type Args = Array<Record<string, unknown> | string | number>
 
 export const wrapCryptoWaitReady =
   (cb: (...args: Args) => void) =>
