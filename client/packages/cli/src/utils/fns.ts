@@ -49,7 +49,7 @@ export const wrapCryptoWaitReady =
         if (isReady) {
           cb(...args)
         } else {
-          throw new Error("Crypto is not ready")
+          throw new Error("Oops! @polkadot/wasm-crypto module is not ready")
         }
       } catch (err) {
         log("ERROR", cleanStack(err.message))
