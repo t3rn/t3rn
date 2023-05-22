@@ -1,0 +1,127 @@
+name: Grandpa Ranger
+
+on:
+  pull_request:
+  push:
+    branches:
+      - development
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  # This job checks if files has been modified.
+  # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+            - "client/packages/grandpa-ranger.Dockerfile"
+            - "client/packages/grandpa-ranger/**/*.ts"
+            - "client/packages/grandpa-ranger/**/*.json"
+            - ".github/workflows/grandpa-ranger.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
+  test-grandpa-ranger:
+    name: Test Grandpa Ranger
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+    defaults:
+      run:
+        working-directory: client/packages/grandpa-ranger
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Read .nvmrc
+        run: echo NVMRC=`cat .nvmrc` >> $GITHUB_ENV
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NVMRC }}
+
+      - run: yarn
+      - run: yarn fmt
+
+      - name: Save Code Linting Report JSON
+        if: github.event_name == 'pull_request'
+        run: npm run lint:report
+        # Continue to the next step even if this fails
+        continue-on-error: true
+
+      - name: Annotate Code Linting Results
+        if: github.event_name == 'pull_request'
+        uses: ataylorme/eslint-annotate-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: client/packages/grandpa-ranger/eslint_report.json
+        # TODO: uncomment when ready
+        continue-on-error: true
+
+  build-docker:
+    name: Build Docker Grandpa Ranger
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Docker
+        working-directory: ./client
+        run: |
+          docker build . -f grandpa-ranger.Dockerfile
+
+  deploy:
+    name: Deploy Grandpa Ranger
+    runs-on: self-hosted
+    needs: test-grandpa-ranger
+    if: github.ref == 'refs/heads/development'
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+  
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+  
+      - name: Build grandpa-ranger
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: test-t0rn-grandpa-ranger
+          IMAGE_TAG: ${{ github.sha }}
+        working-directory: ./client
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f grandpa-ranger.Dockerfile
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: EKS
+        run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
+
+      - name: Helm Upgrade
+        working-directory: ./client/packages/grandpa-ranger
+        run: helm upgrade grandpa-ranger ./helm -n grandpa-ranger -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-grandpa-ranger"
