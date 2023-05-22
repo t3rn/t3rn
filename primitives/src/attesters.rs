@@ -3,7 +3,6 @@ use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
 use sp_core::{crypto::Ss58Codec, sr25519::Public, H160, H256};
 use sp_runtime::Percent;
 use sp_std::{convert::TryInto, prelude::*};
-use std::io::Read;
 use t3rn_types::sfx::TargetId;
 
 // Key types for attester crypto
@@ -81,14 +80,12 @@ impl AttesterInfo {
             },
             ExecutionVendor::Substrate => {
                 let pubkey_as_sr = sr25519::Public::from_raw(self.key_sr);
-                let mut address_string_buffer = String::new();
-                let mut address_slice = self.substrate_address.as_slice();
-                address_slice
-                    .read_to_string(&mut address_string_buffer)
-                    .map_err(|_| "InvalidAddress")?;
 
-                let address_as_sr = Public::from_ss58check(address_string_buffer.as_str())
-                    .map_err(|_| "InvalidAddress")?;
+                let mut address_string = sp_std::str::from_utf8(self.substrate_address.as_slice())
+                    .map_err(|_e| "InvalidAddress")?;
+
+                let address_as_sr =
+                    Public::from_ss58check(address_string).map_err(|_| "InvalidAddress")?;
 
                 Ok(address_as_sr == pubkey_as_sr)
             },
