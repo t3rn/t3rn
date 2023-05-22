@@ -7,6 +7,13 @@
 # https://github.com/dependabot/dependabot-core/issues/3951
 
 version: 2
+registries:
+  github:
+    type: git
+    url: https://github.com
+    username: x-access-token
+    password: ${{secrets.GH_PAT}}
+
 updates:
   - package-ecosystem: github-actions
     directory: /
@@ -19,6 +26,8 @@ updates:
   # that's why we need to specify each dir
   - package-ecosystem: cargo
     directory: /
+    registries:
+      - github
     open-pull-requests-limit: 3
     schedule:
       interval: daily
