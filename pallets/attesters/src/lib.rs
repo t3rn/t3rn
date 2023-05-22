@@ -35,9 +35,7 @@ pub mod pallet {
         CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use t3rn_primitives::{
-        circuit::ReadSFX, portal::Portal, rewards::RewardsWriteApi, xdns::Xdns, ExecutionVendor,
-    };
+    use t3rn_primitives::{circuit::ReadSFX, portal::Portal, xdns::Xdns, ExecutionVendor};
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
