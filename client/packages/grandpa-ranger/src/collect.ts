@@ -27,24 +27,29 @@ export const generateRange = async (config: any, circuitConnection: Connection, 
 }
 
 const generateBatchProof = async (circuitClient: ApiPromise, targetClient: ApiPromise, targetGatewayId: string, from: number, to: number): Promise<any[]> => {
-
 	let transactionArguments: any[] = [];
+
 	while(from < to) {
 		// get finalityProof element of epoch that contains block #from
 		const finalityProof = await targetClient.rpc.grandpa.proveFinality(from)
 		// decode finality proof
 		let { justification, headers } = Encodings.Substrate.Decoders.finalityProofDecode(finalityProof)
-		let signed_header = headers.pop()
 
-		// query from header again, as its not part of the proof, and concat
-		headers = [await getHeader(targetClient, from), ...headers]
+		let signed_header;
+		if(headers.length == 0) { // Only one block in epoch missing
+			signed_header = await getHeader(targetClient, from)
+			from = parseInt(signed_header.number) + 1
+		} else {
+			signed_header = headers.pop()
+			headers = [await getHeader(targetClient, from), ...headers]
+			from = parseInt(signed_header.number.toJSON()) + 1
+		}
+
 		let range = circuitClient.createType("Vec<Header>", headers)
-
 		justification = Encodings.Substrate.Decoders.justificationDecode(justification);
 
 		//push to transaction queue
 		transactionArguments.push({gatewayId: circuitClient.createType("ChainId", targetGatewayId), signed_header, range, justification})
-		from = parseInt(signed_header.number.toJSON()) + 1
 	}
 	return transactionArguments;
 

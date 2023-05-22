@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.27.1-rc.0] - 2023-05-22
+### :bug: Bug Fixes
+- [`b05216d`](https://github.com/t3rn/t3rn/commit/b05216d82696740d946ce4a1d931580a808b717f) - grandpa range edge case *(PR [#1001](https://github.com/t3rn/t3rn/pull/1001) by [@petscheit](https://github.com/petscheit))*
+
+
 ## [v1.27.0-rc.0] - 2023-05-19
 ### :sparkles: New Features
 - [`5243ee1`](https://github.com/t3rn/t3rn/commit/5243ee12816ad84e990d19198d1ea1898b13725e) - batch attestations per target for committee transitions, penalties and SFX *(PR [#980](https://github.com/t3rn/t3rn/pull/980) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1163,3 +1168,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.25.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.25.0-rc.0...v1.25.1-rc.0
 [v1.26.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.25.1-rc.0...v1.26.0-rc.0
 [v1.27.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.26.0-rc.0...v1.27.0-rc.0
+[v1.27.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.27.0-rc.0...v1.27.1-rc.0
