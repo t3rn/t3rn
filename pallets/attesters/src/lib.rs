@@ -20,7 +20,7 @@ pub mod pallet {
         traits::{Currency, ExistenceRequirement, Randomness, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
-    use sp_core::H256;
+    use sp_core::{H160, H256};
     use t3rn_abi::{recode::Codec, FilledAbi};
     pub use t3rn_primitives::portal::InclusionReceipt;
 
@@ -35,7 +35,9 @@ pub mod pallet {
         CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use t3rn_primitives::{portal::Portal, xdns::Xdns};
+    use t3rn_primitives::{
+        circuit::ReadSFX, portal::Portal, rewards::RewardsWriteApi, xdns::Xdns, ExecutionVendor,
+    };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
@@ -275,6 +277,8 @@ pub mod pallet {
             ecdsa_key: [u8; 33],
             ed25519_key: [u8; 32],
             sr25519_key: [u8; 32],
+            eth_address: H160,
+            substrate_address: Vec<u8>,
             custom_commission: Option<Percent>,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
@@ -306,6 +310,8 @@ pub mod pallet {
                     key_sr: sr25519_key,
                     commission,
                     index: next_index,
+                    eth_address,
+                    substrate_address,
                 },
             );
 
@@ -415,11 +421,15 @@ pub mod pallet {
                 Error::<T>::NotInCurrentCommittee
             );
 
+            // ToDo: Generalize attesters to work with multiple ExecutionVendor architecture.
+            //  For now, assume Ethereum.
+            //  let _target_verification_vendor = T::Xdns::get_verification_vendor(&target)?;
             let is_verified = attester
-                .verify_attestation_signature(
+                .verify_attestation_signature_against_address(
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     &message.encode(),
                     &signature,
+                    &ExecutionVendor::EVM,
                 )
                 .map_err(|_| Error::<T>::InvalidSignature)?;
 
@@ -1328,18 +1338,19 @@ pub mod attesters_test {
         TargetId, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
         SR25519_ATTESTER_KEY_TYPE_ID,
     };
-
     use codec::Encode;
     use frame_support::{
         assert_err, assert_ok,
         traits::{Currency, Get, Hooks, Len},
         StorageValue,
     };
-    use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
-    use sp_core::H256;
+    use sp_application_crypto::{
+        ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic, Ss58Codec,
+    };
+    use sp_core::{H160, H256};
+    use sp_runtime::traits::BlakeTwo256;
 
     use crate::TargetBatchDispatchEvent;
-
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, Attesters, AttestersError, AttestersStore, Balance, Balances,
@@ -1422,6 +1433,14 @@ pub mod attesters_test {
         let ed25519_key = ed25519::Pair::from_seed(&secret_key).public().to_raw_vec();
         let sr25519_key = sr25519::Pair::from_seed(&secret_key).public().to_raw_vec();
 
+        let sr25519_address = sr25519::Pair::from_seed(&secret_key)
+            .public()
+            .to_ss58check();
+
+        let secp_key: secp256k1::PublicKey =
+            secp256k1::PublicKey::from_slice(&ecdsa_key.as_slice()).unwrap();
+        let eth_address = t3rn_primitives::attesters::ecdsa_pubkey_to_eth_address(&secp_key);
+
         let _ = Balances::deposit_creating(&attester, 100u128);
 
         assert_ok!(Attesters::register_attester(
@@ -1430,6 +1449,8 @@ pub mod attesters_test {
             ecdsa_key.clone().try_into().unwrap(),
             ed25519_key.clone().try_into().unwrap(),
             sr25519_key.clone().try_into().unwrap(),
+            H160(eth_address),
+            sr25519_address.encode(),
             None,
         ));
 
@@ -1627,6 +1648,155 @@ pub mod attesters_test {
                     created: current_block_1,
                 }]
             );
+        });
+    }
+
+    #[test]
+    fn test_successfull_process_repatriation_for_pending_attestation_with_one_fsx() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: TargetId = [0, 0, 0, 0];
+            let current_block_1 = add_target_and_transition_to_next_batch(target);
+
+            let repatriated_executor = AccountId::from([1u8; 32]);
+            let mock_xtx_id = H256([2u8; 32]);
+            let mock_fsx = FullSideEffect {
+                input: SideEffect {
+                    enforce_executor: Some(repatriated_executor.clone()),
+                    target,
+                    max_reward: 1,
+                    insurance: 1,
+                    action: [0u8; 4],
+                    encoded_args: vec![],
+                    signature: vec![],
+                    reward_asset_id: None,
+                },
+                confirmed: None,
+                security_lvl: SecurityLvl::Escrow,
+                submission_target_height: 1,
+                best_bid: None,
+                index: 0,
+            };
+
+            let sfx_id = mock_fsx
+                .input
+                .generate_id::<BlakeTwo256>(mock_xtx_id.as_bytes(), 0u32);
+
+            assert_ok!(Attesters::request_sfx_attestation(target, sfx_id));
+
+            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+
+            let pending_batches = Attesters::get_batches(target, BatchStatus::PendingAttestation);
+            assert_eq!(pending_batches.len(), 1);
+            let pending_batch = pending_batches[0].clone();
+            assert_eq!(pending_batch.batch_sfx, Some(vec![sfx_id]));
+            assert_eq!(pending_batch.created, current_block_1);
+
+            const SLASH_TREASURY_BALANCE: Balance = 100;
+            Balances::deposit_creating(
+                &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
+                SLASH_TREASURY_BALANCE,
+            );
+
+            FullSideEffects::<MiniRuntime>::insert(mock_xtx_id, vec![vec![mock_fsx]]);
+            SFX2XTXLinksMap::<MiniRuntime>::insert(sfx_id, mock_xtx_id);
+
+            let repatriation_period: BlockNumber =
+                <MiniRuntime as ConfigAttesters>::RepatriationPeriod::get();
+            Attesters::on_initialize(2 * repatriation_period);
+
+            // The batch should change the status to Repatriated
+            let the_same_batch =
+                Attesters::get_batch_by_message(target, pending_batch.message()).unwrap();
+            assert_eq!(the_same_batch.status, BatchStatus::Repatriated);
+
+            assert_eq!(
+                Rewards::get_pending_claims(repatriated_executor.clone()),
+                Some(vec![ClaimableArtifacts {
+                    beneficiary: repatriated_executor,
+                    role: CircuitRole::Executor,
+                    total_round_claim: 10,
+                    benefit_source: BenefitSource::SlashTreasury,
+                }])
+            );
+        });
+    }
+
+    #[test]
+    fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_fsx_not_found(
+    ) {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: TargetId = [0, 0, 0, 0];
+            let current_block_1 = add_target_and_transition_to_next_batch(target);
+
+            let sfx_id = H256([3u8; 32]);
+
+            assert_ok!(Attesters::request_sfx_attestation(target, sfx_id));
+
+            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+
+            let pending_batches = Attesters::get_batches(target, BatchStatus::PendingAttestation);
+            assert_eq!(pending_batches.len(), 1);
+            let pending_batch = pending_batches[0].clone();
+            assert_eq!(pending_batch.batch_sfx, Some(vec![sfx_id]));
+            assert_eq!(pending_batch.created, current_block_1);
+
+            const SLASH_TREASURY_BALANCE: Balance = 100;
+            Balances::deposit_creating(
+                &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
+                SLASH_TREASURY_BALANCE,
+            );
+
+            let repatriation_period: BlockNumber =
+                <MiniRuntime as ConfigAttesters>::RepatriationPeriod::get();
+            Attesters::on_initialize(2 * repatriation_period);
+
+            // The batch should change the status to Expired
+            let the_same_batch =
+                Attesters::get_batch_by_message(target, pending_batch.message()).unwrap();
+            assert_eq!(the_same_batch.status, BatchStatus::Expired);
+        });
+    }
+
+    #[test]
+    fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_no_batch_fsx_required(
+    ) {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            let target: TargetId = [0, 0, 0, 0];
+            let current_block_1 = add_target_and_transition_to_next_batch(target);
+
+            let committee_transition: CommitteeTransition = [
+                1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
+                14u32, 15u32, 16u32, 17u32, 18u32, 19u32, 20u32, 21u32, 22u32, 23u32, 24u32, 25u32,
+                26u32, 27u32, 28u32, 29u32, 30u32, 31u32, 32u32,
+            ];
+
+            Attesters::request_next_committee_attestation(committee_transition);
+
+            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+
+            let pending_batches = Attesters::get_batches(target, BatchStatus::PendingAttestation);
+            assert_eq!(pending_batches.len(), 1);
+            let pending_batch = pending_batches[0].clone();
+            assert_eq!(pending_batch.batch_sfx, None);
+            assert_eq!(pending_batch.created, current_block_1);
+
+            const SLASH_TREASURY_BALANCE: Balance = 100;
+            Balances::deposit_creating(
+                &MiniRuntime::get_treasury_account(TreasuryAccount::Slash),
+                SLASH_TREASURY_BALANCE,
+            );
+
+            let repatriation_period: BlockNumber =
+                <MiniRuntime as ConfigAttesters>::RepatriationPeriod::get();
+            Attesters::on_initialize(2 * repatriation_period);
+
+            // The batch should change the status to Expired
+            let the_same_batch =
+                Attesters::get_batch_by_message(target, pending_batch.message()).unwrap();
+            assert_eq!(the_same_batch.status, BatchStatus::Expired);
         });
     }
 

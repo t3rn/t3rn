@@ -12,6 +12,9 @@ version     = "1.0.0-alpha.1"
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
+tiny-keccak           = { version = "2.0.0", features = ["keccak"] }
+secp256k1             = { version = "0.27.0" }
+
 # This crate should not rely on any of the frame primitives.
 codec                 = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
 ed25519-dalek         = { version = "1.0", default-features = false, features = [ "u64_backend" ] }
