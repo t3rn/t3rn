@@ -30,7 +30,10 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 use sp_std::{convert::TryInto, prelude::*};
-use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};
+use t3rn_primitives::{
+    xdns::{FullGatewayRecord, GatewayRecord},
+    TreasuryAccountProvider,
+};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -72,11 +75,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 59,
-    spec_version: 60,
-    impl_version: 58,
+    authoring_version: 67,
+    spec_version: 68,
+    impl_version: 66,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 59,
+    transaction_version: 67,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -409,6 +412,10 @@ impl_runtime_apis! {
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
             // deprecated
             None
+        }
+
+        fn retreive_treasury_address(treasury_account: t3rn_primitives::TreasuryAccount) -> AccountId {
+            Runtime::get_treasury_account(treasury_account)
         }
     }
 

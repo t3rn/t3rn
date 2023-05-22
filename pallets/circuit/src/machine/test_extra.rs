@@ -21,7 +21,7 @@ use t3rn_primitives::xtx::LocalState;
 
 pub fn no_post_updates<T: Config>(
     _status_change: (CircuitStatus, CircuitStatus),
-    _local_ctx: &LocalXtxCtx<T>,
+    _local_ctx: &LocalXtxCtx<T, Balance>,
 ) -> Result<(), Error<T>> {
     Ok(())
 }
@@ -38,7 +38,7 @@ pub fn no_mangle<T: Config>(
 
 pub fn infallible_no_post_updates<T: Config>(
     _status_change: (CircuitStatus, CircuitStatus),
-    _local_ctx: &LocalXtxCtx<T>,
+    _local_ctx: &LocalXtxCtx<T, Balance>,
 ) {
 }
 

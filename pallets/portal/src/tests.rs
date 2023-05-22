@@ -16,7 +16,7 @@ mod tests {
     use std::fs;
 
     use sp_core::H256;
-    use t3rn_abi::Abi::Codec;
+
     use t3rn_primitives::{
         portal::{HeaderResult, HeightResult, Portal as PortalT},
         EthereumToken, ExecutionVendor, GatewayVendor, SpeedMode, TokenInfo,
@@ -57,7 +57,7 @@ mod tests {
 
                 let result = Portal::get_latest_finalized_header(gateway_id);
 
-                assert_ok!(result.clone());
+                assert_ok!(result);
 
                 match Portal::get_latest_finalized_header(gateway_id) {
                     Ok(HeaderResult::Header(header)) => {
@@ -74,17 +74,17 @@ mod tests {
                 }
 
                 assert_eq!(
-                    Portal::get_finalized_height(gateway_id.clone()),
+                    Portal::get_finalized_height(gateway_id),
                     Ok(HeightResult::Height(0))
                 );
 
                 assert_eq!(
-                    Portal::get_rational_height(gateway_id.clone()),
+                    Portal::get_rational_height(gateway_id),
                     Ok(HeightResult::Height(0))
                 );
 
                 assert_eq!(
-                    Portal::get_fast_height(gateway_id.clone()),
+                    Portal::get_fast_height(gateway_id),
                     Ok(HeightResult::Height(0))
                 );
 
@@ -104,17 +104,17 @@ mod tests {
                 }
 
                 assert_eq!(
-                    Portal::get_finalized_height(gateway_id.clone()),
+                    Portal::get_finalized_height(gateway_id),
                     Ok(HeightResult::Height(5))
                 );
 
                 assert_eq!(
-                    Portal::get_rational_height(gateway_id.clone()),
+                    Portal::get_rational_height(gateway_id),
                     Ok(HeightResult::Height(5))
                 );
 
                 assert_eq!(
-                    Portal::get_fast_height(gateway_id.clone()),
+                    Portal::get_fast_height(gateway_id),
                     Ok(HeightResult::Height(5))
                 );
             });

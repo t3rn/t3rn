@@ -5,7 +5,7 @@ use frame_system::ensure_signed;
 use sp_std::prelude::*;
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
-    portal::{Portal, PortalExecution, PrecompileArgs as PortalPrecompileArgs},
+    portal::{Portal, PrecompileArgs as PortalPrecompileArgs},
     threevm::{
         GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation, GET_STATE, PORTAL,
         POST_SIGNAL, SUBMIT,

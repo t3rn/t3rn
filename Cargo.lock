@@ -6034,8 +6034,10 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "t3rn-abi",
  "t3rn-mini-mock-runtime",
  "t3rn-primitives",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -11095,9 +11097,9 @@ dependencies = [
 
 [[package]]
 name = "scale-info"
-version = "2.6.0"
+version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfdef77228a4c05dc94211441595746732131ad7f6530c6c18f045da7b7ab937"
+checksum = "b569c32c806ec3abdf3b5869fb8bf1e0d275a7c1c9b0b05603d9464632649edf"
 dependencies = [
  "bitvec",
  "cfg-if 1.0.0",
@@ -12567,7 +12569,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.23.0-rc.0"
+version = "1.27.2-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12643,7 +12645,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.23.0-rc.0"
+version = "1.27.2-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12783,6 +12785,7 @@ dependencies = [
  "pallet-account-manager",
  "pallet-assets",
  "pallet-attesters",
+ "pallet-aura",
  "pallet-balances",
  "pallet-clock",
  "pallet-contracts 4.0.0-dev",
@@ -12799,6 +12802,7 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
+ "sp-consensus-aura",
  "sp-core",
  "sp-io",
  "sp-runtime",

@@ -148,10 +148,12 @@ impl pallet_attesters::Config for Runtime {
     type MaxBatchSize = ConstU32<128>;
     type MinAttesterBond = MinAttesterBond;
     type MinNominatorBond = MinNominatorBond;
+    type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
     type RewardMultiplier = RewardMultiplier;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = EscrowAccount;
+    type Xdns = XDNS;
 }
 
 use t3rn_primitives::monetary::TRN;
@@ -183,6 +185,7 @@ impl pallet_rewards::Config for Runtime {
     type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
+    type FindAuthor = ();
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
     type TotalInflation = TotalInflation;

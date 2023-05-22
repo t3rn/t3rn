@@ -20,7 +20,10 @@ class GrandpaRanger {
 
 	async start() {
 		await this.connectClients();
+		await new Promise((resolve, _reject) => setTimeout(resolve, 2000)); // wait for the clients to connect
+		this.collectAndSubmit(() => {})
 		this.scheduleRangeSubmission();
+
 	}
 
 	async connectClients() {
@@ -42,6 +45,11 @@ class GrandpaRanger {
 			})
 
 		if(batches.length > 0) {
+
+			if(batches.length > 10) {
+				batches.slice(0, 10)
+			}
+
 			// calculate the total number of elements in the batches elements
 			const totalElements = batches.reduce((acc, curr) => acc + curr.range.length, 0)
 
@@ -127,8 +135,8 @@ class GrandpaRanger {
 	let config: any;
 	if(process.env.PROFILE === 'prod') {
 		config = require('../config/prod.ts').default;
-	} else if(process.env.PROFILE === 't0rn') {
-		config = require('../config/t0rn.ts').default;
+	} else if (process.env.PROFILE === 'roco') {
+		config = require('../config/roco.ts').default;
 	} else {
 		config = require('../config/local.ts').default;
 	}

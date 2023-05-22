@@ -24,5 +24,7 @@ sp_api::decl_runtime_apis! {
 
         /// Returns the GatewayABIConfig for a given ChainId
         fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig>;
+
+        fn retreive_treasury_address(treasury_account: t3rn_primitives::TreasuryAccount) -> AccountId;
     }
 }

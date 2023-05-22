@@ -50,7 +50,7 @@ use frame_system::{ensure_signed, RawOrigin};
 use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
-use sp_std::{vec, vec::Vec};
+use sp_std::vec::Vec;
 
 pub mod types;
 
@@ -456,8 +456,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         // GrandpaJustification for the signed_header
         justification: GrandpaJustification<BridgedHeader<T, I>>,
     ) -> DispatchResult {
-        ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
-
         // °°°°° Implicit Check: °°°°°
         // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
         // Since polkadot updates its authority set every 24h, this is implicitly ensured => Justification check would fail after 1/7th of max len

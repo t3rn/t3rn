@@ -74,7 +74,7 @@ pub fn setup_n_xtx_with_10_sfx_each(
     target: [u8; 4],
     requester: &AccountId,
 ) -> Vec<(
-    LocalXtxCtx<Runtime>,
+    LocalXtxCtx<Runtime, Balance>,
     Vec<SideEffect<AccountId, Balance>>,
     Vec<H256>,
 )> {
@@ -90,7 +90,7 @@ pub fn setup_xtx_with_10_sfx(
     target: [u8; 4],
     requester: &AccountId,
 ) -> (
-    LocalXtxCtx<Runtime>,
+    LocalXtxCtx<Runtime, Balance>,
     Vec<SideEffect<AccountId, Balance>>,
     Vec<H256>,
 ) {
@@ -136,7 +136,7 @@ pub fn setup_xtx_with_10_sfx(
 
 pub fn bid_for_n_out_of_10_sfx_in_xtx(
     n: u32,
-    local_ctx: &mut LocalXtxCtx<Runtime>,
+    local_ctx: &mut LocalXtxCtx<Runtime, Balance>,
     _requester: AccountId,
 ) {
     if n > 10 {
@@ -193,7 +193,10 @@ pub fn bid_for_n_out_of_10_sfx_in_xtx(
     }
 }
 
-pub fn confirm_n_out_of_10_sfx_in_xtx_after_bidding(n: u32, local_ctx: &mut LocalXtxCtx<Runtime>) {
+pub fn confirm_n_out_of_10_sfx_in_xtx_after_bidding(
+    n: u32,
+    local_ctx: &mut LocalXtxCtx<Runtime, Balance>,
+) {
     if n > 10 {
         panic!("Can't bid for more than 10 SFXs");
     }

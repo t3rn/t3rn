@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   # This job checks if files has been modified.
-  # Using paths in pull request trigger would make this action unpassable for PRs without changes - due to required checks.
+  # Using paths in pull request trigger would make required checks unpassable for PRs without expected changes.
   changes:
     runs-on: [self-hosted]
     outputs:

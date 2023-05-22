@@ -27,7 +27,7 @@ pub struct SquareUp<T: Config> {
 // G) infallible rewards payouts via AccountManager::finalize and infallible unlock executor's bonds @CircuitStatus::Finalize
 impl<T: Config> SquareUp<T> {
     /// Fallible lock requester' max rewards for Xtx.
-    pub fn try_request(local_ctx: &LocalXtxCtx<T>) -> DispatchResult {
+    pub fn try_request(local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) -> DispatchResult {
         let fsx_array = Machine::<T>::read_current_step_fsx(local_ctx);
         let requester = local_ctx.xtx.requester.clone();
 
@@ -122,7 +122,7 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Infallible re-balance requesters locked rewards after possibly lower bids are posted.
-    pub fn bind_bidders(local_ctx: &mut LocalXtxCtx<T>) -> bool {
+    pub fn bind_bidders(local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>) -> bool {
         let mut res: bool = false;
 
         let (current_step, _) = local_ctx.xtx.steps_cnt;
@@ -158,7 +158,7 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Drop Xtx and unlock requester and all executors that posted bids - without penalties.
-    pub fn kill(local_ctx: &LocalXtxCtx<T>) -> bool {
+    pub fn kill(local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) -> bool {
         let mut killed = false;
         for fsx in Machine::<T>::read_current_step_fsx(local_ctx).iter() {
             let sfx_id = fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id);
@@ -185,7 +185,7 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Finalize Xtx after successful run.
-    pub fn finalize(local_ctx: &LocalXtxCtx<T>) -> bool {
+    pub fn finalize(local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) -> bool {
         let optimistic_fsx_in_step: Vec<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -253,5 +253,5 @@ impl<T: Config> SquareUp<T> {
     }
 
     /// Finalize Xtx after successful run - reward Escrow executors.
-    pub fn commit(_local_ctx: &LocalXtxCtx<T>) {}
+    pub fn commit(_local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) {}
 }
