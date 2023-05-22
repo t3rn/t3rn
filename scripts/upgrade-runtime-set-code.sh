@@ -66,7 +66,7 @@ echo
 echo "🔎 making sure runtime version got updated..."
 
 runtime_version="$( \
-  npx --yes $POLKADOT_CLI_VERSION \
+  npm exec -- $POLKADOT_CLI_VERSION \
     --ws $ws_provider \
     consts.system.version \
     2>/dev/null )"
@@ -132,7 +132,7 @@ fi
 
 # Execute runtime upgrade if dryrun flag is not present
 if [[ -z $dryrun ]]; then
-  npx --yes $POLKADOT_CLI_VERSION \
+  npm exec -- $POLKADOT_CLI_VERSION \
     --ws $ws_provider \
     --sudoUncheckedWeight "100000" \
     --seed "$sudo_secret" \
