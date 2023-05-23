@@ -28,8 +28,6 @@ t3rn-abi                  = { path = "../../types/abi" }
 t3rn-primitives           = { path = "../../primitives" }
 t3rn-types                = { path = "../../types" }
 
-pallet-3vm-evm-rpc = { path = "../../pallets/evm/rpc", package = "pallet-evm-rpc" }
-
 # Extras
 futures   = "0.3.21"
 jsonrpsee = { version = "0.14.0", features = [ "server" ] }

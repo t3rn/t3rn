@@ -22,13 +22,17 @@ use crate::{
     BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
     OnCreate, Pallet, RunnerError, ThreeVmInfo, REG_OPCODE_PREFIX,
 };
+use codec::Decode;
 use evm::{
     backend::Backend as BackendT,
     executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
     ExitError, ExitReason, Transfer,
 };
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity};
-use frame_support::traits::{Currency, ExistenceRequirement, Get, Time};
+use frame_support::{
+    traits::{Currency, ExistenceRequirement, Get, Time},
+    weights::Weight,
+};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{
@@ -203,7 +207,8 @@ where
                     Some(&vm_info.author.account),
                 )
             })
-            .unwrap_or_else(|| T::OnChargeTransaction::withdraw_fee(&source, total_fee, None))?;
+            .unwrap_or_else(|| T::OnChargeTransaction::withdraw_fee(&source, total_fee, None))
+            .map_err(|e| RunnerError { error: e, weight })?;
 
         // Execute the EVM call.
         let vicinity = Vicinity {
@@ -239,7 +244,8 @@ where
                     &T::AddressMapping::get_or_into_account_id(&source),
                     vm_info,
                 )
-                .map_err(|_| Error::<T>::RemunerateAuthor)?;
+                .map_err(|_| Error::<T>::RemunerateAuthor)
+                .map_err(|e| RunnerError { error: e, weight })?;
             }
         }
 
@@ -297,11 +303,13 @@ where
                 log.data.len(),
                 log.data
             );
-            Pallet::<T>::deposit_event(Event::<T>::Log(Log {
-                address: log.address,
-                topics: log.topics.clone(),
-                data: log.data.clone(),
-            }));
+            Pallet::<T>::deposit_event(Event::<T>::Log {
+                log: Log {
+                    address: log.address,
+                    topics: log.topics.clone(),
+                    data: log.data.clone(),
+                },
+            });
         }
 
         Ok(ExecutionInfo {
@@ -488,13 +496,24 @@ where
         }
 
         // 3VM stuff starts here
-        let (vm_info, init_code) = if init.starts_with(REG_OPCODE_PREFIX) {
+        let (vm_info, init) = if init.starts_with(REG_OPCODE_PREFIX) {
             let registry_address = T::Hash::decode(&mut &init[REG_OPCODE_PREFIX.len()..])
-                .map_err(|_| Error::<T>::InvalidRegistryHash)?;
-            let contract = T::ThreeVm::peek_registry(&registry_address)?;
+                .map_err(|_| Error::<T>::InvalidRegistryHash)
+                .map_err(|e| RunnerError {
+                    error: e,
+                    weight: Weight::default(),
+                })?;
+            let contract =
+                T::ThreeVm::peek_registry(&registry_address).map_err(|_| RunnerError {
+                    error: Error::<T>::RegistryContractNotFound,
+                    weight: Weight::default(),
+                })?;
             let kind = *contract.meta.get_contract_type();
 
-            T::ThreeVm::instantiate_check(&kind)?;
+            T::ThreeVm::instantiate_check(&kind).map_err(|_| RunnerError {
+                error: Error::<T>::CannotInstantiateRegistryContract,
+                weight: Weight::default(),
+            })?;
 
             (
                 Some(ThreeVmInfo::<T> {
@@ -775,7 +794,7 @@ where
     }
 
     fn inc_nonce(&mut self, address: H160) {
-        let account_id = T::AddressMapping::get_or_into_account_id(address);
+        let account_id = T::AddressMapping::get_or_into_account_id(&address);
         frame_system::Pallet::<T>::inc_account_nonce(&account_id);
     }
 

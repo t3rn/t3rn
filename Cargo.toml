@@ -209,8 +209,6 @@ members = [
   "pallets/evm",
   "pallets/evm/precompile/3vm-dispatch",
   "pallets/evm/precompile/util",
-  "pallets/evm/rpc",
-  "pallets/evm/rpc/runtime-api",
   "pallets/executors",
   "pallets/portal",
   "pallets/portal/rpc",

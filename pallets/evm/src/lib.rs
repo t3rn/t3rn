@@ -57,6 +57,7 @@
 #![allow(clippy::too_many_arguments)]
 #![feature(more_qualified_paths)]
 #![feature(associated_type_defaults)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
@@ -230,7 +231,7 @@ pub mod pallet {
             value: BalanceOf<T>,
         ) -> DispatchResult {
             let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
-            let address_account_id = T::AddressMapping::get_or_into_account_id(address);
+            let address_account_id = T::AddressMapping::get_or_into_account_id(&address);
 
             T::Currency::transfer(
                 &address_account_id,
@@ -506,6 +507,8 @@ pub mod pallet {
         TransactionMustComeFromEOA,
         /// Tried to instantiate a contract with an invalid hash
         InvalidRegistryHash,
+        RegistryContractNotFound,
+        CannotInstantiateRegistryContract,
         /// 3VM failed to remunerate author
         RemunerateAuthor,
         ExecutedFailed,
@@ -543,7 +546,7 @@ pub mod pallet {
             const MAX_ACCOUNT_NONCE: usize = 100;
 
             for (address, account) in &self.accounts {
-                let account_id = T::AddressMapping::get_or_into_account_id(*address);
+                let account_id = T::AddressMapping::get_or_into_account_id(address);
 
                 // ASSUME: in one single EVM transaction, the nonce will not increase more than
                 // `u128::max_value()`.
@@ -725,8 +728,8 @@ where
 pub struct IdentityAddressMapping;
 
 impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
-    fn into_account_id(address: H160) -> T {
-        address.into()
+    fn get_or_into_account_id(address: &H160) -> T {
+        T::from(address.clone())
     }
 }
 
@@ -734,7 +737,7 @@ impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
 pub struct HashedAddressMapping<H>(sp_std::marker::PhantomData<H>);
 
 impl<H: Hasher<Out = H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
-    fn into_account_id(address: H160) -> AccountId32 {
+    fn get_or_into_account_id(address: &H160) -> AccountId32 {
         let mut data = [0u8; 24];
         data[0..4].copy_from_slice(b"evm:");
         data[4..24].copy_from_slice(&address[..]);
@@ -759,7 +762,7 @@ impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
 
 /// A mapping function that converts Ethereum gas to Substrate weight
 pub trait GasWeightMapping {
-    fn gas_to_weight(gas: u64) -> Weight;
+    fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight;
     fn weight_to_gas(weight: Weight) -> u64;
 }
 
@@ -920,6 +923,7 @@ where
         Opposite = C::PositiveImbalance,
     >,
     OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
+    U256: UniqueSaturatedInto<<C as Currency<<T as frame_system::Config>::AccountId>>::Balance>,
 {
     // Kept type as Option to satisfy bound of Default
     type LiquidityInfo = EvmAccountImbalanceLiquidityInfo<T, C>;
@@ -953,8 +957,9 @@ where
     fn correct_and_deposit_fee(
         who: &H160,
         corrected_fee: U256,
+        base_fee: U256,
         already_withdrawn: Self::LiquidityInfo,
-    ) {
+    ) -> Self::LiquidityInfo {
         if let (beneficiary, Some(paid)) = already_withdrawn {
             let account_id = T::AddressMapping::get_or_into_account_id(who);
 
@@ -992,22 +997,29 @@ where
                 .same()
                 .unwrap_or_else(|_| C::NegativeImbalance::zero());
 
+            let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
+
             // Since there is a beneficiary, account-manager handles it
-            if let Some(beneficiary) = beneficiary {
-                <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::resolve_creating(&beneficiary, adjusted_paid);
+            if let Some(beneficiary) = &beneficiary {
+                <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::resolve_creating(beneficiary, base_fee);
             } else {
-                OU::on_unbalanced(adjusted_paid);
+                OU::on_unbalanced(base_fee);
             }
+            (beneficiary.clone(), Some(tip))
+        } else {
+            (None, None)
         }
     }
 
-    fn pay_priority_fee(tip: U256) {
-        let author = <Pallet<T>>::find_author();
-        let account_id = T::AddressMapping::get_or_into_account_id(&author);
-        if let Err(e) =
-            C::deposit_into_existing(&account_id, tip.low_u128().unique_saturated_into())
-        {
-            log::error!("Failed to pay priority fee: {:?}", e);
+    fn pay_priority_fee(tip: Self::LiquidityInfo) {
+        // Contract author is removed here since tips should go to the block author
+        if let (_contract_author, Some(tip)) = tip {
+            let block_author = <Pallet<T>>::find_author();
+            let account_id = T::AddressMapping::get_or_into_account_id(&block_author);
+
+            if let Err(e) = C::deposit_into_existing(&account_id, tip.peek()) {
+                log::error!("Failed to pay priority fee: {:?}", e);
+            }
         }
     }
 }
@@ -1061,18 +1073,18 @@ impl<T: Config> fp_evm::traits::Evm<T::RuntimeOrigin> for Pallet<T> {
             true,
             T::config(),
         )
-        .map_err(|e| e.into())?;
+        .map_err(|e| e.error.into())?;
 
         match info.exit_reason {
             ExitReason::Succeed(_) => {
-                Pallet::<T>::deposit_event(Event::<T>::Executed(target));
+                Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
             },
             _ => {
-                let error = Event::<T>::ExecutedFailed(target);
+                let error = Event::<T>::ExecutedFailed { address: target };
                 Pallet::<T>::deposit_event(error);
             },
         };
-        let gas = T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into());
+        let gas = T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into(), false);
         Ok((
             // I really don't enjoy that this is here, does frontier evm even rollback?
             info, gas,

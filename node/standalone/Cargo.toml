@@ -66,8 +66,6 @@ t3rn-abi                   = { path = "../../types/abi" }
 t3rn-primitives            = { path = "../../primitives" }
 t3rn-types                 = { path = "../../types" }
 
-pallet-3vm-evm-rpc = { path = "../../pallets/evm/rpc", package = "pallet-evm-rpc" }
-
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 
