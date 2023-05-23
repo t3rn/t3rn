@@ -40,7 +40,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_std::{prelude::*, vec};
 
-    const FIVE: Weight = 5;
+    const CONFIGURED_QUEUE_COUNT: u64 = 5;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_account_manager::Config {
@@ -98,8 +98,8 @@ pub mod pallet {
             _interval: T::BlockNumber,
             _max_allowed_weight: Weight,
         ) -> Weight {
-            const KILL_WRITES: Weight = 1;
-            const KILL_READS: Weight = 2;
+            const KILL_WRITES: u64 = 1;
+            const KILL_READS: u64 = 2;
             // fixme: move current_round from treasury to circuit-clock
             let r = Self::current_round();
             let mut claimable_artifacts = vec![];
@@ -108,7 +108,7 @@ pub mod pallet {
                 Ok(claimable) => claimable_artifacts.extend(claimable),
                 Err(e) => {
                     log::error!("Clock init_hook error while collecting claimable: {:?}", e);
-                    return T::DbWeight::get().reads_writes(KILL_READS, 0 as Weight)
+                    return T::DbWeight::get().reads(KILL_READS)
                 },
             }
 
@@ -123,8 +123,8 @@ pub mod pallet {
             _interval: T::BlockNumber,
             _max_allowed_weight: Weight,
         ) -> Weight {
-            const KILL_WRITES: Weight = 1;
-            const KILL_READS: Weight = 2;
+            const KILL_WRITES: u64 = 1;
+            const KILL_READS: u64 = 2;
             let past_round = <CurrentRound<T>>::get();
             let term = T::RoundDuration::get();
             let new_round = RoundInfo {
@@ -157,7 +157,9 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
         fn on_finalize(n: T::BlockNumber) {
-            let max_on_finalize_weight = T::BlockWeights::get().max_block.saturating_div(FIVE);
+            let max_on_finalize_weight = T::BlockWeights::get()
+                .max_block
+                .saturating_div(CONFIGURED_QUEUE_COUNT);
             log::debug!(
                 "Clock::on_finalize process hooks with max_on_finalize_weight: {:?}",
                 max_on_finalize_weight
@@ -170,7 +172,9 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-            let max_on_initialize_weight = T::BlockWeights::get().max_block.saturating_div(FIVE);
+            let max_on_initialize_weight = T::BlockWeights::get()
+                .max_block
+                .saturating_div(CONFIGURED_QUEUE_COUNT);
             log::debug!(
                 "Clock::on_initialize process hooks with max_on_initialize_weight: {:?} and block number: {:?}",
                 max_on_initialize_weight,
