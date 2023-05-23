@@ -76,7 +76,7 @@ pub use self::{
     runner::{Runner, RunnerError},
     weights::WeightInfo,
 };
-use address::AddressMapping;
+pub use address::StoredHashAddressMapping;
 pub use evm::{
     Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -86,6 +86,7 @@ pub use fp_evm::{
     PrecompileResult, PrecompileSet, Vicinity,
 };
 
+use address::AddressMapping;
 use codec::{Decode, Encode};
 use fp_account::AccountId20;
 use frame_support::{
@@ -98,7 +99,6 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
-use pallet::*;
 use scale_info::TypeInfo;
 use sp_core::{Hasher, H160, H256, U256};
 use sp_runtime::{

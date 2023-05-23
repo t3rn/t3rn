@@ -115,9 +115,7 @@ impl pallet_transaction_payment::Config for Runtime {
 
 impl pallet_authorship::Config for Runtime {
     type EventHandler = ();
-    type FilterUncle = ();
     type FindAuthor = ();
-    type UncleGenerations = ();
 }
 
 /// A `HandleCredit` implementation that transfers 80% of the fees to the

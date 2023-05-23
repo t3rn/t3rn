@@ -47,13 +47,13 @@ construct_runtime! {
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system,
         GrandpaFinalityVerifier: crate,
         PolkadotBridge: crate::<Instance1>,
         KusamaBridge: crate::<Instance2>,
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Balances: pallet_balances,
+        Timestamp: pallet_timestamp,
+        Sudo: pallet_sudo,
     }
 }
 
@@ -134,32 +134,32 @@ impl pallet_balances::Config for TestRuntime {
 impl Config<RococoInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl Config<KusamaInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 impl Config<PolkadotInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 

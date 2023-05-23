@@ -2,8 +2,8 @@ use crate::*;
 
 use crate::{
     accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-    BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, ThreeVm,
-    Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
+    BlockWeights, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, RuntimeCall,
+    ThreeVm, Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 

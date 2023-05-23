@@ -308,7 +308,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+    impl pallet_3vm_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
         for Runtime
     {
         fn call(
@@ -349,38 +349,6 @@ impl_runtime_apis! {
             key: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
-        }
-    }
-
-    impl pallet_evm_rpc_runtime_api::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
-        fn get_evm_address(
-            account_id: AccountId,
-        ) -> Option<H160> {
-            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_evm_address(&account_id)
-        }
-        fn get_or_into_account_id(
-            address: H160,
-        ) -> AccountId {
-            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_or_into_account_id(&address)
-        }
-
-        fn get_threevm_info(
-            address: H160,
-        ) -> Option<(AccountId, Balance, u8)> {
-            Evm::get_threevm_info(&address)
-        }
-
-        fn account_info(address: H160) -> (U256, U256, Vec<u8>) {
-            let account = Evm::account_basic(&address);
-            let code = Evm::get_account_code(&address);
-
-            (account.balance, account.nonce, code)
-        }
-
-        fn storage_at(address: H160, index: U256) -> H256 {
-            let mut tmp = [0u8; 32];
-            index.to_big_endian(&mut tmp);
-            Evm::account_storages(address, H256::from_slice(&tmp[..]))
         }
     }
 

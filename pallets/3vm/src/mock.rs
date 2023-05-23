@@ -38,15 +38,15 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        ThreeVm: pallet_3vm::{Pallet, Call, Storage, Event<T>},
+        System: frame_system,
+        ThreeVm: pallet_3vm,
         Balances: pallet_balances,
         Timestamp: pallet_timestamp,
         Assets: pallet_assets,
-        Utility: pallet_utility::{Pallet, Call, Storage, Event},
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Utility: pallet_utility,
+        ContractsRegistry: pallet_contracts_registry,
         Sudo: pallet_sudo,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
+        Circuit: pallet_circuit,
         CircuitPortal: pallet_portal,
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
@@ -240,33 +240,33 @@ impl pallet_grandpa_finality_verifier::bridges::runtime::Chain for Blake2ValU32C
 impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
