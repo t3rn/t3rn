@@ -44,15 +44,15 @@ ethereum-types        = { version = "0.14.1", default-features = false }
 evm                   = { version = "0.37.0", default-features = false }
 hex                   = { version = "0.4", features = [ "serde" ], default-features = false }
 hex-literal           = { version = "0.4", default-features = false }
-impl-trait-for-tuples = "0.2.2"
+impl-trait-for-tuples = { version = "0.2.2", default-features = false }
 log                   = { version = "0.4", default-features = false }
 num                   = { version = "0.4.0", default-features = false }
 num-traits            = { version = "0.2", default-features = false }
 primitive-types       = { version = "0.12.1", features = [ "scale-info", "rlp", "byteorder" ], default-features = false }
-rand                  = { version = "0.7", default-features = false }
+rand                  = { version = "0.8", default-features = false }
 rand_pcg              = { version = "0.3", default-features = false }
 rlp                   = { version = "0.5", features = [ "derive" ], default-features = false }
-serde                 = { default-features = false, version = "1.0", features = [ "derive" ] }
+serde                 = { version = "1.0", features = [ "derive" ], default-features = false }
 sha3                  = { version = "0.10.1", default-features = false }
 smallvec              = { version = "1.0", default-features = false, features = [ "const_generics" ] }
 wasm-instrument       = { version = "0.4", default-features = false }
@@ -118,7 +118,7 @@ sp-std                                     = { git = "https://github.com/parityt
 sp-transaction-pool                        = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-trie                                    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
 sp-version                                 = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39', default-features = false }
-sp-weights                                 = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+sp-weights                                 = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39", default-features = false }
 
 # Polkadot
 pallet-xcm                 = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
@@ -184,6 +184,10 @@ try-runtime-cli                = { git = "https://github.com/paritytech/substrat
 jsonrpc-core        = "18.0.0"
 jsonrpc-core-client = "18.0.0"
 jsonrpc-derive      = "18.0.0"
+jsonrpsee           = { version = "0.14.0", features = [ "server" ] }
+
+# Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
+getrandom = { version = "0", features = [ "js" ] }
 
 [workspace]
 exclude = [  ]

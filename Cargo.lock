@@ -6626,7 +6626,7 @@ dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
  "pretty_assertions",
- "rand 0.7.3",
+ "rand 0.8.5",
  "rand_pcg",
  "scale-info",
  "serde",

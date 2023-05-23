@@ -68,4 +68,4 @@ std = [
   "t3rn-types/std",
   "t3rn-abi/std",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime", "sp-runtime/try-runtime" ]

@@ -57,4 +57,4 @@ std = [
   "t3rn-primitives/std",
   "scale-info/std",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "sp-runtime/try-runtime" ]

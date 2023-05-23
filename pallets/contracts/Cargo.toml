@@ -110,7 +110,7 @@ std = [
   "t3rn-primitives/std",
   "t3rn-sdk-primitives/std",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "sp-runtime/try-runtime" ]
 # Make contract callable functions marked as __unstable__ available. Do not enable
 # on live chains as those are subject to change.
 unstable-interface = [  ]

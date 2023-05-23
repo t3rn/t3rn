@@ -25,15 +25,15 @@ frame-system       = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std     = { workspace = true }
 
+t3rn-abi            = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
 t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 t3rn-types          = { path = "../../types", default-features = false }
-t3rn-abi          = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 
 substrate-abi = { workspace = true }
-xp-channel = { workspace = true, features = [ "frame" ] }
-xp-format  = { workspace = true }
-xs-channel = { workspace = true }
+xp-channel    = { workspace = true, features = [ "frame" ] }
+xp-format     = { workspace = true }
+xs-channel    = { workspace = true }
 
 pallet-circuit = { path = "../circuit", default-features = true }
 # pallet-xbi-portal-enter = { git = "https://github.com/t3rn/xbi", version = "0.9.19", default-features = true 
@@ -76,5 +76,11 @@ std = [
   "xp-format/std",
 ]
 
-runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-support/runtime-benchmarks", "frame-system/runtime-benchmarks", "sp-runtime/runtime-benchmarks", "pallet-circuit/runtime-benchmarks" ]
-try-runtime        = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-circuit/try-runtime", "t3rn-abi/try-runtime" ]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+  "pallet-circuit/runtime-benchmarks",
+]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-circuit/try-runtime", "t3rn-abi/try-runtime", "sp-runtime/try-runtime" ]
