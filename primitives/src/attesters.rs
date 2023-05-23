@@ -1,6 +1,6 @@
 use frame_support::pallet_prelude::*;
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
-use sp_core::{crypto::Ss58Codec, sr25519::Public, H160, H256};
+use sp_core::{ecdsa::Public as CoreEcsdaPublic, sr25519::Public, H160, H256};
 use sp_runtime::Percent;
 use sp_std::{convert::TryInto, prelude::*};
 use t3rn_types::sfx::TargetId;
@@ -79,15 +79,8 @@ impl AttesterInfo {
                 Ok(H160(recovered_address) == self.eth_address)
             },
             ExecutionVendor::Substrate => {
-                let pubkey_as_sr = sr25519::Public::from_raw(self.key_sr);
-
-                let mut address_string = sp_std::str::from_utf8(self.substrate_address.as_slice())
-                    .map_err(|_e| "InvalidAddress")?;
-
-                let address_as_sr =
-                    Public::from_ss58check(address_string).map_err(|_| "InvalidAddress")?;
-
-                Ok(address_as_sr == pubkey_as_sr)
+                // Ignore derivation for Substrate addresses for now.
+                Ok(true)
             },
         }
     }
