@@ -258,11 +258,11 @@ pub mod pallet {
         type DeletionQueueLimit: Get<u32>;
 
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// A dispatchable call.
         type Call: Parameter
-            + Dispatchable<Origin = Self::Origin>
+            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
             + GetDispatchInfo
             + From<Call<Self>>
             + From<frame_system::Call<Self>>;
@@ -317,7 +317,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            0
+            Weight::zero()
         }
 
         fn on_finalize(_n: T::BlockNumber) {
@@ -361,11 +361,11 @@ pub mod pallet {
                     // Add more migration cases here, if needed in the future
                     _ => {
                         // No migration needed.
-                        Ok::<Weight, DispatchError>(0 as Weight)
+                        Ok::<Weight, DispatchError>(Weight::zero())
                     },
                 }
             })
-            .unwrap_or(0)
+            .unwrap_or(Weight::zero())
         }
     }
 
@@ -1151,22 +1151,22 @@ impl<T: Config> Pallet<T> {
         kill_interval: T::BlockNumber,
         max_allowed_weight: Weight,
     ) -> Weight {
-        let mut current_weight: Weight = 0;
+        let mut current_weight = 0;
         if kill_interval == T::BlockNumber::zero() {
-            return current_weight
+            return Weight::zero()
         } else if n % kill_interval == T::BlockNumber::zero() {
             // Go over all unfinished Xtx to find those that should be killed
             let _processed_xtx_revert_count = <PendingXtxBidsTimeoutsMap<T>>::iter()
                 .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
                 .map(|(xtx_id, _timeout_at)| {
-                    if current_weight <= max_allowed_weight {
-                        current_weight =
-                            current_weight.saturating_add(Self::process_tick_one(xtx_id));
+                    if current_weight <= max_allowed_weight.ref_time() {
+                        current_weight = current_weight
+                            .saturating_add(Self::process_tick_one(xtx_id).ref_time());
                     }
                 })
                 .count();
         }
-        current_weight
+        Weight::from_ref_time(current_weight)
     }
 
     pub fn process_revert_xtx_queue(
@@ -1174,7 +1174,7 @@ impl<T: Config> Pallet<T> {
         revert_interval: T::BlockNumber,
         max_allowed_weight: Weight,
     ) -> Weight {
-        let mut current_weight: Weight = 0;
+        let mut current_weight: Weight = Default::default();
         // Scenario 1: all the timeout s can be handled in the block space
         // Scenario 2: all but 5 timeouts can be handled
         //     - add the 5 timeouts to an immediate queue for the next block
@@ -1185,7 +1185,7 @@ impl<T: Config> Pallet<T> {
             let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
                 .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
                 .map(|(xtx_id, _timeout_at)| {
-                    if current_weight <= max_allowed_weight {
+                    if current_weight.ref_time() <= max_allowed_weight.ref_time() {
                         current_weight =
                             current_weight.saturating_add(Self::process_revert_one(xtx_id));
                     }
@@ -1196,8 +1196,8 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> Weight {
-        const REVERT_WRITES: Weight = 2;
-        const REVERT_READS: Weight = 1;
+        const REVERT_WRITES: u64 = 2;
+        const REVERT_READS: u64 = 1;
 
         let _success: bool =
             Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, _local_ctx| {
@@ -1208,8 +1208,8 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn process_tick_one(xtx_id: XExecSignalId<T>) -> Weight {
-        const KILL_WRITES: Weight = 4;
-        const KILL_READS: Weight = 1;
+        const KILL_WRITES: u64 = 4;
+        const KILL_READS: u64 = 1;
 
         Machine::<T>::compile_infallible(
             &mut Machine::<T>::load_xtx(xtx_id).expect("xtx_id corresponds to a valid Xtx when reading from PendingXtxBidsTimeoutsMap storage"),
@@ -1244,18 +1244,18 @@ impl<T: Config> Pallet<T> {
     ) -> Weight {
         let queue_len = <SignalQueue<T>>::decode_len().unwrap_or(0);
         if queue_len == 0 {
-            return 0
+            return Weight::zero()
         }
         let db_weight = T::DbWeight::get();
         let mut queue = <SignalQueue<T>>::get();
-        let mut processed_weight = 0 as Weight;
+        let mut processed_weight = 0;
 
-        while !queue.is_empty() && processed_weight < max_allowed_weight {
+        while !queue.is_empty() && processed_weight < max_allowed_weight.ref_time() {
             // Cannot panic due to loop condition
             let (_requester, signal) = &mut queue.swap_remove(0);
 
             // worst case 4 from setup
-            if let Some(v) = processed_weight.checked_add(db_weight.reads(4 as Weight) as Weight) {
+            if let Some(v) = processed_weight.checked_add(db_weight.reads(4).ref_time()) {
                 processed_weight = v
             }
 
@@ -1265,7 +1265,11 @@ impl<T: Config> Pallet<T> {
                         local_ctx.xtx_id,
                         Cause::IntentionalKill,
                         |_status_change, _local_ctx| {
-                            processed_weight += db_weight.reads_writes(2 as Weight, 1 as Weight);
+                            if let Some(v) = processed_weight
+                                .checked_add(db_weight.reads_writes(2, 1).ref_time())
+                            {
+                                processed_weight = v
+                            }
                         },
                     );
                 },
@@ -1284,9 +1288,7 @@ impl<T: Config> Pallet<T> {
             }
         }
         // Initial read of queue and update
-        if let Some(v) =
-            processed_weight.checked_add(db_weight.reads_writes(1 as Weight, 1 as Weight))
-        {
+        if let Some(v) = processed_weight.checked_add(db_weight.reads_writes(1, 1).ref_time()) {
             processed_weight = v
         } else {
             log::error!("Could not initial read of queue and update")
@@ -1294,7 +1296,7 @@ impl<T: Config> Pallet<T> {
 
         <SignalQueue<T>>::put(queue);
 
-        processed_weight
+        Weight::from_ref_time(processed_weight)
     }
 
     pub fn recover_local_ctx_by_sfx_id(

@@ -31,6 +31,8 @@ use sp_weights::Weight;
 
 pub mod traits;
 
+// FIXME: rexpose this from fp-contracts
+
 /// Result type of a `bare_call` or `bare_instantiate` call.
 ///
 /// It contains the execution result together with some auxiliary information.
