@@ -76,7 +76,7 @@ Options:
 The `bid` command is used to bid on an execution as an executor.
 
 ```bash
-yarn cli [sfxId] [amount]
+yarn cli bid [sfxId] [amount]
 ```
 
 Arguments:

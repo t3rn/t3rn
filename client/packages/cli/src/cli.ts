@@ -5,6 +5,7 @@ import { wrapCryptoWaitReady } from "./utils/fns.ts"
 import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
+import { handleDgfCmd } from "./commands/dgf.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -50,6 +51,14 @@ withExportMode(
     .argument("sfxId <string>", "sfxId of the side effect to bid on")
     .argument("amount <float>", "bid amount")
     .action(wrapCryptoWaitReady(handleBidCmd))
+)
+
+withExportMode(
+  program
+    .command("dgf")
+    .description("Generate data for unhpappy paths")
+    .argument("sfxFile <string>", "folder from where the sfx is loaded")
+    .action(wrapCryptoWaitReady(handleDgfCmd))
 )
 
 program.parse(process.argv)

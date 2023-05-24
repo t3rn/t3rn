@@ -88,6 +88,51 @@ export class Tx {
     );
   }
 
+  async signAndSendRaw(tx: SubmittableExtrinsic): Promise<any> {
+    const nonce = await this.api.rpc.system.accountNextIndex(
+      this.signer.address
+    );
+    let exportObj: ExtrinsicExport;
+
+    if (this.exportMode) {
+      exportObj = new ExtrinsicExport(tx, this.signer.address);
+    }
+
+    return new Promise((resolve, reject) =>
+      tx.signAndSend(
+        this.signer,
+        { nonce },
+        async ({ dispatchError, status, events }) => {
+          events.forEach(({ event }) => {
+            exportObj?.addEvent(event);
+          });
+          // if (dispatchError?.isModule) {
+          //   const err = this.api.registry.findMetaError(dispatchError.asModule);
+          //   exportObj?.addErr(dispatchError).toFile();
+          //   reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
+          // } else if (dispatchError) {
+          //   exportObj?.addErr(dispatchError).toFile();
+          //   reject(Error(dispatchError.toString()));
+          // } else if (status.isInBlock) {
+          //   resolve(status.asInBlock);
+          // }
+          resolve(events)
+        }
+      )
+      // ).then((blockHash: any) => { return events }
+    ).then((events: any) => {
+      // this.api.rpc.chain.getBlock(blockHash).then((r) => {
+      //   const number = r.block.header.number;
+
+      //   exportObj?.addSubmissionHeight(number.toNumber()).toFile();
+      //   return number.toString();
+      // })
+      return events
+    });
+  }
+
+
+
   /**
    * Wraps a transaction object into sudo
    * @param tx - The transaction to sudo

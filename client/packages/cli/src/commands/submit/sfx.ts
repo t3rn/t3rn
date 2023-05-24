@@ -91,6 +91,46 @@ export const submitSfx = async (extrinsic: Extrinsic, exportMode: boolean) => {
   }
 }
 
+
+export const submitSfxRaw = async (extrinsic: Extrinsic, exportMode: boolean) => {
+  const config = getConfig()
+
+  spinner.text = "Submitting extrinsic..."
+  spinner.start()
+
+  if (!config) {
+    process.exit(1)
+  }
+
+  const { circuit, sdk } = await createCircuitContext(exportMode)
+  const transactionArgs = buildSfx(
+    circuit,
+    extrinsic.sideEffects,
+    extrinsic.speed_mode,
+    sdk
+  )
+
+  try {
+    const transaction = circuit.tx.circuit.onExtrinsicTrigger(
+      transactionArgs.sideEffects as Parameters<
+        typeof circuit.tx.circuit.onExtrinsicTrigger
+      >[0],
+      transactionArgs.speed_mode
+    )
+    const submissionHeight = await sdk.circuit.tx.signAndSendSafeRaw(transaction)
+    spinner.stopAndPersist({
+      symbol: "🚀",
+      text: colorLogMsg(
+        "SUCCESS",
+        `Extrinsic submitted at block #${submissionHeight}`
+      ),
+    })
+    process.exit(0)
+  } catch (e) {
+    spinner.fail(`Extrinsic submission failed: ${e}`)
+    process.exit(1)
+  }
+}
 export const buildSfx = (
   circuitApi: Circuit,
   sideEffects: Extrinsic["sideEffects"],
