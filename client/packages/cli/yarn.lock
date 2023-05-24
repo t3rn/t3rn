@@ -306,6 +306,26 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
+"@chainsafe/as-sha256@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@chainsafe/as-sha256/-/as-sha256-0.3.1.tgz#3639df0e1435cab03f4d9870cc3ac079e57a6fc9"
+  integrity sha512-hldFFYuf49ed7DAakWVXSJODuq3pzJEguD8tQ7h+sGkM18vja+OFoJI9krnGmgzyuZC2ETX0NOIcCTy31v2Mtg==
+
+"@chainsafe/persistent-merkle-tree@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@chainsafe/persistent-merkle-tree/-/persistent-merkle-tree-0.5.0.tgz#2b4a62c9489a5739dedd197250d8d2f5427e9f63"
+  integrity sha512-l0V1b5clxA3iwQLXP40zYjyZYospQLZXzBVIhhr9kDg/1qHZfzzHw0jj4VPBijfYCArZDlPkRi1wZaV2POKeuw==
+  dependencies:
+    "@chainsafe/as-sha256" "^0.3.1"
+
+"@chainsafe/ssz@^0.10.2":
+  version "0.10.2"
+  resolved "https://registry.yarnpkg.com/@chainsafe/ssz/-/ssz-0.10.2.tgz#c782929e1bb25fec66ba72e75934b31fd087579e"
+  integrity sha512-/NL3Lh8K+0q7A3LsiFq09YXS9fPE+ead2rr7vM2QK8PLzrNsw3uqrif9bpRX5UxgeRjM+vYi+boCM3+GM4ovXg==
+  dependencies:
+    "@chainsafe/as-sha256" "^0.3.1"
+    "@chainsafe/persistent-merkle-tree" "^0.5.0"
+
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
@@ -731,6 +751,19 @@
   dependencies:
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
+
+"@lodestar/params@^1.8.0":
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/@lodestar/params/-/params-1.8.0.tgz#857063670c7c62dec1932f686476aba7ba7f5e99"
+  integrity sha512-caArExm3XKn67EnOdYtbadoCOZSUpI9JRBZRTQk3EVlQlPj13J6E4KDtLXa2FJ8GOv63qms1od4kkaG+S+TmDg==
+
+"@lodestar/types@^1.8.0":
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/@lodestar/types/-/types-1.8.0.tgz#3f4162440fad02a216b913d2405b19d4c3c814a8"
+  integrity sha512-H3vZvmF89J6Edz/+ekd3+phiE3Cf25Mqroabsm3D/zMewaCzvcIfasn25XVA+m9d1NVSIwI9lj9M/7x0WlH4Fg==
+  dependencies:
+    "@chainsafe/ssz" "^0.10.2"
+    "@lodestar/params" "^1.8.0"
 
 "@noble/hashes@1.2.0":
   version "1.2.0"
