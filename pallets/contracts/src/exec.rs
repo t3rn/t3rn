@@ -90,7 +90,7 @@ where
 pub enum ErrorOrigin {
     /// Caller error origin.
     ///
-    /// The error happened in the current exeuction context rather than in the one
+    /// The error happened in the current execution context rather than in the one
     /// of the contract that is called into.
     Caller,
     /// The error happened during execution of the called contract.

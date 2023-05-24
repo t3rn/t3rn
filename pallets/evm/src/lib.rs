@@ -72,11 +72,11 @@ pub mod runner;
 pub mod weights;
 
 pub use self::{
+    address::{AddressMapping, StoredHashAddressMapping},
     pallet::*,
     runner::{Runner, RunnerError},
     weights::WeightInfo,
 };
-pub use address::StoredHashAddressMapping;
 pub use evm::{
     Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -86,7 +86,6 @@ pub use fp_evm::{
     PrecompileResult, PrecompileSet, Vicinity,
 };
 
-use address::AddressMapping;
 use codec::{Decode, Encode};
 use fp_account::AccountId20;
 use frame_support::{

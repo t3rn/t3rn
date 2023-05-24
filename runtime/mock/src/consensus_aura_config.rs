@@ -37,7 +37,7 @@ impl pallet_grandpa::Config for Runtime {
         <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
     type KeyOwnerProofSystem = ();
     type MaxAuthorities = ConstU32<32>;
-    type RuntimeCall = RuntimeCall;
+    type MaxSetIdSessionEntries = ConstU64<0>;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

@@ -1,5 +1,5 @@
 use super::*;
-use frame_support::parameter_types;
+use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
 use frame_system::EnsureRoot;
 use sp_core::crypto::AccountId32;
 use sp_runtime::traits::ConvertInto;
@@ -40,13 +40,17 @@ impl pallet_assets::Config for Runtime {
     type AssetAccountDeposit = AssetAccountDeposit;
     type AssetDeposit = AssetDeposit;
     type AssetId = circuit_runtime_types::AssetId;
+    type AssetIdParameter = circuit_runtime_types::AssetId;
     type Balance = Balance;
+    type CallbackHandle = ();
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     type Currency = Balances;
     type Extra = ();
     type ForceOrigin = EnsureRoot<AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RemoveItemsLimit = ConstU32<1>;
     type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();

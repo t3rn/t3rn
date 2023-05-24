@@ -115,19 +115,6 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     }
 }
 
-const WEIGHT_PER_GAS: u64 = 20_000;
-
-pub struct FixedGasWeightMapping;
-impl GasWeightMapping for FixedGasWeightMapping {
-    fn gas_to_weight(gas: u64) -> Weight {
-        gas.saturating_mul(WEIGHT_PER_GAS)
-    }
-
-    fn weight_to_gas(weight: Weight) -> u64 {
-        weight.wrapping_div(WEIGHT_PER_GAS)
-    }
-}
-
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> U256 {

@@ -44,7 +44,7 @@ sp-timestamp            = { git = "https://github.com/paritytech/substrate.git",
 
 # These dependencies are used for the node template's RPCs
 
-pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+pallet-transaction-payment-rpc = { workspace = true }
 sc-basic-authorship            = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sc-rpc                         = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sc-rpc-api                     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }

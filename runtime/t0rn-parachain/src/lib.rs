@@ -306,6 +306,35 @@ impl_runtime_apis! {
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
+    }
+
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
+        for Runtime
+    {
+        fn query_call_info(
+            call: RuntimeCall,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: RuntimeCall,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
+        }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
 
     impl pallet_3vm_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
@@ -315,33 +344,34 @@ impl_runtime_apis! {
             origin: AccountId,
             dest: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+            Contracts::bare_call(origin, dest, value, gas_limit.unwrap_or_default(), storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT, Determinism::AllowIndeterminism)
         }
 
         fn instantiate(
             origin: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             code: pallet_3vm_contracts_primitives::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+            Contracts::bare_instantiate(origin, value, gas_limit.unwrap_or_default(), storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
         }
 
         fn upload_code(
             origin: AccountId,
             code: Vec<u8>,
             storage_deposit_limit: Option<Balance>,
+            determinism: Determinism,
         ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
         {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
         }
 
         fn get_storage(

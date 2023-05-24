@@ -45,7 +45,7 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
             log::error!(
                 "GlobalOnInitQueues::Invalid shares exceed 100%, returning 0 - re-check the shares"
             );
-            return 0
+            return Weight::zero()
         }
         // Iterate over all pre-init hooks implemented by pallets and return aggregated weight
         weights_consumed.push(Circuit::process_signal_queue(
@@ -105,7 +105,7 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
         );
         let total_consumed: Weight = weights_consumed
             .iter()
-            .fold(0, |acc: Weight, weight: &Weight| {
+            .fold(Weight::zero(), |acc: Weight, weight: &Weight| {
                 acc.saturating_add(*weight)
             });
 
@@ -191,11 +191,11 @@ parameter_types! {
 impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
     type Balances = Balances;
+    type Call = RuntimeCall;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<100u32>;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
-    type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3u32>;
     type SelfAccountId = CircuitAccountId;

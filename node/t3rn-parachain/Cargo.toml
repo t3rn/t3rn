@@ -32,7 +32,7 @@ try-runtime-cli = { git = "https://github.com/paritytech/substrate.git", branch 
 # Substrate
 frame-benchmarking             = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 frame-benchmarking-cli         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
-pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
+pallet-transaction-payment-rpc = { workspace = true }
 sc-basic-authorship            = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 sc-chain-spec                  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 sc-cli                         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }

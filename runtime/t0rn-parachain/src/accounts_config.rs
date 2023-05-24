@@ -2,7 +2,8 @@ use crate::{
     AccountId, AssetId, Assets, Balance, Balances, Call, Clock, EnsureRoot, Event, Imbalance,
     OnUnbalanced, Runtime, ThreeVm, Timestamp,
 };
-use frame_support::parameter_types;
+use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
+use frame_system::EnsureRoot;
 use sp_core::crypto::AccountId32;
 use sp_runtime::traits::ConvertInto;
 
@@ -26,6 +27,8 @@ impl pallet_account_manager::Config for Runtime {
     type WeightInfo = ();
 }
 
+pallet_account_manager::setup_currency_adapter!();
+
 parameter_types! {
     pub const AssetDeposit: Balance = 0; // 1 UNIT deposit to create asset
     pub const ApprovalDeposit: Balance = 0;
@@ -42,13 +45,17 @@ impl pallet_assets::Config for Runtime {
     type AssetAccountDeposit = AssetAccountDeposit;
     type AssetDeposit = AssetDeposit;
     type AssetId = circuit_runtime_types::AssetId;
+    type AssetIdParameter = circuit_runtime_types::AssetId;
     type Balance = Balance;
+    type CallbackHandle = ();
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     type Currency = Balances;
     type Extra = ();
     type ForceOrigin = EnsureRoot<AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RemoveItemsLimit = ConstU32<1>;
     type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
