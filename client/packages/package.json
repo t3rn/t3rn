@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@chainsafe/bls": "^7.1.1",
+    "@chainsafe/lodestar-params": "^0.39.0",
+    "@lodestar/config": "^1.8.0"
+  }
+}
