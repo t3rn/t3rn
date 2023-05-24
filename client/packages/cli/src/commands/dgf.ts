@@ -4,7 +4,7 @@ import { getConfig } from "@/utils/config.ts"
 import { colorLogMsg } from "@/utils/log.ts"
 import { createType } from "@t3rn/types"
 import ora from "ora"
-import { ErrorMode, batchErrorModes } from "@/utils/dgf/sfx_creation.ts"
+import { ErrorMode, batchErrorCreation } from "@/utils/dgf/creation.ts"
 
 const spinner = ora()
 
@@ -21,5 +21,5 @@ export const handleDgfCmd = async (
 
   spinner.start(colorLogMsg("INFO", 'Generating data...'))
 
-  batchErrorModes()
+  batchErrorCreation()
 }
