@@ -44,6 +44,7 @@ pub mod pallet {
         ReadyForSubmissionByMajority,
         ReadyForSubmissionFullyApproved,
         Repatriated,
+        Expired,
         Committed,
     }
 
@@ -249,6 +250,8 @@ pub mod pallet {
         NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
         NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>),
         Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
+        NewTargetActivated(TargetId),
+        AttesterAgreedToNewTarget(T::AccountId, TargetId, Vec<u8>),
     }
 
     #[pallet::error]
@@ -1660,6 +1663,7 @@ pub mod attesters_test {
                 signatures: Vec::new(),
                 status: BatchStatus::PendingMessage,
                 created: closest_block,
+                index: 0,
             })
         );
 
@@ -1817,6 +1821,7 @@ pub mod attesters_test {
                     signatures: vec![],
                     status: BatchStatus::PendingAttestation,
                     created: current_block_1,
+                    index: 0,
                 }]
             );
         });
@@ -2088,6 +2093,7 @@ pub mod attesters_test {
                     signatures: vec![],
                     status: BatchStatus::PendingAttestation,
                     created: current_block_1,
+                    index: 0,
                 })
             );
 
@@ -2209,6 +2215,7 @@ pub mod attesters_test {
                 signatures: vec![],
                 status: BatchStatus::PendingMessage,
                 created: current_block,
+                index: 0,
             };
             let _current_block: BlockNumber = System::block_number();
             let batching_window: BlockNumber =
@@ -2236,6 +2243,7 @@ pub mod attesters_test {
                     signatures: vec![],
                     status: BatchStatus::PendingAttestation,
                     created: batching_window,
+                    index: 0,
                 }]
             );
             assert_eq!(

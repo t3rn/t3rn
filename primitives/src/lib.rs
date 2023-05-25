@@ -17,7 +17,6 @@
 //! A crate that hosts a common definitions that are relevant for the pallet-contracts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-extern crate core;
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::{ReservableCurrency, Time};
@@ -56,6 +55,7 @@ pub mod light_client;
 pub mod match_format;
 pub mod monetary;
 pub mod portal;
+pub mod rewards;
 pub mod signature_caster;
 pub mod storage;
 pub mod threevm;
