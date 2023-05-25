@@ -1,0 +1,18 @@
+[
+  {
+    "substrate": {
+      "accountId": "t3VVaWrr5So9JWm3YppS71LycMCa7JqLs7rwWfbaiyLbmc2ar",
+      "privateKey": "0x6ed699fd24a0df3a38232108d74f9596dd860897a5c558b2724b37256bb9ffba",
+      "publicKey": "0x36716fbbd021e142d3827438b7dfdfc595bf637452be88df06c56e7aee6cdd6a"
+    },
+    "ethereum": {
+      "privateKey": "6ed699fd24a0df3a38232108d74f9596dd860897a5c558b2724b37256bb9ffba",
+      "publicKey": "e4ce4661dec46df8179acc32638ab35da3484907ec97e357874d7859e086b5465385b36aca0ccfaf8ed2c0a7c435e7410a64ba7b9ca0e8e6af6c8f2879e961d0",
+      "address": "b95cc713cb9f52842b5e88ac5d0c81aa10951009"
+    },
+    "btc": {
+      "privateKey": "0x6ed699fd24a0df3a38232108d74f9596dd860897a5c558b2724b37256bb9ffba",
+      "publicKey": "0xae0e02f26846e81daa899a2d6e6ab286b92210c94d6f3cf05a50ff37794bd176"
+    }
+  }
+]
