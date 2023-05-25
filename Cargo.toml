@@ -181,10 +181,7 @@ substrate-prometheus-endpoint  = { git = "https://github.com/paritytech/substrat
 substrate-wasm-builder         = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 try-runtime-cli                = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 
-jsonrpc-core        = "18.0.0"
-jsonrpc-core-client = "18.0.0"
-jsonrpc-derive      = "18.0.0"
-jsonrpsee           = { version = "0.14.0", features = [ "server" ] }
+jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 
 # Hack https://users.rust-lang.org/t/use-of-undeclared-crate-or-module-imp-on-getrandom-0-2-3-when-building-for-wasm32-unknown-unknown/70171
 getrandom = { version = "0", features = [ "js" ] }

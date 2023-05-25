@@ -2,11 +2,12 @@
 
 use std::sync::Arc;
 
-pub use self::gen_client::Client as PortalClient;
 use codec::Codec;
-use jsonrpc_core::{Error, ErrorCode, Result};
-
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+    core::{Error as JsonRpseeError, RpcResult},
+    proc_macros::rpc,
+    types::error::{CallError, ErrorCode, ErrorObject},
+};
 use pallet_portal_rpc_runtime_api::ChainId;
 pub use pallet_portal_rpc_runtime_api::PortalRuntimeApi;
 use sp_api::ProvideRuntimeApi;
@@ -18,11 +19,11 @@ use sp_runtime::{
 
 const RUNTIME_ERROR: i64 = 1;
 
-#[rpc]
+#[rpc(client, server)]
 pub trait PortalApi<AccountId> {
     /// Returns latest finalized header of a gateway if available
-    #[rpc(name = "portal_getLatestFinalizedHeader")]
-    fn get_latest_finalized_header(&self, chain_id: ChainId) -> Result<Vec<u8>>;
+    #[method(name = "portal_getLatestFinalizedHeader")]
+    fn get_latest_finalized_header(&self, chain_id: ChainId) -> RpcResult<Vec<u8>>;
 }
 
 /// A struct that implements the [`PortalApi`].
@@ -41,19 +42,19 @@ impl<C, P> Portal<C, P> {
     }
 }
 
-impl<C, Block, AccountId> PortalApi<AccountId> for Portal<C, Block>
+impl<C, Block, AccountId> PortalApiServer<AccountId> for Portal<C, Block>
 where
     AccountId: Codec + MaybeDisplay,
     Block: BlockT,
-    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + Send + Sync + 'static,
     C::Api: PortalRuntimeApi<Block, AccountId>,
 {
     // ToDo ChainId decoding is not working, like in XDNS
-    fn get_latest_finalized_header(&self, gateway_id: ChainId) -> Result<Vec<u8>> {
+    fn get_latest_finalized_header(&self, gateway_id: ChainId) -> RpcResult<Vec<u8>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
+        let at = self.client.info().best_hash;
 
-        let result: Option<Vec<u8>> = api.get_latest_finalized_header(&at, gateway_id).unwrap();
+        let result: Option<Vec<u8>> = api.get_latest_finalized_header(at, gateway_id).unwrap();
 
         match result {
             Some(header_hash) => Ok(header_hash),
@@ -63,10 +64,6 @@ where
     }
 }
 
-fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
-    Error {
-        code: ErrorCode::ServerError(RUNTIME_ERROR),
-        message: "Runtime error".into(),
-        data: Some(format!("{err:?}").into()),
-    }
+fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> JsonRpseeError {
+    JsonRpseeError::Custom(format!("{err:?}").into())
 }

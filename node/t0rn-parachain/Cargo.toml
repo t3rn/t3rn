@@ -12,13 +12,12 @@ name = "t0rn-collator"
 path = "src/main.rs"
 
 [dependencies]
-clap         = { version = "3.1", features = [ "derive" ] }
-codec        = { workspace = true, package = "parity-scale-codec", default-features = true }
-derive_more  = "0.99.2"
-hex-literal  = "0.4.1"
-jsonrpc-core = "18.0.0"
-log          = "0.4.14"
-serde        = { version = "1.0", features = [ "derive" ] }
+clap        = { version = "3.1", features = [ "derive" ] }
+codec       = { workspace = true, package = "parity-scale-codec", default-features = true }
+derive_more = "0.99.2"
+hex-literal = "0.4.1"
+log         = "0.4.14"
+serde       = { version = "1.0", features = [ "derive" ] }
 
 # Local
 circuit-parachain-runtime = { path = "../../runtime/t0rn-parachain", package = "t0rn-parachain-runtime" }
