@@ -22,7 +22,7 @@ type ErrorRegistry = Record<ErrorMode, Extrinsic>
  */
 export const batchErrorCreation = async () => {
     // spin up event listener
-    const provider = new WsProvider('ws://ws.t0rn.io')
+    const provider = new WsProvider('ws://127.0.0.1:9944')  // ws.t0rn.io
     const api = await ApiPromise.create({ provider })
     const listener = new ErrorListener(api)
     listener.prependListener('event', () => console.log('Event listener is starting...'))
@@ -83,7 +83,7 @@ export const batchErrorCreation = async () => {
  * @param args arguments passed to the CLI
  * @param sfxFile file containing the SFX
  */
-const processSfx = async (sfxFile: string, errorMode: ErrorMode) => {
+export const processSfx = async (sfxFile: string, errorMode: ErrorMode) => {
     // Get the extrinsic from the file
     const extrinsic = getExtrinsic(sfxFile)
 
@@ -206,7 +206,7 @@ type ListenerEventData = {
  * 
  * @group t3rn Circuit
  */
-class ErrorListener extends EventEmitter {
+export class ErrorListener extends EventEmitter {
     client: ApiPromise
 
     constructor(client: ApiPromise) {
