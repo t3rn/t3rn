@@ -1,11 +1,12 @@
 use crate::GatewayVendor;
+use bytes::Bytes;
+use codec::WrapperTypeDecode;
 use frame_support::pallet_prelude::*;
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
 use sp_core::{H160, H256};
 use sp_runtime::Percent;
 use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
-
 // Key types for attester crypto
 pub const ECDSA_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"ecat");
 pub const ED25519_ATTESTER_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"edat");
@@ -117,17 +118,35 @@ pub type Signature65b = [u8; 65];
 pub type PublicKeyEcdsa33b = [u8; 33];
 pub const COMMITTEE_SIZE: usize = 32;
 
-pub type CommitteeTransition = [u32; COMMITTEE_SIZE];
+pub type CommitteeTransitionIndices = [u32; COMMITTEE_SIZE];
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
+pub struct GenericCommitteeTransition([(u32, Vec<u8>); COMMITTEE_SIZE]);
+
 pub type EvmCommitteeTransition = [(u32, H160); COMMITTEE_SIZE];
+// pub type CommitteeTransition = [(u32, Vec<u8>); COMMITTEE_SIZE];
+pub type CommitteeTransition = Vec<(u32, Vec<u8>)>;
+pub type CommitteeTransitionEncoded = Vec<u8>;
+// impl From<EvmCommitteeTransition> for GenericCommitteeTransition {
+//     fn from(evm: EvmCommitteeTransition) -> Self {
+//         let bytes = Bytes::new();
+//         let mut generic = [(0u32, bytes); COMMITTEE_SIZE];
+//
+//         for i in 0..COMMITTEE_SIZE {
+//             let (n, addr) = evm[i];
+//             generic[i] = (n, Bytes::copy_from_slice(addr.as_bytes()));
+//         }
+//
+//         GenericCommitteeTransition(generic)
+//     }
+// }
+
 pub type AttestersChange = Vec<([u8; 33], u32)>;
 pub type BatchConfirmedSfxId = Vec<H256>;
 
 pub trait AttestersWriteApi<Account, Error> {
     fn request_sfx_attestation(target: TargetId, sfx_id: H256) -> Result<(), Error>;
-    fn request_add_attesters_attestation(add_attester: &Account) -> Result<(), Error>;
     fn request_ban_attesters_attestation(ban_attesters: &Account) -> Result<(), Error>;
-    fn request_remove_attesters_attestation(remove_attesters: &Account) -> Result<(), Error>;
-    fn request_next_committee_attestation(next_committee: CommitteeTransition);
+    fn request_next_committee_attestation();
 }
 
 pub trait AttestersReadApi<Account, Balance> {

@@ -41,7 +41,7 @@ pub mod pallet {
         portal::Portal,
         rewards::RewardsWriteApi,
         xdns::Xdns,
-        GatewayVendor,
+        ExecutionVendor, GatewayVendor,
     };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
@@ -263,9 +263,11 @@ pub mod pallet {
         AttesterDeregistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
         NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
+        NewAttestationMessageHash(TargetId, H256, ExecutionVendor),
         NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>),
         Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
         NewTargetActivated(TargetId),
+        NewTargetProposed(TargetId),
         AttesterAgreedToNewTarget(T::AccountId, TargetId, Vec<u8>),
     }
 
@@ -480,6 +482,8 @@ pub mod pallet {
                     pending.push(target);
                 }
             });
+
+            Self::deposit_event(Event::NewTargetProposed(target));
 
             Ok(())
         }
@@ -1296,6 +1300,7 @@ pub mod pallet {
                     if next_batch.message().len().is_zero() {
                         // Leave the batch empty if it has no messages
                     } else {
+                        let message_hash = next_batch.message_hash();
                         next_batch.status = BatchStatus::PendingAttestation;
                         // Push the batch to the batches vector
                         Batches::<T>::append(target, &next_batch);
@@ -1304,6 +1309,20 @@ pub mod pallet {
                         NextBatch::<T>::insert(target, new_next_batch);
 
                         Self::deposit_event(Event::NewAttestationBatch(target, next_batch));
+
+                        let execution_vendor = match T::Xdns::get_verification_vendor(&target) {
+                            Ok(gv) => match gv {
+                                GatewayVendor::Ethereum => ExecutionVendor::EVM,
+                                _ => ExecutionVendor::Substrate,
+                            },
+                            Err(_) => ExecutionVendor::EVM,
+                        };
+
+                        Self::deposit_event(Event::NewAttestationMessageHash(
+                            target,
+                            message_hash,
+                            execution_vendor,
+                        ));
                     }
                 } else {
                     // Create a new !first! empty batch for the next window on the newly accepted target
