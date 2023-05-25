@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 use sp_core::H256;
 use t3rn_types::fsx::FullSideEffect;
 

@@ -10,7 +10,7 @@ pub mod pallet {
     use frame_support::{
         dispatch::DispatchResult,
         pallet_prelude::*,
-        traits::{Currency, ExistenceRequirement, FindAuthor, ReservableCurrency, WithdrawReasons},
+        traits::{Currency, ExistenceRequirement, FindAuthor, WithdrawReasons},
     };
     use frame_system::pallet_prelude::*;
     use sp_core::H256;
@@ -1371,7 +1371,7 @@ pub mod test {
                 &sfx_id, &fsx
             ));
 
-            assert_eq!(Rewards::get_pending_claims(executor.clone()), None);
+            assert_eq!(Rewards::get_pending_claims(executor), None);
         });
     }
 }

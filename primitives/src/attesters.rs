@@ -1,13 +1,9 @@
 use crate::GatewayVendor;
-use frame_support::{assert_ok, pallet_prelude::*};
+use frame_support::pallet_prelude::*;
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
-use sp_core::{
-    ecdsa::{Public as CoreEcsdaPublic, Signature},
-    sr25519::Public,
-    H160, H256,
-};
+use sp_core::{H160, H256};
 use sp_runtime::Percent;
-use sp_std::{convert::TryInto, prelude::*};
+use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
 
 // Key types for attester crypto
@@ -28,7 +24,7 @@ use tiny_keccak::{Hasher, Keccak};
 
 pub fn ecdsa_pubkey_to_eth_address(pubkey: &[u8; 33]) -> Result<[u8; 20], DispatchError> {
     let pubkey = libsecp256k1::PublicKey::parse_slice(
-        &pubkey.as_slice(),
+        pubkey.as_slice(),
         Some(libsecp256k1::PublicKeyFormat::Compressed),
     )
     .map_err(|_| {
@@ -58,7 +54,7 @@ pub fn ecdsa_pubkey_to_eth_address(pubkey: &[u8; 33]) -> Result<[u8; 20], Dispat
 
 #[test]
 fn test_ecdsa_pubkey_to_eth_address() {
-    let pk_hex = hex_literal::hex!("79846fd12ed97f908d879fc03f1893eb1a18fb3e76d431d31602dd50f50fd9eff78e4603b994db0873fccc41e6ee7846e8050ea4909b4c5d89daf5a40b58b762");
+    let _pk_hex = hex_literal::hex!("79846fd12ed97f908d879fc03f1893eb1a18fb3e76d431d31602dd50f50fd9eff78e4603b994db0873fccc41e6ee7846e8050ea4909b4c5d89daf5a40b58b762");
 
     let compressed_ecdsa_pub_key: [u8; 33] = [
         3, 213, 51, 13, 232, 85, 194, 30, 34, 218, 22, 60, 149, 40, 220, 34, 77, 173, 31, 61, 164,
@@ -66,7 +62,7 @@ fn test_ecdsa_pubkey_to_eth_address() {
     ];
     let address_res = ecdsa_pubkey_to_eth_address(&compressed_ecdsa_pub_key);
 
-    assert_ok!(address_res);
+    frame_support::assert_ok!(address_res);
     let address = address_res.unwrap();
 
     assert_eq!(
