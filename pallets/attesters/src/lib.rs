@@ -356,7 +356,6 @@ pub mod pallet {
 
             Self::deposit_event(Event::AttesterRegistered(account_id));
 
-            println!("Attester registered");
             Ok(())
         }
 
@@ -473,26 +472,16 @@ pub mod pallet {
         pub fn add_attestation_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
             ensure_root(origin)?;
 
-            println!("hello: {target:?}");
-            println!("hello2: {:?}", AttestationTargets::<T>::get());
             ensure!(
                 !AttestationTargets::<T>::get().contains(&target),
                 Error::<T>::TargetAlreadyActive
             );
-            println!("hello3: {:?}", AttestationTargets::<T>::get());
 
             PendingAttestationTargets::<T>::mutate(|pending| {
                 if !pending.contains(&target) {
                     pending.push(target);
                 }
             });
-            println!("hello4: {:?}", AttestationTargets::<T>::get());
-
-            println!("add_attestation_target: {target:?}");
-            println!(
-                "add_attestation_target: {:?}",
-                PendingAttestationTargets::<T>::get()
-            );
 
             Ok(())
         }
@@ -510,7 +499,6 @@ pub mod pallet {
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
 
-            println!("submit_attestation: {:?}", AttestationTargets::<T>::get());
             // Ensure target is activated
             ensure!(
                 AttestationTargets::<T>::get().contains(&target),
@@ -1068,9 +1056,6 @@ pub mod pallet {
                         active.push(*target);
                     }
                 });
-
-                println!("AttestationTargets: {:?}", AttestationTargets::<T>::get());
-
                 true
             } else {
                 false
@@ -1288,7 +1273,6 @@ pub mod pallet {
 
         pub fn process_repatriations(n: T::BlockNumber, aggregated_weight: Weight) -> Weight {
             for target in AttestationTargets::<T>::get() {
-                println!("Processing repatriations for target: {target:?}");
                 Batches::<T>::mutate(target, |batches| {
                     let mut repatriated = false;
                     if let Some(batches) = batches {
@@ -1482,16 +1466,9 @@ pub mod pallet {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             let mut aggregated_weight: Weight = 0;
             // Check if a shuffling round has passed
-            println!(
-                "in on_initialize {:?} {:?}",
-                n,
-                T::ShufflingFrequency::get()
-            );
             if (n % T::ShufflingFrequency::get()).is_zero() {
                 // Process pending unnominations
                 aggregated_weight = Self::process_pending_unnominations(n, aggregated_weight);
-
-                println!("Shuffling round: {n}");
                 // Update the active set of attesters
                 ActiveSet::<T>::put(
                     SortedNominatedAttesters::<T>::get()
@@ -1502,13 +1479,6 @@ pub mod pallet {
                         .map(|(account_id, _balance)| account_id)
                         .collect::<Vec<T::AccountId>>(),
                 );
-
-                println!(
-                    "Shuffling round: SortedNominatedAttesters::<T>::get() {:?}",
-                    SortedNominatedAttesters::<T>::get()
-                );
-                println!("Shuffling round: active set {:?}", ActiveSet::<T>::get());
-
                 aggregated_weight += T::DbWeight::get().reads_writes(1, 1);
 
                 // Call shuffle_committee
