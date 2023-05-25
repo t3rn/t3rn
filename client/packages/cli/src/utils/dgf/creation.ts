@@ -1,10 +1,9 @@
-import { readSfxFile, submitSfx, submitSfxRaw } from "@/commands/submit/sfx.ts"
+import { readSfxFile } from "@/commands/submit/sfx.ts"
 import { validate } from "../fns.ts"
 import { ExtrinsicSchema, Extrinsic } from "@/schemas/extrinsic.ts"
-// import * as fs from "fs"
 import "@t3rn/types"
 import { EventEmitter } from "events"
-import { ApiPromise, WsProvider } from "@polkadot/api"
+import { ApiPromise } from "@polkadot/api"
 
 export enum ErrorMode {
     NoBidders = "NoBidders",
@@ -14,68 +13,6 @@ export enum ErrorMode {
     None = "None",
 }
 
-type ErrorRegistry = Record<ErrorMode, Extrinsic>
-
-/**
- * Batch-create all the SFX with all the possible different errors.
- * 
- */
-export const batchErrorCreation = async () => {
-    // spin up event listener
-    const provider = new WsProvider('ws://127.0.0.1:9944')  // ws.t0rn.io
-    const api = await ApiPromise.create({ provider })
-    const listener = new ErrorListener(api)
-    listener.prependListener('event', () => console.log('Event listener is starting...'))
-    listener.start()
-
-    // listen on "event"s that can be emited
-    listener.on('event', (eventData) => {
-        // validateEvent(eventData)
-        console.log("🆕 new event data received: ", eventData)
-    })
-
-    const submitableRegistry = new Map<ErrorMode, Extrinsic>()
-    const submitedRegistry = new Map<ErrorMode, Extrinsic>()
-
-    for (const errorMode in ErrorMode) {
-        // const file_name = `./sfx.json`
-        const file_name = `./transfer.json`
-        const extrinsic = await processSfx(file_name, ErrorMode[errorMode])
-
-        // registry what could be submitted
-        submitableRegistry.set(ErrorMode[errorMode], extrinsic)
-
-        // submit the extrinsic to the circuit
-        try {
-            const events = submitSfxRaw(extrinsic, true)
-            console.log("Received events after submission: ", events)
-
-            // TODO: check if, in the events returned, there's some info from the submited extrinsic so I can later check if the 
-
-            // register the error with the extrinsic if successfull
-            submitedRegistry.set(ErrorMode[errorMode], extrinsic)
-        } catch (e) {
-            // otherwise, stop everything
-            console.log("❌ Error received when submiting extrinsic: ", e)
-            process.exit(1)
-        }
-    }
-
-    // Save the SFX as a json file if everything goes well
-    // saveToJson(extrinsic, errorMode)
-}
-
-// const validateEvent = (eventData: ListenerEventData) => {
-//     console.log("Received event with type: ", eventData.type)
-//     console.log("Received event with data.vendor: ", eventData.data.vendor)
-//     console.log("Received event with data.height: ", eventData.data.height)
-
-//     switch (eventData.type) {
-//         case ListenerEvents.DroppedAtBidding: { }
-//         case ListenerEvents.RevertTimedOut: { }
-//     }
-// }
-
 
 /**
  * Process the get, injection and save of the SFX.
@@ -83,9 +20,9 @@ export const batchErrorCreation = async () => {
  * @param sfxFile file containing the SFX
  * @param errorMode the type of error to be injected
  */
-export const processSfx = async (sfxFile: string, errorMode: ErrorMode) => {
+export const processSfx = (sfxFile: string, errorMode: ErrorMode) => {
     // Get the extrinsic from the file
-    const extrinsic = await getExtrinsic(sfxFile)
+    const extrinsic = getExtrinsic(sfxFile)
 
     // Attach the error on the SFX
     injectErrorMode(extrinsic, errorMode)
@@ -140,23 +77,6 @@ const injectErrorMode = (extrinsic: Extrinsic, errorMode: ErrorMode) => {
     extrinsic.sideEffects[0].signature = errorMode
     console.log("✅ Succesfully injected the error in the SFX!")
 }
-
-
-// /**
-//  * Save the extrinsic as a json file.
-//  * The default location is `./sfx_with_error_modes`.
-//  * 
-//  * @param sfx The extrinsic to be saved
-//  * @param folder The place to store the extrinsic
-//  */
-// const saveToJson = (sfx: Extrinsic, errorMode: ErrorMode, folder = "./sfx_with_error_modes") => {
-//     if (!fs.existsSync(folder)) {
-//         fs.mkdirSync(folder)
-//     }
-//     fs.writeFileSync(`${folder}/sfx_${errorMode}.json`, JSON.stringify(sfx))
-//     console.log("✅ Succesfully saved the SFX as a json file!")
-// }
-
 
 
 /**
@@ -292,7 +212,4 @@ const emitEvent = (listener: ErrorListener, event: ListenerEvents, notification:
         data: notification.event.data,
         error: error,
     })
-
-    // saveToJson(extrinsic)
-    // return event
 }

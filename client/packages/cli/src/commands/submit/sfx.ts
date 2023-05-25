@@ -99,7 +99,7 @@ export const submitSfxRaw = async (extrinsic: Extrinsic, exportMode: boolean) =>
   spinner.start()
 
   if (!config) {
-    process.exit(1)
+    spinner.text = "Config not found"
   }
 
   const { circuit, sdk } = await createCircuitContext(exportMode)
@@ -117,7 +117,7 @@ export const submitSfxRaw = async (extrinsic: Extrinsic, exportMode: boolean) =>
       >[0],
       transactionArgs.speed_mode
     )
-    const submissionHeight = await sdk.circuit.tx.signAndSendSafeRaw(transaction)
+    const submissionHeight = await sdk.circuit.tx.signAndSendRaw(transaction)
     spinner.stopAndPersist({
       symbol: "🚀",
       text: colorLogMsg(
@@ -125,10 +125,10 @@ export const submitSfxRaw = async (extrinsic: Extrinsic, exportMode: boolean) =>
         `Extrinsic submitted at block #${submissionHeight}`
       ),
     })
-    process.exit(0)
+    // process.exit(0)
   } catch (e) {
     spinner.fail(`Extrinsic submission failed: ${e}`)
-    process.exit(1)
+    // process.exit(1)
   }
 }
 export const buildSfx = (
