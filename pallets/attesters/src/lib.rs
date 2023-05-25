@@ -20,7 +20,7 @@ pub mod pallet {
         traits::{Currency, ExistenceRequirement, Randomness, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
-    use sp_core::H256;
+    use sp_core::{hexdisplay::AsBytesRef, H160, H256};
     use t3rn_abi::{recode::Codec, FilledAbi};
     pub use t3rn_primitives::portal::InclusionReceipt;
 
@@ -32,10 +32,17 @@ pub mod pallet {
 
     pub use t3rn_primitives::attesters::{
         AttesterInfo, AttestersChange, AttestersReadApi, AttestersWriteApi, BatchConfirmedSfxId,
-        CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
+        CommitteeTransitionIndices, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use t3rn_primitives::{circuit::ReadSFX, portal::Portal, rewards::RewardsWriteApi, xdns::Xdns};
+    use t3rn_primitives::{
+        attesters::{CommitteeTransition, EvmCommitteeTransition, GenericCommitteeTransition},
+        circuit::ReadSFX,
+        portal::Portal,
+        rewards::RewardsWriteApi,
+        xdns::Xdns,
+        GatewayVendor,
+    };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
@@ -52,9 +59,7 @@ pub mod pallet {
     pub struct BatchMessage<BlockNumber> {
         pub batch_sfx: Option<BatchConfirmedSfxId>,
         pub next_committee: Option<CommitteeTransition>,
-        pub new_attesters: Option<AttestersChange>,
         pub ban_attesters: Option<AttestersChange>,
-        pub remove_attesters: Option<AttestersChange>,
         pub signatures: Vec<(u32, Signature65b)>,
         pub status: BatchStatus,
         pub created: BlockNumber,
@@ -66,9 +71,7 @@ pub mod pallet {
             BatchMessage {
                 batch_sfx: None,
                 next_committee: None,
-                new_attesters: None,
                 ban_attesters: None,
-                remove_attesters: None,
                 signatures: Vec::new(),
                 status: BatchStatus::PendingMessage,
                 created: Zero::zero(),
@@ -88,15 +91,12 @@ pub mod pallet {
                 }
             }
             if let Some(ref committee) = self.next_committee {
-                committee.encode_to(&mut encoded_message);
-            }
-            if let Some(ref attestors) = self.new_attesters {
-                attestors.encode_to(&mut encoded_message);
+                for (index, sig) in committee.iter() {
+                    encoded_message.extend_from_slice(&index.to_be_bytes());
+                    encoded_message.extend_from_slice(sig.as_bytes_ref());
+                }
             }
             if let Some(ref attestors) = self.ban_attesters {
-                attestors.encode_to(&mut encoded_message);
-            }
-            if let Some(ref attestors) = self.remove_attesters {
                 attestors.encode_to(&mut encoded_message);
             }
 
@@ -351,8 +351,6 @@ pub mod pallet {
 
             // Self nominate in order to be part of the active set selection
             Self::do_nominate(&account_id, &account_id, self_nominate_amount)?;
-
-            Self::request_add_attesters_attestation(&account_id)?;
 
             Self::deposit_event(Event::AttesterRegistered(account_id));
 
@@ -772,35 +770,6 @@ pub mod pallet {
             })
         }
 
-        fn request_add_attesters_attestation(new_attester: &T::AccountId) -> Result<(), Error<T>> {
-            let attester_info =
-                Attesters::<T>::get(new_attester).ok_or(Error::<T>::AttesterNotFound)?;
-
-            let attester_key_index = (attester_info.key_ec, attester_info.index);
-
-            for target in AttestationTargets::<T>::get() {
-                NextBatch::<T>::try_mutate(target, |next_batch| {
-                    let next_batch = next_batch.as_mut().ok_or(Error::<T>::BatchNotFound)?;
-
-                    match &mut next_batch.new_attesters {
-                        Some(attesters) => {
-                            ensure!(
-                                !attesters.contains(&attester_key_index),
-                                Error::<T>::AddAttesterAlreadyRequested
-                            );
-                            attesters.push(attester_key_index);
-                        },
-                        None => {
-                            next_batch.new_attesters = Some(vec![attester_key_index]);
-                        },
-                    }
-                    Ok(())
-                })?;
-            }
-
-            Ok(())
-        }
-
         fn request_ban_attesters_attestation(ban_attester: &T::AccountId) -> Result<(), Error<T>> {
             let attester_info =
                 Attesters::<T>::get(ban_attester).ok_or(Error::<T>::AttesterNotFound)?;
@@ -830,46 +799,18 @@ pub mod pallet {
             Ok(())
         }
 
-        fn request_remove_attesters_attestation(
-            remove_attesters: &T::AccountId,
-        ) -> Result<(), Error<T>> {
-            let attester_info =
-                Attesters::<T>::get(remove_attesters).ok_or(Error::<T>::AttesterNotFound)?;
-
-            let attester_key_index = (attester_info.key_ec, attester_info.index);
-
-            for target in AttestationTargets::<T>::get() {
-                NextBatch::<T>::try_mutate(target, |next_batch| {
-                    let next_batch = next_batch.as_mut().ok_or(Error::<T>::BatchNotFound)?;
-
-                    match &mut next_batch.remove_attesters {
-                        Some(attesters) => {
-                            ensure!(
-                                !attesters.contains(&attester_key_index),
-                                Error::<T>::RemoveAttesterAlreadyRequested
-                            );
-                            attesters.push(attester_key_index);
-                        },
-                        None => {
-                            next_batch.remove_attesters = Some(vec![attester_key_index]);
-                        },
-                    }
-                    Ok(())
-                })?;
-            }
-
-            Ok(())
-        }
-
-        fn request_next_committee_attestation(next_committee: CommitteeTransition) {
+        fn request_next_committee_attestation() {
             for target in AttestationTargets::<T>::get() {
                 if let Some(next_batch) = NextBatch::<T>::get(target) {
                     if next_batch.next_committee.is_none() {
+                        let committee_transition_for_target =
+                            Self::get_current_committee_transition_for_target(&target);
+
                         // We only update the next_committee if it was None.
                         NextBatch::<T>::insert(
                             target,
                             BatchMessage {
-                                next_committee: Some(next_committee),
+                                next_committee: Some(committee_transition_for_target),
                                 ..next_batch
                             },
                         );
@@ -1215,9 +1156,28 @@ pub mod pallet {
             Ok(())
         }
 
-        fn get_current_committee_indices() -> CommitteeTransition {
+        fn get_current_committee_transition_for_target(target: &TargetId) -> CommitteeTransition {
             let current_committee = CurrentCommittee::<T>::get();
-            let mut committee_indices: CommitteeTransition = [0; COMMITTEE_SIZE]; // Initialize the committee_indices array
+            let mut committee_transition = Vec::new();
+
+            for attester in &current_committee {
+                if let Some(attester_info) = Attesters::<T>::get(attester) {
+                    if let Some(checked_recoverable) =
+                        AttestersAgreements::<T>::get(attester, target)
+                    {
+                        committee_transition.push((attester_info.index, checked_recoverable));
+                    }
+                }
+            }
+
+            committee_transition.sort_by(|(a, _), (b, _)| a.cmp(b));
+
+            committee_transition
+        }
+
+        fn get_current_committee_indices() -> CommitteeTransitionIndices {
+            let current_committee = CurrentCommittee::<T>::get();
+            let mut committee_indices: CommitteeTransitionIndices = [0; COMMITTEE_SIZE]; // Initialize the committee_indices array
 
             for (i, attester) in current_committee.iter().enumerate() {
                 if let Some(attester_info) = Attesters::<T>::get(attester) {
@@ -1324,8 +1284,6 @@ pub mod pallet {
                 let mut new_next_batch = BatchMessage {
                     batch_sfx: None,
                     next_committee: None,
-                    new_attesters: None,
-                    remove_attesters: None,
                     ban_attesters: None,
                     signatures: Vec::new(),
                     status: BatchStatus::PendingMessage,
@@ -1486,7 +1444,7 @@ pub mod pallet {
                     log::error!("Failed to shuffle committee");
                     aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
                 } else {
-                    Self::request_next_committee_attestation(Self::get_current_committee_indices());
+                    Self::request_next_committee_attestation();
                     aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
                 }
 
@@ -1528,8 +1486,6 @@ pub mod pallet {
                 let new_batch_message = BatchMessage {
                     batch_sfx: None,
                     next_committee: None,
-                    new_attesters: None,
-                    remove_attesters: None,
                     ban_attesters: None,
                     signatures: Vec::new(),
                     status: BatchStatus::PendingMessage,
@@ -1572,7 +1528,7 @@ pub mod attesters_test {
     use t3rn_primitives::{
         attesters::{
             ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
-            CommitteeTransition,
+            CommitteeTransition, CommitteeTransitionIndices,
         },
         circuit::{FullSideEffect, SecurityLvl, SideEffect},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
@@ -1738,8 +1694,6 @@ pub mod attesters_test {
         assert_eq!(next_batch.index, index);
         assert_eq!(next_batch.batch_sfx, None);
         assert_eq!(next_batch.next_committee, None);
-        assert_eq!(next_batch.new_attesters, None);
-        assert_eq!(next_batch.remove_attesters, None);
         assert_eq!(next_batch.ban_attesters, None);
         assert_eq!(next_batch.signatures, Vec::new());
 
@@ -1901,9 +1855,7 @@ pub mod attesters_test {
                 vec![BatchMessage {
                     batch_sfx: Some(vec![sfx_id_a]),
                     next_committee: None,
-                    new_attesters: None,
                     ban_attesters: None,
-                    remove_attesters: None,
                     signatures: vec![],
                     status: BatchStatus::PendingAttestation,
                     created: current_block_1,
@@ -2036,15 +1988,16 @@ pub mod attesters_test {
             .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
+
+            for counter in 1..33u8 {
+                // Register an attester
+                let _attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+            }
+
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
-            let committee_transition: CommitteeTransition = [
-                1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
-                14u32, 15u32, 16u32, 17u32, 18u32, 19u32, 20u32, 21u32, 22u32, 23u32, 24u32, 25u32,
-                26u32, 27u32, 28u32, 29u32, 30u32, 31u32, 32u32,
-            ];
-
-            Attesters::request_next_committee_attestation(committee_transition);
+            Attesters::request_next_committee_attestation();
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
@@ -2111,78 +2064,262 @@ pub mod attesters_test {
             .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
+            for counter in 1..33u8 {
+                // Register an attester
+                let _attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+            }
+
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
-            let committee_transition: CommitteeTransition = [
+            let committee_transition: CommitteeTransitionIndices = [
                 1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
                 14u32, 15u32, 16u32, 17u32, 18u32, 19u32, 20u32, 21u32, 22u32, 23u32, 24u32, 25u32,
                 26u32, 27u32, 28u32, 29u32, 30u32, 31u32, 32u32,
             ];
 
-            Attesters::request_next_committee_attestation(committee_transition);
+            Attesters::request_next_committee_attestation();
 
             let sfx_id_a = H256::repeat_byte(1);
             assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
 
-            let add_attester = AccountId::from([1; 32]);
-            register_attester_with_single_private_key([1u8; 32]);
-            assert_eq!(
-                Attesters::request_add_attesters_attestation(&add_attester)
-                    .unwrap_err()
-                    .encode(),
-                AttestersError::<MiniRuntime>::AddAttesterAlreadyRequested.encode()
-            );
-
-            let remove_attester = AccountId::from([2; 32]);
-            register_attester_with_single_private_key([2u8; 32]);
-            assert_ok!(Attesters::request_remove_attesters_attestation(
-                &remove_attester
-            ));
             let ban_attester = AccountId::from([3; 32]);
-            register_attester_with_single_private_key([3u8; 32]);
             assert_ok!(Attesters::request_ban_attesters_attestation(&ban_attester));
 
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
+
+            let expected_transition: Option<CommitteeTransition> = Some(vec![
+                (
+                    0,
+                    vec![
+                        26, 100, 47, 14, 60, 58, 245, 69, 231, 172, 189, 56, 176, 114, 81, 179,
+                        153, 9, 20, 241,
+                    ],
+                ),
+                (
+                    1,
+                    vec![
+                        80, 80, 164, 244, 179, 249, 51, 140, 52, 114, 220, 192, 26, 135, 199, 106,
+                        20, 75, 60, 156,
+                    ],
+                ),
+                (
+                    2,
+                    vec![
+                        51, 37, 167, 132, 37, 241, 122, 126, 72, 126, 181, 102, 107, 43, 253, 147,
+                        171, 176, 108, 112,
+                    ],
+                ),
+                (
+                    3,
+                    vec![
+                        196, 139, 129, 43, 180, 52, 1, 57, 44, 3, 115, 129, 172, 169, 52, 244, 6,
+                        156, 5, 23,
+                    ],
+                ),
+                (
+                    4,
+                    vec![
+                        208, 154, 209, 64, 128, 212, 178, 87, 168, 25, 164, 245, 121, 184, 72, 91,
+                        232, 143, 8, 108,
+                    ],
+                ),
+                (
+                    5,
+                    vec![
+                        12, 176, 48, 209, 26, 139, 228, 139, 96, 65, 136, 87, 135, 77, 238, 230,
+                        29, 16, 113, 224,
+                    ],
+                ),
+                (
+                    6,
+                    vec![
+                        74, 98, 49, 102, 35, 173, 69, 127, 2, 205, 197, 217, 151, 222, 214, 122,
+                        56, 62, 197, 105,
+                    ],
+                ),
+                (
+                    7,
+                    vec![
+                        153, 200, 81, 234, 163, 195, 151, 105, 20, 214, 59, 130, 44, 103, 226, 1,
+                        236, 11, 251, 184,
+                    ],
+                ),
+                (
+                    8,
+                    vec![
+                        88, 218, 153, 10, 143, 74, 58, 108, 167, 203, 99, 21, 214, 138, 20, 1, 5,
+                        145, 115, 82,
+                    ],
+                ),
+                (
+                    9,
+                    vec![
+                        193, 113, 3, 61, 92, 191, 247, 23, 95, 41, 223, 211, 166, 61, 218, 61, 111,
+                        143, 56, 94,
+                    ],
+                ),
+                (
+                    10,
+                    vec![
+                        242, 136, 236, 175, 21, 121, 14, 252, 172, 82, 137, 70, 150, 58, 109, 184,
+                        195, 248, 33, 29,
+                    ],
+                ),
+                (
+                    11,
+                    vec![
+                        99, 70, 123, 2, 167, 56, 36, 8, 168, 69, 165, 235, 133, 181, 35, 139, 138,
+                        77, 208, 237,
+                    ],
+                ),
+                (
+                    12,
+                    vec![
+                        34, 156, 120, 75, 147, 204, 180, 64, 249, 29, 197, 19, 44, 116, 169, 83,
+                        25, 73, 125, 244,
+                    ],
+                ),
+                (
+                    13,
+                    vec![
+                        129, 161, 247, 202, 26, 64, 224, 4, 216, 227, 205, 205, 183, 38, 58, 173,
+                        217, 206, 26, 243,
+                    ],
+                ),
+                (
+                    14,
+                    vec![
+                        105, 26, 141, 5, 103, 143, 201, 98, 255, 15, 33, 116, 19, 67, 121, 192, 5,
+                        28, 182, 134,
+                    ],
+                ),
+                (
+                    15,
+                    vec![
+                        239, 4, 90, 85, 76, 187, 0, 22, 39, 94, 144, 227, 0, 47, 77, 33, 198, 242,
+                        99, 225,
+                    ],
+                ),
+                (
+                    16,
+                    vec![
+                        25, 231, 227, 118, 231, 194, 19, 183, 231, 231, 228, 108, 199, 10, 93, 208,
+                        134, 218, 255, 42,
+                    ],
+                ),
+                (
+                    17,
+                    vec![
+                        28, 90, 119, 217, 250, 126, 244, 102, 149, 27, 47, 1, 247, 36, 188, 163,
+                        165, 130, 11, 99,
+                    ],
+                ),
+                (
+                    18,
+                    vec![
+                        3, 161, 187, 166, 11, 90, 163, 112, 148, 207, 22, 18, 58, 221, 103, 76, 1,
+                        88, 148, 136,
+                    ],
+                ),
+                (
+                    19,
+                    vec![
+                        30, 50, 171, 207, 230, 219, 21, 193, 87, 7, 9, 227, 252, 2, 114, 83, 53,
+                        245, 10, 71,
+                    ],
+                ),
+                (
+                    20,
+                    vec![
+                        51, 224, 245, 57, 227, 27, 53, 23, 15, 170, 160, 98, 175, 112, 59, 118,
+                        168, 40, 43, 247,
+                    ],
+                ),
+                (
+                    21,
+                    vec![
+                        161, 67, 201, 108, 74, 81, 135, 115, 67, 196, 221, 119, 253, 98, 88, 79,
+                        215, 242, 93, 180,
+                    ],
+                ),
+                (
+                    22,
+                    vec![
+                        126, 159, 180, 15, 102, 196, 225, 50, 250, 94, 100, 228, 159, 48, 126, 2,
+                        183, 101, 64, 248,
+                    ],
+                ),
+                (
+                    23,
+                    vec![
+                        215, 231, 83, 158, 167, 75, 228, 250, 203, 88, 197, 12, 206, 191, 6, 96,
+                        127, 241, 148, 205,
+                    ],
+                ),
+                (
+                    24,
+                    vec![
+                        4, 146, 155, 184, 96, 118, 224, 159, 36, 139, 37, 73, 49, 73, 30, 54, 29,
+                        59, 78, 84,
+                    ],
+                ),
+                (
+                    25,
+                    vec![
+                        239, 75, 112, 1, 58, 93, 39, 218, 97, 215, 26, 215, 22, 254, 18, 148, 247,
+                        72, 209, 82,
+                    ],
+                ),
+                (
+                    26,
+                    vec![
+                        177, 167, 217, 66, 140, 229, 200, 14, 37, 78, 101, 251, 225, 188, 248, 47,
+                        100, 123, 93, 238,
+                    ],
+                ),
+                (
+                    27,
+                    vec![
+                        25, 80, 41, 10, 165, 39, 129, 221, 108, 66, 85, 70, 123, 187, 235, 159,
+                        119, 60, 25, 54,
+                    ],
+                ),
+                (
+                    28,
+                    vec![
+                        116, 10, 58, 110, 64, 197, 45, 43, 126, 50, 236, 207, 254, 100, 60, 77,
+                        157, 170, 187, 91,
+                    ],
+                ),
+                (
+                    29,
+                    vec![
+                        235, 230, 196, 217, 170, 160, 118, 159, 4, 105, 143, 152, 109, 26, 198,
+                        229, 234, 199, 108, 28,
+                    ],
+                ),
+                (
+                    30,
+                    vec![
+                        168, 139, 113, 15, 175, 255, 104, 227, 215, 187, 75, 61, 215, 44, 53, 139,
+                        91, 219, 154, 24,
+                    ],
+                ),
+                (
+                    31,
+                    vec![
+                        182, 230, 16, 146, 27, 10, 15, 111, 96, 140, 14, 31, 41, 168, 69, 85, 43,
+                        198, 219, 44,
+                    ],
+                ),
+            ]);
 
             assert_eq!(
                 Attesters::get_latest_batch_to_sign(target),
                 Some(BatchMessage {
                     batch_sfx: Some(vec![sfx_id_a]),
-                    next_committee: Some(committee_transition),
-                    new_attesters: Some(vec![
-                        (
-                            [
-                                3, 27, 132, 197, 86, 123, 18, 100, 64, 153, 93, 62, 213, 170, 186,
-                                5, 101, 215, 30, 24, 52, 96, 72, 25, 255, 156, 23, 245, 233, 213,
-                                221, 7, 143
-                            ],
-                            0
-                        ),
-                        (
-                            [
-                                2, 77, 75, 108, 209, 54, 16, 50, 202, 155, 210, 174, 185, 217, 0,
-                                170, 77, 69, 217, 234, 216, 10, 201, 66, 51, 116, 196, 81, 167, 37,
-                                77, 7, 102
-                            ],
-                            1
-                        ),
-                        (
-                            [
-                                2, 83, 31, 230, 6, 129, 52, 80, 61, 39, 35, 19, 50, 39, 200, 103,
-                                172, 143, 166, 200, 60, 83, 126, 154, 68, 195, 197, 189, 189, 203,
-                                31, 227, 55
-                            ],
-                            2
-                        )
-                    ]),
-                    remove_attesters: Some(vec![(
-                        [
-                            2, 77, 75, 108, 209, 54, 16, 50, 202, 155, 210, 174, 185, 217, 0, 170,
-                            77, 69, 217, 234, 216, 10, 201, 66, 51, 116, 196, 81, 167, 37, 77, 7,
-                            102
-                        ],
-                        1
-                    ),]),
+                    next_committee: expected_transition,
                     ban_attesters: Some(vec![(
                         [
                             2, 83, 31, 230, 6, 129, 52, 80, 61, 39, 35, 19, 50, 39, 200, 103, 172,
@@ -2202,22 +2339,51 @@ pub mod attesters_test {
                 Attesters::get_latest_batch_to_sign_message(target),
                 Some(vec![
                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                    1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0,
-                    6, 0, 0, 0, 7, 0, 0, 0, 8, 0, 0, 0, 9, 0, 0, 0, 10, 0, 0, 0, 11, 0, 0, 0, 12,
-                    0, 0, 0, 13, 0, 0, 0, 14, 0, 0, 0, 15, 0, 0, 0, 16, 0, 0, 0, 17, 0, 0, 0, 18,
-                    0, 0, 0, 19, 0, 0, 0, 20, 0, 0, 0, 21, 0, 0, 0, 22, 0, 0, 0, 23, 0, 0, 0, 24,
-                    0, 0, 0, 25, 0, 0, 0, 26, 0, 0, 0, 27, 0, 0, 0, 28, 0, 0, 0, 29, 0, 0, 0, 30,
-                    0, 0, 0, 31, 0, 0, 0, 32, 0, 0, 0, 12, 3, 27, 132, 197, 86, 123, 18, 100, 64,
-                    153, 93, 62, 213, 170, 186, 5, 101, 215, 30, 24, 52, 96, 72, 25, 255, 156, 23,
-                    245, 233, 213, 221, 7, 143, 0, 0, 0, 0, 2, 77, 75, 108, 209, 54, 16, 50, 202,
-                    155, 210, 174, 185, 217, 0, 170, 77, 69, 217, 234, 216, 10, 201, 66, 51, 116,
-                    196, 81, 167, 37, 77, 7, 102, 1, 0, 0, 0, 2, 83, 31, 230, 6, 129, 52, 80, 61,
-                    39, 35, 19, 50, 39, 200, 103, 172, 143, 166, 200, 60, 83, 126, 154, 68, 195,
-                    197, 189, 189, 203, 31, 227, 55, 2, 0, 0, 0, 4, 2, 83, 31, 230, 6, 129, 52, 80,
-                    61, 39, 35, 19, 50, 39, 200, 103, 172, 143, 166, 200, 60, 83, 126, 154, 68,
-                    195, 197, 189, 189, 203, 31, 227, 55, 2, 0, 0, 0, 4, 2, 77, 75, 108, 209, 54,
-                    16, 50, 202, 155, 210, 174, 185, 217, 0, 170, 77, 69, 217, 234, 216, 10, 201,
-                    66, 51, 116, 196, 81, 167, 37, 77, 7, 102, 1, 0, 0, 0
+                    1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 26, 100, 47, 14, 60, 58, 245, 69, 231, 172, 189,
+                    56, 176, 114, 81, 179, 153, 9, 20, 241, 0, 0, 0, 1, 80, 80, 164, 244, 179, 249,
+                    51, 140, 52, 114, 220, 192, 26, 135, 199, 106, 20, 75, 60, 156, 0, 0, 0, 2, 51,
+                    37, 167, 132, 37, 241, 122, 126, 72, 126, 181, 102, 107, 43, 253, 147, 171,
+                    176, 108, 112, 0, 0, 0, 3, 196, 139, 129, 43, 180, 52, 1, 57, 44, 3, 115, 129,
+                    172, 169, 52, 244, 6, 156, 5, 23, 0, 0, 0, 4, 208, 154, 209, 64, 128, 212, 178,
+                    87, 168, 25, 164, 245, 121, 184, 72, 91, 232, 143, 8, 108, 0, 0, 0, 5, 12, 176,
+                    48, 209, 26, 139, 228, 139, 96, 65, 136, 87, 135, 77, 238, 230, 29, 16, 113,
+                    224, 0, 0, 0, 6, 74, 98, 49, 102, 35, 173, 69, 127, 2, 205, 197, 217, 151, 222,
+                    214, 122, 56, 62, 197, 105, 0, 0, 0, 7, 153, 200, 81, 234, 163, 195, 151, 105,
+                    20, 214, 59, 130, 44, 103, 226, 1, 236, 11, 251, 184, 0, 0, 0, 8, 88, 218, 153,
+                    10, 143, 74, 58, 108, 167, 203, 99, 21, 214, 138, 20, 1, 5, 145, 115, 82, 0, 0,
+                    0, 9, 193, 113, 3, 61, 92, 191, 247, 23, 95, 41, 223, 211, 166, 61, 218, 61,
+                    111, 143, 56, 94, 0, 0, 0, 10, 242, 136, 236, 175, 21, 121, 14, 252, 172, 82,
+                    137, 70, 150, 58, 109, 184, 195, 248, 33, 29, 0, 0, 0, 11, 99, 70, 123, 2, 167,
+                    56, 36, 8, 168, 69, 165, 235, 133, 181, 35, 139, 138, 77, 208, 237, 0, 0, 0,
+                    12, 34, 156, 120, 75, 147, 204, 180, 64, 249, 29, 197, 19, 44, 116, 169, 83,
+                    25, 73, 125, 244, 0, 0, 0, 13, 129, 161, 247, 202, 26, 64, 224, 4, 216, 227,
+                    205, 205, 183, 38, 58, 173, 217, 206, 26, 243, 0, 0, 0, 14, 105, 26, 141, 5,
+                    103, 143, 201, 98, 255, 15, 33, 116, 19, 67, 121, 192, 5, 28, 182, 134, 0, 0,
+                    0, 15, 239, 4, 90, 85, 76, 187, 0, 22, 39, 94, 144, 227, 0, 47, 77, 33, 198,
+                    242, 99, 225, 0, 0, 0, 16, 25, 231, 227, 118, 231, 194, 19, 183, 231, 231, 228,
+                    108, 199, 10, 93, 208, 134, 218, 255, 42, 0, 0, 0, 17, 28, 90, 119, 217, 250,
+                    126, 244, 102, 149, 27, 47, 1, 247, 36, 188, 163, 165, 130, 11, 99, 0, 0, 0,
+                    18, 3, 161, 187, 166, 11, 90, 163, 112, 148, 207, 22, 18, 58, 221, 103, 76, 1,
+                    88, 148, 136, 0, 0, 0, 19, 30, 50, 171, 207, 230, 219, 21, 193, 87, 7, 9, 227,
+                    252, 2, 114, 83, 53, 245, 10, 71, 0, 0, 0, 20, 51, 224, 245, 57, 227, 27, 53,
+                    23, 15, 170, 160, 98, 175, 112, 59, 118, 168, 40, 43, 247, 0, 0, 0, 21, 161,
+                    67, 201, 108, 74, 81, 135, 115, 67, 196, 221, 119, 253, 98, 88, 79, 215, 242,
+                    93, 180, 0, 0, 0, 22, 126, 159, 180, 15, 102, 196, 225, 50, 250, 94, 100, 228,
+                    159, 48, 126, 2, 183, 101, 64, 248, 0, 0, 0, 23, 215, 231, 83, 158, 167, 75,
+                    228, 250, 203, 88, 197, 12, 206, 191, 6, 96, 127, 241, 148, 205, 0, 0, 0, 24,
+                    4, 146, 155, 184, 96, 118, 224, 159, 36, 139, 37, 73, 49, 73, 30, 54, 29, 59,
+                    78, 84, 0, 0, 0, 25, 239, 75, 112, 1, 58, 93, 39, 218, 97, 215, 26, 215, 22,
+                    254, 18, 148, 247, 72, 209, 82, 0, 0, 0, 26, 177, 167, 217, 66, 140, 229, 200,
+                    14, 37, 78, 101, 251, 225, 188, 248, 47, 100, 123, 93, 238, 0, 0, 0, 27, 25,
+                    80, 41, 10, 165, 39, 129, 221, 108, 66, 85, 70, 123, 187, 235, 159, 119, 60,
+                    25, 54, 0, 0, 0, 28, 116, 10, 58, 110, 64, 197, 45, 43, 126, 50, 236, 207, 254,
+                    100, 60, 77, 157, 170, 187, 91, 0, 0, 0, 29, 235, 230, 196, 217, 170, 160, 118,
+                    159, 4, 105, 143, 152, 109, 26, 198, 229, 234, 199, 108, 28, 0, 0, 0, 30, 168,
+                    139, 113, 15, 175, 255, 104, 227, 215, 187, 75, 61, 215, 44, 53, 139, 91, 219,
+                    154, 24, 0, 0, 0, 31, 182, 230, 16, 146, 27, 10, 15, 111, 96, 140, 14, 31, 41,
+                    168, 69, 85, 43, 198, 219, 44, 4, 2, 83, 31, 230, 6, 129, 52, 80, 61, 39, 35,
+                    19, 50, 39, 200, 103, 172, 143, 166, 200, 60, 83, 126, 154, 68, 195, 197, 189,
+                    189, 203, 31, 227, 55, 2, 0, 0, 0
                 ])
             );
 
@@ -2225,7 +2391,7 @@ pub mod attesters_test {
                 Attesters::get_latest_batch_to_sign_hash(target),
                 Some(
                     hex_literal::hex!(
-                        "b6b73fb1c00b1d498da0d140eddebd31ff25d0cf04e1af88f935462c292c74e7"
+                        "9ee93ebb7e8092dacbfb1fdb377ea17a0e79ddcbae4ef5750b466cb6ce8ed9e3"
                     )
                     .into()
                 )
@@ -2241,25 +2407,75 @@ pub mod attesters_test {
             .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
+
+            for counter in 1..33u8 {
+                // Register an attester
+                let attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+            }
+
             let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
-            let committee_transition: CommitteeTransition = [
+            let committee_transition: CommitteeTransitionIndices = [
                 1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
                 14u32, 15u32, 16u32, 17u32, 18u32, 19u32, 20u32, 21u32, 22u32, 23u32, 24u32, 25u32,
                 26u32, 27u32, 28u32, 29u32, 30u32, 31u32, 32u32,
             ];
 
-            Attesters::request_next_committee_attestation(committee_transition);
-
+            Attesters::request_next_committee_attestation();
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
+
+            let expected_message_for_next_committe_transition_to_eth: Vec<u8> = vec![
+                0, 0, 0, 0, 26, 100, 47, 14, 60, 58, 245, 69, 231, 172, 189, 56, 176, 114, 81, 179,
+                153, 9, 20, 241, 0, 0, 0, 1, 80, 80, 164, 244, 179, 249, 51, 140, 52, 114, 220,
+                192, 26, 135, 199, 106, 20, 75, 60, 156, 0, 0, 0, 2, 51, 37, 167, 132, 37, 241,
+                122, 126, 72, 126, 181, 102, 107, 43, 253, 147, 171, 176, 108, 112, 0, 0, 0, 3,
+                196, 139, 129, 43, 180, 52, 1, 57, 44, 3, 115, 129, 172, 169, 52, 244, 6, 156, 5,
+                23, 0, 0, 0, 4, 208, 154, 209, 64, 128, 212, 178, 87, 168, 25, 164, 245, 121, 184,
+                72, 91, 232, 143, 8, 108, 0, 0, 0, 5, 12, 176, 48, 209, 26, 139, 228, 139, 96, 65,
+                136, 87, 135, 77, 238, 230, 29, 16, 113, 224, 0, 0, 0, 6, 74, 98, 49, 102, 35, 173,
+                69, 127, 2, 205, 197, 217, 151, 222, 214, 122, 56, 62, 197, 105, 0, 0, 0, 7, 153,
+                200, 81, 234, 163, 195, 151, 105, 20, 214, 59, 130, 44, 103, 226, 1, 236, 11, 251,
+                184, 0, 0, 0, 8, 88, 218, 153, 10, 143, 74, 58, 108, 167, 203, 99, 21, 214, 138,
+                20, 1, 5, 145, 115, 82, 0, 0, 0, 9, 193, 113, 3, 61, 92, 191, 247, 23, 95, 41, 223,
+                211, 166, 61, 218, 61, 111, 143, 56, 94, 0, 0, 0, 10, 242, 136, 236, 175, 21, 121,
+                14, 252, 172, 82, 137, 70, 150, 58, 109, 184, 195, 248, 33, 29, 0, 0, 0, 11, 99,
+                70, 123, 2, 167, 56, 36, 8, 168, 69, 165, 235, 133, 181, 35, 139, 138, 77, 208,
+                237, 0, 0, 0, 12, 34, 156, 120, 75, 147, 204, 180, 64, 249, 29, 197, 19, 44, 116,
+                169, 83, 25, 73, 125, 244, 0, 0, 0, 13, 129, 161, 247, 202, 26, 64, 224, 4, 216,
+                227, 205, 205, 183, 38, 58, 173, 217, 206, 26, 243, 0, 0, 0, 14, 105, 26, 141, 5,
+                103, 143, 201, 98, 255, 15, 33, 116, 19, 67, 121, 192, 5, 28, 182, 134, 0, 0, 0,
+                15, 239, 4, 90, 85, 76, 187, 0, 22, 39, 94, 144, 227, 0, 47, 77, 33, 198, 242, 99,
+                225, 0, 0, 0, 16, 25, 231, 227, 118, 231, 194, 19, 183, 231, 231, 228, 108, 199,
+                10, 93, 208, 134, 218, 255, 42, 0, 0, 0, 17, 28, 90, 119, 217, 250, 126, 244, 102,
+                149, 27, 47, 1, 247, 36, 188, 163, 165, 130, 11, 99, 0, 0, 0, 18, 3, 161, 187, 166,
+                11, 90, 163, 112, 148, 207, 22, 18, 58, 221, 103, 76, 1, 88, 148, 136, 0, 0, 0, 19,
+                30, 50, 171, 207, 230, 219, 21, 193, 87, 7, 9, 227, 252, 2, 114, 83, 53, 245, 10,
+                71, 0, 0, 0, 20, 51, 224, 245, 57, 227, 27, 53, 23, 15, 170, 160, 98, 175, 112, 59,
+                118, 168, 40, 43, 247, 0, 0, 0, 21, 161, 67, 201, 108, 74, 81, 135, 115, 67, 196,
+                221, 119, 253, 98, 88, 79, 215, 242, 93, 180, 0, 0, 0, 22, 126, 159, 180, 15, 102,
+                196, 225, 50, 250, 94, 100, 228, 159, 48, 126, 2, 183, 101, 64, 248, 0, 0, 0, 23,
+                215, 231, 83, 158, 167, 75, 228, 250, 203, 88, 197, 12, 206, 191, 6, 96, 127, 241,
+                148, 205, 0, 0, 0, 24, 4, 146, 155, 184, 96, 118, 224, 159, 36, 139, 37, 73, 49,
+                73, 30, 54, 29, 59, 78, 84, 0, 0, 0, 25, 239, 75, 112, 1, 58, 93, 39, 218, 97, 215,
+                26, 215, 22, 254, 18, 148, 247, 72, 209, 82, 0, 0, 0, 26, 177, 167, 217, 66, 140,
+                229, 200, 14, 37, 78, 101, 251, 225, 188, 248, 47, 100, 123, 93, 238, 0, 0, 0, 27,
+                25, 80, 41, 10, 165, 39, 129, 221, 108, 66, 85, 70, 123, 187, 235, 159, 119, 60,
+                25, 54, 0, 0, 0, 28, 116, 10, 58, 110, 64, 197, 45, 43, 126, 50, 236, 207, 254,
+                100, 60, 77, 157, 170, 187, 91, 0, 0, 0, 29, 235, 230, 196, 217, 170, 160, 118,
+                159, 4, 105, 143, 152, 109, 26, 198, 229, 234, 199, 108, 28, 0, 0, 0, 30, 168, 139,
+                113, 15, 175, 255, 104, 227, 215, 187, 75, 61, 215, 44, 53, 139, 91, 219, 154, 24,
+                0, 0, 0, 31, 182, 230, 16, 146, 27, 10, 15, 111, 96, 140, 14, 31, 41, 168, 69, 85,
+                43, 198, 219, 44,
+            ];
 
             assert_eq!(
                 Attesters::get_latest_batch_to_sign_message(target),
-                Some(committee_transition.encode())
+                Some(expected_message_for_next_committe_transition_to_eth.clone())
             );
 
             let mut keccak = Keccak::v256();
-            keccak.update(&committee_transition.encode());
+            keccak.update(&expected_message_for_next_committe_transition_to_eth);
             let mut res: [u8; 32] = [0; 32];
             keccak.finalize(&mut res);
             let expected_keccak_hash = H256::from(res);
@@ -2321,9 +2537,7 @@ pub mod attesters_test {
             let mut empty_batch = BatchMessage {
                 batch_sfx: None,
                 next_committee: None,
-                new_attesters: None,
                 ban_attesters: None,
-                remove_attesters: None,
                 signatures: vec![],
                 status: BatchStatus::PendingMessage,
                 created: 0,
@@ -2348,9 +2562,7 @@ pub mod attesters_test {
                 vec![BatchMessage {
                     batch_sfx: Some(vec![sfx_id_a, sfx_id_b]),
                     next_committee: None,
-                    new_attesters: None,
                     ban_attesters: None,
-                    remove_attesters: None,
                     signatures: vec![],
                     status: BatchStatus::PendingAttestation,
                     created: 0,
