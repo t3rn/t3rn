@@ -35,7 +35,9 @@ pub mod pallet {
         CommitteeTransition, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
-    use t3rn_primitives::{circuit::ReadSFX, portal::Portal, xdns::Xdns, ExecutionVendor};
+    use t3rn_primitives::{
+        circuit::ReadSFX, portal::Portal, transfers::escrow_transfer, xdns::Xdns, ExecutionVendor,
+    };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
     pub enum BatchStatus {
@@ -57,6 +59,7 @@ pub mod pallet {
         pub signatures: Vec<(u32, Signature65b)>,
         pub status: BatchStatus,
         pub created: BlockNumber,
+        pub index: u32,
     }
 
     // Add the following method to `BatchMessage` struct
@@ -183,6 +186,20 @@ pub mod pallet {
     pub type AttestationTargets<T: Config> = StorageValue<_, Vec<TargetId>, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn pending_attestation_targets)]
+    pub type PendingAttestationTargets<T: Config> = StorageValue<_, Vec<TargetId>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn attesters_agreements)]
+    pub type AttestersAgreements<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId, // Attester
+        Blake2_128Concat,
+        TargetId, // Target
+        Vec<u8>,  // Recoverable pubkey/address from signature on target
+    >;
+    #[pallet::storage]
     #[pallet::getter(fn next_batches)]
     pub type NextBatch<T: Config> = StorageMap<_, Identity, TargetId, BatchMessage<T::BlockNumber>>;
 
@@ -231,6 +248,8 @@ pub mod pallet {
         NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
         NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>),
         Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
+        NewTargetActivated(TargetId),
+        AttesterAgreedToNewTarget(T::AccountId, TargetId, Vec<u8>),
     }
 
     #[pallet::error]
@@ -246,6 +265,7 @@ pub mod pallet {
         AttestationDoubleSignAttempt,
         NotActiveSet,
         NotInCurrentCommittee,
+        AttesterDidNotAgreeToNewTarget,
         NotRegistered,
         NoNominationFound,
         AlreadyNominated,
@@ -257,6 +277,8 @@ pub mod pallet {
         BatchNotFound,
         CollusionWithPermanentSlashDetected,
         BatchFoundWithUnsignableStatus,
+        TargetAlreadyActive,
+        TargetNotActive,
         SfxAlreadyRequested,
         AddAttesterAlreadyRequested,
         RemoveAttesterAlreadyRequested,
@@ -275,8 +297,6 @@ pub mod pallet {
             ecdsa_key: [u8; 33],
             ed25519_key: [u8; 32],
             sr25519_key: [u8; 32],
-            eth_address: H160,
-            substrate_address: Vec<u8>,
             custom_commission: Option<Percent>,
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
@@ -308,8 +328,6 @@ pub mod pallet {
                     key_sr: sr25519_key,
                     commission,
                     index: next_index,
-                    eth_address,
-                    substrate_address,
                 },
             );
 
@@ -373,6 +391,41 @@ pub mod pallet {
             }
 
             AttestationTargets::<T>::put(targets);
+            PendingAttestationTargets::<T>::mutate(|pending| {
+                if let Some(index) = pending.iter().position(|x| x == &target) {
+                    pending.remove(index);
+                }
+            });
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn agree_to_new_attestation_target(
+            origin: OriginFor<T>,
+            target: TargetId,
+            recoverable: Vec<u8>,
+        ) -> DispatchResult {
+            let attester = ensure_signed(origin)?;
+
+            // Ensure the attester is registered
+            ensure!(
+                Attesters::<T>::contains_key(&attester),
+                Error::<T>::NotRegistered
+            );
+
+            AttestersAgreements::<T>::insert(&attester, &target, recoverable.clone());
+
+            Self::deposit_event(Event::AttesterAgreedToNewTarget(
+                attester,
+                target,
+                recoverable,
+            ));
+
+            if Self::try_activate_new_target(&target) {
+                Self::deposit_event(Event::NewTargetActivated(target));
+            }
+
             Ok(())
         }
 
@@ -380,14 +433,17 @@ pub mod pallet {
         pub fn add_attestation_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
             ensure_root(origin)?;
 
-            let mut targets = AttestationTargets::<T>::get();
+            ensure!(
+                AttestationTargets::<T>::get().contains(&target),
+                Error::<T>::TargetAlreadyActive
+            );
 
-            // Add target if doesn't exist yet
-            if !targets.contains(&target) {
-                targets.push(target);
-            }
+            PendingAttestationTargets::<T>::mutate(|pending| {
+                if !pending.contains(&target) {
+                    pending.push(target);
+                }
+            });
 
-            AttestationTargets::<T>::put(targets);
             Ok(())
         }
 
@@ -404,6 +460,12 @@ pub mod pallet {
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
 
+            // Ensure target is activated
+            ensure!(
+                AttestationTargets::<T>::get().contains(&target),
+                Error::<T>::TargetNotActive
+            );
+
             // Lookup the attester in the storage
             let attester = Attesters::<T>::get(&account_id).ok_or(Error::<T>::NotRegistered)?;
 
@@ -419,15 +481,22 @@ pub mod pallet {
                 Error::<T>::NotInCurrentCommittee
             );
 
+            let attested_recoverable = AttestersAgreements::<T>::get(&account_id, &target)
+                .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
+
+            let vendor = <T as Config>::Xdns::get_verification_vendor(&target)
+                .map_err(|_| Error::<T>::TargetNotActive)?;
+
             // ToDo: Generalize attesters to work with multiple ExecutionVendor architecture.
             //  For now, assume Ethereum.
             //  let _target_verification_vendor = T::Xdns::get_verification_vendor(&target)?;
             let is_verified = attester
-                .verify_attestation_signature_against_address(
+                .verify_attestation_signature(
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     &message.encode(),
                     &signature,
-                    &ExecutionVendor::EVM,
+                    attested_recoverable,
+                    &vendor,
                 )
                 .map_err(|_| Error::<T>::InvalidSignature)?;
 
@@ -801,6 +870,10 @@ pub mod pallet {
                 .map(|(nominator, balance)| (nominator, balance))
                 .collect()
         }
+
+        fn get_activated_targets() -> Vec<TargetId> {
+            AttestationTargets::<T>::get()
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -922,6 +995,45 @@ pub mod pallet {
             Ok(())
         }
 
+        pub fn try_activate_new_target(target: &TargetId) -> bool {
+            // Check if all of the current committee members have submitted their agreements
+            let current_committee = CurrentCommittee::<T>::get();
+
+            for attester in current_committee.iter() {
+                if !AttestersAgreements::<T>::contains_key(attester, target) {
+                    return false
+                }
+            }
+
+            // Check if most of the ActiveSet members have submitted their agreements
+            let active_set = ActiveSet::<T>::get();
+            let mut active_set_agreements = 0;
+            for attester in active_set.iter() {
+                if AttestersAgreements::<T>::contains_key(attester, target) {
+                    active_set_agreements += 1;
+                }
+            }
+
+            let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
+
+            if active_set_agreements >= quorum {
+                // Activate the new target
+                PendingAttestationTargets::<T>::mutate(|pending| {
+                    if let Some(index) = pending.iter().position(|x| x == target) {
+                        pending.remove(index);
+                    }
+                });
+                AttestationTargets::<T>::mutate(|active| {
+                    if !active.contains(&target) {
+                        active.push(*target);
+                    }
+                });
+                true
+            } else {
+                false
+            }
+        }
+
         pub fn get_batches(
             target: TargetId,
             by_status: BatchStatus,
@@ -958,6 +1070,30 @@ pub mod pallet {
                     .cloned(),
                 None => None,
             }
+        }
+
+        pub fn get_batches_to_commit(target: TargetId) -> Vec<BatchMessage<T::BlockNumber>> {
+            // Get the batches to sign
+            match Batches::<T>::get(target) {
+                Some(batches) => batches
+                    .iter()
+                    .filter(|b| {
+                        b.status == BatchStatus::ReadyForSubmissionByMajority
+                            || b.status == BatchStatus::ReadyForSubmissionFullyApproved
+                    })
+                    .cloned()
+                    .collect(),
+                None => vec![],
+            }
+        }
+
+        pub fn get_latest_batch_to_commit(
+            target: TargetId,
+        ) -> Option<BatchMessage<T::BlockNumber>> {
+            // Get the batches to sign
+            let mut batches = Self::get_batches_to_commit(target);
+            batches.sort_by(|a, b| b.index.cmp(&a.index));
+            batches.first().cloned()
         }
 
         pub fn get_latest_batch_to_sign(target: TargetId) -> Option<BatchMessage<T::BlockNumber>> {
@@ -1114,7 +1250,7 @@ pub mod pallet {
             let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
 
             for target in AttestationTargets::<T>::get() {
-                let new_next_batch = BatchMessage {
+                let mut new_next_batch = BatchMessage {
                     batch_sfx: None,
                     next_committee: None,
                     new_attesters: None,
@@ -1123,9 +1259,11 @@ pub mod pallet {
                     signatures: Vec::new(),
                     status: BatchStatus::PendingMessage,
                     created: n,
+                    index: 0,
                 };
                 if let Some(mut next_batch) = NextBatch::<T>::get(target) {
                     // Check if batch has pending messages to attest for
+                    // ToDo: here we could also coalesce the batches awaiting confirmation under single index
                     if next_batch.message().len().is_zero() {
                         // Leave the batch empty if it has no messages
                     } else {
@@ -1133,12 +1271,13 @@ pub mod pallet {
                         // Push the batch to the batches vector
                         Batches::<T>::append(target, &next_batch);
                         // Create a new empty batch for the next window
+                        new_next_batch.index = next_batch.index.saturating_add(1);
                         NextBatch::<T>::insert(target, new_next_batch);
 
                         Self::deposit_event(Event::NewAttestationBatch(target, next_batch));
                     }
                 } else {
-                    // Create a new empty batch for the next window
+                    // Create a new !first! empty batch for the next window on the newly accepted target
                     NextBatch::<T>::insert(target, new_next_batch);
                 }
 
@@ -1322,6 +1461,7 @@ pub mod pallet {
                     signatures: Vec::new(),
                     status: BatchStatus::PendingMessage,
                     created: frame_system::Pallet::<T>::block_number(),
+                    index: 0,
                 };
                 // Create new batch for next window
                 NextBatch::<T>::insert(target, new_batch_message.clone());
@@ -1431,14 +1571,6 @@ pub mod attesters_test {
         let ed25519_key = ed25519::Pair::from_seed(&secret_key).public().to_raw_vec();
         let sr25519_key = sr25519::Pair::from_seed(&secret_key).public().to_raw_vec();
 
-        let sr25519_address = sr25519::Pair::from_seed(&secret_key)
-            .public()
-            .to_ss58check();
-
-        let secp_key: secp256k1::PublicKey =
-            secp256k1::PublicKey::from_slice(&ecdsa_key.as_slice()).unwrap();
-        let eth_address = t3rn_primitives::attesters::ecdsa_pubkey_to_eth_address(&secp_key);
-
         let _ = Balances::deposit_creating(&attester, 100u128);
 
         assert_ok!(Attesters::register_attester(
@@ -1447,8 +1579,6 @@ pub mod attesters_test {
             ecdsa_key.clone().try_into().unwrap(),
             ed25519_key.clone().try_into().unwrap(),
             sr25519_key.clone().try_into().unwrap(),
-            H160(eth_address),
-            sr25519_address.encode(),
             None,
         ));
 

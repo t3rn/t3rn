@@ -17,6 +17,8 @@
 //! A crate that hosts a common definitions that are relevant for the pallet-contracts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+extern crate core;
+
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;

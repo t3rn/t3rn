@@ -1,6 +1,11 @@
-use frame_support::pallet_prelude::*;
+use crate::GatewayVendor;
+use frame_support::{assert_ok, pallet_prelude::*};
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
-use sp_core::{ecdsa::Public as CoreEcsdaPublic, sr25519::Public, H160, H256};
+use sp_core::{
+    ecdsa::{Public as CoreEcsdaPublic, Signature},
+    sr25519::Public,
+    H160, H256,
+};
 use sp_runtime::Percent;
 use sp_std::{convert::TryInto, prelude::*};
 use t3rn_types::sfx::TargetId;
@@ -16,18 +21,23 @@ pub struct AttesterInfo {
     pub key_ec: [u8; 33],
     pub key_sr: [u8; 32],
     pub commission: Percent,
-    pub eth_address: H160,
-    pub substrate_address: Vec<u8>,
     pub index: u32,
 }
 
-use secp256k1::PublicKey;
-
-use crate::ExecutionVendor;
 use tiny_keccak::{Hasher, Keccak};
 
-pub fn ecdsa_pubkey_to_eth_address(pubkey: &PublicKey) -> [u8; 20] {
-    let serialized = pubkey.serialize_uncompressed();
+pub fn ecdsa_pubkey_to_eth_address(pubkey: &[u8; 33]) -> Result<[u8; 20], DispatchError> {
+    let pubkey = libsecp256k1::PublicKey::parse_slice(
+        &pubkey.as_slice(),
+        Some(libsecp256k1::PublicKeyFormat::Compressed),
+    )
+    .map_err(|_| {
+        DispatchError::Other(
+            "Failed to parse ECDSA public key - Compressed 33b secp256k1 PK expected",
+        )
+    })?;
+
+    let serialized = pubkey.serialize();
 
     // Remove the first byte (0x04) from the 65-byte serialized public key.
     // Ethereum addresses represent the Keccak-256 hash of the public key (sans the 0x04 byte),
@@ -43,59 +53,51 @@ pub fn ecdsa_pubkey_to_eth_address(pubkey: &PublicKey) -> [u8; 20] {
     // Take the last 20 bytes
     let mut address = [0u8; 20];
     address.copy_from_slice(&output[12..]);
-    address
+    Ok(address)
 }
 
 #[test]
 fn test_ecdsa_pubkey_to_eth_address() {
-    let public_key = PublicKey::from_slice(&[
-        0x02, 0xc6, 0x6e, 0x7d, 0x89, 0x66, 0xb5, 0xc5, 0x55, 0xaf, 0x58, 0x05, 0x98, 0x9d, 0xa9,
-        0xfb, 0xf8, 0xdb, 0x95, 0xe1, 0x56, 0x31, 0xce, 0x35, 0x8c, 0x3a, 0x17, 0x10, 0xc9, 0x62,
-        0x67, 0x90, 0x63,
-    ])
-    .unwrap();
-    let address = ecdsa_pubkey_to_eth_address(&public_key);
+    let pk_hex = hex_literal::hex!("79846fd12ed97f908d879fc03f1893eb1a18fb3e76d431d31602dd50f50fd9eff78e4603b994db0873fccc41e6ee7846e8050ea4909b4c5d89daf5a40b58b762");
+
+    let compressed_ecdsa_pub_key: [u8; 33] = [
+        3, 213, 51, 13, 232, 85, 194, 30, 34, 218, 22, 60, 149, 40, 220, 34, 77, 173, 31, 61, 164,
+        213, 17, 67, 159, 112, 25, 151, 30, 247, 76, 130, 145,
+    ];
+    let address_res = ecdsa_pubkey_to_eth_address(&compressed_ecdsa_pub_key);
+
+    assert_ok!(address_res);
+    let address = address_res.unwrap();
+
     assert_eq!(
         hex::encode(address),
-        "efc8e898b7a8376ea9e6feeebfe2a67aebe923f6"
+        "1e8f2abdffa8bf75802d24b5329d2351b6ab3486"
     );
 }
 
 impl AttesterInfo {
-    pub fn verify_attestation_signature_against_address(
-        &self,
-        key_type: KeyTypeId,
-        message: &Vec<u8>,
-        signature: &[u8],
-        target_execution_vendor: &ExecutionVendor,
-    ) -> Result<bool, DispatchError> {
-        self.verify_attestation_signature(key_type, message, signature)?;
-
-        match target_execution_vendor {
-            ExecutionVendor::EVM => {
-                let pubkey_as_secp = PublicKey::from_slice(&self.key_ec.as_slice())
-                    .map_err(|_| "InvalidPublicKey")?;
-                let recovered_address = ecdsa_pubkey_to_eth_address(&pubkey_as_secp);
-                Ok(H160(recovered_address) == self.eth_address)
-            },
-            ExecutionVendor::Substrate => {
-                // Ignore derivation for Substrate addresses for now.
-                Ok(true)
-            },
-        }
-    }
-
     pub fn verify_attestation_signature(
         &self,
         key_type: KeyTypeId,
         message: &Vec<u8>,
         signature: &[u8],
+        attested_recoverable: Vec<u8>,
+        target_finality: &GatewayVendor,
     ) -> Result<bool, DispatchError> {
         match key_type {
             ECDSA_ATTESTER_KEY_TYPE_ID => {
                 let ecdsa_sig = ecdsa::Signature::from_slice(signature)
                     .ok_or::<DispatchError>("InvalidSignature".into())?;
                 let ecdsa_public = ecdsa::Public::from_raw(self.key_ec);
+                if target_finality == &GatewayVendor::Ethereum {
+                    let recovered_address = ecdsa_pubkey_to_eth_address(&self.key_ec)?;
+                    let attested_recoverable = H160::decode(&mut &attested_recoverable[..])
+                        .map_err(|_| "InvalidRecoverable")?;
+
+                    if H160(recovered_address) != attested_recoverable {
+                        return Ok(false)
+                    }
+                }
                 Ok(ecdsa_public.verify(message, &ecdsa_sig))
             },
             ED25519_ATTESTER_KEY_TYPE_ID => {
@@ -120,6 +122,7 @@ pub type PublicKeyEcdsa33b = [u8; 33];
 pub const COMMITTEE_SIZE: usize = 32;
 
 pub type CommitteeTransition = [u32; COMMITTEE_SIZE];
+pub type EvmCommitteeTransition = [(u32, H160); COMMITTEE_SIZE];
 pub type AttestersChange = Vec<([u8; 33], u32)>;
 pub type BatchConfirmedSfxId = Vec<H256>;
 
@@ -138,6 +141,7 @@ pub trait AttestersReadApi<Account, Balance> {
     fn honest_active_set() -> Vec<Account>;
     fn read_attester_info(attester: &Account) -> Option<AttesterInfo>;
     fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)>;
+    fn get_activated_targets() -> Vec<TargetId>;
 }
 
 pub struct AttestersReadApiEmptyMock<Account, Balance> {
@@ -168,6 +172,10 @@ impl<Account, Balance> AttestersReadApi<Account, Balance>
     }
 
     fn read_nominations(_for_attester: &Account) -> Vec<(Account, Balance)> {
+        vec![]
+    }
+
+    fn get_activated_targets() -> Vec<TargetId> {
         vec![]
     }
 }

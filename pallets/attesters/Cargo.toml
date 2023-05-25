@@ -34,8 +34,7 @@ t3rn-abi        = { path = "../../types/abi", default-features = false }
 [dev-dependencies]
 hex                             = "0.4.2"
 hex-literal                     = "0.2.1"
-t3rn-mini-mock-runtime      = { path = "../../runtime/mini-mock" }
-secp256k1 = "0.24.0"
+t3rn-mini-mock-runtime          = { path = "../../runtime/mini-mock" }
 
 [features]
 default = ["std"]
