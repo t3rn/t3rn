@@ -57,7 +57,7 @@ withExportMode(
   program
     .command("dgf")
     .description("Generate data for unhpappy paths")
-    .argument("sfxFile <string>", "folder from where the sfx is loaded")
+    .option("-s, --sfx <file-path>", "Path to the sfx JSON file", "transfer.json")
     .action(wrapCryptoWaitReady(handleDgfCmd))
 )
 

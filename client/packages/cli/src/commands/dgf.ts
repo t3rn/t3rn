@@ -8,22 +8,17 @@ import { submitSfxRaw } from "@/commands/submit/sfx.ts"
 
 const spinner = ora()
 
-export const handleDgfCmd = async (
-    // sfxId: string,
-    // options: Args<"export">
-) => {
+export const handleDgfCmd = async () => {
     const config = getConfig()
     if (!config) {
         process.exit(1)
     }
 
-    // const { circuit, sdk } = await createCircuitContext(Boolean(options.export))
-
     spinner.start(colorLogMsg("INFO", 'Generating data for unhappy paths...'))
 
     await batchErrorCreation()
 
-    spinner.text = "Data generated for unhappy paths!"
+    spinner.succeed("Data generated for unhappy paths!")
 }
 
 
@@ -37,8 +32,7 @@ const batchErrorCreation = async () => {
     listener.prependListener('event', () => console.log('Event listener is starting...'))
     listener.start()
 
-    spinner.text = "Event listener started!"
-    spinner.start()
+    spinner.succeed("Event listener started!")
 
     // listen on "event"s that can be emited
     listener.on('event', (eventData) => {
@@ -49,32 +43,25 @@ const batchErrorCreation = async () => {
     const submitableRegistry = new Map<ErrorMode, Extrinsic>()
     const submitedRegistry = new Map<ErrorMode, Extrinsic>()
 
-    spinner.text = "Starting to process SFX..."
+    spinner.info("Starting to process SFXs...")
 
     for (const errorMode in ErrorMode) {
-        // const file_name = `./sfx.json`
         const file_name = `./transfer.json`
+
+        spinner.info(`⏳ Processing SFX for error mode: ${errorMode}`)
+
         const extrinsic = await processSfx(file_name, ErrorMode[errorMode])
 
-        spinner.text = `SFX processed for error mode ${errorMode}!`
+        spinner.succeed(`SFX processed for error mode ${errorMode}!`)
 
-        // registry what could be submitted
+        // register what could be submitted
         submitableRegistry.set(ErrorMode[errorMode], extrinsic)
 
         // submit the extrinsic to the circuit
         try {
             const events = submitSfxRaw(extrinsic, true)
-            console.log("Received events after submission: ", events)
 
-            spinner.stopAndPersist({
-                symbol: "🚀",
-                text: colorLogMsg(
-                    "SUCCESS",
-                    `SFX submitted, event received ${events}`
-                ),
-            })
-
-            // TODO: check if, in the events returned, there's some info from the submited extrinsic so I can later check if the 
+            spinner.succeed(`SFX submitted. Event received ${events}!`)
 
             // register the error with the extrinsic if successfull
             submitedRegistry.set(ErrorMode[errorMode], extrinsic)
@@ -84,7 +71,4 @@ const batchErrorCreation = async () => {
             process.exit(1)
         }
     }
-
-    // Save the SFX as a json file if everything goes well
-    // saveToJson(extrinsic, errorMode)
 }

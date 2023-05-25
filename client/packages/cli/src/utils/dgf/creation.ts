@@ -80,12 +80,12 @@ export const batchErrorCreation = async () => {
 /**
  * Process the get, injection and save of the SFX.
  * 
- * @param args arguments passed to the CLI
  * @param sfxFile file containing the SFX
+ * @param errorMode the type of error to be injected
  */
 export const processSfx = async (sfxFile: string, errorMode: ErrorMode) => {
     // Get the extrinsic from the file
-    const extrinsic = getExtrinsic(sfxFile)
+    const extrinsic = await getExtrinsic(sfxFile)
 
     // Attach the error on the SFX
     injectErrorMode(extrinsic, errorMode)
