@@ -20,7 +20,7 @@ pub mod pallet {
         traits::{Currency, ExistenceRequirement, Randomness, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
-    use sp_core::{H160, H256};
+    use sp_core::H256;
     use t3rn_abi::{recode::Codec, FilledAbi};
     pub use t3rn_primitives::portal::InclusionReceipt;
 
@@ -61,6 +61,21 @@ pub mod pallet {
         pub index: u32,
     }
 
+    impl<BlockNumber: Zero> Default for BatchMessage<BlockNumber> {
+        fn default() -> Self {
+            BatchMessage {
+                batch_sfx: None,
+                next_committee: None,
+                new_attesters: None,
+                ban_attesters: None,
+                remove_attesters: None,
+                signatures: Vec::new(),
+                status: BatchStatus::PendingMessage,
+                created: Zero::zero(),
+                index: 0,
+            }
+        }
+    }
     // Add the following method to `BatchMessage` struct
     impl<BlockNumber> BatchMessage<BlockNumber> {
         pub fn message(&self) -> Vec<u8> {
@@ -281,6 +296,7 @@ pub mod pallet {
         BatchFoundWithUnsignableStatus,
         TargetAlreadyActive,
         TargetNotActive,
+        XdnsTargetNotActive,
         SfxAlreadyRequested,
         AddAttesterAlreadyRequested,
         RemoveAttesterAlreadyRequested,
@@ -340,6 +356,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::AttesterRegistered(account_id));
 
+            println!("Attester registered");
             Ok(())
         }
 
@@ -416,7 +433,7 @@ pub mod pallet {
                 Error::<T>::NotRegistered
             );
 
-            AttestersAgreements::<T>::insert(&attester, &target, recoverable.clone());
+            AttestersAgreements::<T>::insert(&attester, target, recoverable.clone());
 
             Self::deposit_event(Event::AttesterAgreedToNewTarget(
                 attester,
@@ -432,19 +449,50 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
+        pub fn force_activate_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
+            ensure_root(origin)?;
+
+            // Activate the new target
+            PendingAttestationTargets::<T>::mutate(|pending| {
+                if let Some(index) = pending.iter().position(|x| x == &target) {
+                    pending.remove(index);
+                }
+            });
+            AttestationTargets::<T>::mutate(|active| {
+                if !active.contains(&target) {
+                    active.push(target);
+                }
+            });
+
+            Self::deposit_event(Event::NewTargetActivated(target));
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
         pub fn add_attestation_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
             ensure_root(origin)?;
 
+            println!("hello: {target:?}");
+            println!("hello2: {:?}", AttestationTargets::<T>::get());
             ensure!(
-                AttestationTargets::<T>::get().contains(&target),
+                !AttestationTargets::<T>::get().contains(&target),
                 Error::<T>::TargetAlreadyActive
             );
+            println!("hello3: {:?}", AttestationTargets::<T>::get());
 
             PendingAttestationTargets::<T>::mutate(|pending| {
                 if !pending.contains(&target) {
                     pending.push(target);
                 }
             });
+            println!("hello4: {:?}", AttestationTargets::<T>::get());
+
+            println!("add_attestation_target: {target:?}");
+            println!(
+                "add_attestation_target: {:?}",
+                PendingAttestationTargets::<T>::get()
+            );
 
             Ok(())
         }
@@ -462,6 +510,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let account_id = ensure_signed(origin)?;
 
+            println!("submit_attestation: {:?}", AttestationTargets::<T>::get());
             // Ensure target is activated
             ensure!(
                 AttestationTargets::<T>::get().contains(&target),
@@ -483,11 +532,11 @@ pub mod pallet {
                 Error::<T>::NotInCurrentCommittee
             );
 
-            let attested_recoverable = AttestersAgreements::<T>::get(&account_id, &target)
+            let attested_recoverable = AttestersAgreements::<T>::get(&account_id, target)
                 .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
 
             let vendor = <T as Config>::Xdns::get_verification_vendor(&target)
-                .map_err(|_| Error::<T>::TargetNotActive)?;
+                .map_err(|_| Error::<T>::XdnsTargetNotActive)?;
 
             // ToDo: Generalize attesters to work with multiple ExecutionVendor architecture.
             //  For now, assume Ethereum.
@@ -998,16 +1047,7 @@ pub mod pallet {
         }
 
         pub fn try_activate_new_target(target: &TargetId) -> bool {
-            // Check if all of the current committee members have submitted their agreements
-            let current_committee = CurrentCommittee::<T>::get();
-
-            for attester in current_committee.iter() {
-                if !AttestersAgreements::<T>::contains_key(attester, target) {
-                    return false
-                }
-            }
-
-            // Check if most of the ActiveSet members have submitted their agreements
+            // Check if all members of the ActiveSet members have submitted their agreements
             let active_set = ActiveSet::<T>::get();
             let mut active_set_agreements = 0;
             for attester in active_set.iter() {
@@ -1016,9 +1056,7 @@ pub mod pallet {
                 }
             }
 
-            let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
-
-            if active_set_agreements >= quorum {
+            if active_set_agreements == active_set.len() {
                 // Activate the new target
                 PendingAttestationTargets::<T>::mutate(|pending| {
                     if let Some(index) = pending.iter().position(|x| x == target) {
@@ -1026,10 +1064,13 @@ pub mod pallet {
                     }
                 });
                 AttestationTargets::<T>::mutate(|active| {
-                    if !active.contains(&target) {
+                    if !active.contains(target) {
                         active.push(*target);
                     }
                 });
+
+                println!("AttestationTargets: {:?}", AttestationTargets::<T>::get());
+
                 true
             } else {
                 false
@@ -1247,6 +1288,7 @@ pub mod pallet {
 
         pub fn process_repatriations(n: T::BlockNumber, aggregated_weight: Weight) -> Weight {
             for target in AttestationTargets::<T>::get() {
+                println!("Processing repatriations for target: {target:?}");
                 Batches::<T>::mutate(target, |batches| {
                     let mut repatriated = false;
                     if let Some(batches) = batches {
@@ -1440,10 +1482,16 @@ pub mod pallet {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             let mut aggregated_weight: Weight = 0;
             // Check if a shuffling round has passed
+            println!(
+                "in on_initialize {:?} {:?}",
+                n,
+                T::ShufflingFrequency::get()
+            );
             if (n % T::ShufflingFrequency::get()).is_zero() {
                 // Process pending unnominations
                 aggregated_weight = Self::process_pending_unnominations(n, aggregated_weight);
 
+                println!("Shuffling round: {n}");
                 // Update the active set of attesters
                 ActiveSet::<T>::put(
                     SortedNominatedAttesters::<T>::get()
@@ -1454,6 +1502,13 @@ pub mod pallet {
                         .map(|(account_id, _balance)| account_id)
                         .collect::<Vec<T::AccountId>>(),
                 );
+
+                println!(
+                    "Shuffling round: SortedNominatedAttesters::<T>::get() {:?}",
+                    SortedNominatedAttesters::<T>::get()
+                );
+                println!("Shuffling round: active set {:?}", ActiveSet::<T>::get());
+
                 aggregated_weight += T::DbWeight::get().reads_writes(1, 1);
 
                 // Call shuffle_committee
@@ -1471,6 +1526,9 @@ pub mod pallet {
             if (n % T::BatchingWindow::get()).is_zero() {
                 // Check if there any pending attestations to submit with the current batch
                 aggregated_weight = Self::process_next_batch_window(n, aggregated_weight);
+            }
+            if (n % T::RepatriationPeriod::get()).is_zero() {
+                aggregated_weight = Self::process_repatriations(n, aggregated_weight);
             }
             aggregated_weight
         }
@@ -1535,18 +1593,20 @@ pub mod attesters_test {
     use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, Attesters, AttestersError, AttestersStore, Balance, Balances,
-        BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards, CurrentCommittee,
-        ExtBuilder, FullSideEffects, MiniRuntime, NextBatch, Nominations, Origin, PendingSlashes,
-        PendingUnnominations, PreviousCommittee, Rewards, SFX2XTXLinksMap,
+        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
+        Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards,
+        CurrentCommittee, ExtBuilder, FullSideEffects, MiniRuntime, NextBatch, Nominations, Origin,
+        PendingSlashes, PendingUnnominations, PreviousCommittee, Rewards, SFX2XTXLinksMap,
         SortedNominatedAttesters, System,
     };
     use t3rn_primitives::{
-        attesters::{AttesterInfo, AttestersReadApi, AttestersWriteApi, CommitteeTransition},
+        attesters::{
+            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
+            CommitteeTransition,
+        },
         circuit::{FullSideEffect, SecurityLvl, SideEffect},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
-        xdns::GatewayRecord,
-        ExecutionVendor, GatewayVendor, TreasuryAccount, TreasuryAccountProvider,
+        TreasuryAccount, TreasuryAccountProvider,
     };
     use tiny_keccak::{Hasher, Keccak};
 
@@ -1609,6 +1669,22 @@ pub mod attesters_test {
         }
     }
 
+    pub fn select_new_committee() {
+        // Run to the next shuffling window
+        let shuffling_frequency = <MiniRuntime as ConfigAttesters>::ShufflingFrequency::get();
+        let current_block = System::block_number();
+        let _shuffling_multiplier = current_block / shuffling_frequency;
+
+        if current_block < shuffling_frequency {
+            Attesters::on_initialize(shuffling_frequency);
+        } else {
+            let shuffling_multiplier = current_block / shuffling_frequency;
+            Attesters::on_initialize(shuffling_multiplier * shuffling_frequency);
+        }
+        assert!(!ActiveSet::<MiniRuntime>::get().is_empty(),);
+        assert!(!CurrentCommittee::<MiniRuntime>::get().is_empty(),);
+    }
+
     pub fn register_attester_with_single_private_key(secret_key: [u8; 32]) -> AttesterInfo {
         // Register an attester
         let attester = AccountId::from(secret_key);
@@ -1638,8 +1714,41 @@ pub mod attesters_test {
         attester_info
     }
 
-    pub fn add_target_and_transition_to_next_batch(target: TargetId) -> BlockNumber {
+    pub fn make_all_agree_to_new_target_or_force_if_no_active_set(target: &TargetId) {
+        assert!(!Attesters::attestation_targets().contains(target));
+        assert!(Attesters::pending_attestation_targets().contains(target));
+        if AttestersStore::<MiniRuntime>::iter().count() == 0 {
+            Attesters::force_activate_target(Origin::root(), *target);
+        }
+        for (attester, attester_info) in AttestersStore::<MiniRuntime>::iter() {
+            // assume attester agrees to eth target: deriving eth address from ecdsa key
+            let derived_eth_address = ecdsa_pubkey_to_eth_address(&attester_info.key_ec);
+            assert_ok!(derived_eth_address);
+            assert_ok!(Attesters::agree_to_new_attestation_target(
+                Origin::signed(attester),
+                *target,
+                derived_eth_address.unwrap().encode(),
+            ));
+        }
+        assert!(!Attesters::pending_attestation_targets().contains(target));
+        assert!(Attesters::attestation_targets().contains(target));
+    }
+
+    pub fn add_target_and_transition_to_next_batch(target: TargetId, index: u32) -> BlockNumber {
         Attesters::add_attestation_target(Origin::root(), target);
+        if !Attesters::attestation_targets().contains(&target) {
+            // if active set is empty, select the next active set
+            if !ActiveSet::<MiniRuntime>::get().is_empty() {
+                select_new_committee();
+            }
+            assert_eq!(Attesters::pending_attestation_targets(), vec![target]);
+            make_all_agree_to_new_target_or_force_if_no_active_set(&target);
+        }
+
+        transition_to_next_batch(target, index)
+    }
+
+    fn transition_to_next_batch(target: TargetId, index: u32) -> BlockNumber {
         let current_block: BlockNumber = System::block_number();
         let batching_window: BlockNumber = <MiniRuntime as ConfigAttesters>::BatchingWindow::get();
 
@@ -1648,24 +1757,21 @@ pub mod attesters_test {
 
         System::set_block_number(closest_block);
 
-        // assert_eq!(NextBatch::<MiniRuntime>::get(target), None);
         // Transition to the next batch
         System::set_block_number(closest_block);
         Attesters::on_initialize(closest_block);
-        assert_eq!(
-            NextBatch::<MiniRuntime>::get(target),
-            Some(BatchMessage {
-                batch_sfx: None,
-                next_committee: None,
-                new_attesters: None,
-                remove_attesters: None,
-                ban_attesters: None,
-                signatures: Vec::new(),
-                status: BatchStatus::PendingMessage,
-                created: closest_block,
-                index: 0,
-            })
-        );
+
+        let next_batch = NextBatch::<MiniRuntime>::get(target).unwrap();
+        assert_eq!(next_batch.status, BatchStatus::PendingMessage);
+        // Pending message doesn't update if it's empty, therefore difficult to predict the created block number without more context
+        assert!(next_batch.created <= closest_block);
+        assert_eq!(next_batch.index, index);
+        assert_eq!(next_batch.batch_sfx, None);
+        assert_eq!(next_batch.next_committee, None);
+        assert_eq!(next_batch.new_attesters, None);
+        assert_eq!(next_batch.remove_attesters, None);
+        assert_eq!(next_batch.ban_attesters, None);
+        assert_eq!(next_batch.signatures, Vec::new());
 
         closest_block
     }
@@ -1701,12 +1807,12 @@ pub mod attesters_test {
         if Attesters::get_latest_batch_to_sign_message(target).is_none()
             || Attesters::get_latest_batch_to_sign_message(target).unwrap() != message
         {
-            let _current_block_1 = add_target_and_transition_to_next_batch(target);
+            let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::from(message);
             assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
 
-            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+            let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
         }
         let latest_batch_hash = Attesters::get_latest_batch_to_sign_hash(target).unwrap();
 
@@ -1735,7 +1841,10 @@ pub mod attesters_test {
 
     #[test]
     fn register_and_submit_attestation_in_ecdsa() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             // Register an attester
             let attester = AccountId::from([1; 32]);
@@ -1755,9 +1864,6 @@ pub mod attesters_test {
 
             let latest_batch_some = latest_batch.unwrap();
             assert_eq!(latest_batch_some.status, BatchStatus::PendingAttestation);
-
-            // Attesters::attestations(H256::from(*b"message_that_needs_attestation32"))
-            //     .expect("Attestation should exist");
             assert_eq!(
                 latest_batch_some.signatures,
                 vec![(attester_info.index, signature.try_into().unwrap())]
@@ -1767,7 +1873,14 @@ pub mod attesters_test {
 
     #[test]
     fn double_attestation_is_not_allowed() {
-        let mut ext = ExtBuilder::default().build();
+        let target = [0u8; 4];
+        let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
+
         ext.execute_with(|| {
             // Register an attester
             let attester = AccountId::from([1; 32]);
@@ -1778,7 +1891,7 @@ pub mod attesters_test {
                 attester.clone(),
                 sfx_id_to_sign_on,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
-                [0u8; 4],
+                target,
                 [1u8; 32],
             );
 
@@ -1791,7 +1904,7 @@ pub mod attesters_test {
                     Origin::signed(attester),
                     message_hash,
                     same_signature_again,
-                    [0, 0, 0, 0],
+                    target,
                 ),
                 AttestersError::<MiniRuntime>::AttestationDoubleSignAttempt
             );
@@ -1800,15 +1913,18 @@ pub mod attesters_test {
 
     #[test]
     fn test_adding_sfx_moves_next_batch_to_pending_attestation() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
-            let current_block_1 = add_target_and_transition_to_next_batch(target);
+            let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
             assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
 
-            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+            let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             assert_eq!(
                 Attesters::get_batches(target, BatchStatus::PendingAttestation),
@@ -1829,10 +1945,13 @@ pub mod attesters_test {
 
     #[test]
     fn test_successfull_process_repatriation_for_pending_attestation_with_one_fsx() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
-            let current_block_1 = add_target_and_transition_to_next_batch(target);
+            let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let repatriated_executor = AccountId::from([1u8; 32]);
             let mock_xtx_id = H256([2u8; 32]);
@@ -1860,7 +1979,7 @@ pub mod attesters_test {
 
             assert_ok!(Attesters::request_sfx_attestation(target, sfx_id));
 
-            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+            let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             let pending_batches = Attesters::get_batches(target, BatchStatus::PendingAttestation);
             assert_eq!(pending_batches.len(), 1);
@@ -1901,16 +2020,19 @@ pub mod attesters_test {
     #[test]
     fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_fsx_not_found(
     ) {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
-            let current_block_1 = add_target_and_transition_to_next_batch(target);
+            let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id = H256([3u8; 32]);
 
             assert_ok!(Attesters::request_sfx_attestation(target, sfx_id));
 
-            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+            let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             let pending_batches = Attesters::get_batches(target, BatchStatus::PendingAttestation);
             assert_eq!(pending_batches.len(), 1);
@@ -1938,10 +2060,13 @@ pub mod attesters_test {
     #[test]
     fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_no_batch_fsx_required(
     ) {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
-            let current_block_1 = add_target_and_transition_to_next_batch(target);
+            let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let committee_transition: CommitteeTransition = [
                 1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
@@ -1951,7 +2076,7 @@ pub mod attesters_test {
 
             Attesters::request_next_committee_attestation(committee_transition);
 
-            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+            let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             let pending_batches = Attesters::get_batches(target, BatchStatus::PendingAttestation);
             assert_eq!(pending_batches.len(), 1);
@@ -1978,15 +2103,18 @@ pub mod attesters_test {
 
     #[test]
     fn test_pending_attestation_batch_with_single_sfx_yields_correct_message_hash() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
-            let _current_block_1 = add_target_and_transition_to_next_batch(target);
+            let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
             assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
 
-            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+            let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             assert_eq!(
                 Attesters::get_latest_batch_to_sign_message(target),
@@ -2007,10 +2135,13 @@ pub mod attesters_test {
 
     #[test]
     fn test_pending_attestation_batch_with_committee_transition_yields_correct_message_hash() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
-            let current_block_1 = add_target_and_transition_to_next_batch(target);
+            let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let committee_transition: CommitteeTransition = [
                 1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
@@ -2041,7 +2172,7 @@ pub mod attesters_test {
             register_attester_with_single_private_key([3u8; 32]);
             assert_ok!(Attesters::request_ban_attesters_attestation(&ban_attester));
 
-            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+            let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             assert_eq!(
                 Attesters::get_latest_batch_to_sign(target),
@@ -2134,10 +2265,13 @@ pub mod attesters_test {
 
     #[test]
     fn test_pending_attestation_batch_with_all_attestations_ordered_yields_correct_message_hash() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
-            let _current_block_1 = add_target_and_transition_to_next_batch(target);
+            let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let committee_transition: CommitteeTransition = [
                 1u32, 2u32, 3u32, 4u32, 5u32, 6u32, 7u32, 8u32, 9u32, 10u32, 11u32, 12u32, 13u32,
@@ -2147,7 +2281,7 @@ pub mod attesters_test {
 
             Attesters::request_next_committee_attestation(committee_transition);
 
-            let _current_block_2 = add_target_and_transition_to_next_batch(target);
+            let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             assert_eq!(
                 Attesters::get_latest_batch_to_sign_message(target),
@@ -2168,10 +2302,13 @@ pub mod attesters_test {
 
     #[test]
     fn test_adding_2_same_sfx_to_next_batch_is_impossible() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
-            add_target_and_transition_to_next_batch(target);
+            NextBatch::<MiniRuntime>::insert(target, BatchMessage::default());
 
             let sfx_id_a = H256::repeat_byte(1);
             assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
@@ -2187,11 +2324,16 @@ pub mod attesters_test {
 
     #[test]
     fn test_adding_2_sfx_to_next_batch_and_transition_to_pending_attestation() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
         ext.execute_with(|| {
             let target: TargetId = [0, 0, 0, 0];
+
+            AttestationTargets::<MiniRuntime>::put(vec![target]);
             assert_eq!(NextBatch::<MiniRuntime>::get(target), None);
-            let current_block = add_target_and_transition_to_next_batch(target);
+            NextBatch::<MiniRuntime>::insert(target, BatchMessage::default());
 
             let sfx_id_a = H256::repeat_byte(1);
             assert_ok!(Attesters::request_sfx_attestation(target, sfx_id_a));
@@ -2214,10 +2356,9 @@ pub mod attesters_test {
                 remove_attesters: None,
                 signatures: vec![],
                 status: BatchStatus::PendingMessage,
-                created: current_block,
+                created: 0,
                 index: 0,
             };
-            let _current_block: BlockNumber = System::block_number();
             let batching_window: BlockNumber =
                 <MiniRuntime as ConfigAttesters>::BatchingWindow::get();
 
@@ -2242,7 +2383,7 @@ pub mod attesters_test {
                     remove_attesters: None,
                     signatures: vec![],
                     status: BatchStatus::PendingAttestation,
-                    created: batching_window,
+                    created: 0,
                     index: 0,
                 }]
             );
@@ -2255,13 +2396,18 @@ pub mod attesters_test {
                 vec![]
             );
             empty_batch.created = batching_window * 2;
+            empty_batch.index += 1;
             assert_eq!(NextBatch::<MiniRuntime>::get(target), Some(empty_batch));
         });
     }
 
     #[test]
     fn committee_setup_and_transition() {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
+
         ext.execute_with(|| {
             // On initialization, the current committee should be empty and the previous committee should be None
             assert!(CurrentCommittee::<MiniRuntime>::get().is_empty());
@@ -2310,15 +2456,26 @@ pub mod attesters_test {
 
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_changes_status_to_approved() {
-        let mut ext = ExtBuilder::default().build();
+        let _target = [0u8; 4];
+        let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
+
         ext.execute_with(|| {
             let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
 
             for counter in 1..33u8 {
                 // Register an attester
-                let attester = AccountId::from([counter; 32]);
+                let _attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
-                // Submit an attestation signed with the Ed25519 key
+            }
+            select_new_committee();
+            for counter in 1..33u8 {
+                // Register an attester
+                let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
                     sfx_id_to_sign_on,
@@ -2337,15 +2494,25 @@ pub mod attesters_test {
     #[test]
     fn register_and_submit_21x_attestations_in_ecdsa_changes_status_to_approved_in_next_batching_window(
     ) {
-        let mut ext = ExtBuilder::default().build();
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
+
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
 
             for counter in 1..22u8 {
                 // Register an attester
-                let attester = AccountId::from([counter; 32]);
+                let _attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
-                // Submit an attestation signed with the Ed25519 key
+            }
+
+            select_new_committee();
+
+            for counter in 1..22u8 {
+                // Register an attester
+                let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
                     message,
@@ -2360,7 +2527,7 @@ pub mod attesters_test {
             assert_eq!(batch.status, BatchStatus::PendingAttestation);
 
             // Trigger batching transition
-            add_target_and_transition_to_next_batch([0u8; 4]);
+            add_target_and_transition_to_next_batch([0u8; 4], 1);
             let batch = Attesters::get_batch_by_message([0u8; 4], message.encode())
                 .expect("get_batch_by_message should return a batch");
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionByMajority);
@@ -2371,26 +2538,27 @@ pub mod attesters_test {
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
     ) {
         let target: TargetId = [1u8; 4];
-        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
-            .with_gateway_records(vec![GatewayRecord {
-                gateway_id: target,
-                verification_vendor: GatewayVendor::Polkadot,
-                execution_vendor: ExecutionVendor::Substrate,
-                codec: t3rn_abi::Codec::Rlp,
-                registrant: None,
-                escrow_account: Some(mock_escrow_account),
-                allowed_side_effects: vec![],
-            }])
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
             .build();
+
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
 
             for counter in 1..33u8 {
                 // Register an attester
-                let attester = AccountId::from([counter; 32]);
+                let _attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
+            }
+
+            select_new_committee();
+
+            for counter in 1..33u8 {
+                // Register an attester
+                let attester = AccountId::from([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
@@ -2436,26 +2604,26 @@ pub mod attesters_test {
     #[test]
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
         let target: TargetId = [1u8; 4];
-        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
-            .with_gateway_records(vec![GatewayRecord {
-                gateway_id: target,
-                verification_vendor: GatewayVendor::Polkadot,
-                execution_vendor: ExecutionVendor::Substrate,
-                codec: t3rn_abi::Codec::Rlp,
-                registrant: None,
-                escrow_account: Some(mock_escrow_account),
-                allowed_side_effects: vec![],
-            }])
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
 
             for counter in 1..33u8 {
                 // Register an attester
-                let attester = AccountId::from([counter; 32]);
+                let _attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
+            }
+
+            select_new_committee();
+
+            for counter in 1..33u8 {
+                // Register an attester
+                let attester = AccountId::from([counter; 32]);
                 // Submit an attestation signed with the Ed25519 key
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,

@@ -15,6 +15,7 @@ pub use pallet_account_manager::{
 
 use sp_runtime::ConsensusEngineId;
 
+use pallet_attesters::TargetId;
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{
@@ -32,7 +33,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup},
     Perbill, Percent,
 };
-use t3rn_primitives::GatewayVendor;
+use t3rn_primitives::{ExecutionVendor, GatewayVendor};
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<MiniRuntime>;
 pub type Block = frame_system::mocking::MockBlock<MiniRuntime>;
@@ -588,6 +589,36 @@ pub struct ExtBuilder {
 impl ExtBuilder {
     pub fn with_gateway_records(mut self, gateway_records: Vec<GatewayRecord<AccountId>>) -> Self {
         self.known_gateway_records = gateway_records;
+        self
+    }
+
+    pub fn with_polkadot_gateway_record(mut self) -> Self {
+        let target: TargetId = [1u8; 4];
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: target,
+            verification_vendor: GatewayVendor::Polkadot,
+            execution_vendor: ExecutionVendor::Substrate,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![],
+        });
+        self
+    }
+
+    pub fn with_eth_gateway_record(mut self) -> Self {
+        let target: TargetId = [0u8; 4];
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: target,
+            verification_vendor: GatewayVendor::Ethereum,
+            execution_vendor: ExecutionVendor::EVM,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![],
+        });
         self
     }
 
