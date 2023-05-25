@@ -225,6 +225,7 @@ export const fetchLastSyncCommitteeUpdateSlot = async () => {
       }
     }
   }
+  console.log("fetchLastSyncCommitteeUpdateSlot", responseData)
   const slot = parseInt(responseData.head.header.message.slot)
 
   return slot - (slot % (32 * 256))
@@ -545,12 +546,12 @@ export const registerEthereumVerificationVendor = async (
   gatewayData: Required<Gateway>
 ) => {
   const slot = await fetchLastSyncCommitteeUpdateSlot()
-  const initData = await fetchInitData(slot)
-  const headerRaw = await fetchHeader(slot)
-  const currentSyncCommittee: SyncCommittee = {
-    pubs: initData.current_sync_committee.pubkeys,
-    aggr: initData.current_sync_committee.aggregate_pubkey,
-  }
+  // const initData = await fetchInitData(slot)
+  // const headerRaw = await fetchHeader(slot)
+  // const currentSyncCommittee: SyncCommittee = {
+  //   pubs: initData.current_sync_committee.pubkeys,
+  //   aggr: initData.current_sync_committee.aggregate_pubkey,
+  // }
   // const response = await circuit.init(headerRaw, currentSyncCommittee)
   // console.log("Init response:", response)
 
