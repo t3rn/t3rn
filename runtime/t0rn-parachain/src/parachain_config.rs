@@ -29,7 +29,7 @@ impl WeightToFeePolynomial for WeightToFee {
         // in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
         // in our template, we map to 1/10 of that, or 1/10 MILLIUNIT
         let p = MILLIUNIT / 10;
-        let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+        let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -104,9 +104,7 @@ parameter_types! {
 
 impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
-    type FilterUncle = ();
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-    type UncleGenerations = UncleGenerations;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -179,7 +177,6 @@ impl pallet_preimage::Config for Runtime {
     type ByteDeposit = PreImageByteDeposit;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type MaxSize = PreimageMaxSize;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
@@ -194,10 +191,9 @@ parameter_types! {
 impl pallet_scheduler::Config for Runtime {
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type MaximumWeight = MaximumSchedulerWeight;
-    type NoPreimagePostponement = NoPreimagePostponement;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type PalletsOrigin = OriginCaller;
-    type PreimageProvider = Preimage;
+    type Preimages = ();
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;

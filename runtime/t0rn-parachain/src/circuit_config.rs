@@ -1,7 +1,5 @@
 use crate::*;
 
-use sp_std::vec;
-
 use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,

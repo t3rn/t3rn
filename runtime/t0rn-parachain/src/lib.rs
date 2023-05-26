@@ -154,8 +154,8 @@ construct_runtime!(
         AssetTxPayment: pallet_asset_tx_payment = 15,
 
         // Collator support. The order of these 4 are important and shall not change.
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
-        CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
+        Authorship: pallet_authorship = 20,
+        CollatorSelection: pallet_collator_selection = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
@@ -348,7 +348,7 @@ impl_runtime_apis! {
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit.unwrap_or_default(), storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT, Determinism::AllowIndeterminism)
+            Contracts::bare_call(origin, dest, value, gas_limit.unwrap_or_default(), storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT, pallet_3vm_contracts::Determinism::AllowIndeterminism)
         }
 
         fn instantiate(
@@ -368,7 +368,7 @@ impl_runtime_apis! {
             origin: AccountId,
             code: Vec<u8>,
             storage_deposit_limit: Option<Balance>,
-            determinism: Determinism,
+            determinism: pallet_3vm_contracts::Determinism,
         ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
         {
             Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)

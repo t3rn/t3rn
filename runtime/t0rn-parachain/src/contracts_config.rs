@@ -1,9 +1,9 @@
 use crate::{
-    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-    BlockWeights, Circuit, ContractsRegistry, RandomnessCollectiveFlip, Runtime, RuntimeCall,
-    RuntimeEvent, ThreeVm, Timestamp, Weight,
+    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
+    ContractsRegistry, RandomnessCollectiveFlip, Runtime, RuntimeCall, RuntimeEvent, ThreeVm,
+    Timestamp, Weight,
 };
-use circuit_runtime_types::AssetId;
+use circuit_runtime_types::{AssetId, BlockWeights};
 use frame_support::{
     pallet_prelude::{ConstU32, DispatchClass},
     parameter_types,

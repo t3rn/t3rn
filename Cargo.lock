@@ -12819,7 +12819,7 @@ dependencies = [
 name = "t0rn-parachain-collator"
 version = "1.12.8-rc.0"
 dependencies = [
- "clap 3.2.25",
+ "clap 4.3.0",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-aura",

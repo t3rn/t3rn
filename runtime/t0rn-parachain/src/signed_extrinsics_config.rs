@@ -24,5 +24,5 @@ where
 {
     // type Extrinsic = TestXt<Call, ()>;
     type Extrinsic = UncheckedExtrinsic;
-    type OverarchingCall = Call;
+    type OverarchingCall = RuntimeCall;
 }

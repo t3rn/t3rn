@@ -1,18 +1,15 @@
 use crate::{
-    AccountId, AssetId, Assets, Balance, Balances, Call, Clock, EnsureRoot, Event, Imbalance,
-    OnUnbalanced, Runtime, ThreeVm, Timestamp,
+    AccountId, AssetId, Assets, Balance, Balances, Clock, EnsureRoot, Imbalance, OnUnbalanced,
+    Runtime, RuntimeCall, RuntimeEvent, ThreeVm, Timestamp,
 };
 use frame_support::{parameter_types, traits::AsEnsureOriginWithArg};
-use frame_system::EnsureRoot;
-use sp_core::crypto::AccountId32;
+use sp_core::{crypto::AccountId32, ConstU32};
 use sp_runtime::traits::ConvertInto;
 
 parameter_types! {
     // TODO: update me to be better
     pub EscrowAccount: AccountId32 = AccountId32::new([51_u8; 32]);
 }
-
-pallet_account_manager::setup_currency_adapter!();
 
 impl pallet_account_manager::Config for Runtime {
     type AssetBalanceOf = ConvertInto;
