@@ -4,6 +4,9 @@ import { ExtrinsicSchema, Extrinsic } from "@/schemas/extrinsic.ts"
 import "@t3rn/types"
 import { EventEmitter } from "events"
 import { ApiPromise } from "@polkadot/api"
+import ora from "ora"
+
+const spinner = ora()
 
 export enum ErrorMode {
     NoBidders = "NoBidders",
@@ -21,12 +24,8 @@ export enum ErrorMode {
  * @param errorMode the type of error to be injected
  */
 export const processSfx = (sfxFile: string, errorMode: ErrorMode) => {
-    // Get the extrinsic from the file
     const extrinsic = getExtrinsic(sfxFile)
-
-    // Attach the error on the SFX
     injectErrorMode(extrinsic, errorMode)
-
     return extrinsic
 }
 
@@ -38,27 +37,11 @@ export const processSfx = (sfxFile: string, errorMode: ErrorMode) => {
  * @returns the validated extrinsic
  */
 const getExtrinsic = (sfxFile: string) => {
-    // Read from file the extrinsic
     const unvalidatedExtrinsic = readSfxFile(sfxFile)
-    maybeExit(unvalidatedExtrinsic)
-
-    // Validate it
     const extrinsic: Extrinsic = validate(ExtrinsicSchema, unvalidatedExtrinsic, {
         configFileName: sfxFile,
     })
-    maybeExit(extrinsic)
-
     return extrinsic
-}
-
-
-/**
- * Check if `value` exists or not, and exit the process accordingly.
- * 
- * @param value anything that can be checked if exists or not
- */
-const maybeExit = (value: Extrinsic | string) => {
-    value ? process.exit(0) : process.exit(1)
 }
 
 
@@ -72,10 +55,7 @@ const maybeExit = (value: Extrinsic | string) => {
  * @param errorMode 
  */
 const injectErrorMode = (extrinsic: Extrinsic, errorMode: ErrorMode) => {
-    // too simple that you'd want to kill me
-    // extrinsic.sideEffects.signature = errorMode
     extrinsic.sideEffects[0].signature = errorMode
-    console.log("✅ Succesfully injected the error in the SFX!")
 }
 
 
@@ -186,7 +166,7 @@ export class ErrorListener extends EventEmitter {
                         break
                     }
                     default: {
-                        console.log("Did not recognise the event. Skipping")
+                        // console.log("Did not recognise the event. Skipping")
                         return ListenerEvents.NotRecognized
                     }
                 }
@@ -204,9 +184,13 @@ export class ErrorListener extends EventEmitter {
  * @param notification The type of notification emited
  * @returns The emited event to return it
  */
-const emitEvent = (listener: ErrorListener, event: ListenerEvents, notification: any, error = ErrorMode.None) => {
-    console.log("🎶 Emiting event: ", event)
-
+const emitEvent = (
+    listener: ErrorListener,
+    event: ListenerEvents,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    notification: any,
+    error = ErrorMode.None
+) => {
     listener.emit("event", <ListenerEventData>{
         type: event,
         data: notification.event.data,

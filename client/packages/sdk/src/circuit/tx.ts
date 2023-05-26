@@ -106,27 +106,12 @@ export class Tx {
           events.forEach(({ event }) => {
             exportObj?.addEvent(event);
           });
-          // if (dispatchError?.isModule) {
-          //   const err = this.api.registry.findMetaError(dispatchError.asModule);
-          //   exportObj?.addErr(dispatchError).toFile();
-          //   reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
-          // } else if (dispatchError) {
-          //   exportObj?.addErr(dispatchError).toFile();
-          //   reject(Error(dispatchError.toString()));
-          // } else if (status.isInBlock) {
-          //   resolve(status.asInBlock);
-          // }
-          resolve(events)
+          if (status.isInBlock) {
+            resolve(events)
+          }
         }
       )
-      // ).then((blockHash: any) => { return events }
     ).then((events: any) => {
-      // this.api.rpc.chain.getBlock(blockHash).then((r) => {
-      //   const number = r.block.header.number;
-
-      //   exportObj?.addSubmissionHeight(number.toNumber()).toFile();
-      //   return number.toString();
-      // })
       return events
     });
   }

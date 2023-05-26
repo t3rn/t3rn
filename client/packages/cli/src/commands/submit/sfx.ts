@@ -95,9 +95,6 @@ export const submitSfx = async (extrinsic: Extrinsic, exportMode: boolean) => {
 export const submitSfxRaw = async (extrinsic: Extrinsic, exportMode: boolean) => {
   const config = getConfig()
 
-  spinner.text = "Submitting extrinsic..."
-  spinner.start()
-
   if (!config) {
     spinner.text = "Config not found"
   }
@@ -117,18 +114,14 @@ export const submitSfxRaw = async (extrinsic: Extrinsic, exportMode: boolean) =>
       >[0],
       transactionArgs.speed_mode
     )
-    const submissionHeight = await sdk.circuit.tx.signAndSendRaw(transaction)
-    spinner.stopAndPersist({
-      symbol: "🚀",
-      text: colorLogMsg(
-        "SUCCESS",
-        `Extrinsic submitted at block #${submissionHeight}`
-      ),
-    })
-    // process.exit(0)
+    const events = await sdk.circuit.tx.signAndSendRaw(transaction)
+    spinner.info("Extrinsic submitted!")
+
+    // this is supposed to be the hash of the extrinsic
+    return events[3].event.data[1]
   } catch (e) {
     spinner.fail(`Extrinsic submission failed: ${e}`)
-    // process.exit(1)
+    process.exit(1)
   }
 }
 export const buildSfx = (
