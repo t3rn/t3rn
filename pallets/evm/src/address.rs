@@ -11,13 +11,13 @@ pub trait AddressMapping<AccountId> {
     /// underlying EvmAddress of the AccountId.
     /// Returns None if there is no EvmAddress associated with the AccountId
     /// and there is no underlying EvmAddress in the AccountId.
-    fn get_evm_address(account_id: &AccountId) -> Option<H160> {
+    fn get_evm_address(_account_id: &AccountId) -> Option<H160> {
         None
     }
 
     /// Returns the EVM address associated with an account ID and generates an
     /// account mapping if no association exists.
-    fn get_or_create_evm_address(account_id: &AccountId) -> H160 {
+    fn get_or_create_evm_address(_account_id: &AccountId) -> H160 {
         H160::zero()
     }
 }

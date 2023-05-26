@@ -1,8 +1,6 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use circuit_parachain_runtime::{
-    opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce, RuntimeApi,
-};
+use circuit_parachain_runtime::{opaque::Block, Hash, RuntimeApi};
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
@@ -13,11 +11,8 @@ use cumulus_client_service::{
     start_full_node, BuildNetworkParams, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
-use jsonrpsee::RpcModule;
-use polkadot_service::CollatorPair;
 use sc_consensus::ImportQueue;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::{NetworkBlock, NetworkService};

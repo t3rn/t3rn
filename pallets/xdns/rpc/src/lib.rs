@@ -11,10 +11,7 @@ use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::sp_std;
-use sp_runtime::{
-    generic::BlockId,
-    traits::{Block as BlockT, MaybeDisplay},
-};
+use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 use sp_std::prelude::*;
 use std::sync::Arc;
 use t3rn_primitives::xdns::{FullGatewayRecord, GatewayRecord};

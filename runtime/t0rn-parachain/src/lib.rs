@@ -18,10 +18,9 @@ pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
 
 use frame_system::EnsureRoot;
-use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic,
     traits::{AccountIdLookup, Block as BlockT},

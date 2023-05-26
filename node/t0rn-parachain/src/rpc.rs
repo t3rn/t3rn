@@ -8,7 +8,7 @@
 use std::sync::Arc;
 
 use circuit_parachain_runtime::{
-    opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce,
+    opaque::Block, AccountId, Balance, Index as Nonce,
 };
 use pallet_xdns_rpc::{Xdns, XdnsApiServer};
 use sc_client_api::AuxStore;

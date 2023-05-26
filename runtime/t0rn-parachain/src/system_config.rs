@@ -240,6 +240,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
             ),
             // Admin
             RuntimeCall::Sudo(_) => true,
+            #[allow(unreachable_patterns)] // We need this as an accidental catchall
             _ => false,
         }
     }
