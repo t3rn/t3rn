@@ -81,11 +81,10 @@ async function main() {
                                 const [targetId, messageHash, executionVendor] = event.data;
                                 console.log(`Received the attestation message hash request to sign`);
                                 console.log(`\t\tTarget ID: ${targetId.toString()}`);
-                                console.log(`\t\tMessage Hash: ${messageHash.toString()}`);
+                                console.log(`\t\tMessage Hash: ${messageHash.toHex()}`);
                                 console.log(`\t\tExecution Vendor: ${executionVendor.toString()}`);
                                 // Submit the attestation for the given target ID for the given message hash for each attester's key in the keys.json file
-
-                                await attest_with_each_attester_key(api, targetId, messageHash, executionVendor);
+                                await attest_with_each_attester_key(api, targetId, messageHash.toHex(), executionVendor);
 
                                 break;
                             }
@@ -186,7 +185,8 @@ async function attest_with_each_attester_key(api, targetId, messageHash, executi
             } else if (executionVendor == 'EVM') {
                 // Generate the signature for the message hash
                 const privateKey = Buffer.from(key.ethereum.privateKey, 'hex');
-                const sigObj = ethUtil.ecsign(messageHash, privateKey);
+
+                const sigObj = ethUtil.ecsign(hexToU8a(messageHash), privateKey);
                 const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s);
                 // Create the Keyring pair from the private key
                 const keyring = new Keyring({ type: 'sr25519' });
@@ -235,6 +235,30 @@ async function register_with_each_attester_key(api, commission, nominateAmount) 
     );
 }
 
+async function agree_to_target_with_each_attester_key(api, targetId) {
+    let keys = JSON.parse(fs.readFileSync('keys.json'));
+    await cryptoWaitReady();
+
+    return await Promise.all(
+        keys.map(async (key) => {
+            // Create the Keyring pair from the private key
+            const keyring = new Keyring({ type: 'sr25519' });
+            const pair = keyring.addFromSeed(hexToU8a(key.substrate.privateKey));
+            // Now use this pair to sign and send the transaction
+            console.log('Agreeing to new target attester key');
+            console.log(`\t\tEthereum Address: ${key.ethereum.address}`);
+
+            const tx = api.tx.attesters.agreeToNewAttestationTarget(targetId, key.ethereum.address).signAndSend(pair, ({ events = [], status }) => {
+                if (status.isInBlock) {
+                    console.log(`Included in ${status.asInBlock}`);
+                } else {
+                    console.log(`Current status: ${status}`);
+                }
+            });
+        }),
+    );
+}
+
 async function deregister_with_each_attester_key(api) {
     let keys = JSON.parse(fs.readFileSync('keys.json'));
     await cryptoWaitReady();
@@ -259,3 +283,4 @@ async function deregister_with_each_attester_key(api) {
 module.exports.register_with_each_attester_key = register_with_each_attester_key;
 module.exports.deregister_with_each_attester_key = deregister_with_each_attester_key;
 module.exports.attest_with_each_attester_key = attest_with_each_attester_key;
+module.exports.agree_to_target_with_each_attester_key = agree_to_target_with_each_attester_key;
