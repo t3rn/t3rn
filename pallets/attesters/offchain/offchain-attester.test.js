@@ -12,6 +12,11 @@ jest.mock('@polkadot/api', () => ({
                     signAndSend: jest.fn().mockResolvedValue({}),
                 },
             },
+            rpc: {
+                system: {
+                    accountNextIndex: jest.fn().mockResolvedValue({}),
+                }
+            },
         }),
     },
 }));
