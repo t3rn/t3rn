@@ -9,7 +9,7 @@ import {
 } from "@/utils/dgf/creation.ts"
 import { ApiPromise, WsProvider } from "@t3rn/sdk"
 import { Extrinsic } from "@/schemas/extrinsic.ts"
-import { SfxSendType, submitSfx } from "@/commands/submit/sfx.ts"
+import { SfxSendType, submitSfx } from "@/utils/sfx.ts"
 
 const spinner = ora()
 
