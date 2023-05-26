@@ -51,7 +51,11 @@ export const readSfxFile = (filePath: string) => {
   }
 }
 
-export const submitSfx = async (extrinsic: Extrinsic, exportMode: boolean) => {
+export const submitSfx = async (
+  extrinsic: Extrinsic,
+  exportMode: boolean,
+  isRawSfx = false
+) => {
   const config = getConfig()
 
   spinner.text = "Submitting extrinsic..."
@@ -76,7 +80,9 @@ export const submitSfx = async (extrinsic: Extrinsic, exportMode: boolean) => {
       >[0],
       transactionArgs.speed_mode
     )
-    const submissionHeight = await sdk.circuit.tx.signAndSendSafe(transaction)
+    const submissionHeight = await sdk.circuit.tx[
+      isRawSfx ? "signAndSendRaw" : "signAndSendSafe"
+    ](transaction)
     spinner.stopAndPersist({
       symbol: "🚀",
       text: colorLogMsg(
@@ -91,39 +97,6 @@ export const submitSfx = async (extrinsic: Extrinsic, exportMode: boolean) => {
   }
 }
 
-
-export const submitSfxRaw = async (extrinsic: Extrinsic, exportMode: boolean) => {
-  const config = getConfig()
-
-  if (!config) {
-    spinner.text = "Config not found"
-  }
-
-  const { circuit, sdk } = await createCircuitContext(exportMode)
-  const transactionArgs = buildSfx(
-    circuit,
-    extrinsic.sideEffects,
-    extrinsic.speed_mode,
-    sdk
-  )
-
-  try {
-    const transaction = circuit.tx.circuit.onExtrinsicTrigger(
-      transactionArgs.sideEffects as Parameters<
-        typeof circuit.tx.circuit.onExtrinsicTrigger
-      >[0],
-      transactionArgs.speed_mode
-    )
-    const events = await sdk.circuit.tx.signAndSendRaw(transaction)
-    spinner.info("Extrinsic submitted!")
-
-    // this is supposed to be the hash of the extrinsic
-    return events[3].event.data[1]
-  } catch (e) {
-    spinner.fail(`Extrinsic submission failed: ${e}`)
-    process.exit(1)
-  }
-}
 export const buildSfx = (
   circuitApi: Circuit,
   sideEffects: Extrinsic["sideEffects"],
