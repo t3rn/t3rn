@@ -1,5 +1,6 @@
-import { ApiPromise } from "@t3rn/sdk"
 import bls from "@chainsafe/bls"
+import fetch from "node-fetch"
+import { ApiPromise } from "@t3rn/sdk"
 import { createBeaconConfig } from "@lodestar/config"
 import { networksChainConfig } from "@lodestar/config/networks"
 import { DOMAIN_SYNC_COMMITTEE } from "@chainsafe/lodestar-params"
@@ -14,6 +15,8 @@ import {
   SingleProof,
   createNodeFromProof,
 } from "@chainsafe/persistent-merkle-tree"
+import { colorLogMsg, log } from "@/utils/log.ts"
+import { spinner } from "../gateway.ts"
 
 const RELAY_ENDPOINT =
   "https://rpc.ankr.com/premium-http/eth_sepolia_beacon/9b5188fb2ebf6f1e050bf1a1b623623759a0108f7a161b3986f3f21329166288"
@@ -203,7 +206,6 @@ export const fetchLastSyncCommitteeUpdateSlot = async () => {
   const fetchOptions = {
     method: "GET",
   }
-
   const response = await fetch(
     RELAY_ENDPOINT + "/eth/v1/beacon/headers/head",
     fetchOptions
@@ -211,13 +213,13 @@ export const fetchLastSyncCommitteeUpdateSlot = async () => {
 
   if (response.status !== 200) {
     throw new Error(
-      "Oops! Fetch last sync committee update slot responded with an error status: " +
-      response.status
+      `Failed to fetch the last sync committee update slot, STATUS: ${response.status
+      }, REASON: ${await response.text()}`
     )
   }
 
   const responseData = (await response.json()) as {
-    head: {
+    data: {
       header: {
         message: {
           slot: string
@@ -225,10 +227,10 @@ export const fetchLastSyncCommitteeUpdateSlot = async () => {
       }
     }
   }
-  console.log("fetchLastSyncCommitteeUpdateSlot", responseData)
-  const slot = parseInt(responseData.head.header.message.slot)
 
-  return slot - (slot % (32 * 256))
+  let slot = parseInt(responseData.data.header.message.slot)
+  slot = slot - (slot % (32 * 256))
+  return slot - 8192
 }
 
 export const generateExecutionPayloadInclusionProof = (
@@ -454,28 +456,29 @@ export async function fetchHeaderData(slot: number) {
   return { beaconHeader, executionPayload, proof, syncAggregate }
 }
 
-export async function fetchHeader(
+export async function fetchBeaconBlockHeaderAndRoot(
   slot: number
-): Promise<phase0.BeaconBlockHeader> {
+): Promise<{ header: phase0.BeaconBlockHeader; root: string }> {
   const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/headers?slot=${slot}`
   const fetchOptions = {
     method: "GET",
   }
-
   const response = await fetch(endpoint, fetchOptions)
 
   if (response.status !== 200) {
     throw new Error(
-      "Oops! Fetch header faulted to error status: " + response.status
+      `Failed to fetch beacon header, STATUS: ${response.status
+      }, REASON: ${await response.text()}`
     )
   }
 
   const responseData = (await response.json()) as {
     data: Array<{
+      root: string
       header: {
         message: {
-          slot: string
           proposer_index: string
+          parent_root: string
           state_root: string
           body_root: string
         }
@@ -483,27 +486,29 @@ export async function fetchHeader(
     }>
   }
 
-  const data = responseData[0]
-  const beaconHeader: phase0.BeaconBlockHeader = {
-    slot: parseInt(data.header.message.slot),
-    proposerIndex: parseInt(data.header.message.proposer_index),
-    parentRoot: fromHexString(data.header.message.parent_root),
-    stateRoot: fromHexString(data.header.message.state_root),
-    bodyRoot: fromHexString(data.header.message.body_root),
+  const { proposer_index, parent_root, state_root, body_root } =
+    responseData.data[0].header.message
+  const header = {
+    slot,
+    proposerIndex: parseInt(proposer_index),
+    parentRoot: fromHexString(parent_root),
+    stateRoot: fromHexString(state_root),
+    bodyRoot: fromHexString(body_root),
   }
 
-  return beaconHeader
+  return {
+    header,
+    root: responseData.data[0].root,
+  }
 }
 
-export const hashHeaderRoot = (header: phase0.BeaconBlockHeader) => {
-  return toHexString(ssz.phase0.BeaconBlockHeader.hashTreeRoot(header))
-}
+// export const hashHeaderRoot = (header: phase0.BeaconBlockHeader) => {
+//   return toHexString(ssz.phase0.BeaconBlockHeader.hashTreeRoot(header))
+// }
 
-export const fetchInitData = async (slot: number) => {
-  const header = await fetchHeader(slot)
-  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${hashHeaderRoot(
-    header
-  )}`
+export const fetchInitData = async (slot: number, beaconBlockRoot: string) => {
+  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${beaconBlockRoot}`
+  console.log("Fetch init data from endpoint:", endpoint)
   const fetchOptions = {
     method: "GET",
   }
@@ -511,32 +516,61 @@ export const fetchInitData = async (slot: number) => {
 
   if (response.status !== 200) {
     throw new Error(
-      "Oops! Fetch init data faulted to error status: " + response.status
+      `Failed fetch init data, STATUS: ${response.status
+      }, REASON: ${await response.text()}`
     )
   }
 
   const responseData = (await response.json()) as {
-    header: {
-      beacon: { slot: string; proposer_index: string }
-      execution: { block_number: string; block_hash: string }
-    }
-    current_sync_committee: {
-      pubkeys: Array<Uint8Array>
-      aggregate_pubkey: Uint8Array
+    data: {
+      header: {
+        beacon: {
+          slot: string
+          proposer_index: string
+          parent_root: string
+          state_root: string
+          body_root: string
+        }
+        execution: {
+          parent_hash: string
+          fee_recipient: string
+          state_root: string
+          receipts_root: string
+          logs_bloom: string
+          prev_randao: string
+          block_number: string
+          gas_limit: string
+          gas_used: string
+          timestamp: string
+          extra_data: string
+          base_fee_per_gas: string
+          block_hash: string
+          transactions_root: string
+          withdrawals_root: string
+        }
+        execution_branch: Array<string>
+      }
+      current_sync_committee: {
+        pubkeys: Array<string>
+        aggregate_pubkey: string
+      }
+      current_sync_committe_branch: Array<string>
+      version: string
     }
   }
+
   const checkpoint = {
-    justified_epoch: parseInt(responseData.header.beacon.slot) / 32,
+    justified_epoch: parseInt(responseData.data.header.beacon.slot) / 32,
     justified_execution_height: parseInt(
-      responseData.header.execution.block_number
+      responseData.data.header.execution.block_number
     ),
-    justified_block_hash: responseData.header.execution.block_hash,
+    justified_block_hash: responseData.data.header.execution.block_hash,
     finalized_epoch: 0,
     finalized_execution_height: 0,
   }
 
   return {
-    ...responseData,
+    ...responseData.data,
     checkpoint,
   }
 }
@@ -545,15 +579,19 @@ export const registerEthereumVerificationVendor = async (
   circuit: ApiPromise,
   gatewayData: Required<Gateway>
 ) => {
-  const slot = await fetchLastSyncCommitteeUpdateSlot()
-  // const initData = await fetchInitData(slot)
-  // const headerRaw = await fetchHeader(slot)
-  // const currentSyncCommittee: SyncCommittee = {
-  //   pubs: initData.current_sync_committee.pubkeys,
-  //   aggr: initData.current_sync_committee.aggregate_pubkey,
-  // }
-  // const response = await circuit.init(headerRaw, currentSyncCommittee)
-  // console.log("Init response:", response)
+  try {
+    const slot = await fetchLastSyncCommitteeUpdateSlot()
+    const { header, root } = await fetchBeaconBlockHeaderAndRoot(slot)
+    const initData = await fetchInitData(slot, root)
+    const currentSyncCommittee: SyncCommittee = {
+      pubs: initData.current_sync_committee.pubkeys.map(fromHexString),
+      aggr: fromHexString(initData.current_sync_committee.aggregate_pubkey),
+    }
+    const response = await circuit.init(header, currentSyncCommittee)
+    console.log("Init response:", response)
+  } catch (e) {
+    spinner.fail(colorLogMsg("ERROR", e))
+  }
 
   // const regData: EthereumInitializationData = {
   //   current_sync_committee: currentSyncCommittee,
