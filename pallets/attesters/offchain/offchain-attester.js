@@ -254,6 +254,7 @@ async function attest_with_each_attester_key(api, targetId, messageHash, executi
 
 async function register_with_each_attester_key(api, commission, nominateAmount) {
     let keys = JSON.parse(fs.readFileSync('keys.json'));
+    console.log('a')
     await cryptoWaitReady();
 
     return await Promise.all(
@@ -269,17 +270,54 @@ async function register_with_each_attester_key(api, commission, nominateAmount) 
             console.log(`\t\tBTC Public Key: ${key.btc.publicKey}`);
             console.log(`\t\tSubstrate Public Key: ${key.substrate.publicKey}`);
 
-            const tx = api.tx.attesters
-                .registerAttester(nominateAmount, key.ethereum.publicKey, key.btc.publicKey, key.substrate.publicKey, commission)
-                .signAndSend(pair, ({ events = [], status }) => {
-                    if (status.isInBlock) {
-                        console.log(`Included in ${status.asInBlock}`);
-                    } else {
-                        console.log(`Current status: ${status}`);
-                    }
-                });
-        }),
+    console.log('b')
+    let balance = await api.query.system
+      .account("5EyEHxFmDYzpNf61q4HxKScKp3NtPwQET3UsKz66TuGZ4cAS")
+      .then((r) => r.data);
+
+    console.log("balance", balance.toHuman());
+    let sessionPublicKey = await api.rpc.author
+      .rotateKeys()
+      .then((r) => r.toHex());
+
+
+    await signAndSendSafe(
+      api,
+      pair,
+      api.tx.session.setKeys(sessionPublicKey, "0x00")
     );
+
+    let block = await signAndSendSafe(
+      api,
+      pair,
+      api.tx.attesters.registerAttester(nominateAmount, key.ethereum.publicKey, key.btc.publicKey, key.substrate.publicKey, commission)
+    );
+        })
+
+    )
+  async function signAndSendSafe(api, signer, tx) {
+    let nonce = await api.rpc.system.accountNextIndex(signer.address);
+
+    return new Promise((resolve, reject) =>
+      tx.signAndSend(signer, { nonce }, async ({ dispatchError, status }) => {
+        if (dispatchError?.isModule) {
+          let err = api.registry.findMetaError(dispatchError.asModule);
+          console.log(
+            Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`)
+          );
+        } else if (dispatchError) {
+          reject(Error(dispatchError.toString()));
+        } else if (status.isInBlock) {
+          resolve(status.asInBlock);
+        }
+      })
+    ).then((blockHash) =>
+      api.rpc.chain
+        .getBlock(blockHash)
+        .then((r) => BigInt(r.block.header.number.toString()))
+    );
+  }
+
 }
 
 async function agree_to_target_with_each_attester_key(api, targetId) {
