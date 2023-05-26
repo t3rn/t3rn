@@ -19,7 +19,10 @@ import {
 
 export const spinner = ora()
 
-export const handleSubmitSfxCmd = (sfxFile: string, exportMode: boolean) => {
+export const handleSubmitSfxCmd = async (
+  sfxFile: string,
+  exportMode: boolean
+) => {
   const unvalidatedExtrinsic = readSfxFile(sfxFile)
 
   if (!unvalidatedExtrinsic) {
@@ -34,7 +37,23 @@ export const handleSubmitSfxCmd = (sfxFile: string, exportMode: boolean) => {
     process.exit(1)
   }
 
-  submitSfx(extrinsic, exportMode)
+  spinner.text = "Submitting extrinsic..."
+  spinner.start()
+
+  try {
+    const submissionHeight = await submitSfx(extrinsic, exportMode)
+    spinner.stopAndPersist({
+      symbol: "🚀",
+      text: colorLogMsg(
+        "SUCCESS",
+        `Extrinsic submitted at block #${submissionHeight}`
+      ),
+    })
+    process.exit(0)
+  } catch (e) {
+    spinner.fail(`Extrinsic submission failed: ${e}`)
+    process.exit(1)
+  }
 }
 
 export const readSfxFile = (filePath: string) => {
@@ -51,15 +70,17 @@ export const readSfxFile = (filePath: string) => {
   }
 }
 
+export enum SfxSendType {
+  Safe = "safe",
+  Raw = "raw",
+}
+
 export const submitSfx = async (
   extrinsic: Extrinsic,
   exportMode: boolean,
-  isRawSfx = false
+  sendType = SfxSendType.Safe
 ) => {
   const config = getConfig()
-
-  spinner.text = "Submitting extrinsic..."
-  spinner.start()
 
   if (!config) {
     process.exit(1)
@@ -72,29 +93,17 @@ export const submitSfx = async (
     extrinsic.speed_mode,
     sdk
   )
+  const transaction = circuit.tx.circuit.onExtrinsicTrigger(
+    transactionArgs.sideEffects as Parameters<
+      typeof circuit.tx.circuit.onExtrinsicTrigger
+    >[0],
+    transactionArgs.speed_mode
+  )
+  const response = await sdk.circuit.tx[
+    sendType === SfxSendType.Raw ? "signAndSendRaw" : "signAndSendSafe"
+  ](transaction)
 
-  try {
-    const transaction = circuit.tx.circuit.onExtrinsicTrigger(
-      transactionArgs.sideEffects as Parameters<
-        typeof circuit.tx.circuit.onExtrinsicTrigger
-      >[0],
-      transactionArgs.speed_mode
-    )
-    const submissionHeight = await sdk.circuit.tx[
-      isRawSfx ? "signAndSendRaw" : "signAndSendSafe"
-    ](transaction)
-    spinner.stopAndPersist({
-      symbol: "🚀",
-      text: colorLogMsg(
-        "SUCCESS",
-        `Extrinsic submitted at block #${submissionHeight}`
-      ),
-    })
-    process.exit(0)
-  } catch (e) {
-    spinner.fail(`Extrinsic submission failed: ${e}`)
-    process.exit(1)
-  }
+  return response
 }
 
 export const buildSfx = (
