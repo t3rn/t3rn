@@ -202,7 +202,7 @@ async function main() {
                     publicKeyUncompressed: ethPublicKeyHexEcUncompressed65b,
                     address: ethAddressHex,
                 },
-                ed25519: {
+                btc: {
                     privateKey: privateKeyHexEd,
                     publicKey: publicKeyHexEd,
                 },
@@ -266,7 +266,7 @@ async function register_with_each_attester_key(api, commission, nominateAmount) 
             console.log(`\t\tNominate Amount: ${nominateAmount}`);
             console.log(`\t\tCommission: ${commission}`);
             console.log(`\t\tEthereum Public Key: ${key.ethereum.publicKey}`);
-            console.log(`\t\tBTC Public Key: ${key.ed25519.publicKey}`);
+            console.log(`\t\tBTC Public Key: ${key.btc.publicKey}`);
             console.log(`\t\tSubstrate Public Key: ${key.substrate.publicKey}`);
 
             let tx = await signAndSendSafe(

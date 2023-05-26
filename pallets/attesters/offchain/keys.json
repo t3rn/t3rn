@@ -11,7 +11,7 @@
       "publicKeyUncompressed": "0x04a62771739e6ccf68766db0ea396045f5316503eef3b7f57aab06b1b567eedfae4e857fd06d131103dbab1d9ad65500e6982bb9ecee2ba462c861f4dac3480d39",
       "address": "0x54e6c56c82a971b6727ae8ebc5d4baab49aa468c"
     },
-    "ed25519": {
+    "btc": {
       "privateKey": "0x026725ded690042c65163d263432d79b293a8a10108c7e7a32ff185f1926fb61",
       "publicKey": "0x44363bd9ca4fb1d689a185071c4f080f22bb671251b0cc026a7c7810d45cc72c"
     }
