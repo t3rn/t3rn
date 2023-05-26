@@ -209,6 +209,7 @@ impl Contains<Call> for BaseCallFilter {
                     | pallet_circuit::Call::bid_sfx { .. }
                     | pallet_circuit::Call::confirm_side_effect { .. }
             ),
+            Call::Attesters(_) => true,
             // 3VM
             Call::ThreeVm(_) => false,
             Call::Contracts(method) => matches!(
@@ -290,6 +291,7 @@ impl Contains<Call> for MaintenanceFilter {
             Call::RococoBridge(_) => false,
             Call::PolkadotBridge(_) => false,
             Call::KusamaBridge(_) => false,
+            Call::Attesters(_) => false,
             // To catch all new pallets and avoid any exploit
             _ => false,
         }
