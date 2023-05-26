@@ -103,8 +103,8 @@ pub mod test {
                 maybe_asset_id: fsx.input.reward_asset_id,
                 charge_fee: 0,
                 recipient: None,
-                source: BenefitSource::TrafficRewards,
-                role: CircuitRole::Executor
+                source: BenefitSource::TrafficFees,
+                role: CircuitRole::Requester
             })
         );
         assert_eq!(
