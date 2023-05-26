@@ -27,7 +27,7 @@
     "cli-progress": "^3.12.0",
     "commander": "^10.0.0",
     "figlet": "^1.6.0",
-    "node-fetch": "^2.6.9",
+    "node-fetch": "^3.3.1",
     "ora": "^5.4.1",
     "tslib": "^2.5.2",
     "zod": "^3.21.4"
@@ -38,7 +38,7 @@
     "@types/figlet": "^1.5.5",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
-    "@types/node-fetch": "^2.6.3",
+    "@types/node-fetch": "^2.6.4",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
     "eslint": "^8.38.0",

@@ -8,7 +8,7 @@ import {
   T3rnPrimitivesExecutionVendor,
   T3rnAbiRecodeCodec,
 } from "@polkadot/types/lookup"
-import { Config, Gateway } from "@/schemas/setup.ts"
+import { Gateway } from "@/schemas/setup.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { createCircuitContext } from "@/utils/circuit.ts"
 import { getConfig } from "@/utils/config.ts"
