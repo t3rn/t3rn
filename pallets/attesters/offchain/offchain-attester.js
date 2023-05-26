@@ -266,20 +266,20 @@ async function register_with_each_attester_key(api, commission, nominateAmount) 
             console.log(`\t\tNominate Amount: ${nominateAmount}`);
             console.log(`\t\tCommission: ${commission}`);
             console.log(`\t\tEthereum Public Key: ${key.ethereum.publicKey}`);
-            console.log(`\t\tEd25519 Public Key: ${key.ed25519.publicKey}`);
+            console.log(`\t\tBTC Public Key: ${key.ed25519.publicKey}`);
             console.log(`\t\tSubstrate Public Key: ${key.substrate.publicKey}`);
 
-            const tx = api.tx.attesters
-                .registerAttester(nominateAmount, key.ethereum.publicKey, key.ed25519.publicKey, key.substrate.publicKey, commission)
-                .signAndSend(pair, ({ events = [], status }) => {
-                    if (status.isInBlock) {
-                        console.log(`Included in ${status.asInBlock}`);
-                    } else {
-                        console.log(`Current status: ${status}`);
-                    }
-                });
-        }),
-    );
+            let tx = await signAndSendSafe(
+                api,
+                pair,
+                api.tx.attesters.registerAttester(nominateAmount, key.ethereum.publicKey, key.btc.publicKey, key.substrate.publicKey, commission)
+            );
+
+            console.log()
+            console.log('\t\tExecuted in block: ', tx)
+        })
+  )
+  
 }
 
 async function agree_to_target_with_each_attester_key(api, targetId) {
@@ -326,6 +326,29 @@ async function deregister_with_each_attester_key(api) {
         }),
     );
 }
+
+async function signAndSendSafe(api, signer, tx) {
+    let nonce = await api.rpc.system.accountNextIndex(signer.address);
+
+    return new Promise((resolve, reject) =>
+      tx.signAndSend(signer, { nonce }, async ({ dispatchError, status }) => {
+        if (dispatchError?.isModule) {
+          let err = api.registry.findMetaError(dispatchError.asModule);
+          console.log(
+            Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`)
+          );
+        } else if (dispatchError) {
+          reject(Error(dispatchError.toString()));
+        } else if (status.isInBlock) {
+          resolve(status.asInBlock);
+        }
+      })
+    ).then((blockHash) =>
+      api.rpc.chain
+        .getBlock(blockHash)
+        .then((r) => BigInt(r.block.header.number.toString()))
+    );
+  }
 
 module.exports.register_with_each_attester_key = register_with_each_attester_key;
 module.exports.deregister_with_each_attester_key = deregister_with_each_attester_key;
