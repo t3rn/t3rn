@@ -36,6 +36,7 @@ describe('register_with_each_attester_key', () => {
 
         await register_with_each_attester_key(mockApi, commission, nominateAmount);
 
+        expect(mockApi.rpc.system.accountNextIndex).toHaveBeenCalled();
         expect(mockApi.tx.attesters.registerAttester).toHaveBeenCalled();
         expect(mockApi.tx.attesters.signAndSend).toHaveBeenCalled();
     });

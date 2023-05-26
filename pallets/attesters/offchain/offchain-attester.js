@@ -314,15 +314,15 @@ async function deregister_with_each_attester_key(api) {
         keys.map(async (key) => {
             const keyring = new Keyring({ type: 'sr25519' });
             const pair = keyring.addFromSeed(hexToU8a(key.substrate.privateKey));
+            
+            let tx = await signAndSendSafe(
+                api,
+                pair,
+                api.tx.attesters.deregisterAttester()
+            );
 
-            // Now use this pair to sign and send the transaction
-            const tx = api.tx.attesters.deregisterAttester().signAndSend(pair, ({ events = [], status }) => {
-                if (status.isInBlock) {
-                    console.log(`Included in ${status.asInBlock}`);
-                } else {
-                    console.log(`Current status: ${status}`);
-                }
-            });
+            console.log()
+            console.log('\t\tExecuted in block: ', tx)
         }),
     );
 }
