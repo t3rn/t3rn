@@ -1,18 +1,19 @@
 [
   {
     "substrate": {
-      "accountId": "t3VVaWrr5So9JWm3YppS71LycMCa7JqLs7rwWfbaiyLbmc2ar",
-      "privateKey": "0x6ed699fd24a0df3a38232108d74f9596dd860897a5c558b2724b37256bb9ffba",
-      "publicKey": "0x36716fbbd021e142d3827438b7dfdfc595bf637452be88df06c56e7aee6cdd6a"
+      "accountId": "5GbuuvA4k9wPb5ednjsyuEviwTEbR3ST49wvHmmSTxL4u56B",
+      "privateKey": "0x25c14e603cf81c5c44b4f4c6946ae341c81f1314dd0a61caf3ab73b287dadb3e",
+      "publicKey": "0xc8be20204db42d4e46030971c17c5ea998012e7b21a182410fe2b99b9e671322"
     },
     "ethereum": {
-      "privateKey": "6ed699fd24a0df3a38232108d74f9596dd860897a5c558b2724b37256bb9ffba",
-      "publicKey": "e4ce4661dec46df8179acc32638ab35da3484907ec97e357874d7859e086b5465385b36aca0ccfaf8ed2c0a7c435e7410a64ba7b9ca0e8e6af6c8f2879e961d0",
-      "address": "b95cc713cb9f52842b5e88ac5d0c81aa10951009"
+      "privateKey": "0x25c14e603cf81c5c44b4f4c6946ae341c81f1314dd0a61caf3ab73b287dadb3e",
+      "publicKey": "0x02495f673e98db4513ec65eaf3c2005750f4bb3ca262ba94393d603b481854128f",
+      "publicKeyUncompressed": "0x04495f673e98db4513ec65eaf3c2005750f4bb3ca262ba94393d603b481854128fbc9a1997be5108fe248647b88ad156dd33c83b0b26776d223e4bbf934132d09c",
+      "address": "0x6616f0256498fa4926bdabae09e4d89db63f722c"
     },
     "btc": {
-      "privateKey": "0x6ed699fd24a0df3a38232108d74f9596dd860897a5c558b2724b37256bb9ffba",
-      "publicKey": "0xae0e02f26846e81daa899a2d6e6ab286b92210c94d6f3cf05a50ff37794bd176"
+      "privateKey": "0x25c14e603cf81c5c44b4f4c6946ae341c81f1314dd0a61caf3ab73b287dadb3e",
+      "publicKey": "0x0adab2a5daaff197ef1b57aaacfd22e25e8ad1b895c1caf07148089d34f6b8c8"
     }
   }
 ]

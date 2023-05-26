@@ -3,8 +3,9 @@
     "@polkadot/api": "^10.7.2",
     "@polkadot/keyring": "^12.2.1",
     "@polkadot/util": "^12.2.1",
-    "@polkadot/util-crypto": "=1.7",
+    "@polkadot/util-crypto": "*",
     "ethereumjs-util": "^7.1.5",
+    "secp256k1": "^5.0.0",
     "yargs": "^17.7.2"
   },
   "scripts": {

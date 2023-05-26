@@ -1,21 +1,25 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { hexToU8a, u8aToHex } = require('@polkadot/util');
 const { Keyring } = require('@polkadot/keyring');
-const generate_random_private_keys = require('./generateKeys');
 
+// use 1.7.0 to access schnorrkelKeypairFromSeed + naclKeypairFromSeed
 const { randomAsU8a, naclKeypairFromSeed, schnorrkelKeypairFromSeed, encodeAddress, cryptoWaitReady } = require('@polkadot/util-crypto');
 const ethUtil = require('ethereumjs-util');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const fs = require('fs');
+const secp256k1 = require('secp256k1');
 
 const argv = yargs(hideBin(process.argv))
     .option('kill-after-5m', { type: 'boolean' })
-    .option('generate-random-private-keys', { type: 'number' })
-    .option('register', { type: 'string' })
+    .option('generate-random-private-keys', { type: 'number' })// e.g. node offchain-attester --generate-random-private-keys 1 --network t0rn genereates 1 key Substrate SS58Prefix = 42 and saves it to keys.json
+    .option('register', { type: 'boolean' })
     .option('commission', { type: 'number' })
-    .option('nomination-amount', { type: 'number' })
-    .option('deregister', { type: 'string' })
+    .option('nominate', { nargs: 2, type: 'array', describe: 'nominate <attesterAccountId> <amount>' })
+    .option('nomination-amount', { type: 'number' , describe: 'nomination-amount <amount>'})
+    .option('deregister', { type: 'boolean' })
+    .option('agree-target', { type: 'string' })
+    .option('network', { type: 'string' })
     .option('start', { type: 'string' }).argv;
 
 const NODES = {
@@ -27,24 +31,58 @@ const NODES = {
 
 async function main() {
     if (argv['register']) {
-        console.log(`To register connecting to Substrate node ${argv.register}...`);
-        let node = NODES[argv.start] || NODES.local;
+        console.log(`Registering attester with all pre-generated accounts...`);
+        let node = NODES[argv.network] || NODES.local;
+        // Connect to the chosen Substrate node
+        const wsProvider = new WsProvider(node);
+        const api = await ApiPromise.create({ provider: wsProvider });
+
+        console.log(`Connecting to Substrate node ${node}...`);
+        await cryptoWaitReady();
+
+        let commission = argv['commission'] ? argv['commission'] : undefined;
+        let nominate_amount = argv['nomination-amount'] ? argv['nomination-amount'] : undefined;
+
+        console.log(`commission = ${commission}`);
+        console.log(`nominate_amount = ${nominate_amount}`);
+
+        await register_with_each_attester_key(api, commission, nominate_amount);
+
+        await api.disconnect();
+    }
+
+    if (argv['agree-target']) {
+        let targetId = argv['agree-target'];
+        console.log(`Agree to target = ${argv['agree-target']}...`);
+        let node = NODES[argv.network] || NODES.local;
+        console.log(`Connecting to Substrate node ${node}...`);
         // Connect to the chosen Substrate node
         const wsProvider = new WsProvider(node);
         const api = await ApiPromise.create({ provider: wsProvider });
 
         await cryptoWaitReady();
 
-        let commission = argv['commission'] ? argv['commission'] : undefined;
-        let nominate_amount = argv['nomination-amount'] ? argv['nomination-amount'] : undefined;
-        await register_with_each_attester_key(api, commission, nominate_amount);
+        await agree_to_target_with_each_attester_key(api, targetId);
 
         await api.disconnect();
     }
 
+    if (argv['nominate']) {
+        console.log(`Nominate amount to attester = ${argv.nominate}...`);
+        let node = NODES[argv.network] || NODES.local;
+        // Connect to the chosen Substrate node
+        const wsProvider = new WsProvider(node);
+        const api = await ApiPromise.create({ provider: wsProvider });
+
+        await cryptoWaitReady();
+
+        console.log('Nominating not implemented yet..');
+        await api.disconnect();
+    }
+
     if (argv['deregister']) {
-        console.log(`To register connecting to Substrate node ${argv.start}...`);
-        let node = NODES[argv.start] || NODES.local;
+        console.log(`To register connecting to Substrate node ${argv.network}...`);
+        let node = NODES[argv.network] || NODES.local;
         // Connect to the chosen Substrate node
         const wsProvider = new WsProvider(node);
         const api = await ApiPromise.create({ provider: wsProvider });
@@ -125,7 +163,10 @@ async function main() {
 
             // Create a new keyring and add a keypair from the seed
             const keyring = new Keyring({ type: 'sr25519' });
-            keyring.setSS58Format(9935);
+
+            // Set the SS58 format to 42 for t0rn, 9935 for t3rn
+            let ss58Format = NODES[argv.network] === 't3rn' ? 9935 : 42;
+            keyring.setSS58Format(ss58Format);
             const keypair = keyring.addFromSeed(seed);
 
             // Substrate keys
@@ -140,10 +181,15 @@ async function main() {
             const publicKeyHexEd = u8aToHex(keypairEd.publicKey);
 
             // Ethereum keys
-            var ethPrivateKey = Buffer.from(seed);
-            var ethPublicKey = ethUtil.privateToPublic(ethPrivateKey);
-            var ethAddress = ethUtil.publicToAddress(ethPublicKey);
+            const ethPrivateKeyHexEc = u8aToHex(seed);
 
+            const ethPublicKey = secp256k1.publicKeyCreate(seed, true); // false for uncompressed
+            const ethPublicKeyUncompressed65b = secp256k1.publicKeyCreate(seed, false); // false for uncompressed
+            const ethPublicKeyBuffer = Buffer.from(ethPublicKey)
+            const ethPublicKeyHexEc = u8aToHex(ethPublicKey);
+            const ethPublicKeyHexEcUncompressed65b = u8aToHex(ethPublicKeyUncompressed65b);
+            const ethAddress = ethUtil.publicToAddress(ethPublicKeyBuffer, true);
+            const ethAddressHex = u8aToHex(ethAddress);
             keys.push({
                 substrate: {
                     accountId: keypair.address,
@@ -151,9 +197,10 @@ async function main() {
                     publicKey: publicKeyHexSr,
                 },
                 ethereum: {
-                    privateKey: ethPrivateKey.toString('hex'),
-                    publicKey: ethPublicKey.toString('hex'),
-                    address: ethAddress.toString('hex'),
+                    privateKey: ethPrivateKeyHexEc,
+                    publicKey: ethPublicKeyHexEc,
+                    publicKeyUncompressed: ethPublicKeyHexEcUncompressed65b,
+                    address: ethAddressHex,
                 },
                 btc: {
                     privateKey: privateKeyHexEd,
@@ -184,7 +231,7 @@ async function attest_with_each_attester_key(api, targetId, messageHash, executi
                 console.log('Ed25519 unhandled yet');
             } else if (executionVendor == 'EVM') {
                 // Generate the signature for the message hash
-                const privateKey = Buffer.from(key.ethereum.privateKey, 'hex');
+                const privateKey = Buffer.from(hexToU8a(key.ethereum.privateKey));
 
                 const sigObj = ethUtil.ecsign(hexToU8a(messageHash), privateKey);
                 const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s);
