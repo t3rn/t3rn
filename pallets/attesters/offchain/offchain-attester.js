@@ -202,7 +202,7 @@ async function main() {
                     publicKeyUncompressed: ethPublicKeyHexEcUncompressed65b,
                     address: ethAddressHex,
                 },
-                btc: {
+                ed25519: {
                     privateKey: privateKeyHexEd,
                     publicKey: publicKeyHexEd,
                 },
@@ -227,7 +227,7 @@ async function attest_with_each_attester_key(api, targetId, messageHash, executi
         keys.map(async (key) => {
             if (executionVendor == 'Substrate') {
                 console.log('Substrate unhandled yet');
-            } else if (executionVendor == 'Btc') {
+            } else if (executionVendor == 'Ed25519') {
                 console.log('Ed25519 unhandled yet');
             } else if (executionVendor == 'EVM') {
                 // Generate the signature for the message hash
@@ -266,11 +266,11 @@ async function register_with_each_attester_key(api, commission, nominateAmount) 
             console.log(`\t\tNominate Amount: ${nominateAmount}`);
             console.log(`\t\tCommission: ${commission}`);
             console.log(`\t\tEthereum Public Key: ${key.ethereum.publicKey}`);
-            console.log(`\t\tBTC Public Key: ${key.btc.publicKey}`);
+            console.log(`\t\tEd25519 Public Key: ${key.ed25519.publicKey}`);
             console.log(`\t\tSubstrate Public Key: ${key.substrate.publicKey}`);
 
             const tx = api.tx.attesters
-                .registerAttester(nominateAmount, key.ethereum.publicKey, key.btc.publicKey, key.substrate.publicKey, commission)
+                .registerAttester(nominateAmount, key.ethereum.publicKey, key.ed25519.publicKey, key.substrate.publicKey, commission)
                 .signAndSend(pair, ({ events = [], status }) => {
                     if (status.isInBlock) {
                         console.log(`Included in ${status.asInBlock}`);
