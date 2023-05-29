@@ -66,7 +66,7 @@ withExportMode(
     )
     .option(
       "-t, --timeout <timeout>",
-      "Timeout in seconds for wating for events from the chain",
+      "Timeout in seconds for waiting for events from the chain",
       "30"
     )
     .action(wrapCryptoWaitReady(handleDgfCmd))

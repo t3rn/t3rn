@@ -106,7 +106,7 @@ yarn cli dgf [options]
 Options:
 
 - **-s, --sfx \<file-path\>**: Path to the sfx JSON file
-- **-t, --timeout \<timeout\>**: Timeout in seconds for wating for events from the chain. Default timeout is 30 seconds
+- **-t, --timeout \<timeout\>**: Timeout in seconds for waiting for events from the chain. Default timeout is 30 seconds
 - **-x, --export**: Export extrinsic data to a file
 
 ### Export
