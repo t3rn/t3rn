@@ -88,6 +88,27 @@ Options:
 
 - **-x, --export**: Export extrinsic data to a file
 
+### dgf
+
+The `dgf` command is used to generate side effects data with specific
+error modes for testing purposes on the chain.
+
+It allows users to simulate different failure scenarios for a specified SFX file.
+These failure scenarios involve external actors, mainly executors,
+and aim to ensure that transactions fail where they should.
+
+Usage:
+
+```bash
+yarn cli dgf [options]
+```
+
+Options:
+
+- **-s, --sfx \<file-path\>**: Path to the sfx JSON file
+- **-t, --timeout \<timeout\>**: Timeout in seconds for wating for events from the chain
+- **-x, --export**: Export extrinsic data to a file
+
 ### Export
 
 Each command that interacts with the node incorporates the `-x, --export` option. This feature facilitates the export of extrinsic data to a file. By default, this data is directed to the `/exports` directory in your current working environment. To alter this default path, you need to adjust the `EXPORT_PATH` variable. Here's an example:

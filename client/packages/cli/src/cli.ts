@@ -56,7 +56,9 @@ withExportMode(
 withExportMode(
   program
     .command("dgf")
-    .description("Generate data for unhpappy paths")
+    .description(
+      "Generate side effects data with specific error modes for testing purposes on the chain."
+    )
     .option(
       "-s, --sfx <file-path>",
       "Path to the sfx JSON file",
