@@ -1,10 +1,9 @@
-import { readSfxFile } from "@/utils/sfx.ts"
-import { validate } from "../fns.ts"
-import { ExtrinsicSchema, Extrinsic } from "@/schemas/extrinsic.ts"
 import "@t3rn/types"
 import { ApiPromise } from "@t3rn/sdk"
 import { EventEmitter } from "events"
-import ora from "ora"
+import { readSfxFile } from "@/utils/sfx.ts"
+import { ExtrinsicSchema, Extrinsic } from "@/schemas/extrinsic.ts"
+import { validate } from "./fns.ts"
 
 export enum ErrorMode {
   NoBidders = "NoBidders",
