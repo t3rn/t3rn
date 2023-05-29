@@ -239,14 +239,15 @@ async function attest_with_each_attester_key(api, targetId, messageHash, executi
                 const keyring = new Keyring({ type: 'sr25519' });
                 const pair = keyring.addFromSeed(hexToU8a(key.substrate.privateKey));
 
-                // Now use this pair to sign and send the transaction
-                const tx = api.tx.attesters.submitAttestation(messageHash, signature, targetId).signAndSend(pair, ({ events = [], status }) => {
-                    if (status.isInBlock) {
-                        console.log(`Included in ${status.asInBlock}`);
-                    } else {
-                        console.log(`Current status: ${status}`);
-                    }
-                });
+
+                let tx = await signAndSendSafe(
+                    api,
+                    pair,
+                    api.tx.attesters.submitAttestation(messageHash, signature, targetId),
+                );
+
+                console.log()
+                console.log('\t\tExecuted in block: ', tx)
             }
         }),
     );
@@ -295,13 +296,14 @@ async function agree_to_target_with_each_attester_key(api, targetId) {
             console.log('Agreeing to new target attester key');
             console.log(`\t\tEthereum Address: ${key.ethereum.address}`);
 
-            const tx = api.tx.attesters.agreeToNewAttestationTarget(targetId, key.ethereum.address).signAndSend(pair, ({ events = [], status }) => {
-                if (status.isInBlock) {
-                    console.log(`Included in ${status.asInBlock}`);
-                } else {
-                    console.log(`Current status: ${status}`);
-                }
-            });
+            let tx = await signAndSendSafe(
+                api,
+                pair,
+                api.tx.attesters.agreeToNewAttestationTarget(targetId, key.ethereum.address),
+            );
+
+            console.log()
+            console.log('\t\tExecuted in block: ', tx)
         }),
     );
 }
