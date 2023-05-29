@@ -129,7 +129,7 @@ const processEvent = (eventData: {
 }) => {
   if (ErrorMode[eventData.error] !== ErrorMode[ErrorMode.None]) {
     spinner.stopAndPersist({
-      symbol: "✈️",
+      symbol: "🛬",
       text:
         "Received an event that is interesting to us:" +
         "\n   Type: " +
