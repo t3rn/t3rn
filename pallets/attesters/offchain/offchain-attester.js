@@ -16,6 +16,7 @@ const argv = yargs(hideBin(process.argv))
     .option('register', { type: 'boolean' })
     .option('commission', { type: 'number' })
     .option('nominate', { nargs: 1, type: 'array', describe: 'nominate <amount>' })
+    .option('unnominate', { describe: 'unnominate' })
     .option('nomination-amount', { type: 'number' , describe: 'nomination-amount <amount>'})
     .option('deregister', { type: 'boolean' })
     .option('agree-target', { type: 'string' })
@@ -68,7 +69,7 @@ async function main() {
     }
 
     if (argv['nominate']) {
-        console.log(`Nominate amount to attester = ${argv.nominate}...`);
+        console.log(`Nominate attester = ${argv.nominate}...`);
         let nominate_amount = argv['nomination-amount'] ? argv['nomination-amount'] : undefined;
         if (nominate_amount == undefined) {
             console.log(`nomination-amount is not set. Use --nomination-amount <amount>`);
@@ -82,6 +83,20 @@ async function main() {
         await cryptoWaitReady();
 
         await nomiante_with_each_attester_key(api, nominate_amount);
+
+        await api.disconnect();
+    }
+
+    if (argv['unnominate']) {
+        console.log(`Unnominate attester ...`);
+        let node = NODES[argv.network] || NODES.local;
+        // Connect to the chosen Substrate node
+        const wsProvider = new WsProvider(node);
+        const api = await ApiPromise.create({ provider: wsProvider });
+
+        await cryptoWaitReady();
+
+        await unnomiante_with_each_attester_key(api);
 
         await api.disconnect();
     }
@@ -259,6 +274,34 @@ async function attest_with_each_attester_key(api, targetId, messageHash, executi
     );
 }
 
+async function unnomiante_with_each_attester_key(api) {
+    let keys = JSON.parse(fs.readFileSync('keys.json'));
+    await cryptoWaitReady();
+
+    return await Promise.all(
+        keys.map(async (key) => {
+            // Create the Keyring pair from the private key
+            const keyring = new Keyring({ type: 'sr25519' });
+            const pair = keyring.addFromSeed(hexToU8a(key.substrate.privateKey));
+            // Now use this pair to sign and send the transaction
+            console.log('Unnominate with each attester key');
+            console.log(`\t\tEthereum Public Key: ${key.ethereum.publicKey}`);
+            console.log(`\t\tBTC Public Key: ${key.btc.publicKey}`);
+            console.log(`\t\tSubstrate Public Key: ${key.substrate.publicKey}`);
+
+            let tx = await signAndSendSafe(
+                api,
+                pair,
+                api.tx.attesters.unnominate(key.substrate.publicKey)
+            );
+
+            console.log()
+            console.log('\t\tExecuted in block: ', tx)
+        })
+  )
+  
+}
+
 async function nomiante_with_each_attester_key(api, nominateAmount) {
     let keys = JSON.parse(fs.readFileSync('keys.json'));
     await cryptoWaitReady();
@@ -392,3 +435,4 @@ module.exports.deregister_with_each_attester_key = deregister_with_each_attester
 module.exports.attest_with_each_attester_key = attest_with_each_attester_key;
 module.exports.agree_to_target_with_each_attester_key = agree_to_target_with_each_attester_key;
 module.exports.nomiante_with_each_attester_key = nomiante_with_each_attester_key;
+module.exports.unnomiante_with_each_attester_key = unnomiante_with_each_attester_key;
