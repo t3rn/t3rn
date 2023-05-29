@@ -25,6 +25,12 @@ export const buildSfx = (
     sideEffects: createType(
       "Vec<T3rnTypesSfxSideEffect>",
       sideEffects.map((data) => {
+        if (!isGatewayRegistered(data.target, sdk)) {
+          throw new Error(
+            `${data.target} gateway is not registered, please run \`yarn cli register -g ${data.target}\` to register it!`
+          )
+        }
+
         const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[
           data.action
         ]({
@@ -109,3 +115,6 @@ export const readSfxFile = (filePath: string) => {
     log("ERROR", `Unable to parse ${filePath} as JSON`)
   }
 }
+
+export const isGatewayRegistered = (target: string, sdk: Sdk) =>
+  Boolean(sdk.gateways[target])
