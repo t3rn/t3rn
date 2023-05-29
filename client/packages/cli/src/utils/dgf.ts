@@ -143,7 +143,6 @@ export class ErrorListener extends EventEmitter {
               type: ListenerEvents.HeaderSubmitted,
               data,
             })
-            // return ListenerEvents.HeaderSubmitted
             break
           }
           case "SideEffectConfirmed": {
@@ -161,7 +160,6 @@ export class ErrorListener extends EventEmitter {
               notification,
               ErrorMode.NoBidders
             )
-            // return ErrorMode.NoBidders
             break
           }
           case "XTransactionXtxRevertedAfterTimeOut": {
@@ -171,11 +169,9 @@ export class ErrorListener extends EventEmitter {
               notification,
               ErrorMode.ConfirmationTimeout
             )
-            // return ErrorMode.ConfirmationTimeout
             break
           }
           default: {
-            // console.log("Did not recognise the event. Skipping")
             return ListenerEvents.NotRecognized
           }
         }
