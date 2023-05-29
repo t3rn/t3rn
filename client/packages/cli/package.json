@@ -9,8 +9,8 @@
   },
   "scripts": {
     "preinstall": "npx -y only-allow yarn",
-    "cli": "yarn build && node dist/cli.cjs",
-    "build": "tsup src/cli.ts",
+    "cli": "yarn build && node dist/cli.js",
+    "build": "tsup",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
     "ci": "rm -rf node_modules && rm yarn.lock && yarn",
