@@ -1,74 +1,120 @@
+import ora from "ora"
+import { ApiPromise, WsProvider } from "@t3rn/sdk"
 import { getConfig } from "@/utils/config.ts"
 import { colorLogMsg } from "@/utils/log.ts"
-import ora from "ora"
 import {
   ErrorListener,
   ErrorMode,
   ListenerEvents,
   processSfx,
-} from "@/utils/dgf/creation.ts"
-import { ApiPromise, WsProvider } from "@t3rn/sdk"
+} from "@/utils/dgf.ts"
 import { Extrinsic } from "@/schemas/extrinsic.ts"
 import { SfxSendType, submitSfx } from "@/utils/sfx.ts"
+import { Args } from "@/types.ts"
 
 const spinner = ora()
-
-// FIXME: kind of global because I don't know to do it locally better
 const submitedRegistry = new Map<string, Extrinsic>()
 
-export const handleDgfCmd = async () => {
+export const handleDgfCmd = async (
+  args: Args<"sfx" | "timeout" | "export">
+) => {
   const config = getConfig()
+
   if (!config) {
     process.exit(1)
   }
 
   spinner.start(
-    colorLogMsg("INFO", "Starting the unhappy path generation process")
+    colorLogMsg("INFO", "Starting the unhappy path generation process...")
   )
 
-  await batchErrorCreation()
+  try {
+    const provider = new WsProvider(getConfig().circuit.ws)
+    const api = await ApiPromise.create({ provider })
+    const listener = new ErrorListener(api)
 
-  spinner.succeed("Data generated for unhappy paths!")
+    await batchErrorCreation(args.sfx, Boolean(args.export))
+    spinner.stopAndPersist({
+      symbol: "🎉",
+      text: colorLogMsg("SUCCESS", "Data generated for unhappy paths!"),
+    })
 
-  spinner.info("Now waiting for events from the chain...")
+    const timeout = parseInt(args.timeout) ?? 30
+    const start = Date.now()
+
+    listener.on("event", (eventData) => {
+      spinner.info(
+        colorLogMsg(
+          "INFO",
+          `Received ${ListenerEvents[eventData.type]} event for processing!`
+        )
+      )
+
+      processEvent(eventData)
+
+      const secondsLeftTillTimeout = timeout - (Date.now() - start) / 1000
+      spinner.start(
+        colorLogMsg(
+          "INFO",
+          `Waiting for events from the chain, ${secondsLeftTillTimeout.toFixed(
+            2
+          )}s till timeout...`
+        )
+      )
+    })
+    listener.start()
+
+    spinner.start(
+      `🕑 Waiting for events from the chain, ${timeout}s till timeout...`
+    )
+
+    await new Promise((resolve) => setTimeout(resolve, timeout * 1000))
+
+    spinner.stopAndPersist({
+      symbol: "🏁",
+      text: colorLogMsg("INFO", "Timeout waiting for events from the chain!"),
+    })
+    process.exit(0)
+  } catch (e) {
+    spinner.fail(colorLogMsg("ERROR", e.message))
+    process.exit(1)
+  }
 }
 
-const batchErrorCreation = async () => {
-  // spin up event listener
-  const provider = new WsProvider("ws://127.0.0.1:9944") // ws.t0rn.io
-  const api = await ApiPromise.create({ provider })
-  const listener = new ErrorListener(api)
-
-  listener.on("event", (eventData) => {
-    processEvent(eventData)
+const batchErrorCreation = async (filePath: string, exportMode = false) => {
+  spinner.stopAndPersist({
+    symbol: "🚧",
+    text: colorLogMsg(
+      "INFO",
+      "Generate and submit test SFXs that will result in various errors:"
+    ),
   })
-  spinner.info("Event listener is starting...")
-  listener.start()
-  spinner.succeed("Event listener started!")
-
-  spinner.info("Starting to process SFXs...")
 
   for (const errorMode in ErrorMode) {
     if (errorMode === ErrorMode[ErrorMode.None]) {
       continue
     }
 
-    const file_name = "./transfer.json"
+    const extrinsic = processSfx(filePath, ErrorMode[errorMode])
 
-    spinner.info(`Processing error mode: ${errorMode}`)
-    const extrinsic = processSfx(file_name, ErrorMode[errorMode])
-    spinner.succeed(`Processed error mode ${errorMode}!`)
+    spinner.stopAndPersist({
+      symbol: " •",
+      text: colorLogMsg(
+        "SUCCESS",
+        `🔨 Generated SFX that will result in ${errorMode} `
+      ),
+    })
+    spinner.start(colorLogMsg("INFO", "📦 Submitting this SFX..."))
 
-    spinner.info("Submitting processed SFX...")
-    const response = await submitSfx(extrinsic, true, SfxSendType.Raw)
+    const response = await submitSfx(extrinsic, exportMode, SfxSendType.Raw)
     const hash = response[3].event.data[1]
-    submitedRegistry.set(hash.toHuman(), extrinsic)
-  }
 
-  // console.log("Registry of submitted SFX:")
-  // submitedRegistry.forEach((value, key) => {
-  //     console.log(value.sideEffects[0].signature, " -- ", key)
-  // })
+    submitedRegistry.set(hash.toHuman(), extrinsic)
+    spinner.stopAndPersist({
+      symbol: " •",
+      text: colorLogMsg("SUCCESS", "✨ The SFX was successfully submitted!"),
+    })
+  }
 }
 
 /**
@@ -82,14 +128,21 @@ const processEvent = (eventData: {
   error: ErrorMode
 }) => {
   if (ErrorMode[eventData.error] !== ErrorMode[ErrorMode.None]) {
-    spinner.info(`New event data received with:`)
-    spinner.info(`\tType: ${ListenerEvents[eventData.type]}`)
-    spinner.info(`\tHash of the extrinsic: ${JSON.stringify(eventData.data)}`)
-    spinner.info(`\tError mode: ${JSON.stringify(ErrorMode[eventData.error])}`)
+    spinner.stopAndPersist({
+      symbol: "✈️",
+      text:
+        "Received an event that is interesing to us:" +
+        "\n   Type: " +
+        ListenerEvents[eventData.type] +
+        "\n   Extrinsic Hash: " +
+        JSON.stringify(eventData.data) +
+        "\n   Error mode: " +
+        JSON.stringify(ErrorMode[eventData.error]),
+    })
 
     validateExtrinsic(eventData)
   } else {
-    spinner.info(`Not interesing event...`)
+    spinner.warn(colorLogMsg("WARN", "Ignore this event, not interesting!"))
   }
 }
 
@@ -116,7 +169,7 @@ const validateExtrinsic = (eventData: {
       text: colorLogMsg(
         "SUCCESS",
         `Event emited and created have matching error modes: ${ErrorMode[eventData.error]
-        }`
+        } `
       ),
     })
   } else {
@@ -125,7 +178,7 @@ const validateExtrinsic = (eventData: {
       text: colorLogMsg(
         "ERROR",
         `Event emited and created DO NOT match on the error modes: ${ErrorMode[eventData.error]
-        }`
+        } `
       ),
     })
   }

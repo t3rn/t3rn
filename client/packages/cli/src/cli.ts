@@ -57,7 +57,16 @@ withExportMode(
   program
     .command("dgf")
     .description("Generate data for unhpappy paths")
-    .option("-s, --sfx <file-path>", "Path to the sfx JSON file", "transfer.json")
+    .option(
+      "-s, --sfx <file-path>",
+      "Path to the sfx JSON file",
+      "transfer.json"
+    )
+    .option(
+      "-t, --timeout <timeout>",
+      "Timeout in seconds for wating for events from the chain",
+      "30"
+    )
     .action(wrapCryptoWaitReady(handleDgfCmd))
 )
 
