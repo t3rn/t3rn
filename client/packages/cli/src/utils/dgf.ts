@@ -6,8 +6,6 @@ import { ApiPromise } from "@t3rn/sdk"
 import { EventEmitter } from "events"
 import ora from "ora"
 
-const spinner = ora()
-
 export enum ErrorMode {
   NoBidders = "NoBidders",
   ConfirmationTimeout = "ConfirmationTimeout",
@@ -195,16 +193,22 @@ export class ErrorListener extends EventEmitter {
  * @param notification The type of notification emited
  * @returns The emited event to return it
  */
+
 const emitEvent = (
   listener: ErrorListener,
   event: ListenerEvents,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  notification: any,
+  notification: unknown,
   error = ErrorMode.None
 ) => {
   listener.emit("event", <ListenerEventData>{
     type: event,
-    data: notification.event.data,
+    data: (
+      notification as {
+        event: {
+          data: ListenerEventData["data"]
+        }
+      }
+    ).event.data,
     error: error,
   })
 }
