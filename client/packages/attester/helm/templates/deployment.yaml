@@ -1,4 +1,4 @@
-{{- range $index, $keys := .Values.attestersKeys }}
+{{- range $index, $keys := .Values.attesterKeys }}
 ----
 apiVersion: apps/v1
 kind: Deployment
@@ -32,7 +32,7 @@ spec:
             - name: PROFILE
               value: "{{ .Values.profile }}"
             - name: KEYS
-              value: {{ $keys }}
+              value: {{ $keys | b64enc }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

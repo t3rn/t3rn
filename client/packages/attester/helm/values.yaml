@@ -12,7 +12,6 @@ securityContext:
   runAsUser: 1000
   fsGroup: 1000
 
-
 resources: 
   limits:
     cpu: 1000m
