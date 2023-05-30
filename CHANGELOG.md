@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.29.0-rc.0] - 2023-05-30
+### :sparkles: New Features
+- [`103f832`](https://github.com/t3rn/t3rn/commit/103f8321cc8940724687642716aa7cb78305a217) - data generation framework for unhappy paths *(PR [#1014](https://github.com/t3rn/t3rn/pull/1014) by [@palozano](https://github.com/palozano))*
+
+
+## [v1.28.0-rc.0] - 2023-05-26
+### :sparkles: New Features
+- [`2116659`](https://github.com/t3rn/t3rn/commit/211665983df714cc6cf48d226b5b734de145e5e6) - allow attester calls *(PR [#1016](https://github.com/t3rn/t3rn/pull/1016) by [@palozano](https://github.com/palozano))*
+
+### :wrench: Chores
+- [`f810e0c`](https://github.com/t3rn/t3rn/commit/f810e0c3eeb67816e29392a3a68b77cf7ec87725) - remove unused scripts *(PR [#999](https://github.com/t3rn/t3rn/pull/999) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.27.1-rc.0] - 2023-05-22
 ### :bug: Bug Fixes
 - [`b05216d`](https://github.com/t3rn/t3rn/commit/b05216d82696740d946ce4a1d931580a808b717f) - grandpa range edge case *(PR [#1001](https://github.com/t3rn/t3rn/pull/1001) by [@petscheit](https://github.com/petscheit))*
@@ -1169,3 +1182,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.26.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.25.1-rc.0...v1.26.0-rc.0
 [v1.27.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.26.0-rc.0...v1.27.0-rc.0
 [v1.27.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.27.0-rc.0...v1.27.1-rc.0
+[v1.28.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.27.2-rc.0...v1.28.0-rc.0
+[v1.29.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.28.0-rc.0...v1.29.0-rc.0
