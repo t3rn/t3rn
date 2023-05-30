@@ -2,14 +2,14 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   annotations:
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-name: attester
   labels:
-    app.kubernetes.io/component: {{ .Release.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: attester
+    app.kubernetes.io/instance: attester
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: {{ .Release.Name }}
-    release: {{ .Release.Name }}
-  name: {{ .Release.Name }}
+    app.kubernetes.io/name: attester
+    release: attester
+  name: attester
 spec:
   endpoints:
   - honorLabels: true
@@ -17,5 +17,5 @@ spec:
   jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/name: {{ .Release.Name }}
+      app.kubernetes.io/instance: attester
+      app.kubernetes.io/name: attester

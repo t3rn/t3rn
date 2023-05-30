@@ -27,7 +27,7 @@ tolerations: []
 
 affinity: {}
 
-attester:
+attestersKeys:
   - substrate:
       accountId: 5CcPB3SM45831q1wTmz7KMsxSHdHSJA7PZJ3eZNFaMJMqBMc
       privateKey: '0x026725ded690042c65163d263432d79b293a8a10108c7e7a32ff185f1926fb61'
