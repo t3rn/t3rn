@@ -16,7 +16,7 @@ targets = [ "x86_64-unknown-linux-gnu" ]
 evm             = { git = "https://github.com/rust-blockchain/evm.git", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", default-features = false, features = [ "with-codec" ] }
 hex             = { version = "0.4", default-features = false, features = [ "serde" ] }
 log             = { version = "0.4", default-features = false }
-primitive-types = { version = "0.11.1", default-features = false, features = [ "rlp", "byteorder" ] }
+primitive-types = { version = "0.12.1", default-features = false, features = [ "rlp", "byteorder" ] }
 rlp             = { version = "0.5", default-features = false }
 serde           = { version = "1.0.162", optional = true, features = [ "derive" ] }
 sha3            = { version = "0.10.1", default-features = false }
