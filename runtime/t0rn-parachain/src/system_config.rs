@@ -20,7 +20,6 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
     type BaseCallFilter = MaintenanceMode;
-    // type BaseCallFilter = MaintenanceMode;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
@@ -209,6 +208,7 @@ impl Contains<Call> for BaseCallFilter {
                     | pallet_circuit::Call::bid_sfx { .. }
                     | pallet_circuit::Call::confirm_side_effect { .. }
             ),
+            Call::Attesters(_) => true,
             // 3VM
             Call::ThreeVm(_) => false,
             Call::Contracts(method) => matches!(
@@ -290,6 +290,7 @@ impl Contains<Call> for MaintenanceFilter {
             Call::RococoBridge(_) => false,
             Call::PolkadotBridge(_) => false,
             Call::KusamaBridge(_) => false,
+            Call::Attesters(_) => false,
             // To catch all new pallets and avoid any exploit
             _ => false,
         }

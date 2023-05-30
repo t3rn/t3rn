@@ -8,7 +8,6 @@ export default {
 			ws: "ws://localhost:9944",
 			http: "http://localhost:9933"
 		},
-		signer: "0x0177d124e501887c2470e260c8f0da60db9ed3dba808a682f09afb39eff0c561",
 	},
 	target: { // we dont need to specify the http endpoint for the target
 		rpc1: {

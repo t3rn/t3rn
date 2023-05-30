@@ -456,8 +456,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         // GrandpaJustification for the signed_header
         justification: GrandpaJustification<BridgedHeader<T, I>>,
     ) -> DispatchResult {
-        ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
-
         // °°°°° Implicit Check: °°°°°
         // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
         // Since polkadot updates its authority set every 24h, this is implicitly ensured => Justification check would fail after 1/7th of max len

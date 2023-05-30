@@ -6,7 +6,7 @@ A CLI tool for interacting with the t3rn circuit.
 
 The CLI is yet to be published to NPM, so you must manually install the dependencies and build the CLI from the source. To do so, run the command below to install the CLI dependencies:
 
-```
+```bash
 npm i -g yarn
 yarn i
 ```
@@ -15,7 +15,7 @@ yarn i
 
 To start using the cli, you need to generate a `.t3rnrc.json` config file.
 
-```
+```bash
 yarn cli init -c
 ```
 
@@ -76,7 +76,7 @@ Options:
 The `bid` command is used to bid on an execution as an executor.
 
 ```bash
-yarn cli [sfxId] [amount]
+yarn cli bid [sfxId] [amount]
 ```
 
 Arguments:
@@ -86,6 +86,27 @@ Arguments:
 
 Options:
 
+- **-x, --export**: Export extrinsic data to a file
+
+### dgf
+
+The `dgf` command is used to generate side effects data with specific
+error modes for testing purposes on the chain.
+
+It allows users to simulate different failure scenarios for a specified SFX file.
+These failure scenarios involve external actors, mainly executors,
+and aim to ensure that transactions fail where they should.
+
+Usage:
+
+```bash
+yarn cli dgf [options]
+```
+
+Options:
+
+- **-s, --sfx \<file-path\>**: Path to the sfx JSON file
+- **-t, --timeout \<timeout\>**: Timeout in seconds for waiting for events from the chain. Default timeout is 30 seconds
 - **-x, --export**: Export extrinsic data to a file
 
 ### Export

@@ -4,6 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**/*.ts ./src/*.ts",
+    "lint": "eslint --ext .ts src",
+    "lint:report": "eslint --ext .ts src --output-file eslint_report.json --format json",
     "start": "ts-node src/index.ts"
   },
   "dependencies": {

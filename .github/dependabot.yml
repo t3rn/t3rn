@@ -7,34 +7,50 @@
 # https://github.com/dependabot/dependabot-core/issues/3951
 
 version: 2
+registries:
+  github:
+    type: git
+    url: https://github.com
+    username: x-access-token
+    password: ${{secrets.GH_PAT}}
+
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     open-pull-requests-limit: 2
     schedule:
-      interval: "daily"
+      interval: daily
 
   # Rust
   # workspace is not correctly detected by dependabot
   # that's why we need to specify each dir
-  - package-ecosystem: "cargo" 
-    directory: "/"
+  - package-ecosystem: cargo
+    directory: /
+    registries:
+      - github
     open-pull-requests-limit: 3
     schedule:
-      interval: "daily"
+      interval: daily
 
-  # TODO: uncomment when we have a proper tests for all node applications
-  # - package-ecosystem: "npm" 
-  #   directory: "client/packages/cli"
-  #   schedule:
-  #     interval: "daily"
-
-  - package-ecosystem: "npm" 
-    directory: "client/packages/executor"
+  - package-ecosystem: npm
+    directory: client/packages/cli
     open-pull-requests-limit: 1
     schedule:
-      interval: "daily"
+      interval: daily
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-patch]
 
+  - package-ecosystem: npm
+    directory: client/packages/executor
+    open-pull-requests-limit: 1
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-patch]
+
+  # TODO: uncomment when we have a proper tests for all node applications
   # - package-ecosystem: "npm" 
   #   directory: "client/packages/sdk"
   #   schedule:
