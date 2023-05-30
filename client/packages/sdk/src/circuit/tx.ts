@@ -88,6 +88,36 @@ export class Tx {
     );
   }
 
+  async signAndSendRaw(tx: SubmittableExtrinsic): Promise<any> {
+    const nonce = await this.api.rpc.system.accountNextIndex(
+      this.signer.address
+    );
+    let exportObj: ExtrinsicExport;
+
+    if (this.exportMode) {
+      exportObj = new ExtrinsicExport(tx, this.signer.address);
+    }
+
+    return new Promise((resolve, reject) =>
+      tx.signAndSend(
+        this.signer,
+        { nonce },
+        async ({ dispatchError, status, events }) => {
+          events.forEach(({ event }) => {
+            exportObj?.addEvent(event);
+          });
+          if (status.isInBlock) {
+            resolve(events)
+          }
+        }
+      )
+    ).then((events: any) => {
+      return events
+    });
+  }
+
+
+
   /**
    * Wraps a transaction object into sudo
    * @param tx - The transaction to sudo

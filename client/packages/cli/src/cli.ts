@@ -5,6 +5,7 @@ import { wrapCryptoWaitReady } from "./utils/fns.ts"
 import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
+import { handleDgfCmd } from "./commands/dgf.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -50,6 +51,25 @@ withExportMode(
     .argument("sfxId <string>", "sfxId of the side effect to bid on")
     .argument("amount <float>", "bid amount")
     .action(wrapCryptoWaitReady(handleBidCmd))
+)
+
+withExportMode(
+  program
+    .command("dgf")
+    .description(
+      "Generate side effects data with specific error modes for testing purposes on the chain."
+    )
+    .option(
+      "-s, --sfx <file-path>",
+      "Path to the sfx JSON file",
+      "transfer.json"
+    )
+    .option(
+      "-t, --timeout <timeout>",
+      "Timeout in seconds for waiting for events from the chain",
+      "30"
+    )
+    .action(wrapCryptoWaitReady(handleDgfCmd))
 )
 
 program.parse(process.argv)

@@ -9,8 +9,8 @@
   },
   "scripts": {
     "preinstall": "npx -y only-allow yarn",
-    "cli": "yarn build && node dist/cli.cjs",
-    "build": "tsup src/cli.ts",
+    "cli": "yarn build && node dist/cli.js",
+    "build": "tsup",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
     "ci": "rm -rf node_modules && rm yarn.lock && yarn",
@@ -27,8 +27,9 @@
     "cli-progress": "^3.12.0",
     "commander": "^10.0.0",
     "figlet": "^1.6.0",
-    "node-fetch": "^2.6.9",
+    "node-fetch": "^3.3.1",
     "ora": "^5.4.1",
+    "tslib": "^2.5.2",
     "zod": "^3.21.4"
   },
   "devDependencies": {
@@ -37,7 +38,7 @@
     "@types/figlet": "^1.5.5",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
-    "@types/node-fetch": "^2.6.3",
+    "@types/node-fetch": "^2.6.4",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
     "eslint": "^8.38.0",
