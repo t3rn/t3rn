@@ -23,7 +23,8 @@ jobs:
   changes:
     runs-on: [self-hosted]
     # Run it only when e2e label is present in PR or in merge queue
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'e2e') || github.event.pull_request.mergeable }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'e2e') }}
+
     outputs:
       src: ${{ steps.changes.outputs.src }}
 
