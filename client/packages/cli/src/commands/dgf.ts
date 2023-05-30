@@ -1,5 +1,4 @@
 import ora from "ora"
-import { ApiPromise, WsProvider } from "@t3rn/sdk"
 import { getConfig } from "@/utils/config.ts"
 import { colorLogMsg } from "@/utils/log.ts"
 import {
@@ -8,8 +7,9 @@ import {
   ListenerEvents,
   processSfx,
 } from "@/utils/dgf.ts"
-import { Extrinsic } from "@/schemas/extrinsic.ts"
 import { SfxSendType, submitSfx } from "@/utils/sfx.ts"
+import { createCircuitContext } from "@/utils/circuit.ts"
+import { Extrinsic } from "@/schemas/extrinsic.ts"
 import { Args } from "@/types.ts"
 
 const spinner = ora()
@@ -19,6 +19,7 @@ export const handleDgfCmd = async (
   args: Args<"sfx" | "timeout" | "export">
 ) => {
   const config = getConfig()
+  const exportMode = Boolean(args.export)
 
   if (!config) {
     process.exit(1)
@@ -29,11 +30,10 @@ export const handleDgfCmd = async (
   )
 
   try {
-    const provider = new WsProvider(getConfig().circuit.ws)
-    const api = await ApiPromise.create({ provider })
-    const listener = new ErrorListener(api)
+    const { circuit } = await createCircuitContext(exportMode)
+    const listener = new ErrorListener(circuit)
 
-    await batchErrorCreation(args.sfx, Boolean(args.export))
+    await batchErrorCreation(args.sfx, exportMode)
     spinner.stopAndPersist({
       symbol: "🎉",
       text: colorLogMsg("SUCCESS", "Data generated for unhappy paths!"),
