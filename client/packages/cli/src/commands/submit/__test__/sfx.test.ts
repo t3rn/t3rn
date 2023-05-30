@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@jest/globals"
 import fs from "fs"
 import transferTemplate from "@/templates/transfer.ts"
-import { readSfxFile } from "../sfx.ts"
+import { readSfxFile } from "@/utils/sfx.ts"
 
 jest.mock("fs")
 

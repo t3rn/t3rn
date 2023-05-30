@@ -20,7 +20,6 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     /// The basic call filter to use in dispatchable.
     type BaseCallFilter = MaintenanceMode;
-    // type BaseCallFilter = MaintenanceMode;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
