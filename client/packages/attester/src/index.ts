@@ -55,6 +55,7 @@ class Attester {
     }
 
     async listenEvents() {
+        logger.info('Listening to events')
         // Subscribe to the NewAttestationMessageHash event
         this.circuit.sdk?.client.query.system.events(async (events) => {
             logger.info({ events_count: events.length }, `Received events`)
@@ -90,11 +91,11 @@ class Attester {
                                 )
                                 // Submit the attestation for the given target ID for the given message hash for each attester's key in the keys.json file
                                 if (executionVendor.toString() == 'Substrate') {
-                                    console.warn('Substrate unhandled yet')
+                                    logger.warn('Substrate unhandled yet')
                                 } else if (
                                     executionVendor.toString() == 'Ed25519'
                                 ) {
-                                    console.warn('Ed25519 unhandled yet')
+                                    logger.warn('Ed25519 unhandled yet')
                                 } else if (
                                     executionVendor.toString() == 'EVM'
                                 ) {
@@ -182,7 +183,7 @@ function checkKeys(keys: any) {
     try {
         for (const field of requiredFields) {
             if (!keys[field]) {
-                console.error(`Field "${field}" is missing in the JSON.`)
+                logger.error(`Field "${field}" is missing in the JSON.`)
                 process.exit(1)
             }
         }

@@ -8,7 +8,6 @@ export class Connection {
     rpc1: any
     usingPrimaryRpc = true
     rpc2: any
-    isCircuit: boolean
     isActive = false
     sdk: Sdk | undefined
     signer: any
@@ -43,7 +42,7 @@ export class Connection {
                     target: this.target,
                 })
                 this.usingPrimaryRpc = !this.usingPrimaryRpc // toggle connection
-                logger.info(
+                logger.warn(
                     { ws: this.currentProvider().ws },
                     `Retrying in 2 second `
                 )
@@ -59,31 +58,13 @@ export class Connection {
             this.provider.on('connected', async () => {
                 this.isActive = true
                 logger.info({ ws: this.currentProvider().ws }, `Connected`)
-                if (this.isCircuit) {
-                    this.prometheus.circuitActive = true
-                    const sdk = new Sdk(this.provider, this.signer)
-                    this.sdk = sdk
-                    this.client = await sdk.init()
-                } else {
-                    this.prometheus.targetActive = true
-                    this.client = await ApiPromise.create({
-                        provider: this.provider,
-                    })
-
-                    // update prometheus metrics with incoming blocks
-                    this.client.derive.chain.subscribeNewHeads((header) => {
-                        this.prometheus.targetHeight.set(
-                            header.number.toNumber()
-                        )
-                    })
-                }
+                const sdk = new Sdk(this.provider, this.signer)
+                this.sdk = sdk
+                this.client = await sdk.init()
             })
 
             this.provider.on('disconnected', () => {
                 this.isActive = false
-                this.isCircuit
-                    ? (this.prometheus.circuitActive = false)
-                    : (this.prometheus.targetActive = false)
                 logger.info({ ws: this.currentProvider().ws }, `Disconnected`)
                 this.provider.disconnect()
                 if (this.client) {
@@ -94,10 +75,8 @@ export class Connection {
 
             this.provider.on('error', () => {
                 this.isActive = false
-                this.isCircuit
-                    ? (this.prometheus.circuitActive = false)
-                    : (this.prometheus.targetActive = false)
-                logger.info(
+                this.prometheus.circuitActive = false
+                logger.error(
                     { ws: this.currentProvider().ws },
                     `Connection error`
                 )
