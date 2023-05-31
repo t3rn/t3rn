@@ -1,5 +1,5 @@
-import { Sdk, ApiPromise, WsProvider, Keyring } from "@t3rn/sdk"
-import { Prometheus } from "./prometheus"
+import { Sdk, ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
+import { Prometheus } from './prometheus'
 
 export class Connection {
     client: ApiPromise
@@ -28,7 +28,7 @@ export class Connection {
         this.isCircuit = isCircuit
         this.prometheus = prometheus
         this.target = target
-        const keyring = new Keyring({ type: "sr25519" })
+        const keyring = new Keyring({ type: 'sr25519' })
         this.signer = keyring.addFromMnemonic(substratePrivateKey)
     }
 
@@ -56,7 +56,7 @@ export class Connection {
 
     async setListeners() {
         return new Promise((resolve, reject) => {
-            this.provider.on("connected", async () => {
+            this.provider.on('connected', async () => {
                 this.isActive = true
                 console.log(`Connected to ${this.currentProvider().ws}`)
                 if (this.isCircuit) {
@@ -79,7 +79,7 @@ export class Connection {
                 }
             })
 
-            this.provider.on("disconnected", () => {
+            this.provider.on('disconnected', () => {
                 this.isActive = false
                 this.isCircuit
                     ? (this.prometheus.circuitActive = false)
@@ -92,7 +92,7 @@ export class Connection {
                 reject()
             })
 
-            this.provider.on("error", () => {
+            this.provider.on('error', () => {
                 this.isActive = false
                 this.isCircuit
                     ? (this.prometheus.circuitActive = false)

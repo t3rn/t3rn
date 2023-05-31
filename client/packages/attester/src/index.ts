@@ -1,27 +1,27 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-require("dotenv").config()
-import { Connection } from "./connection"
-import { cryptoWaitReady } from "@t3rn/sdk"
-import { Prometheus } from "./prometheus"
-import fs from "fs"
-import pino from "pino"
-import ethUtil from "ethereumjs-util"
-import { hexToU8a } from "@polkadot/util"
+require('dotenv').config()
+import { Connection } from './connection'
+import { cryptoWaitReady } from '@t3rn/sdk'
+import { Prometheus } from './prometheus'
+import fs from 'fs'
+import pino from 'pino'
+import ethUtil from 'ethereumjs-util'
+import { hexToU8a } from '@polkadot/util'
 
 // Determine if pretty printing is enabled based on the PROFILE environment variable
 const isPrettyPrintEnabled =
-    process.env.PROFILE === "local" || process.env.LOG_PRETTY === "true"
+    process.env.PROFILE === 'local' || process.env.LOG_PRETTY === 'true'
 
 const { stderr } = process
 // Create a writable stream that discards the output
-const NullWritable = fs.createWriteStream("/dev/null")
+const NullWritable = fs.createWriteStream('/dev/null')
 
 // Redirect stdout to the NullWritable stream
 // stdout.write = NullWritable.write.bind(NullWritable)
 stderr.write = NullWritable.write.bind(NullWritable)
 
 const loggerConfig = {
-    level: process.env.LOG_LEVEL || "info",
+    level: process.env.LOG_LEVEL || 'info',
     formatters: {
         level: (label) => {
             return { level: label }
@@ -31,7 +31,7 @@ const loggerConfig = {
     stream: process.stdout,
     transport: isPrettyPrintEnabled
         ? {
-              target: "pino-pretty",
+              target: 'pino-pretty',
           }
         : undefined,
 }
@@ -94,13 +94,13 @@ class Attester {
                     const { event } = record
                     logger.debug(event.toHuman())
 
-                    if (event.section == "attesters") {
+                    if (event.section == 'attesters') {
                         logger.info(
                             `${event.section}:${event.method}:: (phase=${record.phase})`
                         )
 
                         switch (event.method) {
-                            case "NewAttestationMessageHash": {
+                            case 'NewAttestationMessageHash': {
                                 const [targetId, messageHash, executionVendor] =
                                     event.data
                                 logger.info(
@@ -113,14 +113,14 @@ class Attester {
                                     }
                                 )
                                 // Submit the attestation for the given target ID for the given message hash for each attester's key in the keys.json file
-                                if (executionVendor.toString() == "Substrate") {
-                                    console.warn("Substrate unhandled yet")
+                                if (executionVendor.toString() == 'Substrate') {
+                                    console.warn('Substrate unhandled yet')
                                 } else if (
-                                    executionVendor.toString() == "Ed25519"
+                                    executionVendor.toString() == 'Ed25519'
                                 ) {
-                                    console.warn("Ed25519 unhandled yet")
+                                    console.warn('Ed25519 unhandled yet')
                                 } else if (
-                                    executionVendor.toString() == "EVM"
+                                    executionVendor.toString() == 'EVM'
                                 ) {
                                     // Generate the signature for the message hash
                                     const privateKey = Buffer.from(
@@ -148,7 +148,7 @@ class Attester {
                                             targetId
                                         )
 
-                                    logger.info("Executed", {
+                                    logger.info('Executed', {
                                         executionVendor:
                                             executionVendor.toString(),
                                         targetId: targetId.toString(),
@@ -159,7 +159,7 @@ class Attester {
 
                                 break
                             }
-                            case "NewTargetProposed": {
+                            case 'NewTargetProposed': {
                                 logger.info(
                                     `Received the new target proposed event`
                                 )
@@ -178,15 +178,15 @@ class Attester {
 
 ;(async () => {
     let config: any
-    if (process.env.PROFILE === "prod") {
+    if (process.env.PROFILE === 'prod') {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        config = require("../config/prod.ts").default
-    } else if (process.env.PROFILE === "roco") {
+        config = require('../config/prod.ts').default
+    } else if (process.env.PROFILE === 'roco') {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        config = require("../config/roco.ts").default
+        config = require('../config/roco.ts').default
     } else {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        config = require("../config/local.ts").default
+        config = require('../config/local.ts').default
     }
     const keys = {
         ethereum: {
