@@ -86,7 +86,7 @@ class Attester {
     async listenEvents() {
         // Subscribe to the NewAttestationMessageHash event
         this.circuit.sdk?.client.query.system.events(async (events) => {
-            logger.info(`\nReceived ${events.length} events`)
+            logger.info(`Received ${events.length} events`)
             // Loop through the Vec<EventRecord>
             await Promise.all(
                 events.map(async (record) => {
@@ -96,7 +96,7 @@ class Attester {
 
                     if (event.section == "attesters") {
                         logger.info(
-                            `\t${event.section}:${event.method}:: (phase=${record.phase})`
+                            `${event.section}:${event.method}:: (phase=${record.phase})`
                         )
 
                         switch (event.method) {
