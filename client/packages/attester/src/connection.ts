@@ -31,6 +31,7 @@ export class Connection {
     }
 
     async connect() {
+        logger.info({ rcp1: this.rpc1.ws, rpc2: this.rpc2.ws }, 'Connecting')
         // eslint-disable-next-line no-constant-condition
         while (true) {
             try {

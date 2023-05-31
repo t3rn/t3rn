@@ -39,10 +39,6 @@ class Attester {
 
     async connectClients() {
         await cryptoWaitReady()
-        logger.info(
-            { keySubstrate: this.keys.substrate.publicKey },
-            'Connecting'
-        )
         this.circuit = new Connection(
             this.config.circuit.rpc1,
             this.config.circuit.rpc2,
@@ -169,9 +165,17 @@ class Attester {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         config = require('../config/local.ts').default
     }
-    const keys = JSON.parse(
-        Buffer.from(process.env.KEYS as string, 'base64').toString('utf-8')
-    )
+
+    let keys: any
+    try {
+        keys = JSON.parse(
+            Buffer.from(process.env.KEYS as string, 'base64').toString('utf-8')
+        )
+    } catch (error) {
+        logger.error('Invalid Keys JSON', { error })
+        process.exit(1)
+    }
+
     checkKeys(keys)
     const attester = new Attester(config, keys)
     await attester.start()
@@ -189,7 +193,14 @@ function checkKeys(keys: any) {
             }
         }
 
-        logger.info('Keys are valid')
+        logger.info(
+            {
+                substratePublicKey: keys.substrate.publicKey,
+                ethereumPublicKey: keys.ethereum.publicKey,
+                btcPublicKey: keys.btc.publicKey,
+            },
+            'Keys are valid'
+        )
     } catch (error) {
         logger.error('Invalid Keys JSON', { error })
         process.exit(1)

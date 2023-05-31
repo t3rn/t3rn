@@ -4,6 +4,10 @@ export default {
             ws: 'wss://ws.t0rn.io',
             http: 'https://rpc.t0rn.io',
         },
+        rpc2: {
+            ws: 'wss://ws.t0rn.io',
+            http: 'https://rpc.t0rn.io',
+        },
     },
     target: {
         // we dont need to specify the http endpoint for the target
