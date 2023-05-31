@@ -7,7 +7,6 @@ import { Prometheus } from './prometheus'
 import ethUtil from 'ethereumjs-util'
 import { hexToU8a } from '@polkadot/util'
 
-
 class Attester {
     circuit: Connection
     target: Connection
@@ -170,7 +169,9 @@ class Attester {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         config = require('../config/local.ts').default
     }
-    const keys = JSON.parse(process.env.KEYS as string)
+    const keys = JSON.parse(
+        Buffer.from(process.env.KEYS as string, 'base64').toString('utf-8')
+    )
     checkKeys(keys)
     const attester = new Attester(config, keys)
     await attester.start()
