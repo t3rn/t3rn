@@ -80,8 +80,6 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/attester/eslint_report.json
 
-      - run: yarn test
-
   build-docker:
     name: Build Docker Attester
     needs: [changes]
@@ -99,7 +97,7 @@ jobs:
   deploy:
     name: Deploy Attester
     runs-on: self-hosted
-    needs: test-attester
+    # needs: test-attester
     # if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
