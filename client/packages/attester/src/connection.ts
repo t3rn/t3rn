@@ -1,5 +1,6 @@
 import { Sdk, ApiPromise, WsProvider, Keyring } from '@t3rn/sdk'
 import { Prometheus } from './prometheus'
+import { logger } from './logging'
 
 export class Connection {
     client: ApiPromise
@@ -17,7 +18,6 @@ export class Connection {
     constructor(
         rpc1: any,
         rpc2: any,
-        isCircuit: boolean,
         prometheus: Prometheus,
         target: string,
         substratePrivateKey: string
@@ -25,7 +25,6 @@ export class Connection {
         this.rpc1 = rpc1
         this.rpc2 = rpc2
         this.usingPrimaryRpc = true
-        this.isCircuit = isCircuit
         this.prometheus = prometheus
         this.target = target
         const keyring = new Keyring({ type: 'sr25519' })
@@ -44,8 +43,9 @@ export class Connection {
                     target: this.target,
                 })
                 this.usingPrimaryRpc = !this.usingPrimaryRpc // toggle connection
-                console.log(
-                    `Retrying in 2 second with ${this.currentProvider().ws}`
+                logger.info(
+                    { ws: this.currentProvider().ws },
+                    `Retrying in 2 second `
                 )
                 await new Promise((resolve, _reject) =>
                     setTimeout(resolve, 2000)
@@ -58,7 +58,7 @@ export class Connection {
         return new Promise((resolve, reject) => {
             this.provider.on('connected', async () => {
                 this.isActive = true
-                console.log(`Connected to ${this.currentProvider().ws}`)
+                logger.info({ ws: this.currentProvider().ws }, `Connected`)
                 if (this.isCircuit) {
                     this.prometheus.circuitActive = true
                     const sdk = new Sdk(this.provider, this.signer)
@@ -84,7 +84,7 @@ export class Connection {
                 this.isCircuit
                     ? (this.prometheus.circuitActive = false)
                     : (this.prometheus.targetActive = false)
-                console.log(`Disconnected from ${this.currentProvider().ws}`)
+                logger.info({ ws: this.currentProvider().ws }, `Disconnected`)
                 this.provider.disconnect()
                 if (this.client) {
                     this.client.disconnect()
@@ -97,7 +97,10 @@ export class Connection {
                 this.isCircuit
                     ? (this.prometheus.circuitActive = false)
                     : (this.prometheus.targetActive = false)
-                console.log(`Error from ${this.currentProvider().ws}`)
+                logger.info(
+                    { ws: this.currentProvider().ws },
+                    `Connection error`
+                )
                 this.provider.disconnect()
                 if (this.client) {
                     this.client.disconnect()

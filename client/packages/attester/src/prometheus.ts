@@ -1,5 +1,6 @@
 import client from 'prom-client'
 import http from 'http'
+import { logger } from './logging'
 export class Prometheus {
     circuitActive: boolean
     targetActive: boolean
@@ -25,28 +26,28 @@ export class Prometheus {
             name: 'circuit_height',
             help: 'The header height stored on circuit',
             registers: [this.register],
-            labelNames: ['target'],
+            labelNames: [],
         })
 
         this.targetHeight = new client.Gauge({
             name: 'target_height',
             help: 'The current header height on the target',
             registers: [this.register],
-            labelNames: ['target'],
+            labelNames: [],
         })
 
         this.circuitDisconnected = new client.Counter({
             name: 'circuit_disconnect',
             help: 'Information on circuit disconnections',
             registers: [this.register],
-            labelNames: ['endpoint', 'target'],
+            labelNames: ['endpoint'],
         })
 
         this.circuitDisconnectsTotal = new client.Counter({
             name: 'circuit_disconnects_total',
             help: 'Number of times circuit rpc server has disconnected',
             registers: [this.register],
-            labelNames: ['target'],
+            labelNames: [],
         })
 
         this.startServer()
@@ -59,14 +60,12 @@ export class Prometheus {
                     res.setHeader('Content-Type', this.register.contentType)
                     const metrics = await this.register.metrics()
                     res.end(metrics)
-                } else if (req.url === '/status') {
+                } else if (req.url === '/healthz') {
                     res.setHeader('Content-Type', 'text/plain')
-                    res.statusCode =
-                        this.circuitActive && this.targetActive ? 200 : 500
+                    res.statusCode = this.circuitActive ? 200 : 500
                     res.end(
                         JSON.stringify({
                             circuitActive: this.circuitActive,
-                            targetActive: this.targetActive,
                         })
                     )
                 } else {
@@ -81,7 +80,7 @@ export class Prometheus {
 
         const port = 8080
         server.listen(port, () => {
-            console.log(`Metrics server listening on port ${port}`)
+            logger.info(`Metrics server listening on port ${port}`)
         })
     }
 }
