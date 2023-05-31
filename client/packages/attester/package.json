@@ -17,6 +17,7 @@
     "http": "^0.0.1-security",
     "pino": "^8.14.1",
     "prom-client": "^14.2.0",
+    "typescript": "^5.0.4",
     "url": "^0.11.0"
   },
   "devDependencies": {
