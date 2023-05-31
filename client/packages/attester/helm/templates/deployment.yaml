@@ -1,9 +1,14 @@
-{{- range $index, $keys := .Values.attesterKeys }}
-----
+{{ $outer := . -}}
+
+{{- range $index, $keys := .Values.attestersKeys }}
+{{- with $outer -}}
+{{- $attesterName := printf "attester-%d" $index }}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: attester-{{ $index }}
+  name: {{ $attesterName }}
   labels:
     {{- include "attester.labels" . | nindent 4 }}
 spec:
@@ -32,7 +37,7 @@ spec:
             - name: PROFILE
               value: "{{ .Values.profile }}"
             - name: KEYS
-              value: {{ $keys | b64enc }}
+              value: {{ $keys | toJson | b64enc }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
@@ -47,4 +52,5 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-{{ end }}
+{{- end }}
+{{- end }}
