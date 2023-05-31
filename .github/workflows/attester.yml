@@ -1,0 +1,134 @@
+name: Attester
+
+on:
+  pull_request:
+  push:
+    branches:
+      - development
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  # This job checks if files has been modified.
+  # Using paths in pull request trigger would make required checks unpassable for PRs without expected changes.
+  changes:
+    runs-on: [self-hosted]
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          # TODO: can be removed when we have npm packages
+          # - "client/packages/**/*.ts"
+          # - "client/packages/**/*.json"
+
+          filters: |
+            src:
+            - "client/attester.Dockerfile"
+            - "client/packages/**/*.ts"
+            - "client/packages/**/*.json"
+            - "client/packages/attester/**/*.ts"
+            - "client/packages/attester/**/*.json"
+            - ".github/workflows/attester.yml"
+
+      - name: Detected changes
+        run: |
+          echo Detected changes: "${{ steps.changes.outputs.src }}"
+
+  test-attester:
+    name: Test Attester
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+    defaults:
+      run:
+        working-directory: client/packages/attester
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Read .nvmrc
+        run: echo NVMRC=`cat .nvmrc` >> $GITHUB_ENV
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NVMRC }}
+
+      - run: cd .. && make all
+      - run: yarn
+      - run: yarn fmt
+
+      - name: Save Code Linting Report JSON
+        if: github.event_name == 'pull_request'
+        run: npm run lint:report
+        # Continue to the next step even if this fails
+        continue-on-error: true
+
+      - name: Annotate Code Linting Results
+        if: github.event_name == 'pull_request'
+        uses: ataylorme/eslint-annotate-action@v2
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: client/packages/attester/eslint_report.json
+
+      - run: yarn test
+
+  build-docker:
+    name: Build Docker Attester
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true'
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Docker
+        working-directory: ./client
+        run: |
+          docker build . -f attester.Dockerfile
+
+  deploy:
+    name: Deploy Attester
+    runs-on: self-hosted
+    needs: test-attester
+    if: github.ref == 'refs/heads/development'
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+  
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+  
+      - name: Build attester
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: test-t0rn-attester
+          IMAGE_TAG: ${{ github.sha }}
+        working-directory: ./client
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f attester.Dockerfile
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: EKS
+        run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
+
+      - name: Helm Upgrade
+        working-directory: ./client/packages/attester
+        run: helm upgrade attester helm -n attester -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-attester"
