@@ -95,38 +95,6 @@ pub mod pallet {
     // Add the following method to `BatchMessage` struct
     impl<BlockNumber> BatchMessage<BlockNumber> {
         pub fn message(&self) -> Vec<u8> {
-            // let mut bytes = Vec::new();
-            // if let Some(ref sfx) = self.next_committee {
-            //     bytes.extend(
-            //         self.next_committee
-            //             .into_iter()
-            //             .flat_map(|address| address.as_bytes().to_vec()),
-            //     );
-            // }
-            // if let Some(ref sfx) = self.banned_committee {
-            //     bytes.extend(
-            //         self.banned_committee
-            //             .into_iter()
-            //             .flat_map(|address| address.as_bytes().to_vec()),
-            //     );
-            // }
-            // if let Some(ref sfx) = self.confirmed_sfx {
-            //     bytes.extend(
-            //         self.confirmed_sfx
-            //             .into_iter()
-            //             .flat_map(|bytes32| bytes32.to_vec()),
-            //     );
-            // }
-            // if let Some(ref sfx) = self.reverted_sfx {
-            //     bytes.extend(
-            //         self.reverted_sfx
-            //             .into_iter()
-            //             .flat_map(|bytes32| bytes32.to_vec()),
-            //     );
-            // }
-            // bytes.extend_from_slice(&self.index.to_le_bytes().as_slice());
-            //
-            // bytes
             let mut encoded_message = Vec::new();
 
             if let Some(ref committee) = self.next_committee {
@@ -318,7 +286,7 @@ pub mod pallet {
         AttestationSubmitted(T::AccountId),
         NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
         NewAttestationMessageHash(TargetId, H256, ExecutionVendor),
-        NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>),
+        NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>, Vec<u8>, H256),
         Nominated(T::AccountId, T::AccountId, BalanceOf<T>),
         NewTargetActivated(TargetId),
         NewTargetProposed(TargetId),
@@ -662,7 +630,12 @@ pub mod pallet {
                         "Batch {:?} is ready for submission by full approval",
                         batch.message_hash()
                     );
-                    Self::deposit_event(Event::NewConfirmationBatch(target, batch.clone()));
+                    Self::deposit_event(Event::NewConfirmationBatch(
+                        target,
+                        batch.clone(),
+                        batch.message(),
+                        batch.message_hash(),
+                    ));
                 }
 
                 Self::deposit_event(Event::AttestationSubmitted(account_id));
@@ -1406,6 +1379,8 @@ pub mod pallet {
                                 Self::deposit_event(Event::NewConfirmationBatch(
                                     target,
                                     batch.clone(),
+                                    batch.message(),
+                                    batch.message_hash(),
                                 ));
                             }
                         }
