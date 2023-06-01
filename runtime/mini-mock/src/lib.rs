@@ -2,8 +2,8 @@ use codec::{Decode, Encode};
 use frame_support::{traits::FindAuthor, RuntimeDebug};
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
-    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, NextBatch, Nominations,
-    PendingSlashes, PendingUnnominations, PreviousCommittee, SortedNominatedAttesters,
+    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, LatencyStatus, NextBatch,
+    Nominations, PendingSlashes, PendingUnnominations, PreviousCommittee, SortedNominatedAttesters,
 };
 pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
 mod treasuries_config;

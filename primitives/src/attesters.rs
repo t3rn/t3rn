@@ -125,6 +125,7 @@ pub struct GenericCommitteeTransition([(u32, Vec<u8>); COMMITTEE_SIZE]);
 pub type EvmCommitteeTransition = [(u32, H160); COMMITTEE_SIZE];
 // pub type CommitteeTransition = [(u32, Vec<u8>); COMMITTEE_SIZE];
 pub type CommitteeTransition = Vec<(u32, Vec<u8>)>;
+pub type CommitteeRecoverable = Vec<Vec<u8>>;
 pub type CommitteeTransitionEncoded = Vec<u8>;
 // impl From<EvmCommitteeTransition> for GenericCommitteeTransition {
 //     fn from(evm: EvmCommitteeTransition) -> Self {
@@ -144,7 +145,8 @@ pub type AttestersChange = Vec<([u8; 33], u32)>;
 pub type BatchConfirmedSfxId = Vec<H256>;
 
 pub trait AttestersWriteApi<Account, Error> {
-    fn request_sfx_attestation(target: TargetId, sfx_id: H256) -> Result<(), Error>;
+    fn request_sfx_attestation_commit(target: TargetId, sfx_id: H256) -> Result<(), Error>;
+    fn request_sfx_attestation_revert(target: TargetId, sfx_id: H256) -> Result<(), Error>;
     fn request_ban_attesters_attestation(ban_attesters: &Account) -> Result<(), Error>;
     fn request_next_committee_attestation();
 }
