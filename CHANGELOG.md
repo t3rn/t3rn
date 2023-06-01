@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.29.2-rc.0] - 2023-06-01
+### :bug: Bug Fixes
+- [`97c14f1`](https://github.com/t3rn/t3rn/commit/97c14f1608a48ed7f2f57d8575092dd1ccc89703) - **chainspecs**: replace outdated bootnodes for rococo *(PR [#1024](https://github.com/t3rn/t3rn/pull/1024) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.29.0-rc.0] - 2023-05-30
 ### :sparkles: New Features
 - [`103f832`](https://github.com/t3rn/t3rn/commit/103f8321cc8940724687642716aa7cb78305a217) - data generation framework for unhappy paths *(PR [#1014](https://github.com/t3rn/t3rn/pull/1014) by [@palozano](https://github.com/palozano))*
@@ -1184,3 +1189,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.27.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.27.0-rc.0...v1.27.1-rc.0
 [v1.28.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.27.2-rc.0...v1.28.0-rc.0
 [v1.29.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.28.0-rc.0...v1.29.0-rc.0
+[v1.29.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.29.1-rc.0...v1.29.2-rc.0

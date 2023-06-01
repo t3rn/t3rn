@@ -8,6 +8,7 @@ on:
       - "**/Cargo.toml"
       - "**/Cargo.lock"
       - "**/runtime-upgrade-t0rn.yml"
+      - "specs/*.raw.json"
 
 permissions:
   pull-requests: write
