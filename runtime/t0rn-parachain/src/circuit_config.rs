@@ -134,6 +134,7 @@ parameter_types! {
     pub const MinNominatorBond: Balance = 1;
     pub const MinAttesterBond: Balance = 1;
     pub const DefaultCommission: Percent = Percent::from_percent(10);
+    pub const HourlyShufflingFrequency: BlockNumber = 60 * 60 / 12; // (60 * 60) / 12; assuming one distribution per two weeks
 }
 
 impl pallet_attesters::Config for Runtime {
@@ -153,7 +154,7 @@ impl pallet_attesters::Config for Runtime {
     type RepatriationPeriod = ConstU32<60>;
     type RewardMultiplier = RewardMultiplier;
     type Rewards = Rewards;
-    type ShufflingFrequency = ConstU32<400>;
+    type ShufflingFrequency = HourlyShufflingFrequency;
     type SlashAccount = EscrowAccount;
     type Xdns = XDNS;
 }
@@ -172,6 +173,7 @@ parameter_types! {
     pub const StartingRepatriationPercentage: Percent = Percent::from_parts(10); // 10%
     pub const OneYear: BlockNumber = 2_628_000; // (365.25 * 24 * 60 * 60) / 12; assuming 12s block time
     pub const InflationDistributionPeriod: BlockNumber = 100_800; // (14 * 24 * 60 * 60) / 12; assuming one distribution per two weeks
+    pub const HourlyInflationDistributionPeriod: BlockNumber = 60 * 60 / 12; // (60 * 60) / 12; assuming one distribution per two weeks
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
 }
 
@@ -189,7 +191,7 @@ impl pallet_rewards::Config for Runtime {
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-    type InflationDistributionPeriod = InflationDistributionPeriod;
+    type InflationDistributionPeriod = HourlyInflationDistributionPeriod;
     type OneYear = OneYear;
     type StartingRepatriationPercentage = StartingRepatriationPercentage;
     type TotalInflation = TotalInflation;
