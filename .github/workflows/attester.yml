@@ -64,12 +64,12 @@ jobs:
           node-version: ${{ env.NVMRC }}
 
       - run: cd .. && make all
-      - run: yarn
-      - run: yarn fmt
+      - run: pnpm i
+      - run: pnpm run fmt
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'
-        run: npm run lint:report
+        run: pnpm run lint:report
         # Continue to the next step even if this fails
         continue-on-error: true
 
