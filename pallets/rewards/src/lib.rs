@@ -23,7 +23,7 @@ pub mod pallet {
     use t3rn_primitives::{
         account_manager::{AccountManager, Settlement},
         attesters::AttestersReadApi,
-        circuit::FullSideEffect,
+        circuit::{CircuitStatus, FullSideEffect},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         clock::Clock as ClockTrait,
         rewards::RewardsWriteApi,
@@ -682,30 +682,46 @@ pub mod pallet {
         /// for attesters not signing on the attestation within the acceptable time limit.
         /// The repatriation is done on the agreed percentage value of the SlashTreasury, the current percantage is available through the `repatriation_percentage` function.
         /// Since the percentage and the estimated slash treasury balance are known, the amount of funds to be repatriated can be calculated by executors prior to bidding for SFX on Escrow Targets, with the following formula:
-        /// `amount_to_be_repatriated = slash_treasury_balance * repatriation_percentage`
-        fn repatriate_executor_from_slash_treasury(
+        /// `amount_to_be_repatriated = slash_treasury_balance * repatriation_percentage`.
+        /// The repatratration can't exceed the 50% of the max_reward of SFX.
+        /// Remaining funds in the SlashTreasury after repatriation are used as a base for Finality Fee, therefore land in Fee Treasury.
+        fn repatriate_for_late_attestation(
             sfx_id: &H256,
             fsx: &FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            status: &CircuitStatus,
+            requester: Option<T::AccountId>,
         ) -> bool {
-            if let Some(executor) = &fsx.input.enforce_executor {
-                let treasury_account =
-                    T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Slash);
-                let slash_treasury_balance = T::Currency::free_balance(&treasury_account);
-                let repatriation_percentage = Self::repatriation_percentage();
-                let amount_to_be_repatriated =
-                    repatriation_percentage.mul_ceil(slash_treasury_balance);
+            let sfx_max_reward = fsx.input.max_reward;
+            let max_repatriation = Perbill::from_percent(50).mul_ceil(sfx_max_reward);
+            let slash_treasury_account =
+                T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Slash);
+            let slash_treasury_balance = T::Currency::free_balance(&slash_treasury_account);
+            let repatriation_percentage = Self::repatriation_percentage();
 
-                if amount_to_be_repatriated <= T::Currency::minimum_balance() {
-                    log::error!(
+            let mut available_repatriation: BalanceOf<T> =
+                Self::repatriation_percentage().mul_ceil(slash_treasury_balance);
+            // Divide by 2 since the repatriation will also benefit the Fee Treasury
+            available_repatriation = available_repatriation
+                .checked_div(&BalanceOf::<T>::from(2u8))
+                .unwrap_or(Zero::zero());
+
+            let amount_to_be_repatriated = max_repatriation.min(available_repatriation);
+            if amount_to_be_repatriated <= T::Currency::minimum_balance() {
+                log::error!(
                         "Repatriation for {:?} from slash treasury failed for side effect id: {:?} because amount to be repatriated is less than existential deposit",
                         amount_to_be_repatriated,
                         sfx_id
                     );
-                    return false
-                }
+                return false
+            }
 
-                match T::Currency::ensure_can_withdraw(
-                    &treasury_account,
+            let (maybe_sfx_beneficiary, role): (Option<T::AccountId>, CircuitRole) = match status {
+                CircuitStatus::Committed { .. } => (requester, CircuitRole::Requester),
+                _ => (fsx.input.enforce_executor.clone(), CircuitRole::Executor),
+            };
+            if let Some(sfx_beneficiary) = &maybe_sfx_beneficiary {
+                return match T::Currency::ensure_can_withdraw(
+                    &slash_treasury_account,
                     amount_to_be_repatriated,
                     WithdrawReasons::TRANSFER,
                     slash_treasury_balance,
@@ -716,25 +732,34 @@ pub mod pallet {
                             amount_to_be_repatriated,
                             sfx_id
                         );
-                        return false
+                        false
                     },
                     Ok(_) => {
                         // Decrease slash treasury balance
                         let _ = T::Currency::withdraw(
-                            &treasury_account,
-                            amount_to_be_repatriated,
+                            &slash_treasury_account,
+                            amount_to_be_repatriated.saturating_mul(BalanceOf::<T>::from(2u8)),
                             WithdrawReasons::TRANSFER,
-                        ExistenceRequirement::KeepAlive,
+                            ExistenceRequirement::KeepAlive,
                         ).expect("Failed to withdraw from treasury account, this should never happen since we checked the balance before");
 
                         Self::update_pending_claims(
-                            executor,
-                            CircuitRole::Executor,
+                            sfx_beneficiary,
+                            role,
                             amount_to_be_repatriated,
                             BenefitSource::SlashTreasury,
                         );
 
-                        return true
+                        let fee_treasury_account =
+                            T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Fee);
+
+                        // Increase fee treasury balance by the amount repatriated
+                        T::Currency::deposit_creating(
+                            &fee_treasury_account,
+                            amount_to_be_repatriated,
+                        );
+
+                        true
                     },
                 }
             }
@@ -811,11 +836,12 @@ pub mod test {
     };
     use t3rn_primitives::{
         account_manager::{Outcome, Settlement},
-        circuit::{FullSideEffect, SecurityLvl, SideEffect},
+        circuit::{Cause, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         rewards::RewardsWriteApi,
         TreasuryAccount, TreasuryAccountProvider,
     };
+
     #[test]
     fn test_available_distribution_totals_to_max_4_4_percent_after_almost_1_year() {
         let _total_supply_account = AccountId::from([99u8; 32]);
@@ -1302,7 +1328,7 @@ pub mod test {
                 input: SideEffect {
                     enforce_executor: Some(executor.clone()),
                     target: [0u8; 4],
-                    max_reward: 1,
+                    max_reward: 10,
                     insurance: 1,
                     action: [0u8; 4],
                     encoded_args: vec![],
@@ -1317,8 +1343,11 @@ pub mod test {
             };
 
             let sfx_id = H256::from([99u8; 32]);
-            assert!(Rewards::repatriate_executor_from_slash_treasury(
-                &sfx_id, &fsx
+            assert!(Rewards::repatriate_for_late_attestation(
+                &sfx_id,
+                &fsx,
+                &CircuitStatus::Reverted(Cause::Timeout),
+                None
             ));
 
             assert_eq!(
@@ -1331,9 +1360,14 @@ pub mod test {
                 Some(vec![ClaimableArtifacts {
                     beneficiary: executor,
                     role: CircuitRole::Executor,
-                    total_round_claim: 10,
+                    total_round_claim: 5,
                     benefit_source: BenefitSource::SlashTreasury,
                 }])
+            );
+
+            assert_eq!(
+                Balances::free_balance(&MiniRuntime::get_treasury_account(TreasuryAccount::Fee)),
+                5
             );
         });
     }
@@ -1352,7 +1386,7 @@ pub mod test {
                 input: SideEffect {
                     enforce_executor: Some(executor.clone()),
                     target: [0u8; 4],
-                    max_reward: 1,
+                    max_reward: 10,
                     insurance: 1,
                     action: [0u8; 4],
                     encoded_args: vec![],
@@ -1367,8 +1401,12 @@ pub mod test {
             };
 
             let sfx_id = H256::from([99u8; 32]);
-            assert!(!Rewards::repatriate_executor_from_slash_treasury(
-                &sfx_id, &fsx
+
+            assert!(!Rewards::repatriate_for_late_attestation(
+                &sfx_id,
+                &fsx,
+                &CircuitStatus::Reverted(Cause::Timeout),
+                None
             ));
 
             assert_eq!(Rewards::get_pending_claims(executor), None);
