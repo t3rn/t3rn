@@ -2,9 +2,9 @@
 require('dotenv').config()
 import { logger } from './logging'
 import { Attester } from './attester'
+import { checkKeys } from './utils'
 
-;import { checkKeys } from './utils';
-(async () => {
+;(async () => {
     logger.info(`Starting attester`)
 
     let config: any
