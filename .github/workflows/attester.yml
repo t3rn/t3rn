@@ -73,6 +73,8 @@ jobs:
         # Continue to the next step even if this fails
         continue-on-error: true
 
+      - run: pnpm run test
+
       - name: Annotate Code Linting Results
         if: github.event_name == 'pull_request'
         uses: ataylorme/eslint-annotate-action@v2
