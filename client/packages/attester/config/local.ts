@@ -9,13 +9,4 @@ export default {
             http: 'http://localhost:9933',
         },
     },
-    target: {
-        // we dont need to specify the http endpoint for the target
-        rpc1: {
-            ws: 'wss://rococo-rpc.polkadot.io',
-        },
-        rpc2: {
-            ws: 'wss://rococo-community-rpc.laminar.codes/ws',
-        },
-    },
 }

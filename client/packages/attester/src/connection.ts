@@ -12,20 +12,17 @@ export class Connection {
     sdk: Sdk | undefined
     signer: any
     prometheus: Prometheus
-    target: string
 
     constructor(
         rpc1: any,
         rpc2: any,
         prometheus: Prometheus,
-        target: string,
         substratePrivateKey: string
     ) {
         this.rpc1 = rpc1
         this.rpc2 = rpc2
         this.usingPrimaryRpc = true
         this.prometheus = prometheus
-        this.target = target
         const keyring = new Keyring({ type: 'sr25519' })
         this.signer = keyring.addFromMnemonic(substratePrivateKey)
     }
@@ -39,9 +36,7 @@ export class Connection {
                 await this.setListeners()
                 break
             } catch (e) {
-                this.prometheus.circuitDisconnectsTotal.inc({
-                    target: this.target,
-                })
+                this.prometheus.circuitDisconnectsTotal.inc()
                 this.usingPrimaryRpc = !this.usingPrimaryRpc // toggle connection
                 logger.warn(
                     { ws: this.currentProvider().ws },

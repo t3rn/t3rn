@@ -7,7 +7,6 @@ import { hexToU8a } from '@polkadot/util'
 
 export class Attester {
     circuit: Connection
-    target: Connection
     config: any
     prometheus: Prometheus
     keys: any
@@ -41,7 +40,6 @@ export class Attester {
             this.config.circuit.rpc1,
             this.config.circuit.rpc2,
             this.prometheus,
-            this.config.targetGatewayId,
             this.keys.substrate.privateKey
         )
         this.circuit.connect()
