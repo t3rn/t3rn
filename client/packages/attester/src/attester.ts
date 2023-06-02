@@ -14,7 +14,7 @@ export class Attester {
 
     constructor(config: any, keys: any) {
         this.config = config
-        this.prometheus = new Prometheus(this.config.targetGatewayId)
+        this.prometheus = new Prometheus()
         this.keys = keys
     }
 

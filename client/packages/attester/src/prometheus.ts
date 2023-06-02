@@ -3,17 +3,12 @@ import http from 'http'
 import { logger } from './logging'
 export class Prometheus {
     circuitActive: boolean
-    targetActive: boolean
-    targetDisconnectsTotal: any
     circuitDisconnectsTotal: any
     register: any
     circuitHeight: any
-    targetHeight: any
     circuitDisconnected: any
-    target: string
 
-    constructor(target: string) {
-        this.target = target
+    constructor() {
         const Registry = client.Registry
         this.register = new Registry()
         this.createMetrics()
@@ -25,13 +20,6 @@ export class Prometheus {
         this.circuitHeight = new client.Gauge({
             name: 'circuit_height',
             help: 'The header height stored on circuit',
-            registers: [this.register],
-            labelNames: [],
-        })
-
-        this.targetHeight = new client.Gauge({
-            name: 'target_height',
-            help: 'The current header height on the target',
             registers: [this.register],
             labelNames: [],
         })
