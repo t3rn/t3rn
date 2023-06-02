@@ -59,6 +59,9 @@ export class Attester {
                     logger.debug(event.toHuman())
 
                     if (event.section == 'attesters') {
+                        this.prometheus.eventsAttestationsTotal.inc().set({
+                            method: event.method,
+                        })
                         logger.info(
                             {
                                 section: event.section,

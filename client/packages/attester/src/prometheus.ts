@@ -8,6 +8,7 @@ export class Prometheus {
     circuitHeight: any
     circuitDisconnected: any
     eventsTotal: any
+    eventsAttestationsTotal: any
 
     constructor() {
         const Registry = client.Registry
@@ -44,6 +45,13 @@ export class Prometheus {
             help: 'Number of events received',
             registers: [this.register],
             labelNames: [],
+        })
+
+        this.eventsAttestationsTotal = new client.Counter({
+            name: 'events_attestations_total',
+            help: 'Number of attestations received',
+            registers: [this.register],
+            labelNames: ['method'],
         })
 
         this.startServer()
