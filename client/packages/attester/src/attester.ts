@@ -50,6 +50,7 @@ export class Attester {
         // Subscribe to the NewAttestationMessageHash event
         this.circuit.sdk?.client.query.system.events(async (events) => {
             logger.info({ events_count: events.length }, `Received events`)
+            this.prometheus.eventsTotal.inc(events.length)
             // Loop through the Vec<EventRecord>
             await Promise.all(
                 events.map(async (record) => {

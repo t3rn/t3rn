@@ -7,6 +7,7 @@ export class Prometheus {
     register: any
     circuitHeight: any
     circuitDisconnected: any
+    eventsTotal: any
 
     constructor() {
         const Registry = client.Registry
@@ -34,6 +35,13 @@ export class Prometheus {
         this.circuitDisconnectsTotal = new client.Counter({
             name: 'circuit_disconnects_total',
             help: 'Number of times circuit rpc server has disconnected',
+            registers: [this.register],
+            labelNames: [],
+        })
+
+        this.eventsTotal = new client.Counter({
+            name: 'events_total',
+            help: 'Number of events received',
             registers: [this.register],
             labelNames: [],
         })
