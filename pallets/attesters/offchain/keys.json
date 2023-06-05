@@ -542,22 +542,5 @@
       "privateKey": "0x115db6b0c74bef87e28879199e3ab3dda09ed0e7f0c3e1ff6cb92e228b221384",
       "publicKey": "0xa9ac84238b09d95e2315193a764af018f978e2221c461102949499a215d57509"
     }
-  },
-  {
-    "substrate": {
-      "accountId": "5FjqW9wjsqprXzvzycQfQEZNtqAoo1AuFGsmmbP91rbZfSnJ",
-      "privateKey": "0x776d775e340f5d396e45deea0642367870a5c507031d545fc30e3f2dc177e93f",
-      "publicKey": "0xa28d02cba20af2e2acadc25cb9723e77f79b4f166e5452318f7c8494e66dd26b"
-    },
-    "ethereum": {
-      "privateKey": "0x776d775e340f5d396e45deea0642367870a5c507031d545fc30e3f2dc177e93f",
-      "publicKey": "0x02ee3cc6f576763023c9842968e64ee134a06985021f778ad98136987f19f485f9",
-      "publicKeyUncompressed": "0x04ee3cc6f576763023c9842968e64ee134a06985021f778ad98136987f19f485f907a5cd254e6a78eb6662517ebe4c82f1a95c27741945b623c3229cdb0ba37e46",
-      "address": "0xc9148e87f457f7c60c717b2946342c44e69fb8e3"
-    },
-    "btc": {
-      "privateKey": "0x776d775e340f5d396e45deea0642367870a5c507031d545fc30e3f2dc177e93f",
-      "publicKey": "0x6df9042c4fc3a4d435b0552b94161a7824032bf2c4e6277549037e4bfa143202"
-    }
   }
 ]
