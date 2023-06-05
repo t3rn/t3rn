@@ -32,7 +32,6 @@ const fn deposit(items: u32, bytes: u32) -> Balance {
 parameter_types! {
     pub const CreateSideEffectsPrecompileDest: AccountId = AccountId::new([51u8; 32]); // 0x333...3
     pub const CircuitTargetId: t3rn_primitives::ChainId = [3, 3, 3, 3];
-
     pub const MaxValueSize: u32 = 16_384;
     // The lazy deletion runs inside on_initialize.
     // The weight needed for decoding the queue should be less or equal than a fifth
@@ -42,12 +41,11 @@ parameter_types! {
         .get(DispatchClass::Normal)
         .max_total
         .unwrap_or(BlockWeights::get().max_block);
+    pub const DeletionQueueDepth: u32 = 128;
     pub Schedule: pallet_3vm_contracts::Schedule<Runtime> = Default::default();
-
     pub const MaxCodeSize: u32 = 128 * 1024;
     pub const DepositPerItem: Balance = deposit(1, 0);
     pub const DepositPerByte: Balance = deposit(0, 1);
-    pub const DeletionQueueDepth: u32 = 128;
 }
 
 impl pallet_3vm::Config for Runtime {

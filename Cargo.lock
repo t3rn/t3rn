@@ -7590,7 +7590,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "sp-weights",
  "substrate-abi",
  "substrate-contracts-abi",
  "t3rn-primitives",
