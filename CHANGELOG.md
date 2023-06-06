@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.30.0-rc.0] - 2023-06-06
+### :sparkles: New Features
+- [`275f71b`](https://github.com/t3rn/t3rn/commit/275f71b6164c11246cafcd0b741062ca372616b0) - update executor *(PR [#1026](https://github.com/t3rn/t3rn/pull/1026) by [@3h4x](https://github.com/3h4x))*
+- [`f4684f0`](https://github.com/t3rn/t3rn/commit/f4684f0e36100b4bff8c59264c58c8bf59dcbb33) - allow attesters to agree on the new targets & support eth  *(PR [#1015](https://github.com/t3rn/t3rn/pull/1015) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.29.2-rc.0] - 2023-06-01
 ### :bug: Bug Fixes
 - [`97c14f1`](https://github.com/t3rn/t3rn/commit/97c14f1608a48ed7f2f57d8575092dd1ccc89703) - **chainspecs**: replace outdated bootnodes for rococo *(PR [#1024](https://github.com/t3rn/t3rn/pull/1024) by [@3h4x](https://github.com/3h4x))*
@@ -1190,3 +1196,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.28.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.27.2-rc.0...v1.28.0-rc.0
 [v1.29.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.28.0-rc.0...v1.29.0-rc.0
 [v1.29.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.29.1-rc.0...v1.29.2-rc.0
+[v1.30.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.29.2-rc.0...v1.30.0-rc.0
