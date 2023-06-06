@@ -54,7 +54,7 @@ export class CircuitRelayer extends EventEmitter {
             const batch = await this.sdk.circuit.tx.createBatch(txs)
             return this.sdk.circuit.tx.signAndSendSafe(batch)
         } else {
-            return this.sdk.circuit.tx.signAndSendSafe(txs[0])
+            return this.sdk.circuit.tx.signAndSendSafe(txs[0] as any)
         }
     }
 
@@ -63,7 +63,7 @@ export class CircuitRelayer extends EventEmitter {
      *
      * @param sfx The SideEffect to confirm
      */
-    createConfirmTx(sfx: SideEffect): SubmittableExtrinsic {
+    createConfirmTx(sfx: SideEffect): any {
         let inclusionData
 
         if (sfx.target === "roco") {
