@@ -5,6 +5,8 @@ use frame_support::{
 };
 use frame_system as system;
 
+use circuit_runtime_types::AssetId;
+use frame_support::pallet_prelude::{DispatchResult, DispatchResultWithPostInfo};
 use pallet_grandpa_finality_verifier::light_clients::{
     select_grandpa_light_client_instance, KusamaInstance, LightClient, PolkadotInstance,
     RococoInstance,
@@ -17,8 +19,10 @@ use sp_core::H256;
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-    AccountId32,
+    AccountId32, DispatchError,
 };
+use t3rn_primitives::xdns::PalletAssetsOverlay;
+
 type Header = generic::Header<u32, BlakeTwo256>;
 pub type AccountId = u64;
 pub const ALICE: AccountId = 1;
@@ -121,6 +125,7 @@ impl pallet_utility::Config for Test {
 parameter_types! {
     pub const CreateSideEffectsPrecompileDest: AccountId32 = AccountId32::new([51u8; 32]); // 0x333....3
     pub const CircuitTargetId: t3rn_primitives::ChainId = [3, 3, 3, 3];
+    pub const CircuitTargetIdOptimistic: t3rn_primitives::ChainId = [0, 3, 3, 3];
     pub EscrowAccount: AccountId = ESCROW;
 }
 
@@ -191,6 +196,8 @@ parameter_types! {
 
 impl pallet_circuit::Config for Test {
     type AccountManager = AccountManager;
+    type Attesters =
+        t3rn_primitives::attesters::AttestersReadApiEmptyMock<AccountId, Balance, DispatchError>;
     type Balances = Balances;
     type Call = Call;
     type Currency = Balances;
@@ -209,10 +216,38 @@ impl pallet_circuit::Config for Test {
     type XtxTimeoutDefault = ConstU32<1024>;
 }
 
+// There are no tests in 3VM testing the XDNS Assets Overlay, so safe to mock with false values
+impl PalletAssetsOverlay<Test, Balance> for Test {
+    fn contains_asset(asset_id: &AssetId) -> bool {
+        false
+    }
+
+    fn force_create_asset(
+        origin: Origin,
+        asset_id: AssetId,
+        admin: AccountId,
+        is_sufficient: bool,
+        min_balance: Balance,
+    ) -> DispatchResult {
+        Err("Mock PalletAssetsOverlay::force_create_asset - not implemented".into())
+    }
+
+    fn destroy(origin: Origin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
+        Err("Mock PalletAssetsOverlay::destroy - not implemented".into())
+    }
+}
+
 impl pallet_xdns::Config for Test {
+    type AssetsOverlay = Test;
+    type AttestersRead =
+        t3rn_primitives::attesters::AttestersReadApiEmptyMock<AccountId, Balance, DispatchError>;
     type Balances = Balances;
     type Currency = Balances;
     type Event = Event;
+    type Portal = Portal;
+    type SelfGatewayIdEscrow = CircuitTargetId;
+    type SelfGatewayIdOptimistic = CircuitTargetIdOptimistic;
+    type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
     type WeightInfo = ();
 }
@@ -298,6 +333,7 @@ impl pallet_portal::SelectLightClient<Test> for SelectLightClientRegistry {
 }
 
 impl pallet_portal::Config for Test {
+    type Currency = Balances;
     type Event = Event;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Test>;

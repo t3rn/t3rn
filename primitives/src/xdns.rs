@@ -1,6 +1,6 @@
 use crate::{
-    gateway::GatewayABIConfig, light_client::LightClientHeartbeat, transfers::CurrencyBalanceOf,
-    ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
+    gateway::GatewayABIConfig, light_client::LightClientHeartbeat, ChainId, ExecutionVendor,
+    GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
