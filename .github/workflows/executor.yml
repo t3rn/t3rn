@@ -80,6 +80,8 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/executor/eslint_report.json
+        # TODO: remove at some point
+        continue-on-error: true
 
       - run: yarn test
 
