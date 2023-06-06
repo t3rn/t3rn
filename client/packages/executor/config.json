@@ -1,9 +1,9 @@
 {
     "circuit":{
-      "rpc":"ws://127.0.0.1:9944",
+      "rpc":"wss://ws.t0rn.io",
       "ticker":"TRN",
       "decimals":12,
-      "signerKey":"process.env.CIRCUIT_SIGNER_KEY"
+      "signerKey":"0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab"
     },
     "vendors": ["Rococo"],
     "gateways":[
@@ -12,7 +12,7 @@
         "id":"roco",
         "rpc":"wss://rococo-rpc.polkadot.io",
         "type":"Substrate",
-        "signerKey":"process.env.GATEWAY_SIGNER_KEY"
+        "signerKey":"0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab"
       },
       {
         "name":"Basilisk",
