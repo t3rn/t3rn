@@ -182,7 +182,7 @@ pub mod pallet {
         type Portal: Portal<Self>;
         type Rewards: RewardsWriteApi<Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
-        type Xdns: Xdns<Self>;
+        type Xdns: Xdns<Self, BalanceOf<Self>>;
     }
 
     #[pallet::pallet]
@@ -781,13 +781,16 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> AttestersWriteApi<T::AccountId, Error<T>> for Pallet<T> {
-        fn request_sfx_attestation_commit(target: TargetId, sfx_id: H256) -> Result<(), Error<T>> {
+    impl<T: Config> AttestersWriteApi<T::AccountId, DispatchError> for Pallet<T> {
+        fn request_sfx_attestation_commit(
+            target: TargetId,
+            sfx_id: H256,
+        ) -> Result<(), DispatchError> {
             NextBatch::<T>::try_mutate(target, |next_batch| {
                 if let Some(ref mut next_batch) = next_batch {
                     if let Some(ref mut batch_sfx) = &mut next_batch.committed_sfx {
                         if batch_sfx.contains(&sfx_id) {
-                            return Err(Error::<T>::SfxAlreadyRequested)
+                            return Err(Error::<T>::SfxAlreadyRequested.into())
                         } else {
                             batch_sfx.push(sfx_id);
                         }
@@ -796,17 +799,20 @@ pub mod pallet {
                     }
                     Ok(())
                 } else {
-                    Err(Error::<T>::BatchNotFound)
+                    Err(Error::<T>::BatchNotFound.into())
                 }
             })
         }
 
-        fn request_sfx_attestation_revert(target: TargetId, sfx_id: H256) -> Result<(), Error<T>> {
+        fn request_sfx_attestation_revert(
+            target: TargetId,
+            sfx_id: H256,
+        ) -> Result<(), DispatchError> {
             NextBatch::<T>::try_mutate(target, |next_batch| {
                 if let Some(ref mut next_batch) = next_batch {
                     if let Some(ref mut batch_sfx) = &mut next_batch.reverted_sfx {
                         if batch_sfx.contains(&sfx_id) {
-                            return Err(Error::<T>::SfxAlreadyRequested)
+                            return Err(Error::<T>::SfxAlreadyRequested.into())
                         } else {
                             batch_sfx.push(sfx_id);
                         }
@@ -815,18 +821,22 @@ pub mod pallet {
                     }
                     Ok(())
                 } else {
-                    Err(Error::<T>::BatchNotFound)
+                    Err(Error::<T>::BatchNotFound.into())
                 }
             })
         }
 
-        fn request_ban_attesters_attestation(ban_attester: &T::AccountId) -> Result<(), Error<T>> {
+        fn request_ban_attesters_attestation(
+            ban_attester: &T::AccountId,
+        ) -> Result<(), DispatchError> {
             for target in AttestationTargets::<T>::get() {
                 let attester_recoverable = AttestersAgreements::<T>::get(ban_attester, target)
                     .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
 
                 NextBatch::<T>::try_mutate(target, |next_batch| {
-                    let next_batch = next_batch.as_mut().ok_or(Error::<T>::BatchNotFound)?;
+                    let next_batch = next_batch
+                        .as_mut()
+                        .ok_or::<DispatchError>(Error::<T>::BatchNotFound.into())?;
 
                     match &mut next_batch.banned_committee {
                         Some(attesters) => {
@@ -840,7 +850,7 @@ pub mod pallet {
                             next_batch.banned_committee = Some(vec![attester_recoverable]);
                         },
                     }
-                    Ok(())
+                    Ok::<(), DispatchError>(())
                 })?;
             }
 
