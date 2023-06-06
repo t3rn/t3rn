@@ -1,7 +1,13 @@
 use crate::*;
-use sp_std::marker::PhantomData;
-
-use frame_support::{parameter_types, traits::ConstU32, weights::Weight, PalletId};
+use codec::Encode;
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo,
+    pallet_prelude::DispatchResult,
+    parameter_types,
+    traits::{fungibles::Destroy, ConstU32, FindAuthor},
+    weights::Weight,
+    Blake2_128Concat, PalletId, RuntimeDebug, StorageHasher,
+};
 use pallet_eth2_finality_verifier;
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
@@ -12,14 +18,12 @@ use pallet_grandpa_finality_verifier::{
 };
 use pallet_portal::Error as PortalError;
 use sp_core::H256;
-use sp_runtime::Percent;
-use sp_std::{boxed::Box, vec};
-
 use sp_runtime::{
     traits::{BlakeTwo256, Convert, One},
-    Perbill,
+    Perbill, Percent,
 };
-use t3rn_primitives::GatewayVendor;
+use sp_std::{boxed::Box, marker::PhantomData, vec};
+use t3rn_primitives::{xdns::PalletAssetsOverlay, GatewayVendor};
 
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
@@ -200,7 +204,7 @@ impl pallet_rewards::Config for Runtime {
 
 impl pallet_xdns::Config for Runtime {
     type AssetsOverlay = Runtime;
-    type AttestersRead = ();
+    type AttestersRead = Attesters;
     type Balances = Balances;
     type Currency = Balances;
     type Event = Event;
@@ -212,7 +216,7 @@ impl pallet_xdns::Config for Runtime {
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
-impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
+impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
     fn contains_asset(asset_id: &AssetId) -> bool {
         const PALLET_NAME: &'static str = "Assets";
         const STORAGE_NAME: &'static str = "Asset";
@@ -230,7 +234,6 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
         final_key.extend_from_slice(&key_hashed);
 
         frame_support::storage::unhashed::get::<Data>(&final_key).is_some()
-        // <pallet_assets::Pallet<MiniRuntime> as Store>::Asset::contains_key(asset_id).is_some()
     }
 
     fn force_create_asset(
@@ -240,7 +243,13 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
         is_sufficient: bool,
         min_balance: Balance,
     ) -> DispatchResult {
-        Assets::force_create(origin, asset_id, admin, is_sufficient, min_balance)
+        Assets::force_create(
+            origin,
+            asset_id,
+            sp_runtime::MultiAddress::Id(admin),
+            is_sufficient,
+            min_balance,
+        )
     }
 
     fn destroy(origin: Origin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
@@ -286,6 +295,7 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
 }
 
 impl pallet_portal::Config for Runtime {
+    type Currency = Balances;
     type Event = Event;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
