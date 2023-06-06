@@ -12,7 +12,7 @@ name = "t0rn-collator"
 path = "src/main.rs"
 
 [dependencies]
-clap         = { version = "3.1", features = [ "derive" ] }
+clap         = { version = "4.1", features = [ "derive" ] }
 codec        = { package = "parity-scale-codec", version = "3" }
 derive_more  = "0.99.2"
 hex-literal  = "0.4.1"

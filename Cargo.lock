@@ -1061,7 +1061,7 @@ name = "circuit-standalone-node"
 version = "1.0.0-alpha.0"
 dependencies = [
  "circuit-standalone-runtime",
- "clap",
+ "clap 4.1.14",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.28",
@@ -1218,14 +1218,14 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.23"
+version = "3.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71655c45cb9845d3270c9d6df84ebe72b4dad3c2ba3f7023ad47c144e4e473a5"
+checksum = "4ea181bf566f71cb9a5d17a59e1871af638180a18fb0035c92ae62b705207123"
 dependencies = [
  "atty",
  "bitflags",
- "clap_derive",
- "clap_lex",
+ "clap_derive 3.2.25",
+ "clap_lex 0.2.4",
  "indexmap",
  "once_cell",
  "strsim",
@@ -1234,16 +1234,52 @@ dependencies = [
 ]
 
 [[package]]
-name = "clap_derive"
-version = "3.2.18"
+name = "clap"
+version = "4.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea0c8bce528c4be4da13ea6fead8965e95b6073585a2f05204bd8f4119f82a65"
+checksum = "906f7fe1da4185b7a282b2bc90172a496f9def1aca4545fe7526810741591e14"
+dependencies = [
+ "clap_builder",
+ "clap_derive 4.1.14",
+ "once_cell",
+]
+
+[[package]]
+name = "clap_builder"
+version = "4.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "351f9ad9688141ed83dfd8f5fb998a06225ef444b48ff4dc43de6d409b7fd10b"
+dependencies = [
+ "bitflags",
+ "clap_lex 0.4.1",
+ "is-terminal",
+ "strsim",
+ "termcolor",
+]
+
+[[package]]
+name = "clap_derive"
+version = "3.2.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae6371b8bdc8b7d3959e9cf7b22d4435ef3e79e138688421ec654acf8c81b008"
 dependencies = [
  "heck",
  "proc-macro-error",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "clap_derive"
+version = "4.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81d7dc0031c3a59a04fc2ba395c8e2dd463cba1859275f065d225f6122221b45"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -1254,6 +1290,12 @@ checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
 dependencies = [
  "os_str_bytes",
 ]
+
+[[package]]
+name = "clap_lex"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a2dd5a6fe8c6e3502f568a6353e5273bbb15193ad9a89e457b9970798efbea1"
 
 [[package]]
 name = "cloudabi"
@@ -1635,7 +1677,7 @@ name = "cumulus-client-cli"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.27#b86cd207fc77af888f223c10363ae4d18a4b63b4"
 dependencies = [
- "clap",
+ "clap 3.2.25",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-cli",
@@ -2978,7 +3020,7 @@ source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27#5b
 dependencies = [
  "Inflector",
  "chrono",
- "clap",
+ "clap 3.2.25",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -8085,7 +8127,7 @@ name = "polkadot-cli"
 version = "0.9.27"
 source = "git+https://github.com/paritytech/polkadot.git?branch=release-v0.9.27#b017bad50d360a1c6e3cdf9652bdb85e5f479fea"
 dependencies = [
- "clap",
+ "clap 3.2.25",
  "frame-benchmarking-cli",
  "futures 0.3.28",
  "log",
@@ -10190,7 +10232,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27#5bfdbab8ba28523ef10e365627fed64ef2b77cbf"
 dependencies = [
  "chrono",
- "clap",
+ "clap 3.2.25",
  "fdlimit",
  "futures 0.3.28",
  "hex",
@@ -12571,7 +12613,7 @@ dependencies = [
 name = "t0rn-parachain-collator"
 version = "1.30.0-rc.0"
 dependencies = [
- "clap",
+ "clap 4.1.14",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-aura",
@@ -12816,7 +12858,7 @@ dependencies = [
 name = "t3rn-parachain-collator"
 version = "1.0.0"
 dependencies = [
- "clap",
+ "clap 4.1.14",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-aura",
@@ -13489,7 +13531,7 @@ name = "try-runtime-cli"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27#5bfdbab8ba28523ef10e365627fed64ef2b77cbf"
 dependencies = [
- "clap",
+ "clap 3.2.25",
  "jsonrpsee",
  "log",
  "parity-scale-codec",
