@@ -1,71 +1,87 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
 contract AttestationsVerifier {
-    event SignerEmitted(address indexed signer, uint32 indexed memberIndex);
+    event SignerEmitted(address indexed signer);
     event BatchApplied(bytes32 indexed batchHash, uint256 numSignatures);
-    event CommitteeTransitioned(address[] newCommittee);
-    event InvalidSignature(address indexed invalidSigner, bytes signature);
-    event ReceivedSignatures(uint256 numSignatures);
-    event RecoveredSigner(address indexed signer);
     event SignerNotInCommittee(address indexed signer);
 
-    struct CommitteeMember {
-        uint32 index;
-        bool isMember;
-    }
-
-    mapping(address => CommitteeMember) public current_committee;
-
-    struct Attester {
-        address attesterAddress;
-        uint32 index;
-    }
+    mapping(address => bool) public current_committee;
 
     struct Batch {
-        Attester[] newCommittee;
+        address[] newCommittee;
         address[] bannedCommittee;
         bytes32[] confirmedSFXs;
+        bytes32[] revertedSFXs;
+        uint32 index;
     }
 
-    mapping(bytes32 => bool) public confirmedSFXs;
+    mapping(bytes32 => bool) public confirmedSFXsMap;
+    mapping(bytes32 => bool) public revertedSFXsMap;
     uint256 public committeeSize;
+    uint256 public currentBatchIndex;
 
-    constructor(Attester[] memory initialCommittee) {
+    function batchEncodePacked(Batch memory batch) public pure returns (bytes memory) {
+        return abi.encodePacked(
+            batch.newCommittee,
+            batch.bannedCommittee,
+            batch.confirmedSFXs,
+            batch.revertedSFXs,
+            batch.index
+        );
+    }
+
+    constructor(address[] memory initialCommittee) {
         for (uint i = 0; i < initialCommittee.length; i++) {
-            current_committee[initialCommittee[i].attesterAddress] = CommitteeMember(initialCommittee[i].index, true);
+            current_committee[initialCommittee[i]] = true;
         }
         committeeSize = initialCommittee.length;
+        currentBatchIndex = 0;
     }
 
     function receiveAttestationBatch(
-        bytes memory batchMessage,
+        address[] memory newCommittee,
+        address[] memory bannedCommittee,
+        bytes32[] memory confirmedSFXs,
+        bytes32[] memory revertedSFXs,
+        uint32 index,
         bytes32 expectedBatchHash,
         bytes[] memory signatures
     ) public {
-        bytes32 batchMessageHash = keccak256(abi.encodePacked(batchMessage));
+        Batch memory batch = Batch(newCommittee, bannedCommittee, confirmedSFXs, revertedSFXs, index);
+        bytes32 batchMessageHash = keccak256(batchEncodePacked(batch));
         require(batchMessageHash == expectedBatchHash, "Batch hash mismatch");
-        Batch memory batch = abi.decode(batchMessage, (Batch));
 
         require(verifySignedByActiveCommittee(batchMessageHash, signatures), "Signatures verification failed");
 
+        require(batch.index == currentBatchIndex + 1, "Batch index mismatch");
+
+        uint256 _committeeSize = committeeSize;
         for (uint i = 0; i < batch.newCommittee.length; i++) {
-            if (!current_committee[batch.newCommittee[i].attesterAddress].isMember) {
-                current_committee[batch.newCommittee[i].attesterAddress] = CommitteeMember(batch.newCommittee[i].index, true);
-                committeeSize += 1;
+            if (!current_committee[batch.newCommittee[i]]) {
+                current_committee[batch.newCommittee[i]] = true;
+                _committeeSize += 1;
             }
         }
 
         for (uint i = 0; i < batch.bannedCommittee.length; i++) {
-            if (current_committee[batch.bannedCommittee[i]].isMember) {
+            if (current_committee[batch.bannedCommittee[i]]) {
                 delete current_committee[batch.bannedCommittee[i]];
-                committeeSize -= 1;
+                _committeeSize -= 1;
             }
         }
 
+        committeeSize = _committeeSize;
+
         for (uint i = 0; i < batch.confirmedSFXs.length; i++) {
-            confirmedSFXs[batch.confirmedSFXs[i]] = true;
+            confirmedSFXsMap[batch.confirmedSFXs[i]] = true;
         }
+
+        for (uint i = 0; i < batch.revertedSFXs.length; i++) {
+            revertedSFXsMap[batch.revertedSFXs[i]] = true;
+        }
+
+        currentBatchIndex = batch.index;
 
         emit BatchApplied(batchMessageHash, signatures.length);
     }
@@ -74,19 +90,15 @@ contract AttestationsVerifier {
         bytes32 messageHash,
         bytes[] memory signatures
     ) public returns (bool) {
-        emit ReceivedSignatures(signatures.length);
         uint256 validSignatures = 0;
+        uint256 quorum = committeeSize * 2 / 3;
         for (uint i = 0; i < signatures.length; i++) {
             address signer = recoverSigner(messageHash, signatures[i]);
-            emit RecoveredSigner(signer);
-            if (signer == address(0)) {
-                emit InvalidSignature(signer, signatures[i]);
-            }
-            if (current_committee[signer].isMember) {
-                emit SignerEmitted(signer, current_committee[signer].index);
+            if (signer != address(0) && current_committee[signer]) {
                 validSignatures += 1;
-            } else {
-                emit SignerNotInCommittee(signer);
+                if (validSignatures >= quorum) {
+                    return true;
+                }
             }
         }
         return validSignatures > committeeSize * 2 / 3;
