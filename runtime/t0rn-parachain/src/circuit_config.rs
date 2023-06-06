@@ -1,6 +1,6 @@
 use crate::{
     AccountId, AccountManager, Attesters, Aura, Balance, Balances, BlockNumber, Call, Circuit,
-    Clock, Event, Portal, RandomnessCollectiveFlip, Runtime, Timestamp, XDNS,
+    Clock, Event, Portal, RandomnessCollectiveFlip, Rewards, Runtime, Timestamp, XDNS,
 };
 use sp_runtime::Percent;
 use sp_std::marker::PhantomData;
@@ -134,6 +134,7 @@ parameter_types! {
     pub const MinNominatorBond: Balance = 1;
     pub const MinAttesterBond: Balance = 1;
     pub const DefaultCommission: Percent = Percent::from_percent(10);
+    pub const HourlyShufflingFrequency: BlockNumber = 60 * 60 / 12; // (60 * 60) / 12; assuming one distribution per two weeks
 }
 
 impl pallet_attesters::Config for Runtime {
@@ -149,8 +150,11 @@ impl pallet_attesters::Config for Runtime {
     type MinNominatorBond = MinNominatorBond;
     type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
+    type ReadSFX = Circuit;
+    type RepatriationPeriod = ConstU32<60>;
     type RewardMultiplier = RewardMultiplier;
-    type ShufflingFrequency = ConstU32<400>;
+    type Rewards = Rewards;
+    type ShufflingFrequency = HourlyShufflingFrequency;
     type SlashAccount = EscrowAccount;
     type Xdns = XDNS;
 }
@@ -166,8 +170,10 @@ parameter_types! {
     pub const AttesterBootstrapRewards: Percent = Percent::from_parts(40); // 40%
     pub const CollatorBootstrapRewards: Percent = Percent::from_parts(20); // 20%
     pub const ExecutorBootstrapRewards: Percent = Percent::from_parts(40); // 40%
+    pub const StartingRepatriationPercentage: Percent = Percent::from_parts(10); // 10%
     pub const OneYear: BlockNumber = 2_628_000; // (365.25 * 24 * 60 * 60) / 12; assuming 12s block time
     pub const InflationDistributionPeriod: BlockNumber = 100_800; // (14 * 24 * 60 * 60) / 12; assuming one distribution per two weeks
+    pub const HourlyInflationDistributionPeriod: BlockNumber = 60 * 60 / 12; // (60 * 60) / 12; assuming one distribution per two weeks
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
 }
 
@@ -185,8 +191,9 @@ impl pallet_rewards::Config for Runtime {
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-    type InflationDistributionPeriod = InflationDistributionPeriod;
+    type InflationDistributionPeriod = HourlyInflationDistributionPeriod;
     type OneYear = OneYear;
+    type StartingRepatriationPercentage = StartingRepatriationPercentage;
     type TotalInflation = TotalInflation;
     type TreasuryAccounts = Runtime;
     type TreasuryInflation = TreasuryInflation;

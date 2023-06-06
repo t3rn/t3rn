@@ -84,4 +84,6 @@ pub trait ReadSFX<Hash, Account, Balance, BlockNumber> {
     ) -> Result<FullSideEffect<Account, BlockNumber, Balance>, DispatchError>;
 
     fn get_xtx_status(xtx_id: Hash) -> Result<CircuitStatus, DispatchError>;
+
+    fn get_fsx_requester(fsx_id: Hash) -> Result<Account, DispatchError>;
 }

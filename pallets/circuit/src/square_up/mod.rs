@@ -50,8 +50,8 @@ impl<T: Config> SquareUp<T> {
                         payee: requester.clone(),
                         offered_reward: fsx.input.max_reward,
                         charge_fee: Zero::zero(),
-                        source: BenefitSource::TrafficRewards,
-                        role: CircuitRole::Executor,
+                        source: BenefitSource::TrafficFees,
+                        role: CircuitRole::Requester,
                         recipient: None,
                         maybe_asset_id: fsx.input.reward_asset_id,
                     },
@@ -236,6 +236,7 @@ impl<T: Config> SquareUp<T> {
                 },
             }
         }
+        // Finalize XTX for requester - charge all deposits or return all max_reward deposits back to requester.
         Machine::<T>::read_current_step_fsx(local_ctx)
             .iter()
             .for_each(|fsx| {

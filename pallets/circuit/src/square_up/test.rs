@@ -103,8 +103,8 @@ pub mod test {
                 maybe_asset_id: fsx.input.reward_asset_id,
                 charge_fee: 0,
                 recipient: None,
-                source: BenefitSource::TrafficRewards,
-                role: CircuitRole::Executor
+                source: BenefitSource::TrafficFees,
+                role: CircuitRole::Requester
             })
         );
         assert_eq!(
@@ -312,8 +312,8 @@ pub mod test {
                         recipient: EXECUTOR,
                         settlement_amount: bid.amount,
                         outcome: Outcome::Commit,
-                        source: BenefitSource::TrafficRewards,
-                        role: CircuitRole::Executor
+                        source: BenefitSource::TrafficFees,
+                        role: CircuitRole::Requester
                     })
                 );
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);

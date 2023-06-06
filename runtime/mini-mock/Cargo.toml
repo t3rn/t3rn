@@ -52,6 +52,7 @@ pallet-treasury   = { git = "https://github.com/paritytech/substrate.git", branc
 # t3rn pallets
 pallet-clock = { path = "../../pallets/clock" }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
+pallet-circuit                   = { path = "../../pallets/circuit" }
 pallet-portal                    = { path = "../../pallets/portal" }
 pallet-xdns                      = { path = "../../pallets/xdns" }
 pallet-account-manager           = { path = "../../pallets/account-manager" }

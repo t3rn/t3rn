@@ -430,6 +430,16 @@ pub mod pallet {
             Err(Error::<T>::FSXNotFoundById.into())
         }
 
+        fn get_fsx_requester(fsx_id: T::Hash) -> Result<T::AccountId, DispatchError> {
+            let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            let xtx = XExecSignals::<T>::get(xtx_id)
+                .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
+
+            Ok(xtx.requester)
+        }
+
         fn get_xtx_status(xtx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
             XExecSignals::<T>::get(xtx_id)
                 .map(|xtx| xtx.status)

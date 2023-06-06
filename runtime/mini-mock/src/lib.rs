@@ -2,10 +2,10 @@ use codec::{Decode, Encode};
 use frame_support::{traits::FindAuthor, RuntimeDebug};
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
-    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, NextBatch, Nominations,
-    PendingSlashes, PendingUnnominations, PreviousCommittee, SortedNominatedAttesters,
+    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, LatencyStatus, NextBatch,
+    Nominations, PendingSlashes, PendingUnnominations, PreviousCommittee, SortedNominatedAttesters,
 };
-
+pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
 mod treasuries_config;
 
 pub use pallet_account_manager::{
@@ -15,6 +15,7 @@ pub use pallet_account_manager::{
 
 use sp_runtime::ConsensusEngineId;
 
+use pallet_attesters::TargetId;
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{
@@ -32,7 +33,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup},
     Perbill, Percent,
 };
-use t3rn_primitives::GatewayVendor;
+use t3rn_primitives::{ExecutionVendor, GatewayVendor};
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<MiniRuntime>;
 pub type Block = frame_system::mocking::MockBlock<MiniRuntime>;
@@ -65,6 +66,7 @@ frame_support::construct_runtime!(
         Rewards: pallet_rewards = 102,
         AccountManager: pallet_account_manager = 103,
         Clock: pallet_clock = 104,
+        Circuit: pallet_circuit = 105,
         // Portal
         Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
@@ -138,6 +140,7 @@ parameter_types! {
     pub const AttesterBootstrapRewards: Percent = Percent::from_parts(40); // 40%
     pub const CollatorBootstrapRewards: Percent = Percent::from_parts(20); // 20%
     pub const ExecutorBootstrapRewards: Percent = Percent::from_parts(40); // 40%
+    pub const StartingRepatriationPercentage: Percent = Percent::from_parts(10); // 10%
     pub const OneYear: BlockNumber = 2_628_000; // (365.25 * 24 * 60 * 60) / 12; assuming 12s block time
     pub const InflationDistributionPeriod: BlockNumber = 100_800; // (14 * 24 * 60 * 60) / 12; assuming one distribution per two weeks
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
@@ -177,6 +180,7 @@ impl pallet_rewards::Config for MiniRuntime {
     type FindAuthor = FindAuthorMockRoundRobinRotate32;
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
+    type StartingRepatriationPercentage = StartingRepatriationPercentage;
     type TotalInflation = TotalInflation;
     type TreasuryAccounts = MiniRuntime;
     type TreasuryInflation = TreasuryInflation;
@@ -204,7 +208,10 @@ impl pallet_attesters::Config for MiniRuntime {
     type MinNominatorBond = MinNominatorBond;
     type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
+    type ReadSFX = Circuit;
+    type RepatriationPeriod = ConstU32<60>;
     type RewardMultiplier = RewardMultiplier;
+    type Rewards = Rewards;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = SlashAccount;
     type Xdns = XDNS;
@@ -298,6 +305,31 @@ impl pallet_xdns::Config for MiniRuntime {
     type Event = Event;
     type Time = Timestamp;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<MiniRuntime>;
+}
+
+parameter_types! {
+    pub const CircuitAccountId: AccountId = AccountId::new([51u8; 32]); // 0x333...3
+    pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
+}
+
+impl pallet_circuit::Config for MiniRuntime {
+    type AccountManager = AccountManager;
+    type Balances = Balances;
+    type Call = Call;
+    type Currency = Balances;
+    type DeletionQueueLimit = ConstU32<100u32>;
+    type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type Portal = Portal;
+    type SFXBiddingPeriod = ConstU32<3u32>;
+    type SelfAccountId = CircuitAccountId;
+    type SelfGatewayId = SelfGatewayId;
+    type SelfParaId = ConstU32<3333u32>;
+    type SignalQueueDepth = ConstU32<5u32>;
+    type WeightInfo = ();
+    type Xdns = XDNS;
+    type XtxTimeoutCheckInterval = ConstU32<10u32>;
+    type XtxTimeoutDefault = ConstU32<400u32>;
 }
 
 impl pallet_portal::Config for MiniRuntime {
@@ -560,6 +592,36 @@ impl ExtBuilder {
         self
     }
 
+    pub fn with_polkadot_gateway_record(mut self) -> Self {
+        let target: TargetId = [1u8; 4];
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: target,
+            verification_vendor: GatewayVendor::Polkadot,
+            execution_vendor: ExecutionVendor::Substrate,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![],
+        });
+        self
+    }
+
+    pub fn with_eth_gateway_record(mut self) -> Self {
+        let target: TargetId = [0u8; 4];
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: target,
+            verification_vendor: GatewayVendor::Ethereum,
+            execution_vendor: ExecutionVendor::EVM,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![],
+        });
+        self
+    }
+
     pub fn with_standard_sfx_abi(mut self, standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>) -> Self {
         self.standard_sfx_abi = standard_sfx_abi;
         self
@@ -596,6 +658,12 @@ impl ExtBuilder {
         pallet_xdns::GenesisConfig::<MiniRuntime> {
             known_gateway_records: self.known_gateway_records,
             standard_sfx_abi: self.standard_sfx_abi,
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet xdns can be assimilated");
+
+        pallet_rewards::GenesisConfig::<MiniRuntime> {
+            phantom: Default::default(),
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");
