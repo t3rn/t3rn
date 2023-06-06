@@ -147,6 +147,7 @@ impl pallet_xdns::Config for Runtime {
     type SelfGatewayIdOptimistic = SelfGatewayIdOptimistic;
     type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
+    type TreasuryAccounts = Runtime;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 

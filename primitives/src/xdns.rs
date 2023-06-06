@@ -215,11 +215,10 @@ pub trait Xdns<T: frame_system::Config, Balance> {
     fn register_new_token(
         origin: &T::Origin,
         token_id: AssetId,
-        gateway_id: [u8; 4],
         token_props: TokenInfo,
     ) -> DispatchResult;
 
-    fn add_new_token(
+    fn link_token_to_gateway(
         token_id: AssetId,
         gateway_id: [u8; 4],
         token_props: TokenInfo,
