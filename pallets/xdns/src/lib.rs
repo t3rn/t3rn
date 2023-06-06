@@ -14,6 +14,8 @@ pub use t3rn_types::{
     sfx::{EventSignature, SideEffectId, SideEffectName},
 };
 
+use frame_support::sp_runtime::traits::Saturating;
+use t3rn_primitives::reexport_currency_types;
 pub use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
@@ -28,6 +30,7 @@ mod benchmarking;
 pub mod weights;
 
 use weights::WeightInfo;
+reexport_currency_types!();
 
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
@@ -36,6 +39,7 @@ pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
     use crate::WeightInfo;
+    use circuit_runtime_types::AssetId;
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -44,13 +48,19 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
+    use sp_runtime::traits::Zero;
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
-        xdns::{FullGatewayRecord, GatewayRecord, TokenRecord, Xdns},
-        Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo,
+        attesters::AttestersReadApi,
+        light_client::LightClientHeartbeat,
+        portal::Portal,
+        xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
+        AccountId, Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
+
+    use t3rn_types::{fsx::FullSideEffect, sfx::SecurityLvl};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -64,6 +74,18 @@ pub mod pallet {
         type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
 
         type Currency: Currency<Self::AccountId>;
+
+        type AssetsOverlay: PalletAssetsOverlay<Self, BalanceOf<Self>>;
+
+        type Portal: Portal<Self>;
+
+        type AttestersRead: AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
+
+        type SelfTokenId: Get<AssetId>;
+
+        type SelfGatewayIdOptimistic: Get<ChainId>;
+
+        type SelfGatewayIdEscrow: Get<ChainId>;
 
         type Time: Time;
     }
@@ -155,7 +177,7 @@ pub mod pallet {
         pub fn purge_gateway_record(
             origin: OriginFor<T>,
             requester: T::AccountId,
-            gateway_id: [u8; 4],
+            gateway_id: TargetId,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             if !<Gateways<T>>::contains_key(gateway_id) {
@@ -167,11 +189,36 @@ pub mod pallet {
                     .filter(|token| token.gateway_id == gateway_id)
                     .for_each(|token| {
                         <Tokens<T>>::remove(token.token_id);
+                        <AllTokenIds<T>>::mutate(|all_token_ids| {
+                            all_token_ids.retain(|&id| id != token.token_id);
+                        });
                     });
+
+                <AllGatewayIds<T>>::mutate(|all_gateway_ids| {
+                    all_gateway_ids.retain(|&id| id != gateway_id);
+                });
 
                 Self::deposit_event(Event::<T>::GatewayRecordPurged(requester, gateway_id));
                 Ok(().into())
             }
+        }
+
+        /// Removes a gateway from the onchain registry. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
+        pub fn purge_token_record(
+            origin: OriginFor<T>,
+            token_id: AssetId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
+            T::AssetsOverlay::destroy(origin, &token_id)?;
+
+            <Tokens<T>>::remove(token_id);
+            <AllTokenIds<T>>::mutate(|all_token_ids| {
+                all_token_ids.retain(|&id| id != token_id);
+            });
+
+            Ok(().into())
         }
     }
 
@@ -179,15 +226,15 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// \[gateway_4b_id\]
-        GatewayRecordStored([u8; 4]),
-        /// \[token_4b_id, gateway_4b_id\]
-        TokenRecordStored([u8; 4], [u8; 4]),
+        GatewayRecordStored(TargetId),
+        /// \[token_4b_asset_id, gateway_4b_id\]
+        TokenRecordStored(AssetId, TargetId),
         /// \[requester, gateway_record_id\]
-        GatewayRecordPurged(T::AccountId, [u8; 4]),
+        GatewayRecordPurged(T::AccountId, TargetId),
         /// \[requester, xdns_record_id\]
-        XdnsRecordPurged(T::AccountId, [u8; 4]),
+        XdnsRecordPurged(T::AccountId, TargetId),
         /// \[xdns_record_id\]
-        XdnsRecordUpdated([u8; 4]),
+        XdnsRecordUpdated(TargetId),
     }
 
     // Errors inform users that something went wrong.
@@ -209,13 +256,15 @@ pub mod pallet {
         NoParachainInfoFound,
         /// A token is not compatible with the gateways execution layer
         TokenExecutionVendorMismatch,
+        /// Gateway verified as inactive
+        GatewayNotActive,
     }
 
     // Deprecated storage entry -- StandardSideEffects
     // Storage Migration: StandardSideEffects -> StandardSFXABIs
     // Storage Migration Details: 16-03-2023; v1.4.0-rc -> v1.5.0-rc
     #[pallet::storage]
-    pub type StandardSideEffects<T: Config> = StorageMap<_, Identity, [u8; 4], Vec<u8>>; // SideEffectInterface
+    pub type StandardSideEffects<T: Config> = StorageMap<_, Identity, TargetId, Vec<u8>>; // SideEffectInterface
 
     // Deprecated storage entry -- CustomSideEffects
     // Storage Migration: CustomSideEffects -> !dropped and replaced by SFXABIRegistry
@@ -237,11 +286,41 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn gateways)]
     pub type Gateways<T: Config> =
-        StorageMap<_, Identity, [u8; 4], GatewayRecord<T::AccountId>, OptionQuery>;
+        StorageMap<_, Identity, TargetId, GatewayRecord<T::AccountId>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn tokens)]
-    pub type Tokens<T: Config> = StorageMap<_, Identity, [u8; 4], TokenRecord, OptionQuery>;
+    pub type Tokens<T: Config> = StorageMap<_, Identity, AssetId, TokenRecord, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn all_token_ids)]
+    pub type AllTokenIds<T: Config> = StorageValue<_, Vec<AssetId>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn all_gateway_ids)]
+    pub type AllGatewayIds<T: Config> = StorageValue<_, Vec<TargetId>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn per_target_asset_estimates)]
+    pub type PerTargetAssetEstimates<T: Config> = StorageDoubleMap<
+        _,
+        Identity,
+        TargetId,
+        Identity,
+        (AssetId, AssetId),
+        BalanceOf<T>,
+        ValueQuery,
+    >;
+
+    #[pallet::storage]
+    #[pallet::getter(fn asset_estimates)]
+    pub type AssetEstimates<T: Config> =
+        StorageMap<_, Identity, (AssetId, AssetId), BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn asset_estimates_in_native)]
+    pub type AssetEstimatesInNative<T: Config> =
+        StorageMap<_, Identity, AssetId, BalanceOf<T>, ValueQuery>;
 
     // The genesis config type.
     #[pallet::genesis_config]
@@ -296,34 +375,84 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> Xdns<T> for Pallet<T> {
+    impl<T: Config> Xdns<T, BalanceOf<T>> for Pallet<T> {
         /// Fetches all known Gateway records
         fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>> {
             Gateways::<T>::iter_values().collect()
         }
 
-        fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>> {
-            Gateways::<T>::iter_values()
-                .map(|gateway| {
-                    let tokens = Tokens::<T>::iter_values()
-                        .filter(|token| token.gateway_id == gateway.gateway_id)
-                        .collect();
-                    FullGatewayRecord {
-                        gateway_record: gateway,
-                        tokens,
-                    }
-                })
-                .collect()
+        fn register_new_token(
+            origin: &OriginFor<T>,
+            token_id: AssetId,
+            gateway_id: TargetId,
+            token_props: TokenInfo,
+        ) -> DispatchResult {
+            if T::AssetsOverlay::contains_asset(&token_id) {
+                return Err(Error::<T>::TokenRecordAlreadyExists.into())
+            }
+
+            let admin: T::AccountId = ensure_signed_or_root(origin.clone())?
+                .unwrap_or(T::AccountId::decode(&mut &[51u8; 32][..]).expect("32 bytes, encoded"));
+
+            T::AssetsOverlay::force_create_asset(
+                origin.clone(),
+                token_id,
+                admin,
+                true,
+                T::Currency::minimum_balance(),
+            )?;
+
+            Self::add_new_token(token_id, gateway_id, token_props)
+        }
+
+        fn add_new_token(
+            token_id: AssetId,
+            gateway_id: TargetId,
+            token_props: TokenInfo,
+        ) -> DispatchResult {
+            // early exit if record already exists in storage
+            if <Tokens<T>>::contains_key(token_id) {
+                return Err(Error::<T>::TokenRecordAlreadyExists.into())
+            }
+
+            // fetch record and ensure it exists
+            let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
+
+            // ensure that the token's execution vendor matches the gateway's execution vendor
+            ensure!(
+                token_props.match_execution_vendor() == record.execution_vendor,
+                Error::<T>::TokenExecutionVendorMismatch
+            );
+
+            Self::override_token(token_id, gateway_id, token_props)
+        }
+
+        fn override_token(
+            token_id: AssetId,
+            gateway_id: TargetId,
+            token_props: TokenInfo,
+        ) -> DispatchResult {
+            <Tokens<T>>::insert(
+                token_id,
+                TokenRecord {
+                    token_id,
+                    gateway_id,
+                    token_props,
+                },
+            );
+
+            Self::deposit_event(Event::<T>::TokenRecordStored(token_id, gateway_id));
+            Ok(())
         }
 
         fn add_new_gateway(
-            gateway_id: [u8; 4],
+            gateway_id: TargetId,
             verification_vendor: GatewayVendor,
             execution_vendor: ExecutionVendor,
             codec: Codec,
             registrant: Option<T::AccountId>,
             escrow_account: Option<T::AccountId>,
-            allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
+            allowed_side_effects: Vec<(TargetId, Option<u8>)>,
         ) -> DispatchResult {
             // early exit if record already exists in storage
             if <Gateways<T>>::contains_key(gateway_id) {
@@ -342,13 +471,13 @@ pub mod pallet {
         }
 
         fn override_gateway(
-            gateway_id: [u8; 4],
+            gateway_id: TargetId,
             verification_vendor: GatewayVendor,
             execution_vendor: ExecutionVendor,
             codec: Codec,
             registrant: Option<T::AccountId>,
             escrow_account: Option<T::AccountId>,
-            allowed_side_effects: Vec<([u8; 4], Option<u8>)>,
+            allowed_side_effects: Vec<(TargetId, Option<u8>)>,
         ) -> DispatchResult {
             // Populate standard side effect ABI registry
             for (sfx_4b_id, maybe_event_memo_prefix) in allowed_side_effects.iter() {
@@ -372,92 +501,11 @@ pub mod pallet {
                     allowed_side_effects,
                 },
             );
+            <AllGatewayIds<T>>::mutate(|ids| ids.push(gateway_id));
+
             Self::deposit_event(Event::<T>::GatewayRecordStored(gateway_id));
 
             Ok(())
-        }
-
-        fn add_new_token(
-            token_id: [u8; 4],
-            gateway_id: [u8; 4],
-            token_props: TokenInfo,
-        ) -> DispatchResult {
-            // early exit if record already exists in storage
-            if <Tokens<T>>::contains_key(token_id) {
-                return Err(Error::<T>::TokenRecordAlreadyExists.into())
-            }
-
-            // fetch record and ensure it exists
-            let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
-
-            // ensure that the token's execution vendor matches the gateway's execution vendor
-            ensure!(
-                token_props.match_execution_vendor() == record.execution_vendor,
-                Error::<T>::TokenExecutionVendorMismatch
-            );
-
-            Self::override_token(token_id, gateway_id, token_props)
-        }
-
-        fn override_token(
-            token_id: [u8; 4],
-            gateway_id: [u8; 4],
-            token_props: TokenInfo,
-        ) -> DispatchResult {
-            <Tokens<T>>::insert(
-                token_id,
-                TokenRecord {
-                    token_id,
-                    gateway_id,
-                    token_props,
-                },
-            );
-            Self::deposit_event(Event::<T>::TokenRecordStored(token_id, gateway_id));
-            Ok(())
-        }
-
-        /// returns a mapping of all allowed side_effects of a gateway.
-        fn allowed_side_effects(gateway_id: &ChainId) -> Vec<(Sfx4bId, Option<u8>)> {
-            match <Gateways<T>>::get(gateway_id) {
-                Some(gateway) => gateway.allowed_side_effects,
-                None => Vec::new(),
-            }
-        }
-
-        /// returns the gateway vendor of a gateway if its available
-        fn get_verification_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
-            match <Gateways<T>>::get(chain_id) {
-                Some(rec) => Ok(rec.verification_vendor),
-                None => Err(Error::<T>::XdnsRecordNotFound.into()),
-            }
-        }
-
-        fn get_target_codec(chain_id: &ChainId) -> Result<Codec, DispatchError> {
-            match <Gateways<T>>::get(chain_id) {
-                Some(rec) => Ok(rec.codec),
-                None => Err(Error::<T>::XdnsRecordNotFound.into()),
-            }
-        }
-
-        fn get_escrow_account(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
-            match <Gateways<T>>::get(chain_id) {
-                Some(rec) => Ok(rec.escrow_account.encode()),
-                None => Err(Error::<T>::XdnsRecordNotFound.into()),
-            }
-        }
-
-        // todo: this must be removed and functionality replaced
-        fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
-            if chain_id == &[3u8; 4] {
-                return GatewayType::OnCircuit(0)
-            }
-            match <Gateways<T>>::get(chain_id) {
-                Some(rec) => match rec.escrow_account {
-                    Some(_) => GatewayType::ProgrammableExternal(0),
-                    None => GatewayType::TxOnly(0),
-                },
-                None => panic!("Gateway record not found"),
-            }
         }
 
         fn extend_sfx_abi(
@@ -527,6 +575,95 @@ pub mod pallet {
             })?;
 
             Ok(())
+        }
+
+        /// returns a mapping of all allowed side_effects of a gateway.
+        fn allowed_side_effects(gateway_id: &ChainId) -> Vec<(Sfx4bId, Option<u8>)> {
+            match <Gateways<T>>::get(gateway_id) {
+                Some(gateway) => gateway.allowed_side_effects,
+                None => Vec::new(),
+            }
+        }
+
+        // todo: this must be removed and functionality replaced
+        fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
+            if chain_id == &[3u8; 4] {
+                return GatewayType::OnCircuit(0)
+            }
+            match <Gateways<T>>::get(chain_id) {
+                Some(rec) => match rec.escrow_account {
+                    Some(_) => GatewayType::ProgrammableExternal(0),
+                    None => GatewayType::TxOnly(0),
+                },
+                None => panic!("Gateway record not found"),
+            }
+        }
+
+        /// returns the gateway vendor of a gateway if its available
+        fn get_verification_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
+            match <Gateways<T>>::get(chain_id) {
+                Some(rec) => Ok(rec.verification_vendor),
+                None => Err(Error::<T>::XdnsRecordNotFound.into()),
+            }
+        }
+
+        fn get_target_codec(chain_id: &ChainId) -> Result<Codec, DispatchError> {
+            match <Gateways<T>>::get(chain_id) {
+                Some(rec) => Ok(rec.codec),
+                None => Err(Error::<T>::XdnsRecordNotFound.into()),
+            }
+        }
+
+        fn get_escrow_account(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
+            match <Gateways<T>>::get(chain_id) {
+                Some(rec) => Ok(rec.escrow_account.encode()),
+                None => Err(Error::<T>::XdnsRecordNotFound.into()),
+            }
+        }
+
+        fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>> {
+            Gateways::<T>::iter_values()
+                .map(|gateway| {
+                    let tokens = Tokens::<T>::iter_values()
+                        .filter(|token| token.gateway_id == gateway.gateway_id)
+                        .collect();
+                    FullGatewayRecord {
+                        gateway_record: gateway,
+                        tokens,
+                    }
+                })
+                .collect()
+        }
+
+        fn verify_active(
+            gateway_id: &ChainId,
+            max_acceptable_heartbeat_offset: T::BlockNumber,
+            security_lvl: &SecurityLvl,
+        ) -> Result<LightClientHeartbeat<T>, DispatchError> {
+            let heartbeat = T::Portal::get_latest_heartbeat(gateway_id)
+                .map_err(|_| Error::<T>::GatewayNotActive)?;
+
+            if heartbeat.is_halted
+                || !heartbeat.ever_initialized
+                || max_acceptable_heartbeat_offset
+                    > frame_system::Pallet::<T>::block_number()
+                        .saturating_sub(heartbeat.last_heartbeat)
+            {
+                return Err(Error::<T>::GatewayNotActive.into())
+            }
+
+            if security_lvl == &SecurityLvl::Escrow {
+                T::AttestersRead::get_activated_targets()
+                    .iter()
+                    .find(|target| target == &gateway_id)
+                    .ok_or(Error::<T>::GatewayNotActive)?;
+            }
+
+            Ok(heartbeat)
+        }
+
+        fn estimate_costs(_fsx: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>) {
+            todo!("estimate costs")
         }
     }
 }

@@ -24,7 +24,8 @@ use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
-    xdns::Xdns, EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo,
+    xdns::{PalletAssetsOverlay, Xdns},
+    EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo,
 };
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
 const STANDARD_SFX_ABI_COUNT: usize = 7;
@@ -81,7 +82,7 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
         assert!(pallet_xdns::Gateways::<Runtime>::get(b"test").is_some());
 
         assert_ok!(XDNS::add_new_token(
-            *b"test",
+            u32::from_le_bytes(*b"test"),
             *b"test",
             TokenInfo::Substrate(SubstrateToken {
                 id: 1,
@@ -93,7 +94,7 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
         // no duplicates
         assert_noop!(
             XDNS::add_new_token(
-                *b"test",
+                u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Substrate(SubstrateToken {
                     decimals: 18,
@@ -107,7 +108,7 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
         // no mismatched execution vendor
         assert_noop!(
             XDNS::add_new_token(
-                *b"roco",
+                u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Ethereum(EthereumToken {
                     decimals: 18,
@@ -115,7 +116,7 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
                     address: Some([1; 20])
                 })
             ),
-            pallet_xdns::pallet::Error::<Runtime>::TokenExecutionVendorMismatch
+            pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
         );
 
         assert_eq!(pallet_xdns::Tokens::<Runtime>::iter().count(), 1);
@@ -128,7 +129,7 @@ fn shouldnt_add_new_without_gateway_record() {
         // no duplicates
         assert_noop!(
             XDNS::add_new_token(
-                *b"test",
+                u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Substrate(SubstrateToken {
                     decimals: 18,
@@ -179,6 +180,71 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
 }
 
 #[test]
+fn should_register_token_and_populate_assets_storage_successfully() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+
+            assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+
+            assert_ok!(XDNS::register_new_token(
+                &circuit_mock_runtime::Origin::root(),
+                u32::from_le_bytes(*b"test"),
+                *b"gate",
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+        });
+}
+
+#[test]
+fn should_purge_token_and_destroy_asset_storage_successfully() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+
+            assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+
+            assert_ok!(XDNS::register_new_token(
+                &circuit_mock_runtime::Origin::root(),
+                u32::from_le_bytes(*b"test"),
+                *b"gate",
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+
+            assert_ok!(XDNS::purge_token_record(
+                circuit_mock_runtime::Origin::root(),
+                u32::from_le_bytes(*b"test"),
+            ));
+
+            assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+        });
+}
+
+#[test]
 fn should_purge_a_gateway_record_successfully() {
     ExtBuilder::default()
         .with_standard_sfx_abi()
@@ -191,7 +257,7 @@ fn should_purge_a_gateway_record_successfully() {
             );
 
             assert_ok!(XDNS::add_new_token(
-                *b"gate",
+                u32::from_le_bytes(*b"test"),
                 *b"gate",
                 TokenInfo::Substrate(SubstrateToken {
                     id: 1,
