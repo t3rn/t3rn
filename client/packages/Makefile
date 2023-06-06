@@ -7,6 +7,10 @@ all:
 clean:
 	find . -type d -name node_modules | xargs rm -rf {}\;
 
+test:
+	cd cli; pnpm run test
+	cd executor; yarn test
+
 register_roco:
 	cd cli; ts-node index.ts register roco;
 

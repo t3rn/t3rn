@@ -35,8 +35,10 @@ The bidding engine is responsible for generating the bidding amount for a specif
 To execute transactions on other blockchains, a custom relayer class is needed. These classes need to be able to execute a certain set of transactions and generate an inclusion proof for said transaction. Currently, a substrate based version is implmented.
 
 ## Getting Started:
-The first thing to setup is the config file.
 
-- in packages directory, run `make` to build the local dependencies (types & sdk)
-- run `yarn`
-- run `yarn start`
+- in the parent `packages` directory, run `make` to build the local dependencies (`types` & `sdk`)
+- run `yarn install`
+- configure your executor by editing `config.json`
+- run `EXECUTOR=myexec CIRCUIT_SIGNER_KEY=abc ROCOCO_GATEWAY_SIGNER_KEY=xyz yarn start`
+
+The `EXECUTOR` env var passed to the `start` command determines the config file location for given executor instance. The [default config](./config.json) can be overridden by a custom config file that is located at `~/.t3rn-executor-$EXECUTOR/config.json`. Those custom named config files allow running multiple executors on a single machine.
