@@ -1,5 +1,9 @@
 use codec::{Decode, Encode};
-use frame_support::{traits::FindAuthor, RuntimeDebug};
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo,
+    traits::{fungibles::Destroy, FindAuthor},
+    Blake2_128Concat, RuntimeDebug, StorageHasher,
+};
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
     Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, LatencyStatus, NextBatch,
@@ -7,6 +11,7 @@ pub use pallet_attesters::{
 };
 pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
 mod treasuries_config;
+use sp_runtime::DispatchResult;
 
 pub use pallet_account_manager::{
     Config as ConfigAccountManager, Error as AccountManagerError, Event as AccountManagerEvent,
@@ -102,6 +107,45 @@ impl pallet_assets::Config for MiniRuntime {
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
+}
+
+impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
+    fn contains_asset(asset_id: &AssetId) -> bool {
+        const PALLET_NAME: &'static str = "Assets";
+        const STORAGE_NAME: &'static str = "Asset";
+        type Index = u32;
+        type Data = u32;
+
+        let pallet_hash = sp_io::hashing::twox_128(PALLET_NAME.as_bytes());
+        let storage_hash = sp_io::hashing::twox_128(STORAGE_NAME.as_bytes());
+        // Hashing the scale-encoded key
+        let key_hashed = Blake2_128Concat::hash(&*asset_id.encode());
+
+        let mut final_key = Vec::new();
+        final_key.extend_from_slice(&pallet_hash);
+        final_key.extend_from_slice(&storage_hash);
+        final_key.extend_from_slice(&key_hashed);
+
+        frame_support::storage::unhashed::get::<Data>(&final_key).is_some()
+    }
+
+    fn force_create_asset(
+        origin: Origin,
+        asset_id: AssetId,
+        admin: AccountId,
+        is_sufficient: bool,
+        min_balance: Balance,
+    ) -> DispatchResult {
+        Assets::force_create(origin, asset_id, admin, is_sufficient, min_balance)
+    }
+
+    fn destroy(origin: Origin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
+        let destroy_witness = match Assets::get_destroy_witness(asset_id) {
+            Some(witness) => witness,
+            None => return Err("AssetNotFound".into()),
+        };
+        Assets::destroy(origin, *asset_id, destroy_witness)
+    }
 }
 
 parameter_types! {
@@ -300,9 +344,15 @@ impl pallet_timestamp::Config for MiniRuntime {
 }
 
 impl pallet_xdns::Config for MiniRuntime {
+    type AssetsOverlay = MiniRuntime;
+    type AttestersRead = Attesters;
     type Balances = Balances;
     type Currency = Balances;
     type Event = Event;
+    type Portal = Portal;
+    type SelfGatewayIdEscrow = SelfGatewayId;
+    type SelfGatewayIdOptimistic = SelfGatewayIdOptimistic;
+    type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<MiniRuntime>;
 }
@@ -310,10 +360,12 @@ impl pallet_xdns::Config for MiniRuntime {
 parameter_types! {
     pub const CircuitAccountId: AccountId = AccountId::new([51u8; 32]); // 0x333...3
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
+    pub const SelfGatewayIdOptimistic: [u8; 4] = [0, 3, 3, 3];
 }
 
 impl pallet_circuit::Config for MiniRuntime {
     type AccountManager = AccountManager;
+    type Attesters = Attesters;
     type Balances = Balances;
     type Call = Call;
     type Currency = Balances;
@@ -333,6 +385,7 @@ impl pallet_circuit::Config for MiniRuntime {
 }
 
 impl pallet_portal::Config for MiniRuntime {
+    type Currency = Balances;
     type Event = Event;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<MiniRuntime>;
@@ -576,7 +629,10 @@ pub enum MockWasmContractsEvent<T: frame_system::Config + pallet_balances::Confi
 
 use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild;
 use t3rn_abi::{types::Sfx4bId, SFXAbi};
-use t3rn_primitives::{contracts_registry::RegistryContract, xdns::GatewayRecord};
+use t3rn_primitives::{
+    contracts_registry::RegistryContract,
+    xdns::{GatewayRecord, PalletAssetsOverlay},
+};
 
 #[derive(Default)]
 pub struct ExtBuilder {

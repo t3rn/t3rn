@@ -1,15 +1,20 @@
 use crate::{
-    gateway::GatewayABIConfig, ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType,
-    GatewayVendor, TokenInfo,
+    gateway::GatewayABIConfig, light_client::LightClientHeartbeat, transfers::CurrencyBalanceOf,
+    ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
 };
 use codec::{Decode, Encode};
-use frame_support::dispatch::DispatchResult;
+use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
 use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 use t3rn_abi::sfx_abi::SFXAbi;
-use t3rn_types::sfx::Sfx4bId;
+use t3rn_types::{
+    fsx::FullSideEffect,
+    sfx::{SecurityLvl, Sfx4bId},
+};
+
+use circuit_runtime_types::AssetId;
 
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId = [u8; 4];
@@ -17,21 +22,35 @@ pub type XdnsRecordId = [u8; 4];
 /// A hash based on encoding the Gateway ID
 pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 
+pub trait PalletAssetsOverlay<T: frame_system::Config, Balance> {
+    fn contains_asset(asset_id: &AssetId) -> bool;
+
+    fn force_create_asset(
+        origin: OriginFor<T>,
+        asset_id: AssetId,
+        admin: <T as frame_system::Config>::AccountId,
+        is_sufficient: bool,
+        min_balance: Balance,
+    ) -> DispatchResult;
+
+    fn destroy(origin: OriginFor<T>, asset_id: &AssetId) -> DispatchResultWithPostInfo;
+}
+
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Parachain {
     // gateway_id of relaychain
     pub relay_chain_id: ChainId,
     // parachain_id
-    pub id: u32,
+    pub id: AssetId,
 }
 
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct TokenRecord {
-    /// Its token 4b Id
-    pub token_id: [u8; 4],
+    /// Its token AssetId, assume u32
+    pub token_id: AssetId,
 
     /// Link to the gateway token is whitelisted on.
     pub gateway_id: [u8; 4],
@@ -190,17 +209,24 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     }
 }
 
-pub trait Xdns<T: frame_system::Config> {
+pub trait Xdns<T: frame_system::Config, Balance> {
     fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>>;
 
+    fn register_new_token(
+        origin: &T::Origin,
+        token_id: AssetId,
+        gateway_id: [u8; 4],
+        token_props: TokenInfo,
+    ) -> DispatchResult;
+
     fn add_new_token(
-        token_id: [u8; 4],
+        token_id: AssetId,
         gateway_id: [u8; 4],
         token_props: TokenInfo,
     ) -> DispatchResult;
 
     fn override_token(
-        token_id: [u8; 4],
+        token_id: AssetId,
         gateway_id: [u8; 4],
         token_props: TokenInfo,
     ) -> DispatchResult;
@@ -259,4 +285,12 @@ pub trait Xdns<T: frame_system::Config> {
     fn get_escrow_account(chain_id: &ChainId) -> Result<Vec<u8>, DispatchError>;
 
     fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>>;
+
+    fn verify_active(
+        gateway_id: &ChainId,
+        max_acceptable_heartbeat_offset: T::BlockNumber,
+        security_lvl: &SecurityLvl,
+    ) -> Result<LightClientHeartbeat<T>, DispatchError>;
+
+    fn estimate_costs(fsx: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, Balance>>);
 }
