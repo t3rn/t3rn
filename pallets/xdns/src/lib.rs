@@ -57,6 +57,7 @@ pub mod pallet {
         portal::Portal,
         xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
         AccountId, Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo,
+        TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -80,6 +81,8 @@ pub mod pallet {
         type Portal: Portal<Self>;
 
         type AttestersRead: AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
+
+        type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
 
         type SelfTokenId: Get<AssetId>;
 
@@ -184,15 +187,19 @@ pub mod pallet {
                 Err(Error::<T>::XdnsRecordNotFound.into())
             } else {
                 <Gateways<T>>::remove(gateway_id);
-                // remove all tokens associated with this gateway
-                Tokens::<T>::iter_values()
-                    .filter(|token| token.gateway_id == gateway_id)
-                    .for_each(|token| {
-                        <Tokens<T>>::remove(token.token_id);
+
+                let token_ids = GatewayTokens::<T>::get(gateway_id);
+
+                token_ids.iter().for_each(|token| {
+                    <Tokens<T>>::remove(token.token_id, gateway_id);
+                    if gateway_id == T::SelfGatewayIdOptimistic::get() {
                         <AllTokenIds<T>>::mutate(|all_token_ids| {
                             all_token_ids.retain(|&id| id != token.token_id);
                         });
-                    });
+                    }
+                });
+
+                <GatewayTokens<T>>::remove(gateway_id);
 
                 <AllGatewayIds<T>>::mutate(|all_gateway_ids| {
                     all_gateway_ids.retain(|&id| id != gateway_id);
@@ -203,7 +210,24 @@ pub mod pallet {
             }
         }
 
-        /// Removes a gateway from the onchain registry. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
+        pub fn unlink_token(
+            origin: OriginFor<T>,
+            gateway_id: TargetId,
+            token_id: AssetId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
+            <Tokens<T>>::remove(token_id, gateway_id);
+
+            <GatewayTokens<T>>::mutate(gateway_id, |token_ids| {
+                token_ids.retain(|token| token.token_id != token_id);
+            });
+
+            Ok(().into())
+        }
+
+        /// Removes from all of the registered destinations + the onchain registry. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
         pub fn purge_token_record(
             origin: OriginFor<T>,
@@ -213,7 +237,14 @@ pub mod pallet {
 
             T::AssetsOverlay::destroy(origin, &token_id)?;
 
-            <Tokens<T>>::remove(token_id);
+            // Remove from all destinations
+            let destinations = <Tokens<T>>::iter_prefix(token_id)
+                .map(|(dest, _)| dest)
+                .collect::<Vec<_>>();
+            destinations.iter().for_each(|dest| {
+                <Tokens<T>>::remove(token_id, *dest);
+            });
+
             <AllTokenIds<T>>::mutate(|all_token_ids| {
                 all_token_ids.retain(|&id| id != token_id);
             });
@@ -227,8 +258,10 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// \[gateway_4b_id\]
         GatewayRecordStored(TargetId),
-        /// \[token_4b_asset_id, gateway_4b_id\]
-        TokenRecordStored(AssetId, TargetId),
+        /// \[asset_id, gateway_4b_id\]
+        NewTokenLinkedToGateway(AssetId, TargetId),
+        /// \[asset_id, gateway_4b_id\]
+        NewTokenAssetRegistered(AssetId, TargetId),
         /// \[requester, gateway_record_id\]
         GatewayRecordPurged(T::AccountId, TargetId),
         /// \[requester, xdns_record_id\]
@@ -246,6 +279,8 @@ pub mod pallet {
         XdnsRecordNotFound,
         /// Stored token has already been added before
         TokenRecordAlreadyExists,
+        /// XDNS Token not found in assets overlay
+        TokenRecordNotFoundInAssetsOverlay,
         /// Gateway Record not found
         GatewayRecordNotFound,
         /// SideEffectABI already exists
@@ -288,10 +323,19 @@ pub mod pallet {
     pub type Gateways<T: Config> =
         StorageMap<_, Identity, TargetId, GatewayRecord<T::AccountId>, OptionQuery>;
 
+    // Token can be stored in multiple gateways and on each Gateway be mapped to a different TokenRecord (Substrate, Eth etc.)
     #[pallet::storage]
     #[pallet::getter(fn tokens)]
-    pub type Tokens<T: Config> = StorageMap<_, Identity, AssetId, TokenRecord, OptionQuery>;
+    pub type Tokens<T: Config> =
+        StorageDoubleMap<_, Identity, AssetId, Identity, TargetId, TokenRecord, OptionQuery>;
 
+    // Recover TokenRecords stored per gateway, to be able to iterate over all tokens stored on a gateway
+    #[pallet::storage]
+    #[pallet::getter(fn gateway_tokens)]
+    pub type GatewayTokens<T: Config> =
+        StorageMap<_, Identity, TargetId, Vec<TokenRecord>, ValueQuery>;
+
+    // All known TokenIds to t3rn
     #[pallet::storage]
     #[pallet::getter(fn all_token_ids)]
     pub type AllTokenIds<T: Config> = StorageValue<_, Vec<AssetId>, ValueQuery>;
@@ -320,6 +364,11 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn asset_estimates_in_native)]
     pub type AssetEstimatesInNative<T: Config> =
+        StorageMap<_, Identity, AssetId, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn asset_cost_estimates_in_native)]
+    pub type AssetCostEstimatesInNative<T: Config> =
         StorageMap<_, Identity, AssetId, BalanceOf<T>, ValueQuery>;
 
     // The genesis config type.
@@ -381,18 +430,19 @@ pub mod pallet {
             Gateways::<T>::iter_values().collect()
         }
 
+        /// Register new token assuming self::SelfGatewayIdOptimistic as a base chain
         fn register_new_token(
             origin: &OriginFor<T>,
             token_id: AssetId,
-            gateway_id: TargetId,
             token_props: TokenInfo,
         ) -> DispatchResult {
             if T::AssetsOverlay::contains_asset(&token_id) {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
             }
 
-            let admin: T::AccountId = ensure_signed_or_root(origin.clone())?
-                .unwrap_or(T::AccountId::decode(&mut &[51u8; 32][..]).expect("32 bytes, encoded"));
+            let admin: T::AccountId = ensure_signed_or_root(origin.clone())?.unwrap_or(
+                T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+            );
 
             T::AssetsOverlay::force_create_asset(
                 origin.clone(),
@@ -402,18 +452,30 @@ pub mod pallet {
                 T::Currency::minimum_balance(),
             )?;
 
-            Self::add_new_token(token_id, gateway_id, token_props)
+            let gateway_id = T::SelfGatewayIdOptimistic::get();
+
+            Self::link_token_to_gateway(token_id, gateway_id, token_props)?;
+
+            Self::deposit_event(Event::<T>::NewTokenAssetRegistered(token_id, gateway_id));
+
+            Ok(())
         }
 
-        fn add_new_token(
+        // Link existing token to a gateway. Assume that the token is already registered in the assets overlay via register_new_token
+        fn link_token_to_gateway(
             token_id: AssetId,
             gateway_id: TargetId,
             token_props: TokenInfo,
         ) -> DispatchResult {
             // early exit if record already exists in storage
-            if <Tokens<T>>::contains_key(token_id) {
+            if <Tokens<T>>::contains_key(token_id, gateway_id) {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
             }
+
+            ensure!(
+                T::AssetsOverlay::contains_asset(&token_id),
+                Error::<T>::TokenRecordNotFoundInAssetsOverlay
+            );
 
             // fetch record and ensure it exists
             let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
@@ -434,6 +496,7 @@ pub mod pallet {
         ) -> DispatchResult {
             <Tokens<T>>::insert(
                 token_id,
+                gateway_id,
                 TokenRecord {
                     token_id,
                     gateway_id,
@@ -441,7 +504,7 @@ pub mod pallet {
                 },
             );
 
-            Self::deposit_event(Event::<T>::TokenRecordStored(token_id, gateway_id));
+            Self::deposit_event(Event::<T>::NewTokenLinkedToGateway(token_id, gateway_id));
             Ok(())
         }
 

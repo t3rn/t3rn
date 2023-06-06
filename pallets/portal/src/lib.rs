@@ -131,7 +131,8 @@ pub mod pallet {
                 allowed_side_effects,
             )?;
 
-            <T as Config>::Xdns::register_new_token(&origin, token_id, gateway_id, token_props)?;
+            <T as Config>::Xdns::register_new_token(&origin, token_id, token_props.clone())?;
+            <T as Config>::Xdns::link_token_to_gateway(token_id, gateway_id, token_props)?;
 
             <Pallet<T> as Portal<T>>::initialize(origin, gateway_id, encoded_registration_data)
         }
