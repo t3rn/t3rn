@@ -1,6 +1,6 @@
-import "@t3rn/types";
-import { EventEmitter } from "events";
-import { ApiPromise } from "@polkadot/api";
+import "@t3rn/types"
+import { EventEmitter } from "events"
+import { ApiPromise } from "@polkadot/api"
 
 /**
  * Enum for the different types of events emitted by the relayer
@@ -8,22 +8,22 @@ import { ApiPromise } from "@polkadot/api";
  * @group t3rn Circuit
  */
 export enum ListenerEvents {
-  /** A new XTX was detected on Circuit */
-  NewSideEffectsAvailable,
-  /** A new SFX bid was detected */
-  SFXNewBidReceived,
-  /** An XTX is ready to be executed */
-  XTransactionReadyForExec,
-  /** New headers where detected for a specific gateway */
-  HeaderSubmitted,
-  /** A SFX was confirmed on circuit */
-  SideEffectConfirmed,
-  /** A XTX was finalized */
-  XtxCompleted,
-  /** A XTX was dropped at bidding */
-  DroppedAtBidding,
-  /** A XTX was reverted */
-  RevertTimedOut,
+    /** A new XTX was detected on Circuit */
+    NewSideEffectsAvailable,
+    /** A new SFX bid was detected */
+    SFXNewBidReceived,
+    /** An XTX is ready to be executed */
+    XTransactionReadyForExec,
+    /** New headers where detected for a specific gateway */
+    HeaderSubmitted,
+    /** A SFX was confirmed on circuit */
+    SideEffectConfirmed,
+    /** A XTX was finalized */
+    XtxCompleted,
+    /** A XTX was dropped at bidding */
+    DroppedAtBidding,
+    /** A XTX was reverted */
+    RevertTimedOut,
 }
 
 /**
@@ -32,19 +32,19 @@ export enum ListenerEvents {
  * @group t3rn Circuit
  */
 export type ListenerEventData = {
-  type: ListenerEvents;
-  data: any;
-};
+    type: ListenerEvents
+    data: any
+}
 
 /** @group t3rn Circuit */
 export class CircuitListener extends EventEmitter {
     client: ApiPromise
     stop: any
 
-  constructor(client: ApiPromise) {
-    super();
-    this.client = client;
-  }
+    constructor(client: ApiPromise) {
+        super()
+        this.client = client
+    }
 
     async start() {
         this.stop = await this.client.query.system.events((notifications) => {
@@ -73,7 +73,7 @@ export class CircuitListener extends EventEmitter {
                     }
                     const data = {
                         vendor,
-                        height: parseInt(notifications[i].event.data[0]),
+                        height: parseInt(String(notifications[i].event.data[0])),
                     }
                     this.emit("Event", <ListenerEventData>{
                         type: ListenerEvents.HeaderSubmitted,

@@ -62,7 +62,7 @@ class Instance {
         await cryptoWaitReady()
         this.signer = new Keyring({ type: "sr25519" })
             // loadConfig asserts that config.circuit.signerKey is set
-            .addFromSeed(Uint8Array.from(Buffer.from(this.config.circuit.signerKey!.slice(2), "hex")))
+            .addFromSeed(Uint8Array.from(Buffer.from(this.config.circuit.signerKey!.slice(2), "hex"))) as KeyringPair
         this.sdk = new Sdk(this.config.circuit.rpc, this.signer)
         // @ts-ignore
         this.circuitClient = await this.sdk.init()
