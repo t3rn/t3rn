@@ -8,9 +8,9 @@
     "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts | npx pino-pretty -c -S",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
-    "export": "LOG_LEVEL=debug yarn start >> logger.log",
-    "fmt": "npx prettier --no-semi --tab-width 4 --print-width 140 --write config/*.ts src/*.ts src/**/*.ts src/**/**/*.ts tests/*.ts",
-    "build-docs": "yarn fmt && npx typedoc && cp -R docs ../../../docs/executor",
+    "export": "LOG_LEVEL=debug pnpm run start >> logger.log",
+    "fmt": "prettier --write src config tests",
+    "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
     "test": "mocha -r ts-node/register 'tests/**/*.ts'",
     "test-single": "mocha -r ts-node/register"
   },
