@@ -84,6 +84,7 @@ jobs:
         continue-on-error: true
 
       - run: pnpm test
+        timeout-minutes: 5
 
   build-docker:
     name: Build Docker Executor
