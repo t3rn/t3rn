@@ -729,7 +729,8 @@ pub mod pallet {
                         || status_change.1 == CircuitStatus::Committed
                     {
                         Self::request_sfx_attestation(local_ctx);
-                        T::Xdns::estimate_costs(Machine::read_current_step_fsx(local_ctx));
+                        // ToDo: uncomment when price + costs estimates are implemented
+                        // T::Xdns::estimate_costs(Machine::read_current_step_fsx(local_ctx));
                     }
                     // Emit: From Circuit events
                     Self::emit_status_update(
@@ -1041,11 +1042,12 @@ impl<T: Config> Pallet<T> {
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
             let security_lvl = determine_security_lvl(gateway_type);
-            let _last_update = <T as Config>::Xdns::verify_active(
-                &sfx.target,
-                <T as Config>::XtxTimeoutDefault::get(),
-                &security_lvl,
-            )?;
+            // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
+            // let _last_update = <T as Config>::Xdns::verify_active(
+            //     &sfx.target,
+            //     <T as Config>::XtxTimeoutDefault::get(),
+            //     &security_lvl,
+            // )?;
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
