@@ -17,7 +17,7 @@ Object {
     ],
     "TRN": Array [
       Object {
-        "id": "acala",
+        "id": "kusama",
         "priceSource": "coingecko",
       },
     ],
@@ -52,7 +52,7 @@ Object {
       ],
       "TRN": Array [
         Object {
-          "id": "acala",
+          "id": "kusama",
           "priceSource": "coingecko",
         },
       ],
@@ -169,7 +169,7 @@ Object {
     ],
     "TRN": Array [
       Object {
-        "id": "acala",
+        "id": "kusama",
         "priceSource": "coingecko",
       },
     ],
@@ -204,7 +204,7 @@ Object {
       ],
       "TRN": Array [
         Object {
-          "id": "acala",
+          "id": "kusama",
           "priceSource": "coingecko",
         },
       ],

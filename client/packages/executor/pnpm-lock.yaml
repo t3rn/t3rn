@@ -4,9 +4,18 @@ dependencies:
   '@polkadot/api':
     specifier: ^10.7.1
     version: 10.8.1
+  '@polkadot/keyring':
+    specifier: ^12.2.2
+    version: 12.2.2(@polkadot/util-crypto@12.2.2)(@polkadot/util@12.2.2)
   '@polkadot/types':
     specifier: ^8.9.1
     version: 8.14.1
+  '@polkadot/util':
+    specifier: ^12.2.2
+    version: 12.2.2
+  '@polkadot/util-crypto':
+    specifier: ^12.2.2
+    version: 12.2.2(@polkadot/util@12.2.2)
   '@t3rn/sdk':
     specifier: ../sdk
     version: link:../sdk
@@ -76,6 +85,9 @@ dependencies:
   typedoc:
     specifier: ^0.24.7
     version: 0.24.8(typescript@4.9.5)
+  types:
+    specifier: link:@polkadot/keyring/types
+    version: link:@polkadot/keyring/types
   typescript:
     specifier: ^4.8.4
     version: 4.9.5

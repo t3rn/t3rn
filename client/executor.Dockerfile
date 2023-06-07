@@ -1,6 +1,6 @@
 FROM node:20.1
 
-RUN npm install -g typescript
+RUN npm install -g typescript pnpm
 
 ADD packages/sdk /app/sdk
 RUN cd /app/sdk && yarn install && yarn build
@@ -9,7 +9,7 @@ ADD packages/types /app/types
 RUN cd /app/types && yarn install && yarn build
 
 ADD packages/executor /app/executor
-RUN cd /app/executor && yarn 
+RUN cd /app/executor && pnpm i
 
 WORKDIR /app/executor
 
@@ -17,4 +17,7 @@ WORKDIR /app/executor
 RUN chown -R node /app
 USER node
 
-CMD ["yarn", "start"]
+RUN mkdir -p /home/node/.t3rn-executor-example/.t3rn-executor-example
+COPY --chown=node:node packages/executor/config.json /home/node/.t3rn-executor-example/config.json
+
+CMD ["pnpm", "run", "start"]

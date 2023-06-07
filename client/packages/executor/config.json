@@ -42,7 +42,7 @@
       "TRN":[
         {
           "priceSource":"coingecko",
-          "id":"acala"
+          "id":"kusama"
         }
       ]
     },
