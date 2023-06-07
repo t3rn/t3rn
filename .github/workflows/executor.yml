@@ -104,7 +104,7 @@ jobs:
     name: Deploy Executor
     runs-on: self-hosted
     needs: test-executor
-    # if: github.ref == 'refs/heads/development'
+    if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
