@@ -790,7 +790,7 @@ pub mod pallet {
                 if let Some(ref mut next_batch) = next_batch {
                     if let Some(ref mut batch_sfx) = &mut next_batch.committed_sfx {
                         if batch_sfx.contains(&sfx_id) {
-                            return Err(Error::<T>::SfxAlreadyRequested.into())
+                            return Err("SfxAlreadyRequested".into())
                         } else {
                             batch_sfx.push(sfx_id);
                         }
@@ -799,7 +799,7 @@ pub mod pallet {
                     }
                     Ok(())
                 } else {
-                    Err(Error::<T>::BatchNotFound.into())
+                    Err("BatchNotFound".into())
                 }
             })
         }
@@ -1613,7 +1613,7 @@ pub mod attesters_test {
 
     use codec::Encode;
     use frame_support::{
-        assert_err, assert_ok,
+        assert_err, assert_noop, assert_ok,
         traits::{Currency, Get, Hooks, Len},
         StorageValue,
     };
@@ -2593,11 +2593,9 @@ pub mod attesters_test {
             let sfx_id_a = H256::repeat_byte(1);
             assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_a));
 
-            assert_eq!(
-                Attesters::request_sfx_attestation_commit(target, sfx_id_a)
-                    .unwrap_err()
-                    .encode(),
-                AttestersError::<MiniRuntime>::SfxAlreadyRequested.encode(),
+            assert_noop!(
+                Attesters::request_sfx_attestation_commit(target, sfx_id_a),
+                "SfxAlreadyRequested",
             );
         });
     }
