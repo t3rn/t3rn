@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "EXECUTOR=example ts-node src/main.ts | npx pino-pretty -c -S",
+    "start": "EXECUTOR=example ts-node src/main.ts",
     "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts | npx pino-pretty -c -S",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
