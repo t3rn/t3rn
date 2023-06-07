@@ -72,6 +72,8 @@ const registerGateway = async (
   )
   const registrationData = await getRegistrationData(circuit, gatewayData)
 
+  console.log(registrationData)
+
   if (!registrationData) {
     spinner.fail(
       colorLogMsg("ERROR", `${gatewayData.name} gateway registration failed!`)
@@ -98,9 +100,13 @@ const registerGateway = async (
     registrationData
   )
 
+  console.log(tx)
+
   const response = await sdk.circuit.tx.signAndSendSafe(
     sdk.circuit.tx.createSudo(tx)
   )
+
+  console.log(response)
 
   spinner.succeed(
     colorLogMsg("SUCCESS", `Gateway registration tx sent ${response}`)
