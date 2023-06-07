@@ -1,5 +1,4 @@
 import "@polkadot/api-augment";
-// @ts-ignore
 import { Sdk } from "@t3rn/sdk";
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
@@ -8,7 +7,6 @@ import { PathLike, existsSync } from "fs";
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { homedir } from "os";
-import readline from "readline";
 require("dotenv").config();
 import "@t3rn/types";
 import {
@@ -61,7 +59,7 @@ class Instance {
    * @param name Display name and config identifier for an instance
    * @param logToDisk Write logs to disk within ~/.t3rn-executor-${name}/logs
    */
-  constructor(name: string = "example", logToDisk: boolean = false) {
+  constructor(name = "example", logToDisk = false) {
     this.name = name;
     this.baseDir = join(homedir(), `.t3rn-executor-${name}`);
     this.logsDir = logToDisk
@@ -99,7 +97,8 @@ class Instance {
       this.config.gateways,
       this.config.vendors
     );
-    this.registerExitListener();
+    // TODO: on nodejs it just freeze execution
+    // this.registerExitListener();
     this.registerStateListener();
     this.logger.info("setup complete");
     return this;
@@ -177,20 +176,20 @@ class Instance {
   }
 
   /** Registers a keypress listener for Ctrl+C that initiates instance shutdown. */
-  private registerExitListener(): Instance {
-    const self = this;
-    readline.emitKeypressEvents(process.stdin);
-    process.stdin.on("keypress", async (_, { ctrl, name }) => {
-      if (ctrl && name === "c") {
-        this.logger.info("shutting down...");
-        await this.executionManager.shutdown();
-        process.exit(0);
-      }
-    });
-    process.stdin.setRawMode(true);
-    process.stdin.resume();
-    return self;
-  }
+  // private registerExitListener(): Instance {
+  //   const self = this;
+  //   readline.emitKeypressEvents(process.stdin);
+  //   process.stdin.on("keypress", async (_, { ctrl, name }) => {
+  //     if (ctrl && name === "c") {
+  //       this.logger.info("shutting down...");
+  //       await this.executionManager.shutdown();
+  //       process.exit(0);
+  //     }
+  //   });
+  //   process.stdin.setRawMode(true);
+  //   process.stdin.resume();
+  //   return self;
+  // }
 
   /** Registers a state listener that persists to disk. */
   private registerStateListener(): Instance {
