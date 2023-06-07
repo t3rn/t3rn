@@ -477,12 +477,6 @@ pub mod pallet {
                 Error::<T>::TokenRecordNotFoundInAssetsOverlay
             );
 
-            // ensure that the token's execution vendor matches the gateway's execution vendor
-            ensure!(
-                token_props.match_execution_vendor() == record.execution_vendor,
-                Error::<T>::TokenExecutionVendorMismatch
-            );
-
             Self::override_token(token_id, gateway_id, token_props)
         }
 

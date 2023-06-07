@@ -16,6 +16,7 @@ mod tests {
 
     use pallet_eth2_finality_verifier;
     use std::fs;
+    use t3rn_primitives::xdns::Xdns;
 
     use sp_core::H256;
 
@@ -199,11 +200,12 @@ mod tests {
 
         ExtBuilder::default()
             .with_standard_sfx_abi()
+            .with_default_xdns_records()
             .build()
             .execute_with(|| {
                 let result = Portal::register_gateway(
                     Origin::root(),
-                    [0u8; 4],
+                    [44u8; 4],
                     [0u8; 4],
                     GatewayVendor::Ethereum,
                     ExecutionVendor::EVM,
