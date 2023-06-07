@@ -35,8 +35,8 @@ export enum Network {
 }
 
 interface SyncCommittee {
-  pubs: Array<BLSPubKey>
-  aggr: BLSPubKey
+    pubs: string[],
+    aggr: string
 }
 
 interface SyncAggregate {
@@ -275,80 +275,80 @@ interface BeaconBlockResponseData {
   }
 }
 
-export async function fetchSyncAggregate(slot: number) {
-  const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/blocks/${slot}`
-  const fetchOptions = {
-    type: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "*/*",
-    },
-  }
-  const response = await fetch(endpoint, fetchOptions)
+// export async function fetchSyncAggregate(slot: number) {
+//   const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/blocks/${slot}`
+//   const fetchOptions = {
+//     type: "GET",
+//     headers: {
+//       "Content-Type": "application/json",
+//       Accept: "*/*",
+//     },
+//   }
+//   const response = await fetch(endpoint, fetchOptions)
+//
+//   if (response.status !== 200) {
+//     throw new Error(
+//       "Oops! Fetch sync aggregate faulted to error status: " + response.status
+//     )
+//   }
+//
+//   const responseData = (await response.json()) as {
+//     body: {
+//       sync_aggregate: {
+//         sync_committee_bits: string
+//         sync_committee_signature: string
+//       }
+//     }
+//   }
+//   const syncAggregate: SyncAggregate = {
+//     committeeBits: responseData.body.sync_aggregate.sync_committee_bits,
+//     signature: responseData.body.sync_aggregate.sync_committee_signature,
+//   }
+//
+//   return syncAggregate
+// }
 
-  if (response.status !== 200) {
-    throw new Error(
-      "Oops! Fetch sync aggregate faulted to error status: " + response.status
-    )
-  }
+// export const fetchValidatorRoot = async () => {
+//   const response = await fetch(RELAY_ENDPOINT + "/eth/v1/beacon/genesis", {
+//     method: "GET",
+//   })
+//
+//   if (response.status !== 200) {
+//     throw new Error(
+//       "Oops! Fetch validator root responded with an error status: " +
+//       response.status
+//     )
+//   }
+//
+//   const responseData = (await response.json()) as {
+//     data: {
+//       genesis_validators_root: string
+//     }
+//   }
+//   return responseData.data.genesis_validators_root
+// }
 
-  const responseData = (await response.json()) as {
-    body: {
-      sync_aggregate: {
-        sync_committee_bits: string
-        sync_committee_signature: string
-      }
-    }
-  }
-  const syncAggregate: SyncAggregate = {
-    committeeBits: responseData.body.sync_aggregate.sync_committee_bits,
-    signature: responseData.body.sync_aggregate.sync_committee_signature,
-  }
-
-  return syncAggregate
-}
-
-export const fetchValidatorRoot = async () => {
-  const response = await fetch(RELAY_ENDPOINT + "/eth/v1/beacon/genesis", {
-    method: "GET",
-  })
-
-  if (response.status !== 200) {
-    throw new Error(
-      "Oops! Fetch validator root responded with an error status: " +
-      response.status
-    )
-  }
-
-  const responseData = (await response.json()) as {
-    data: {
-      genesis_validators_root: string
-    }
-  }
-  return responseData.data.genesis_validators_root
-}
-
-export const getDomain = async (
-  network: Network,
-  slot: number,
-  domain: Uint8Array
-) => {
-  const getConfig = (network: Network) => {
-    switch (network) {
-      case Network.MAINNET:
-        return networksChainConfig.mainnet
-        break
-      case Network.SEPOLIA:
-        return networksChainConfig.sepolia
-        break
-    }
-  }
-
-  const chainConfig = getConfig(network)
-  const validatorsRoot = await fetchValidatorRoot()
-  const config = createBeaconConfig(chainConfig, fromHexString(validatorsRoot))
-  return config.getDomain(slot, domain)
-}
+// export const getDomain = async (
+//   network: Network,
+//   slot: number,
+//   domain: Uint8Array
+// ) => {
+//   const getConfig = (network: Network) => {
+//     switch (network) {
+//       case Network.MAINNET:
+//         return networksChainConfig.mainnet
+//         break
+//       case Network.SEPOLIA:
+//         return networksChainConfig.sepolia
+//         break
+//     }
+//   }
+//
+//   const chainConfig = getConfig(network)
+//   const validatorsRoot = await fetchValidatorRoot()
+//   const config = createBeaconConfig(chainConfig, fromHexString(validatorsRoot))
+//   return config.getDomain(slot, domain)
+// }
 
 export const decodeSignerBits = (signerBits: string): boolean[] => {
   signerBits = signerBits.replace("0x", "")
@@ -374,47 +374,47 @@ export const decodeSignerBits = (signerBits: string): boolean[] => {
   return acc.flat()
 }
 
-export const generateSigningRoot = async (
-  network: Network,
-  slot: number,
-  root: string,
-  domainId: Uint8Array
-) => {
-  const domain = await getDomain(network, slot, domainId)
-  const signingRoot = ssz.phase0.SigningData.hashTreeRoot({
-    objectRoot: fromHexString(root),
-    domain,
-  })
-  return signingRoot
-}
+// export const generateSigningRoot = async (
+//   network: Network,
+//   slot: number,
+//   root: string,
+//   domainId: Uint8Array
+// ) => {
+//   const domain = await getDomain(network, slot, domainId)
+//   const signingRoot = ssz.phase0.SigningData.hashTreeRoot({
+//     objectRoot: fromHexString(root),
+//     domain,
+//   })
+//   return signingRoot
+// }
 
-export const aggregatePubkey = (
-  pubkeys: string[],
-  signerBits: string
-): string => {
-  const signerBitsArray = decodeSignerBits(signerBits)
-  const pubkeysArray = pubkeys.map((x) =>
-    Buffer.from(x.replace("0x", ""), "hex")
-  )
-  const aggPubkey = bls.aggregatePublicKeys(
-    pubkeysArray.filter((_, i) => signerBitsArray[i] === true)
-  )
-  return toHexString(aggPubkey)
-}
+// export const aggregatePubkey = (
+//   pubkeys: string[],
+//   signerBits: string
+// ): string => {
+//   const signerBitsArray = decodeSignerBits(signerBits)
+//   const pubkeysArray = pubkeys.map((x) =>
+//     Buffer.from(x.replace("0x", ""), "hex")
+//   )
+//   const aggPubkey = bls.aggregatePublicKeys(
+//     pubkeysArray.filter((_, i) => signerBitsArray[i] === true)
+//   )
+//   return toHexString(aggPubkey)
+// }
 
-export const verifyAggregateSignature = (
-  aggrPub: string,
-  msg: string,
-  sig: string
-): boolean => {
-  const aggrPubBytes = fromHexString(aggrPub)
-  const msgBytes = fromHexString(msg)
-  const sigBytes = fromHexString(sig)
-  return bls.verify(aggrPubBytes, msgBytes, sigBytes)
-}
+// export const verifyAggregateSignature = (
+//   aggrPub: string,
+//   msg: string,
+//   sig: string
+// ): boolean => {
+//   const aggrPubBytes = fromHexString(aggrPub)
+//   const msgBytes = fromHexString(msg)
+//   const sigBytes = fromHexString(sig)
+//   return bls.verify(aggrPubBytes, msgBytes, sigBytes)
+// }
 
 export async function fetchHeaderData(slot: number) {
-  const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/blocks/${slot}`
+  const endpoint = `${RELAY_ENDPOINT}/eth/v2/beacon/blocks/${slot}`
   const fetchOptions = {
     headers: {
       "Content-Type": "application/json",
@@ -429,31 +429,25 @@ export async function fetchHeaderData(slot: number) {
     )
   }
 
+
   const responseData = (await response.json()) as BeaconBlockResponseData
-  const { executionPayload, beaconHeader, proof } =
-    generateExecutionPayloadInclusionProof(responseData.message)
-  const syncAggregate = await fetchSyncAggregate(
-    parseInt(responseData.message.slot) + 1
-  )
-  // testing the signature:
-  const signingRoot = await generateSigningRoot(
-    Network.SEPOLIA,
-    parseInt(responseData.message.slot),
-    toHexString(beaconHeader.hashTreeRoot()),
-    DOMAIN_SYNC_COMMITTEE
-  )
-  const init = await fetchInitData(await fetchLastSyncCommitteeUpdateSlot())
-  const aggregate = aggregatePubkey(
-    init.current_sync_committee.pubkeys as unknown as string[],
-    syncAggregate.committeeBits
-  )
-  const valid = verifyAggregateSignature(
-    aggregate,
-    toHexString(signingRoot),
-    syncAggregate.signature
-  )
-  console.log("Signature valid:", valid)
-  return { beaconHeader, executionPayload, proof, syncAggregate }
+
+  return responseData
+}
+
+async function fetchCheckpointEntry(slot: number) {
+  const header = await fetchHeaderData(slot)
+  const {root} =  await fetchBeaconBlockHeaderAndRoot(slot)
+  // console.log(header.data.message.body.execution_payload.block)
+   return {
+     beacon: {
+       root, epoch: parseInt(header.data.message.slot, 10) / 32
+     },
+     execution: {
+       root: header.data.message.body.execution_payload.block_hash,
+       height: parseInt(header.data.message.body.execution_payload.block_number, 10)
+     }
+   }
 }
 
 export async function fetchBeaconBlockHeaderAndRoot(
@@ -502,12 +496,8 @@ export async function fetchBeaconBlockHeaderAndRoot(
   }
 }
 
-// export const hashHeaderRoot = (header: phase0.BeaconBlockHeader) => {
-//   return toHexString(ssz.phase0.BeaconBlockHeader.hashTreeRoot(header))
-// }
-
-export const fetchInitData = async (slot: number, beaconBlockRoot: string) => {
-  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${beaconBlockRoot}`
+export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockRoot: string) => {
+  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${finalizedBeaconBlockRoot}`
   console.log("Fetch init data from endpoint:", endpoint)
   const fetchOptions = {
     method: "GET",
@@ -559,18 +549,27 @@ export const fetchInitData = async (slot: number, beaconBlockRoot: string) => {
     }
   }
 
+  const finalized = await fetchCheckpointEntry(finalizedSlot)
+  const justified = await fetchCheckpointEntry(finalizedSlot + 32)
+  const attested = await fetchCheckpointEntry(finalizedSlot + 64)
+
+  const currentSyncCommittee: SyncCommittee = {
+    pubs: responseData.data.current_sync_committee.pubkeys,
+    aggr: responseData.data.current_sync_committee.aggregate_pubkey,
+  }
+
   const checkpoint = {
-    justified_epoch: parseInt(responseData.data.header.beacon.slot) / 32,
-    justified_execution_height: parseInt(
-      responseData.data.header.execution.block_number
-    ),
-    justified_block_hash: responseData.data.header.execution.block_hash,
-    finalized_epoch: 0,
-    finalized_execution_height: 0,
+    attested_beacon: attested.beacon,
+    attested_execution: attested.execution,
+    justified_beacon: justified.beacon,
+    justified_execution: justified.execution,
+    finalized_beacon: finalized.beacon,
+    finalized_execution: finalized.execution
   }
 
   return {
-    ...responseData.data,
+    initData: responseData.data,
+    currentSyncCommittee,
     checkpoint,
   }
 }
@@ -582,24 +581,66 @@ export const registerEthereumVerificationVendor = async (
   try {
     const slot = await fetchLastSyncCommitteeUpdateSlot()
     const { header, root } = await fetchBeaconBlockHeaderAndRoot(slot)
-    const initData = await fetchInitData(slot, root)
-    const currentSyncCommittee: SyncCommittee = {
-      pubs: initData.current_sync_committee.pubkeys.map(fromHexString),
-      aggr: fromHexString(initData.current_sync_committee.aggregate_pubkey),
-    }
-    const response = await circuit.init(header, currentSyncCommittee)
-    console.log("Init response:", response)
+
+    const {initData, checkpoint, currentSyncCommittee} = await fetchInitData(slot, root)
+
+    const registrationData = generateRegistrationData(initData, checkpoint, currentSyncCommittee, circuit)
+    return circuit.tx.portal.registerGateway(
+        registrationData.gatewayId,
+        registrationData.tokenId,
+        registrationData.verificationVendor,
+        registrationData.executionVendor,
+        registrationData.codec,
+        registrationData.registrant,
+        registrationData.escrowAccounts,
+        registrationData.allowedSideEffects,
+        registrationData.tokenInfo,
+        registrationData.registrationData
+    )
+
   } catch (e) {
     spinner.fail(colorLogMsg("ERROR", e))
   }
+}
 
-  // const regData: EthereumInitializationData = {
-  //   current_sync_committee: currentSyncCommittee,
-  //   next_sync_committee: currentSyncCommittee,
-  //   checkpoint: initData.checkpoint,
-  //   beacon_header: initData.header.beacon,
-  //   execution_payload: initData.header.execution,
-  // }
-  // encode the response
-  // return it
+const generateRegistrationData = (initData: any, checkpoint: any, syncCommittee: any, circuit: ApiPromise,) => {
+  // console.log(
+  //     "Params:",circuit.createType("EthereumInitializationData", {
+  //       current_sync_committee: circuit.createType("SyncCommittee", syncCommittee),
+  //       next_sync_committee: circuit.createType("SyncCommittee", syncCommittee),
+  //       checkpoint: circuit.createType("Checkpoint", checkpoint),
+  //       beacon_header: circuit.createType("BeaconBlockHeader", initData.header.beacon),
+  //       execution_header: circuit.createType("ExecutionHeader", initData.header.execution),
+  //   }).toHuman(true)
+  // )
+
+  console.log(circuit.createType("SyncCommittee", syncCommittee).toHex())
+
+  return {
+    gatewayId: circuit.createType("ChainId", "ethr"),
+    tokenId: circuit.createType("ChainId", "ethr"),
+    verificationVendor: circuit.createType('GatewayVendor', "Ethereum"),
+    executionVendor: circuit.createType("ExecutionVendor", "EVM"),
+    codec: circuit.createType('RuntimeCodec', 'RLP'),
+    registrant: null,
+    escrowAccounts: null,
+    allowedSideEffects: circuit.createType('Vec<([u8; 4], Option<u8>)>', [["tran", 4]]),
+    tokenInfo: circuit.createType('TokenInfo', {
+        Ethereum: {
+            symbol: "eth",
+            decimals: 18,
+            address: null
+        }
+    }),
+    registrationData: circuit.createType("EthereumInitializationData", {
+        current_sync_committee: circuit.createType("SyncCommittee", {
+          pubs: circuit.createType("Vec<BLSPubkey>", syncCommittee.pubs),
+          aggr: circuit.createType("BLSPubkey", syncCommittee.aggr),
+        }),
+        next_sync_committee: circuit.createType("SyncCommittee", syncCommittee),
+        checkpoint: circuit.createType("Checkpoint", checkpoint),
+        beacon_header: circuit.createType("BeaconBlockHeader", initData.header.beacon),
+        execution_header: circuit.createType("ExecutionHeader", initData.header.execution),
+    }).toHex()
+  }
 }
