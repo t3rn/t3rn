@@ -1,0 +1,56 @@
+{{ $outer := . -}}
+
+{{- range $index, $keys := .Values.attestersKeys }}
+{{- with $outer -}}
+{{- $attesterName := printf "attester-%d" $index }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $attesterName }}
+  labels:
+    {{- include "attester.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "attester.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "attester.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "attester.name" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: attester
+          image: "{{ .Values.repository }}:{{ .Values.tag }}"
+          env:
+            - name: PROFILE
+              value: "{{ .Values.profile }}"
+            - name: KEYS
+              value: {{ $keys | toJson | b64enc }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

@@ -150,7 +150,10 @@ impl pallet_attesters::Config for Runtime {
     type MinNominatorBond = MinNominatorBond;
     type Portal = Portal;
     type RandomnessSource = RandomnessCollectiveFlip;
+    type ReadSFX = Circuit;
+    type RepatriationPeriod = ConstU32<60>;
     type RewardMultiplier = RewardMultiplier;
+    type Rewards = Rewards;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = EscrowAccount;
     type Xdns = XDNS;
@@ -167,6 +170,7 @@ parameter_types! {
     pub const AttesterBootstrapRewards: Percent = Percent::from_parts(40); // 40%
     pub const CollatorBootstrapRewards: Percent = Percent::from_parts(20); // 20%
     pub const ExecutorBootstrapRewards: Percent = Percent::from_parts(40); // 40%
+    pub const StartingRepatriationPercentage: Percent = Percent::from_parts(10); // 10%
     pub const OneYear: BlockNumber = 2_628_000; // (365.25 * 24 * 60 * 60) / 12; assuming 12s block time
     pub const InflationDistributionPeriod: BlockNumber = 100_800; // (14 * 24 * 60 * 60) / 12; assuming one distribution per two weeks
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
@@ -188,6 +192,7 @@ impl pallet_rewards::Config for Runtime {
     type FindAuthor = ();
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
+    type StartingRepatriationPercentage = StartingRepatriationPercentage;
     type TotalInflation = TotalInflation;
     type TreasuryAccounts = Runtime;
     type TreasuryInflation = TreasuryInflation;

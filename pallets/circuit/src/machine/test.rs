@@ -182,6 +182,54 @@ pub mod test {
     }
 
     #[test]
+    fn read_sfx_api_returns_fsx_requester_if_xtx_exists() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                stage_single();
+
+                let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
+                let fsx_id =
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
+                        xtx_id,
+                    )
+                    .unwrap()[0];
+
+                assert_eq!(
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_requester(
+                        fsx_id
+                    ),
+                    Ok(circuit_mock_runtime::ALICE)
+                );
+            });
+    }
+
+    #[test]
+    fn read_sfx_api_fails_to_return_requester_if_xtx_does_not_exist() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                stage_single();
+
+                assert_err!(
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_requester(
+                        hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
+                            .into()
+                    ),
+                    DispatchError::Module(ModuleError {
+                        index: 108,
+                        error: [56, 0, 0, 0],
+                        message: Some("XtxNotFound")
+                    })
+                );
+            });
+    }
+
+    #[test]
     fn read_sfx_api_errors_if_xtx_does_not_exist() {
         ExtBuilder::default()
             .with_standard_sfx_abi()

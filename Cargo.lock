@@ -12569,7 +12569,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.29.2-rc.0"
+version = "1.30.0-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12645,7 +12645,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.29.2-rc.0"
+version = "1.30.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12787,6 +12787,7 @@ dependencies = [
  "pallet-attesters",
  "pallet-aura",
  "pallet-balances",
+ "pallet-circuit",
  "pallet-clock",
  "pallet-contracts 4.0.0-dev",
  "pallet-grandpa-finality-verifier",
@@ -12948,6 +12949,7 @@ dependencies = [
 name = "t3rn-primitives"
 version = "1.0.0-alpha.1"
 dependencies = [
+ "bytes",
  "ed25519-dalek",
  "finality-grandpa",
  "frame-support",
@@ -12955,6 +12957,7 @@ dependencies = [
  "hash-db",
  "hex",
  "hex-literal 0.3.4",
+ "libsecp256k1",
  "log",
  "num-traits",
  "pallet-sudo",
@@ -12975,6 +12978,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-sdk-primitives",
  "t3rn-types 1.5.0-rc.0",
+ "tiny-keccak",
 ]
 
 [[package]]
