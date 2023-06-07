@@ -29,9 +29,9 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+t3rn-abi         = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives  = { default-features = false, path = "../../primitives" }
 t3rn-types       = { default-features = false, path = "../../types", features = [ "runtime" ] }
-t3rn-abi         = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 
 circuit-runtime-types = { default-features = false, path = "../../runtime/common-types" }
 
@@ -46,7 +46,13 @@ sp-keystore             = { git = "https://github.com/paritytech/substrate", bra
 
 [features]
 default = [ "std" ]
-runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-support/runtime-benchmarks", "frame-system/runtime-benchmarks", "pallet-timestamp/runtime-benchmarks", "sp-runtime/runtime-benchmarks"]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "pallet-timestamp/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+]
 std = [
   "codec/std",
   "frame-support/std",
@@ -65,4 +71,4 @@ std = [
   "t3rn-abi/std",
   "circuit-runtime-types/std",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime"]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-timestamp/try-runtime", "t3rn-abi/try-runtime" ]

@@ -77,7 +77,15 @@ pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
 
 [features]
 default = [ "std" ]
-runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-system/runtime-benchmarks", "frame-support/runtime-benchmarks", "sp-runtime/runtime-benchmarks",  "rand", "rand_pcg", "unstable-interface" ]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+  "rand",
+  "rand_pcg",
+  "unstable-interface",
+]
 std = [
   "serde/std",
   "codec/std",
