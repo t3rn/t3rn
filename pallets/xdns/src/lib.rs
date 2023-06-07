@@ -48,7 +48,7 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::Zero;
+
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
@@ -56,8 +56,8 @@ pub mod pallet {
         light_client::LightClientHeartbeat,
         portal::Portal,
         xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
-        AccountId, Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo,
-        TreasuryAccount, TreasuryAccountProvider,
+        Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo, TreasuryAccount,
+        TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -86,9 +86,7 @@ pub mod pallet {
 
         type SelfTokenId: Get<AssetId>;
 
-        type SelfGatewayIdOptimistic: Get<ChainId>;
-
-        type SelfGatewayIdEscrow: Get<ChainId>;
+        type SelfGatewayId: Get<ChainId>;
 
         type Time: Time;
     }
@@ -190,11 +188,11 @@ pub mod pallet {
 
                 let token_ids = GatewayTokens::<T>::get(gateway_id);
 
-                token_ids.iter().for_each(|token| {
-                    <Tokens<T>>::remove(token.token_id, gateway_id);
-                    if gateway_id == T::SelfGatewayIdOptimistic::get() {
+                token_ids.iter().for_each(|token_id| {
+                    <Tokens<T>>::remove(token_id, gateway_id);
+                    if gateway_id == T::SelfGatewayId::get() {
                         <AllTokenIds<T>>::mutate(|all_token_ids| {
-                            all_token_ids.retain(|&id| id != token.token_id);
+                            all_token_ids.retain(|id| id != token_id);
                         });
                     }
                 });
@@ -216,12 +214,12 @@ pub mod pallet {
             gateway_id: TargetId,
             token_id: AssetId,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin.clone())?;
+            ensure_root(origin)?;
 
             <Tokens<T>>::remove(token_id, gateway_id);
 
             <GatewayTokens<T>>::mutate(gateway_id, |token_ids| {
-                token_ids.retain(|token| token.token_id != token_id);
+                token_ids.retain(|&x_token_id| x_token_id != token_id);
             });
 
             Ok(().into())
@@ -332,8 +330,7 @@ pub mod pallet {
     // Recover TokenRecords stored per gateway, to be able to iterate over all tokens stored on a gateway
     #[pallet::storage]
     #[pallet::getter(fn gateway_tokens)]
-    pub type GatewayTokens<T: Config> =
-        StorageMap<_, Identity, TargetId, Vec<TokenRecord>, ValueQuery>;
+    pub type GatewayTokens<T: Config> = StorageMap<_, Identity, TargetId, Vec<AssetId>, ValueQuery>;
 
     // All known TokenIds to t3rn
     #[pallet::storage]
@@ -452,7 +449,7 @@ pub mod pallet {
                 T::Currency::minimum_balance(),
             )?;
 
-            let gateway_id = T::SelfGatewayIdOptimistic::get();
+            let gateway_id = T::SelfGatewayId::get();
 
             Self::link_token_to_gateway(token_id, gateway_id, token_props)?;
 
@@ -467,6 +464,9 @@ pub mod pallet {
             gateway_id: TargetId,
             token_props: TokenInfo,
         ) -> DispatchResult {
+            // fetch record and ensure it exists
+            let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
+
             // early exit if record already exists in storage
             if <Tokens<T>>::contains_key(token_id, gateway_id) {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
@@ -476,9 +476,6 @@ pub mod pallet {
                 T::AssetsOverlay::contains_asset(&token_id),
                 Error::<T>::TokenRecordNotFoundInAssetsOverlay
             );
-
-            // fetch record and ensure it exists
-            let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
 
             // ensure that the token's execution vendor matches the gateway's execution vendor
             ensure!(
@@ -503,6 +500,12 @@ pub mod pallet {
                     token_props,
                 },
             );
+
+            <GatewayTokens<T>>::mutate(gateway_id, |tokens| {
+                if !tokens.contains(&token_id) {
+                    tokens.push(token_id);
+                }
+            });
 
             Self::deposit_event(Event::<T>::NewTokenLinkedToGateway(token_id, gateway_id));
             Ok(())

@@ -225,10 +225,10 @@ impl pallet_xdns::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Portal = Portal;
-    type SelfGatewayIdEscrow = SelfGatewayId;
-    type SelfGatewayIdOptimistic = SelfGatewayIdOptimistic;
+    type SelfGatewayId = SelfGatewayId;
     type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
+    type TreasuryAccounts = Runtime;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 

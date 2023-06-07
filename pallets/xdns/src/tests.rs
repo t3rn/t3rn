@@ -65,9 +65,24 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
     });
 }
 
+fn add_self_as_base_gateway() {
+    assert_ok!(XDNS::add_new_gateway(
+        [3, 3, 3, 3],
+        GatewayVendor::Rococo,
+        ExecutionVendor::Substrate,
+        t3rn_abi::Codec::Scale,
+        None,   // registrant
+        None,   // escrow_account
+        vec![], // allowed_side_effects
+    ));
+}
+
 #[test]
-fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
+fn should_add_a_new_xdns_and_record_and_token_if_it_doesnt_exist() {
     ExtBuilder::default().build().execute_with(|| {
+        // Add the self-gateway
+        add_self_as_base_gateway();
+
         assert_ok!(XDNS::add_new_gateway(
             *b"test",
             GatewayVendor::Rococo,
@@ -78,10 +93,20 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
             vec![], // allowed_side_effects
         ));
 
-        assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
+        assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 2);
         assert!(pallet_xdns::Gateways::<Runtime>::get(b"test").is_some());
 
-        assert_ok!(XDNS::add_new_token(
+        assert_ok!(XDNS::register_new_token(
+            &circuit_mock_runtime::Origin::root(),
+            u32::from_le_bytes(*b"test"),
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1,
+                symbol: b"test".to_vec(),
+                decimals: 1,
+            })
+        ));
+
+        assert_ok!(XDNS::link_token_to_gateway(
             u32::from_le_bytes(*b"test"),
             *b"test",
             TokenInfo::Substrate(SubstrateToken {
@@ -93,7 +118,7 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
 
         // no duplicates
         assert_noop!(
-            XDNS::add_new_token(
+            XDNS::link_token_to_gateway(
                 u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Substrate(SubstrateToken {
@@ -107,7 +132,7 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
 
         // no mismatched execution vendor
         assert_noop!(
-            XDNS::add_new_token(
+            XDNS::link_token_to_gateway(
                 u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Ethereum(EthereumToken {
@@ -119,16 +144,16 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
             pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
         );
 
-        assert_eq!(pallet_xdns::Tokens::<Runtime>::iter().count(), 1);
+        assert_eq!(pallet_xdns::Tokens::<Runtime>::iter().count(), 2);
     });
 }
 
 #[test]
-fn shouldnt_add_new_without_gateway_record() {
+fn should_not_link_token_without_gateway_record() {
     ExtBuilder::default().build().execute_with(|| {
         // no duplicates
         assert_noop!(
-            XDNS::add_new_token(
+            XDNS::link_token_to_gateway(
                 u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Substrate(SubstrateToken {
@@ -196,7 +221,6 @@ fn should_register_token_and_populate_assets_storage_successfully() {
             assert_ok!(XDNS::register_new_token(
                 &circuit_mock_runtime::Origin::root(),
                 u32::from_le_bytes(*b"test"),
-                *b"gate",
                 TokenInfo::Substrate(SubstrateToken {
                     id: 1,
                     symbol: b"test".to_vec(),
@@ -225,7 +249,6 @@ fn should_purge_token_and_destroy_asset_storage_successfully() {
             assert_ok!(XDNS::register_new_token(
                 &circuit_mock_runtime::Origin::root(),
                 u32::from_le_bytes(*b"test"),
-                *b"gate",
                 TokenInfo::Substrate(SubstrateToken {
                     id: 1,
                     symbol: b"test".to_vec(),
@@ -255,8 +278,17 @@ fn should_purge_a_gateway_record_successfully() {
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT
             );
+            assert_ok!(XDNS::register_new_token(
+                &circuit_mock_runtime::Origin::root(),
+                u32::from_le_bytes(*b"test"),
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
 
-            assert_ok!(XDNS::add_new_token(
+            assert_ok!(XDNS::link_token_to_gateway(
                 u32::from_le_bytes(*b"test"),
                 *b"gate",
                 TokenInfo::Substrate(SubstrateToken {
@@ -272,21 +304,38 @@ fn should_purge_a_gateway_record_successfully() {
                     .count(),
                 1
             );
+
+            assert_eq!(
+                pallet_xdns::GatewayTokens::<Runtime>::get(*b"gate"),
+                vec![u32::from_le_bytes(*b"test")]
+            );
+
+            assert!(
+                pallet_xdns::Tokens::<Runtime>::get(u32::from_le_bytes(*b"test"), *b"gate")
+                    .is_some(),
+            );
+
             assert_ok!(XDNS::purge_gateway_record(
                 Origin::<Runtime>::Root.into(),
                 ALICE,
                 *b"gate"
             ));
+
             assert_eq!(
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT - 1
             );
             assert!(pallet_xdns::Gateways::<Runtime>::get(b"gate").is_none());
-            assert_eq!(
-                pallet_xdns::Tokens::<Runtime>::iter_values()
-                    .filter(|token| token.gateway_id == *b"gate")
-                    .count(),
-                0
+            // should leave the token record intact registered on the base
+            assert!(pallet_xdns::Tokens::<Runtime>::get(
+                u32::from_le_bytes(*b"test"),
+                [3, 3, 3, 3]
+            )
+            .is_some());
+
+            assert!(
+                pallet_xdns::Tokens::<Runtime>::get(u32::from_le_bytes(*b"test"), *b"gate")
+                    .is_none(),
             );
         });
 }

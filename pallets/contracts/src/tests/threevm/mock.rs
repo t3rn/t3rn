@@ -151,10 +151,10 @@ mod threevm_mock {
         type Currency = Balances;
         type Event = Event;
         type Portal = CircuitPortal;
-        type SelfGatewayIdEscrow = CircuitTargetId;
-        type SelfGatewayIdOptimistic = CircuitTargetIdOptimistic;
+        type SelfGatewayId = CircuitTargetId;
         type SelfTokenId = ConstU32<3333>;
         type Time = Timestamp;
+        type TreasuryAccounts = Test;
         type WeightInfo = ();
     }
 
