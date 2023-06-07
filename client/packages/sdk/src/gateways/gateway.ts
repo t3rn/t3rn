@@ -36,6 +36,7 @@ export class Gateway {
   allowedSideEffects: string[];
   createSfx: {} = {};
   tokens: [] = [];
+  record: T3rnPrimitivesXdnsFullGatewayRecord;
 
   /**
    * Create a Gateway instance
@@ -44,6 +45,7 @@ export class Gateway {
 
   constructor(record: T3rnPrimitivesXdnsFullGatewayRecord) {
     this.id = record.gateway_record.gateway_id.toHuman();
+    this.record = record;
     this.vendor = record.gateway_record.verification_vendor.toHuman();
     this.executionVendor = record.gateway_record.execution_vendor.toHuman();
     let tokens: any[] = record.tokens.map((token) => token.toHuman());

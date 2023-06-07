@@ -16,6 +16,8 @@ import { EventEmitter } from "events";
 import { floatToBn, toFloat } from "@t3rn/sdk/dist/circuit";
 import { bnToFloat } from "@t3rn/sdk/dist/converters/amounts";
 import { InclusionProof } from "../gateways/types";
+import { Miscellaneous } from "./execution";
+import { createLogger } from "../utils";
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];
@@ -65,6 +67,28 @@ export type Notification = {
   type: NotificationType;
   payload: any;
 };
+
+/**
+ * Extra data to recreate a serialized side effect
+ *
+ * @group Execution Manager
+ */
+export interface SideEffectMiscellaneous extends Miscellaneous {
+  gatewayId: string;
+  xdns: { [key: string]: any };
+}
+
+/**
+ * JSON serializable side effect
+ *
+ * @group Execution Manager
+ */
+export interface SerializableSideEffect {
+  id: string;
+  xtxId: string;
+  misc: SideEffectMiscellaneous;
+  sideEffect: { [key: string]: any };
+}
 
 /**
  * Class used for tracking the state of a side effect. It contains all needed data and helper functions to go through the lifecycle of a XTX.
@@ -148,6 +172,9 @@ export class SideEffect extends EventEmitter {
   strategyEngine: StrategyEngine;
   biddingEngine: BiddingEngine;
 
+  misc: Miscellaneous;
+  xdns: { [key: string]: any };
+
   /**
    * @param sideEffect Scale encoded side effect
    * @param id Id of the SFX
@@ -155,8 +182,8 @@ export class SideEffect extends EventEmitter {
    * @param sdk Instance of @t3rn/sdk
    * @param strategyEngine Instance of the strategy engine
    * @param biddingEngine Instance of the bidding engine
-   * @param circuitSignerAddress Address of the executor account used for transaction on circuit
    * @param logger The logger instance
+   * @param misc Extra data
    * @returns SideEffect instance
    */
   constructor(
@@ -166,12 +193,13 @@ export class SideEffect extends EventEmitter {
     sdk: Sdk,
     strategyEngine: StrategyEngine,
     biddingEngine: BiddingEngine,
-    circuitSignerAddress: string,
-    logger: any
+    logger: any,
+    misc: Miscellaneous
   ) {
     super();
     if (this.decodeAction(sideEffect.action)) {
       this.raw = sideEffect;
+      this.misc = misc;
       this.id = id;
       this.humanId = id.substring(0, 8);
       this.xtxId = xtxId;
@@ -184,7 +212,7 @@ export class SideEffect extends EventEmitter {
       this.insurance = sdk.circuit.toFloat(sideEffect.insurance); // this is always in TRN (native asset)
       this.strategyEngine = strategyEngine;
       this.biddingEngine = biddingEngine;
-      this.circuitSignerAddress = circuitSignerAddress;
+      this.circuitSignerAddress = misc.circuitSignerAddress;
       this.logger = logger;
       this.vendor = this.gateway.vendor;
     }
@@ -283,6 +311,59 @@ export class SideEffect extends EventEmitter {
       this.maxProfitUsd.next(maxProfitUsd);
       this.triggerBid();
     }
+  }
+
+  /** Custom JSON serialization. */
+  toJSON(): SerializableSideEffect {
+    return {
+      id: this.id,
+      xtxId: this.xtxId,
+      sideEffect: Object.assign({}, this.raw, {
+        action: this.raw.action.toHuman(),
+      }),
+      misc: {
+        executorName: this.misc.executorName,
+        logsDir: this.logger.logsDir,
+        circuitRpc: this.misc.circuitRpc,
+        circuitSignerAddress: this.misc.circuitSignerAddress,
+        circuitSignerSecret: this.misc.circuitSignerSecret,
+        gatewayId: this.gateway.id,
+        //WIP this.gateway.record
+        xdns: Object.assign({}, (this.gateway as any).record),
+      },
+    };
+  }
+
+  /** Custom JSON deserialization. */
+  static fromJSON(o: SerializableSideEffect): SideEffect {
+    const logger = createLogger(o.misc.executorName, o.misc.logsDir);
+    const sdk = new Sdk(o.misc.circuitRpc, o.misc.circuitSignerSecret);
+    let sideEffect = {
+      ...o.sideEffect,
+      action: {
+        toHuman() {
+          return o.sideEffect.action.toString();
+        },
+      },
+      target: {
+        toU8a() {
+          return Uint8Array.from(Buffer.from(o.misc.gatewayId));
+        },
+      },
+    };
+    sideEffect = new Gateway(o.misc.xdns).createSfx[o.sideEffect.action](
+      sideEffect
+    ) as T3rnTypesSideEffect;
+    return new SideEffect(
+      sideEffect as T3rnTypesSideEffect,
+      o.id,
+      o.xtxId,
+      sdk,
+      new StrategyEngine(),
+      new BiddingEngine(logger),
+      logger,
+      o.misc
+    );
   }
 
   /** Triggers the bidding engine to place a new bid for the SFX. */
@@ -428,7 +509,7 @@ export class SideEffect extends EventEmitter {
     this.lastBids.push(bidAmount);
 
     // if this is not own bid, update reward and isBidder
-    if (signer !== this.circuitSignerAddress) {
+    if (signer !== this.misc.circuitSignerAddress) {
       this.logger.info(
         `Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(
           bidAmount

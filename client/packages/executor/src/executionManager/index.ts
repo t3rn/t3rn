@@ -13,9 +13,10 @@ import {
 } from "../circuit/listener";
 import { ApiPromise } from "@polkadot/api";
 import { CircuitRelayer } from "../circuit/relayer";
+// import { ExecutionLayerType } from "@t3rn/sdk/dist/src/gateways/types"
 import { RelayerEventData, RelayerEvents } from "../gateways/types";
 import { XtxStatus } from "@t3rn/sdk/dist/side-effects/types";
-import { Gateway } from "../../config/config";
+import { Config, Gateway } from "../../config/config";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -47,6 +48,15 @@ export type Queue = {
     reverted: string[];
   };
 };
+
+/** Persisted state for JSON de/serialization. WIP */
+export interface PersistedState {
+  queue: Queue;
+  xtx: { [id: string]: Execution };
+  sfxToXtx: { [sfxId: string]: string };
+  // targetEstimator: { [id: string]: Estimator }
+  // relayers: { [key: string]: SubstrateRelayer }
+}
 
 /**
  * The ExecutionManager lies at the heart of the t3rn executor. It is responsible for managing and coordinating the execution of incoming
@@ -84,8 +94,14 @@ export class ExecutionManager {
   circuitRelayer: CircuitRelayer;
   signer: any;
   logger: any;
+  config: Config;
 
-  constructor(circuitClient: ApiPromise, sdk: Sdk, logger: any) {
+  constructor(
+    circuitClient: ApiPromise,
+    sdk: Sdk,
+    logger: any,
+    config: Config
+  ) {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
     this.biddingEngine = new BiddingEngine(logger);
@@ -94,6 +110,23 @@ export class ExecutionManager {
     this.circuitRelayer = new CircuitRelayer(sdk);
     this.sdk = sdk;
     this.logger = logger;
+    this.config = config;
+  }
+
+  /** Injects persisted execution state.
+   *
+   * @param state Persisted state to rebase ontop
+   *
+   */
+  inject(state: undefined | PersistedState): ExecutionManager {
+    if (state) {
+      this.queue = state.queue;
+      this.xtx = state.xtx;
+      this.sfxToXtx = state.sfxToXtx;
+      // this.targetEstimator = state.targetEstimator
+      // this.relayers = state.relayers
+    }
+    return this;
   }
 
   /** Setup all instances and listeners for the execution manager */
@@ -103,6 +136,31 @@ export class ExecutionManager {
     await this.circuitListener.start();
     await this.initializeEventListeners();
     this.addLog({ msg: "Setup Successful" });
+  }
+
+  /** Initiates a shutdown, the promise resolves once all executions are done. */
+  async shutdown(): Promise<void> {
+    const self = this;
+    await self.circuitListener.stop();
+    return new Promise((resolve) => {
+      function recheckQueue() {
+        const done = Object.entries(self.sdk.gateways)
+          .map(([_, gtwy]) => (gtwy as any).id)
+          .every(
+            (gtwyId) =>
+              self.queue[gtwyId].isBidding.length === 0 &&
+              self.queue[gtwyId].isExecuting.length === 0 &&
+              self.queue[gtwyId].isConfirming.length === 0
+          );
+        if (done) {
+          resolve(undefined);
+        } else {
+          self.circuitListener.once("Event", recheckQueue);
+        }
+      }
+      this.circuitListener.once("Event", recheckQueue);
+      recheckQueue();
+    });
   }
 
   initializeVendors(vendors: string[]) {
@@ -189,8 +247,9 @@ export class ExecutionManager {
           }
         });
       }
+
+      this.addLog({ msg: "Gateways Initialized" });
     }
-    this.addLog({ msg: "Gateways Initialized" });
   }
 
   /** Initialize the circuit listeners */
@@ -523,7 +582,7 @@ export class ExecutionManager {
         this.removeFromQueue("isExecuting", sfx.id, sfx.vendor);
         let confirmBatch =
           this.queue[sfx.vendor].isConfirming[
-          sfx.targetInclusionHeight.toString()
+            sfx.targetInclusionHeight.toString()
           ];
         if (!confirmBatch) confirmBatch = [];
         if (confirmBatch.includes(sfx.id)) {

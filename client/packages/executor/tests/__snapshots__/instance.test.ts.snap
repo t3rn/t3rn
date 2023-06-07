@@ -1,0 +1,305 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Instance Configuration should load custom config 1`] = `
+Object {
+  "assets": Object {
+    "BSX": Array [
+      Object {
+        "id": "basilisk",
+        "priceSource": "coingecko",
+      },
+    ],
+    "ROC": Array [
+      Object {
+        "id": "polkadot",
+        "priceSource": "coingecko",
+      },
+    ],
+    "TRN": Array [
+      Object {
+        "id": "acala",
+        "priceSource": "coingecko",
+      },
+    ],
+  },
+  "bidding": Object {
+    "bidAggressive": true,
+    "bidMeek": false,
+    "bidPercentile": 0.75,
+    "closerPercentageBid": 0.1,
+    "equalMinProfitBid": false,
+    "overrideNoCompetition": true,
+  },
+  "circuit": Object {
+    "decimals": 12,
+    "rpc": "wss://ws.t0rn.io",
+    "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+    "ticker": "TRN",
+  },
+  "default": Object {
+    "assets": Object {
+      "BSX": Array [
+        Object {
+          "id": "basilisk",
+          "priceSource": "coingecko",
+        },
+      ],
+      "ROC": Array [
+        Object {
+          "id": "polkadot",
+          "priceSource": "coingecko",
+        },
+      ],
+      "TRN": Array [
+        Object {
+          "id": "acala",
+          "priceSource": "coingecko",
+        },
+      ],
+    },
+    "bidding": Object {
+      "bidAggressive": true,
+      "bidMeek": false,
+      "bidPercentile": 0.75,
+      "closerPercentageBid": 0.1,
+      "equalMinProfitBid": false,
+      "overrideNoCompetition": true,
+    },
+    "circuit": Object {
+      "decimals": 12,
+      "rpc": "wss://ws.t0rn.io",
+      "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+      "ticker": "TRN",
+    },
+    "gateways": Array [
+      Object {
+        "id": "roco",
+        "name": "Rococo",
+        "rpc": "wss://rococo-rpc.polkadot.io",
+        "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+        "type": "Substrate",
+      },
+      Object {
+        "id": "bslk",
+        "name": "Basilisk",
+        "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
+        "type": "Substrate",
+      },
+    ],
+    "pricing": Object {
+      "coingecko": Object {
+        "endpoint": "https://api.coingecko.com/api/v3/coins/",
+      },
+    },
+    "strategies": Object {
+      "roco": Object {
+        "sfx": Object {
+          "minProfitUsd": 3,
+          "minYield": 0.05,
+        },
+        "supportedAssets": Array [
+          "ROC",
+        ],
+        "xtx": Object {
+          "minInsuranceAmountUsd": 1,
+          "minInsuranceShare": 0.1,
+        },
+      },
+    },
+    "vendors": Array [
+      "Rococo",
+    ],
+  },
+  "gateways": Array [
+    Object {
+      "id": "roco",
+      "name": "Rococo",
+      "rpc": "wss://rococo-rpc.polkadot.io",
+      "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+      "type": "Substrate",
+    },
+    Object {
+      "id": "bslk",
+      "name": "Basilisk",
+      "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
+      "type": "Substrate",
+    },
+  ],
+  "name": "alina",
+  "pricing": Object {
+    "coingecko": Object {
+      "endpoint": "https://api.coingecko.com/api/v3/coins/",
+    },
+  },
+  "strategies": Object {
+    "roco": Object {
+      "sfx": Object {
+        "minProfitUsd": 3,
+        "minYield": 0.05,
+      },
+      "supportedAssets": Array [
+        "ROC",
+      ],
+      "xtx": Object {
+        "minInsuranceAmountUsd": 1,
+        "minInsuranceShare": 0.1,
+      },
+    },
+  },
+  "vendors": Array [
+    "Rococo",
+  ],
+}
+`;
+
+exports[`Instance Configuration should persist custom config 1`] = `
+Object {
+  "assets": Object {
+    "BSX": Array [
+      Object {
+        "id": "basilisk",
+        "priceSource": "coingecko",
+      },
+    ],
+    "ROC": Array [
+      Object {
+        "id": "polkadot",
+        "priceSource": "coingecko",
+      },
+    ],
+    "TRN": Array [
+      Object {
+        "id": "acala",
+        "priceSource": "coingecko",
+      },
+    ],
+  },
+  "bidding": Object {
+    "bidAggressive": true,
+    "bidMeek": false,
+    "bidPercentile": 0.75,
+    "closerPercentageBid": 0.1,
+    "equalMinProfitBid": false,
+    "overrideNoCompetition": true,
+  },
+  "circuit": Object {
+    "decimals": 12,
+    "rpc": "wss://ws.t0rn.io",
+    "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+    "ticker": "TRN",
+  },
+  "default": Object {
+    "assets": Object {
+      "BSX": Array [
+        Object {
+          "id": "basilisk",
+          "priceSource": "coingecko",
+        },
+      ],
+      "ROC": Array [
+        Object {
+          "id": "polkadot",
+          "priceSource": "coingecko",
+        },
+      ],
+      "TRN": Array [
+        Object {
+          "id": "acala",
+          "priceSource": "coingecko",
+        },
+      ],
+    },
+    "bidding": Object {
+      "bidAggressive": true,
+      "bidMeek": false,
+      "bidPercentile": 0.75,
+      "closerPercentageBid": 0.1,
+      "equalMinProfitBid": false,
+      "overrideNoCompetition": true,
+    },
+    "circuit": Object {
+      "decimals": 12,
+      "rpc": "wss://ws.t0rn.io",
+      "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+      "ticker": "TRN",
+    },
+    "gateways": Array [
+      Object {
+        "id": "roco",
+        "name": "Rococo",
+        "rpc": "wss://rococo-rpc.polkadot.io",
+        "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+        "type": "Substrate",
+      },
+      Object {
+        "id": "bslk",
+        "name": "Basilisk",
+        "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
+        "type": "Substrate",
+      },
+    ],
+    "pricing": Object {
+      "coingecko": Object {
+        "endpoint": "https://api.coingecko.com/api/v3/coins/",
+      },
+    },
+    "strategies": Object {
+      "roco": Object {
+        "sfx": Object {
+          "minProfitUsd": 3,
+          "minYield": 0.05,
+        },
+        "supportedAssets": Array [
+          "ROC",
+        ],
+        "xtx": Object {
+          "minInsuranceAmountUsd": 1,
+          "minInsuranceShare": 0.1,
+        },
+      },
+    },
+    "vendors": Array [
+      "Rococo",
+    ],
+  },
+  "gateways": Array [
+    Object {
+      "id": "roco",
+      "name": "Rococo",
+      "rpc": "wss://rococo-rpc.polkadot.io",
+      "signerKey": "0xacabacabacabacabacabacabacabacabacabacabacabacabacabacabacabacab",
+      "type": "Substrate",
+    },
+    Object {
+      "id": "bslk",
+      "name": "Basilisk",
+      "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
+      "type": "Substrate",
+    },
+  ],
+  "name": "alina",
+  "pricing": Object {
+    "coingecko": Object {
+      "endpoint": "https://api.coingecko.com/api/v3/coins/",
+    },
+  },
+  "strategies": Object {
+    "roco": Object {
+      "sfx": Object {
+        "minProfitUsd": 3,
+        "minYield": 0.05,
+      },
+      "supportedAssets": Array [
+        "ROC",
+      ],
+      "xtx": Object {
+        "minInsuranceAmountUsd": 1,
+        "minInsuranceShare": 0.1,
+      },
+    },
+  },
+  "vendors": Array [
+    "Rococo",
+  ],
+}
+`;

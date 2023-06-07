@@ -64,10 +64,9 @@ jobs:
           node-version: ${{ env.NVMRC }}
 
       - run: cd .. && make all
-      - run: yarn
-      - run: yarn ci
-      - run: yarn fmt
-      - run: yarn build-docs
+      - run: pnpm install
+      - run: pnpm fmt
+      - run: pnpm build-docs
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'
@@ -81,8 +80,11 @@ jobs:
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/executor/eslint_report.json
+        # TODO: remove at some point
+        continue-on-error: true
 
-      - run: yarn test
+      - run: pnpm test
+        timeout-minutes: 5
 
   build-docker:
     name: Build Docker Executor
