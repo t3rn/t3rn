@@ -142,6 +142,7 @@ std = [
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",
   "serde/std",
+  "sp-io/std",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",

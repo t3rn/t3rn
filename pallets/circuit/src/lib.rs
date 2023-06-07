@@ -729,7 +729,7 @@ pub mod pallet {
                         || status_change.1 == CircuitStatus::Committed
                     {
                         Self::request_sfx_attestation(local_ctx);
-                        T::Xdns::estimate_costs(&Machine::read_current_step_fsx(local_ctx));
+                        T::Xdns::estimate_costs(Machine::read_current_step_fsx(local_ctx));
                     }
                     // Emit: From Circuit events
                     Self::emit_status_update(
@@ -1302,7 +1302,7 @@ impl<T: Config> Pallet<T> {
 
         let _success: bool =
             Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, local_ctx| {
-                Self::request_sfx_attestation(&local_ctx);
+                Self::request_sfx_attestation(local_ctx);
                 Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id));
             });
 
@@ -1310,7 +1310,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn request_sfx_attestation(local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) {
-        Machine::<T>::read_current_step_fsx(&local_ctx)
+        Machine::<T>::read_current_step_fsx(local_ctx)
             .iter()
             .for_each(|fsx| {
                 if fsx.security_lvl == SecurityLvl::Escrow {

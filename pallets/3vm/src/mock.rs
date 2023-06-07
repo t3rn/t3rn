@@ -13,7 +13,7 @@ use pallet_grandpa_finality_verifier::light_clients::{
 };
 use pallet_portal::Error as PortalError;
 use sp_std::boxed::Box;
-use t3rn_primitives::GatewayVendor;
+use t3rn_primitives::{GatewayVendor, TreasuryAccount, TreasuryAccountProvider};
 
 use sp_core::H256;
 use sp_runtime::{
@@ -216,23 +216,29 @@ impl pallet_circuit::Config for Test {
     type XtxTimeoutDefault = ConstU32<1024>;
 }
 
+impl TreasuryAccountProvider<AccountId> for Test {
+    fn get_treasury_account(_treasury_account: TreasuryAccount) -> AccountId {
+        CircuitAccountId::get()
+    }
+}
+
 // There are no tests in 3VM testing the XDNS Assets Overlay, so safe to mock with false values
 impl PalletAssetsOverlay<Test, Balance> for Test {
-    fn contains_asset(asset_id: &AssetId) -> bool {
+    fn contains_asset(_asset_id: &AssetId) -> bool {
         false
     }
 
     fn force_create_asset(
-        origin: Origin,
-        asset_id: AssetId,
-        admin: AccountId,
-        is_sufficient: bool,
-        min_balance: Balance,
+        _origin: Origin,
+        _asset_id: AssetId,
+        _admin: AccountId,
+        _is_sufficient: bool,
+        _min_balance: Balance,
     ) -> DispatchResult {
         Err("Mock PalletAssetsOverlay::force_create_asset - not implemented".into())
     }
 
-    fn destroy(origin: Origin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
+    fn destroy(_origin: Origin, _asset_id: &AssetId) -> DispatchResultWithPostInfo {
         Err("Mock PalletAssetsOverlay::destroy - not implemented".into())
     }
 }
