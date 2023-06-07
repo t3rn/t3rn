@@ -4,9 +4,9 @@ use frame_support::{
     dispatch::DispatchResultWithPostInfo,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{fungibles::Destroy, ConstU32, FindAuthor},
+    traits::{fungibles::Destroy, ConstU32},
     weights::Weight,
-    Blake2_128Concat, PalletId, RuntimeDebug, StorageHasher,
+    Blake2_128Concat, PalletId, StorageHasher,
 };
 use pallet_eth2_finality_verifier;
 use pallet_grandpa_finality_verifier::{
@@ -218,15 +218,15 @@ impl pallet_xdns::Config for Runtime {
 
 impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
     fn contains_asset(asset_id: &AssetId) -> bool {
-        const PALLET_NAME: &'static str = "Assets";
-        const STORAGE_NAME: &'static str = "Asset";
+        const PALLET_NAME: &str = "Assets";
+        const STORAGE_NAME: &str = "Asset";
         type Index = u32;
         type Data = u32;
 
         let pallet_hash = sp_io::hashing::twox_128(PALLET_NAME.as_bytes());
         let storage_hash = sp_io::hashing::twox_128(STORAGE_NAME.as_bytes());
         // Hashing the scale-encoded key
-        let key_hashed = Blake2_128Concat::hash(&*asset_id.encode());
+        let key_hashed = Blake2_128Concat::hash(&asset_id.encode());
 
         let mut final_key = Vec::new();
         final_key.extend_from_slice(&pallet_hash);

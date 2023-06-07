@@ -696,7 +696,7 @@ pub mod pallet {
             let slash_treasury_account =
                 T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Slash);
             let slash_treasury_balance = T::Currency::free_balance(&slash_treasury_account);
-            let repatriation_percentage = Self::repatriation_percentage();
+            let _repatriation_percentage = Self::repatriation_percentage();
 
             let mut available_repatriation: BalanceOf<T> =
                 Self::repatriation_percentage().mul_ceil(slash_treasury_balance);
