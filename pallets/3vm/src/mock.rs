@@ -245,10 +245,10 @@ impl pallet_xdns::Config for Test {
     type Currency = Balances;
     type Event = Event;
     type Portal = Portal;
-    type SelfGatewayIdEscrow = CircuitTargetId;
-    type SelfGatewayIdOptimistic = CircuitTargetIdOptimistic;
+    type SelfGatewayId = CircuitTargetId;
     type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
+    type TreasuryAccounts = Test;
     type WeightInfo = ();
 }
 

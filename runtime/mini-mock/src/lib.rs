@@ -350,10 +350,10 @@ impl pallet_xdns::Config for MiniRuntime {
     type Currency = Balances;
     type Event = Event;
     type Portal = Portal;
-    type SelfGatewayIdEscrow = SelfGatewayId;
-    type SelfGatewayIdOptimistic = SelfGatewayIdOptimistic;
+    type SelfGatewayId = SelfGatewayId;
     type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
+    type TreasuryAccounts = MiniRuntime;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<MiniRuntime>;
 }
 
