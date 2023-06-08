@@ -103,14 +103,8 @@ export const createViewFromListCompositeType = <V>(
   return type.toView(type.fromJson(value) as never)
 }
 
-export const buildEthereumInitializationData =
-  (): EthereumInitializationData => {
-    //@todo: implement later
-    return {} as never
-  }
-
 export async function fetchDebugBeaconState(block: number) {
-  const endpoint = `${RELAY_ENDPOINT}/eth/v1/debug/beacon/states/${block}`
+  const endpoint = `${LIGHTHOUSE_ENDPOINT}/eth/v1/debug/beacon/states/${block}`
   const fetchOptions = {
     method: "GET",
     headers: {
@@ -130,7 +124,7 @@ export async function fetchDebugBeaconState(block: number) {
 
   const responseData = (await response.json()) as {
     next_sync_committee: {
-      pubkeys: Array<BLSPubKey>
+      pubkeys: Array<BLSPubKey>,
       aggregate_pubkey: BLSPubKey
     }
   }
@@ -192,14 +186,51 @@ export const generateSyncCommitteeInclusionProof = (state: unknown) => {
   return proof
 }
 
-export const fetchSyncCommittee = async (slot: number) => {
+export const fetchNextSyncCommittee = async (slot: number) => {
   const state = await fetchDebugBeaconState(slot)
-  const proof = generateSyncCommitteeInclusionProof(state)
-  const syncCommittee: SyncCommittee = {
-    pubs: state.next_sync_committee.pubkeys,
-    aggr: state.next_sync_committee.aggregate_pubkey,
+
+  const nextSyncCommittee: SyncCommittee = {
+    pubs: state.data.next_sync_committee.pubkeys,
+    aggr: state.data.next_sync_committee.aggregate_pubkey,
   }
-  return { syncCommittee, proof }
+  return nextSyncCommittee
+}
+
+const fetchLightClientUpdate = async (slot: number): SyncCommittee => {
+  const period = (slot / 32) / 256
+  console.log("Period:", period)
+  const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
+  const fetchOptions = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "*/*",
+    },
+  }
+
+  const response = await fetch(endpoint, fetchOptions)
+  if (response.status !== 200) {
+    throw new Error(
+      "Oops! Fetch debug beacon state faulted to error status: " +
+      response.status
+    )
+  }
+
+  const responseData = (await response.json()) as [
+    data: {
+      next_sync_committee: {
+        pubkeys: Array<BLSPubKey>,
+        aggregate_pubkey: BLSPubKey
+      }
+    }
+  ]
+
+  const next: SyncCommittee = {
+    pubs: responseData[0].data.next_sync_committee.pubkeys,
+    aggr: responseData[0].data.next_sync_committee.aggregate_pubkey
+  }
+
+  return next
 }
 
 export const fetchLastSyncCommitteeUpdateSlot = async () => {
@@ -230,35 +261,35 @@ export const fetchLastSyncCommitteeUpdateSlot = async () => {
 
   let slot = parseInt(responseData.data.header.message.slot)
   slot = slot - (slot % (32 * 256))
-  return slot - 8192
+  return slot
 }
 
-export const generateExecutionPayloadInclusionProof = (
-  block: BeaconBlockResponseData["message"]
-) => {
-  const beaconHeader = beaconHeaderView(block)
-  const compressedBody = compressBody(block.body)
-  const executionPayload = createViewFromContainerType(
-    ssz.capella.ExecutionPayloadHeader,
-    compressedBody.execution_payload_header
-  )
-  const bodyValues = ssz.capella.BlindedBeaconBlockBody.fromJson(compressedBody)
-  const bodyView = ssz.capella.BlindedBeaconBlockBody.toView(bodyValues)
-  const proofInput: SingleProofInput = {
-    type: ProofType.single,
-    gindex: bodyView.type.getPropertyGindex([
-      "executionPayloadHeader",
-    ] as never) as bigint,
-  }
-  const tree = new Tree(bodyView.node)
-  const proof = tree.getProof(proofInput) as SingleProof
-  const proofRes = createNodeFromProof(proof)
-  console.log(
-    "Proof Valid:",
-    toHexString(proofRes.root) === toHexString(bodyView.hashTreeRoot())
-  )
-  return { executionPayload, beaconHeader, proof }
-}
+// export const generateExecutionPayloadInclusionProof = (
+//   block: BeaconBlockResponseData["message"]
+// ) => {
+//   const beaconHeader = beaconHeaderView(block)
+//   const compressedBody = compressBody(block.body)
+//   const executionPayload = createViewFromContainerType(
+//     ssz.capella.ExecutionPayloadHeader,
+//     compressedBody.execution_payload_header
+//   )
+//   const bodyValues = ssz.capella.BlindedBeaconBlockBody.fromJson(compressedBody)
+//   const bodyView = ssz.capella.BlindedBeaconBlockBody.toView(bodyValues)
+//   const proofInput: SingleProofInput = {
+//     type: ProofType.single,
+//     gindex: bodyView.type.getPropertyGindex([
+//       "executionPayloadHeader",
+//     ] as never) as bigint,
+//   }
+//   const tree = new Tree(bodyView.node)
+//   const proof = tree.getProof(proofInput) as SingleProof
+//   const proofRes = createNodeFromProof(proof)
+//   console.log(
+//     "Proof Valid:",
+//     toHexString(proofRes.root) === toHexString(bodyView.hashTreeRoot())
+//   )
+//   return { executionPayload, beaconHeader, proof }
+// }
 
 interface BeaconBlockResponseData {
   message: {
@@ -274,81 +305,6 @@ interface BeaconBlockResponseData {
     }
   }
 }
-
-// export async function fetchSyncAggregate(slot: number) {
-//   const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/blocks/${slot}`
-//   const fetchOptions = {
-//     type: "GET",
-//     headers: {
-//       "Content-Type": "application/json",
-//       Accept: "*/*",
-//     },
-//   }
-//   const response = await fetch(endpoint, fetchOptions)
-//
-//   if (response.status !== 200) {
-//     throw new Error(
-//       "Oops! Fetch sync aggregate faulted to error status: " + response.status
-//     )
-//   }
-//
-//   const responseData = (await response.json()) as {
-//     body: {
-//       sync_aggregate: {
-//         sync_committee_bits: string
-//         sync_committee_signature: string
-//       }
-//     }
-//   }
-//   const syncAggregate: SyncAggregate = {
-//     committeeBits: responseData.body.sync_aggregate.sync_committee_bits,
-//     signature: responseData.body.sync_aggregate.sync_committee_signature,
-//   }
-//
-//   return syncAggregate
-// }
-
-// export const fetchValidatorRoot = async () => {
-//   const response = await fetch(RELAY_ENDPOINT + "/eth/v1/beacon/genesis", {
-//     method: "GET",
-//   })
-//
-//   if (response.status !== 200) {
-//     throw new Error(
-//       "Oops! Fetch validator root responded with an error status: " +
-//       response.status
-//     )
-//   }
-//
-//   const responseData = (await response.json()) as {
-//     data: {
-//       genesis_validators_root: string
-//     }
-//   }
-//   return responseData.data.genesis_validators_root
-// }
-
-// export const getDomain = async (
-//   network: Network,
-//   slot: number,
-//   domain: Uint8Array
-// ) => {
-//   const getConfig = (network: Network) => {
-//     switch (network) {
-//       case Network.MAINNET:
-//         return networksChainConfig.mainnet
-//         break
-//       case Network.SEPOLIA:
-//         return networksChainConfig.sepolia
-//         break
-//     }
-//   }
-//
-//   const chainConfig = getConfig(network)
-//   const validatorsRoot = await fetchValidatorRoot()
-//   const config = createBeaconConfig(chainConfig, fromHexString(validatorsRoot))
-//   return config.getDomain(slot, domain)
-// }
 
 export const decodeSignerBits = (signerBits: string): boolean[] => {
   signerBits = signerBits.replace("0x", "")
@@ -373,45 +329,6 @@ export const decodeSignerBits = (signerBits: string): boolean[] => {
 
   return acc.flat()
 }
-
-// export const generateSigningRoot = async (
-//   network: Network,
-//   slot: number,
-//   root: string,
-//   domainId: Uint8Array
-// ) => {
-//   const domain = await getDomain(network, slot, domainId)
-//   const signingRoot = ssz.phase0.SigningData.hashTreeRoot({
-//     objectRoot: fromHexString(root),
-//     domain,
-//   })
-//   return signingRoot
-// }
-
-// export const aggregatePubkey = (
-//   pubkeys: string[],
-//   signerBits: string
-// ): string => {
-//   const signerBitsArray = decodeSignerBits(signerBits)
-//   const pubkeysArray = pubkeys.map((x) =>
-//     Buffer.from(x.replace("0x", ""), "hex")
-//   )
-//   const aggPubkey = bls.aggregatePublicKeys(
-//     pubkeysArray.filter((_, i) => signerBitsArray[i] === true)
-//   )
-//   return toHexString(aggPubkey)
-// }
-
-// export const verifyAggregateSignature = (
-//   aggrPub: string,
-//   msg: string,
-//   sig: string
-// ): boolean => {
-//   const aggrPubBytes = fromHexString(aggrPub)
-//   const msgBytes = fromHexString(msg)
-//   const sigBytes = fromHexString(sig)
-//   return bls.verify(aggrPubBytes, msgBytes, sigBytes)
-// }
 
 export async function fetchHeaderData(slot: number) {
   const endpoint = `${RELAY_ENDPOINT}/eth/v2/beacon/blocks/${slot}`
@@ -557,6 +474,7 @@ export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockR
     pubs: responseData.data.current_sync_committee.pubkeys,
     aggr: responseData.data.current_sync_committee.aggregate_pubkey,
   }
+  const nextSyncCommittee = await fetchLightClientUpdate(finalizedSlot)
 
   const checkpoint = {
     attested_beacon: attested.beacon,
@@ -570,6 +488,7 @@ export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockR
   return {
     initData: responseData.data,
     currentSyncCommittee,
+    nextSyncCommittee,
     checkpoint,
   }
 }
@@ -582,52 +501,32 @@ export const registerEthereumVerificationVendor = async (
     const slot = await fetchLastSyncCommitteeUpdateSlot()
     const { header, root } = await fetchBeaconBlockHeaderAndRoot(slot)
 
-    const {initData, checkpoint, currentSyncCommittee} = await fetchInitData(slot, root)
+    const {initData, checkpoint, currentSyncCommittee, nextSyncCommittee} = await fetchInitData(slot, root)
 
-    return  generateRegistrationData(initData, checkpoint, currentSyncCommittee, circuit)
+    return  generateRegistrationData(initData, checkpoint, currentSyncCommittee, nextSyncCommittee, circuit)
 
   } catch (e) {
     spinner.fail(colorLogMsg("ERROR", e))
   }
 }
 
-const generateRegistrationData = (initData: any, checkpoint: any, syncCommittee: any, circuit: ApiPromise,) => {
-  // return {
-  //   gatewayId: circuit.createType("ChainId", "ethr"),
-  //   tokenId: circuit.createType("ChainId", "ethr"),
-  //   verificationVendor: circuit.createType('GatewayVendor', "Ethereum"),
-  //   executionVendor: circuit.createType("ExecutionVendor", "EVM"),
-  //   codec: circuit.createType('RuntimeCodec', 'RLP'),
-  //   registrant: null,
-  //   escrowAccounts: null,
-  //   allowedSideEffects: circuit.createType('Vec<([u8; 4], Option<u8>)>', [["tran", 4]]),
-  //   tokenInfo: circuit.createType('TokenInfo', {
-  //       Ethereum: {
-  //           symbol: "eth",
-  //           decimals: 18,
-  //           address: null
-  //       }
-  //   }),
-  //   registrationData: circuit.createType("EthereumInitializationData", {
-  //       current_sync_committee: circuit.createType("SyncCommittee", {
-  //         pubs: circuit.createType("Vec<BLSPubkey>", syncCommittee.pubs),
-  //         aggr: circuit.createType("BLSPubkey", syncCommittee.aggr),
-  //       }),
-  //       next_sync_committee: circuit.createType("SyncCommittee", syncCommittee),
-  //       checkpoint: circuit.createType("Checkpoint", checkpoint),
-  //       beacon_header: circuit.createType("BeaconBlockHeader", initData.header.beacon),
-  //       execution_header: circuit.createType("ExecutionHeader", initData.header.execution),
-  //   }).toHex()
-  // }
-
+const generateRegistrationData = (initData: any, checkpoint: any, currentSyncCommittee: any, nextSyncCommittee: any, circuit: ApiPromise,) => {
   return circuit.createType("EthereumInitializationData", {
         current_sync_committee: circuit.createType("SyncCommittee", {
-          pubs: circuit.createType("Vec<BLSPubkey>", syncCommittee.pubs),
-          aggr: circuit.createType("BLSPubkey", syncCommittee.aggr),
+          pubs: circuit.createType("Vec<BLSPubkey>", currentSyncCommittee.pubs),
+          aggr: circuit.createType("BLSPubkey", currentSyncCommittee.aggr),
         }),
-        next_sync_committee: circuit.createType("SyncCommittee", syncCommittee),
+        next_sync_committee: circuit.createType("SyncCommittee", {
+          pubs: circuit.createType("Vec<BLSPubkey>", nextSyncCommittee.pubs),
+          aggr: circuit.createType("BLSPubkey", nextSyncCommittee.aggr),
+        }),
         checkpoint: circuit.createType("Checkpoint", checkpoint),
         beacon_header: circuit.createType("BeaconBlockHeader", initData.header.beacon),
         execution_header: circuit.createType("ExecutionHeader", initData.header.execution),
     }).toHex()
 }
+
+// const test = async () => {
+//   const slot = await fetchLastSyncCommitteeUpdateSlot()
+//   const currentBootstrap = await
+// }

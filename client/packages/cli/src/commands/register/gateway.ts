@@ -72,8 +72,6 @@ const registerGateway = async (
   )
   const registrationData = await getRegistrationData(circuit, gatewayData)
 
-  console.log(registrationData)
-
   if (!registrationData) {
     spinner.fail(
       colorLogMsg("ERROR", `${gatewayData.name} gateway registration failed!`)
