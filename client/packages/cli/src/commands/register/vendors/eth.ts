@@ -1,20 +1,8 @@
-import bls from "@chainsafe/bls"
 import fetch from "node-fetch"
 import { ApiPromise } from "@t3rn/sdk"
-import { createBeaconConfig } from "@lodestar/config"
-import { networksChainConfig } from "@lodestar/config/networks"
-import { DOMAIN_SYNC_COMMITTEE } from "@chainsafe/lodestar-params"
 import { Gateway } from "@/schemas/setup.ts"
 import { ssz, phase0 } from "@lodestar/types"
-import { ContainerType, Type, ListCompositeType, ValueOf } from "@chainsafe/ssz"
 import { fromHexString, toHexString } from "@chainsafe/ssz"
-import {
-  Tree,
-  SingleProofInput,
-  ProofType,
-  SingleProof,
-  createNodeFromProof,
-} from "@chainsafe/persistent-merkle-tree"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { spinner } from "../gateway.ts"
 
@@ -29,19 +17,10 @@ type ValidatorIndex = number
 type U256 = Array<number>
 type Bloom = Array<number>
 
-export enum Network {
-  MAINNET,
-  SEPOLIA,
-}
 
 interface SyncCommittee {
     pubs: string[],
     aggr: string
-}
-
-interface SyncAggregate {
-  committeeBits: string
-  signature: string
 }
 
 interface EpochCheckPoint {
@@ -86,119 +65,56 @@ interface EthereumInitializationData {
   execution_payload: ExecutionPayload
 }
 
-export const createViewFromContainerType = <
-  F extends Record<string, Type<unknown>>,
-  V
->(
-  type: ContainerType<F>,
-  value: V
-) => {
-  return type.toView(type.fromJson(value))
+interface BootstrapResponse {
+  data: {
+    header: {
+      beacon: {
+        slot: string
+        proposer_index: string
+        parent_root: string
+        state_root: string
+        body_root: string
+      }
+      execution: {
+        parent_hash: string
+        fee_recipient: string
+        state_root: string
+        receipts_root: string
+        logs_bloom: string
+        prev_randao: string
+        block_number: string
+        gas_limit: string
+        gas_used: string
+        timestamp: string
+        extra_data: string
+        base_fee_per_gas: string
+        block_hash: string
+        transactions_root: string
+        withdrawals_root: string
+      }
+      execution_branch: Array<string>
+    }
+    current_sync_committee: {
+      pubkeys: Array<string>
+      aggregate_pubkey: string
+    }
+    current_sync_committe_branch: Array<string>
+    version: string
+  }
 }
 
-export const createViewFromListCompositeType = <V>(
-  type: ListCompositeType<never>,
-  value: V
-) => {
-  return type.toView(type.fromJson(value) as never)
-}
-
-export async function fetchDebugBeaconState(block: number) {
-  const endpoint = `${LIGHTHOUSE_ENDPOINT}/eth/v1/debug/beacon/states/${block}`
-  const fetchOptions = {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "*/*",
-    },
-  }
-
-  const response = await fetch(endpoint, fetchOptions)
-
-  if (response.status !== 200) {
-    throw new Error(
-      "Oops! Fetch debug beacon state faulted to error status: " +
-      response.status
-    )
-  }
-
-  const responseData = (await response.json()) as {
+interface NextSyncCommitteeResponse {
+  data: {
     next_sync_committee: {
       pubkeys: Array<BLSPubKey>,
       aggregate_pubkey: BLSPubKey
     }
   }
-
-  return responseData
 }
 
-export const compressBody = (
-  body: BeaconBlockResponseData["message"]["body"]
-) => {
-  const executionPayload = body.execution_payload
-  const transactionRoot = toHexString(
-    createViewFromListCompositeType(
-      ssz.bellatrix.Transactions as never,
-      executionPayload.transactions
-    ).hashTreeRoot()
-  )
 
-  executionPayload.transactions_root = transactionRoot
-
-  const withdrawalsRoot = toHexString(
-    createViewFromListCompositeType(
-      ssz.capella.Withdrawals as never,
-      executionPayload.withdrawals
-    ).hashTreeRoot()
-  )
-  executionPayload.withdrawals_root = withdrawalsRoot
-
-  delete body.execution_payload
-  delete executionPayload.transactions
-  delete executionPayload.withdrawals
-
-  body.execution_payload_header = executionPayload
-
-  return body
-}
-
-export const beaconHeaderView = <V>(block: V) => {
-  const blockValues = ssz.capella.BeaconBlock.fromJson(block)
-  return ssz.capella.BeaconBlock.toView(blockValues)
-}
-
-export declare type ValueOfFields<
-  Fields extends Record<string, Type<unknown>>
-> = {
-    [K in keyof Fields]: ValueOf<Fields[K]>
-  }
-
-export const generateSyncCommitteeInclusionProof = (state: unknown) => {
-  const view = createViewFromContainerType(ssz.capella.BeaconState, state)
-  const proofInput: SingleProofInput = {
-    type: ProofType.single,
-    gindex: view.type.getPropertyGindex([
-      "next_sync_committee",
-    ] as never) as bigint,
-  }
-  const tree = new Tree(view.node)
-  const proof = tree.getProof(proofInput) as SingleProof
-  return proof
-}
-
-export const fetchNextSyncCommittee = async (slot: number) => {
-  const state = await fetchDebugBeaconState(slot)
-
-  const nextSyncCommittee: SyncCommittee = {
-    pubs: state.data.next_sync_committee.pubkeys,
-    aggr: state.data.next_sync_committee.aggregate_pubkey,
-  }
-  return nextSyncCommittee
-}
-
-const fetchLightClientUpdate = async (slot: number): SyncCommittee => {
+const fetchNextSyncCommittee = async (slot: number): SyncCommittee => {
   const period = (slot / 32) / 256
-  console.log("Period:", period)
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
   const fetchOptions = {
     method: "GET",
@@ -216,14 +132,7 @@ const fetchLightClientUpdate = async (slot: number): SyncCommittee => {
     )
   }
 
-  const responseData = (await response.json()) as [
-    data: {
-      next_sync_committee: {
-        pubkeys: Array<BLSPubKey>,
-        aggregate_pubkey: BLSPubKey
-      }
-    }
-  ]
+  const responseData = (await response.json()) as [NextSyncCommitteeResponse]
 
   const next: SyncCommittee = {
     pubs: responseData[0].data.next_sync_committee.pubkeys,
@@ -260,36 +169,9 @@ export const fetchLastSyncCommitteeUpdateSlot = async () => {
   }
 
   let slot = parseInt(responseData.data.header.message.slot)
-  slot = slot - (slot % (32 * 256))
+  slot = slot - (slot % (32 * 256)) // calc first slot of the current committee period
   return slot
 }
-
-// export const generateExecutionPayloadInclusionProof = (
-//   block: BeaconBlockResponseData["message"]
-// ) => {
-//   const beaconHeader = beaconHeaderView(block)
-//   const compressedBody = compressBody(block.body)
-//   const executionPayload = createViewFromContainerType(
-//     ssz.capella.ExecutionPayloadHeader,
-//     compressedBody.execution_payload_header
-//   )
-//   const bodyValues = ssz.capella.BlindedBeaconBlockBody.fromJson(compressedBody)
-//   const bodyView = ssz.capella.BlindedBeaconBlockBody.toView(bodyValues)
-//   const proofInput: SingleProofInput = {
-//     type: ProofType.single,
-//     gindex: bodyView.type.getPropertyGindex([
-//       "executionPayloadHeader",
-//     ] as never) as bigint,
-//   }
-//   const tree = new Tree(bodyView.node)
-//   const proof = tree.getProof(proofInput) as SingleProof
-//   const proofRes = createNodeFromProof(proof)
-//   console.log(
-//     "Proof Valid:",
-//     toHexString(proofRes.root) === toHexString(bodyView.hashTreeRoot())
-//   )
-//   return { executionPayload, beaconHeader, proof }
-// }
 
 interface BeaconBlockResponseData {
   message: {
@@ -415,7 +297,6 @@ export async function fetchBeaconBlockHeaderAndRoot(
 
 export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockRoot: string) => {
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${finalizedBeaconBlockRoot}`
-  console.log("Fetch init data from endpoint:", endpoint)
   const fetchOptions = {
     method: "GET",
   }
@@ -428,43 +309,7 @@ export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockR
     )
   }
 
-  const responseData = (await response.json()) as {
-    data: {
-      header: {
-        beacon: {
-          slot: string
-          proposer_index: string
-          parent_root: string
-          state_root: string
-          body_root: string
-        }
-        execution: {
-          parent_hash: string
-          fee_recipient: string
-          state_root: string
-          receipts_root: string
-          logs_bloom: string
-          prev_randao: string
-          block_number: string
-          gas_limit: string
-          gas_used: string
-          timestamp: string
-          extra_data: string
-          base_fee_per_gas: string
-          block_hash: string
-          transactions_root: string
-          withdrawals_root: string
-        }
-        execution_branch: Array<string>
-      }
-      current_sync_committee: {
-        pubkeys: Array<string>
-        aggregate_pubkey: string
-      }
-      current_sync_committe_branch: Array<string>
-      version: string
-    }
-  }
+  const responseData = (await response.json()) as BootstrapResponse
 
   const finalized = await fetchCheckpointEntry(finalizedSlot)
   const justified = await fetchCheckpointEntry(finalizedSlot + 32)
@@ -474,7 +319,7 @@ export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockR
     pubs: responseData.data.current_sync_committee.pubkeys,
     aggr: responseData.data.current_sync_committee.aggregate_pubkey,
   }
-  const nextSyncCommittee = await fetchLightClientUpdate(finalizedSlot)
+  const nextSyncCommittee = await fetchNextSyncCommittee(finalizedSlot)
 
   const checkpoint = {
     attested_beacon: attested.beacon,
@@ -525,8 +370,3 @@ const generateRegistrationData = (initData: any, checkpoint: any, currentSyncCom
         execution_header: circuit.createType("ExecutionHeader", initData.header.execution),
     }).toHex()
 }
-
-// const test = async () => {
-//   const slot = await fetchLastSyncCommitteeUpdateSlot()
-//   const currentBootstrap = await
-// }
