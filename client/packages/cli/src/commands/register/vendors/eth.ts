@@ -1,68 +1,21 @@
 import fetch from "node-fetch"
 import { ApiPromise } from "@t3rn/sdk"
-import { Gateway } from "@/schemas/setup.ts"
-import { ssz, phase0 } from "@lodestar/types"
-import { fromHexString, toHexString } from "@chainsafe/ssz"
-import { colorLogMsg, log } from "@/utils/log.ts"
+import { phase0 } from "@lodestar/types"
+import { fromHexString } from "@chainsafe/ssz"
+import { colorLogMsg } from "@/utils/log.ts"
 import { spinner } from "../gateway.ts"
-import { ETHEREUM_SLOTS_PER_EPOCH, ETHEREUM_EPOCHS_PER_PERIOD} from "@/consts.js"
-const RELAY_ENDPOINT =
-  "https://rpc.ankr.com/premium-http/eth_sepolia_beacon/9b5188fb2ebf6f1e050bf1a1b623623759a0108f7a161b3986f3f21329166288"
-const LODESTAR_ENDPOINT = "https://lodestar-sepolia.chainsafe.io"
+import {
+  ETHEREUM_SLOTS_PER_EPOCH,
+  ETHEREUM_EPOCHS_PER_PERIOD,
+  LODESTAR_ENDPOINT,
+  RELAY_ENDPOINT,
+} from "@/consts.ts"
 
 type BLSPubKey = Uint8Array
-type Slot = number
-type Root = Uint32Array
-type ValidatorIndex = number
-type U256 = Array<number>
-type Bloom = Array<number>
 
-
-interface SyncCommittee {
-    pubs: string[],
-    aggr: string
-}
-
-interface EpochCheckPoint {
-  justified_epoch: number
-  justified_execution_height: number
-  justified_block_hash: Root
-  finalized_epoch: number
-  finalized_execution_height: number
-}
-
-interface BeaconBlockHeader {
-  slot: Slot
-  proposer_index: ValidatorIndex
-  parent_root: Root
-  state_root: Root
-  body_root: Root
-}
-
-interface ExecutionPayload {
-  parent_hash: Root
-  fee_recipient: Array<number>
-  state_root: Root
-  receipts_root: Root
-  logs_bloom: Bloom
-  prev_randao: Root
-  block_number: number
-  gas_limit: number
-  gas_used: number
-  timestamp: number
-  extra_data: Array<number>
-  base_fee_per_gas: U256
-  block_hash: Root
-  transactions_root: Root
-  withdrawals_root: Root
-}
-
-interface EthereumInitializationData {
-  current_sync_committe: SyncCommittee
-  next_sync_committie: SyncCommittee
-  checkpoint: EpochCheckPoint
-  beacon_header: BeaconBlockHeader
-  execution_payload: ExecutionPayload
+type SyncCommittee = {
+  pubs: Array<BLSPubKey | string>
+  aggr: BLSPubKey | string
 }
 
 interface BootstrapResponse {
@@ -106,14 +59,14 @@ interface BootstrapResponse {
 interface NextSyncCommitteeResponse {
   data: {
     next_sync_committee: {
-      pubkeys: Array<BLSPubKey>,
-      aggregate_pubkey: BLSPubKey
+      pubkeys: Array<BLSPubKey | string>
+      aggregate_pubkey: BLSPubKey | string
     }
   }
 }
 
-const fetchNextSyncCommittee = async (slot: number): SyncCommittee => {
-  const period = (slot / ETHEREUM_SLOTS_PER_EPOCH) / ETHEREUM_EPOCHS_PER_PERIOD
+const fetchNextSyncCommittee = async (slot: number): Promise<SyncCommittee> => {
+  const period = slot / ETHEREUM_SLOTS_PER_EPOCH / ETHEREUM_EPOCHS_PER_PERIOD
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
   const fetchOptions = {
     method: "GET",
@@ -122,8 +75,8 @@ const fetchNextSyncCommittee = async (slot: number): SyncCommittee => {
       Accept: "*/*",
     },
   }
-
   const response = await fetch(endpoint, fetchOptions)
+
   if (response.status !== 200) {
     throw new Error(
       "Oops! Fetch debug beacon state faulted to error status: " +
@@ -132,16 +85,15 @@ const fetchNextSyncCommittee = async (slot: number): SyncCommittee => {
   }
 
   const responseData = (await response.json()) as [NextSyncCommitteeResponse]
-
   const next: SyncCommittee = {
     pubs: responseData[0].data.next_sync_committee.pubkeys,
-    aggr: responseData[0].data.next_sync_committee.aggregate_pubkey
+    aggr: responseData[0].data.next_sync_committee.aggregate_pubkey,
   }
 
   return next
 }
 
-export const fetchLastSyncCommitteeUpdateSlot = async () => {
+const fetchLastSyncCommitteeUpdateSlot = async () => {
   const fetchOptions = {
     method: "GET",
   }
@@ -181,13 +133,15 @@ interface BeaconBlockResponseData {
         transactions_root: string
         withdrawals: unknown
         withdrawals_root: unknown
+        block_hash: string
+        block_number: string
       }
       execution_payload_header: unknown
     }
   }
 }
 
-export async function fetchHeaderData(slot: number) {
+async function fetchHeaderData(slot: number) {
   const endpoint = `${RELAY_ENDPOINT}/eth/v2/beacon/blocks/${slot}`
   const fetchOptions = {
     headers: {
@@ -203,28 +157,31 @@ export async function fetchHeaderData(slot: number) {
     )
   }
 
+  const responseData = (await response.json()) as {
+    data: BeaconBlockResponseData
+  }
 
-  const responseData = (await response.json()) as BeaconBlockResponseData
-
-  return responseData
+  return responseData.data
 }
 
 async function fetchCheckpointEntry(slot: number) {
   const header = await fetchHeaderData(slot)
-  const {root} =  await fetchBeaconBlockHeaderAndRoot(slot)
-  // console.log(header.data.message.body.execution_payload.block)
-   return {
-     beacon: {
-       root, epoch: parseInt(header.data.message.slot, 10) / ETHEREUM_SLOTS_PER_EPOCH // slot to epoch number
-     },
-     execution: {
-       root: header.data.message.body.execution_payload.block_hash,
-       height: parseInt(header.data.message.body.execution_payload.block_number, 10)
-     }
-   }
+  const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
+
+  return {
+    beacon: {
+      root,
+      // slot to epoch number
+      epoch: parseInt(header.message.slot, 10) / ETHEREUM_SLOTS_PER_EPOCH,
+    },
+    execution: {
+      root: header.message.body.execution_payload.block_hash,
+      height: parseInt(header.message.body.execution_payload.block_number, 10),
+    },
+  }
 }
 
-export async function fetchBeaconBlockHeaderAndRoot(
+async function fetchBeaconBlockHeaderAndRoot(
   slot: number
 ): Promise<{ header: phase0.BeaconBlockHeader; root: string }> {
   const endpoint = `${RELAY_ENDPOINT}/eth/v1/beacon/headers?slot=${slot}`
@@ -270,7 +227,12 @@ export async function fetchBeaconBlockHeaderAndRoot(
   }
 }
 
-export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockRoot: string) => {
+type InitData = Awaited<ReturnType<typeof fetchInitData>>
+
+const fetchInitData = async (
+  finalizedSlot: number,
+  finalizedBeaconBlockRoot: string
+) => {
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/bootstrap/${finalizedBeaconBlockRoot}`
   const fetchOptions = {
     method: "GET",
@@ -285,63 +247,72 @@ export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockR
   }
 
   const responseData = (await response.json()) as BootstrapResponse
-
   const finalized = await fetchCheckpointEntry(finalizedSlot)
-  const justified = await fetchCheckpointEntry(finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH) // next epoch
-  const attested = await fetchCheckpointEntry(finalizedSlot + (2 * ETHEREUM_SLOTS_PER_EPOCH)) // next next epoch
-
+  const justified = await fetchCheckpointEntry(
+    finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH
+  )
+  const attested = await fetchCheckpointEntry(
+    finalizedSlot + 2 * ETHEREUM_SLOTS_PER_EPOCH
+  )
   const currentSyncCommittee: SyncCommittee = {
     pubs: responseData.data.current_sync_committee.pubkeys,
     aggr: responseData.data.current_sync_committee.aggregate_pubkey,
   }
   const nextSyncCommittee = await fetchNextSyncCommittee(finalizedSlot)
-
   const checkpoint = {
     attested_beacon: attested.beacon,
     attested_execution: attested.execution,
     justified_beacon: justified.beacon,
     justified_execution: justified.execution,
     finalized_beacon: finalized.beacon,
-    finalized_execution: finalized.execution
+    finalized_execution: finalized.execution,
   }
 
   return {
-    initData: responseData.data,
+    data: responseData.data,
     currentSyncCommittee,
     nextSyncCommittee,
     checkpoint,
   }
 }
 
+const generateRegistrationData = (
+  { data, checkpoint, currentSyncCommittee, nextSyncCommittee }: InitData,
+  circuit: ApiPromise
+) => {
+  return circuit
+    .createType("EthereumInitializationData", {
+      current_sync_committee: circuit.createType("SyncCommittee", {
+        pubs: circuit.createType("Vec<BLSPubkey>", currentSyncCommittee.pubs),
+        aggr: circuit.createType("BLSPubkey", currentSyncCommittee.aggr),
+      }),
+      next_sync_committee: circuit.createType("SyncCommittee", {
+        pubs: circuit.createType("Vec<BLSPubkey>", nextSyncCommittee.pubs),
+        aggr: circuit.createType("BLSPubkey", nextSyncCommittee.aggr),
+      }),
+      checkpoint: circuit.createType("Checkpoint", checkpoint),
+      beacon_header: circuit.createType(
+        "BeaconBlockHeader",
+        data.header.beacon
+      ),
+      execution_header: circuit.createType(
+        "ExecutionHeader",
+        data.header.execution
+      ),
+    })
+    .toHex()
+}
+
 export const registerEthereumVerificationVendor = async (
-  circuit: ApiPromise,
-  gatewayData: Required<Gateway>
+  circuit: ApiPromise
 ) => {
   try {
     const slot = await fetchLastSyncCommitteeUpdateSlot()
-    const { header, root } = await fetchBeaconBlockHeaderAndRoot(slot)
+    const { root } = await fetchBeaconBlockHeaderAndRoot(slot)
+    const data = await fetchInitData(slot, root)
 
-    const {initData, checkpoint, currentSyncCommittee, nextSyncCommittee} = await fetchInitData(slot, root)
-
-    return  generateRegistrationData(initData, checkpoint, currentSyncCommittee, nextSyncCommittee, circuit)
-
+    return generateRegistrationData(data, circuit)
   } catch (e) {
     spinner.fail(colorLogMsg("ERROR", e))
   }
-}
-
-const generateRegistrationData = (initData: any, checkpoint: any, currentSyncCommittee: any, nextSyncCommittee: any, circuit: ApiPromise,) => {
-  return circuit.createType("EthereumInitializationData", {
-        current_sync_committee: circuit.createType("SyncCommittee", {
-          pubs: circuit.createType("Vec<BLSPubkey>", currentSyncCommittee.pubs),
-          aggr: circuit.createType("BLSPubkey", currentSyncCommittee.aggr),
-        }),
-        next_sync_committee: circuit.createType("SyncCommittee", {
-          pubs: circuit.createType("Vec<BLSPubkey>", nextSyncCommittee.pubs),
-          aggr: circuit.createType("BLSPubkey", nextSyncCommittee.aggr),
-        }),
-        checkpoint: circuit.createType("Checkpoint", checkpoint),
-        beacon_header: circuit.createType("BeaconBlockHeader", initData.header.beacon),
-        execution_header: circuit.createType("ExecutionHeader", initData.header.execution),
-    }).toHex()
 }

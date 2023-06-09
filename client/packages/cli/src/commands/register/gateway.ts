@@ -121,7 +121,7 @@ const getRegistrationData = (
     case "Rococo":
       return registerSubstrateVerificationVendor(circuit, gatewayData)
     case "Ethereum":
-      return registerEthereumVerificationVendor(circuit, gatewayData)
+      return registerEthereumVerificationVendor(circuit)
     default:
       spinner.fail(
         colorLogMsg(
