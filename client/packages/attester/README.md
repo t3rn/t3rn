@@ -33,6 +33,8 @@ Attester is a TypeScript application that performs attestation tasks.
    pnpm install
    ```
 
+1. Copy .envrc-example to .envrc and supply it with base64 encoded keys used for attester
+
 1. Run it
    ```bash
    cd client/packages/attester
