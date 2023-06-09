@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "incremental": true,
     "outDir": "./dist",
     "baseUrl": "./src",
     "moduleResolution": "Node",
@@ -16,7 +15,6 @@
     "noImplicitThis": false,
     "noUnusedLocals": true,
     "resolveJsonModule": true,
-    "composite": true,
     "declaration": true
   },
   "references": [],

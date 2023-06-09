@@ -1,5 +1,7 @@
 FROM node:20.1
 
+RUN apt update -y
+RUN apt install -y python
 RUN npm install -g typescript ts-node
 
 ADD packages/sdk /app/sdk

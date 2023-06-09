@@ -1,16 +1,14 @@
 import z from "zod"
 import figlet from "figlet"
-import { cryptoWaitReady } from "@t3rn/sdk"
-import { log } from "./log.ts"
 import cleanStack from "clean-stack"
+import { cryptoWaitReady } from "@t3rn/sdk"
 import { CONFIG_FILE } from "@/consts.ts"
+import { log } from "./log.ts"
 
 export const greet = () =>
-  console.log(
-    figlet.textSync("t3rn CLI", {
-      font: "3D-ASCII",
-    })
-  )
+  figlet.textSync("t3rn CLI", {
+    font: "3D-ASCII",
+  })
 
 export const validate = <T>(
   schema: z.ZodType<T>,
@@ -40,16 +38,18 @@ export const validate = <T>(
   }
 }
 
+type Args = Array<Record<string, unknown> | string | number>
+
 export const wrapCryptoWaitReady =
-  (cb: (...args: any[]) => void) =>
-    async (...args: any[]) => {
+  (cb: (...args: Args) => void) =>
+    async (...args: Args) => {
       try {
         const isReady = await cryptoWaitReady()
 
         if (isReady) {
           cb(...args)
         } else {
-          throw new Error("Crypto is not ready")
+          throw new Error("Oops! @polkadot/wasm-crypto module is not ready")
         }
       } catch (err) {
         log("ERROR", cleanStack(err.message))
