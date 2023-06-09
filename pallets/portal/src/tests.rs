@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use ::pallet_eth2_finality_verifier::{
-        mock::{gen_epoch_data, gen_init_data},
+        mock::{generate_epoch_update, generate_initialization},
         types::EthereumInitializationData,
     };
     use circuit_mock_runtime::{ExtBuilder, Portal, *};
@@ -122,34 +122,33 @@ mod tests {
 
     #[test]
     fn test_initialize_and_submit_ethereum() {
-        let (
-            checkpoint,
-            current_sync_committee,
-            next_sync_committee,
-            beacon_header,
-            execution_payload,
-        ) = gen_init_data([0; 32]);
+        let init = generate_initialization(None, None);
 
-        let registration_data = EthereumInitializationData {
-            checkpoint,
-            current_sync_committee,
-            next_sync_committee,
-            beacon_header,
-            execution_payload,
-        };
-
-        let submission_data = gen_epoch_data(1, 32, 64, None, None, None);
+        let submission_data = generate_epoch_update(
+            0,
+            3,
+            Some(
+                init.checkpoint
+                    .justified_beacon
+                    .hash_tree_root::<Runtime>()
+                    .unwrap(),
+            ),
+            Some(
+                init.checkpoint
+                    .finalized_beacon
+                    .hash_tree_root::<Runtime>()
+                    .unwrap(),
+            ),
+            None,
+            None,
+        );
 
         ExtBuilder::default()
             .with_standard_sfx_abi()
             .with_default_xdns_records()
             .build()
             .execute_with(|| {
-                assert_ok!(Portal::initialize(
-                    Origin::root(),
-                    *b"eth2",
-                    registration_data.encode()
-                ));
+                assert_ok!(Portal::initialize(Origin::root(), *b"eth2", init.encode()));
 
                 assert_eq!(
                     Portal::get_latest_finalized_header(*b"eth2"),
@@ -206,21 +205,7 @@ mod tests {
     }
 
     fn test_register_ethereum_light_client() {
-        let (
-            checkpoint,
-            current_sync_committee,
-            next_sync_committee,
-            beacon_header,
-            execution_payload,
-        ) = gen_init_data([0; 32]);
-
-        let registration_data = EthereumInitializationData {
-            checkpoint,
-            current_sync_committee,
-            next_sync_committee,
-            beacon_header,
-            execution_payload,
-        };
+        let init = generate_initialization(None, None);
 
         ExtBuilder::default()
             .with_standard_sfx_abi()
@@ -241,7 +226,7 @@ mod tests {
                         decimals: 0,
                         symbol: vec![0u8; 1],
                     }),
-                    registration_data.encode(),
+                    init.encode(),
                 );
 
                 assert_ok!(result);
