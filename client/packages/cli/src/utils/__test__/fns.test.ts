@@ -1,14 +1,6 @@
 import { describe, expect, test } from "@jest/globals"
 import { z } from "zod"
-import { validate, greet } from "../fns.ts"
-
-describe("greet", () => {
-  test("should return a greeting", () => {
-    console.log = jest.fn()
-    greet()
-    expect(console.log).toBeCalled()
-  })
-})
+import { validate } from "../fns.ts"
 
 const Schema = z.object({
   tokenId: z.string(),

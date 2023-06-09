@@ -50,8 +50,8 @@ dependencies:
     specifier: 4.3.4
     version: 4.3.4(supports-color@8.1.1)
   dotenv:
-    specifier: 16.0.3
-    version: 16.0.3
+    specifier: 16.1.4
+    version: 16.1.4
   mocha:
     specifier: ^10.2.0
     version: 10.2.0
@@ -2189,8 +2189,8 @@ packages:
     dependencies:
       esutils: 2.0.3
 
-  /dotenv@16.0.3:
-    resolution: {integrity: sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==}
+  /dotenv@16.1.4:
+    resolution: {integrity: sha512-m55RtE8AsPeJBpOIFKihEmqUcoVncQIwo7x9U8ZwLEZw9ZpXboz2c+rvog+jUaJvVrZ5kBOeYQBX5+8Aa/OZQw==}
     engines: {node: '>=12'}
     dev: false
 

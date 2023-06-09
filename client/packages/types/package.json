@@ -22,12 +22,10 @@
     "preinstall": "npx -y only-allow yarn",
     "prepublishOnly": "yarn clean && yarn build",
     "prepack": "yarn clean && yarn build",
-    "compile": "yarn compile:code && yarn compile:typings",
     "ci": "rm -rf node_modules && rm yarn.lock && yarn",
-    "compile:code": "tsup",
-    "compile:typings": "tsc ",
     "clean": "git clean -xdf -e node_modules",
     "build": "yarn generate:all && yarn compile",
+    "compile": "tsup && tsup --dts",
     "lint": "eslint ./ --ext .ts",
     "format": "prettier ./ --write",
     "checks": "yarn build && madge --circular ./ && prettier ./ --check && yarn lint",
@@ -39,12 +37,12 @@
   "dependencies": {
     "@types/lodash": "^4.14.157",
     "lodash": "^4.17.15",
+    "ts-node": "^10.2.1",
     "moment": "^2.24.0"
   },
   "devDependencies": {
     "@polkadot/typegen": "^8.9.1",
     "madge": "^4.0.1",
-    "ts-node": "^10.2.1",
     "tsup": "6.6.3",
     "typescript": "4.4.3"
   },

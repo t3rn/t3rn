@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.31.0-rc.0] - 2023-06-09
+### :sparkles: New Features
+- [`cf76b08`](https://github.com/t3rn/t3rn/commit/cf76b08b634ab2061c675223265968e5eba9e22e) - add support to register eth2 gateway via CLI *(PR [#1031](https://github.com/t3rn/t3rn/pull/1031) by [@ahkohd](https://github.com/ahkohd))*
+
+### :bug: Bug Fixes
+- [`38e9bdc`](https://github.com/t3rn/t3rn/commit/38e9bdc3976773cdea0bcca223c0c967444f01d4) - **executor**: config in Docker and libraries update *(PR [#1028](https://github.com/t3rn/t3rn/pull/1028) by [@3h4x](https://github.com/3h4x))*
+- [`be9f99a`](https://github.com/t3rn/t3rn/commit/be9f99a6a53438ddb90bac4082eee0f01ccddcc6) - **attester**: info logs for events are spamming *(PR [#1030](https://github.com/t3rn/t3rn/pull/1030) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.30.0-rc.0] - 2023-06-06
 ### :sparkles: New Features
 - [`275f71b`](https://github.com/t3rn/t3rn/commit/275f71b6164c11246cafcd0b741062ca372616b0) - update executor *(PR [#1026](https://github.com/t3rn/t3rn/pull/1026) by [@3h4x](https://github.com/3h4x))*
@@ -1197,3 +1206,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.29.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.28.0-rc.0...v1.29.0-rc.0
 [v1.29.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.29.1-rc.0...v1.29.2-rc.0
 [v1.30.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.29.2-rc.0...v1.30.0-rc.0
+[v1.31.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.30.0-rc.0...v1.31.0-rc.0
