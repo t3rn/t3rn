@@ -5,7 +5,7 @@ import { ssz, phase0 } from "@lodestar/types"
 import { fromHexString, toHexString } from "@chainsafe/ssz"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { spinner } from "../gateway.ts"
-
+import { ETHEREUM_SLOTS_PER_EPOCH, ETHEREUM_EPOCHS_PER_PERIOD} from "@/consts.js"
 const RELAY_ENDPOINT =
   "https://rpc.ankr.com/premium-http/eth_sepolia_beacon/9b5188fb2ebf6f1e050bf1a1b623623759a0108f7a161b3986f3f21329166288"
 const LODESTAR_ENDPOINT = "https://lodestar-sepolia.chainsafe.io"
@@ -112,9 +112,8 @@ interface NextSyncCommitteeResponse {
   }
 }
 
-
 const fetchNextSyncCommittee = async (slot: number): SyncCommittee => {
-  const period = (slot / 32) / 256
+  const period = (slot / ETHEREUM_SLOTS_PER_EPOCH) / ETHEREUM_EPOCHS_PER_PERIOD
   const endpoint = `${LODESTAR_ENDPOINT}/eth/v1/beacon/light_client/updates?start_period=${period}&count=1`
   const fetchOptions = {
     method: "GET",
@@ -169,7 +168,7 @@ export const fetchLastSyncCommitteeUpdateSlot = async () => {
   }
 
   let slot = parseInt(responseData.data.header.message.slot)
-  slot = slot - (slot % (32 * 256)) // calc first slot of the current committee period
+  slot = slot - (slot % (ETHEREUM_SLOTS_PER_EPOCH * ETHEREUM_EPOCHS_PER_PERIOD)) // calc first slot of the current committee period
   return slot
 }
 
@@ -186,30 +185,6 @@ interface BeaconBlockResponseData {
       execution_payload_header: unknown
     }
   }
-}
-
-export const decodeSignerBits = (signerBits: string): boolean[] => {
-  signerBits = signerBits.replace("0x", "")
-  // split into byte groups
-  const bytes = signerBits.match(/.{1,2}/g) ?? []
-  const acc: boolean[][] = []
-
-  for (let i = 0; i < bytes.length; i++) {
-    const binaries = parseInt(bytes[i], 16)
-      .toString(2)
-      .split("")
-      .reverse()
-      .map((x) => (parseInt(x) === 1 ? true : false))
-
-    // pad remaining 0s
-    while (binaries.length < 8) {
-      binaries.push(false)
-    }
-
-    acc.push(binaries)
-  }
-
-  return acc.flat()
 }
 
 export async function fetchHeaderData(slot: number) {
@@ -240,7 +215,7 @@ async function fetchCheckpointEntry(slot: number) {
   // console.log(header.data.message.body.execution_payload.block)
    return {
      beacon: {
-       root, epoch: parseInt(header.data.message.slot, 10) / 32
+       root, epoch: parseInt(header.data.message.slot, 10) / ETHEREUM_SLOTS_PER_EPOCH // slot to epoch number
      },
      execution: {
        root: header.data.message.body.execution_payload.block_hash,
@@ -312,8 +287,8 @@ export const fetchInitData = async (finalizedSlot: number, finalizedBeaconBlockR
   const responseData = (await response.json()) as BootstrapResponse
 
   const finalized = await fetchCheckpointEntry(finalizedSlot)
-  const justified = await fetchCheckpointEntry(finalizedSlot + 32)
-  const attested = await fetchCheckpointEntry(finalizedSlot + 64)
+  const justified = await fetchCheckpointEntry(finalizedSlot + ETHEREUM_SLOTS_PER_EPOCH) // next epoch
+  const attested = await fetchCheckpointEntry(finalizedSlot + (2 * ETHEREUM_SLOTS_PER_EPOCH)) // next next epoch
 
   const currentSyncCommittee: SyncCommittee = {
     pubs: responseData.data.current_sync_committee.pubkeys,
