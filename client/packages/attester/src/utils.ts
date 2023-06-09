@@ -25,14 +25,3 @@ export function checkKeys(keys: any) {
         process.exit(1)
     }
 }
-
-export async function submitTx(tx: any, circuit: any) {
-        if (circuit.sdk && circuit.isActive) {
-            try {
-                return await circuit.sdk.circuit.tx.signAndSendSafe(tx)
-            }
-            catch (error) {
-                logger.error(error)
-            }
-        }
-    }

@@ -2,10 +2,9 @@ import { Connection } from './connection'
 import { cryptoWaitReady } from '@t3rn/sdk'
 import { logger } from './logging'
 import { Prometheus } from './prometheus'
-import * as ethUtil from "ethereumjs-util"
+import * as ethUtil from 'ethereumjs-util'
 
 import { hexToU8a } from '@polkadot/util'
-import { submitTx } from './utils'
 
 export class Attester {
     circuit: Connection
@@ -20,7 +19,7 @@ export class Attester {
     }
 
     async start() {
-		await this.connectClients()
+        await this.connectClients()
 
         await new Promise<void>((resolve) => {
             const checkClient = () => {
@@ -33,7 +32,27 @@ export class Attester {
             checkClient()
         })
 
-        this.listenEvents()
+        if (process.env.LOG_LEVEL == 'debug') {
+            const event = {
+                method: 'NewAttestationMessageHash',
+                section: 'attesters',
+                index: '0x6505',
+                data: [
+                    '0x7365706C',
+                    '0xe8e77626586f73b955364c7b4bbf0bb7f7685ebd40e852b164633a4acbd3244c',
+                    'EVM',
+                ],
+            }
+
+            const [targetId, messageHash, executionVendor] = event.data
+            await this.submitAttestationEVM(
+                messageHash,
+                targetId,
+                executionVendor
+            )
+        } else {
+            this.listenEvents()
+        }
     }
 
     async connectClients() {
@@ -60,7 +79,7 @@ export class Attester {
                 events.map(async (record) => {
                     // Extract the phase, event and the event types
                     const { event } = record
-                    logger.debug({'event': event}, "Event data")
+                    logger.debug({ event: event }, 'Event data')
 
                     if (event.section == 'attesters') {
                         this.prometheus.eventsAttestationsTotal.inc({
@@ -78,12 +97,14 @@ export class Attester {
 
                         switch (event.method) {
                             case 'NewAttestationMessageHash': {
-                                const [targetId, messageHash, executionVendor] = event.data
+                                const [targetId, messageHash, executionVendor] =
+                                    event.data
                                 logger.info(
                                     {
                                         targetId: targetId.toString(),
-                                        messageHash: messageHash.toHex(),
-                                        executionVendor: executionVendor.toString(),
+                                        messageHash: messageHash,
+                                        executionVendor:
+                                            executionVendor.toString(),
                                     },
                                     `Received the attestation message hash request to sign`
                                 )
@@ -98,7 +119,19 @@ export class Attester {
                                     executionVendor.toString() == 'EVM'
                                 ) {
                                     // Generate the signature for the message hash
-                                    await this.submitAttestationEVM(messageHash, targetId, executionVendor)
+                                    try {
+                                        await this.submitAttestationEVM(
+                                            messageHash.toHex(),
+                                            targetId,
+                                            executionVendor
+                                        )
+                                    } catch (error) {
+                                        logger.error(
+                                            error,
+                                            'Error submitting attestation'
+                                        )
+                                        return
+                                    }
                                 }
 
                                 break
@@ -119,42 +152,45 @@ export class Attester {
         })
     }
 
-    private async submitAttestationEVM(messageHash: any, targetId: any, executionVendor: any) {
-        const privateKey = Buffer.from(
-            hexToU8a(
-                this.keys.ethereum.privateKey
-            )
-        )
+    private async submitAttestationEVM(
+        messageHash: any,
+        targetId: any,
+        executionVendor: any
+    ) {
+        const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
 
         const sigObj = ethUtil.ecsign(
-            Buffer.from(
-                hexToU8a(messageHash)
-            ),
+            Buffer.from(hexToU8a(messageHash)),
             privateKey
         )
 
-        const signature = ethUtil.toRpcSig(
-            sigObj.v,
-            sigObj.r,
-            sigObj.s
-        )
+        const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s)
 
-        logger.info(
-            {
-                executionVendor: executionVendor.toString(),
-                targetId: targetId.toString(),
-                messageHash: messageHash,
-                signature: signature.toString(),
-            },
-            'Submitting attestation'
-        )
         const tx = this.circuit.client.tx.attesters.submitAttestation(
             messageHash,
             signature,
             targetId
         )
+        logger.info(
+            {
+                executionVendor: executionVendor.toString(),
+                targetId: targetId,
+                messageHash: messageHash,
+                signature: signature.toString(),
+            },
+            'Submitting attestation'
+        )
 
-        const result = await submitTx(tx, this.circuit)
+        let result
+        try {
+            result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
+        } catch (error) {
+            logger.error(error, 'Error submitting attestation')
+            return
+        }
+
+        logger.error(result)
+
         logger.info(
             {
                 executionVendor: executionVendor.toString(),
@@ -165,5 +201,4 @@ export class Attester {
             'Attestation submitted'
         )
     }
-
 }

@@ -4,6 +4,15 @@ import { logger } from './logging'
 import { Attester } from './attester'
 import { checkKeys } from './utils'
 
+process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error)
+    process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection:', reason)
+    process.exit(1)
+})
 ;(async () => {
     logger.info(`Starting attester`)
 
