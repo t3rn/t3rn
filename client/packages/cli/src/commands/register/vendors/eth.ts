@@ -3,13 +3,13 @@ import { ApiPromise } from "@t3rn/sdk"
 import { phase0 } from "@lodestar/types"
 import { fromHexString } from "@chainsafe/ssz"
 import { colorLogMsg } from "@/utils/log.ts"
-import { spinner } from "../gateway.ts"
 import {
   ETHEREUM_SLOTS_PER_EPOCH,
   ETHEREUM_EPOCHS_PER_PERIOD,
   LODESTAR_ENDPOINT,
   RELAY_ENDPOINT,
 } from "@/consts.ts"
+import { spinner } from "../gateway.ts"
 
 type BLSPubKey = Uint8Array
 
