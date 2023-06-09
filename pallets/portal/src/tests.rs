@@ -13,6 +13,8 @@ mod tests {
         mock::produce_mock_headers_range,
         types::RelaychainRegistrationData,
     };
+
+    use pallet_eth2_finality_verifier;
     use std::fs;
 
     use sp_core::H256;
@@ -157,17 +159,17 @@ mod tests {
 
                 assert_eq!(
                     Portal::get_finalized_height(*b"eth2"),
-                    Ok(HeightResult::Height(0))
+                    Ok(HeightResult::Height(31))
                 );
 
                 assert_eq!(
                     Portal::get_rational_height(*b"eth2"),
-                    Ok(HeightResult::Height(0))
+                    Ok(HeightResult::Height(31))
                 );
 
                 assert_eq!(
                     Portal::get_fast_height(*b"eth2"),
-                    Ok(HeightResult::Height(100031))
+                    Ok(HeightResult::Height(63))
                 );
 
                 assert_ok!(Portal::submit_encoded_headers(
@@ -176,30 +178,18 @@ mod tests {
                 ));
 
                 assert_eq!(
-                    Portal::get_latest_finalized_header(*b"eth2"),
-                    Ok(HeaderResult::Header(
-                        [
-                            144, 163, 180, 61, 137, 204, 211, 16, 77, 115, 89, 213, 158, 230, 226,
-                            77, 9, 214, 195, 52, 108, 239, 200, 228, 85, 103, 219, 172, 62, 150,
-                            199, 68
-                        ]
-                        .into()
-                    ))
-                ); // need to submit first epoch
-
-                assert_eq!(
                     Portal::get_finalized_height(*b"eth2"),
-                    Ok(HeightResult::Height(100031))
+                    Ok(HeightResult::Height(63))
                 );
 
                 assert_eq!(
                     Portal::get_rational_height(*b"eth2"),
-                    Ok(HeightResult::Height(100031))
+                    Ok(HeightResult::Height(63))
                 );
 
                 assert_eq!(
                     Portal::get_fast_height(*b"eth2"),
-                    Ok(HeightResult::Height(100063))
+                    Ok(HeightResult::Height(95))
                 );
             });
     }

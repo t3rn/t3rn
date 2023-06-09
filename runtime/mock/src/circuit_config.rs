@@ -342,7 +342,7 @@ parameter_types! {
     pub const SyncCommitteeSize: u32 = 26;
     pub const GenesisValidatorsRoot: Root = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
     pub const SlotsPerEpoch: u32 = 32;
-    pub const EpochsPerSyncCommitteePeriod: u32 = 2;
+    pub const EpochsPerSyncCommitteePeriod: u32 = 6;
     pub const CommitteeMajorityThreshold: u32 = 80;
 }
 
