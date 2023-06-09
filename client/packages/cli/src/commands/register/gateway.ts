@@ -70,47 +70,52 @@ const registerGateway = async (
     "TokenInfo",
     gatewayData.registrationData.tokenInfo
   )
-  const registrationData = await getRegistrationData(circuit, gatewayData)
 
-  if (!registrationData) {
+  try {
+    const registrationData = await getRegistrationData(circuit, gatewayData)
+
+    if (!registrationData) {
+      throw new Error(`${gatewayData.name} gateway registration failed!`)
+    }
+
+    spinner.succeed(colorLogMsg("SUCCESS", "Fetched registration data"))
+    spinner.start()
+
+    const tx = circuit.tx.portal.registerGateway(
+      gatewayId,
+      tokenId,
+      //@ts-ignore - TS doesn't know about the type
+      verificationVendor.toJSON(),
+      //@ts-ignore - TS doesn't know about the type
+      executionVendor.toJSON(),
+      //@ts-ignore - TS doesn't know about the type
+      codec.toJSON(),
+      registrant,
+      escrowAccounts,
+      allowedSideEffects,
+      tokenInfo,
+      registrationData
+    )
+    const response = await sdk.circuit.tx.signAndSendSafe(
+      sdk.circuit.tx.createSudo(tx)
+    )
+
+    spinner.succeed(
+      colorLogMsg("SUCCESS", `Gateway registration tx sent ${response}`)
+    )
+    spinner.stopAndPersist({
+      symbol: "🎉",
+      text: colorLogMsg("SUCCESS", `${gatewayData.name} gateway registered!`),
+    })
+    spinner.stop()
+
+    process.exit(0)
+  } catch (error) {
     spinner.fail(
       colorLogMsg("ERROR", `${gatewayData.name} gateway registration failed!`)
     )
     process.exit(1)
   }
-
-  spinner.succeed(colorLogMsg("SUCCESS", "Fetched registration data"))
-  spinner.start()
-
-  const tx = circuit.tx.portal.registerGateway(
-    gatewayId,
-    tokenId,
-    //@ts-ignore - TS doesn't know about the type
-    verificationVendor.toJSON(),
-    //@ts-ignore - TS doesn't know about the type
-    executionVendor.toJSON(),
-    //@ts-ignore - TS doesn't know about the type
-    codec.toJSON(),
-    registrant,
-    escrowAccounts,
-    allowedSideEffects,
-    tokenInfo,
-    registrationData
-  )
-
-  const response = await sdk.circuit.tx.signAndSendSafe(
-    sdk.circuit.tx.createSudo(tx)
-  )
-
-  spinner.succeed(
-    colorLogMsg("SUCCESS", `Gateway registration tx sent ${response}`)
-  )
-  spinner.stopAndPersist({
-    symbol: "🎉",
-    text: colorLogMsg("SUCCESS", `${gatewayData.name} gateway registered!`),
-  })
-  spinner.stop()
-  process.exit(0)
 }
 
 const getRegistrationData = (
@@ -123,12 +128,6 @@ const getRegistrationData = (
     case "Ethereum":
       return registerEthereumVerificationVendor(circuit)
     default:
-      spinner.fail(
-        colorLogMsg(
-          "ERROR",
-          "Registration for verification vendor not available!"
-        )
-      )
-      return
+      throw new Error("Registration for verification vendor not available!")
   }
 }
