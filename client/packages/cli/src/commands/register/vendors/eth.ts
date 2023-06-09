@@ -1,5 +1,6 @@
 import fetch from "node-fetch"
 import { ApiPromise } from "@t3rn/sdk"
+// @ts-ignore - TS doesn't know about the type definition
 import { phase0 } from "@lodestar/types"
 import { fromHexString } from "@chainsafe/ssz"
 import { colorLogMsg } from "@/utils/log.ts"
