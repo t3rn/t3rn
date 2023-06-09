@@ -5,6 +5,7 @@ import { Prometheus } from './prometheus'
 import * as ethUtil from "ethereumjs-util"
 
 import { hexToU8a } from '@polkadot/util'
+import { submitTx } from './utils'
 
 export class Attester {
     circuit: Connection
@@ -153,27 +154,16 @@ export class Attester {
             targetId
         )
 
-        const result = await this.submitTx(tx, this.circuit)
+        const result = await submitTx(tx, this.circuit)
         logger.info(
             {
                 executionVendor: executionVendor.toString(),
                 targetId: targetId.toString(),
                 messageHash: messageHash,
-                // hash: result?.hash.toHex(),
+                hash: result.hash.toHex(),
             },
             'Attestation submitted'
         )
     }
 
-    async submitTx(tx: any, circuit: any) {
-        if (circuit.sdk && circuit.isActive) {
-            try {
-                return await circuit.sdk.circuit.tx.signAndSendSafe(tx)
-            }
-            catch (error) {
-                logger.error(error)
-            }
-        }
-
-    }
 }
