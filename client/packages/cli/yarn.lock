@@ -1192,6 +1192,7 @@
     "@types/lodash" "^4.14.157"
     lodash "^4.17.15"
     moment "^2.24.0"
+    ts-node "^10.2.1"
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.9"
@@ -3867,7 +3868,7 @@ ts-jest@^29.1.0:
     semver "7.x"
     yargs-parser "^21.0.1"
 
-ts-node@^10.9.1:
+ts-node@^10.2.1, ts-node@^10.9.1:
   version "10.9.1"
   resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-10.9.1.tgz#e73de9102958af9e1f0b168a6ff320e25adcff4b"
   integrity sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==

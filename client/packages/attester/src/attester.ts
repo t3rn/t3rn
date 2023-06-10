@@ -32,7 +32,7 @@ export class Attester {
             checkClient()
         })
 
-        if (process.env.LOG_LEVEL == 'debug') {
+        if (process.env.TEST == 'true') {
             const event = {
                 method: 'NewAttestationMessageHash',
                 section: 'attesters',
