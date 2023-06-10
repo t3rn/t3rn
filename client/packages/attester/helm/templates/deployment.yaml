@@ -38,7 +38,7 @@ spec:
               value: "{{ .Values.profile }}"
             - name: KEYS
               value: {{ $keys | toJson | b64enc }}
-            {{- if $index == 0 }}
+            {{- if eq $index 0 }}
             - name: LOG_LEVEL
               value: debug
             {{- end }}
