@@ -79,7 +79,7 @@ export class Attester {
                 events.map(async (record) => {
                     // Extract the phase, event and the event types
                     const { event } = record
-                    logger.debug({ event: event }, 'Event data')
+                    logger.debug({ record: record }, 'Event')
 
                     if (event.section == 'attesters') {
                         this.prometheus.eventsAttestationsTotal.inc({
