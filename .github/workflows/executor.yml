@@ -91,6 +91,7 @@ jobs:
     runs-on: self-hosted
     if: needs.changes.outputs.src == 'true'
     needs: test-executor
+    concurrency: executor
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3

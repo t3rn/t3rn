@@ -100,6 +100,7 @@ jobs:
     name: Deploy Attester
     runs-on: self-hosted
     needs: test-attester
+    concurrency: attester
     if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo

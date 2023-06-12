@@ -93,6 +93,7 @@ jobs:
     name: Deploy Grandpa Ranger
     runs-on: self-hosted
     needs: test-grandpa-ranger
+    concurrency: grandpa-ranger
     if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
