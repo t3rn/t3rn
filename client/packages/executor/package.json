@@ -28,7 +28,7 @@
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.2.1",
+    "@types/node": "^20.2.6",
     "axios": "^1.4.0",
     "bn.js": "^5.2.1",
     "chai": "^4.3.7",
