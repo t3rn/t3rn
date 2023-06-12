@@ -82,7 +82,7 @@ async function main() {
 
         await cryptoWaitReady();
 
-        await nomiante_with_each_attester_key(api, nominate_amount);
+        await nominate_with_each_attester_key(api, nominate_amount);
 
         await api.disconnect();
     }
@@ -96,7 +96,7 @@ async function main() {
 
         await cryptoWaitReady();
 
-        await unnomiante_with_each_attester_key(api);
+        await unnominate_with_each_attester_key(api);
 
         await api.disconnect();
     }
@@ -274,7 +274,7 @@ async function attest_with_each_attester_key(api, targetId, messageHash, executi
     );
 }
 
-async function unnomiante_with_each_attester_key(api) {
+async function unnominate_with_each_attester_key(api) {
     let keys = JSON.parse(fs.readFileSync('keys.json'));
     await cryptoWaitReady();
 
@@ -302,7 +302,7 @@ async function unnomiante_with_each_attester_key(api) {
   
 }
 
-async function nomiante_attesters(api, nominateAmount) {
+async function nominate_attesters(api, nominateAmount) {
     let nominators_keys = JSON.parse(fs.readFileSync('nominators.json'));
     let attesters_keys = JSON.parse(fs.readFileSync('attesters.json'));
 
@@ -444,5 +444,5 @@ module.exports.register_with_each_attester_key = register_with_each_attester_key
 module.exports.deregister_with_each_attester_key = deregister_with_each_attester_key;
 module.exports.attest_with_each_attester_key = attest_with_each_attester_key;
 module.exports.agree_to_target_with_each_attester_key = agree_to_target_with_each_attester_key;
-module.exports.nomiante_attesters = nomiante_attesters;
-module.exports.unnomiante_with_each_attester_key = unnomiante_with_each_attester_key;
+module.exports.nominate_attesters = nominate_attesters;
+module.exports.unnominate_with_each_attester_key = unnominate_with_each_attester_key;
