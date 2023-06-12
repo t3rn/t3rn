@@ -47,12 +47,12 @@ jobs:
   test-attester:
     name: Test Attester
     needs: [changes]
-    if: needs.changes.outputs.src == 'true'
+    runs-on: self-hosted
     defaults:
       run:
         working-directory: client/packages/attester
 
-    runs-on: self-hosted
+    if: needs.changes.outputs.src == 'true'
     steps:
       - uses: actions/checkout@v3
 
@@ -82,26 +82,13 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/attester/eslint_report.json
 
-  build-docker:
-    name: Build Docker Attester
-    needs: [changes]
-    if: needs.changes.outputs.src == 'true'
-
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build Docker
-        working-directory: ./client
-        run: |
-          docker build . -f attester.Dockerfile
-
   deploy:
-    name: Deploy Attester
+    name: Build & Deploy Attester
     runs-on: self-hosted
     needs: test-attester
-    if: needs.changes.outputs.src == 'true'
+    concurrency: attester
 
+    if: needs.changes.outputs.src == 'true'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
