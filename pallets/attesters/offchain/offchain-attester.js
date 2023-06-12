@@ -302,26 +302,36 @@ async function unnomiante_with_each_attester_key(api) {
   
 }
 
-async function nomiante_with_each_attester_key(api, nominateAmount) {
-    let keys = JSON.parse(fs.readFileSync('keys.json'));
+async function nomiante_attesters(api, nominateAmount) {
+    let nominators_keys = JSON.parse(fs.readFileSync('nominators.json'));
+    let attesters_keys = JSON.parse(fs.readFileSync('attesters.json'));
+
+    const attesters = attesters_keys.map(obj => obj.substrate.publicKey);
+    let attesterIndex = 0; // Counter variable to track the current attester index
+
+
     await cryptoWaitReady();
 
     return await Promise.all(
-        keys.map(async (key) => {
+        nominators_keys.map(async (key) => {
             // Create the Keyring pair from the private key
             const keyring = new Keyring({ type: 'sr25519' });
             const pair = keyring.addFromSeed(hexToU8a(key.substrate.privateKey));
             // Now use this pair to sign and send the transaction
             console.log('Nominate with each attester key');
             console.log(`\t\tNominate Amount: ${nominateAmount}`);
-            console.log(`\t\tEthereum Public Key: ${key.ethereum.publicKey}`);
-            console.log(`\t\tBTC Public Key: ${key.btc.publicKey}`);
-            console.log(`\t\tSubstrate Public Key: ${key.substrate.publicKey}`);
+            console.log(`\t\tNominator Public Key: ${key.substrate.publicKey}`);
+
+            // Get the current attester from the attesters list
+            const attester = attesters[attesterIndex];
+            attesterIndex = (attesterIndex + 1) % attesters.length; // Increment the index and loop back to the start if necessary
+
+            console.log(`\t\tAttester Public Key: ${attester}`);
 
             let tx = await signAndSendSafe(
                 api,
                 pair,
-                api.tx.attesters.nominate(key.substrate.publicKey, nominateAmount)
+                api.tx.attesters.nominate(attester, nominateAmount)
             );
 
             console.log()
@@ -434,5 +444,5 @@ module.exports.register_with_each_attester_key = register_with_each_attester_key
 module.exports.deregister_with_each_attester_key = deregister_with_each_attester_key;
 module.exports.attest_with_each_attester_key = attest_with_each_attester_key;
 module.exports.agree_to_target_with_each_attester_key = agree_to_target_with_each_attester_key;
-module.exports.nomiante_with_each_attester_key = nomiante_with_each_attester_key;
+module.exports.nomiante_attesters = nomiante_attesters;
 module.exports.unnomiante_with_each_attester_key = unnomiante_with_each_attester_key;
