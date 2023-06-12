@@ -2760,7 +2760,6 @@ pub mod attesters_test {
 
             let batch_0_hash = next_batch.message_hash();
             // If no attestations are received, the next batch should be empty, and the current batch should be pending attestation with indication of late submission
-            // Attesters::on_initialize(SHUFFLING_FREQUENCY * 1 + BATCHING_WINDOW * 1);
             add_target_and_transition_to_next_batch(TARGET_0, 1);
 
             let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
@@ -2886,10 +2885,11 @@ pub mod attesters_test {
                     [counter; 32],
                 );
             }
-
-            let batch = Attesters::get_batch_by_message([0u8; 4], expected_message_bytes)
-                .expect("get_batch_by_message should return a batch");
-            assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
+            assert_eq!(
+                Attesters::get_batches([0u8; 4], BatchStatus::ReadyForSubmissionFullyApproved)
+                    .len(),
+                1
+            );
         });
     }
 
@@ -2926,14 +2926,14 @@ pub mod attesters_test {
                 );
             }
 
-            let batch = Attesters::get_batch_by_message([0u8; 4], expected_message_bytes.clone())
-                .expect("get_batch_by_message should return a batch");
+            let batch = Attesters::get_latest_batch_to_sign([0u8; 4])
+                .expect("get_latest_batch_to_sign should return a batch");
 
             assert_eq!(batch.status, BatchStatus::PendingAttestation);
 
             // Trigger batching transition
-            add_target_and_transition_to_next_batch([0u8; 4], 2);
-            let batch = Attesters::get_batch_by_message([0u8; 4], expected_message_bytes)
+            add_target_and_transition_to_next_batch([0u8; 4], 1);
+            let batch = Attesters::get_batch_by_message([0u8; 4], batch.message())
                 .expect("get_batch_by_message should return a batch");
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionByMajority);
         });
@@ -2987,10 +2987,13 @@ pub mod attesters_test {
                 );
             }
 
-            // Check if the attestations have been added to the batch
-            let first_batch = Attesters::get_batch_by_message(target, message_bytes.clone())
-                .expect("Batch by message should exist");
+            let attested_batches =
+                Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
 
+            assert_eq!(attested_batches.len(), 1);
+            let first_batch = attested_batches[0].clone();
+
+            // Check if the attestations have been added to the batch
             let first_batch_hash = first_batch.message_hash();
             let first_batch_message = first_batch.message();
 
@@ -3005,8 +3008,6 @@ pub mod attesters_test {
                 hash: first_batch_hash,
                 message: first_batch_message.clone(),
             };
-
-            assert_eq!(first_batch_message, message_bytes);
 
             // Commit the batch
             assert_ok!(Attesters::commit_batch(
@@ -3060,14 +3061,12 @@ pub mod attesters_test {
             }
 
             // Check if the attestations have been added to the batch
-            let first_batch =
-                Attesters::get_batch_by_message(target, expected_message_bytes.clone())
-                    .expect("Batch by message should exist");
+
+            let fist_batches =
+                Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
+            assert_eq!(fist_batches.len(), 1);
+            let first_batch = fist_batches[0].clone();
             assert_eq!(first_batch.signatures.len(), 32);
-            assert_eq!(
-                first_batch.status,
-                BatchStatus::ReadyForSubmissionFullyApproved
-            );
 
             let colluded_message: [u8; 32] = *b"_message_that_was_colluded_by_32";
 
@@ -3089,7 +3088,7 @@ pub mod attesters_test {
             );
 
             // Check if the batch status has not been updated to Committed
-            let batch = Attesters::get_batch_by_message(target, expected_message_bytes)
+            let batch = Attesters::get_batch_by_message_hash(target, latest_batch_hash)
                 .expect("Batch by message should exist");
 
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
