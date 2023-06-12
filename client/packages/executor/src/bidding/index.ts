@@ -1,5 +1,7 @@
 import { SideEffect } from "../executionManager/sideEffect";
 import { config } from "../../config/config";
+import { Prometheus } from "src/prometheus";
+import { Instance } from "src";
 
 /**
  * The bidding engine is used for determining the bidding amount for a given
@@ -50,12 +52,21 @@ export class BiddingEngine {
     switch (scenario) {
       case Scenario.noBidAndNoCompetition:
         bid = this.computeNoBidAndNoCompetition(sfx);
+        Instance.prom.noBidAndNoCompetition.inc({
+          executor: Instance.prom.executorName,
+        });
         break;
       case Scenario.noBidButCompetition:
         bid = this.computeNoBidButCompetition(sfx);
+        Instance.prom.noBidButCompetition.inc({
+          executor: Instance.prom.executorName,
+        });
         break;
       case Scenario.beenOutbid:
         bid = this.computeBeenOutbid(sfx);
+        Instance.prom.beenOutBid.inc({
+          executor: Instance.prom.executorName,
+        });
         break;
     }
     return bid;

@@ -18,6 +18,8 @@ import { bnToFloat } from "@t3rn/sdk/dist/converters/amounts";
 import { InclusionProof } from "../gateways/types";
 import { Miscellaneous } from "./execution";
 import { createLogger } from "../utils";
+import { Prometheus } from "src/prometheus";
+import { Instance } from "src";
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];
@@ -418,8 +420,10 @@ export class SideEffect extends EventEmitter {
     // we have passed all checks and need to compute the bid amount
     this.txStatus = TxStatus.Pending; // acts as mutex lock
     this.minProfitUsd = this.strategyEngine.getMinProfitUsd(this);
+
     const bidUsd = this.biddingEngine.computeBid(this);
     const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue();
+    Instance.prom.bids.inc({ executor: Instance.prom.executorName });
 
     return { trigger: true, bidAmount: floatToBn(bidRewardAsset) };
   }

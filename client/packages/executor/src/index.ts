@@ -38,6 +38,7 @@ import { CircuitRelayer } from "./circuit/relayer";
 import * as defaultConfig from "../config.json";
 import { problySubstrateSeed, createLogger } from "./utils";
 import { Logger } from "pino";
+import { Prometheus } from "./prometheus";
 
 /** An executor instance. */
 class Instance {
@@ -52,6 +53,7 @@ class Instance {
   logsDir: undefined | PathLike;
   configFile: PathLike;
   stateFile: PathLike;
+  static prom: Prometheus;
 
   /**
    * Initializes an executor instance.
@@ -67,6 +69,7 @@ class Instance {
       : undefined;
     this.stateFile = join(this.baseDir.toString(), "state.json");
     this.configFile = join(this.baseDir.toString(), "config.json");
+    Instance.prom = new Prometheus(this.name);
   }
 
   /**
@@ -86,6 +89,21 @@ class Instance {
     this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
     // @ts-ignore
     this.circuitClient = await this.sdk.init();
+
+    this.circuitClient.on("disconnected", () => {
+      Instance.prom.circuitDisconnects.inc({
+        executor: Instance.prom.executorName,
+        endpoint: this.config.circuit.rpc,
+      });
+      Instance.prom.circuitDisconnected.inc({
+        executor: Instance.prom.executorName,
+        endpoint: this.config.circuit.rpc,
+      });
+    });
+    this.circuitClient.on("connected", () => {
+      Instance.prom.circuitDisconnected.reset();
+    });
+
     this.executionManager = new ExecutionManager(
       this.circuitClient,
       this.sdk,
@@ -193,7 +211,6 @@ class Instance {
 
   /** Registers a state listener that persists to disk. */
   private registerStateListener(): Instance {
-    const self = this;
     const _proxy = new Proxy(this.executionManager.queue, {
       set(target, prop, receiver) {
         // wait until reflected, then persist state
@@ -201,7 +218,7 @@ class Instance {
         return Reflect.set(target, prop, receiver);
       },
     });
-    return self;
+    return this;
   }
 
   private async persistState() {

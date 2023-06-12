@@ -8,7 +8,6 @@ export class Prometheus {
   isActive: boolean;
 
   // Metrics
-  up: Counter;
   bids: Counter;
   events: Counter;
   circuitDisconnects: Counter;
@@ -17,20 +16,13 @@ export class Prometheus {
   noBidButCompetition: Counter;
   beenOutBid: Counter;
 
-  constructor(public executor: string) {
+  constructor(public readonly executorName: string) {
     this.register = new Registry();
     this.createMetrics();
   }
 
   createMetrics() {
     collectDefaultMetrics({ register: this.register });
-
-    this.up = new Counter({
-      name: "server_up",
-      help: "If the server initialized successfully",
-      registers: [this.register],
-      labelNames: ["executor"],
-    });
 
     this.bids = new Counter({
       name: "bids",
@@ -108,7 +100,6 @@ export class Prometheus {
 
     server.listen(port, () => {
       console.log(`Metrics server listening on port ${port}`);
-      this.up.inc({ executor: this.executor }, 1);
     });
   }
 }
