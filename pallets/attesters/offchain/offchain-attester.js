@@ -82,7 +82,7 @@ async function main() {
 
         await cryptoWaitReady();
 
-        await nominate_with_each_attester_key(api, nominate_amount);
+        await nominate_attesters(api, nominate_amount);
 
         await api.disconnect();
     }
