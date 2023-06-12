@@ -19,9 +19,7 @@
   "scripts": {
     "ci": "rm -rf node_modules && rm yarn.lock && yarn",
     "clean:build": "rm -rf ./dist",
-    "build": "yarn clean:build && tsup && yarn build:typings",
-    "build:typings": "tsc --emitDeclarationOnly --outDir ./typings && rm -rf types && mv ./typings/src ./types && rm -rf typings && yarn build:typings:merge",
-    "build:typings:merge": "cp -R ./types/ ./dist && rm -rf ./types",
+    "build": "yarn clean:build && tsup && tsup --dts",
     "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk"
   },
   "keywords": [

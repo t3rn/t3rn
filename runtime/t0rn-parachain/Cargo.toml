@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t0rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.30.0-rc.0"
+version     = "1.31.0-rc.0"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]

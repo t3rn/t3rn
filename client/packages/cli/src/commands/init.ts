@@ -14,7 +14,7 @@ export const handleInitCmd = async (args: Args<"config" | "transfer">) => {
     process.exit(1)
   }
 
-  greet()
+  console.log(greet())
 
   if (args.config) {
     initConfigFile(args.config)
