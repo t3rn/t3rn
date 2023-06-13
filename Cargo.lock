@@ -5968,7 +5968,7 @@ dependencies = [
 [[package]]
 name = "pallet-asset-registry"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi#604db5d940e9c9b0e00769c4454f706b5072fde6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7531,7 +7531,7 @@ dependencies = [
 [[package]]
 name = "pallet-xbi-portal"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi#604db5d940e9c9b0e00769c4454f706b5072fde6"
 dependencies = [
  "fp-evm 3.0.0-dev",
  "frame-benchmarking",
@@ -12376,7 +12376,7 @@ dependencies = [
 [[package]]
 name = "substrate-abi"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi#604db5d940e9c9b0e00769c4454f706b5072fde6"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -12423,7 +12423,7 @@ dependencies = [
 [[package]]
 name = "substrate-contracts-abi"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi#604db5d940e9c9b0e00769c4454f706b5072fde6"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -13390,7 +13390,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.10.2",
+ "parking_lot 0.11.2",
  "regex",
  "serde",
  "serde_json",
@@ -14533,7 +14533,7 @@ dependencies = [
 [[package]]
 name = "xp-channel"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi#604db5d940e9c9b0e00769c4454f706b5072fde6"
 dependencies = [
  "frame-support",
  "log",
@@ -14548,7 +14548,7 @@ dependencies = [
 [[package]]
 name = "xp-format"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi#604db5d940e9c9b0e00769c4454f706b5072fde6"
 dependencies = [
  "frame-system",
  "log",
@@ -14564,7 +14564,7 @@ dependencies = [
 [[package]]
 name = "xp-xcm"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi#604db5d940e9c9b0e00769c4454f706b5072fde6"
 dependencies = [
  "parity-scale-codec",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
@@ -14575,7 +14575,7 @@ dependencies = [
 [[package]]
 name = "xs-channel"
 version = "0.3.7"
-source = "git+https://github.com/t3rn/xbi#e23bcb888df60d6f0da80d3aa3fc24c3a67cc95d"
+source = "git+https://github.com/t3rn/xbi#604db5d940e9c9b0e00769c4454f706b5072fde6"
 dependencies = [
  "frame-support",
  "frame-system",
