@@ -256,10 +256,7 @@ export class ExecutionManager {
   /** Initialize the circuit listeners */
   async initializeEventListeners() {
     this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
-      Instance.prom.events.inc({
-        executor: Instance.prom.executorName,
-        event: eventData.type,
-      });
+      Instance.prom.events.inc();
 
       switch (eventData.type) {
         case ListenerEvents.NewSideEffectsAvailable:

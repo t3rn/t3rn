@@ -52,21 +52,15 @@ export class BiddingEngine {
     switch (scenario) {
       case Scenario.noBidAndNoCompetition:
         bid = this.computeNoBidAndNoCompetition(sfx);
-        Instance.prom.noBidAndNoCompetition.inc({
-          executor: Instance.prom.executorName,
-        });
+        Instance.prom.noBidAndNoCompetition.inc();
         break;
       case Scenario.noBidButCompetition:
         bid = this.computeNoBidButCompetition(sfx);
-        Instance.prom.noBidButCompetition.inc({
-          executor: Instance.prom.executorName,
-        });
+        Instance.prom.noBidButCompetition.inc();
         break;
       case Scenario.beenOutbid:
         bid = this.computeBeenOutbid(sfx);
-        Instance.prom.beenOutBid.inc({
-          executor: Instance.prom.executorName,
-        });
+        Instance.prom.beenOutBid.inc();
         break;
     }
     return bid;

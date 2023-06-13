@@ -16,7 +16,7 @@ export class Prometheus {
   noBidButCompetition: Counter;
   beenOutBid: Counter;
 
-  constructor(public readonly executorName: string) {
+  constructor() {
     this.register = new Registry();
     this.createMetrics();
   }
@@ -28,49 +28,43 @@ export class Prometheus {
       name: "bids",
       help: "Number of bids",
       registers: [this.register],
-      labelNames: ["executor"],
     });
 
     this.events = new Counter({
       name: "events",
       help: "Number of events",
       registers: [this.register],
-      labelNames: ["executor", "event"],
     });
 
     this.circuitDisconnected = new Counter({
       name: "circuit_disconnect",
       help: "Information on circuit disconnections",
       registers: [this.register],
-      labelNames: ["endpoint", "executor"],
+      labelNames: ["endpoint"],
     });
 
     this.circuitDisconnects = new Counter({
       name: "circuit_disconnects_total",
       help: "Number of times circuit rpc server has disconnected",
       registers: [this.register],
-      labelNames: ["executor"],
     });
 
     this.noBidAndNoCompetition = new Counter({
       name: "no_bid_and_no_competition",
       help: "Number of times no bid and no competition",
       registers: [this.register],
-      labelNames: ["executor"],
     });
 
     this.noBidButCompetition = new Counter({
       name: "no_bid_but_competition",
       help: "Number of times no bid but competition",
       registers: [this.register],
-      labelNames: ["executor"],
     });
 
     this.beenOutBid = new Counter({
       name: "been_out_bid",
       help: "Number of times been out bid",
       registers: [this.register],
-      labelNames: ["executor"],
     });
 
     this.startServer();

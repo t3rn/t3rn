@@ -71,7 +71,7 @@ class Instance {
       : undefined;
     this.stateFile = join(this.baseDir.toString(), "state.json");
     this.configFile = join(this.baseDir.toString(), "config.json");
-    Instance.prom = new Prometheus(this.name);
+    Instance.prom = new Prometheus();
   }
 
   /**
@@ -93,12 +93,8 @@ class Instance {
     this.circuitClient = await this.sdk.init();
 
     this.circuitClient.on("disconnected", () => {
-      Instance.prom.circuitDisconnects.inc({
-        executor: Instance.prom.executorName,
-        endpoint: this.config.circuit.rpc,
-      });
+      Instance.prom.circuitDisconnects.inc();
       Instance.prom.circuitDisconnected.inc({
-        executor: Instance.prom.executorName,
         endpoint: this.config.circuit.rpc,
       });
     });
