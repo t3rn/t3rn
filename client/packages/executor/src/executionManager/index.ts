@@ -17,7 +17,7 @@ import { CircuitRelayer } from "../circuit/relayer";
 import { RelayerEventData, RelayerEvents } from "../gateways/types";
 import { XtxStatus } from "@t3rn/sdk/dist/side-effects/types";
 import { Config, Gateway } from "../../config/config";
-import { Instance } from "src";
+import { Instance } from "../index";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution

@@ -18,8 +18,7 @@ import { bnToFloat } from "@t3rn/sdk/dist/converters/amounts";
 import { InclusionProof } from "../gateways/types";
 import { Miscellaneous } from "./execution";
 import { createLogger } from "../utils";
-import { Prometheus } from "src/prometheus";
-import { Instance } from "src";
+import { Instance } from "../index";
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];

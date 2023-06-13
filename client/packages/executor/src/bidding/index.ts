@@ -1,7 +1,6 @@
 import { SideEffect } from "../executionManager/sideEffect";
 import { config } from "../../config/config";
-import { Prometheus } from "src/prometheus";
-import { Instance } from "src";
+import { Instance } from "../index";
 
 /**
  * The bidding engine is used for determining the bidding amount for a given
