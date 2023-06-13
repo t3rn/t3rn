@@ -1,6 +1,8 @@
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import * as fs from "fs";
 import * as process from "process";
+import * as path from "path";
+
 require("dotenv").config();
 
 interface ExtrinsicParam {
@@ -68,18 +70,18 @@ export class ExtrinsicExport {
     this.events.push(eventType);
   }
 
-  addErr(dispatchError: any) {
+  public addErr(dispatchError: any) {
     this.error = dispatchError.toHex().substring(2);
-    this.toJSON();
+    return this;
   }
 
-  addSubmissionHeight(height: number) {
+  public addSubmissionHeight(height: number) {
     this.submissionHeight = height;
-    this.toJSON();
+    return this;
   }
 
   toJSON() {
-    const json = JSON.stringify(
+    return JSON.stringify(
       {
         section: this.section,
         method: this.method,
@@ -92,10 +94,15 @@ export class ExtrinsicExport {
       null,
       4
     );
+  }
 
-    const fileName = `/${Date.now()}_${this.section}_${this.method}.json`;
-    const path = process.env.EXPORT_PATH || "./exports";
+  toFile() {
+    const dir = process.env.EXPORT_PATH || "./exports";
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
 
-    fs.writeFileSync(`${path}${fileName}`, json);
+    const fileName = `${Date.now()}_${this.section}_${this.method}.json`;
+    fs.writeFileSync(path.join(dir, fileName), this.toJSON());
   }
 }
