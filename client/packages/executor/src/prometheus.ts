@@ -35,7 +35,7 @@ export class Prometheus {
       name: "events",
       help: "Number of events",
       registers: [this.register],
-      labelNames: ["executor"],
+      labelNames: ["executor", "event"],
     });
 
     this.circuitDisconnected = new Counter({

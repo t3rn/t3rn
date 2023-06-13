@@ -1,4 +1,5 @@
 import "@polkadot/api-augment";
+import * as dotenv from "dotenv";
 import { Sdk } from "@t3rn/sdk";
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
@@ -7,7 +8,6 @@ import { PathLike, existsSync } from "fs";
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { homedir } from "os";
-require("dotenv").config();
 import "@t3rn/types";
 import {
   SubstrateRelayer,
@@ -39,6 +39,8 @@ import * as defaultConfig from "../config.json";
 import { problySubstrateSeed, createLogger } from "./utils";
 import { Logger } from "pino";
 import { Prometheus } from "./prometheus";
+
+dotenv.config();
 
 /** An executor instance. */
 class Instance {
