@@ -41,8 +41,6 @@
     "@polkadot/api": "^8.9.1",
     "@polkadot/keyring": "^9.5.1",
     "@polkadot/types": "^8.9.1",
-    "@types/vfile": "^4.0.0",
-    "ajv": "^6.11.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0"
   },

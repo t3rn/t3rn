@@ -941,8 +941,6 @@
     "@polkadot/keyring" "^9.5.1"
     "@polkadot/types" "^8.9.1"
     "@types/lodash" "^4.14.157"
-    "@types/vfile" "^4.0.0"
-    ajv "^6.11.0"
     lodash "^4.17.15"
     moment "^2.24.0"
 
@@ -1006,18 +1004,6 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-20.1.0.tgz#258805edc37c327cf706e64c6957f241ca4c4c20"
   integrity sha512-O+z53uwx64xY7D6roOi4+jApDGFg0qn6WHcxe5QeqjMaTezBO/mxdfFXIVAVVyNWKx84OmPB3L8kbVYOTeN34A==
 
-"@types/unist@^2.0.0":
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/@types/unist/-/unist-2.0.6.tgz#250a7b16c3b91f672a24552ec64678eeb1d3a08d"
-  integrity sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==
-
-"@types/vfile@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@types/vfile/-/vfile-4.0.0.tgz#c32d13cbda319bc9f4ab3cacc0263b4ba1dd1ea3"
-  integrity sha512-eleP0/Cz8uVWxARDLi3Axq2+fDdN4ibAXoC6Pv8p6s7znXaUL7XvhgeIhjCiNMnvlLNP+tmCLd+RuCryGgmtEg==
-  dependencies:
-    vfile "*"
-
 "@types/websocket@^1.0.5":
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/@types/websocket/-/websocket-1.0.5.tgz#3fb80ed8e07f88e51961211cd3682a3a4a81569c"
@@ -1047,7 +1033,7 @@ acorn@^8.4.1, acorn@^8.8.0:
   resolved "https://registry.npmjs.org/acorn/-/acorn-8.8.1.tgz"
   integrity sha512-7zFpHzhnqYKrkYdUjF1HI1bzd0VygEGX8lFk4k5zVMqHEoES+P+7TKI+EvLO9WVMJ8eekdO0aDEK044xTXwPPA==
 
-ajv@^6.10.0, ajv@^6.11.0, ajv@^6.12.4:
+ajv@^6.10.0, ajv@^6.12.4:
   version "6.12.6"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.6.tgz#baf5a62e802b07d977034586f8c3baf5adf26df4"
   integrity sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==
@@ -3396,13 +3382,6 @@ unbox-primitive@^1.0.2:
     has-symbols "^1.0.3"
     which-boxed-primitive "^1.0.2"
 
-unist-util-stringify-position@^3.0.0:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/unist-util-stringify-position/-/unist-util-stringify-position-3.0.3.tgz#03ad3348210c2d930772d64b489580c13a7db39d"
-  integrity sha512-k5GzIBZ/QatR8N5X2y+drfpWG8IDBzdnVj6OInRNWm1oXrzydiaAT2OQiA8DPRRZyAKb9b6I2a6PxYklZD0gKg==
-  dependencies:
-    "@types/unist" "^2.0.0"
-
 uri-js@^4.2.2:
   version "4.4.1"
   resolved "https://registry.yarnpkg.com/uri-js/-/uri-js-4.4.1.tgz#9b1a52595225859e55f669d928f88c6c57f2a77e"
@@ -3426,23 +3405,6 @@ v8-compile-cache-lib@^3.0.1:
   version "3.0.1"
   resolved "https://registry.npmjs.org/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz"
   integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
-
-vfile-message@^4.0.0:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/vfile-message/-/vfile-message-4.0.1.tgz#7f2b7a12bf59af281ac8fdf4cccebfa50d8eadf0"
-  integrity sha512-Z1WqUoIK6T6LLoyO64ncUapmjlA84JqKRQFjcG0kZnnyysfq2rMyg5NvKhkQ16GH9FRCRT+Rk4G0aMxgKYS16g==
-  dependencies:
-    "@types/unist" "^2.0.0"
-    unist-util-stringify-position "^3.0.0"
-
-vfile@*:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/vfile/-/vfile-6.0.0.tgz#b39a635353647ae9feccd9d4796782294b4e5d8d"
-  integrity sha512-wx7bOMmEl8bY5WPaXTGsK8YxPLoFiUiDg+m+lBACA1QGcagj3sUyxkX0F+W/Nmn4MHH7G4sXBekpYWRxQE2eHg==
-  dependencies:
-    "@types/unist" "^2.0.0"
-    unist-util-stringify-position "^3.0.0"
-    vfile-message "^4.0.0"
 
 vscode-oniguruma@^1.7.0:
   version "1.7.0"
