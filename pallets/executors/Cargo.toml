@@ -25,10 +25,10 @@ frame-system       = { git = "https://github.com/paritytech/substrate", branch =
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
 sp-std     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
 
+t3rn-abi            = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 t3rn-primitives     = { default-features = false, path = "../../primitives" }
 t3rn-sdk-primitives = { version = "=0.1.1-rc.5", default-features = false }
 t3rn-types          = { path = "../../types", default-features = false }
-t3rn-abi          = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
 
 substrate-abi = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false }
 xp-channel    = { git = "https://github.com/t3rn/xbi", version = "0.3.7", default-features = false, features = [ "frame" ] }
@@ -76,5 +76,11 @@ std = [
   "xp-format/std",
 ]
 
-runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-support/runtime-benchmarks", "frame-system/runtime-benchmarks", "sp-runtime/runtime-benchmarks", "pallet-circuit/runtime-benchmarks" ]
-try-runtime        = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-circuit/try-runtime", "t3rn-abi/try-runtime" ]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+  "pallet-circuit/runtime-benchmarks",
+]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "pallet-circuit/try-runtime", "t3rn-abi/try-runtime" ]

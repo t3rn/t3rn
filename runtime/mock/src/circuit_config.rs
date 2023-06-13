@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use crate::*;
+use codec::Encode;
 use sp_runtime::Percent;
 use std::marker::PhantomData;
 
@@ -9,7 +10,13 @@ use circuit_runtime_pallets::{
     pallet_grandpa_finality_verifier::light_clients::select_grandpa_light_client_instance,
     pallet_portal::Error as PortalError,
 };
-use frame_support::{parameter_types, traits::ConstU32, weights::Weight};
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo,
+    parameter_types,
+    traits::{fungibles::Destroy, ConstU32},
+    weights::Weight,
+    Blake2_128Concat, StorageHasher,
+};
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{KusamaInstance, PolkadotInstance, RococoInstance},
@@ -130,10 +137,16 @@ impl pallet_clock::Config for Runtime {
 }
 
 impl pallet_xdns::Config for Runtime {
+    type AssetsOverlay = Runtime;
+    type AttestersRead = Attesters;
     type Balances = Balances;
     type Currency = Balances;
     type Event = Event;
+    type Portal = Portal;
+    type SelfGatewayId = SelfGatewayId;
+    type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
+    type TreasuryAccounts = Runtime;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
@@ -168,7 +181,7 @@ impl pallet_attesters::Config for Runtime {
     type Xdns = XDNS;
 }
 
-use t3rn_primitives::monetary::TRN;
+use t3rn_primitives::{monetary::TRN, xdns::PalletAssetsOverlay};
 
 parameter_types! {
     pub const TotalInflation: Perbill = Perbill::from_parts(44_000_000); // 4.4%
@@ -241,6 +254,7 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
 }
 
 impl pallet_portal::Config for Runtime {
+    type Currency = Balances;
     type Event = Event;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
@@ -257,10 +271,57 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 parameter_types! {
     pub const CircuitAccountId: AccountId = AccountId::new([51u8; 32]); // 0x333...3
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
+    pub const SelfGatewayIdOptimistic: [u8; 4] = [0, 3, 3, 3];
+}
+use sp_runtime::DispatchResult;
+impl PalletAssetsOverlay<Runtime, Balance> for Runtime {
+    fn contains_asset(asset_id: &AssetId) -> bool {
+        const PALLET_NAME: &str = "Assets";
+        const STORAGE_NAME: &str = "Asset";
+        type Index = u32;
+        type Data = u32;
+
+        let pallet_hash = sp_io::hashing::twox_128(PALLET_NAME.as_bytes());
+        let storage_hash = sp_io::hashing::twox_128(STORAGE_NAME.as_bytes());
+        // Hashing the scale-encoded key
+        let key_hashed = Blake2_128Concat::hash(&asset_id.encode());
+
+        let mut final_key = Vec::new();
+        final_key.extend_from_slice(&pallet_hash);
+        final_key.extend_from_slice(&storage_hash);
+        final_key.extend_from_slice(&key_hashed);
+
+        frame_support::storage::unhashed::get::<Data>(&final_key).is_some()
+    }
+
+    fn force_create_asset(
+        origin: Origin,
+        asset_id: AssetId,
+        admin: AccountId,
+        is_sufficient: bool,
+        min_balance: Balance,
+    ) -> DispatchResult {
+        Assets::force_create(
+            origin,
+            asset_id,
+            sp_runtime::MultiAddress::Id(admin),
+            is_sufficient,
+            min_balance,
+        )
+    }
+
+    fn destroy(origin: Origin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
+        let destroy_witness = match Assets::get_destroy_witness(asset_id) {
+            Some(witness) => witness,
+            None => return Err("AssetNotFound".into()),
+        };
+        Assets::destroy(origin, *asset_id, destroy_witness)
+    }
 }
 
 impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
+    type Attesters = Attesters;
     type Balances = Balances;
     type Call = Call;
     type Currency = Balances;

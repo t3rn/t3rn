@@ -36,8 +36,11 @@ pub trait LightClient<T: frame_system::Config> {
     fn get_latest_finalized_header(&self) -> HeaderResult;
 
     fn get_fast_height(&self) -> HeightResult<T::BlockNumber>;
+
     fn get_rational_height(&self) -> HeightResult<T::BlockNumber>;
+
     fn get_finalized_height(&self) -> HeightResult<T::BlockNumber>;
+
     fn get_latest_heartbeat(&self) -> Result<LightClientHeartbeat<T>, DispatchError>;
 
     fn initialize(

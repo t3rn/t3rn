@@ -1163,6 +1163,7 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -12950,6 +12951,7 @@ name = "t3rn-primitives"
 version = "1.0.0-alpha.1"
 dependencies = [
  "bytes",
+ "circuit-runtime-types",
  "ed25519-dalek",
  "finality-grandpa",
  "frame-support",

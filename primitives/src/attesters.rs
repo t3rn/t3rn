@@ -1,6 +1,5 @@
 use crate::GatewayVendor;
-use bytes::Bytes;
-use codec::WrapperTypeDecode;
+
 use frame_support::pallet_prelude::*;
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
 use sp_core::{H160, H256};
@@ -123,23 +122,9 @@ pub type CommitteeTransitionIndices = [u32; COMMITTEE_SIZE];
 pub struct GenericCommitteeTransition([(u32, Vec<u8>); COMMITTEE_SIZE]);
 
 pub type EvmCommitteeTransition = [(u32, H160); COMMITTEE_SIZE];
-// pub type CommitteeTransition = [(u32, Vec<u8>); COMMITTEE_SIZE];
 pub type CommitteeTransition = Vec<(u32, Vec<u8>)>;
 pub type CommitteeRecoverable = Vec<Vec<u8>>;
 pub type CommitteeTransitionEncoded = Vec<u8>;
-// impl From<EvmCommitteeTransition> for GenericCommitteeTransition {
-//     fn from(evm: EvmCommitteeTransition) -> Self {
-//         let bytes = Bytes::new();
-//         let mut generic = [(0u32, bytes); COMMITTEE_SIZE];
-//
-//         for i in 0..COMMITTEE_SIZE {
-//             let (n, addr) = evm[i];
-//             generic[i] = (n, Bytes::copy_from_slice(addr.as_bytes()));
-//         }
-//
-//         GenericCommitteeTransition(generic)
-//     }
-// }
 
 pub type AttestersChange = Vec<([u8; 33], u32)>;
 pub type BatchConfirmedSfxId = Vec<H256>;
@@ -161,12 +146,12 @@ pub trait AttestersReadApi<Account, Balance> {
     fn get_activated_targets() -> Vec<TargetId>;
 }
 
-pub struct AttestersReadApiEmptyMock<Account, Balance> {
-    _phantom: PhantomData<(Account, Balance)>,
+pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {
+    _phantom: PhantomData<(Account, Balance, Error)>,
 }
 
-impl<Account, Balance> AttestersReadApi<Account, Balance>
-    for AttestersReadApiEmptyMock<Account, Balance>
+impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
+    for AttestersReadApiEmptyMock<Account, Balance, Error>
 {
     fn previous_committee() -> Vec<Account> {
         vec![]
@@ -194,5 +179,125 @@ impl<Account, Balance> AttestersReadApi<Account, Balance>
 
     fn get_activated_targets() -> Vec<TargetId> {
         vec![]
+    }
+}
+
+impl<Account, Balance, Error> AttestersWriteApi<Account, Error>
+    for AttestersReadApiEmptyMock<Account, Balance, Error>
+{
+    fn request_sfx_attestation_commit(_target: TargetId, _sfx_id: H256) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn request_sfx_attestation_revert(_target: TargetId, _sfx_id: H256) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn request_ban_attesters_attestation(_ban_attesters: &Account) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn request_next_committee_attestation() {}
+}
+
+#[cfg(test)]
+pub mod test {
+    use super::{AttestersReadApi, AttestersReadApiEmptyMock, AttestersWriteApi};
+    use frame_support::assert_ok;
+    use sp_core::crypto::AccountId32;
+    use sp_runtime::DispatchError;
+    use t3rn_types::fsx::TargetId;
+
+    #[test]
+    fn attesters_mocks_return_empty_data() {
+        let attester_rw_mock: AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> =
+            AttestersReadApiEmptyMock {
+                _phantom: Default::default(),
+            };
+
+        assert_ok!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
+                AccountId32,
+                DispatchError,
+            >>::request_sfx_attestation_commit([0u8; 4], sp_core::H256([0u8; 32]))
+        );
+
+        assert_ok!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
+                AccountId32,
+                DispatchError,
+            >>::request_sfx_attestation_revert([0u8; 4], sp_core::H256([0u8; 32]))
+        );
+
+        assert_ok!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
+                AccountId32,
+                DispatchError,
+            >>::request_ban_attesters_attestation(&AccountId32::new([0; 32]))
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
+                AccountId32,
+                DispatchError,
+            >>::request_next_committee_attestation(),
+            ()
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::previous_committee(),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::current_committee(),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::active_set(),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::honest_active_set(),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::read_attester_info(&AccountId32::new([0; 32])),
+            None
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::read_nominations(&AccountId32::new([0; 32])),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::get_activated_targets(),
+            Vec::<TargetId>::new()
+        );
     }
 }

@@ -18,6 +18,7 @@ use sp_runtime::DispatchError;
 use t3rn_abi::{Codec, SFXAbi};
 
 pub type TargetId = [u8; 4];
+pub type TokenId4b = [u8; 4];
 pub type Sfx4bId = [u8; 4];
 pub type Bytes = Vec<u8>;
 pub type EventSignature = Bytes;
