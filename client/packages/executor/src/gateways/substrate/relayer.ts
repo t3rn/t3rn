@@ -68,13 +68,25 @@ export class SubstrateRelayer extends EventEmitter {
   }
 
   /**
-   * Submit the transaction to the target chain. This function increments the nonce locally to enable optimistic nonce increment. This
-   * allows transaction to be submitted in parallel without waiting for the previous one to be included. A successful submission will
-   * trigger inclusion proof generation.
+   * Submit the transaction to the target chain. 
+   * This function increments the nonce locally to enable optimistic nonce increment. 
+   * This allows transaction to be submitted in parallel without waiting for the previous one to be included. 
+   * A successful submission will trigger inclusion proof generation.
    *
    * @param sfx Object to execute
    */
   async executeTx(sfx: SideEffect) {
+    // TODO: validate the SFX
+
+
+
+
+
+
+
+
+
+
     this.logger.info(
       `Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`
     );
