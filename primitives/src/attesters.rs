@@ -199,3 +199,105 @@ impl<Account, Balance, Error> AttestersWriteApi<Account, Error>
 
     fn request_next_committee_attestation() {}
 }
+
+#[cfg(test)]
+pub mod test {
+    use super::{AttestersReadApi, AttestersReadApiEmptyMock, AttestersWriteApi};
+    use frame_support::assert_ok;
+    use sp_core::crypto::AccountId32;
+    use sp_runtime::DispatchError;
+    use t3rn_types::fsx::TargetId;
+
+    #[test]
+    fn attesters_mocks_return_empty_data() {
+        let attester_rw_mock: AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> =
+            AttestersReadApiEmptyMock {
+                _phantom: Default::default(),
+            };
+
+        assert_ok!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
+                AccountId32,
+                DispatchError,
+            >>::request_sfx_attestation_commit([0u8; 4], sp_core::H256([0u8; 32]))
+        );
+
+        assert_ok!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
+                AccountId32,
+                DispatchError,
+            >>::request_sfx_attestation_revert([0u8; 4], sp_core::H256([0u8; 32]))
+        );
+
+        assert_ok!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
+                AccountId32,
+                DispatchError,
+            >>::request_ban_attesters_attestation(&AccountId32::new([0; 32]))
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersWriteApi<
+                AccountId32,
+                DispatchError,
+            >>::request_next_committee_attestation(),
+            ()
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::previous_committee(),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::current_committee(),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::active_set(),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::honest_active_set(),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::read_attester_info(&AccountId32::new([0; 32])),
+            None
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::read_nominations(&AccountId32::new([0; 32])),
+            vec![]
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::get_activated_targets(),
+            Vec::<TargetId>::new()
+        );
+    }
+}
