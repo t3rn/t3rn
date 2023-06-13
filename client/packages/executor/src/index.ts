@@ -55,6 +55,8 @@ class Instance {
   logsDir: undefined | PathLike;
   configFile: PathLike;
   stateFile: PathLike;
+
+  // A Prometheus instance shared across all instances
   static prom: Prometheus;
 
   /**
