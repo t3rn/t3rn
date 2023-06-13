@@ -878,6 +878,7 @@ declare module '@polkadot/api-base/types/errors' {
        * The contract could not be found in the registry
        **/
       ContractNotFound: AugmentedError<ApiType>;
+      DownstreamCircuit: AugmentedError<ApiType>;
       /**
        * A user exceeded the bounce threshold for submitting signals
        **/
@@ -949,6 +950,10 @@ declare module '@polkadot/api-base/types/errors' {
        * SideEffectABI not found
        **/
       SideEffectABINotFound: AugmentedError<ApiType>;
+      /**
+       * A token is not compatible with the gateways execution layer
+       **/
+      TokenExecutionVendorMismatch: AugmentedError<ApiType>;
       /**
        * Stored token has already been added before
        **/
