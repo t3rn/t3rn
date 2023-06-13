@@ -118,7 +118,7 @@ export class Execution extends EventEmitter {
     }
 
     // set the step index for each sfx
-    for (let [sfxId, sfx] of this.sideEffects) {
+    for (const [sfxId, sfx] of this.sideEffects) {
       for (let i = 0; i < this.phases.length; i++) {
         if (this.phases[i].includes(sfxId)) {
           sfx.setPhase(i);
@@ -132,7 +132,7 @@ export class Execution extends EventEmitter {
     this.status = XtxStatus.ReadyToExecute;
 
     //Updates each Sfx
-    for (let [_sfxId, sfx] of this.sideEffects) {
+    for (const [_sfxId, sfx] of this.sideEffects) {
       sfx.readyToExecute();
     }
 
@@ -150,7 +150,7 @@ export class Execution extends EventEmitter {
   /** Update XTX and all its SFX status to ready. */
   droppedAtBidding() {
     this.status = XtxStatus.DroppedAtBidding;
-    for (let [_sfxId, sfx] of this.sideEffects) {
+    for (const [_sfxId, sfx] of this.sideEffects) {
       sfx.droppedAtBidding();
     }
     this.logger.info(`Dropped XTX: ${this.humanId}`);
@@ -160,7 +160,7 @@ export class Execution extends EventEmitter {
   /** Update XTX and all its SFX status to reverted. */
   revertTimeout() {
     this.status = XtxStatus.RevertTimedOut;
-    for (let [_sfxId, sfx] of this.sideEffects) {
+    for (const [_sfxId, sfx] of this.sideEffects) {
       sfx.reverted();
     }
 
@@ -174,8 +174,8 @@ export class Execution extends EventEmitter {
    * @returns {SideEffect[]} Array of SideEffect instances that are ready
    */
   getReadyToExecute(): SideEffect[] {
-    let result: SideEffect[] = [];
-    for (let [_sfxId, sfx] of this.sideEffects) {
+    const result: SideEffect[] = [];
+    for (const [_sfxId, sfx] of this.sideEffects) {
       if (
         sfx.status === SfxStatus.ReadyToExecute &&
         sfx.isBidder &&
@@ -187,7 +187,7 @@ export class Execution extends EventEmitter {
     return result;
   }
 
-  private addLog(msg: any, debug: boolean = true) {
+  private addLog(msg: any, debug = true) {
     msg.component = "XTX";
     msg.id = this.id;
 

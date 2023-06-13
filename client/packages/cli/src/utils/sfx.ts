@@ -99,10 +99,6 @@ export const mapEncodedArgs = (
   switch (action) {
     case SideEffectActions.Transfer: {
       const args: TransferEncodedArgs = encodedArgs[0]
-      console.error(['asdf', {
-        to: args.to,
-        amount: args.amount,
-      }])
       return {
         to: args.to,
         amount: args.amount,
