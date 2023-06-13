@@ -991,7 +991,7 @@ dependencies = [
  "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=main)",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-executors",
@@ -1133,7 +1133,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "pallet-contracts-rpc-runtime-api",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa",
@@ -6601,6 +6601,39 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
+dependencies = [
+ "eth_trie",
+ "ethereum-types 0.14.1",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "log",
+ "milagro_bls",
+ "num-traits",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "sp-trie",
+ "ssz-rs",
+ "ssz-rs-derive",
+ "t3rn-primitives",
+ "typenum",
+]
+
+[[package]]
+name = "pallet-eth2-finality-verifier"
+version = "1.0.0-alpha.0"
 source = "git+https://github.com/t3rn/eth2-light-client?branch=main#1040f7207d1012114c52d8a5241ed33297dbb41a"
 dependencies = [
  "eth_trie",
@@ -7152,7 +7185,7 @@ dependencies = [
  "hex-literal 0.2.2",
  "log",
  "pallet-balances",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=main)",
  "pallet-grandpa-finality-verifier",
  "pallet-sudo",
  "pallet-timestamp",
@@ -9189,6 +9222,7 @@ name = "precompile-util"
 version = "1.0.0"
 dependencies = [
  "fp-evm 3.0.0-dev",
+ "frame-support",
  "frame-system",
  "pallet-evm 0.1.0",
  "pallet-evm-precompile-3vm-dispatch",
@@ -12685,7 +12719,7 @@ dependencies = [
  "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=main)",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa-finality-verifier",
