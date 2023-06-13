@@ -1,29 +1,38 @@
 import http from "http";
 import { Registry, Counter, collectDefaultMetrics } from "prom-client";
 
-export class Prometheus {
-  register: Registry;
-
+isActive = false;
   // State
   isActive: boolean;
 
   // Metrics
-  bids: Counter;
-  events: Counter;
-  circuitDisconnects: Counter;
-  circuitDisconnected: Counter;
-  noBidAndNoCompetition: Counter;
-  noBidButCompetition: Counter;
-  beenOutBid: Counter;
+// Number of bids
+bids: Counter;
 
+// Number of events
+events: Counter;
+
+// Number of times circuit rpc server has disconnected
+circuitDisconnects: Counter;
+
+// Information on circuit disconnections
+circuitDisconnected: Counter;
+
+// Number of times no bid and no competition
+noBidAndNoCompetition: Counter;
+
+// Number of times no bid but competition
+noBidButCompetition: Counter;
+
+// Number of times been out bid
+beenOutBid: Counter;
   constructor() {
     this.register = new Registry();
     this.createMetrics();
-  }
-
-  createMetrics() {
-    collectDefaultMetrics({ register: this.register });
-
+// Creates all the metrics for Prometheus
+createMetrics() {
+// Collects default metrics
+collectDefaultMetrics({ register: this.register });
     this.bids = new Counter({
       name: "bids",
       help: "Number of bids",
