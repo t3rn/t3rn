@@ -69,7 +69,7 @@ impl pallet_3vm_contracts::Config for Runtime {
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
     type CallFilter = frame_support::traits::Nothing;
-    type CallStack = [pallet_3vm_contracts::Frame<Self>; 31];
+    type CallStack = [pallet_3vm_contracts::Frame<Self>; 2];
     type ChainExtension = ();
     type Currency = Balances;
     type DeletionQueueDepth = DeletionQueueDepth;
