@@ -8,7 +8,14 @@ export const onExtrinsicTrigger = (circuitApi: ApiPromise, sideEffects: any[], s
     return {
         sideEffects: circuitApi.createType("Vec<T3rnTypesSfxSideEffect>",
             sideEffects.map(data => {
-                console.log("data", data)
+                console.log("data", [
+                    sender.toString(),
+                    data.to,
+                    sdk.gateways[data.target].floatToBn(data.amount).toNumber(),
+                    sdk.circuit.floatToBn(data.reward).toNumber(),
+                    sdk.circuit.floatToBn(data.insurance).toNumber(),
+                    0,
+                ])
                 const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[data.type]({
                     from: sender.toString(),
                     to: data.to,

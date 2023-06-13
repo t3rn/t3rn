@@ -31,16 +31,23 @@ export const buildSfx = (
           )
         }
 
-        const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[
-          data.action
-        ]({
-          ...mapEncodedArgs(data.action, data.encodedArgs as EncodedArgs),
-          maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
-          insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
-          signature: data.signature,
-          enforceExecutioner: data.enforceExecutor,
-          rewardAssetId: data.rewardAssetId,
+
+        const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[data.action]({
+            from: sdk.circuit.signer.address,
+            to: data.encodedArgs[0]['to'],
+            value: sdk.gateways[data.target].floatToBn(data.encodedArgs[0]['amount']), 
+            maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
+            insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
         })
+        // const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[
+        //   data.action
+        // ]({
+        //   ...mapEncodedArgs(data.action, data.encodedArgs as EncodedArgs),
+        //   signature: data.signature,
+        //   enforceExecutioner: data.enforceExecutor,
+        //   rewardAssetId: data.rewardAssetId,
+        // })
+        console.error(obj)
         return obj
       })
       // @ts-ignore - TS doesn't know that we are creating a type here
@@ -92,9 +99,13 @@ export const mapEncodedArgs = (
   switch (action) {
     case SideEffectActions.Transfer: {
       const args: TransferEncodedArgs = encodedArgs[0]
-      return {
-        from: args.from,
+      console.error(['asdf', {
         to: args.to,
+        amount: args.amount,
+      }])
+      return {
+        to: args.to,
+        amount: args.amount,
       }
     }
     default:
