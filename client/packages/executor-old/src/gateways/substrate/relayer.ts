@@ -3,7 +3,7 @@ import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { EventMapper, SideEffect } from "../../executionManager/sideEffect"
 import { getEventProofs } from "../../utils"
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types"
-import { SfxType } from "@t3rn/sdk/dist/src/side-effects/types"
+import { SfxType } from "@t3rn/sdk/dist/side-effects/types"
 import { InclusionProof, RelayerEventData, RelayerEvents } from "../types"
 import Estimator from "./estimator"
 import { CostEstimator, Estimate } from "./estimator/cost"
@@ -61,6 +61,7 @@ export class SubstrateRelayer extends EventEmitter {
                 return this.client.tx.balances.transfer(data[0], data[1])
             }
         }
+        throw new Error(`Unsupported SFX type: ${sideEffect.action}`)
     }
 
     /**

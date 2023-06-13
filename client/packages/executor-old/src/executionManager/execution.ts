@@ -5,7 +5,7 @@ import { SideEffect } from "./sideEffect"
 import { T3rnTypesSideEffect } from "@polkadot/types/lookup"
 import { EventEmitter } from "events"
 
-import { SecurityLevel, SfxStatus, XtxStatus } from "@t3rn/sdk/dist/src/side-effects/types"
+import { SecurityLevel, SfxStatus, XtxStatus } from "@t3rn/sdk/dist/side-effects/types"
 import { Sdk } from "@t3rn/sdk"
 import { StrategyEngine } from "../strategy"
 import { BiddingEngine } from "../bidding"

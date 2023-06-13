@@ -10,7 +10,7 @@ import {CircuitListener, ListenerEventData, ListenerEvents} from "../circuit/lis
 import {ApiPromise} from "@polkadot/api"
 import {CircuitRelayer} from "../circuit/relayer"
 import {RelayerEventData, RelayerEvents} from "../gateways/types"
-import {XtxStatus} from "@t3rn/sdk/dist/src/side-effects/types"
+import {XtxStatus} from "@t3rn/sdk/dist/side-effects/types"
 import {Gateway} from "../../config/config"
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.

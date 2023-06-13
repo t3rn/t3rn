@@ -74,7 +74,7 @@ export class CircuitListener extends EventEmitter {
                     }
                     const data = {
                         vendor,
-                        height: parseInt(notifications[i].event.data[0]),
+                        height: parseInt(notifications[i].event.data[0] as any),
                     }
                     this.emit("Event", <ListenerEventData>{
                         type: ListenerEvents.HeaderSubmitted,

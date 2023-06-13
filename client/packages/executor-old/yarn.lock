@@ -2,17 +2,17 @@
 # yarn lockfile v1
 
 
-"@babel/runtime@^7.18.6", "@babel/runtime@^7.20.13", "@babel/runtime@^7.20.6":
-  version "7.21.5"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.21.5.tgz#8492dddda9644ae3bda3b45eabe87382caee7200"
-  integrity sha512-8jI69toZqqcsnqGGqwGS4Qb1VwLOEp4hz+CXPywcvjs60u3B4Pom/U/7rm4W8tMOYEB+E9wgD0mW1l3r8qlI9Q==
-  dependencies:
-    regenerator-runtime "^0.13.11"
-
-"@babel/runtime@^7.18.9":
+"@babel/runtime@^7.18.6", "@babel/runtime@^7.18.9":
   version "7.22.5"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.22.5.tgz#8564dd588182ce0047d55d7a75e93921107b57ec"
   integrity sha512-ecjvYlnAaZ/KVneE/OdKYBYfgXV3Ptu6zQWmgEF7vwKhQnvVS6bjMD2XYgj+SNvQ1GfK/pjgokfPkC/2CO8CuA==
+  dependencies:
+    regenerator-runtime "^0.13.11"
+
+"@babel/runtime@^7.20.13", "@babel/runtime@^7.20.6":
+  version "7.21.5"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.21.5.tgz#8492dddda9644ae3bda3b45eabe87382caee7200"
+  integrity sha512-8jI69toZqqcsnqGGqwGS4Qb1VwLOEp4hz+CXPywcvjs60u3B4Pom/U/7rm4W8tMOYEB+E9wgD0mW1l3r8qlI9Q==
   dependencies:
     regenerator-runtime "^0.13.11"
 
@@ -1049,7 +1049,7 @@ acorn@^8.4.1, acorn@^8.8.0:
 
 ajv@^6.10.0, ajv@^6.11.0, ajv@^6.12.4:
   version "6.12.6"
-  resolved "https://registry.npmjs.org/ajv/-/ajv-6.12.6.tgz"
+  resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.6.tgz#baf5a62e802b07d977034586f8c3baf5adf26df4"
   integrity sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==
   dependencies:
     fast-deep-equal "^3.1.1"
@@ -2217,11 +2217,6 @@ is-boolean-object@^1.1.0:
   dependencies:
     call-bind "^1.0.2"
     has-tostringtag "^1.0.0"
-
-is-buffer@^2.0.0:
-  version "2.0.5"
-  resolved "https://registry.yarnpkg.com/is-buffer/-/is-buffer-2.0.5.tgz#ebc252e400d22ff8d77fa09888821a24a658c191"
-  integrity sha512-i2R6zNFDwgEHJyQUtJEk0XFi1i0dPFn/oqjK3/vPCcDeJvW5NQ83V8QbicfF1SupOaB0h8ntgBC2YiE7dfyctQ==
 
 is-callable@^1.1.3, is-callable@^1.1.4, is-callable@^1.2.7:
   version "1.2.7"
@@ -3432,23 +3427,22 @@ v8-compile-cache-lib@^3.0.1:
   resolved "https://registry.npmjs.org/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz"
   integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
 
-vfile-message@^3.0.0:
-  version "3.1.4"
-  resolved "https://registry.yarnpkg.com/vfile-message/-/vfile-message-3.1.4.tgz#15a50816ae7d7c2d1fa87090a7f9f96612b59dea"
-  integrity sha512-fa0Z6P8HUrQN4BZaX05SIVXic+7kE3b05PWAtPuYP9QLHsLKYR7/AlLW3NtOrpXRLeawpDLMsVkmk5DG0NXgWw==
+vfile-message@^4.0.0:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/vfile-message/-/vfile-message-4.0.1.tgz#7f2b7a12bf59af281ac8fdf4cccebfa50d8eadf0"
+  integrity sha512-Z1WqUoIK6T6LLoyO64ncUapmjlA84JqKRQFjcG0kZnnyysfq2rMyg5NvKhkQ16GH9FRCRT+Rk4G0aMxgKYS16g==
   dependencies:
     "@types/unist" "^2.0.0"
     unist-util-stringify-position "^3.0.0"
 
 vfile@*:
-  version "5.3.7"
-  resolved "https://registry.yarnpkg.com/vfile/-/vfile-5.3.7.tgz#de0677e6683e3380fafc46544cfe603118826ab7"
-  integrity sha512-r7qlzkgErKjobAmyNIkkSpizsFPYiUPuJb5pNW1RB4JcYVZhs4lIbVqk8XPk033CV/1z8ss5pkax8SuhGpcG8g==
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/vfile/-/vfile-6.0.0.tgz#b39a635353647ae9feccd9d4796782294b4e5d8d"
+  integrity sha512-wx7bOMmEl8bY5WPaXTGsK8YxPLoFiUiDg+m+lBACA1QGcagj3sUyxkX0F+W/Nmn4MHH7G4sXBekpYWRxQE2eHg==
   dependencies:
     "@types/unist" "^2.0.0"
-    is-buffer "^2.0.0"
     unist-util-stringify-position "^3.0.0"
-    vfile-message "^3.0.0"
+    vfile-message "^4.0.0"
 
 vscode-oniguruma@^1.7.0:
   version "1.7.0"

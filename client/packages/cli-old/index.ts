@@ -5,7 +5,7 @@ import { setOperational } from "./commands/operational";
 import {onExtrinsicTrigger} from "./commands/onExtrinsicTrigger";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";
-import { Sdk, Converters } from "@t3rn/sdk/dist/src";
+import { Sdk, Converters } from "@t3rn/sdk/dist";
 
 import { Command } from 'commander';
 import {bid} from "./commands/bid";
