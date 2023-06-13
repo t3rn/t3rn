@@ -211,13 +211,18 @@ class Instance {
 
   /** Registers a state listener that persists to disk. */
   private registerStateListener(): Instance {
-    const _proxy = new Proxy(this.executionManager.queue, {
-      set(target, prop, receiver) {
-        // wait until reflected, then persist state
-        setTimeout(() => self.persistState(), 100);
-        return Reflect.set(target, prop, receiver);
-      },
+    const set =
+      (instance: Instance) =>
+        (target: Queue, prop: string | symbol, receiver: never) => {
+          // wait until reflected, then persist state
+          setTimeout((instance) => instance.persistState(), 100, instance);
+          return Reflect.set(target, prop, receiver);
+        };
+
+    new Proxy(this.executionManager.queue, {
+      set: set(this),
     });
+
     return this;
   }
 
