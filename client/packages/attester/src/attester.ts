@@ -79,9 +79,9 @@ export class Attester {
                 events.map(async (record) => {
                     // Extract the phase, event and the event types
                     const { event } = record
-                    logger.debug({ record: record.toHuman() }, 'Event')
 
                     if (event.section == 'attesters') {
+                        logger.debug({ record: record.toHuman() }, 'Attestation Event')
                         this.prometheus.eventsAttestationsTotal.inc({
                             method: event.method,
                         })
@@ -106,7 +106,7 @@ export class Attester {
                                         executionVendor:
                                             executionVendor.toString(),
                                     },
-                                    `Received the attestation message hash request to sign`
+                                    `Received NewAttestationMessageHash event to sign`
                                 )
                                 // Submit the attestation for the given target ID for the given message hash for each attester's key in the keys.json file
                                 if (executionVendor.toString() == 'Substrate') {
@@ -136,9 +136,28 @@ export class Attester {
 
                                 break
                             }
+                            case 'CurrentPendingAttestationBatches': {
+                                logger.info(
+                                    `Received CurrentPendingAttestationBatches event`
+                                )
+
+                                logger.info(event.data)
+                                const target = event.data[0]
+                                // Attest all pending attestations
+                                event.data[1].forEach(async (batch) => {
+                                    logger.error([target ,batch[1]])
+                                    // Generate the signature for the message hash
+                                        await this.submitAttestationEVM(
+                                            batch[1],
+                                            target,
+                                            "EVM"
+                                        )
+                                })
+                                break
+                            }
                             case 'NewTargetProposed': {
                                 logger.info(
-                                    `Received the new target proposed event`
+                                    `Received NewTargetProposed event`
                                 )
                                 break
                             }
@@ -160,14 +179,14 @@ export class Attester {
         const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
 
         const sigObj = ethUtil.ecsign(
-            Buffer.from(hexToU8a(messageHash)),
+            Buffer.from(messageHash),
             privateKey
         )
 
         const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s)
 
         const tx = this.circuit.client.tx.attesters.submitAttestation(
-            messageHash,
+            messageHash.toHex(),
             signature,
             targetId
         )
@@ -175,7 +194,7 @@ export class Attester {
             {
                 executionVendor: executionVendor.toString(),
                 targetId: targetId,
-                messageHash: messageHash,
+                messageHash: messageHash.toHex(),
                 signature: signature.toString(),
             },
             'Submitting attestation'
@@ -186,17 +205,18 @@ export class Attester {
             result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
         } catch (error) {
             logger.error(error, 'Error submitting attestation')
-            return
+            console.error(error)
+            throw new Error(error)
         }
 
-        logger.error(result)
+        logger.info(result)
 
         logger.info(
             {
                 executionVendor: executionVendor.toString(),
                 targetId: targetId.toString(),
-                messageHash: messageHash,
-                hash: result.hash.toHex(),
+                messageHash: messageHash.toHex(),
+                // hash: result.hash.toHex(),
             },
             'Attestation submitted'
         )
