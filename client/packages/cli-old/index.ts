@@ -266,7 +266,7 @@ class CircuitCLI {
             })
             .catch(err => {
                 logger.info("Error: SideEffects submission failed! Err:", err);
-                this.error()
+                throw err
             })
 
         if (exportArgs) {
