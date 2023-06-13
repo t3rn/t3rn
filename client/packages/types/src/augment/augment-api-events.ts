@@ -1,20 +1,14 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-// import type lookup before we augment - in some environments
-// this is required to allow for ambient/previous definitions
-import '@polkadot/api-base/types/events';
-
-import type { ApiTypes, AugmentedEvent } from '@polkadot/api-base/types';
+import type { ApiTypes } from '@polkadot/api-base/types';
 import type { Bytes, Null, Option, Result, U256, U8aFixed, Vec, bool, u128, u32, u64, u8 } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H160, H256 } from '@polkadot/types/interfaces/runtime';
 import type { EthereumLog, FrameSupportTokensMiscBalanceStatus, FrameSupportWeightsDispatchInfo, SpFinalityGrandpaAppPublic, SpRuntimeDispatchError, T3rnPrimitivesContractMetadataContractType, T3rnPrimitivesGatewayVendor, T3rnSdkPrimitivesSignalSignalKind, T3rnTypesFsxFullSideEffect, T3rnTypesSfxSideEffect, XpFormatXbiResult } from '@polkadot/types/lookup';
 
-export type __AugmentedEvent<ApiType extends ApiTypes> = AugmentedEvent<ApiType>;
-
 declare module '@polkadot/api-base/types/events' {
-  interface AugmentedEvents<ApiType extends ApiTypes> {
+  export interface AugmentedEvents<ApiType extends ApiTypes> {
     accountManager: {
       ContractsRegistryExecutionFinalized: AugmentedEvent<ApiType, [executionId: u64], { executionId: u64 }>;
       DepositReceived: AugmentedEvent<ApiType, [chargeId: H256, payee: AccountId32, recipient: Option<AccountId32>, amount: u128], { chargeId: H256, payee: AccountId32, recipient: Option<AccountId32>, amount: u128 }>;

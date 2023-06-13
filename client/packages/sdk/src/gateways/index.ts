@@ -20,7 +20,6 @@ export const initGateways = async (api: ApiPromise) => {
   let res: Record<string, Gateway> = {};
 
   for (let i = 0; i < records.length; i++) {
-    console.log(JSON.stringify(records[i]))
     const gateway = new Gateway(records[i]);
     res[gateway.id] = gateway;
   }

@@ -1,11 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-// import type lookup before we augment - in some environments
-// this is required to allow for ambient/previous definitions
-import '@polkadot/api-base/types/storage';
-
-import type { ApiTypes, AugmentedQuery, QueryableStorageEntry } from '@polkadot/api-base/types';
+import type { ApiTypes } from '@polkadot/api-base/types';
 import type { Data } from '@polkadot/types';
 import type { Bytes, Option, U8aFixed, Vec, bool, u128, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
@@ -13,11 +9,8 @@ import type { AccountId32, H160, H256 } from '@polkadot/types/interfaces/runtime
 import type { FrameSupportWeightsPerDispatchClassU64, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, PalletAssetsApproval, PalletAssetsAssetAccount, PalletAssetsAssetDetails, PalletAssetsAssetMetadata, PalletAuthorshipUncleEntryItem, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReleases, PalletBalancesReserveData, PalletCircuitStateXExecSignal, PalletContractsStorageDeletedContract, PalletContractsStorageRawContractInfo, PalletContractsWasmOwnerInfo, PalletContractsWasmPrefabWasmModule, PalletEvmThreeVmInfo, PalletGrandpaFinalityVerifierBridgesHeaderChainAuthoritySet, PalletGrandpaFinalityVerifierParachainRegistrationData, PalletGrandpaStoredPendingChange, PalletGrandpaStoredState, PalletIdentityRegistrarInfo, PalletIdentityRegistration, PalletTransactionPaymentReleases, PalletTreasuryProposal, SpConsensusAuraSr25519AppSr25519Public, SpRuntimeDigest, SpRuntimeHeader, T3rnAbiSfxAbi, T3rnPrimitivesAccountManagerRequestCharge, T3rnPrimitivesAccountManagerSettlement, T3rnPrimitivesClaimableClaimableArtifacts, T3rnPrimitivesCommonRoundInfo, T3rnPrimitivesContractsRegistryRegistryContract, T3rnPrimitivesVolatileLocalState, T3rnPrimitivesXdnsGatewayRecord, T3rnPrimitivesXdnsTokenRecord, T3rnPrimitivesXdnsXdnsRecord, T3rnSdkPrimitivesSignalExecutionSignal, T3rnTypesFsxFullSideEffect } from '@polkadot/types/lookup';
 import type { Observable } from '@polkadot/types/types';
 
-export type __AugmentedQuery<ApiType extends ApiTypes> = AugmentedQuery<ApiType, () => unknown>;
-export type __QueryableStorageEntry<ApiType extends ApiTypes> = QueryableStorageEntry<ApiType>;
-
 declare module '@polkadot/api-base/types/storage' {
-  interface AugmentedQueries<ApiType extends ApiTypes> {
+  export interface AugmentedQueries<ApiType extends ApiTypes> {
     accountManager: {
       contractsRegistryExecutionNonce: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       pendingCharges: AugmentedQuery<ApiType, (arg: H256 | string | Uint8Array) => Observable<Option<T3rnPrimitivesAccountManagerRequestCharge>>, [H256]>;

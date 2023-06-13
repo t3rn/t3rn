@@ -1,404 +1,349 @@
 {
-   "GatewayVendor":{
-      "_enum":[
-         "Polkadot",
-         "Kusama",
-         "Rococo",
-         "Ethereum"
-      ]
-   },
-   "ExecutionVendor":{
-      "_enum":[
-         "Substrate",
-         "EVM"
-      ]
-   },
-   "SpeedMode":{
-      "_enum":[
-         "Fast",
-         "Rational",
-         "Finalized"
-      ]
-   },
-   "GatewayType":{
-      "_enum":{
-         "ProgrammableInternal":"u32",
-         "ProgrammableExternal":"u32",
-         "TxOnly":"u32"
-      }
-   },
-   "TokenInfo":{
-      "_enum":{
-         "Substrate":"SubstrateToken",
-         "Ethereum":"EthereumToken"
-      }
-   },
-   "SubstrateToken":{
-      "id":"u32",
-      "symbol":"Bytes",
-      "decimals":"u8"
-   },
-   "EthereumToken":{
-      "symbol":"Vec<u8>",
-      "decimals":"u8",
-      "address":"Option<[u8; 20]>"
-   },
-   "RuntimeCodec":{
-      "_enum":[
-         "Scale",
-         "Rlp"
-      ]
-   },
-   "GatewayGenesisConfig":{
-      "modules_encoded":"Option<Bytes>",
-      "extrinsics_version":"u8",
-      "genesis_hash":"Bytes"
-   },
-   "AllowedSideEffect":"([u8; 4], Option<u8>)",
-   "BlockNumber":"u64",
-   "Compose":{
-      "name":"Vec<u8>",
-      "code_txt":"Vec<u8>",
-      "exec_type":"Vec<u8>",
-      "dest":"AccountId",
-      "value":"Balance",
-      "bytes":"Vec<u8>",
-      "input_data":"Vec<u8>"
-   },
-   "CircuitOutboundMessage":{
-      "name":"Bytes",
-      "module_name":"Bytes",
-      "method_name":"Bytes",
-      "sender":"Option<Bytes>",
-      "target":"Option<Bytes>",
-      "arguments":"Vec<Bytes>",
-      "expected_output":"Vec<GatewayExpectedOutput>",
-      "extra_payload":"Option<ExtraMessagePayload>"
-   },
-   "GatewayExpectedOutput":{
-      "_enum":{
-         "Storage":[
-            null
-         ],
-         "Events":[
-            null
-         ],
-         "Extrinsic":[
-            null
-         ],
-         "Output":[
-            null
-         ]
-      }
-   },
-   "ProofTriePointer":{
-      "_enum":{
-         "State":0,
-         "Transaction":1,
-         "Receipts":2
-      }
-   },
-   "GatewayPointer":{
-      "id":"ChainId",
-      "vendor":"GatewayVendor",
-      "gateway_type":"GatewayType"
-   },
-   "ExtraMessagePayload":{
-      "signer":"Bytes",
-      "module_name":"Bytes",
-      "method_name":"Bytes",
-      "call_bytes":"Bytes",
-      "signature":"Bytes",
-      "extra":"Bytes",
-      "tx_signed":"Bytes",
-      "custom_payload":"Option<Bytes>"
-   },
-   "ContractActionDesc":{
-      "action_id":"Hash",
-      "target_id":"Option<TargetId>",
-      "to":"Option<AccountId>"
-   },
-   "TargetId":"[u8; 4]",
-   "SideEffect":{
-      "target":"TargetId",
-      "prize":"BalanceOf",
-      "ordered_at":"BlockNumber",
-      "action":"[u8; 4]",
-      "encoded_args":"Vec<Bytes>",
-      "signature":"Bytes",
-      "enforce_executioner":"Option<AccountId>",
-      "reward_asset_id":"Option<u32>"
-   },
-   "SideEffectId":"Hash",
-   "ConfirmedSideEffect":{
-      "err":"Option<Bytes>",
-      "output":"Option<Bytes>",
-      "inclusion_data":"Vec<u8>",
-      "executioner":"AccountId",
-      "received_at":"BlockNumber",
-      "cost":"Option<BalanceOf>"
-   },
-   "FullSideEffect":{
-      "input":"SideEffect",
-      "confirmed":"Option<ConfirmedSideEffect>"
-   },
-   "XtxId":"Hash",
-   "XdnsRecordId":"Hash",
-   "XdnsRecord":{
-      "url":"Vec<u8>",
-      "gateway_abi":"GatewayABIConfig",
-      "gateway_genesis":"GatewayGenesisConfig",
-      "gateway_vendor":"GatewayVendor",
-      "gateway_type":"GatewayType",
-      "gateway_id":"ChainId",
-      "gateway_sys_props":"TokenInfo",
-      "registrant":"Option<AccountId>",
-      "last_finalized":"Option<u64>",
-      "allowed_side_effects":"Vec<AllowedSideEffect>"
-   },
-   "GatewayRecord":{
-      "gateway_id":"ChainId",
-      "verification_vendor":"GatewayVendor",
-      "execution_vendor":"ExecutionVendor",
-      "codec":"RuntimeCodec",
-      "registrant":"Option<AccountId>",
-      "escrow_account":"Option<AccountId>",
-      "allowed_side_effects":"Vec<(Sfx4bId, Option<u8>)>"
-   },
-   "TokenRecord":{
-      "token_id":"[u8; 4]",
-      "gateway_id":"[u8; 4]",
-      "token_props":"TokenInfo"
-   },
-   "FullGatewayRecord":{
-      "gateway_record":"GatewayRecord",
-      "tokens":"Vec<TokenRecord>"
-   },
-   "Sfx4bId":"[u8; 4]",
-   "FetchXdnsRecordsResponse":{
-      "xdns_records":"Vec<XdnsRecord<AccountId>>"
-   },
-   "ChainId":"[u8; 4]",
-   "RegistryContractId":"Hash",
-   "RegistryContract":{
-      "code_txt":"Vec<u8>",
-      "bytes":"Vec<u8>",
-      "author":"AccountId",
-      "author_fees_per_single_use":"Option<BalanceOf>",
-      "abi":"Option<Vec<u8>>",
-      "action_descriptions":"Vec<ContractActionDesc<Hash, ChainId, AccountId>>",
-      "info":"Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>",
-      "meta":"ContractMetadata"
-   },
-   "RawAliveContractInfo":{
-      "trie_id":"TrieId",
-      "storage_size":"u32",
-      "pair_count":"u32",
-      "code_hash":"CodeHash",
-      "rent_allowance":"Balance",
-      "rent_paid":"Balance",
-      "deduct_block":"BlockNumber",
-      "last_write":"Option<BlockNumber>",
-      "_reserved":"Option<()>"
-   },
-   "Address":"MultiAddress",
-   "LookupSource":"MultiAddress",
-   "DispatchMessageId":{
-      "channelId":"ChannelId",
-      "nonce":"u64"
-   },
-   "ChannelId":{
-      "_enum":[
-         "Basic",
-         "Incentivized"
-      ]
-   },
-   "MessageNonce":"u64",
-   "Message":{
-      "data":"Vec<u8>",
-      "proof":"Proof"
-   },
-   "Proof":{
-      "blockHash":"H256",
-      "txIndex":"u32",
-      "data":"(Vec<Vec<u8>>, Vec<Vec<u8>>)"
-   },
-   "EthereumHeaderId":{
-      "number":"u64",
-      "hash":"H256"
-   },
-   "EthereumHeader":{
-      "parentHash":"H256",
-      "timestamp":"u64",
-      "number":"u64",
-      "author":"H160",
-      "transactionsRoot":"H256",
-      "ommersHash":"H256",
-      "extraData":"Vec<u8>",
-      "stateRoot":"H256",
-      "receiptsRoot":"H256",
-      "logBloom":"Bloom",
-      "gasUsed":"U256",
-      "gasLimit":"U256",
-      "difficulty":"U256",
-      "seal":"Vec<Vec<u8>>",
-      "baseFee":"Option<U256>"
-   },
-   "StoredHeader":{
-      "submitter":"Option<AccountId>",
-      "header":"EthereumHeader",
-      "totalDifficulty":"U256",
-      "finalized":"bool"
-   },
-   "EthashProofData":{
-      "dagNodes":"[H512; 2]",
-      "proof":"Vec<H128>"
-   },
-   "Bloom":"[u8; 256]",
-   "PruningRange":{
-      "oldestUnprunedBlock":"u64",
-      "oldestBlockToKeep":"u64"
-   },
-   "EthereumDifficultyConfig":{
-      "byzantiumForkBlock":"u64",
-      "constantinopleForkBlock":"u64",
-      "muirGlacierForkBlock":"u64",
-      "londonForkBlock":"u64"
-   },
-   "AssetId":{
-      "_enum":{
-         "ETH":null,
-         "Token":"H160"
-      }
-   },
-   "TokenId":"u128",
-   "TokenData":{
-      "tokenContract":"H160",
-      "tokenId":"U256"
-   },
-   "TokenInfoOf":{
-      "owner":"AccountId",
-      "metadata":"Vec<u8>",
-      "data":"TokenData"
-   },
-   "GatewayABIConfig":{
-      "block_number_type_size":"u16",
-      "hash_size":"u16",
-      "hasher":"HasherAlgo",
-      "crypto":"CryptoAlgo",
-      "address_length":"u16",
-      "value_type_size":"u16",
-      "decimals":"u16"
-   },
-   "HasherAlgo":{
-      "_enum":[
-         "Blake2",
-         "Keccak256"
-      ]
-   },
-   "CryptoAlgo":{
-      "_enum":[
-         "Ed25519",
-         "Sr25519",
-         "Ecdsa"
-      ]
-   },
-   "StructDecl":{
-      "name":"Type",
-      "fields":"Vec<Parameter>",
-      "offsets":"Vec<u16>"
-   },
-   "ParachainRegistrationData":{
-      "relay_chain_id":"ChainId",
-      "id":"u32"
-   },
-   "RelaychainRegistrationData":{
-      "first_header":"Vec<u8>",
-      "authorities":"Vec<AuthorityId>",
-      "authority_set_id":"SetId",
-      "owner":"AccountId"
-   },
-   "RegistrationData":{
-      "url":"Vec<u8>",
-      "gateway_id":"ChainId",
-      "gateway_abi":"GatewayABIConfig",
-      "gateway_vendor":"GatewayVendor",
-      "gateway_type":"GatewayType",
-      "gateway_genesis":"GatewayGenesisConfig",
-      "gateway_sys_props":"TokenSysProps",
-      "allowed_side_effects":"Vec<(Sfx4bId, Option<u8>)>",
-      "encoded_registration_data":"Vec<u8>"
-   },
-   "GrandpaHeaderData":{
-      "signed_header":"Header",
-      "range":"Vec<Header>",
-      "justification":"GrandpaJustification<Header>"
-   },
-   "RelaychainInclusionProof":{
-      "encoded_payload":"Vec<u8>",
-      "payload_proof":"StorageProof",
-      "block_hash":"Header::Hash"
-   },
-   "ParachainInclusionProof":{
-      "encoded_payload":"Vec<u8>",
-      "header_proof":"StorageProof",
-      "payload_proof":"StorageProof",
-      "relay_block_hash":"Header::Hash"
-   },
-   "SyncCommittee":{
-      "pubs":"Vec<BLSPubkey>",
-      "aggr":"BLSPubkey"
-   },
-   "BLSPubkey": "[u8; 48]",
-   "BLSSignature": "[u8; 96]",
-   "BeaconBlockHeader":{
-      "slot":"Slot",
-      "proposer_index":"ValidatorIndex",
-      "parent_root":"Root",
-      "state_root":"Root",
-      "body_root":"Root"
-   },
-   "Checkpoint": {
-    "attested_beacon": "BeaconCheckpoint",
-    "attested_execution": "ExecutionCheckpoint",
-    "justified_beacon": "BeaconCheckpoint",
-    "justified_execution": "ExecutionCheckpoint",
-    "finalized_beacon": "BeaconCheckpoint",
-    "finalized_execution": "ExecutionCheckpoint"
-   },
-   "BeaconCheckpoint": {
-    "epoch": "u64",
-    "root": "Root"
-   },
-   "ExecutionCheckpoint": {
-    "height": "u64",
-    "root": "Root"
-   },
-   "Root":"[u8; 32]",
-   "ValidatorIndex":"u64",
-   "Slot":"u64",
-   "EthereumInitializationData":{
-      "current_sync_committee":"SyncCommittee",
-      "next_sync_committee":"SyncCommittee",
-      "checkpoint":"Checkpoint",
-      "beacon_header":"BeaconBlockHeader",
-      "execution_header":"ExecutionHeader"
-   },
-   "ExecutionHeader":{
-      "parent_hash":"Root",
-      "fee_recipient":"[u8; 20]",
-      "state_root":"Root",
-      "receipts_root":"Root",
-      "logs_bloom":"Bloom",
-      "prev_randao":"Root",
-      "block_number":"u64",
-      "gas_limit":"u64",
-      "gas_used":"u64",
-      "timestamp":"u64",
-      "extra_data":"Vec<u8>",
-      "base_fee_per_gas":"U256",
-      "block_hash":"Root",
-      "transactions_root":"Root",
-      "withdrawals_root":"Root"
-   }
+    "GatewayVendor": {
+        "_enum": [
+            "Polkadot",
+            "Kusama",
+            "Rococo",
+            "Ethereum"
+        ]
+    },
+    "ExecutionVendor": {
+        "_enum": [
+            "Substrate",
+            "EVM"
+        ]
+    },
+    "SpeedMode": {
+        "_enum": [
+            "Fast",
+            "Rational",
+            "Finalized"
+        ]
+    },
+    "GatewayType": {
+        "_enum": {
+            "ProgrammableInternal": "u32",
+            "ProgrammableExternal": "u32",
+            "TxOnly": "u32"
+        }
+    },
+    "TokenInfo": {
+        "_enum": {
+            "Substrate": "SubstrateToken",
+            "Ethereum": "EthereumToken"
+        }
+    },
+    "SubstrateToken": {
+        "id": "u32",
+        "symbol": "Bytes",
+        "decimals": "u8"
+    },
+    "EthereumToken": {
+        "symbol": "Vec<u8>",
+        "decimals": "u8",
+        "address": "Option<[u8; 20]>"
+    },
+    "RuntimeCodec": {
+         "_enum": [
+            "Scale",
+             "Rlp"
+        ]
+    },
+    "GatewayGenesisConfig": {
+        "modules_encoded": "Option<Bytes>",
+        "extrinsics_version": "u8",
+        "genesis_hash": "Bytes"
+    },
+
+    "AllowedSideEffect": "[u8; 4]",
+    "BlockNumber": "u64",
+    "Compose": {
+        "name": "Vec<u8>",
+        "code_txt": "Vec<u8>",
+        "exec_type": "Vec<u8>",
+        "dest": "AccountId",
+        "value": "Balance",
+        "bytes": "Vec<u8>",
+        "input_data": "Vec<u8>"
+    },
+    "CircuitOutboundMessage": {
+        "name": "Bytes",
+        "module_name": "Bytes",
+        "method_name": "Bytes",
+        "sender": "Option<Bytes>",
+        "target": "Option<Bytes>",
+        "arguments": "Vec<Bytes>",
+        "expected_output": "Vec<GatewayExpectedOutput>",
+        "extra_payload": "Option<ExtraMessagePayload>"
+    },
+    "GatewayExpectedOutput": {
+        "_enum": {
+            "Storage": [
+                null
+            ],
+            "Events": [
+                null
+            ],
+            "Extrinsic": [
+                null
+            ],
+            "Output": [
+                null
+            ]
+        }
+    },
+    "ProofTriePointer": {
+        "_enum": {
+            "State": 0,
+            "Transaction": 1,
+            "Receipts": 2
+        }
+    },
+    "GatewayPointer": {
+        "id": "ChainId",
+        "vendor": "GatewayVendor",
+        "gateway_type": "GatewayType"
+    },
+    "ExtraMessagePayload": {
+        "signer": "Bytes",
+        "module_name": "Bytes",
+        "method_name": "Bytes",
+        "call_bytes": "Bytes",
+        "signature": "Bytes",
+        "extra": "Bytes",
+        "tx_signed": "Bytes",
+        "custom_payload": "Option<Bytes>"
+    },
+    "ContractActionDesc": {
+        "action_id": "Hash",
+        "target_id": "Option<TargetId>",
+        "to": "Option<AccountId>"
+    },
+    "TargetId": "[u8; 4]",
+    "SideEffect": {
+        "target": "TargetId",
+        "prize": "BalanceOf",
+        "ordered_at": "BlockNumber",
+        "action": "[u8; 4]",
+        "encoded_args": "Vec<Bytes>",
+        "signature": "Bytes",
+        "enforce_executioner": "Option<AccountId>",
+        "reward_asset_id": "Option<u32>"
+    },
+    "SideEffectId": "Hash",
+    "ConfirmedSideEffect": {
+        "err": "Option<Bytes>",
+        "output": "Option<Bytes>",
+        "inclusion_data": "Vec<u8>",
+        "executioner": "AccountId",
+        "received_at": "BlockNumber",
+        "cost": "Option<BalanceOf>"
+    },
+    "FullSideEffect": {
+        "input": "SideEffect",
+        "confirmed": "Option<ConfirmedSideEffect>"
+    },
+    "XtxId": "Hash",
+    "XdnsRecordId": "Hash",
+    "XdnsRecord": {
+        "url": "Vec<u8>",
+        "gateway_abi": "GatewayABIConfig",
+        "gateway_genesis": "GatewayGenesisConfig",
+        "gateway_vendor": "GatewayVendor",
+        "gateway_type": "GatewayType",
+        "gateway_id": "ChainId",
+        "gateway_sys_props": "TokenInfo",
+        "registrant": "Option<AccountId>",
+        "last_finalized": "Option<u64>",
+        "allowed_side_effects": "Vec<AllowedSideEffect>"
+    },
+    "GatewayRecord": {
+        "gateway_id": "ChainId",
+        "verification_vendor": "GatewayVendor",
+        "execution_vendor": "ExecutionVendor",
+        "codec": "RuntimeCodec",
+        "registrant": "Option<AccountId>",
+        "escrow_account": "Option<AccountId>",
+        "allowed_side_effects": "Vec<(Sfx4bId, Option<u8>)>"
+    },
+    "TokenRecord": {
+        "token_id": "[u8; 4]",
+        "gateway_id": "[u8; 4]",
+        "token_props": "TokenInfo"
+    },
+    "FullGatewayRecord": {
+        "gateway_record": "GatewayRecord",
+        "tokens": "Vec<TokenRecord>"
+    },
+    "Sfx4bId": "[u8; 4]",
+    "FetchXdnsRecordsResponse": {
+        "xdns_records": "Vec<XdnsRecord<AccountId>>"
+    },
+    "ChainId": "[u8; 4]",
+    "RegistryContractId": "Hash",
+    "RegistryContract": {
+        "code_txt": "Vec<u8>",
+        "bytes": "Vec<u8>",
+        "author": "AccountId",
+        "author_fees_per_single_use": "Option<BalanceOf>",
+        "abi": "Option<Vec<u8>>",
+        "action_descriptions": "Vec<ContractActionDesc<Hash, ChainId, AccountId>>",
+        "info": "Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>",
+        "meta": "ContractMetadata"
+    },
+    "RawAliveContractInfo": {
+        "trie_id": "TrieId",
+        "storage_size": "u32",
+        "pair_count": "u32",
+        "code_hash": "CodeHash",
+        "rent_allowance": "Balance",
+        "rent_paid": "Balance",
+        "deduct_block": "BlockNumber",
+        "last_write": "Option<BlockNumber>",
+        "_reserved": "Option<()>"
+    },
+    "Address": "MultiAddress",
+    "LookupSource": "MultiAddress",
+    "DispatchMessageId": {
+        "channelId": "ChannelId",
+        "nonce": "u64"
+    },
+    "ChannelId": {
+        "_enum": [
+            "Basic",
+            "Incentivized"
+        ]
+    },
+    "MessageNonce": "u64",
+    "Message": {
+        "data": "Vec<u8>",
+        "proof": "Proof"
+    },
+    "Proof": {
+        "blockHash": "H256",
+        "txIndex": "u32",
+        "data": "(Vec<Vec<u8>>, Vec<Vec<u8>>)"
+    },
+    "EthereumHeaderId": {
+        "number": "u64",
+        "hash": "H256"
+    },
+    "EthereumHeader": {
+        "parentHash": "H256",
+        "timestamp": "u64",
+        "number": "u64",
+        "author": "H160",
+        "transactionsRoot": "H256",
+        "ommersHash": "H256",
+        "extraData": "Vec<u8>",
+        "stateRoot": "H256",
+        "receiptsRoot": "H256",
+        "logBloom": "Bloom",
+        "gasUsed": "U256",
+        "gasLimit": "U256",
+        "difficulty": "U256",
+        "seal": "Vec<Vec<u8>>",
+        "baseFee": "Option<U256>"
+    },
+    "StoredHeader": {
+        "submitter": "Option<AccountId>",
+        "header": "EthereumHeader",
+        "totalDifficulty": "U256",
+        "finalized": "bool"
+    },
+    "EthashProofData": {
+        "dagNodes": "[H512; 2]",
+        "proof": "Vec<H128>"
+    },
+    "Bloom": "[u8; 256]",
+    "PruningRange": {
+        "oldestUnprunedBlock": "u64",
+        "oldestBlockToKeep": "u64"
+    },
+    "EthereumDifficultyConfig": {
+        "byzantiumForkBlock": "u64",
+        "constantinopleForkBlock": "u64",
+        "muirGlacierForkBlock": "u64",
+        "londonForkBlock": "u64"
+    },
+    "AssetId": {
+        "_enum": {
+            "ETH": null,
+            "Token": "H160"
+        }
+    },
+    "TokenId": "u128",
+    "TokenData": {
+        "tokenContract": "H160",
+        "tokenId": "U256"
+    },
+    "TokenInfoOf": {
+        "owner": "AccountId",
+        "metadata": "Vec<u8>",
+        "data": "TokenData"
+    },
+    "GatewayABIConfig": {
+        "block_number_type_size": "u16",
+        "hash_size": "u16",
+        "hasher": "HasherAlgo",
+        "crypto": "CryptoAlgo",
+        "address_length": "u16",
+        "value_type_size": "u16",
+        "decimals": "u16"
+    },
+    "HasherAlgo": {
+        "_enum": [
+            "Blake2",
+            "Keccak256"
+        ]
+    },
+    "CryptoAlgo": {
+        "_enum": [
+            "Ed25519",
+            "Sr25519",
+            "Ecdsa"
+        ]
+    },
+    "StructDecl": {
+        "name": "Type",
+        "fields": "Vec<Parameter>",
+        "offsets": "Vec<u16>"
+    },
+    "ParachainRegistrationData": {
+        "relay_chain_id": "ChainId",
+        "id": "u32"
+    },
+    "RelaychainRegistrationData": {
+        "first_header": "Vec<u8>",
+        "authorities": "Vec<AuthorityId>",
+        "authority_set_id": "SetId",
+        "owner": "AccountId"
+    },
+    "RegistrationData": {
+        "url": "Vec<u8>",
+        "gateway_id": "ChainId",
+        "gateway_abi": "GatewayABIConfig",
+        "gateway_vendor": "GatewayVendor",
+        "gateway_type": "GatewayType",
+        "gateway_genesis": "GatewayGenesisConfig",
+        "gateway_sys_props": "TokenSysProps",
+        "allowed_side_effects": "Vec<(Sfx4bId, Option<u8>)>",
+        "encoded_registration_data": "Vec<u8>"
+    },
+    "GrandpaHeaderData": {
+        "signed_header": "Header",
+        "range": "Vec<Header>",
+        "justification": "GrandpaJustification<Header>"
+    },
+    "RelaychainInclusionProof": {
+        "encoded_payload": "Vec<u8>",
+        "payload_proof": "StorageProof",
+        "block_hash": "Header::Hash"
+    },
+    "ParachainInclusionProof": {
+        "encoded_payload": "Vec<u8>",
+        "header_proof": "StorageProof",
+        "payload_proof": "StorageProof",
+        "relay_block_hash": "Header::Hash"
+    },
 }

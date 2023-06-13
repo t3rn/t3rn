@@ -1,16 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-// import type lookup before we augment - in some environments
-// this is required to allow for ambient/previous definitions
-import '@polkadot/api-base/types/errors';
-
-import type { ApiTypes, AugmentedError } from '@polkadot/api-base/types';
-
-export type __AugmentedError<ApiType extends ApiTypes> = AugmentedError<ApiType>;
+import type { ApiTypes } from '@polkadot/api-base/types';
 
 declare module '@polkadot/api-base/types/errors' {
-  interface AugmentedErrors<ApiType extends ApiTypes> {
+  export interface AugmentedErrors<ApiType extends ApiTypes> {
     accountManager: {
       ChargeAlreadyRegistered: AugmentedError<ApiType>;
       ChargeOrSettlementActualFeesOutgrowReserved: AugmentedError<ApiType>;
@@ -878,7 +872,6 @@ declare module '@polkadot/api-base/types/errors' {
        * The contract could not be found in the registry
        **/
       ContractNotFound: AugmentedError<ApiType>;
-      DownstreamCircuit: AugmentedError<ApiType>;
       /**
        * A user exceeded the bounce threshold for submitting signals
        **/
@@ -950,10 +943,6 @@ declare module '@polkadot/api-base/types/errors' {
        * SideEffectABI not found
        **/
       SideEffectABINotFound: AugmentedError<ApiType>;
-      /**
-       * A token is not compatible with the gateways execution layer
-       **/
-      TokenExecutionVendorMismatch: AugmentedError<ApiType>;
       /**
        * Stored token has already been added before
        **/

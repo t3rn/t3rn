@@ -9,7 +9,7 @@ import {
   // @ts-ignore
   u128,
 } from "@polkadot/types/lookup";
-import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
+import {SubmittableExtrinsic} from "@polkadot/api/promise/types";
 
 /**
  * A class for batching and sending transaction to circuit. The main functionality here is signAndSendSafe, which takes care of nonce incrementation and error decoding. This is supposed to act as a default way of dealing with extrinsics.
@@ -45,16 +45,13 @@ export class Tx {
    * @returns The block height the transaction was included in
    */
 
-  async signAndSendSafe(tx: SubmittableExtrinsic): Promise<string> {
-    const nonce = await this.api.rpc.system.accountNextIndex(
-      this.signer.address
-    );
-    let exportObj: ExtrinsicExport;
+  async signAndSendSafe(tx:  SubmittableExtrinsic): Promise<string> {
+    let nonce = await this.api.rpc.system.accountNextIndex(this.signer.address);
 
-    if (this.exportMode) {
-      exportObj = new ExtrinsicExport(tx, this.signer.address);
+    let exportObj = null;
+    if(this.exportMode) {
+      exportObj = new ExtrinsicExport(tx, this.signer.address)
     }
-
     return new Promise((resolve, reject) =>
       tx.signAndSend(
         this.signer,
@@ -63,15 +60,12 @@ export class Tx {
           events.forEach(({ event }) => {
             exportObj?.addEvent(event);
           });
-
           if (dispatchError?.isModule) {
-            const err = this.api.registry.findMetaError(dispatchError.asModule);
-
-            exportObj?.addErr(dispatchError).toFile();
+            let err = this.api.registry.findMetaError(dispatchError.asModule);
+            exportObj?.addErr(dispatchError);
             reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
           } else if (dispatchError) {
-            exportObj?.addErr(dispatchError).toFile();
-
+            exportObj?.addErr(dispatchError);
             reject(Error(dispatchError.toString()));
           } else if (status.isInBlock) {
             resolve(status.asInBlock);
@@ -79,44 +73,15 @@ export class Tx {
         }
       )
     ).then((blockHash: any) =>
-      this.api.rpc.chain.getBlock(blockHash).then((r) => {
-        const number = r.block.header.number;
-
-        exportObj?.addSubmissionHeight(number.toNumber()).toFile();
-        return number.toString();
-      })
+      this.api.rpc.chain
+        .getBlock(blockHash)
+        .then((r) => {
+          const number = r.block.header.number
+          exportObj?.addSubmissionHeight(number.toNumber());
+          return number.toString()
+        })
     );
   }
-
-  async signAndSendRaw(tx: SubmittableExtrinsic): Promise<any> {
-    const nonce = await this.api.rpc.system.accountNextIndex(
-      this.signer.address
-    );
-    let exportObj: ExtrinsicExport;
-
-    if (this.exportMode) {
-      exportObj = new ExtrinsicExport(tx, this.signer.address);
-    }
-
-    return new Promise((resolve, reject) =>
-      tx.signAndSend(
-        this.signer,
-        { nonce },
-        async ({ dispatchError, status, events }) => {
-          events.forEach(({ event }) => {
-            exportObj?.addEvent(event);
-          });
-          if (status.isInBlock) {
-            resolve(events)
-          }
-        }
-      )
-    ).then((events: any) => {
-      return events
-    });
-  }
-
-
 
   /**
    * Wraps a transaction object into sudo

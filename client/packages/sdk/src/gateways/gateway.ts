@@ -36,7 +36,6 @@ export class Gateway {
   allowedSideEffects: string[];
   createSfx: {} = {};
   tokens: [] = [];
-  record: T3rnPrimitivesXdnsFullGatewayRecord;
 
   /**
    * Create a Gateway instance
@@ -45,12 +44,11 @@ export class Gateway {
 
   constructor(record: T3rnPrimitivesXdnsFullGatewayRecord) {
     this.id = record.gateway_record.gateway_id.toHuman();
-    this.record = record;
     this.vendor = record.gateway_record.verification_vendor.toHuman();
-    this.executionVendor = record.gateway_record.execution_vendor.toHuman();
-    let tokens: any[] = record.tokens.map((token) => token.toHuman());
+    this.executionVendor = record.gateway_record.execution_vendor.toHuman()
+    let tokens: any[] = record.tokens.map(token => token.toHuman())
 
-    let nativeToken = tokens.filter((token) => token.gateway_id === this.id)[0];
+    let nativeToken = tokens.filter(token => token.gateway_id === this.id)[0];
     // @ts-ignore
     this.ticker = Object.values(nativeToken.token_props)[0].symbol;
     this.decimals = parseInt(
@@ -58,12 +56,10 @@ export class Gateway {
       Object.values(nativeToken.token_props)[0].decimals
     );
     this.tokenId = parseInt(
-      // @ts-ignore
+       // @ts-ignore
       Object.values(nativeToken.token_props)[0].id
     );
-    this.allowedSideEffects = record.gateway_record.allowed_side_effects
-      .toHuman()
-      .map((entry) => entry[0]);
+    this.allowedSideEffects = record.gateway_record.allowed_side_effects.toHuman().map(entry => entry[0]);
     this.setSfxBindings();
   }
 
@@ -180,21 +176,23 @@ export class Gateway {
     return new AmountConverter({
       value,
       decimals: this.decimals,
-      valueTypeSize: this.valueTypeSize,
-    }).toBn();
+      valueTypeSize: this.valueTypeSize
+    }
+    ).toBn()
   }
 
   /**
-   * Parse integer to float, accounting for decimals
-   * @param value - The integer value to be converted
-   */
+     * Parse integer to float, accounting for decimals
+     * @param value - The integer value to be converted
+     */
 
   toFloat(value: BN | number): number {
     return new AmountConverter({
       value,
       decimals: this.decimals,
-      valueTypeSize: this.valueTypeSize,
-    }).toFloat();
+      valueTypeSize: this.valueTypeSize
+    }
+    ).toFloat()
   }
 
   /**

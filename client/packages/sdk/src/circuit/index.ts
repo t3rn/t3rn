@@ -25,6 +25,7 @@ export class Circuit {
   constructor(api: ApiPromise, signer: any, exportMode: boolean) {
     this.api = api;
     this.signer = signer;
+    console.log("exportMode: " + exportMode)
     this.tx = new Tx(this.api, this.signer, exportMode);
   }
 
@@ -35,7 +36,7 @@ export class Circuit {
    */
 
   floatToBn(value: number): BN {
-    return floatToBn(value);
+    return floatToBn(value)
   }
 
   /**
@@ -45,7 +46,7 @@ export class Circuit {
    */
 
   toFloat(value: BN | number): number {
-    return toFloat(value);
+    return toFloat(value)
   }
 }
 
@@ -59,9 +60,10 @@ export const toFloat = (value: BN | number): number => {
   return new AmountConverter({
     value,
     decimals: DECIMALS,
-    valueTypeSize: VALUE_TYPE_SIZE,
-  }).toFloat();
-};
+    valueTypeSize: VALUE_TYPE_SIZE
+  }
+  ).toFloat()
+}
 
 /**
  * Converts a BN to a float with the circuits decimal precision
@@ -72,8 +74,9 @@ export const toFloat = (value: BN | number): number => {
 export const floatToBn = (value: number): BN => {
   return new AmountConverter({
     decimals: DECIMALS,
-    valueTypeSize: VALUE_TYPE_SIZE,
-  }).floatToBn(value);
-};
+    valueTypeSize: VALUE_TYPE_SIZE
+  }
+  ).floatToBn(value)
+}
 
-export { Tx };
+export {Tx}
