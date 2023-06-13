@@ -39,15 +39,6 @@ export const buildSfx = (
             maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
             insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
         })
-        // const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[
-        //   data.action
-        // ]({
-        //   ...mapEncodedArgs(data.action, data.encodedArgs as EncodedArgs),
-        //   signature: data.signature,
-        //   enforceExecutioner: data.enforceExecutor,
-        //   rewardAssetId: data.rewardAssetId,
-        // })
-        console.error(obj)
         return obj
       })
       // @ts-ignore - TS doesn't know that we are creating a type here
