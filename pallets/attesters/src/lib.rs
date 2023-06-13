@@ -1576,7 +1576,8 @@ pub mod pallet {
     // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        phantom: PhantomData<T>,
+        pub phantom: PhantomData<T>,
+        pub attestation_targets: Vec<TargetId>,
     }
 
     // The default value for the genesis config type.
@@ -1585,6 +1586,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 phantom: Default::default(),
+                attestation_targets: Default::default(),
             }
         }
     }
@@ -1593,6 +1595,11 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
+            // Extend the list of attestation targets
+            for target in self.attestation_targets.iter() {
+                AttestationTargets::<T>::append(target);
+            }
+
             for target in AttestationTargets::<T>::get() {
                 let mut new_next_batch = BatchMessage::default();
                 new_next_batch.created = frame_system::Pallet::<T>::block_number();
