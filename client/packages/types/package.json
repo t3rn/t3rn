@@ -35,9 +35,9 @@
     "generate:all": "yarn generate:interfaces && yarn generate:meta"
   },
   "dependencies": {
-    "@polkadot/api": "8.9.1",
-    "@polkadot/keyring": "9.5.1",
-    "@polkadot/types": "8.9.1",
+    "@polkadot/api": "^8.9.1",
+    "@polkadot/keyring": "^9.5.1",
+    "@polkadot/types": "^8.9.1",
     "@types/lodash": "^4.14.157",
     "@types/vfile": "^4.0.0",
     "ajv": "^6.11.0",
@@ -45,7 +45,7 @@
     "moment": "^2.24.0"
   },
   "devDependencies": {
-    "@polkadot/typegen": "8.9.1",
+    "@polkadot/typegen": "^8.9.1",
     "madge": "^4.0.1",
     "ts-node": "^10.2.1",
     "tsup": "6.6.3",

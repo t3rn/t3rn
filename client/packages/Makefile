@@ -4,6 +4,12 @@ all:
 	cd cli; yarn add ../sdk; yarn;
 	cd executor; yarn add ../sdk; yarn add ../types; yarn;
 
+old:
+	cd types; yarn; yarn link; yarn build;
+	cd sdk; yarn; yarn link; yarn build;
+	cd cli-old; yarn add ../sdk; yarn;
+	cd executor-old; yarn add ../sdk; yarn add ../types; yarn;
+
 clean:
 	find . -type d -name node_modules | xargs rm -rf {}\;
 
