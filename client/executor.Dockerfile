@@ -1,4 +1,4 @@
-FROM node:20.1
+FROM node:20.2
 
 RUN npm install -g typescript pnpm
 
