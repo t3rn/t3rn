@@ -26,7 +26,7 @@ contract Snorkle {
 
     function getHeight() public  {
         bytes32 arguments = bytes32(0x027365706C000000000000000000000000000000000000000000000000000000);
-        
+
         (bool success, bytes memory returnData) = PORTAL.staticcall(
             abi.encodePacked(arguments)
         );
