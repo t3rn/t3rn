@@ -27,6 +27,8 @@ use t3rn_primitives::{
     xdns::{PalletAssetsOverlay, Xdns},
     EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo,
 };
+use t3rn_types::fsx::SecurityLvl;
+
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
 const STANDARD_SFX_ABI_COUNT: usize = 7;
 
@@ -414,6 +416,172 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
         .execute_with(|| {
             let actual = XDNS::get_verification_vendor(b"pdot");
             assert_ok!(actual, GatewayVendor::Polkadot);
+        });
+}
+
+#[test]
+fn xdns_returns_full_gateway_record() {
+    use t3rn_abi::Codec::{Rlp, Scale};
+    use t3rn_primitives::{
+        xdns::{FullGatewayRecord, GatewayRecord},
+        ExecutionVendor::{Substrate, EVM},
+        GatewayVendor::{Ethereum, Polkadot, Rococo},
+    };
+
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                XDNS::fetch_full_gateway_records(),
+                vec![
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [0, 0, 0, 0],
+                            verification_vendor: Rococo,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4)),
+                                ([115, 119, 97, 112], Some(3)),
+                                ([97, 108, 105, 113], Some(3)),
+                                ([99, 101, 118, 109], Some(10)),
+                                ([119, 97, 115, 109], Some(10)),
+                                ([99, 97, 108, 108], Some(10))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [1, 1, 1, 1],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4)),
+                                ([115, 119, 97, 112], Some(3)),
+                                ([97, 108, 105, 113], Some(3)),
+                                ([99, 101, 118, 109], Some(10)),
+                                ([119, 97, 115, 109], Some(10)),
+                                ([99, 97, 108, 108], Some(10))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [3, 3, 3, 3],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4)),
+                                ([115, 119, 97, 112], Some(3)),
+                                ([97, 108, 105, 113], Some(3)),
+                                ([99, 101, 118, 109], Some(10)),
+                                ([119, 97, 115, 109], Some(10)),
+                                ([99, 97, 108, 108], Some(10))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [5, 5, 5, 5],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4)),
+                                ([115, 119, 97, 112], Some(3)),
+                                ([97, 108, 105, 113], Some(3)),
+                                ([99, 101, 118, 109], Some(10)),
+                                ([119, 97, 115, 109], Some(10)),
+                                ([99, 97, 108, 108], Some(10))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [101, 116, 104, 50],
+                            verification_vendor: Ethereum,
+                            execution_vendor: EVM,
+                            codec: Rlp,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![([116, 114, 97, 110], Some(2))]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [103, 97, 116, 101],
+                            verification_vendor: Rococo,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![([116, 114, 97, 110], Some(2))]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [107, 115, 109, 97],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [112, 100, 111, 116],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4))
+                            ]
+                        },
+                        tokens: vec![]
+                    }
+                ]
+            );
+        });
+}
+
+#[test]
+fn xdns_returns_error_for_inactive_gateway() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let is_active_res = XDNS::verify_active(b"pdot", 0u32, &SecurityLvl::Optimistic);
+            assert!(is_active_res.is_err());
         });
 }
 
