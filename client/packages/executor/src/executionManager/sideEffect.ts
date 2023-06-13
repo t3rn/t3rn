@@ -423,7 +423,7 @@ export class SideEffect extends EventEmitter {
 
     const bidUsd = this.biddingEngine.computeBid(this);
     const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue();
-    Instance.prom.bids.inc({ executor: Instance.prom.executorName });
+    Instance.prom.bids.inc();
 
     return { trigger: true, bidAmount: floatToBn(bidRewardAsset) };
   }
