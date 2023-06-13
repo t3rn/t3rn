@@ -1,0 +1,15 @@
+{{- if hasKey .Values "storage" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    {{- include "executor.labels" . | nindent 4 }}
+  name: executor
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.storage.size }}
+  storageClassName: gp3
+{{- end }}

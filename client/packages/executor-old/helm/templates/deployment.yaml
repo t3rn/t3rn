@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "executor.fullname" . }}
+  labels:
+    {{- include "executor.labels" . | nindent 4 }}
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "executor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "executor.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "executor.name" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: executor
+          image: "{{ .Values.repository }}:{{ .Values.tag }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: WS_CIRCUIT_ENDPOINT
+              value: "{{ .Values.websocketEndpoint }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if hasKey .Values "storage" }}
+          volumeMounts:
+          - name: storage
+            mountPath: /data
+          {{- end }}
+      {{- if hasKey .Values "storage" }}
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: executor
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
