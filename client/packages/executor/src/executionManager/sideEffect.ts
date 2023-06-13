@@ -33,7 +33,7 @@ export type TxOutput = {
   amount: bigint;
   /** Output amount in human-readable float */
   amountHuman: number;
-  /** Output asset tickker */
+  /** Output asset ticker */
   asset: string;
 };
 
@@ -552,7 +552,7 @@ export class SideEffect extends EventEmitter {
     this.inclusionProof.block_hash = blockHash;
   }
 
-  /** SFX is confirmed, so wecan update the status and emit an event */
+  /** SFX is confirmed, so we can update the status and emit an event */
   confirmedOnCircuit() {
     this.status = SfxStatus.Confirmed;
 

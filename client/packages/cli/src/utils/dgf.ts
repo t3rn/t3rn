@@ -195,7 +195,7 @@ const emitEvent = (
   notification: unknown,
   error = ErrorMode.None
 ) => {
-  listener.emit("event", <ListenerEventData>{
+  listener.emit("error-event", <ListenerEventData>{
     type: event,
     data: (
       notification as {

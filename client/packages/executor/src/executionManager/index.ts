@@ -17,6 +17,8 @@ import { CircuitRelayer } from "../circuit/relayer";
 import { RelayerEventData, RelayerEvents } from "../gateways/types";
 import { XtxStatus } from "@t3rn/sdk/dist/side-effects/types";
 import { Config, Gateway } from "../../config/config";
+import { Gateway } from "../../config/config";
+import { Extrinsic } from "@polkadot/types/interfaces/extrinsics";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -94,6 +96,9 @@ export class ExecutionManager {
   circuitRelayer: CircuitRelayer;
   signer: any;
   logger: any;
+  validActions: string[]
+  validAssets: string[]
+  trackedEvents: Map<string, Extrinsic>;
   config: Config;
 
   constructor(
@@ -110,6 +115,10 @@ export class ExecutionManager {
     this.circuitRelayer = new CircuitRelayer(sdk);
     this.sdk = sdk;
     this.logger = logger;
+    // hardcoded from types/abi/src/standard.rs; so get from somewhere else
+    this.validActions = ["data", "tran", "tass", "swap", "aliq", "rliq", "cevm", "wasm", "cgen"]
+    this.validAssets = []
+    this.trackedEvents = new Map<string, any>()
     this.config = config;
   }
 
@@ -135,6 +144,7 @@ export class ExecutionManager {
     await this.initializeGateways(gatewayConfig);
     await this.circuitListener.start();
     await this.initializeEventListeners();
+    await this.indirectErrorListener();
     this.addLog({ msg: "Setup Successful" });
   }
 
@@ -200,6 +210,7 @@ export class ExecutionManager {
         // initialize gateway estimator
         this.targetEstimator[entry.id] = new Estimator(relayer);
 
+        // @ts-ignore editor not picking up that has the method
         relayer.on("Event", async (eventData: RelayerEventData) => {
           switch (eventData.type) {
             case RelayerEvents.SfxExecutedOnTarget:
@@ -242,7 +253,7 @@ export class ExecutionManager {
                 ?.addHeaderProof(proof.toJSON().proof, blockHash);
               break;
             case RelayerEvents.SfxExecutionError:
-              // ToDo figure out how to handle this
+              // TODO figure out how to handle this
               break;
           }
         });
@@ -254,6 +265,7 @@ export class ExecutionManager {
 
   /** Initialize the circuit listeners */
   async initializeEventListeners() {
+    // @ts-ignore editor not picking up that has the method
     this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
       switch (eventData.type) {
         case ListenerEvents.NewSideEffectsAvailable:
@@ -328,12 +340,110 @@ export class ExecutionManager {
     // add XTX and init required event listeners
     this.xtx[xtx.id] = xtx;
     for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
-      this.initSfxListeners(sfx);
-      this.sfxToXtx[sfxId] = xtx.id;
-      this.queue[sfx.vendor].isBidding.push(sfxId);
-      await this.addRiskRewardParameters(sfx);
+      // check if the sfx is valid and get a reason if not
+      const { valid, reason } = this.isValidSfxDirect(sfx);
+      if (valid) {
+        this.initSfxListeners(sfx);
+        this.sfxToXtx[sfxId] = xtx.id;
+        this.queue[sfx.vendor].isBidding.push(sfxId);
+        await this.addRiskRewardParameters(sfx);
+      } else {
+        this.addLog({ msg: `Invalid sfx. Reason: ${reason}`, debug: false })
+      }
     }
     this.addLog({ msg: "XTX initialized", xtxId: xtx.id });
+  }
+
+  /**
+   * Check if a side effect is valid for execution.
+   * This method checks for direct errors, and not delayed ones after N blocks.
+   * 
+   * @param sfx The side effect to check for soundness
+   */
+  isValidSfxDirect(sfx: SideEffect) {
+    // Reason that failed
+    let reason = "SFX is valid"
+
+    // Check if sfx target exists in allowed targets in circuit relayer
+    const targetExists = this.circuitRelayer.allowedTargets.includes(sfx.target);
+    if (!targetExists) {
+      reason = "Invalid target"
+    }
+
+    // Check that the action is one of the valid ones
+    const validAction = this.validActions.includes(sfx.action.toString());
+    if (!validAction) {
+      reason = "Invalid action"
+    }
+
+    // all conditions must be met
+    const isValid = targetExists && validAction
+
+    return { valid: isValid, reason: reason };
+  }
+
+  /**
+   * Keep a record { hash -> event } of the events that contain a custom error
+   * 
+   * @param event Event received from the circuit
+   */
+  trackEvent(event: any) {
+    const event_hash = event.data[0].toHuman();
+    this.trackedEvents.set(event_hash, event);
+  }
+
+  /**
+   * Check if the event received is a custom error, and matches what we want
+   * 
+   * @param event Event received from the circuit
+   */
+  checkTrackedEvent(event: any, reason: ListenerEvents) {
+    const event_hash = event.data[0].toHuman();
+
+    if (this.trackedEvents.has(event_hash)) {
+      const event_data = this.getTrackedEventData(event_hash);
+    } else {
+      console.log("[ERR] Not tracking this event!")
+      return
+    }
+  }
+
+  /**
+   * Parse the info from the event and return it in a nice format
+   * 
+   * @param event_hash Event hash to get the data from
+   * @returns The event data
+   */
+  getTrackedEventData(event_hash: string) {
+    return this.trackedEvents.get(event_hash);
+  }
+
+  /** Initialize the circuit listeners for the custom 
+   *  errors injected in the signature field.
+   */
+  async indirectErrorListener() {
+    // @ts-ignore editor not picking up that has the method
+    this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
+      // check only custom errors, those with injected info in the signature field
+      if (!eventData.data.signature.startswith("0x")) {
+        switch (eventData.type) {
+          case ListenerEvents.NewSideEffectsAvailable:
+            this.trackEvent(eventData)
+            this.addXtx(eventData.data, this.sdk);
+            break;
+          case ListenerEvents.SFXNewBidReceived:
+            this.checkTrackedEvent(eventData, ListenerEvents.SFXNewBidReceived)
+            this.addBid(eventData.data);
+            break;
+          case ListenerEvents.DroppedAtBidding:
+            // Check the reason it was dropped at bidding
+            this.checkTrackedEvent(eventData, ListenerEvents.DroppedAtBidding)
+            break;
+          case ListenerEvents.RevertTimedOut:
+            this.revertTimeout(eventData.data[0].toString());
+        }
+      }
+    });
   }
 
   /**
@@ -507,6 +617,7 @@ export class ExecutionManager {
    * @param sfx Object of the sfx
    */
   initSfxListeners(sfx: SideEffect) {
+    // @ts-ignore editor not picking up it has the method
     sfx.on("Notification", (notification: Notification) => {
       switch (notification.type) {
         case NotificationType.SubmitBid: {
@@ -582,7 +693,7 @@ export class ExecutionManager {
         this.removeFromQueue("isExecuting", sfx.id, sfx.vendor);
         let confirmBatch =
           this.queue[sfx.vendor].isConfirming[
-            sfx.targetInclusionHeight.toString()
+          sfx.targetInclusionHeight.toString()
           ];
         if (!confirmBatch) confirmBatch = [];
         if (confirmBatch.includes(sfx.id)) {

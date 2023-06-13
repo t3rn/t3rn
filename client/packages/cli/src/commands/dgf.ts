@@ -42,7 +42,7 @@ export const handleDgfCmd = async (
     const timeout = parseInt(args.timeout) ?? 30
     const start = Date.now()
 
-    listener.on("event", (eventData) => {
+    listener.on("error-event", (eventData) => {
       spinner.info(
         colorLogMsg(
           "INFO",

@@ -16,16 +16,18 @@ import fs from "fs";
 export class CircuitRelayer extends EventEmitter {
   static debug = createDebug("circuit-relayer");
 
-  api: ApiPromise;
-  sdk: Sdk;
-  id: string;
-  rpc: string;
+  api: ApiPromise
+  sdk: Sdk
+  id: string
+  rpc: string
+  allowedTargets: string[]
 
   constructor(sdk: Sdk) {
     super();
     // @ts-ignore
-    this.api = sdk.client;
-    this.sdk = sdk;
+    this.api = sdk.client
+    this.sdk = sdk
+    this.allowedTargets = ["roco"]
   }
 
   /**
@@ -71,7 +73,8 @@ export class CircuitRelayer extends EventEmitter {
   createConfirmTx(sfx: SideEffect): any {
     let inclusionData;
 
-    if (sfx.target === "roco") {
+    // TODO: check that it doesn't only have to be "roco"
+    if (this.allowedTargets.includes(sfx.target)) {
       inclusionData = this.api.createType("RelaychainInclusionProof", {
         encoded_payload: sfx.inclusionProof.encoded_payload,
         payload_proof: sfx.inclusionProof.payload_proof,
