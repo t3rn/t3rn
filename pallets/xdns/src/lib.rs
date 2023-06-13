@@ -8,6 +8,7 @@
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
 
+use sp_runtime::traits::Zero;
 use sp_std::prelude::*;
 pub use t3rn_types::{
     gateway::GatewayABIConfig,
@@ -56,12 +57,16 @@ pub mod pallet {
         light_client::LightClientHeartbeat,
         portal::Portal,
         xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
-        Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo, TreasuryAccount,
-        TreasuryAccountProvider,
+        Bytes, ChainId, ExecutionVendor, GatewayActivity, GatewayType, GatewayVendor,
+        GatewaysOverview, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
+    type GatewayActivityOf<T> = GatewayActivity<<T as frame_system::Config>::BlockNumber>;
+
     use t3rn_types::{fsx::FullSideEffect, sfx::SecurityLvl};
+
+    pub const MAX_GATEWAY_OVERVIEW_RECORDS: u32 = 1000;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -168,6 +173,76 @@ pub mod pallet {
                 }
             })
             .unwrap_or(0)
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        pub fn process_overview(n: BlockNumberFor<T>) {
+            let mut all_overviews: Vec<GatewayActivityOf<T>> = Vec::new();
+
+            for gateway in Self::fetch_full_gateway_records() {
+                let gateway_id = gateway.gateway_record.gateway_id;
+                // ToDo: Uncomment when eth2::turn_on implemented
+                if gateway.gateway_record.verification_vendor == GatewayVendor::Ethereum {
+                    continue
+                }
+                let activity = match T::Portal::get_latest_heartbeat(&gateway_id) {
+                    Ok(heartbeat) => {
+                        let security_lvl = match gateway.gateway_record.escrow_account {
+                            Some(_) => SecurityLvl::Escrow,
+                            None => SecurityLvl::Optimistic,
+                        };
+                        GatewayActivity {
+                            gateway_id,
+                            reported_at: n,
+                            justified_height: heartbeat.last_updated_height,
+                            finalized_height: heartbeat.last_finalized_height,
+                            updated_height: heartbeat.last_updated_height,
+                            security_lvl,
+                            is_active: !heartbeat.is_halted,
+                        }
+                    },
+                    Err(_) => {
+                        let last_active_activity =
+                            GatewaysOverviewStoreHistory::<T>::get(&gateway_id)
+                                .last()
+                                .cloned()
+                                .unwrap_or_else(|| GatewayActivity {
+                                    gateway_id,
+                                    reported_at: Zero::zero(),
+                                    justified_height: Zero::zero(),
+                                    finalized_height: Zero::zero(),
+                                    updated_height: Zero::zero(),
+                                    security_lvl: SecurityLvl::Optimistic,
+                                    is_active: false,
+                                });
+
+                        GatewayActivity {
+                            gateway_id,
+                            reported_at: n,
+                            justified_height: last_active_activity.justified_height,
+                            finalized_height: last_active_activity.finalized_height,
+                            updated_height: last_active_activity.updated_height,
+                            security_lvl: last_active_activity.security_lvl,
+                            is_active: false,
+                        }
+                    },
+                };
+
+                // Add the new activity to the historic overview of the gateway
+                let mut historic_overview = GatewaysOverviewStoreHistory::<T>::get(&gateway_id);
+                if historic_overview.len() == MAX_GATEWAY_OVERVIEW_RECORDS as usize {
+                    let _ = historic_overview.remove(0);
+                }
+                historic_overview.push(activity.clone());
+                GatewaysOverviewStoreHistory::<T>::insert(&gateway_id, historic_overview);
+
+                // Add the new activity to the general overview
+                all_overviews.push(activity);
+            }
+
+            // Update the general overview
+            GatewaysOverviewStore::<T>::put(all_overviews);
         }
     }
 
@@ -367,6 +442,21 @@ pub mod pallet {
     #[pallet::getter(fn asset_cost_estimates_in_native)]
     pub type AssetCostEstimatesInNative<T: Config> =
         StorageMap<_, Identity, AssetId, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn gateways_overview)]
+    pub type GatewaysOverviewStore<T: Config> =
+        StorageValue<_, Vec<GatewayActivityOf<T>>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn gateways_overview_history)]
+    pub type GatewaysOverviewStoreHistory<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        TargetId,                  // Gateway Id
+        Vec<GatewayActivityOf<T>>, // Activity
+        ValueQuery,
+    >;
 
     // The genesis config type.
     #[pallet::genesis_config]

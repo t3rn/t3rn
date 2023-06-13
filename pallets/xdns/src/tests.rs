@@ -18,15 +18,24 @@
 //! Runtimes for pallet-xdns.
 
 use super::*;
-use circuit_mock_runtime::{ExtBuilder, *};
+use circuit_mock_runtime::{ExtBuilder, Portal, *};
 use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
-    xdns::{PalletAssetsOverlay, Xdns},
-    EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo,
+    circuit::SecurityLvl::Optimistic,
+    portal::Portal as PortalT,
+    xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, Xdns},
+    EthereumToken, ExecutionVendor,
+    ExecutionVendor::{Substrate, EVM},
+    GatewayActivity, GatewayVendor,
+    GatewayVendor::{Ethereum, Polkadot, Rococo},
+    SubstrateToken, TokenInfo,
 };
+
+use t3rn_abi::Codec::{Rlp, Scale};
+
 use t3rn_types::fsx::SecurityLvl;
 
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
@@ -421,13 +430,6 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
 
 #[test]
 fn xdns_returns_full_gateway_record() {
-    use t3rn_abi::Codec::{Rlp, Scale};
-    use t3rn_primitives::{
-        xdns::{FullGatewayRecord, GatewayRecord},
-        ExecutionVendor::{Substrate, EVM},
-        GatewayVendor::{Ethereum, Polkadot, Rococo},
-    };
-
     ExtBuilder::default()
         .with_default_xdns_records()
         .build()
@@ -582,6 +584,99 @@ fn xdns_returns_error_for_inactive_gateway() {
         .execute_with(|| {
             let is_active_res = XDNS::verify_active(b"pdot", 0u32, &SecurityLvl::Optimistic);
             assert!(is_active_res.is_err());
+        });
+}
+
+#[test]
+fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_via_portal() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            for gateway in XDNS::fetch_full_gateway_records().iter() {
+                // ToDo: Uncomment when eth2::turn_on implemented
+                if gateway.gateway_record.verification_vendor == Ethereum {
+                    continue
+                }
+                Portal::turn_on(
+                    circuit_mock_runtime::Origin::root(),
+                    gateway.gateway_record.gateway_id,
+                )
+                .unwrap();
+            }
+
+            assert_eq!(XDNS::process_overview(10), ());
+            let overview = XDNS::gateways_overview();
+
+            assert_eq!(
+                overview,
+                vec![
+                    GatewayActivity {
+                        gateway_id: [0, 0, 0, 0],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [1, 1, 1, 1],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [3, 3, 3, 3],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [5, 5, 5, 5],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [103, 97, 116, 101],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [107, 115, 109, 97],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [112, 100, 111, 116],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    }
+                ]
+            );
         });
 }
 

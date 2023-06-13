@@ -21,7 +21,6 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
-
 pub use t3rn_abi::recode::Codec as T3rnCodec;
 pub use t3rn_types::{gateway, types::Bytes};
 
@@ -65,6 +64,7 @@ pub mod xdns;
 pub mod xtx;
 
 pub type ChainId = [u8; 4];
+use t3rn_types::sfx::{SecurityLvl, TargetId};
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -363,6 +363,29 @@ pub enum GatewayExpectedOutput {
 
     /// Yet another event or Storage output. If expecting output u can define its type format.
     Output { output: Bytes },
+}
+#[derive(Encode, Decode, Clone, Default, Debug, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GatewaysOverview<BlockNumber> {
+    data: Vec<(TargetId, BlockNumber, Vec<GatewayActivity<BlockNumber>>)>,
+}
+
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GatewayActivity<BlockNumber> {
+    pub gateway_id: TargetId,
+
+    pub reported_at: BlockNumber,
+
+    pub justified_height: BlockNumber,
+
+    pub finalized_height: BlockNumber,
+
+    pub updated_height: BlockNumber,
+
+    pub security_lvl: SecurityLvl,
+
+    pub is_active: bool,
 }
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
