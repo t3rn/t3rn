@@ -163,28 +163,16 @@ where
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
-        source_address: Bytes,
+        source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
-            PalletInstance::Rococo(pallet) => pallet.verify_event_inclusion(
-                gateway_id,
-                message,
-                source_address,
-                submission_target_height,
-            ),
-            PalletInstance::Kusama(pallet) => pallet.verify_event_inclusion(
-                gateway_id,
-                message,
-                source_address,
-                submission_target_height,
-            ),
-            PalletInstance::Polkadot(pallet) => pallet.verify_event_inclusion(
-                gateway_id,
-                message,
-                source_address,
-                submission_target_height,
-            ),
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_event_inclusion(gateway_id, message, source, submission_target_height),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_event_inclusion(gateway_id, message, source, submission_target_height),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_event_inclusion(gateway_id, message, source, submission_target_height),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }

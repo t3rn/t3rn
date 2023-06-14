@@ -170,7 +170,7 @@ pub enum PrecompileArgs {
     GetFinalizedHeight(ChainId),
     GetRationalHeight(ChainId),
     GetFastHeight(ChainId),
-    VerifyEventInclusion([u8; 4], Bytes),
+    VerifyEventInclusion([u8; 4], Bytes, Bytes),
     VerifyStateInclusion([u8; 4], Bytes),
     VerifyTxInclusion([u8; 4], Bytes),
 }
@@ -182,7 +182,7 @@ impl PrecompileArgs {
                 GetFinalizedHeight:Bytes4,\
                 GetRationalHeight:Bytes4,\
                 GetFastHeight:Bytes4,\
-                VerifyEventInclusion:Tuple(Bytes4,Bytes),\
+                VerifyEventInclusion:Tuple(Bytes4,Bytes,Bytes),\
                 VerifyStateInclusion:Tuple(Bytes4,Bytes),\
                 VerifyTxInclusion:Tuple(Bytes4,Bytes),\
         )"

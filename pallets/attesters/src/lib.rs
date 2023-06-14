@@ -667,8 +667,12 @@ pub mod pallet {
             .to_vec();
 
             #[cfg(not(feature = "test-skip-verification"))]
-            let escrow_inclusion_receipt =
-                T::Portal::verify_event_inclusion(target, target_inclusion_proof_encoded, None)?;
+            let escrow_inclusion_receipt = T::Portal::verify_event_inclusion(
+                target,
+                target_inclusion_proof_encoded,
+                None,
+                None,
+            )?; // Todo: add escrow address
             #[cfg(feature = "test-skip-verification")]
             let escrow_inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
                 height: Zero::zero(),
