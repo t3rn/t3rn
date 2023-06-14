@@ -123,15 +123,14 @@ export class Attester {
                                 )
 
                                 // Attest all pending attestations
-                                event.data[1]
-                                    .forEach(async (batch) => {
-                                        // Generate the signature for the message hash
-                                        await this.submitAttestationEVM(
-                                            batch[1], // messageHash
-                                            event.data[0], // target
-                                            'EVM'
-                                        )
-                                    })
+                                event.data[1].forEach(async (batch) => {
+                                    // Generate the signature for the message hash
+                                    await this.submitAttestationEVM(
+                                        batch[1], // messageHash
+                                        event.data[0], // target
+                                        'EVM'
+                                    )
+                                })
                                 break
                             }
                             case 'NewTargetProposed': {
@@ -233,11 +232,21 @@ export class Attester {
             return
         }
 
-        this.isInCurrentCommittee =
-            committee.find(
-                (item) => item.accountId === this.keys.substrate.addressId
-            ) !== undefined
-        logger.info({ isInCurrentCommittee: this.isInCurrentCommittee, accountId: this.keys.substrate.accountId }, 'Current committee member')
-        this.prometheus.currentCommitteeMember.set(this.isInCurrentCommittee ? 1 : 0)
+        let committeeArray = committee.map(function(item) {
+            return item.toString();
+          });
+
+        this.isInCurrentCommittee = committeeArray.includes(this.keys.substrate.accountId)
+         
+        logger.info(
+            {
+                isInCurrentCommittee: this.isInCurrentCommittee,
+                accountId: this.keys.substrate.accountId,
+            },
+            'Current committee member'
+        )
+        this.prometheus.currentCommitteeMember.set(
+            this.isInCurrentCommittee ? 1 : 0
+        )
     }
 }

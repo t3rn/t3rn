@@ -7,7 +7,8 @@
     "fmt": "prettier --write src config tests",
     "lint": "eslint --ext .ts src --fix",
     "lint:report": "eslint --ext .ts src --output-file eslint_report.json --format json",
-    "test": "jest",
+    "test": "LOG_LEVEL=silent jest --verbose --no-warnings",
+    "test:watch": "LOG_LEVEL=silent jest --watch --no-warnings",
     "start": "ts-node src/index.ts"
   },
   "eslintConfig": {
@@ -17,6 +18,7 @@
     ]
   },
   "dependencies": {
+    "@polkadot/util": "^10.4.2",
     "@t3rn/sdk": "link:../sdk",
     "async-mutex": "^0.4.0",
     "axios": "^1.4.0",

@@ -8,7 +8,6 @@ process.on('uncaughtException', (error) => {
     logger.error(error.stack)
     process.exit(1)
 })
-
 ;(async () => {
     logger.info(`Starting attester`)
 

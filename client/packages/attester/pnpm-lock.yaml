@@ -1,6 +1,9 @@
 lockfileVersion: '6.0'
 
 dependencies:
+  '@polkadot/util':
+    specifier: ^10.4.2
+    version: 10.4.2
   '@t3rn/sdk':
     specifier: link:../sdk
     version: link:../sdk
@@ -1323,7 +1326,6 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.11
-    dev: true
 
   /@babel/template@7.22.5:
     resolution: {integrity: sha512-X7yV7eiwAxdj9k94NEylvbVHLiVG1nvzCV2EAowhxLTwODV1jl9UzZ48leOC0sH7OnuHrIkllaBgneUykIcZaw==}
@@ -1705,6 +1707,50 @@ packages:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.15.0
     dev: true
+
+  /@polkadot/util@10.4.2:
+    resolution: {integrity: sha512-0r5MGICYiaCdWnx+7Axlpvzisy/bi1wZGXgCSw5+ZTyPTOqvsYRqM2X879yxvMsGfibxzWqNzaiVjToz1jvUaA==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@babel/runtime': 7.22.5
+      '@polkadot/x-bigint': 10.4.2
+      '@polkadot/x-global': 10.4.2
+      '@polkadot/x-textdecoder': 10.4.2
+      '@polkadot/x-textencoder': 10.4.2
+      '@types/bn.js': 5.1.1
+      bn.js: 5.2.1
+    dev: false
+
+  /@polkadot/x-bigint@10.4.2:
+    resolution: {integrity: sha512-awRiox+/XSReLzimAU94fPldowiwnnMUkQJe8AebYhNocAj6SJU00GNoj6j6tAho6yleOwrTJXZaWFBaQVJQNg==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@babel/runtime': 7.22.5
+      '@polkadot/x-global': 10.4.2
+    dev: false
+
+  /@polkadot/x-global@10.4.2:
+    resolution: {integrity: sha512-g6GXHD/ykZvHap3M6wh19dO70Zm43l4jEhlxf5LtTo5/0/UporFCXr2YJYZqfbn9JbQwl1AU+NroYio+vtJdiA==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@babel/runtime': 7.22.5
+    dev: false
+
+  /@polkadot/x-textdecoder@10.4.2:
+    resolution: {integrity: sha512-d3ADduOKUTU+cliz839+KCFmi23pxTlabH7qh7Vs1GZQvXOELWdqFOqakdiAjtMn68n1KVF4O14Y+OUm7gp/zA==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@babel/runtime': 7.22.5
+      '@polkadot/x-global': 10.4.2
+    dev: false
+
+  /@polkadot/x-textencoder@10.4.2:
+    resolution: {integrity: sha512-mxcQuA1exnyv74Kasl5vxBq01QwckG088lYjc3KwmND6+pPrW2OWagbxFX5VFoDLDAE+UJtnUHsjdWyOTDhpQA==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@babel/runtime': 7.22.5
+      '@polkadot/x-global': 10.4.2
+    dev: false
 
   /@sinclair/typebox@0.25.24:
     resolution: {integrity: sha512-XJfwUVUKDHF5ugKwIcxEgc9k8b7HbznCp6eUfWgu710hMPNIO4aw4/zB5RogDQz8nd6gyCDpU9O/m6qYEWY6yQ==}
@@ -2249,8 +2295,8 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001502
-      electron-to-chromium: 1.4.428
+      caniuse-lite: 1.0.30001503
+      electron-to-chromium: 1.4.430
       node-releases: 2.0.12
       update-browserslist-db: 1.0.11(browserslist@4.21.8)
     dev: true
@@ -2311,8 +2357,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /caniuse-lite@1.0.30001502:
-    resolution: {integrity: sha512-AZ+9tFXw1sS0o0jcpJQIXvFTOB/xGiQ4OQ2t98QX3NDn2EZTSRBC801gxrsGgViuq2ak/NLkNgSNEPtCr5lfKg==}
+  /caniuse-lite@1.0.30001503:
+    resolution: {integrity: sha512-Sf9NiF+wZxPfzv8Z3iS0rXM1Do+iOy2Lxvib38glFX+08TCYYYGR5fRJXk4d77C4AYwhUjgYgMsMudbh2TqCKw==}
     dev: true
 
   /chai@4.3.7:
@@ -2538,8 +2584,8 @@ packages:
     engines: {node: '>=12'}
     dev: false
 
-  /electron-to-chromium@1.4.428:
-    resolution: {integrity: sha512-L7uUknyY286of0AYC8CKfgWstD0Smk2DvHDi9F0GWQhSH90Bzi7iDrmCbZKz75tYJxeGSAc7TYeKpmbjMDoh1w==}
+  /electron-to-chromium@1.4.430:
+    resolution: {integrity: sha512-FytjTbGwz///F+ToZ5XSeXbbSaXalsVRXsz2mHityI5gfxft7ieW3HqFLkU5V1aIrY42aflICqbmFoDxW10etg==}
     dev: true
 
   /elliptic@6.5.4:
@@ -4256,7 +4302,6 @@ packages:
 
   /regenerator-runtime@0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
-    dev: true
 
   /regenerator-transform@0.15.1:
     resolution: {integrity: sha512-knzmNAcuyxV+gQCufkYcvOqX/qIIfHLv0u5x79kRxuGojfYVky1f15TzZEu2Avte8QGepvUNTnLskf8E6X6Vyg==}
