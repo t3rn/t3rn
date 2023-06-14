@@ -11,6 +11,7 @@ export class Prometheus {
     eventsAttestationsTotal: any
     currentCommitteeMember: any
     submitAttestationError: any
+    submittedAttestation: client.Counter
 
     constructor() {
         const Registry = client.Registry
@@ -70,6 +71,12 @@ export class Prometheus {
             labelNames: ['error'],
         })
         
+        this.submittedAttestation = new client.Counter({
+            name: 'submit_attestation_count',
+            help: 'Number of attestations submitted',
+            registers: [this.register],
+            labelNames: ['messageHash'],
+        })
         this.startServer()
     }
 

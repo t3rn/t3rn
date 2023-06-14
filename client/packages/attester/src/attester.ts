@@ -232,11 +232,12 @@ export class Attester {
         }
 
         logger.debug(result)
+        this.prometheus.submittedAttestation.inc({messageHash: messageHash, targetId: targetId, executionVendor: executionVendor})
 
         logger.info(
             {
-                executionVendor: executionVendor.toString(),
-                targetId: targetId.toString(),
+                executionVendor: executionVendor,
+                targetId: targetId,
                 messageHash: messageHash,
                 // hash: result.hash.toHex(),
             },
