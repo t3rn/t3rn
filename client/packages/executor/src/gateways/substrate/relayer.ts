@@ -76,17 +76,6 @@ export class SubstrateRelayer extends EventEmitter {
    * @param sfx Object to execute
    */
   async executeTx(sfx: SideEffect) {
-    // TODO: validate the SFX
-
-
-
-
-
-
-
-
-
-
     this.logger.info(
       `Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`
     );

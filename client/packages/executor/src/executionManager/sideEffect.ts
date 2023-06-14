@@ -368,11 +368,15 @@ export class SideEffect extends EventEmitter {
    * @returns TxOutput.
    */
   getTxOutputs(): TxOutput {
+    // In the data generation framework, execution can be invalid
+    // but the proof can be valid. In that case, alter the amount.
+    const invalidExecutionValidProofCondition = this.signature === "invalidExecutionValidProof";
     switch (this.action) {
       case SfxType.Transfer: {
         let amount = this.getTransferArguments()[1];
-        amount = parseInt(amount.toString());
-
+        if (!invalidExecutionValidProofCondition) {
+          amount *= 2;
+        }
         return {
           amount: BigInt(amount),
           amountHuman: this.gateway.toFloat(amount), // converts to human format

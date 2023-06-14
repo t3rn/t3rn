@@ -373,15 +373,19 @@ export class ExecutionManager {
     this.xtx[xtx.id] = xtx;
     for (const [sfxId, sfx] of xtx.sideEffects.entries()) {
       // check if the sfx is valid and get a reason if not
-      const { valid, reason } = this.isValidSfxDirect(sfx);
-      if (valid) {
-        this.initSfxListeners(sfx);
+      // const { valid, reason } = this.isValidSfxDirect(sfx);
+
+      this.initSfxListeners(sfx);
+
+      // In the error generating scheme, when ErrorMode.NoBidders, 
+      // do NOT add the sfx to the queue for bidding.
+      const noBiddersCondition = sfx.signature === "NoBidders";
+      if (noBiddersCondition) {
         this.sfxToXtx[sfxId] = xtx.id;
         this.queue[sfx.vendor].isBidding.push(sfxId);
         await this.addRiskRewardParameters(sfx);
-      } else {
-        this.addLog({ msg: `Invalid sfx. Reason: ${reason}`, debug: false })
       }
+
     }
     this.addLog({ msg: "XTX initialized", xtxId: xtx.id });
   }
@@ -392,6 +396,8 @@ export class ExecutionManager {
    * 
    * @param sfx The side effect to check for soundness
    */
+  // TODO: these checks are already done somewhere else, so no need to duplicate
+  // override this for the noBidders
   isValidSfxDirect(sfx: SideEffect) {
     // Reason that failed
     let reason = "SFX is valid"
@@ -583,7 +589,12 @@ export class ExecutionManager {
       if (!sfx) continue;
 
       if (sfx.phase === this.xtx[sfx.xtxId].currentPhase) {
-        readyByStep.push(sfx);
+        // In the data generation framework, if ErrorMode.ConfirmationTimeout is set
+        // we filter OUT them from the confirmation queue
+        const confirmationTimeoutCondition = sfx.signature === "ConfirmationTimeout";
+        if (!confirmationTimeoutCondition) {
+          readyByStep.push(sfx);
+        }
       }
     }
 
