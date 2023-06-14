@@ -1,5 +1,6 @@
 import { logger } from './logging'
 
+
 export function checkKeys(keys: any) {
     // Simple check to see if the keys are present
     const requiredFields = ['btc', 'ethereum', 'substrate']
@@ -15,6 +16,7 @@ export function checkKeys(keys: any) {
         logger.info(
             {
                 substratePublicKey: keys.substrate.publicKey,
+                substrateAccountId: keys.substrate.accountId,
                 ethereumPublicKey: keys.ethereum.publicKey,
                 btcPublicKey: keys.btc.publicKey,
             },

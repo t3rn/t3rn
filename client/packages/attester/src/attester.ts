@@ -85,6 +85,11 @@ export class Attester {
             logger.debug({ events_count: events.length }, `Received events`)
             this.prometheus.eventsTotal.inc(events.length)
 
+            // Before acting on attestation events we need to check if we are in current committee
+            if (!await this.isInCommittee()) {
+                logger.debug('Not in committee')
+                return
+            }
             // Loop through the Vec<EventRecord>
             await Promise.all(
                 events.map(async (record) => {
@@ -228,4 +233,17 @@ export class Attester {
             'Attestation submitted'
         )
     }
+
+    private async isInCommittee() {
+        let comittee
+        try {
+            comittee = await this.circuit.client.query.attesters.currentCommittee()
+        } catch (error) {
+            logger.error(error.stack, 'Error getting committee')
+            return
+        }
+
+        return comittee.includes(this.keys.substrate.addressId)
+    }
+
 }
