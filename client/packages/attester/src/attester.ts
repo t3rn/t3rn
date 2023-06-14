@@ -224,7 +224,7 @@ export class Attester {
 
         } catch (error) {
             const errorName = error.stack.match(/^Error: (.*):/)[1] // Parse stack trace to get exact error which is not present in error object
-            logger.error(error.stack, 'Error submitting attestation')
+            logger.error({error: errorName, messageHash: messageHash, targetId: targetId, executionVendor: executionVendor, stack: error.stack}, 'Error submitting attestation')
             this.prometheus.submitAttestationError.inc({error: errorName})
             return
         }
