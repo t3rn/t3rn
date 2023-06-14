@@ -107,7 +107,7 @@ export class Attester {
                             method: event.method,
                         })
 
-                        logger.info(
+                        logger.debug(
                             {
                                 section: event.section,
                                 method: event.method,
@@ -150,11 +150,10 @@ export class Attester {
                                 break
                             }
                             case 'CurrentPendingAttestationBatches': {
-                                logger.info(
+                                logger.debug(
                                     `Received CurrentPendingAttestationBatches event`
                                 )
 
-                                logger.info(event.data)
                                 const target = event.data[0]
                                 // Attest all pending attestations
                                 // TODO: remove slice
