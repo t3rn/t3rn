@@ -41,7 +41,7 @@ pub mod pallet {
         portal::Portal,
         rewards::RewardsWriteApi,
         xdns::Xdns,
-        ExecutionVendor, GatewayVendor,
+        ExecutionVendor, GatewayVendor, SpeedMode,
     };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
@@ -670,6 +670,7 @@ pub mod pallet {
             let escrow_inclusion_receipt = T::Portal::verify_event_inclusion(
                 target,
                 target_inclusion_proof_encoded,
+                SpeedMode::Finalized,
                 None,
                 None,
             )?; // Todo: add escrow address

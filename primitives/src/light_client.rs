@@ -62,6 +62,7 @@ pub trait LightClient<T: frame_system::Config> {
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
@@ -69,6 +70,7 @@ pub trait LightClient<T: frame_system::Config> {
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
@@ -76,6 +78,7 @@ pub trait LightClient<T: frame_system::Config> {
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
@@ -83,6 +86,7 @@ pub trait LightClient<T: frame_system::Config> {
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError>;
 
@@ -90,6 +94,7 @@ pub trait LightClient<T: frame_system::Config> {
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError>;
 
@@ -97,6 +102,7 @@ pub trait LightClient<T: frame_system::Config> {
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError>;
 }

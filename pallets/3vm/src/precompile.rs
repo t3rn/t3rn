@@ -243,14 +243,14 @@ pub(crate) fn invoke<T: Config>(
                     .map(|x| PrecompileInvocation::Portal(x.into())),
             PortalPrecompileArgs::GetFastHeight(chain_id) =>
                 T::Portal::get_fast_height(chain_id).map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyEventInclusion(chain_id, source, event) =>
-                T::Portal::verify_event_inclusion(chain_id, event, Some(source), None)
+            PortalPrecompileArgs::VerifyEventInclusion(chain_id, source, speed_mode, event) =>
+                T::Portal::verify_event_inclusion(chain_id, event, speed_mode, Some(source), None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyStateInclusion(chain_id, event) =>
-                T::Portal::verify_state_inclusion(chain_id, event, None)
+            PortalPrecompileArgs::VerifyStateInclusion(chain_id, event, speed_mode) =>
+                T::Portal::verify_state_inclusion(chain_id, event, speed_mode, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyTxInclusion(chain_id, event) =>
-                T::Portal::verify_tx_inclusion(chain_id, event, None)
+            PortalPrecompileArgs::VerifyTxInclusion(chain_id, event, speed_mode) =>
+                T::Portal::verify_tx_inclusion(chain_id, event, speed_mode, None)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
         },
     }
