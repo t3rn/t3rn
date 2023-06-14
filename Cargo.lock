@@ -9222,7 +9222,6 @@ name = "precompile-util"
 version = "1.0.0"
 dependencies = [
  "fp-evm 3.0.0-dev",
- "frame-support",
  "frame-system",
  "pallet-evm 0.1.0",
  "pallet-evm-precompile-3vm-dispatch",

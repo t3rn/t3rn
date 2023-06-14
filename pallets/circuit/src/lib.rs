@@ -1121,6 +1121,7 @@ impl<T: Config> Pallet<T> {
         let inclusion_receipt = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
             confirmation.inclusion_data.clone(),
+            None, //ToDo - load pallet index or contract address here
             Some(fsx.submission_target_height), // this enforces the submission height check!
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;

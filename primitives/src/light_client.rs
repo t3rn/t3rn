@@ -59,6 +59,7 @@ pub trait LightClient<T: frame_system::Config> {
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
+        source: Option<Bytes>, // source of the event, could be contract, pallet index, etc
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 

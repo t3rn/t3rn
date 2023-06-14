@@ -49,6 +49,7 @@ pub trait Portal<T: frame_system::Config> {
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
+        source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
@@ -83,6 +84,7 @@ pub trait Portal<T: frame_system::Config> {
     fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
         message: Bytes,
+        source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,

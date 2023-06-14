@@ -188,11 +188,13 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
+        source_address: Bytes,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
             gateway_id,
             message,
+            source_address,
             submission_target_height,
         )
     }
@@ -276,12 +278,17 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
         message: Bytes,
+        source_address: Bytes,
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        let mut inclusion_check =
-            Self::verify_event_inclusion(gateway_id, message, submission_target_height)?;
+        let mut inclusion_check = Self::verify_event_inclusion(
+            gateway_id,
+            message,
+            source_address,
+            submission_target_height,
+        )?;
 
         let in_codec = match_vendor_with_codec(
             <T as Config>::Xdns::get_verification_vendor(&gateway_id)

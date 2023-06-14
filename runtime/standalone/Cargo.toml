@@ -34,8 +34,8 @@ pallet-portal                             = { path = "../../pallets/portal", def
 pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
-#pallet-eth2-finality-verifier             = { path = "../../../eth2-light-client", default-features = false }
+#pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
+pallet-eth2-finality-verifier             = { path = "../../../eth2-light-client", default-features = false }
 t3rn-primitives                           = { default-features = false, path = "../../primitives" }
 t3rn-types                                = { path = "../../types", default-features = false }
 t3rn-abi   = { path = "../../types/abi", default-features = false }
