@@ -681,6 +681,98 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
 }
 
 #[test]
+fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turning_off() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            for gateway in XDNS::fetch_full_gateway_records().iter() {
+                // ToDo: Uncomment when eth2::turn_on implemented
+                if gateway.gateway_record.verification_vendor == Ethereum {
+                    continue
+                }
+                Portal::turn_off(
+                    circuit_mock_runtime::Origin::root(),
+                    gateway.gateway_record.gateway_id,
+                )
+                .unwrap();
+            }
+            assert_eq!(XDNS::process_overview(10), ());
+            let overview = XDNS::gateways_overview();
+
+            assert_eq!(
+                overview,
+                vec![
+                    GatewayActivity {
+                        gateway_id: [0, 0, 0, 0],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [1, 1, 1, 1],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [3, 3, 3, 3],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [5, 5, 5, 5],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [103, 97, 116, 101],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [107, 115, 109, 97],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [112, 100, 111, 116],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    }
+                ]
+            );
+        });
+}
+
+#[test]
 fn test_storage_migration_v140_to_v150_for_standard_side_effects_to_standard_sfx_abi() {
     type EventSignature = Vec<u8>;
     use t3rn_abi::SFXAbi;
