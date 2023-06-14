@@ -48,15 +48,10 @@ pub trait Portal<T: frame_system::Config> {
 
     fn get_fast_height_precompile(gateway_id: ChainId) -> T::BlockNumber;
 
-    fn header_speed_mode_satisfied(
-        gateway_id: [u8; 4],
-        header: Bytes,
-        speed_mode: SpeedMode,
-    ) -> Result<bool, DispatchError>;
-
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
@@ -64,18 +59,21 @@ pub trait Portal<T: frame_system::Config> {
     fn verify_state_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_tx_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_event_inclusion_precompile(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError>;
@@ -83,18 +81,21 @@ pub trait Portal<T: frame_system::Config> {
     fn verify_state_inclusion_precompile(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError>;
 
     fn verify_tx_inclusion_precompile(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError>;
 
     fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
@@ -103,6 +104,7 @@ pub trait Portal<T: frame_system::Config> {
     fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
@@ -111,6 +113,7 @@ pub trait Portal<T: frame_system::Config> {
     fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
         message: Bytes,
+        speed_mode: SpeedMode,
         source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
@@ -197,9 +200,9 @@ pub enum PrecompileArgs {
     GetFinalizedHeight(ChainId),
     GetRationalHeight(ChainId),
     GetFastHeight(ChainId),
-    VerifyEventInclusion([u8; 4], Bytes, Bytes),
-    VerifyStateInclusion([u8; 4], Bytes),
-    VerifyTxInclusion([u8; 4], Bytes),
+    VerifyEventInclusion([u8; 4], Bytes, SpeedMode, Bytes),
+    VerifyStateInclusion([u8; 4], Bytes, SpeedMode),
+    VerifyTxInclusion([u8; 4], Bytes, SpeedMode),
 }
 
 impl PrecompileArgs {
@@ -209,9 +212,9 @@ impl PrecompileArgs {
                 GetFinalizedHeight:Bytes4,\
                 GetRationalHeight:Bytes4,\
                 GetFastHeight:Bytes4,\
-                VerifyEventInclusion:Triple(Bytes4,Bytes,Bytes),\
-                VerifyStateInclusion:Tuple(Bytes4,Bytes),\
-                VerifyTxInclusion:Tuple(Bytes4,Bytes),\
+                VerifyEventInclusion:Triple(Bytes4,Bytes,Byte,Bytes),\
+                VerifyStateInclusion:Tuple(Bytes4,Byte,Bytes),\
+                VerifyTxInclusion:Tuple(Bytes4,Bytes,Byte),\
         )"
         .to_vec()
     }
@@ -283,21 +286,30 @@ pub mod tests {
                     Box::new(Abi::Bytes4(Some(b"GetFinalizedHeight".to_vec()))),
                     Box::new(Abi::Bytes4(Some(b"GetRationalHeight".to_vec()))),
                     Box::new(Abi::Bytes4(Some(b"GetFastHeight".to_vec()))),
-                    Box::new(Abi::Triple(
+                    Box::new(Abi::Quadruple(
                         Some(b"VerifyEventInclusion".to_vec()),
                         (
                             Box::new(Abi::Bytes4(None)),
                             Box::new(Abi::Bytes(None)),
+                            Box::new(Abi::Byte(None)),
                             Box::new(Abi::Bytes(None))
                         ),
                     )),
-                    Box::new(Abi::Tuple(
+                    Box::new(Abi::Triple(
                         Some(b"VerifyStateInclusion".to_vec()),
-                        (Box::new(Abi::Bytes4(None)), Box::new(Abi::Bytes(None))),
+                        (
+                            Box::new(Abi::Bytes4(None)),
+                            Box::new(Abi::Bytes(None)),
+                            Box::new(Abi::Byte(None))
+                        ),
                     )),
-                    Box::new(Abi::Tuple(
+                    Box::new(Abi::Triple(
                         Some(b"VerifyTxInclusion".to_vec()),
-                        (Box::new(Abi::Bytes4(None)), Box::new(Abi::Bytes(None))),
+                        (
+                            Box::new(Abi::Bytes4(None)),
+                            Box::new(Abi::Bytes(None)),
+                            Box::new(Abi::Byte(None))
+                        ),
                     )),
                 ]
             )

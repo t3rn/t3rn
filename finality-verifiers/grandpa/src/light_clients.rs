@@ -183,18 +183,6 @@ where
         }
     }
 
-    fn header_speed_mode_satisfied(&self, header: Bytes, speed_mode: SpeedMode) -> bool {
-        match self {
-            PalletInstance::Rococo(pallet) =>
-                pallet.header_speed_mode_satisfied(header, speed_mode),
-            PalletInstance::Kusama(pallet) =>
-                pallet.header_speed_mode_satisfied(header, speed_mode),
-            PalletInstance::Polkadot(pallet) =>
-                pallet.header_speed_mode_satisfied(header, speed_mode),
-            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
-        }
-    }
-
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],
@@ -404,14 +392,6 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
     fn submit_encoded_headers(&self, headers: Bytes) -> Result<bool, DispatchError> {
         Pallet::<T, I>::submit_encoded_headers(headers)?;
         Ok(true)
-    }
-
-    fn header_speed_mode_satisfied(
-        &self,
-        _including_header: Bytes,
-        _speed_mode: SpeedMode,
-    ) -> bool {
-        true
     }
 
     fn verify_event_inclusion(
