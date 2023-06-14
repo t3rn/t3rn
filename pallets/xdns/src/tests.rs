@@ -24,8 +24,11 @@ use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
-    xdns::Xdns, EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo,
+    xdns::{PalletAssetsOverlay, Xdns},
+    EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo,
 };
+use t3rn_types::fsx::SecurityLvl;
+
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
 const STANDARD_SFX_ABI_COUNT: usize = 7;
 
@@ -64,9 +67,24 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
     });
 }
 
+fn add_self_as_base_gateway() {
+    assert_ok!(XDNS::add_new_gateway(
+        [3, 3, 3, 3],
+        GatewayVendor::Rococo,
+        ExecutionVendor::Substrate,
+        t3rn_abi::Codec::Scale,
+        None,   // registrant
+        None,   // escrow_account
+        vec![], // allowed_side_effects
+    ));
+}
+
 #[test]
-fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
+fn should_add_a_new_xdns_and_record_and_token_if_it_doesnt_exist() {
     ExtBuilder::default().build().execute_with(|| {
+        // Add the self-gateway
+        add_self_as_base_gateway();
+
         assert_ok!(XDNS::add_new_gateway(
             *b"test",
             GatewayVendor::Rococo,
@@ -77,11 +95,21 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
             vec![], // allowed_side_effects
         ));
 
-        assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
+        assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 2);
         assert!(pallet_xdns::Gateways::<Runtime>::get(b"test").is_some());
 
-        assert_ok!(XDNS::add_new_token(
-            *b"test",
+        assert_ok!(XDNS::register_new_token(
+            &circuit_mock_runtime::Origin::root(),
+            u32::from_le_bytes(*b"test"),
+            TokenInfo::Substrate(SubstrateToken {
+                id: 1,
+                symbol: b"test".to_vec(),
+                decimals: 1,
+            })
+        ));
+
+        assert_ok!(XDNS::link_token_to_gateway(
+            u32::from_le_bytes(*b"test"),
             *b"test",
             TokenInfo::Substrate(SubstrateToken {
                 id: 1,
@@ -92,8 +120,8 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
 
         // no duplicates
         assert_noop!(
-            XDNS::add_new_token(
-                *b"test",
+            XDNS::link_token_to_gateway(
+                u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Substrate(SubstrateToken {
                     decimals: 18,
@@ -106,8 +134,8 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
 
         // no mismatched execution vendor
         assert_noop!(
-            XDNS::add_new_token(
-                *b"roco",
+            XDNS::link_token_to_gateway(
+                u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Ethereum(EthereumToken {
                     decimals: 18,
@@ -115,20 +143,20 @@ fn should_add_a_new_xdns_and_record_if_it_doesnt_exist() {
                     address: Some([1; 20])
                 })
             ),
-            pallet_xdns::pallet::Error::<Runtime>::TokenExecutionVendorMismatch
+            pallet_xdns::pallet::Error::<Runtime>::TokenRecordAlreadyExists
         );
 
-        assert_eq!(pallet_xdns::Tokens::<Runtime>::iter().count(), 1);
+        assert_eq!(pallet_xdns::Tokens::<Runtime>::iter().count(), 2);
     });
 }
 
 #[test]
-fn shouldnt_add_new_without_gateway_record() {
+fn should_not_link_token_without_gateway_record() {
     ExtBuilder::default().build().execute_with(|| {
         // no duplicates
         assert_noop!(
-            XDNS::add_new_token(
-                *b"test",
+            XDNS::link_token_to_gateway(
+                u32::from_le_bytes(*b"test"),
                 *b"test",
                 TokenInfo::Substrate(SubstrateToken {
                     decimals: 18,
@@ -179,7 +207,7 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
 }
 
 #[test]
-fn should_purge_a_gateway_record_successfully() {
+fn should_register_token_and_populate_assets_storage_successfully() {
     ExtBuilder::default()
         .with_standard_sfx_abi()
         .with_default_xdns_records()
@@ -190,8 +218,80 @@ fn should_purge_a_gateway_record_successfully() {
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT
             );
 
-            assert_ok!(XDNS::add_new_token(
-                *b"gate",
+            assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+
+            assert_ok!(XDNS::register_new_token(
+                &circuit_mock_runtime::Origin::root(),
+                u32::from_le_bytes(*b"test"),
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+        });
+}
+
+#[test]
+fn should_purge_token_and_destroy_asset_storage_successfully() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+
+            assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+
+            assert_ok!(XDNS::register_new_token(
+                &circuit_mock_runtime::Origin::root(),
+                u32::from_le_bytes(*b"test"),
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert!(Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+
+            assert_ok!(XDNS::purge_token_record(
+                circuit_mock_runtime::Origin::root(),
+                u32::from_le_bytes(*b"test"),
+            ));
+
+            assert!(!Runtime::contains_asset(&u32::from_le_bytes(*b"test")));
+        });
+}
+
+#[test]
+fn should_purge_a_gateway_record_successfully() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+            assert_ok!(XDNS::register_new_token(
+                &circuit_mock_runtime::Origin::root(),
+                u32::from_le_bytes(*b"test"),
+                TokenInfo::Substrate(SubstrateToken {
+                    id: 1,
+                    symbol: b"test".to_vec(),
+                    decimals: 1,
+                })
+            ));
+
+            assert_ok!(XDNS::link_token_to_gateway(
+                u32::from_le_bytes(*b"test"),
                 *b"gate",
                 TokenInfo::Substrate(SubstrateToken {
                     id: 1,
@@ -206,21 +306,38 @@ fn should_purge_a_gateway_record_successfully() {
                     .count(),
                 1
             );
+
+            assert_eq!(
+                pallet_xdns::GatewayTokens::<Runtime>::get(*b"gate"),
+                vec![u32::from_le_bytes(*b"test")]
+            );
+
+            assert!(
+                pallet_xdns::Tokens::<Runtime>::get(u32::from_le_bytes(*b"test"), *b"gate")
+                    .is_some(),
+            );
+
             assert_ok!(XDNS::purge_gateway_record(
                 Origin::<Runtime>::Root.into(),
                 ALICE,
                 *b"gate"
             ));
+
             assert_eq!(
                 pallet_xdns::Gateways::<Runtime>::iter().count(),
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT - 1
             );
             assert!(pallet_xdns::Gateways::<Runtime>::get(b"gate").is_none());
-            assert_eq!(
-                pallet_xdns::Tokens::<Runtime>::iter_values()
-                    .filter(|token| token.gateway_id == *b"gate")
-                    .count(),
-                0
+            // should leave the token record intact registered on the base
+            assert!(pallet_xdns::Tokens::<Runtime>::get(
+                u32::from_le_bytes(*b"test"),
+                [3, 3, 3, 3]
+            )
+            .is_some());
+
+            assert!(
+                pallet_xdns::Tokens::<Runtime>::get(u32::from_le_bytes(*b"test"), *b"gate")
+                    .is_none(),
             );
         });
 }
@@ -299,6 +416,172 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
         .execute_with(|| {
             let actual = XDNS::get_verification_vendor(b"pdot");
             assert_ok!(actual, GatewayVendor::Polkadot);
+        });
+}
+
+#[test]
+fn xdns_returns_full_gateway_record() {
+    use t3rn_abi::Codec::{Rlp, Scale};
+    use t3rn_primitives::{
+        xdns::{FullGatewayRecord, GatewayRecord},
+        ExecutionVendor::{Substrate, EVM},
+        GatewayVendor::{Ethereum, Polkadot, Rococo},
+    };
+
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(
+                XDNS::fetch_full_gateway_records(),
+                vec![
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [0, 0, 0, 0],
+                            verification_vendor: Rococo,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4)),
+                                ([115, 119, 97, 112], Some(3)),
+                                ([97, 108, 105, 113], Some(3)),
+                                ([99, 101, 118, 109], Some(10)),
+                                ([119, 97, 115, 109], Some(10)),
+                                ([99, 97, 108, 108], Some(10))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [1, 1, 1, 1],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4)),
+                                ([115, 119, 97, 112], Some(3)),
+                                ([97, 108, 105, 113], Some(3)),
+                                ([99, 101, 118, 109], Some(10)),
+                                ([119, 97, 115, 109], Some(10)),
+                                ([99, 97, 108, 108], Some(10))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [3, 3, 3, 3],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4)),
+                                ([115, 119, 97, 112], Some(3)),
+                                ([97, 108, 105, 113], Some(3)),
+                                ([99, 101, 118, 109], Some(10)),
+                                ([119, 97, 115, 109], Some(10)),
+                                ([99, 97, 108, 108], Some(10))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [5, 5, 5, 5],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4)),
+                                ([115, 119, 97, 112], Some(3)),
+                                ([97, 108, 105, 113], Some(3)),
+                                ([99, 101, 118, 109], Some(10)),
+                                ([119, 97, 115, 109], Some(10)),
+                                ([99, 97, 108, 108], Some(10))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [101, 116, 104, 50],
+                            verification_vendor: Ethereum,
+                            execution_vendor: EVM,
+                            codec: Rlp,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![([116, 114, 97, 110], Some(2))]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [103, 97, 116, 101],
+                            verification_vendor: Rococo,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![([116, 114, 97, 110], Some(2))]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [107, 115, 109, 97],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4))
+                            ]
+                        },
+                        tokens: vec![]
+                    },
+                    FullGatewayRecord {
+                        gateway_record: GatewayRecord {
+                            gateway_id: [112, 100, 111, 116],
+                            verification_vendor: Polkadot,
+                            execution_vendor: Substrate,
+                            codec: Scale,
+                            registrant: None,
+                            escrow_account: None,
+                            allowed_side_effects: vec![
+                                ([116, 114, 97, 110], Some(2)),
+                                ([116, 97, 115, 115], Some(4))
+                            ]
+                        },
+                        tokens: vec![]
+                    }
+                ]
+            );
+        });
+}
+
+#[test]
+fn xdns_returns_error_for_inactive_gateway() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let is_active_res = XDNS::verify_active(b"pdot", 0u32, &SecurityLvl::Optimistic);
+            assert!(is_active_res.is_err());
         });
 }
 

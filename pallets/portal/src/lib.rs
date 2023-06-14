@@ -14,6 +14,7 @@ use t3rn_primitives::{
     self,
     light_client::LightClient,
     portal::{HeaderResult, HeightResult, Portal},
+    reexport_currency_types,
     xdns::Xdns,
     ChainId, GatewayVendor, SpeedMode, TokenInfo,
 };
@@ -24,13 +25,15 @@ pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
 use frame_support::transactional;
-use t3rn_primitives::portal::InclusionReceipt;
+use t3rn_primitives::{light_client::LightClientHeartbeat, portal::InclusionReceipt};
+
+reexport_currency_types!();
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
     use core::convert::TryInto;
-    use frame_support::pallet_prelude::*;
+    use frame_support::{pallet_prelude::*, traits::Currency};
 
     use sp_std::vec::Vec;
     use t3rn_primitives::{xdns::Xdns, ChainId, ExecutionVendor, GatewayVendor};
@@ -40,8 +43,10 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type Currency: Currency<Self::AccountId>;
         /// Access to XDNS pallet
-        type Xdns: Xdns<Self>;
+        type Xdns: Xdns<Self, BalanceOf<Self>>;
         /// Type representing the weight of this pallet
         type WeightInfo: crate::weights::WeightInfo;
 
@@ -105,6 +110,7 @@ pub mod pallet {
         pub fn register_gateway(
             origin: OriginFor<T>,
             gateway_id: [u8; 4],
+            // ToDo: Revisit with client update and change to u32
             token_id: [u8; 4],
             verification_vendor: GatewayVendor,
             execution_vendor: ExecutionVendor,
@@ -126,7 +132,11 @@ pub mod pallet {
                 allowed_side_effects,
             )?;
 
-            <T as Config>::Xdns::add_new_token(token_id, gateway_id, token_props)?;
+            // ToDo: Revisit with client update and change to u32
+            let token_id = u32::from_le_bytes(token_id);
+
+            <T as Config>::Xdns::register_new_token(&origin, token_id, token_props.clone())?;
+            <T as Config>::Xdns::link_token_to_gateway(token_id, gateway_id, token_props)?;
 
             <Pallet<T> as Portal<T>>::initialize(origin, gateway_id, encoded_registration_data)
         }
@@ -152,6 +162,12 @@ pub fn match_light_client_by_gateway_id<T: Config>(
 }
 
 impl<T: Config> Portal<T> for Pallet<T> {
+    fn get_latest_heartbeat(
+        gateway_id: &ChainId,
+    ) -> Result<LightClientHeartbeat<T>, DispatchError> {
+        match_light_client_by_gateway_id::<T>(*gateway_id)?.get_latest_heartbeat()
+    }
+
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError> {
         log::debug!(target: "portal", "Getting latest finalized header for gateway id {:?}", gateway_id);
         Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_header())

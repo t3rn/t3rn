@@ -1163,6 +1163,7 @@ dependencies = [
  "sp-core",
  "sp-finality-grandpa",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -12569,7 +12570,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.31.1-rc.0"
+version = "1.32.0-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12645,7 +12646,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.31.1-rc.0"
+version = "1.32.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12950,6 +12951,7 @@ name = "t3rn-primitives"
 version = "1.0.0-alpha.1"
 dependencies = [
  "bytes",
+ "circuit-runtime-types",
  "ed25519-dalek",
  "finality-grandpa",
  "frame-support",

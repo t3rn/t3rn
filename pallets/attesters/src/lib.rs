@@ -193,7 +193,7 @@ pub mod pallet {
         type Portal: Portal<Self>;
         type Rewards: RewardsWriteApi<Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
-        type Xdns: Xdns<Self>;
+        type Xdns: Xdns<Self, BalanceOf<Self>>;
     }
 
     #[pallet::pallet]
@@ -799,13 +799,16 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> AttestersWriteApi<T::AccountId, Error<T>> for Pallet<T> {
-        fn request_sfx_attestation_commit(target: TargetId, sfx_id: H256) -> Result<(), Error<T>> {
+    impl<T: Config> AttestersWriteApi<T::AccountId, DispatchError> for Pallet<T> {
+        fn request_sfx_attestation_commit(
+            target: TargetId,
+            sfx_id: H256,
+        ) -> Result<(), DispatchError> {
             NextBatch::<T>::try_mutate(target, |next_batch| {
                 if let Some(ref mut next_batch) = next_batch {
                     if let Some(ref mut batch_sfx) = &mut next_batch.committed_sfx {
                         if batch_sfx.contains(&sfx_id) {
-                            return Err(Error::<T>::SfxAlreadyRequested)
+                            return Err("SfxAlreadyRequested".into())
                         } else {
                             batch_sfx.push(sfx_id);
                         }
@@ -814,17 +817,20 @@ pub mod pallet {
                     }
                     Ok(())
                 } else {
-                    Err(Error::<T>::BatchNotFound)
+                    Err("BatchNotFound".into())
                 }
             })
         }
 
-        fn request_sfx_attestation_revert(target: TargetId, sfx_id: H256) -> Result<(), Error<T>> {
+        fn request_sfx_attestation_revert(
+            target: TargetId,
+            sfx_id: H256,
+        ) -> Result<(), DispatchError> {
             NextBatch::<T>::try_mutate(target, |next_batch| {
                 if let Some(ref mut next_batch) = next_batch {
                     if let Some(ref mut batch_sfx) = &mut next_batch.reverted_sfx {
                         if batch_sfx.contains(&sfx_id) {
-                            return Err(Error::<T>::SfxAlreadyRequested)
+                            return Err(Error::<T>::SfxAlreadyRequested.into())
                         } else {
                             batch_sfx.push(sfx_id);
                         }
@@ -833,18 +839,22 @@ pub mod pallet {
                     }
                     Ok(())
                 } else {
-                    Err(Error::<T>::BatchNotFound)
+                    Err(Error::<T>::BatchNotFound.into())
                 }
             })
         }
 
-        fn request_ban_attesters_attestation(ban_attester: &T::AccountId) -> Result<(), Error<T>> {
+        fn request_ban_attesters_attestation(
+            ban_attester: &T::AccountId,
+        ) -> Result<(), DispatchError> {
             for target in AttestationTargets::<T>::get() {
                 let attester_recoverable = AttestersAgreements::<T>::get(ban_attester, target)
                     .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
 
                 NextBatch::<T>::try_mutate(target, |next_batch| {
-                    let next_batch = next_batch.as_mut().ok_or(Error::<T>::BatchNotFound)?;
+                    let next_batch = next_batch
+                        .as_mut()
+                        .ok_or::<DispatchError>(Error::<T>::BatchNotFound.into())?;
 
                     match &mut next_batch.banned_committee {
                         Some(attesters) => {
@@ -858,7 +868,7 @@ pub mod pallet {
                             next_batch.banned_committee = Some(vec![attester_recoverable]);
                         },
                     }
-                    Ok(())
+                    Ok::<(), DispatchError>(())
                 })?;
             }
 
@@ -1605,7 +1615,8 @@ pub mod pallet {
     // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        phantom: PhantomData<T>,
+        pub phantom: PhantomData<T>,
+        pub attestation_targets: Vec<TargetId>,
     }
 
     // The default value for the genesis config type.
@@ -1614,6 +1625,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 phantom: Default::default(),
+                attestation_targets: Default::default(),
             }
         }
     }
@@ -1622,6 +1634,11 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
+            // Extend the list of attestation targets
+            for target in self.attestation_targets.iter() {
+                AttestationTargets::<T>::append(target);
+            }
+
             for target in AttestationTargets::<T>::get() {
                 let mut new_next_batch = BatchMessage::default();
                 new_next_batch.created = frame_system::Pallet::<T>::block_number();
@@ -1642,7 +1659,7 @@ pub mod attesters_test {
 
     use codec::Encode;
     use frame_support::{
-        assert_err, assert_ok,
+        assert_err, assert_noop, assert_ok,
         traits::{Currency, Get, Hooks, Len},
         StorageValue,
     };
@@ -2624,11 +2641,9 @@ pub mod attesters_test {
             let sfx_id_a = H256::repeat_byte(1);
             assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_a));
 
-            assert_eq!(
-                Attesters::request_sfx_attestation_commit(target, sfx_id_a)
-                    .unwrap_err()
-                    .encode(),
-                AttestersError::<MiniRuntime>::SfxAlreadyRequested.encode(),
+            assert_noop!(
+                Attesters::request_sfx_attestation_commit(target, sfx_id_a),
+                "SfxAlreadyRequested",
             );
         });
     }

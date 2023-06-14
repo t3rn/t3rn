@@ -1,13 +1,13 @@
 import { z } from "zod"
 
 export const TransferEncodedArgsSchema = z.object({
-  from: z.string({
-    required_error: "From is required",
-    invalid_type_error: "From must be a string",
-  }),
   to: z.string({
     required_error: "From is required",
     invalid_type_error: "From must be a string",
+  }),
+  amount: z.number({
+    required_error: "Amount is required",
+    invalid_type_error: "Amount must be a number",
   }),
 })
 

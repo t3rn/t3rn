@@ -31,15 +31,13 @@ export const buildSfx = (
           )
         }
 
-        const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[
-          data.action
-        ]({
-          ...mapEncodedArgs(data.action, data.encodedArgs as EncodedArgs),
-          maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
-          insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
-          signature: data.signature,
-          enforceExecutioner: data.enforceExecutor,
-          rewardAssetId: data.rewardAssetId,
+
+        const obj: T3rnTypesSfxSideEffect = sdk.gateways[data.target].createSfx[data.action]({
+            from: sdk.circuit.signer.address,
+            to: data.encodedArgs[0]['to'],
+            value: sdk.gateways[data.target].floatToBn(data.encodedArgs[0]['amount']), 
+            maxReward: sdk.circuit.floatToBn(parseFloat(data.maxReward)),
+            insurance: sdk.circuit.floatToBn(parseFloat(data.insurance)),
         })
         return obj
       })
@@ -93,8 +91,8 @@ export const mapEncodedArgs = (
     case SideEffectActions.Transfer: {
       const args: TransferEncodedArgs = encodedArgs[0]
       return {
-        from: args.from,
         to: args.to,
+        amount: args.amount,
       }
     }
     default:
