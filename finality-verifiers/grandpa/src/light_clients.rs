@@ -163,16 +163,15 @@ where
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
-        source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
-                pallet.verify_event_inclusion(gateway_id, message, source, submission_target_height),
+                pallet.verify_event_inclusion(gateway_id, message, submission_target_height),
             PalletInstance::Kusama(pallet) =>
-                pallet.verify_event_inclusion(gateway_id, message, source, submission_target_height),
+                pallet.verify_event_inclusion(gateway_id, message, submission_target_height),
             PalletInstance::Polkadot(pallet) =>
-                pallet.verify_event_inclusion(gateway_id, message, source, submission_target_height),
+                pallet.verify_event_inclusion(gateway_id, message, submission_target_height),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -286,7 +285,6 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         &self,
         gateway_id: [u8; 4],
         message: Bytes,
-        source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         // In substrate the source is handled via pallet index, so we unpack the index here.
@@ -295,12 +293,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
             None => return Err(Error::<T, I>::InvalidSourceFormat.into()),
         };
 
-        Pallet::<T, I>::confirm_event_inclusion(
-            gateway_id,
-            message,
-            source_index,
-            submission_target_height,
-        )
+        Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, submission_target_height)
     }
 
     fn verify_state_inclusion(

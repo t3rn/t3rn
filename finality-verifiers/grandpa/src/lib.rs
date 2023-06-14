@@ -681,7 +681,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     pub fn confirm_event_inclusion(
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
-        source: u8, // this is the pallet index of the event
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
@@ -724,12 +723,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             )
         };
 
-        let message = verify_event_storage_proof::<T, I>(
-            payload_proof,
-            header.clone(),
-            encoded_payload,
-            source,
-        )?;
+        let message =
+            verify_event_storage_proof::<T, I>(payload_proof, header.clone(), encoded_payload)?;
 
         Ok(InclusionReceipt::<T::BlockNumber> {
             height: to_local_block_number::<T, I>(*header.number())?,
@@ -855,14 +850,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     storage_proof: StorageProof,
     header: BridgedHeader<T, I>,
     encoded_payload: Vec<u8>,
-    source: u8,
 ) -> Result<Vec<u8>, DispatchError> {
-    // ensures the correct pallet emitted the event
-    ensure!(
-        encoded_payload.first() == Some(&source),
-        Error::<T, I>::InvalidPayloadSource
-    );
-
     // storage key for System_Events
     let key: Vec<u8> = [
         38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128, 212, 30, 94,
