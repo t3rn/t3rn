@@ -75,7 +75,7 @@ export class Prometheus {
             name: 'submit_attestation_count',
             help: 'Number of attestations submitted',
             registers: [this.register],
-            labelNames: ['messageHash'],
+            labelNames: ['messageHash', 'targetId', 'executionVendor'],
         })
         this.startServer()
     }

@@ -88,11 +88,6 @@ export class Attester {
             logger.debug({ events_count: events.length }, `Received events`)
             this.prometheus.eventsTotal.inc(events.length)
 
-            // Before acting on attestation events we need to check if we are in current committee
-            if (!(await this.isInCommittee())) {
-                logger.debug('Not in committee')
-                return
-            }
             // Loop through the Vec<EventRecord>
             await Promise.all(
                 events.map(async (record) => {
@@ -207,6 +202,11 @@ export class Attester {
             targetId
         )
 
+        // Before attestation we need to check if we are in current committee
+        if (!(await this.isInCommittee())) {
+            return
+        }
+
         let result
         try {
             await this.mutex.runExclusive(async () => {
@@ -229,7 +229,6 @@ export class Attester {
                     messageHash: messageHash,
                     targetId: targetId,
                     executionVendor: executionVendor,
-                    stack: error.stack,
                 },
                 'Error submitting attestation'
             )
@@ -270,7 +269,7 @@ export class Attester {
             committee.find(
                 (item) => item.accountId === this.keys.substrate.addressId
             ) !== undefined
-        logger.debug({ committee: isInCommittee }, 'Current committee member')
+        logger.info({ committee: isInCommittee }, 'Current committee member')
         this.prometheus.currentCommitteeMember.set(isInCommittee ? 1 : 0)
         return isInCommittee
     }
