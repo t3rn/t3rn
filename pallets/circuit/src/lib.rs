@@ -714,6 +714,10 @@ pub mod pallet {
             let xtx_id = <Self as Store>::SFX2XTXLinksMap::get(sfx_id)
                 .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
+            if !Self::ensure_all_gateways_are_active(xtx_id) {
+                return Err(Error::<T>::NotAllGatewaysActive.into())
+            }
+
             Machine::<T>::compile(
                 &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, __status, _requester| {
@@ -882,6 +886,7 @@ pub mod pallet {
         InvalidFTXStateEmptyConfirmationForFinishedXtx,
         InvalidFTXStateUnassignedExecutorForReadySFX,
         InvalidFTXStateIncorrectExecutorForReadySFX,
+        NotAllGatewaysActive,
         SetupFailed,
         SetupFailedXtxNotFound,
         SetupFailedXtxStorageArtifactsNotFound,
@@ -1023,16 +1028,6 @@ impl<T: Config> Pallet<T> {
         let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
             vec![];
 
-        pub fn determine_security_lvl(gateway_type: GatewayType) -> SecurityLvl {
-            if gateway_type == GatewayType::ProgrammableInternal(0)
-                || gateway_type == GatewayType::OnCircuit(0)
-            {
-                SecurityLvl::Escrow
-            } else {
-                SecurityLvl::Optimistic
-            }
-        }
-
         // ToDo: Handle empty SFX case as error instead - must satisfy requirements of LocalTrigger
         if side_effects.is_empty() {
             local_ctx.full_side_effects = vec![vec![]];
@@ -1040,14 +1035,17 @@ impl<T: Config> Pallet<T> {
         }
 
         for (index, sfx) in side_effects.iter().enumerate() {
-            let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
-            let security_lvl = determine_security_lvl(gateway_type);
-            // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
-            // let _last_update = <T as Config>::Xdns::verify_active(
-            //     &sfx.target,
-            //     <T as Config>::XtxTimeoutDefault::get(),
-            //     &security_lvl,
-            // )?;
+            let gateway_activity_overview =
+                match <T as Config>::Xdns::read_last_activity(sfx.target.clone()) {
+                    Some(gateway_activity_overview) => gateway_activity_overview,
+                    None => return Err("Failed to read last activity for target gateway"),
+                };
+
+            if gateway_activity_overview.is_active {
+                return Err("Target gateway is currently not active. Observe XDNS::gateway_activity_overview for more updates")
+            }
+
+            let security_lvl = gateway_activity_overview.security_lvl;
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
@@ -1298,9 +1296,47 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
+    /// At the XTX submission fn verify ensures that all of the gateways are active.
+    /// At either confirmation or revert attempt, ensure that all of the gateways are active, so that Executor won't be slashed.
+    pub fn ensure_all_gateways_are_active(xtx_id: XExecSignalId<T>) -> bool {
+        let xtx = match Machine::<T>::load_xtx(xtx_id) {
+            Ok(xtx) => xtx,
+            Err(_) => {
+                log::warn!("Failing to ensure_all_gateways_are_active. XTX not found.");
+                return false
+            },
+        };
+
+        for fsx in Machine::<T>::read_current_step_fsx(&xtx) {
+            let gateway_activity_overview = match <T as Config>::Xdns::read_last_activity(
+                fsx.input.target.clone(),
+            ) {
+                Some(gateway_activity_overview) => gateway_activity_overview,
+                None => {
+                    log::warn!("Failing to ensure_all_gateways_are_active. Target gateway is not registered in XDNS. Observe XDNS::gateway_activity_overview for more updates");
+                    return false
+                },
+            };
+
+            if gateway_activity_overview.is_active {
+                log::warn!(
+                    "Failing to ensure_all_gateways_are_active. Target gateway is currently not active. Observe XDNS::gateway_activity_overview for more updates"
+                );
+                return false
+            }
+        }
+        true
+    }
+
     pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> Weight {
         const REVERT_WRITES: Weight = 2;
         const REVERT_READS: Weight = 1;
+
+        // Halt the Circuit reverting process if the gateway is not available for one of the FSX targets
+        if !Self::ensure_all_gateways_are_active(xtx_id) {
+            log::warn!("Failing to process_revert_one. Not all gateways are active.");
+            return 0
+        }
 
         let _success: bool =
             Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, local_ctx| {

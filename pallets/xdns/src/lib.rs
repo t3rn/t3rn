@@ -511,6 +511,9 @@ pub mod pallet {
                     }
                 }
             }
+
+            let current_block = <frame_system::Pallet<T>>::block_number();
+            Pallet::<T>::process_overview(current_block);
         }
     }
 
