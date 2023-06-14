@@ -7,9 +7,7 @@ enable-features            = [  ]
 metadata                   = "optional"
 owners                     = [ "team@t3rn.io" ]
 pre-release-commit-message = "build(release): release {{version}}"
-pre-release-hook = [
-  "../../scripts/upgrade-runtime-cargo-release.sh",
-]
+pre-release-hook           = [ "../../scripts/upgrade-runtime-cargo-release.sh" ]
 publish                    = false
 push                       = true
 push-options               = [  ]

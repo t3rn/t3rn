@@ -18,9 +18,9 @@ log         = { version = "0.4" }
 scale-info  = { version = "2.7.0", default-features = false, features = [ "derive" ] }
 serde       = { version = "1.0", optional = true, features = [ "derive" ] }
 
+t3rn-abi        = { path = "../../types/abi" }
 t3rn-primitives = { path = "../../primitives" }
-t3rn-types   = { path = "../../types" }
-t3rn-abi   = { path = "../../types/abi" }
+t3rn-types      = { path = "../../types" }
 
 circuit-runtime-pallets = { path = "../common-pallets" }
 circuit-runtime-types   = { path = "../common-types" }
@@ -46,7 +46,7 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch 
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-version          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
-pallet-treasury     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 # Mock only
 sp-io = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }

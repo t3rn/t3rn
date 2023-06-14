@@ -75,11 +75,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 74,
-    spec_version: 75,
-    impl_version: 73,
+    authoring_version: 77,
+    spec_version: 78,
+    impl_version: 76,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 74,
+    transaction_version: 77,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -402,11 +402,11 @@ impl_runtime_apis! {
 
     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_records() -> Vec<GatewayRecord<AccountId>> {
-             <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_gateways()
+             <XDNS as t3rn_primitives::xdns::Xdns<Runtime, Balance>>::fetch_gateways()
         }
 
         fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<AccountId>> {
-             <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_full_gateway_records()
+             <XDNS as t3rn_primitives::xdns::Xdns<Runtime, Balance>>::fetch_full_gateway_records()
         }
 
         fn fetch_abi(_chain_id: ChainId) -> Option<GatewayABIConfig> {
