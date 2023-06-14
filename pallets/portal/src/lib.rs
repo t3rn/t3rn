@@ -24,6 +24,7 @@ pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
 use frame_support::transactional;
+use sp_runtime::traits::Zero;
 use t3rn_primitives::portal::InclusionReceipt;
 
 #[frame_support::pallet]
@@ -176,6 +177,47 @@ impl<T: Config> Portal<T> for Pallet<T> {
         Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_fast_height())
     }
 
+    fn get_latest_finalized_header_precompile(gateway_id: ChainId) -> Bytes {
+        log::debug!(target: "portal", "Getting latest finalized header for gateway id {:?}", gateway_id);
+        if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
+            if let HeaderResult::Header(header) = light_client.get_latest_finalized_header() {
+                return header
+            }
+        }
+        vec![]
+    }
+
+    fn get_finalized_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
+            if let HeightResult::Height(height) = light_client.get_finalized_height() {
+                return height
+            }
+        }
+        return T::BlockNumber::zero()
+    }
+
+    fn get_rational_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
+            if let HeightResult::Height(height) = light_client.get_rational_height() {
+                return height
+            }
+        }
+        return T::BlockNumber::zero()
+    }
+
+    fn get_fast_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
+            if let HeightResult::Height(height) = light_client.get_fast_height() {
+                return height
+            }
+        }
+        return T::BlockNumber::zero()
+    }
+
     fn header_speed_mode_satisfied(
         gateway_id: [u8; 4],
         header: Bytes,
@@ -221,6 +263,48 @@ impl<T: Config> Portal<T> for Pallet<T> {
             message,
             submission_target_height,
         )
+    }
+
+    fn verify_event_inclusion_precompile(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        source: Option<Bytes>,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        // ToDo: we need to verify the event source here
+        let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
+            gateway_id,
+            message,
+            submission_target_height,
+        )?;
+        Ok(result.message)
+    }
+
+    fn verify_state_inclusion_precompile(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_state_inclusion(
+            gateway_id,
+            message,
+            submission_target_height,
+        )?;
+
+        Ok(result.message)
+    }
+
+    fn verify_tx_inclusion_precompile(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_tx_inclusion(
+            gateway_id,
+            message,
+            submission_target_height,
+        )?;
+        Ok(result.message)
     }
 
     fn verify_state_inclusion_and_recode(

@@ -40,6 +40,14 @@ pub trait Portal<T: frame_system::Config> {
 
     fn get_fast_height(gateway_id: ChainId) -> Result<HeightResult<T::BlockNumber>, DispatchError>;
 
+    fn get_latest_finalized_header_precompile(gateway_id: ChainId) -> Bytes;
+
+    fn get_finalized_height_precompile(gateway_id: ChainId) -> T::BlockNumber;
+
+    fn get_rational_height_precompile(gateway_id: ChainId) -> T::BlockNumber;
+
+    fn get_fast_height_precompile(gateway_id: ChainId) -> T::BlockNumber;
+
     fn header_speed_mode_satisfied(
         gateway_id: [u8; 4],
         header: Bytes,
@@ -64,6 +72,25 @@ pub trait Portal<T: frame_system::Config> {
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+
+    fn verify_event_inclusion_precompile(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        source: Option<Bytes>,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError>;
+
+    fn verify_state_inclusion_precompile(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError>;
+
+    fn verify_tx_inclusion_precompile(
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError>;
 
     fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],

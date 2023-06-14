@@ -90,6 +90,20 @@ mod tests {
                     Ok(HeightResult::Height(0))
                 );
 
+                assert_eq!(
+                    Portal::get_latest_finalized_header_precompile(gateway_id),
+                    [
+                        220, 221, 137, 146, 125, 138, 52, 142, 0, 37, 126, 30, 204, 134, 23, 244,
+                        94, 219, 81, 24, 239, 255, 62, 162, 249, 150, 27, 42, 217, 183, 105, 10
+                    ]
+                );
+
+                assert_eq!(Portal::get_finalized_height_precompile(gateway_id), 0);
+
+                assert_eq!(Portal::get_rational_height_precompile(gateway_id), 0);
+
+                assert_eq!(Portal::get_fast_height_precompile(gateway_id), 0);
+
                 assert_ok!(Portal::submit_encoded_headers(gateway_id, submission_data));
                 match Portal::get_latest_finalized_header(gateway_id) {
                     Ok(HeaderResult::Header(header)) => {
@@ -164,13 +178,24 @@ mod tests {
 
                 assert_eq!(
                     Portal::get_rational_height(*b"eth2"),
-                    Ok(HeightResult::Height(31))
+                    Ok(HeightResult::Height(63))
                 );
 
                 assert_eq!(
                     Portal::get_fast_height(*b"eth2"),
-                    Ok(HeightResult::Height(63))
+                    Ok(HeightResult::Height(95))
                 );
+
+                assert_eq!(
+                    Portal::get_latest_finalized_header_precompile(*b"eth2").len(),
+                    0
+                ); // need to submit first epoch
+
+                assert_eq!(Portal::get_finalized_height_precompile(*b"eth2"), 31);
+
+                assert_eq!(Portal::get_rational_height_precompile(*b"eth2"), 63);
+
+                assert_eq!(Portal::get_fast_height_precompile(*b"eth2"), 95);
 
                 assert_ok!(Portal::submit_encoded_headers(
                     *b"eth2",
@@ -184,12 +209,12 @@ mod tests {
 
                 assert_eq!(
                     Portal::get_rational_height(*b"eth2"),
-                    Ok(HeightResult::Height(63))
+                    Ok(HeightResult::Height(95))
                 );
 
                 assert_eq!(
                     Portal::get_fast_height(*b"eth2"),
-                    Ok(HeightResult::Height(95))
+                    Ok(HeightResult::Height(127))
                 );
             });
     }

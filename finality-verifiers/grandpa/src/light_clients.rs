@@ -5,11 +5,10 @@ use codec::Encode;
 
 use frame_system::pallet_prelude::OriginFor;
 use num_traits::Zero;
-pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
-
 use sp_runtime::{traits::Header, DispatchError};
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, vec};
 use t3rn_abi::types::Bytes;
+pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
 use t3rn_primitives::{
     light_client::{HeaderResult, HeightResult, InclusionReceipt},
     GatewayVendor, SpeedMode,
