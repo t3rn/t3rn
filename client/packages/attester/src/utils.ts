@@ -1,6 +1,5 @@
 import { logger } from './logging'
 
-
 export function checkKeys(keys: any) {
     // Simple check to see if the keys are present
     const requiredFields = ['btc', 'ethereum', 'substrate']

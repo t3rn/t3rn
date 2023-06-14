@@ -13,7 +13,6 @@ process.on('uncaughtException', (error) => {
 //     logger.error('Unhandled Rejection:', reason)
 //     process.exit(1)
 // })
-
 ;(async () => {
     logger.info(`Starting attester`)
 

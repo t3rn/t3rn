@@ -70,7 +70,7 @@ export class Prometheus {
             registers: [this.register],
             labelNames: ['error'],
         })
-        
+
         this.submittedAttestation = new client.Counter({
             name: 'submit_attestation_count',
             help: 'Number of attestations submitted',
