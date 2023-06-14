@@ -216,8 +216,9 @@ export class Attester {
         try {
             result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
         } catch (error) {
-            logger.error({stack: error.stack, name: error.message}, 'Error submitting attestation')
-            // process.exit(17)
+            const errorName = error.stack.match(/^Error: (.*):/)[1] // Parse stack trace to get exact error which is not present in error object
+            logger.error(error.stack, 'Error submitting attestation')
+            this.prometheus.submitAttestationError.inc({error: errorName})
             return
         }
 
@@ -235,17 +236,18 @@ export class Attester {
     }
 
     private async isInCommittee() {
-        let comittee
+        let committee
         try {
-            comittee = await this.circuit.client.query.attesters.currentCommittee()
+            committee = await this.circuit.client.query.attesters.currentCommittee()
         } catch (error) {
             logger.error(error.stack, 'Error getting committee')
             this.prometheus.currentCommitteeMember.set(0)
             return
         }
 
-        const isInCommittee = comittee.includes(this.keys.substrate.addressId) 
-        this.prometheus.currentCommitteeMember.set(isInCommittee)
+        const isInCommittee = committee.find((item) => item.accountId === this.keys.substrate.addressId) !== undefined
+        logger.debug({ committee: isInCommittee}, 'Current committee member')
+        this.prometheus.currentCommitteeMember.set(isInCommittee ? 1 : 0)
         return isInCommittee
     }
 
