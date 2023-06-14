@@ -208,19 +208,18 @@ export class Attester {
             targetId
         )
 
-        logger.info(
-            {
-                executionVendor: executionVendor.toString(),
-                targetId: targetId,
-                messageHash: messageHash,
-                signature: signature.toString(),
-            },
-            'Submitting attestation'
-        )
-
         let result
         try {
             await this.mutex.runExclusive(async () => {
+                logger.info(
+                    {
+                        executionVendor: executionVendor.toString(),
+                        targetId: targetId,
+                        messageHash: messageHash,
+                        signature: signature.toString(),
+                    },
+                    'Submitting attestation'
+                )
                 result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
             })
 
