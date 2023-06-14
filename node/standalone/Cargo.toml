@@ -19,10 +19,10 @@ path = "src/main.rs"
 [dependencies]
 # Extras
 
-clap                   = { version = "3.0", features = [ "derive" ] }
-futures                = "0.3.21"
-jsonrpsee              = { version = "0.14.0", features = [ "server" ] }
-log                    = "0.4.14"
+clap      = { version = "3.0", features = [ "derive" ] }
+futures   = "0.3.21"
+jsonrpsee = { version = "0.14.0", features = [ "server" ] }
+log       = "0.4.19"
 
 sc-cli                  = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", features = [ "wasmtime" ] }
 sc-client-api           = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
@@ -62,9 +62,9 @@ circuit-standalone-runtime = { path = "../../runtime/standalone" }
 pallet-portal-rpc          = { path = "../../pallets/portal/rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
+t3rn-abi                   = { path = "../../types/abi" }
 t3rn-primitives            = { path = "../../primitives" }
 t3rn-types                 = { path = "../../types" }
-t3rn-abi                 = { path = "../../types/abi" }
 
 pallet-3vm-contracts-rpc = { path = "../../pallets/contracts/rpc", package = "pallet-contracts-rpc" }
 pallet-3vm-evm-rpc       = { path = "../../pallets/evm/rpc", package = "pallet-evm-rpc" }

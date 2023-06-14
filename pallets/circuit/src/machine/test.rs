@@ -1,12 +1,9 @@
 #[cfg(test)]
 pub mod test {
     use circuit_mock_runtime::{
-        AccountId, Balance, Balances, BlockNumber, Circuit, ExtBuilder, Hash, Runtime,
+        AccountId, Attesters, Balance, Balances, BlockNumber, Circuit, ExtBuilder, Hash, Runtime,
     };
-    use circuit_runtime_pallets::pallet_circuit::{
-        machine::{Machine, PrecompileResult},
-        state::{Cause, CircuitStatus},
-    };
+    use circuit_runtime_pallets::pallet_circuit::machine::{Machine, PrecompileResult};
     use frame_support::{assert_err, assert_ok};
     use sp_runtime::{DispatchError, ModuleError};
     use t3rn_primitives::circuit::traits::ReadSFX;
@@ -20,6 +17,140 @@ pub mod test {
         tests::ESCROW_ACCOUNT,
     };
     use hex_literal::hex;
+    use t3rn_primitives::{
+        attesters::{AttestersReadApi, AttestersWriteApi},
+        circuit::{Cause, CircuitStatus},
+    };
+    use t3rn_types::fsx::SecurityLvl;
+
+    #[test]
+    fn attesters_api_receives_sfx_after_finalized_all_steps_for_escrow_security() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .with_default_attestation_targets()
+            .build()
+            .execute_with(|| {
+                stage_single();
+
+                let target_0 = [0u8; 4];
+
+                let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
+
+                let mut local_ctx = Machine::<Runtime>::load_xtx(xtx_id).unwrap();
+
+                local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
+                local_ctx.full_side_effects[0][0].security_lvl = SecurityLvl::Escrow;
+
+                let res = Circuit::request_sfx_attestation(&local_ctx);
+
+                let next_batch = Attesters::next_batches(target_0);
+
+                let fsx_ids =
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
+                        xtx_id,
+                    )
+                    .unwrap();
+                assert_eq!(fsx_ids.len(), 1);
+
+                assert_eq!(next_batch.unwrap().committed_sfx, Some(fsx_ids));
+            });
+    }
+
+    #[test]
+    fn attesters_api_receives_sfx_after_revert_for_escrow_security() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .with_default_attestation_targets()
+            .build()
+            .execute_with(|| {
+                stage_single();
+
+                let target_0 = [0u8; 4];
+
+                let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
+
+                let mut local_ctx = Machine::<Runtime>::load_xtx(xtx_id).unwrap();
+
+                local_ctx.xtx.status = CircuitStatus::Reverted(Cause::Timeout);
+                local_ctx.full_side_effects[0][0].security_lvl = SecurityLvl::Escrow;
+
+                let res = Circuit::request_sfx_attestation(&local_ctx);
+
+                let next_batch = Attesters::next_batches(target_0);
+
+                let fsx_ids =
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
+                        xtx_id,
+                    )
+                    .unwrap();
+                assert_eq!(fsx_ids.len(), 1);
+
+                assert_eq!(next_batch.unwrap().reverted_sfx, Some(fsx_ids));
+            });
+    }
+
+    #[test]
+    fn attesters_api_does_not_receive_sfx_optimistic_security() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .with_default_attestation_targets()
+            .build()
+            .execute_with(|| {
+                stage_single();
+
+                let target_0 = [0u8; 4];
+
+                let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
+
+                let mut local_ctx = Machine::<Runtime>::load_xtx(xtx_id).unwrap();
+
+                local_ctx.xtx.status = CircuitStatus::Committed;
+                local_ctx.full_side_effects[0][0].security_lvl = SecurityLvl::Optimistic;
+
+                let res = Circuit::request_sfx_attestation(&local_ctx);
+
+                let next_batch = Attesters::next_batches(target_0);
+                assert_eq!(next_batch.clone().unwrap().reverted_sfx, None);
+                assert_eq!(next_batch.unwrap().committed_sfx, None);
+            });
+    }
+
+    #[test]
+    fn attesters_api_receives_sfx_after_commit_for_escrow_security() {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .with_default_attestation_targets()
+            .build()
+            .execute_with(|| {
+                stage_single();
+
+                let target_0 = [0u8; 4];
+
+                let xtx_id = setup_single_sfx_xtx_and_post_bid_and_set_to_ready(None);
+
+                let mut local_ctx = Machine::<Runtime>::load_xtx(xtx_id).unwrap();
+
+                local_ctx.xtx.status = CircuitStatus::Committed;
+                local_ctx.full_side_effects[0][0].security_lvl = SecurityLvl::Escrow;
+
+                let res = Circuit::request_sfx_attestation(&local_ctx);
+
+                let next_batch = Attesters::next_batches(target_0);
+
+                let fsx_ids =
+                    <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
+                        xtx_id,
+                    )
+                    .unwrap();
+                assert_eq!(fsx_ids.len(), 1);
+
+                assert_eq!(next_batch.unwrap().committed_sfx, Some(fsx_ids));
+            });
+    }
 
     #[test]
     fn read_sfx_api_get_fsx_if_xtx_exists() {

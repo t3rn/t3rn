@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.32.0-rc.0] - 2023-06-13
+### :sparkles: New Features
+- [`dcece94`](https://github.com/t3rn/t3rn/commit/dcece94a68375054d918ab735ea9751311d18b14) - connect XDNS with Assets to create, purge, lookup via Overlay trait *(PR [#1027](https://github.com/t3rn/t3rn/pull/1027) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`a758412`](https://github.com/t3rn/t3rn/commit/a7584120b8510c61eea8cb8b371829441b7b5c0d) - executor bidding works *(PR [#1052](https://github.com/t3rn/t3rn/pull/1052) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.31.1-rc.0] - 2023-06-13
 ### :bug: Bug Fixes
 - [`eaa0fec`](https://github.com/t3rn/t3rn/commit/eaa0fec43b1d1481aea1af769983bdf0f87c8c90) - client apps should deploy in order *(PR [#1036](https://github.com/t3rn/t3rn/pull/1036) by [@3h4x](https://github.com/3h4x))*
@@ -1217,3 +1225,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.30.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.29.2-rc.0...v1.30.0-rc.0
 [v1.31.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.30.0-rc.0...v1.31.0-rc.0
 [v1.31.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.0-rc.0...v1.31.1-rc.0
+[v1.32.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.1-rc.0...v1.32.0-rc.0

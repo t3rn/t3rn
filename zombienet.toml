@@ -1,57 +1,57 @@
 [relaychain]
+chain   = "rococo-local"
 command = "polkadot"
-chain = "rococo-local"
 
 [[relaychain.nodes]]
-name = "alice"
+name    = "alice"
 ws_port = 9900
 
 [[relaychain.node_groups]]
-name = "bob"
 count = 4
+name  = "bob"
 
 [[parachains]]
-id = 3000
+chain         = "zombienet.json"
 cumulus_based = true
-chain = "zombienet.json"
+id            = 3000
 
 [[parachains.collators]]
-name = "t3rn01-collator01"
-command = "circuit-collator"
-ws_port = 9930
+command  = "circuit-collator"
+name     = "t3rn01-collator01"
 rpc_port = 8830
+ws_port  = 9930
 
 [[parachains.collators]]
-name = "t3rn01-collator02"
-command = "circuit-collator"
-ws_port = 9931
+command  = "circuit-collator"
+name     = "t3rn01-collator02"
 rpc_port = 8831
+ws_port  = 9931
 
 [[parachains]]
-id = 4000
+chain         = "zombienet.json"
 cumulus_based = true
-chain = "zombienet.json"
+id            = 4000
 
 [[parachains.collators]]
-name = "t3rn02-collator01"
-command = "circuit-collator"
-ws_port = 9940
+command  = "circuit-collator"
+name     = "t3rn02-collator01"
 rpc_port = 8840
+ws_port  = 9940
 
 [[parachains.collators]]
-name = "t3rn02-collator02"
-command = "circuit-collator"
-ws_port = 9941
+command  = "circuit-collator"
+name     = "t3rn02-collator02"
 rpc_port = 8841
+ws_port  = 9941
 
 [[hrmp_channels]]
-sender = 3000
-recipient = 4000
-max_capacity = 8
+max_capacity     = 8
 max_message_size = 512
+recipient        = 4000
+sender           = 3000
 
 [[hrmp_channels]]
-sender = 4000
-recipient = 3000
-max_capacity = 8
+max_capacity     = 8
 max_message_size = 512
+recipient        = 3000
+sender           = 4000
