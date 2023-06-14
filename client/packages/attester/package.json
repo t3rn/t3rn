@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@t3rn/sdk": "link:../sdk",
+    "async-mutex": "^0.4.0",
     "axios": "^1.4.0",
     "dotenv": "^16.1.4",
     "ethereumjs-util": "^7.1.5",

@@ -11,6 +11,8 @@
       "esnext", "es5", "es6"
     ],
     "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "alwaysStrict": false,
     "strictNullChecks": true,
     "noImplicitAny": false,

@@ -3,6 +3,9 @@ import { cryptoWaitReady } from '@t3rn/sdk'
 import { logger } from './logging'
 import { Prometheus } from './prometheus'
 import * as ethUtil from 'ethereumjs-util'
+import { Mutex } from 'async-mutex'
+
+
 
 import { hexToU8a } from '@polkadot/util'
 
@@ -11,11 +14,13 @@ export class Attester {
     config: any
     prometheus: Prometheus
     keys: any
+    mutex: any
 
     constructor(config: any, keys: any) {
         this.config = config
         this.prometheus = new Prometheus()
         this.keys = keys
+        this.mutex = new Mutex()
     }
 
     async start() {
@@ -153,6 +158,7 @@ export class Attester {
                                 const target = event.data[0]
                                 // Attest all pending attestations
                                 // TODO: remove slice
+                                // logger.debug([event.data[1].slice(0, 1)])
                                 event.data[1].slice(0, 1).forEach(async (batch) => {
                                     // Generate the signature for the message hash
                                         await this.submitAttestationEVM(
@@ -214,7 +220,10 @@ export class Attester {
 
         let result
         try {
-            result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
+            await this.mutex.runExclusive(async () => {
+                result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
+            })
+
         } catch (error) {
             const errorName = error.stack.match(/^Error: (.*):/)[1] // Parse stack trace to get exact error which is not present in error object
             logger.error(error.stack, 'Error submitting attestation')
@@ -250,5 +259,4 @@ export class Attester {
         this.prometheus.currentCommitteeMember.set(isInCommittee ? 1 : 0)
         return isInCommittee
     }
-
 }
