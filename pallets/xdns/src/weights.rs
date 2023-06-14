@@ -40,6 +40,7 @@ pub trait WeightInfo {
     fn add_new_gateway() -> Weight;
     fn update_ttl() -> Weight;
     fn purge_gateway() -> Weight;
+    fn reboot_self_gateway() -> Weight;
     fn best_available() -> Weight;
 }
 
@@ -67,6 +68,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn best_available() -> Weight {
         25_265_000_u64.saturating_add(T::DbWeight::get().reads(1_u64))
     }
+
+    fn reboot_self_gateway() -> Weight {
+        0_u64
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
+    }
 }
 
 // For backwards compatibility and tests
@@ -91,5 +98,11 @@ impl WeightInfo for () {
 
     fn best_available() -> Weight {
         25_265_000_u64.saturating_add(RocksDbWeight::get().reads(1_u64))
+    }
+
+    fn reboot_self_gateway() -> Weight {
+        0_u64
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 }
