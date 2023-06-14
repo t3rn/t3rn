@@ -149,27 +149,27 @@ export class ExecutionManager {
 
   /** Initiates a shutdown, the promise resolves once all executions are done. */
   async shutdown(): Promise<void> {
-    this.circuitListener.stop();
-
-    const recheckQueue = (
-      manager: ExecutionManager,
-      resolve: (...args: unknown[]) => void
-    ) => {
-      const done = Object.entries(manager.sdk.gateways)
-        .map(([, gtwy]) => gtwy.id)
-        .every(
-          (gtwyId) =>
-            manager.queue[gtwyId].isBidding.length === 0 &&
-            manager.queue[gtwyId].isExecuting.length === 0 &&
-            manager.queue[gtwyId].isConfirming.length === 0
-        );
-
-      if (done) {
-        resolve(undefined);
-      } else {
-        manager.circuitListener.once("Event", () =>
-          recheckQueue(manager, resolve)
-        );
+    await this.circuitListener.stop();
+    return new Promise((resolve) => {
+      function recheckQueue() {
+        // @ts-ignore implicit `any` here FIXME
+        const done = Object.entries(this.sdk.gateways)
+          .map(([_, gtwy]) => (gtwy as any).id)
+          .every(
+            (gtwyId) =>
+              // @ts-ignore implicit `any` here FIXME
+              this.queue[gtwyId].isBidding.length === 0 &&
+              // @ts-ignore implicit `any` here FIXME
+              this.queue[gtwyId].isExecuting.length === 0 &&
+              // @ts-ignore implicit `any` here FIXME
+              this.queue[gtwyId].isConfirming.length === 0
+          );
+        if (done) {
+          resolve(undefined);
+        } else {
+          // @ts-ignore implicit `any` here FIXME
+          this.circuitListener.once("Event", recheckQueue);
+        }
       }
     };
 
@@ -219,33 +219,25 @@ export class ExecutionManager {
         // @ts-ignore editor not picking up that has the method
         relayer.on("Event", async (eventData: RelayerEventData) => {
           switch (eventData.type) {
-            case RelayerEvents.SfxExecutedOnTarget:
-              {
-                const xtxId = this.sfxToXtx[eventData.sfxId];
-                const xtx = this.xtx[xtxId];
-                const sfx = xtx.sideEffects.get(eventData.sfxId);
-
-                if (!sfx) break;
-
-                const vendor = sfx.vendor;
-                this.removeFromQueue("isExecuting", eventData.sfxId, vendor);
-
-                // create array if first for block
-                if (!this.queue[vendor].isConfirming[eventData.blockNumber]) {
-                  this.queue[vendor].isConfirming[eventData.blockNumber] = [];
-                }
-
-                // adds to queue
-                this.queue[vendor].isConfirming[eventData.blockNumber].push(
-                  eventData.sfxId
-                );
-
-                this.addLog({
-                  msg: "moved sfx from isExecuting to isConfirming",
-                  sfxId: eventData.sfxId,
-                  xtxId: this.sfxToXtx[eventData.sfxId],
-                });
+            case RelayerEvents.SfxExecutedOnTarget: {
+              // @ts-ignore
+              const vendor = this.xtx[
+                this.sfxToXtx[eventData.sfxId]
+              ].sideEffects.get(eventData.sfxId).vendor;
+              this.removeFromQueue("isExecuting", eventData.sfxId, vendor);
+              // create array if first for block
+              if (!this.queue[vendor].isConfirming[eventData.blockNumber]) {
+                this.queue[vendor].isConfirming[eventData.blockNumber] = [];
               }
+              // adds to queue
+              this.queue[vendor].isConfirming[eventData.blockNumber].push(
+                eventData.sfxId
+              );
+              this.addLog({
+                msg: "moved sfx from isExecuting to isConfirming",
+                sfxId: eventData.sfxId,
+                xtxId: this.sfxToXtx[eventData.sfxId],
+              });
               break;
             case RelayerEvents.HeaderInclusionProofRequest:
               {
@@ -268,9 +260,11 @@ export class ExecutionManager {
                   ?.addHeaderProof(proof, blockHash);
               }
               break;
-            case RelayerEvents.SfxExecutionError:
+            }
+            case RelayerEvents.SfxExecutionError: {
               // TODO figure out how to handle this
               break;
+            }
           }
         });
       }
@@ -309,23 +303,18 @@ export class ExecutionManager {
             this.updateGatewayHeight(data.vendor, data.height);
           }
           break;
-        case ListenerEvents.SideEffectConfirmed:
-          {
-            const sfxId = eventData.data[0].toString();
-            const xtxId = this.sfxToXtx[sfxId];
-            const xtx = this.xtx[xtxId];
-            const sfx = xtx.sideEffects.get(sfxId);
-
-            if (!sfx) break;
-
-            sfx.confirmedOnCircuit();
-            this.addLog({
-              msg: "Sfx confirmed",
-              sfxId: sfxId,
-              xtxId: this.sfxToXtx[sfxId],
-            });
-          }
+        case ListenerEvents.SideEffectConfirmed: {
+          const sfxId = eventData.data[0].toString();
+          this.xtx[this.sfxToXtx[sfxId]].sideEffects
+            .get(sfxId)!
+            .confirmedOnCircuit();
+          this.addLog({
+            msg: "Sfx confirmed",
+            sfxId: sfxId,
+            xtxId: this.sfxToXtx[sfxId],
+          });
           break;
+        }
         case ListenerEvents.XtxCompleted:
           this.xtx[eventData.data[0].toString()].completed();
           break;

@@ -25,7 +25,7 @@ export class CircuitRelayer extends EventEmitter {
 
   constructor(public sdk: Sdk) {
     super();
-    // @ts-ignore
+    // @ts-ignore local tsserver doesn't complain for me, but still here
     this.api = sdk.client
     this.sdk = sdk
     this.allowedTargets = ["roco"]
