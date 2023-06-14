@@ -9,6 +9,7 @@ export class Prometheus {
     circuitDisconnected: any
     eventsTotal: any
     eventsAttestationsTotal: any
+    currentCommitteeMember: any
 
     constructor() {
         const Registry = client.Registry
@@ -52,6 +53,13 @@ export class Prometheus {
             help: 'Number of attestations received',
             registers: [this.register],
             labelNames: ['method'],
+        })
+
+        this.currentCommitteeMember = new client.Gauge({
+            name: 'current_committee_member',
+            help: 'Is member of current committee',
+            registers: [this.register],
+            labelNames: [],
         })
 
         this.startServer()

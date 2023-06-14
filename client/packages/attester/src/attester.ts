@@ -34,26 +34,26 @@ export class Attester {
 
         if (process.env.TEST == 'true') {
             logger.debug('Testing mode')
-            // const event = {
-            //     method: 'NewAttestationMessageHash',
-            //     section: 'attesters',
-            //     index: '0x6505',
-            //     data: [
-            //         '0x7365706C',
-            //         '0xe8e77626586f73b955364c7b4bbf0bb7f7685ebd40e852b164633a4acbd3244c',
-            //         'EVM',
-            //     ],
-            // }
             const event = {
-                "method": "NewAttestationMessageHash",
-                "section": "attesters",
-                "index": "0x6505",
-                "data": [
-                  "sepl",
-                  "0xd53de5f3bf5d9615c04ef9931460269bff6ddc7285411ea3ca3937a32ccdfeaf",
-                  "EVM"
-                ]
-              }
+                method: 'NewAttestationMessageHash',
+                section: 'attesters',
+                index: '0x6505',
+                data: [
+                    'sepl',
+                    '0xcd0116ff1215cb38acd4a5bcff75046b920eef860f4c1b5d176c3dd454862cf3',
+                    'EVM',
+                ],
+            }
+            // const event = {
+            //     "method": "NewAttestationMessageHash",
+            //     "section": "attesters",
+            //     "index": "0x6505",
+            //     "data": [
+            //       "sepl",
+            //       "0xd53de5f3bf5d9615c04ef9931460269bff6ddc7285411ea3ca3937a32ccdfeaf",
+            //       "EVM"
+            //     ]
+            //   }
 
             const [targetId, messageHash, executionVendor] = event.data
                 await this.submitAttestationEVM(
@@ -216,7 +216,7 @@ export class Attester {
         try {
             result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
         } catch (error) {
-            logger.error(error.stack, 'Error submitting attestation')
+            logger.error({stack: error.stack, name: error.message}, 'Error submitting attestation')
             // process.exit(17)
             return
         }
@@ -240,10 +240,13 @@ export class Attester {
             comittee = await this.circuit.client.query.attesters.currentCommittee()
         } catch (error) {
             logger.error(error.stack, 'Error getting committee')
+            this.prometheus.currentCommitteeMember.set(0)
             return
         }
 
-        return comittee.includes(this.keys.substrate.addressId)
+        const isInCommittee = comittee.includes(this.keys.substrate.addressId) 
+        this.prometheus.currentCommitteeMember.set(isInCommittee)
+        return isInCommittee
     }
 
 }
