@@ -62,8 +62,6 @@ pub mod pallet {
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
-    type GatewayActivityOf<T> = GatewayActivity<<T as frame_system::Config>::BlockNumber>;
-
     use t3rn_types::{fsx::FullSideEffect, sfx::SecurityLvl};
 
     pub const MAX_GATEWAY_OVERVIEW_RECORDS: u32 = 1000;
@@ -178,7 +176,7 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         pub fn process_overview(n: BlockNumberFor<T>) {
-            let mut all_overviews: Vec<GatewayActivityOf<T>> = Vec::new();
+            let mut all_overviews: Vec<GatewayActivity<T::BlockNumber>> = Vec::new();
 
             for gateway in Self::fetch_full_gateway_records() {
                 let gateway_id = gateway.gateway_record.gateway_id;
@@ -186,47 +184,52 @@ pub mod pallet {
                 if gateway.gateway_record.verification_vendor == GatewayVendor::Ethereum {
                     continue
                 }
-                let activity = match T::Portal::get_latest_heartbeat(&gateway_id) {
-                    Ok(heartbeat) => {
+
+                let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(&gateway_id)
+                    .last()
+                    .cloned()
+                    .unwrap_or_else(|| GatewayActivity {
+                        gateway_id,
+                        reported_at: Zero::zero(),
+                        justified_height: Zero::zero(),
+                        finalized_height: Zero::zero(),
+                        updated_height: Zero::zero(),
+                        security_lvl: SecurityLvl::Optimistic,
+                        is_active: false,
+                    });
+
+                let (justified_height, finalized_height, updated_height, security_lvl, is_active) =
+                    if let Ok(heartbeat) = T::Portal::get_latest_heartbeat(&gateway_id) {
                         let security_lvl = match gateway.gateway_record.escrow_account {
                             Some(_) => SecurityLvl::Escrow,
                             None => SecurityLvl::Optimistic,
                         };
-                        GatewayActivity {
-                            gateway_id,
-                            reported_at: n,
-                            justified_height: heartbeat.last_updated_height,
-                            finalized_height: heartbeat.last_finalized_height,
-                            updated_height: heartbeat.last_updated_height,
+                        let is_active = !heartbeat.is_halted;
+                        (
+                            heartbeat.last_updated_height,
+                            heartbeat.last_finalized_height,
+                            heartbeat.last_updated_height,
                             security_lvl,
-                            is_active: !heartbeat.is_halted,
-                        }
-                    },
-                    Err(_) => {
-                        let last_active_activity =
-                            GatewaysOverviewStoreHistory::<T>::get(&gateway_id)
-                                .last()
-                                .cloned()
-                                .unwrap_or_else(|| GatewayActivity {
-                                    gateway_id,
-                                    reported_at: Zero::zero(),
-                                    justified_height: Zero::zero(),
-                                    finalized_height: Zero::zero(),
-                                    updated_height: Zero::zero(),
-                                    security_lvl: SecurityLvl::Optimistic,
-                                    is_active: false,
-                                });
+                            is_active,
+                        )
+                    } else {
+                        (
+                            last_active_activity.justified_height,
+                            last_active_activity.finalized_height,
+                            last_active_activity.updated_height,
+                            last_active_activity.security_lvl,
+                            false,
+                        )
+                    };
 
-                        GatewayActivity {
-                            gateway_id,
-                            reported_at: n,
-                            justified_height: last_active_activity.justified_height,
-                            finalized_height: last_active_activity.finalized_height,
-                            updated_height: last_active_activity.updated_height,
-                            security_lvl: last_active_activity.security_lvl,
-                            is_active: false,
-                        }
-                    },
+                let activity = GatewayActivity {
+                    gateway_id,
+                    reported_at: n,
+                    justified_height,
+                    finalized_height,
+                    updated_height,
+                    security_lvl,
+                    is_active,
                 };
 
                 // Add the new activity to the historic overview of the gateway
@@ -446,15 +449,15 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn gateways_overview)]
     pub type GatewaysOverviewStore<T: Config> =
-        StorageValue<_, Vec<GatewayActivityOf<T>>, ValueQuery>;
+        StorageValue<_, Vec<GatewayActivity<T::BlockNumber>>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn gateways_overview_history)]
     pub type GatewaysOverviewStoreHistory<T: Config> = StorageMap<
         _,
         Twox64Concat,
-        TargetId,                  // Gateway Id
-        Vec<GatewayActivityOf<T>>, // Activity
+        TargetId,                             // Gateway Id
+        Vec<GatewayActivity<T::BlockNumber>>, // Activity
         ValueQuery,
     >;
 
@@ -783,6 +786,17 @@ pub mod pallet {
                     }
                 })
                 .collect()
+        }
+
+        fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<T::BlockNumber>> {
+            <GatewaysOverviewStore<T>>::get()
+                .iter()
+                .find(|activity| activity.gateway_id == gateway_id)
+                .cloned()
+        }
+
+        fn read_last_activity_overview() -> Vec<GatewayActivity<T::BlockNumber>> {
+            <GatewaysOverviewStore<T>>::get()
         }
 
         fn verify_active(
