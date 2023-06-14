@@ -220,7 +220,7 @@ export class ExecutionManager {
         relayer.on("Event", async (eventData: RelayerEventData) => {
           switch (eventData.type) {
             case RelayerEvents.SfxExecutedOnTarget: {
-              // @ts-ignore
+              // @ts-ignore the object might be undefined FIXME add a default value
               const vendor = this.xtx[
                 this.sfxToXtx[eventData.sfxId]
               ].sideEffects.get(eventData.sfxId).vendor;
