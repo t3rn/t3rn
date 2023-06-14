@@ -117,7 +117,7 @@ export class SideEffect extends EventEmitter {
   /** The current reward paid by the user for executing this SFX. This amount can reduce through executor bidding */
   reward: BehaviorSubject<number>;
   /** The raw SideEffect, encoded in SCALE */
-  raw: T3rnTypesSideEffect;
+  raw: T3rnTypesSfxSideEffect;
 
   // TargetConfirmation
   /** Required data for confirming the inclusion on circuit. contains encoded payload, inclusionProof, and blockHash */
@@ -163,7 +163,7 @@ export class SideEffect extends EventEmitter {
    */
 
   constructor(
-    sideEffect: T3rnTypesSideEffect,
+    sideEffect: T3rnTypesSfxSideEffect,
     id: string,
     xtxId: string,
     sdk: Sdk,
@@ -370,7 +370,8 @@ export class SideEffect extends EventEmitter {
   getTxOutputs(): TxOutput {
     // In the data generation framework, execution can be invalid
     // but the proof can be valid. In that case, alter the amount.
-    const invalidExecutionValidProofCondition = this.raw.signature === "InvalidExecutionValidProof";
+    const encoder = new TextEncoder();
+    const invalidExecutionValidProofCondition = this.raw.signature === encoder.encode("InvalidExecutionValidProof")
     switch (this.action) {
       case SfxType.Transfer: {
         let amount = this.getTransferArguments()[1];

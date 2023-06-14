@@ -90,7 +90,8 @@ export class CircuitRelayer extends EventEmitter {
 
     // Under data generation scheme, mess up the payload proof, for example, 
     // only if the signature contains the custom error to generate it.
-    const invalidProofCondition = sfx.raw.signature === "InvalidProof"
+    const encoder = new TextEncoder()
+    const invalidProofCondition = sfx.raw.signature === encoder.encode("InvalidProof")
     if (invalidProofCondition) {
       inclusionData.payload_proof = "0xMessedUpProof"
     }
