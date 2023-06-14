@@ -34,10 +34,15 @@ pub struct LightClientHeartbeat<T: frame_system::Config> {
 
 pub trait LightClient<T: frame_system::Config> {
     fn get_latest_finalized_header(&self) -> HeaderResult;
-
     fn get_fast_height(&self) -> HeightResult<T::BlockNumber>;
     fn get_rational_height(&self) -> HeightResult<T::BlockNumber>;
     fn get_finalized_height(&self) -> HeightResult<T::BlockNumber>;
+
+    fn get_latest_finalized_header_precompile(&self) -> Bytes;
+    fn get_fast_height_precompile(&self) -> T::BlockNumber;
+    fn get_rational_height_precompile(&self) -> T::BlockNumber;
+    fn get_finalized_height_precompile(&self) -> T::BlockNumber;
+
     fn get_latest_heartbeat(&self) -> Result<LightClientHeartbeat<T>, DispatchError>;
 
     fn initialize(
@@ -75,4 +80,25 @@ pub trait LightClient<T: frame_system::Config> {
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
+
+    fn verify_event_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError>;
+
+    fn verify_state_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError>;
+
+    fn verify_tx_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError>;
 }

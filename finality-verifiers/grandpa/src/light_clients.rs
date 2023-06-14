@@ -4,6 +4,7 @@ use crate::{to_local_block_number, Config, Error, Pallet};
 use codec::Encode;
 
 use frame_system::pallet_prelude::OriginFor;
+use num_traits::Zero;
 pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
 
 use sp_runtime::{traits::Header, DispatchError};
@@ -99,6 +100,42 @@ where
             PalletInstance::Rococo(pallet) => pallet.get_latest_heartbeat(),
             PalletInstance::Kusama(pallet) => pallet.get_latest_heartbeat(),
             PalletInstance::Polkadot(pallet) => pallet.get_latest_heartbeat(),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn get_latest_finalized_header_precompile(&self) -> Bytes {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.get_latest_finalized_header_precompile(),
+            PalletInstance::Kusama(pallet) => pallet.get_latest_finalized_header_precompile(),
+            PalletInstance::Polkadot(pallet) => pallet.get_latest_finalized_header_precompile(),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn get_finalized_height_precompile(&self) -> T::BlockNumber {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Polkadot(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn get_rational_height_precompile(&self) -> T::BlockNumber {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Polkadot(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn get_fast_height_precompile(&self) -> T::BlockNumber {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Polkadot(pallet) => pallet.get_finalized_height_precompile(),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -209,6 +246,75 @@ where
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
+
+    fn verify_event_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.verify_event_inclusion_precompile(
+                gateway_id,
+                message,
+                submission_target_height,
+            ),
+            PalletInstance::Kusama(pallet) => pallet.verify_event_inclusion_precompile(
+                gateway_id,
+                message,
+                submission_target_height,
+            ),
+            PalletInstance::Polkadot(pallet) => pallet.verify_event_inclusion_precompile(
+                gateway_id,
+                message,
+                submission_target_height,
+            ),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn verify_state_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.verify_state_inclusion_precompile(
+                gateway_id,
+                message,
+                submission_target_height,
+            ),
+            PalletInstance::Kusama(pallet) => pallet.verify_state_inclusion_precompile(
+                gateway_id,
+                message,
+                submission_target_height,
+            ),
+            PalletInstance::Polkadot(pallet) => pallet.verify_state_inclusion_precompile(
+                gateway_id,
+                message,
+                submission_target_height,
+            ),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn verify_tx_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        match self {
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, message, submission_target_height),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, message, submission_target_height),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, message, submission_target_height),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
 }
 
 impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
@@ -234,6 +340,34 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
             Err(_) => return HeightResult::NotActive,
         };
         HeightResult::Height(local_number)
+    }
+
+    fn get_latest_finalized_header_precompile(&self) -> Bytes {
+        match Pallet::<T, I>::get_best_block_hash() {
+            Some(header) => header.encode(),
+            None => vec![],
+        }
+    }
+
+    fn get_fast_height_precompile(&self) -> T::BlockNumber {
+        match self.get_finalized_height() {
+            HeightResult::Height(height) => height,
+            HeightResult::NotActive => T::BlockNumber::zero(),
+        }
+    }
+
+    fn get_rational_height_precompile(&self) -> T::BlockNumber {
+        match self.get_finalized_height() {
+            HeightResult::Height(height) => height,
+            HeightResult::NotActive => T::BlockNumber::zero(),
+        }
+    }
+
+    fn get_finalized_height_precompile(&self) -> T::BlockNumber {
+        match self.get_finalized_height() {
+            HeightResult::Height(height) => height,
+            HeightResult::NotActive => T::BlockNumber::zero(),
+        }
     }
 
     fn get_latest_heartbeat(&self) -> Result<LightClientHeartbeat<T>, DispatchError> {
@@ -305,6 +439,37 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         _message: Bytes,
         _submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+        unimplemented!("GrandpaFV::verify_tx_inclusion not implemented yet")
+    }
+
+    fn verify_event_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        message: Bytes,
+        submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        match Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, submission_target_height)
+        {
+            Ok(receipt) => Ok(receipt.message.encode()),
+            Err(err) => Err(err),
+        }
+    }
+
+    fn verify_state_inclusion_precompile(
+        &self,
+        _gateway_id: [u8; 4],
+        _message: Bytes,
+        _submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
+        unimplemented!("GrandpaFV::verify_storage_inclusion not implemented yet")
+    }
+
+    fn verify_tx_inclusion_precompile(
+        &self,
+        _gateway_id: [u8; 4],
+        _message: Bytes,
+        _submission_target_height: Option<T::BlockNumber>,
+    ) -> Result<Bytes, DispatchError> {
         unimplemented!("GrandpaFV::verify_tx_inclusion not implemented yet")
     }
 }
