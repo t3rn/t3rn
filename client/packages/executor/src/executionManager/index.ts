@@ -379,7 +379,7 @@ export class ExecutionManager {
 
       // In the error generating scheme, when ErrorMode.NoBidders, 
       // do NOT add the sfx to the queue for bidding.
-      const noBiddersCondition = sfx.signature === "NoBidders";
+      const noBiddersCondition = sfx.raw.signature === "NoBidders";
       if (noBiddersCondition) {
         this.sfxToXtx[sfxId] = xtx.id;
         this.queue[sfx.vendor].isBidding.push(sfxId);
@@ -591,7 +591,7 @@ export class ExecutionManager {
       if (sfx.phase === this.xtx[sfx.xtxId].currentPhase) {
         // In the data generation framework, if ErrorMode.ConfirmationTimeout is set
         // we filter OUT them from the confirmation queue
-        const confirmationTimeoutCondition = sfx.signature === "ConfirmationTimeout";
+        const confirmationTimeoutCondition = sfx.raw.signature === "ConfirmationTimeout";
         if (!confirmationTimeoutCondition) {
           readyByStep.push(sfx);
         }
