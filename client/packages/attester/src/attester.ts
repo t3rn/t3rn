@@ -33,19 +33,30 @@ export class Attester {
         })
 
         if (process.env.TEST == 'true') {
+            logger.debug('Testing mode')
+            // const event = {
+            //     method: 'NewAttestationMessageHash',
+            //     section: 'attesters',
+            //     index: '0x6505',
+            //     data: [
+            //         '0x7365706C',
+            //         '0xe8e77626586f73b955364c7b4bbf0bb7f7685ebd40e852b164633a4acbd3244c',
+            //         'EVM',
+            //     ],
+            // }
             const event = {
-                method: 'NewAttestationMessageHash',
-                section: 'attesters',
-                index: '0x6505',
-                data: [
-                    '0x7365706C',
-                    '0xe8e77626586f73b955364c7b4bbf0bb7f7685ebd40e852b164633a4acbd3244c',
-                    'EVM',
-                ],
-            }
+                "method": "NewAttestationMessageHash",
+                "section": "attesters",
+                "index": "0x6505",
+                "data": [
+                  "sepl",
+                  "0xd53de5f3bf5d9615c04ef9931460269bff6ddc7285411ea3ca3937a32ccdfeaf",
+                  "EVM"
+                ]
+              }
 
             const [targetId, messageHash, executionVendor] = event.data
-            await this.submitAttestationEVM(
+                await this.submitAttestationEVM(
                 messageHash,
                 targetId,
                 executionVendor
@@ -119,19 +130,11 @@ export class Attester {
                                     executionVendor.toString() == 'EVM'
                                 ) {
                                     // Generate the signature for the message hash
-                                    try {
                                         await this.submitAttestationEVM(
-                                            messageHash.toHex(),
+                                            messageHash,
                                             targetId,
                                             executionVendor
                                         )
-                                    } catch (error) {
-                                        logger.error(
-                                            error,
-                                            'Error submitting attestation'
-                                        )
-                                        return
-                                    }
                                 }
 
                                 break
@@ -144,14 +147,14 @@ export class Attester {
                                 logger.info(event.data)
                                 const target = event.data[0]
                                 // Attest all pending attestations
-                                event.data[1].forEach(async (batch) => {
-                                    logger.error([target ,batch[1]])
+                                // TODO: remove slice
+                                event.data[1].slice(0, 1).forEach(async (batch) => {
                                     // Generate the signature for the message hash
                                         await this.submitAttestationEVM(
                                             batch[1],
                                             target,
                                             "EVM"
-                                        )
+                                    )
                                 })
                                 break
                             }
@@ -172,29 +175,33 @@ export class Attester {
     }
 
     private async submitAttestationEVM(
-        messageHash: any,
-        targetId: any,
-        executionVendor: any
+        messageHash: string,
+        targetId: string,
+        executionVendor: string,
     ) {
         const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
 
+        // const messageUint8Array = new Uint8Array(Buffer.from(messageHash.slice(2)))
+        const messageUint8Array = ethUtil.hashPersonalMessage(ethUtil.toBuffer(messageHash))
+        // logger.debug(['MessageHash', messageHash])
         const sigObj = ethUtil.ecsign(
-            Buffer.from(messageHash),
-            privateKey
+            messageUint8Array,
+            privateKey,
         )
 
         const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s)
 
         const tx = this.circuit.client.tx.attesters.submitAttestation(
-            messageHash.toHex(),
+            messageHash,
             signature,
             targetId
         )
+
         logger.info(
             {
                 executionVendor: executionVendor.toString(),
                 targetId: targetId,
-                messageHash: messageHash.toHex(),
+                messageHash: messageHash,
                 signature: signature.toString(),
             },
             'Submitting attestation'
@@ -204,18 +211,18 @@ export class Attester {
         try {
             result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
         } catch (error) {
-            logger.error(error, 'Error submitting attestation')
-            console.error(error)
-            throw new Error(error)
+            logger.error(error.stack, 'Error submitting attestation')
+            // process.exit(17)
+            return
         }
 
-        logger.info(result)
+        logger.debug(result)
 
         logger.info(
             {
                 executionVendor: executionVendor.toString(),
                 targetId: targetId.toString(),
-                messageHash: messageHash.toHex(),
+                messageHash: messageHash,
                 // hash: result.hash.toHex(),
             },
             'Attestation submitted'
