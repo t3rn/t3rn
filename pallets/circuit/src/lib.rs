@@ -1129,18 +1129,6 @@ impl<T: Config> Pallet<T> {
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
         log::debug!("Inclusion confirmed!");
-        //
-        // #[cfg(not(feature = "test-skip-verification"))]
-        // ensure!(
-        //     T::Portal::header_speed_mode_satisfied(
-        //         fsx.input.target,
-        //         inclusion_receipt.including_header.clone(),
-        //         xtx.speed_mode,
-        //     )?,
-        //     "Speed mode not satisfied"
-        // );
-        //
-        // log::debug!("Speed mode satisfied!");
 
         // ToDo: handle misbehavior
         #[cfg(not(feature = "test-skip-verification"))]

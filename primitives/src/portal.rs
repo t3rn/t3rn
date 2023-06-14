@@ -390,18 +390,25 @@ pub mod tests {
 
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PrecompileArgs::VerifyEventInclusion([1u8; 4], vec![4u8; 32], vec![5u8]).encode(),
+            PrecompileArgs::VerifyEventInclusion(
+                [1u8; 4],
+                vec![4u8; 32],
+                SpeedMode::Fast,
+                vec![5u8],
+            )
+            .encode(),
             Codec::Scale,
         )
         .unwrap();
 
         assert_eq!(
             filled_abi,
-            FilledAbi::Triple(
+            FilledAbi::Quadruple(
                 Some(b"VerifyEventInclusion".to_vec()),
                 (
                     Box::new(FilledAbi::Bytes4(None, vec![1u8; 4])),
                     Box::new(FilledAbi::Bytes(None, vec![4u8; 32].encode())),
+                    Box::new(FilledAbi::Byte(None, vec![0u8].encode())),
                     Box::new(FilledAbi::Bytes(None, vec![5u8].encode()))
                 ),
             )
@@ -470,7 +477,12 @@ pub mod tests {
     fn test_verify_event_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
-        let portal_call = PrecompileArgs::VerifyEventInclusion(chain_id, event.clone(), vec![4u8]);
+        let portal_call = PrecompileArgs::VerifyEventInclusion(
+            chain_id,
+            event.clone(),
+            SpeedMode::Finalized,
+            vec![4u8],
+        );
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -478,7 +490,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyEventInclusion(chain_id, event, vec![4u8])
+            PrecompileArgs::VerifyEventInclusion(chain_id, event, SpeedMode::Finalized, vec![4u8])
         );
     }
 
@@ -486,7 +498,8 @@ pub mod tests {
     fn test_verify_state_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
-        let portal_call = PrecompileArgs::VerifyStateInclusion(chain_id, event.clone());
+        let portal_call =
+            PrecompileArgs::VerifyStateInclusion(chain_id, event.clone(), SpeedMode::Rational);
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -494,7 +507,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyStateInclusion(chain_id, event)
+            PrecompileArgs::VerifyStateInclusion(chain_id, event, SpeedMode::Rational)
         );
     }
 
@@ -502,7 +515,8 @@ pub mod tests {
     fn test_verify_tx_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
-        let portal_call = PrecompileArgs::VerifyTxInclusion(chain_id, event.clone());
+        let portal_call =
+            PrecompileArgs::VerifyTxInclusion(chain_id, event.clone(), SpeedMode::Rational);
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -510,7 +524,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyTxInclusion(chain_id, event)
+            PrecompileArgs::VerifyTxInclusion(chain_id, event, SpeedMode::Rational)
         );
     }
 }

@@ -350,22 +350,6 @@ mod tests {
     }
 
     #[test]
-    fn test_header_speed_mode_satisfied_rococo_with_initialize() {
-        test_header_speed_mode_satisfied(
-            GatewayVendor::Rococo,
-            Some(get_test_initialize_genesis_data()),
-        );
-    }
-
-    #[test]
-    fn test_header_speed_mode_satisfied_kusama_with_initialize() {
-        test_header_speed_mode_satisfied(
-            GatewayVendor::Kusama,
-            Some(get_test_initialize_genesis_data()),
-        );
-    }
-
-    #[test]
     #[ignore]
     fn run_e2e_tests() {
         ExtBuilder::default()
@@ -386,69 +370,5 @@ mod tests {
                     assert_ok!(replay_and_evaluate_extrinsic::<Runtime>(&data));
                 }
             })
-    }
-
-    #[test]
-    fn test_header_speed_mode_satisfied_polkadot_with_initialize() {
-        test_header_speed_mode_satisfied(
-            GatewayVendor::Polkadot,
-            Some(get_test_initialize_genesis_data()),
-        );
-    }
-    fn test_header_speed_mode_satisfied(
-        vendor: GatewayVendor,
-        maybe_registration_data: Option<RelaychainRegistrationData<AccountId>>,
-    ) {
-        ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_default_xdns_records()
-            .build()
-            .execute_with(|| {
-                let gateway_id = match vendor {
-                    GatewayVendor::Rococo => [0, 0, 0, 0],
-                    GatewayVendor::Kusama => *b"ksma",
-                    GatewayVendor::Polkadot => *b"pdot",
-                    _ => unreachable!(),
-                };
-                let header: Vec<u8> = match maybe_registration_data.clone() {
-                    Some(registration_data) => {
-                        let result = Portal::initialize(
-                            Origin::root(),
-                            gateway_id,
-                            registration_data.encode(),
-                        );
-                        assert_ok!(result);
-
-                        let result = Portal::get_latest_finalized_header(gateway_id);
-
-                        assert_ok!(result.clone());
-
-                        assert_eq!(
-                            result,
-                            Ok(HeaderResult::Header(vec![
-                                220, 221, 137, 146, 125, 138, 52, 142, 0, 37, 126, 30, 204, 134,
-                                23, 244, 94, 219, 81, 24, 239, 255, 62, 162, 249, 150, 27, 42, 217,
-                                183, 105, 10
-                            ]))
-                        );
-                        vec![
-                            220, 221, 137, 146, 125, 138, 52, 142, 0, 37, 126, 30, 204, 134, 23,
-                            244, 94, 219, 81, 24, 239, 255, 62, 162, 249, 150, 27, 42, 217, 183,
-                            105, 10,
-                        ]
-                    },
-                    None => H256::zero().encode(),
-                };
-                let speed_mode = SpeedMode::Fast;
-                let result = Portal::header_speed_mode_satisfied(gateway_id, header, speed_mode);
-                assert_ok!(result);
-
-                let is_satisfied_res = result.unwrap();
-
-                match maybe_registration_data {
-                    Some(_) => assert!(is_satisfied_res),
-                    None => assert!(!is_satisfied_res),
-                }
-            });
     }
 }

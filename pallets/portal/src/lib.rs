@@ -229,6 +229,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
             gateway_id,
             message,
+            speed_mode,
             submission_target_height,
         )
     }
@@ -242,6 +243,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_state_inclusion(
             gateway_id,
             message,
+            speed_mode,
             submission_target_height,
         )
     }
@@ -255,6 +257,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_tx_inclusion(
             gateway_id,
             message,
+            speed_mode,
             submission_target_height,
         )
     }
@@ -270,6 +273,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
             gateway_id,
             message,
+            speed_mode,
             submission_target_height,
         )?;
         Ok(result.message)
@@ -284,6 +288,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_state_inclusion(
             gateway_id,
             message,
+            speed_mode,
             submission_target_height,
         )?;
 
@@ -299,6 +304,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_tx_inclusion(
             gateway_id,
             message,
+            speed_mode,
             submission_target_height,
         )?;
         Ok(result.message)
