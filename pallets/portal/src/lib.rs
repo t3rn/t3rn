@@ -191,10 +191,10 @@ impl<T: Config> Portal<T> for Pallet<T> {
         source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
+        // ToDo: we need to verify the event source here
         match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
             gateway_id,
             message,
-            source,
             submission_target_height,
         )
     }

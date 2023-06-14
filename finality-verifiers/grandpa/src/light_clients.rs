@@ -287,12 +287,6 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         message: Bytes,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        // In substrate the source is handled via pallet index, so we unpack the index here.
-        let source_index = match source {
-            Some(source) => *source.first().ok_or(Error::<T, I>::InvalidSourceFormat)?,
-            None => return Err(Error::<T, I>::InvalidSourceFormat.into()),
-        };
-
         Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, submission_target_height)
     }
 
