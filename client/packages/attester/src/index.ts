@@ -9,10 +9,6 @@ process.on('uncaughtException', (error) => {
     process.exit(1)
 })
 
-// process.on('unhandledRejection', (reason, promise) => {
-//     logger.error('Unhandled Rejection:', reason)
-//     process.exit(1)
-// })
 ;(async () => {
     logger.info(`Starting attester`)
 

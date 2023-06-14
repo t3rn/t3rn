@@ -1,16 +1,17 @@
 import client from 'prom-client'
 import http from 'http'
 import { logger } from './logging'
+
 export class Prometheus {
+    register: client.Registry
     circuitActive: boolean
-    circuitDisconnectsTotal: any
-    register: any
-    circuitHeight: any
-    circuitDisconnected: any
-    eventsTotal: any
-    eventsAttestationsTotal: any
-    currentCommitteeMember: any
-    submitAttestationError: any
+    circuitDisconnectsTotal: client.Counter
+    circuitHeight: client.Counter
+    circuitDisconnected: client.Counter
+    eventsTotal: client.Counter
+    eventsAttestationsTotal: client.Counter
+    currentCommitteeMember: client.Gauge
+    submitAttestationError: client.Counter
     submittedAttestation: client.Counter
 
     constructor() {

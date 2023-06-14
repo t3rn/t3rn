@@ -12,7 +12,8 @@ export class Attester {
     config: any
     prometheus: Prometheus
     keys: any
-    mutex: any
+    mutex: Mutex
+    isInCurrentCommittee = false
 
     constructor(config: any, keys: any) {
         this.config = config
@@ -35,38 +36,7 @@ export class Attester {
             checkClient()
         })
 
-        if (process.env.TEST == 'true') {
-            logger.debug('Testing mode')
-            const event = {
-                method: 'NewAttestationMessageHash',
-                section: 'attesters',
-                index: '0x6505',
-                data: [
-                    'sepl',
-                    '0xcd0116ff1215cb38acd4a5bcff75046b920eef860f4c1b5d176c3dd454862cf3',
-                    'EVM',
-                ],
-            }
-            // const event = {
-            //     "method": "NewAttestationMessageHash",
-            //     "section": "attesters",
-            //     "index": "0x6505",
-            //     "data": [
-            //       "sepl",
-            //       "0xd53de5f3bf5d9615c04ef9931460269bff6ddc7285411ea3ca3937a32ccdfeaf",
-            //       "EVM"
-            //     ]
-            //   }
-
-            const [targetId, messageHash, executionVendor] = event.data
-            await this.submitAttestationEVM(
-                messageHash,
-                targetId,
-                executionVendor
-            )
-        } else {
-            this.listenEvents()
-        }
+        this.listenEvents()
     }
 
     async connectClients() {
@@ -87,6 +57,8 @@ export class Attester {
         this.circuit.sdk?.client.query.system.events(async (events) => {
             logger.debug({ events_count: events.length }, `Received events`)
             this.prometheus.eventsTotal.inc(events.length)
+
+            await this.checkIsInCommittee()
 
             // Loop through the Vec<EventRecord>
             await Promise.all(
@@ -150,17 +122,13 @@ export class Attester {
                                     `Received CurrentPendingAttestationBatches event`
                                 )
 
-                                const target = event.data[0]
                                 // Attest all pending attestations
-                                // TODO: remove slice
-                                // logger.debug([event.data[1].slice(0, 1)])
                                 event.data[1]
-                                    .slice(0, 1)
                                     .forEach(async (batch) => {
                                         // Generate the signature for the message hash
                                         await this.submitAttestationEVM(
-                                            batch[1],
-                                            target,
+                                            batch[1], // messageHash
+                                            event.data[0], // target
                                             'EVM'
                                         )
                                     })
@@ -203,7 +171,7 @@ export class Attester {
         )
 
         // Before attestation we need to check if we are in current committee
-        if (!(await this.isInCommittee())) {
+        if (!this.isInCurrentCommittee) {
             return
         }
 
@@ -254,7 +222,7 @@ export class Attester {
         )
     }
 
-    private async isInCommittee() {
+    private async checkIsInCommittee() {
         let committee
         try {
             committee =
@@ -265,12 +233,11 @@ export class Attester {
             return
         }
 
-        const isInCommittee =
+        this.isInCurrentCommittee =
             committee.find(
                 (item) => item.accountId === this.keys.substrate.addressId
             ) !== undefined
-        logger.info({ committee: isInCommittee }, 'Current committee member')
-        this.prometheus.currentCommitteeMember.set(isInCommittee ? 1 : 0)
-        return isInCommittee
+        logger.info({ isInCurrentCommittee: this.isInCurrentCommittee, accountId: this.keys.substrate.accountId }, 'Current committee member')
+        this.prometheus.currentCommitteeMember.set(this.isInCurrentCommittee ? 1 : 0)
     }
 }
