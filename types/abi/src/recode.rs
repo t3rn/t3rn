@@ -152,6 +152,46 @@ impl FilledAbi {
                     (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
                 }
             },
+            FilledAbi::Triple(_name, (field1, field2, field3)) => {
+                let mut encoded_fields: Vec<u8> = vec![];
+                for field in &[field1, field2, field3] {
+                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                }
+                match (in_codec, out_codec) {
+                    (_, Codec::Scale) => Ok(encoded_fields),
+                    (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
+                }
+            },
+            FilledAbi::Quadruple(_name, (field1, field2, field3, field4)) => {
+                let mut encoded_fields: Vec<u8> = vec![];
+                for field in &[field1, field2, field3, field4] {
+                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                }
+                match (in_codec, out_codec) {
+                    (_, Codec::Scale) => Ok(encoded_fields),
+                    (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
+                }
+            },
+            FilledAbi::Quintuple(_name, (field1, field2, field3, field4, field5)) => {
+                let mut encoded_fields: Vec<u8> = vec![];
+                for field in &[field1, field2, field3, field4, field5] {
+                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                }
+                match (in_codec, out_codec) {
+                    (_, Codec::Scale) => Ok(encoded_fields),
+                    (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
+                }
+            },
+            FilledAbi::Sextuple(_name, (field1, field2, field3, field4, field5, field6)) => {
+                let mut encoded_fields: Vec<u8> = vec![];
+                for field in &[field1, field2, field3, field4, field5, field6] {
+                    encoded_fields.extend_from_slice(&field.recode_as(in_codec, out_codec)?[..]);
+                }
+                match (in_codec, out_codec) {
+                    (_, Codec::Scale) => Ok(encoded_fields),
+                    (_, Codec::Rlp) => Ok(rlp::encode_list(&encoded_fields).to_vec()),
+                }
+            },
             // todo: consider converting between little vs big endian
             FilledAbi::Bytes(_name, data) => Ok(data.clone()),
             FilledAbi::Vec(_name, fields, _prefix_memo) => {
