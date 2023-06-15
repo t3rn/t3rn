@@ -20,8 +20,10 @@ export const initGateways = async (api: ApiPromise) => {
   let res: Record<string, Gateway> = {};
 
   for (let i = 0; i < records.length; i++) {
-    const gateway = new Gateway(records[i]);
-    res[gateway.id] = gateway;
+    if(records[i].gateway_record.gateway_id.toHuman() !== "0x03030303") {
+      const gateway = new Gateway(records[i]);
+      res[gateway.id] = gateway;
+    }
   }
 
   return res;

@@ -173,6 +173,17 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Re-adds the self-gateway if was present before. Inserts if wasn't. Root only access.
+        #[pallet::weight(< T as Config >::WeightInfo::reboot_self_gateway())]
+        pub fn reboot_self_gateway(
+            origin: OriginFor<T>,
+            vendor: GatewayVendor,
+        ) -> DispatchResultWithPostInfo {
+            Self::do_reboot_self_gateway(origin, vendor)?;
+
+            Ok(().into())
+        }
+
         /// Removes a gateway from the onchain registry. Root only access.
         #[pallet::weight(< T as Config >::WeightInfo::purge_gateway())]
         pub fn purge_gateway_record(
@@ -421,6 +432,57 @@ pub mod pallet {
         }
     }
 
+    impl<T: Config> Pallet<T> {
+        pub fn do_reboot_self_gateway(
+            origin: OriginFor<T>,
+            vendor: GatewayVendor,
+        ) -> DispatchResult {
+            let admin: T::AccountId = ensure_signed_or_root(origin)?.unwrap_or(
+                T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
+            );
+
+            let target_id = T::SelfGatewayId::get();
+
+            const BALANCES_INDEX: u8 = 10;
+            const ASSETS_INDEX: u8 = 12;
+            const EVM_INDEX: u8 = 120;
+            const WASM_INDEX: u8 = 121;
+
+            let mut allowed_side_effects = vec![];
+
+            if <StandardSFXABIs<T>>::contains_key(*b"tran") {
+                allowed_side_effects.push((*b"tran", Some(BALANCES_INDEX)));
+            }
+            if <StandardSFXABIs<T>>::contains_key(*b"tass") {
+                allowed_side_effects.push((*b"tran", Some(ASSETS_INDEX)));
+            }
+            if <StandardSFXABIs<T>>::contains_key(*b"swap") {
+                allowed_side_effects.push((*b"swap", Some(BALANCES_INDEX)));
+            }
+            if <StandardSFXABIs<T>>::contains_key(*b"aliq") {
+                allowed_side_effects.push((*b"aliq", Some(BALANCES_INDEX)));
+            }
+            if <StandardSFXABIs<T>>::contains_key(*b"rliq") {
+                allowed_side_effects.push((*b"rliq", Some(BALANCES_INDEX)));
+            }
+            if <StandardSFXABIs<T>>::contains_key(*b"cevm") {
+                allowed_side_effects.push((*b"cevm", Some(EVM_INDEX)));
+            }
+            if <StandardSFXABIs<T>>::contains_key(*b"wasm") {
+                allowed_side_effects.push((*b"wasm", Some(WASM_INDEX)));
+            }
+
+            Pallet::<T>::override_gateway(
+                target_id,
+                vendor,
+                ExecutionVendor::Substrate,
+                Codec::Scale,
+                Some(admin),
+                None,
+                allowed_side_effects,
+            )
+        }
+    }
     impl<T: Config> Xdns<T, BalanceOf<T>> for Pallet<T> {
         /// Fetches all known Gateway records
         fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>> {

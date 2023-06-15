@@ -5,7 +5,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 name       = "t0rn-parachain-collator"
 repository = 'https://github.com/t3rn/t3rn'
-version    = "1.32.0-rc.0"
+version    = "1.32.3-rc.0"
 
 [[bin]]
 name = "t0rn-collator"
@@ -17,7 +17,7 @@ codec        = { package = "parity-scale-codec", version = "3" }
 derive_more  = "0.99.2"
 hex-literal  = "0.4.1"
 jsonrpc-core = "18.0.0"
-log          = "0.4.14"
+log          = "0.4.19"
 serde        = { version = "1.0", features = [ "derive" ] }
 
 # Local

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.32.3-rc.0] - 2023-06-14
+### :bug: Bug Fixes
+- [`b80f031`](https://github.com/t3rn/t3rn/commit/b80f0314fe46d68cea24287c8517258a4788aa55) - add reboot self gateway extrinsic to XDNS *(PR [#1060](https://github.com/t3rn/t3rn/pull/1060) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.32.0-rc.0] - 2023-06-13
 ### :sparkles: New Features
 - [`dcece94`](https://github.com/t3rn/t3rn/commit/dcece94a68375054d918ab735ea9751311d18b14) - connect XDNS with Assets to create, purge, lookup via Overlay trait *(PR [#1027](https://github.com/t3rn/t3rn/pull/1027) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1226,3 +1231,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.31.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.30.0-rc.0...v1.31.0-rc.0
 [v1.31.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.0-rc.0...v1.31.1-rc.0
 [v1.32.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.1-rc.0...v1.32.0-rc.0
+[v1.32.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.2-rc.0...v1.32.3-rc.0

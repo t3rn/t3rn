@@ -33,7 +33,6 @@ export const handleRegisterGateway = async (
     log("ERROR", `Gateway ID ${gatewayId} not found in config file`)
     process.exit(1)
   }
-
   spinner.text = `Registering ${foundGateway.name} gateway...`
   spinner.start()
 
