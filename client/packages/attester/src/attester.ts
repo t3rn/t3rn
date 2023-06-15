@@ -62,76 +62,79 @@ export class Attester {
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
 
             const attesterEvents = await events.filter(
-               async (event) => await event.section == 'attesters'
+                async (event) => (await event.section) == 'attesters'
             )
 
             // Loop through the Vec<EventRecord>
             await Promise.all(
                 attesterEvents.map(async (record) => {
+                    // Before any attestation we need to check if we are in current committee
+                    if (!this.isInCurrentCommittee) {
+                        return
+                    }
+
                     // Extract the phase, event and the event types
                     const { event } = record
 
-                        switch (event.method) {
-                            case 'NewAttestationMessageHash': {
-                                const [targetId, messageHash, executionVendor] =
-                                    event.data
+                    switch (event.method) {
+                        case 'NewAttestationMessageHash': {
+                            const [targetId, messageHash, executionVendor] =
+                                event.data
 
-                                // Submit the attestation for the given target ID for the given message hash for each attester's key in the keys.json file
-                                if (executionVendor.toString() == 'Substrate') {
-                                    logger.warn('Substrate not implemented')
-                                } else if (
-                                    executionVendor.toString() == 'Ed25519'
-                                ) {
-                                    logger.warn('Ed25519 not implemented')
-                                } else if (
-                                    executionVendor.toString() == 'EVM'
-                                ) {
-                                    // Generate the signature for the message hash
-                                    await this.submitAttestationEVM(
-                                        messageHash,
-                                        targetId,
-                                        executionVendor
-                                    )
-                                }
-                                break
+                            // Submit the attestation for the given target ID for the given message hash for each attester's key in the keys.json file
+                            if (executionVendor.toString() == 'Substrate') {
+                                logger.warn('Substrate not implemented')
+                            } else if (
+                                executionVendor.toString() == 'Ed25519'
+                            ) {
+                                logger.warn('Ed25519 not implemented')
+                            } else if (executionVendor.toString() == 'EVM') {
+                                // Generate the signature for the message hash
+                                await this.submitAttestationEVM(
+                                    messageHash,
+                                    targetId,
+                                    executionVendor
+                                )
                             }
-                            case 'CurrentPendingAttestationBatches': {
-                                const targetId = event.data[0].toString()
-                                const messageHashes = event.data[1]
+                            break
+                        }
+                        case 'CurrentPendingAttestationBatches': {
+                            const targetId = event.data[0].toString()
+                            const messageHashes = event.data[1]
 
-                                logger.error({
+                            logger.info(
+                                {
                                     targetId: targetId,
                                     messageHashes: messageHashes.length,
                                 },
-                                    `Received CurrentPendingAttestationBatches event`
+                                `Received CurrentPendingAttestationBatches event`
+                            )
+                            this.prometheus.attestionsPending.set(
+                                {
+                                    targetId: targetId,
+                                },
+                                messageHashes.length
+                            )
+
+                            // Attest all pending attestations
+                            messageHashes.forEach(async (messageHash) => {
+                                await this.submitAttestationEVM(
+                                    messageHash[1],
+                                    targetId,
+                                    'EVM'
                                 )
-                                    this.prometheus.attestionsPending.set(
-                                        {
-                                            targetId: targetId,
-                                        },
-                                        messageHashes.length
-                                    )
-
-                                // Attest all pending attestations
-                                messageHashes.forEach(async (messageHash) => {
-                                        await this.submitAttestationEVM(
-                                            messageHash[1],
-                                            targetId,
-                                            'EVM'
-                                        )
-                                })
-                                break
-                            }
-                            case 'NewTargetProposed': {
-                                logger.info(`Received NewTargetProposed event`)
-                                break
-                            }
-                            default: {
-                                break
-                            }
+                            })
+                            break
                         }
+                        case 'NewTargetProposed': {
+                            logger.info(`Received NewTargetProposed event`)
+                            break
+                        }
+                        default: {
+                            break
+                        }
+                    }
                 })
-
             )
         })
     }
@@ -157,11 +160,6 @@ export class Attester {
             signature,
             targetId
         )
-
-        // Before attestation we need to check if we are in current committee
-        if (!this.isInCurrentCommittee) {
-            return
-        }
 
         let result
         try {
