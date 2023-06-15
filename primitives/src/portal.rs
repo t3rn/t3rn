@@ -5,6 +5,7 @@ use crate::{
 };
 use codec::{Decode, Encode};
 
+use crate::light_client::LightClientHeartbeat;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::{convert::TryFrom, vec::Vec};
@@ -28,6 +29,9 @@ pub struct RegistrationData {
 // This could be split into readable parts here, or even more specific traits in the future, if needed.
 // Something like `.. Portal: ReadHeaders + Submit { ..`
 pub trait Portal<T: frame_system::Config> {
+    fn get_latest_heartbeat(gateway_id: &ChainId)
+        -> Result<LightClientHeartbeat<T>, DispatchError>;
+
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError>;
 
     fn get_finalized_height(

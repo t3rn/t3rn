@@ -7,8 +7,8 @@ export default {
       action: "tran",
       encodedArgs: [
         {
-          from: "5Hmf2ARKQWr2RXLYUuZRN2HzEoDLVUGquhwLN8J7nsRMYcGQ",
           to: "5Hmf2ARKQWr2RXLYUuZRN2HzEoDLVUGquhwLN8J7nsRMYcGQ",
+          amount: 1,
         },
       ],
       signature: "0x",

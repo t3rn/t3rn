@@ -4,17 +4,17 @@ name    = "circuit-test-utils"
 version = "0.1.0"
 
 [dependencies]
-sp-core    = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-t3rn-primitives = { default-features = false, path = "../primitives" }
-t3rn-types = { default-features = false, path = "../types" }
-circuit-runtime-types = { default-features = false, path = "../runtime/common-types" }
 circuit-mock-runtime    = { path = "../runtime/mock" }
 circuit-runtime-pallets = { path = "../runtime/common-pallets" }
-frame-support      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-frame-system       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-serde = "1.0.160"
-serde_json = "1.0.96"
-hex = "0.4.3"
-hex-literal = "0.4.1"
-codec       = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
+circuit-runtime-types   = { default-features = false, path = "../runtime/common-types" }
+codec                   = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
+frame-support           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+frame-system            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+hex                     = "0.4.3"
+hex-literal             = "0.4.1"
+serde                   = "1.0.160"
+serde_json              = "1.0.96"
+sp-core                 = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+sp-runtime              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+t3rn-primitives         = { default-features = false, path = "../primitives" }
+t3rn-types              = { default-features = false, path = "../types" }

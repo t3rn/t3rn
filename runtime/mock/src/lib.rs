@@ -13,6 +13,7 @@ use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::impl_opaque_keys;
 use sp_std::convert::{TryFrom, TryInto};
 pub mod signed_extrinsics_config;
+use circuit_runtime_pallets::pallet_attesters::TargetId;
 pub use circuit_runtime_pallets::*;
 pub use circuit_runtime_types::*;
 
@@ -112,9 +113,15 @@ pub struct ExtBuilder {
     known_gateway_records: Vec<GatewayRecord<AccountId>>,
     standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>,
     known_contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
+    attestation_targets: Vec<TargetId>,
 }
 
 impl ExtBuilder {
+    pub fn with_default_attestation_targets(mut self) -> ExtBuilder {
+        self.attestation_targets = vec![[0, 0, 0, 0], [1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]];
+        self
+    }
+
     pub fn with_default_xdns_records(mut self) -> ExtBuilder {
         self.known_gateway_records = vec![
             GatewayRecord {
@@ -256,6 +263,12 @@ impl ExtBuilder {
             .assimilate_storage(&mut t)
             .expect("Pallet balances storage can be assimilated");
 
+        pallet_attesters::GenesisConfig::<Runtime> {
+            phantom: Default::default(),
+            attestation_targets: self.attestation_targets,
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet attesters can be assimilated");
         pallet_xdns::GenesisConfig::<Runtime> {
             known_gateway_records: self.known_gateway_records,
             standard_sfx_abi: self.standard_sfx_abi,

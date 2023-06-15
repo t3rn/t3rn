@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.32.3-rc.0] - 2023-06-14
+### :bug: Bug Fixes
+- [`b80f031`](https://github.com/t3rn/t3rn/commit/b80f0314fe46d68cea24287c8517258a4788aa55) - add reboot self gateway extrinsic to XDNS *(PR [#1060](https://github.com/t3rn/t3rn/pull/1060) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.32.0-rc.0] - 2023-06-13
+### :sparkles: New Features
+- [`dcece94`](https://github.com/t3rn/t3rn/commit/dcece94a68375054d918ab735ea9751311d18b14) - connect XDNS with Assets to create, purge, lookup via Overlay trait *(PR [#1027](https://github.com/t3rn/t3rn/pull/1027) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`a758412`](https://github.com/t3rn/t3rn/commit/a7584120b8510c61eea8cb8b371829441b7b5c0d) - executor bidding works *(PR [#1052](https://github.com/t3rn/t3rn/pull/1052) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.31.1-rc.0] - 2023-06-13
+### :bug: Bug Fixes
+- [`eaa0fec`](https://github.com/t3rn/t3rn/commit/eaa0fec43b1d1481aea1af769983bdf0f87c8c90) - client apps should deploy in order *(PR [#1036](https://github.com/t3rn/t3rn/pull/1036) by [@3h4x](https://github.com/3h4x))*
+- [`ce7aa01`](https://github.com/t3rn/t3rn/commit/ce7aa01947adaab62461e8292477678dfe414587) - create new batches for each committee transition *(PR [#1044](https://github.com/t3rn/t3rn/pull/1044) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`72237ed`](https://github.com/t3rn/t3rn/commit/72237ed2a1f431d01e66f97dc54049b1d97c8c16) - offchain script for automated nominations *(PR [#1042](https://github.com/t3rn/t3rn/pull/1042) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.31.0-rc.0] - 2023-06-09
 ### :sparkles: New Features
 - [`cf76b08`](https://github.com/t3rn/t3rn/commit/cf76b08b634ab2061c675223265968e5eba9e22e) - add support to register eth2 gateway via CLI *(PR [#1031](https://github.com/t3rn/t3rn/pull/1031) by [@ahkohd](https://github.com/ahkohd))*
@@ -1207,3 +1229,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.29.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.29.1-rc.0...v1.29.2-rc.0
 [v1.30.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.29.2-rc.0...v1.30.0-rc.0
 [v1.31.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.30.0-rc.0...v1.31.0-rc.0
+[v1.31.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.0-rc.0...v1.31.1-rc.0
+[v1.32.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.1-rc.0...v1.32.0-rc.0
+[v1.32.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.2-rc.0...v1.32.3-rc.0

@@ -40,6 +40,7 @@ use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     pallet_prelude::OriginFor,
 };
+use sp_core::H256;
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
     DispatchError, KeyTypeId,
@@ -70,6 +71,7 @@ pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
 
+use t3rn_primitives::attesters::AttestersWriteApi;
 pub use t3rn_primitives::light_client::InclusionReceipt;
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
@@ -116,6 +118,7 @@ pub mod pallet {
     };
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
+        attesters::AttestersWriteApi,
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX},
         portal::Portal,
         xdns::Xdns,
@@ -280,7 +283,9 @@ pub mod pallet {
         type Currency: Currency<Self::AccountId>;
 
         /// A type that provides access to Xdns
-        type Xdns: Xdns<Self>;
+        type Xdns: Xdns<Self, BalanceOf<Self>>;
+
+        type Attesters: AttestersWriteApi<Self::AccountId, DispatchError>;
 
         type Executors: Executors<Self, BalanceOf<Self>>;
 
@@ -718,8 +723,15 @@ pub mod pallet {
                     })?;
                     Ok(PrecompileResult::TryConfirm(sfx_id, confirmation))
                 },
-                |_status_change, local_ctx| {
+                |status_change, local_ctx| {
                     Self::deposit_event(Event::SideEffectConfirmed(sfx_id));
+                    if status_change.1 == CircuitStatus::FinishedAllSteps
+                        || status_change.1 == CircuitStatus::Committed
+                    {
+                        Self::request_sfx_attestation(local_ctx);
+                        // ToDo: uncomment when price + costs estimates are implemented
+                        // T::Xdns::estimate_costs(Machine::read_current_step_fsx(local_ctx));
+                    }
                     // Emit: From Circuit events
                     Self::emit_status_update(
                         local_ctx.xtx_id,
@@ -829,6 +841,10 @@ pub mod pallet {
             T::AccountId, // to
             BalanceOf<T>, // value
         ),
+        SuccessfulFSXCommitAttestationRequest(H256),
+        UnsuccessfulFSXCommitAttestationRequest(H256),
+        SuccessfulFSXRevertAttestationRequest(H256),
+        UnsuccessfulFSXRevertAttestationRequest(H256),
     }
 
     #[pallet::error]
@@ -1025,6 +1041,13 @@ impl<T: Config> Pallet<T> {
 
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
+            let security_lvl = determine_security_lvl(gateway_type);
+            // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
+            // let _last_update = <T as Config>::Xdns::verify_active(
+            //     &sfx.target,
+            //     <T as Config>::XtxTimeoutDefault::get(),
+            //     &security_lvl,
+            // )?;
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
@@ -1050,7 +1073,7 @@ impl<T: Config> Pallet<T> {
             full_side_effects.push(FullSideEffect {
                 input: sfx.clone(),
                 confirmed: None,
-                security_lvl: determine_security_lvl(gateway_type),
+                security_lvl,
                 submission_target_height,
                 best_bid: None,
                 index: index as u32,
@@ -1269,11 +1292,60 @@ impl<T: Config> Pallet<T> {
         const REVERT_READS: Weight = 1;
 
         let _success: bool =
-            Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, _local_ctx| {
+            Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, local_ctx| {
+                Self::request_sfx_attestation(local_ctx);
                 Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id));
             });
 
         T::DbWeight::get().reads_writes(REVERT_READS, REVERT_WRITES)
+    }
+
+    pub fn request_sfx_attestation(local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) {
+        Machine::<T>::read_current_step_fsx(local_ctx)
+            .iter()
+            .for_each(|fsx| {
+                if fsx.security_lvl == SecurityLvl::Escrow {
+                    let sfx_id: H256 = H256::from_slice(
+                        fsx.calc_sfx_id::<SystemHashing<T>, T>(local_ctx.xtx_id)
+                            .as_ref(),
+                    );
+                    match local_ctx.xtx.status {
+                        CircuitStatus::Reverted(_) =>
+                            match T::Attesters::request_sfx_attestation_revert(
+                                fsx.input.target,
+                                sfx_id,
+                            ) {
+                                Ok(_) => {
+                                    Self::deposit_event(
+                                        Event::SuccessfulFSXRevertAttestationRequest(sfx_id),
+                                    );
+                                },
+                                Err(_) => {
+                                    Self::deposit_event(
+                                        Event::UnsuccessfulFSXRevertAttestationRequest(sfx_id),
+                                    );
+                                },
+                            },
+                        CircuitStatus::FinishedAllSteps | CircuitStatus::Committed =>
+                            match T::Attesters::request_sfx_attestation_commit(
+                                fsx.input.target,
+                                sfx_id,
+                            ) {
+                                Ok(_) => {
+                                    Self::deposit_event(
+                                        Event::SuccessfulFSXCommitAttestationRequest(sfx_id),
+                                    );
+                                },
+                                Err(_) => {
+                                    Self::deposit_event(
+                                        Event::UnsuccessfulFSXCommitAttestationRequest(sfx_id),
+                                    );
+                                },
+                            },
+                        _ => {},
+                    }
+                }
+            });
     }
 
     pub fn process_tick_one(xtx_id: XExecSignalId<T>) -> Weight {
