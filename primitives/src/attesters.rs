@@ -117,6 +117,14 @@ pub type Signature65b = [u8; 65];
 pub type PublicKeyEcdsa33b = [u8; 33];
 pub const COMMITTEE_SIZE: usize = 32;
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
+pub enum LatencyStatus {
+    #[default]
+    OnTime,
+    // Late: (n amount of missed latency windows, total amount of successful repatriations)
+    Late(u32, u32),
+}
+
 pub type CommitteeTransitionIndices = [u32; COMMITTEE_SIZE];
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
 pub struct GenericCommitteeTransition([(u32, Vec<u8>); COMMITTEE_SIZE]);
@@ -144,6 +152,7 @@ pub trait AttestersReadApi<Account, Balance> {
     fn read_attester_info(attester: &Account) -> Option<AttesterInfo>;
     fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)>;
     fn get_activated_targets() -> Vec<TargetId>;
+    fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus>;
 }
 
 pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {
@@ -179,6 +188,10 @@ impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
 
     fn get_activated_targets() -> Vec<TargetId> {
         vec![]
+    }
+
+    fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
+        None
     }
 }
 

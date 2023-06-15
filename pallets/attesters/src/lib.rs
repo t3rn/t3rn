@@ -32,7 +32,7 @@ pub mod pallet {
 
     pub use t3rn_primitives::attesters::{
         AttesterInfo, AttestersChange, AttestersReadApi, AttestersWriteApi, BatchConfirmedSfxId,
-        CommitteeTransitionIndices, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
+        CommitteeTransitionIndices, LatencyStatus, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use t3rn_primitives::{
@@ -53,14 +53,6 @@ pub mod pallet {
         Repatriated,
         Expired,
         Committed,
-    }
-
-    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
-    pub enum LatencyStatus {
-        #[default]
-        OnTime,
-        // Late: (n amount of missed latency windows, total amount of successful repatriations)
-        Late(u32, u32),
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -228,8 +220,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn pending_slashes)]
-    pub type PendingSlashes<T: Config> =
-        StorageMap<_, Identity, T::AccountId, Vec<Slash<T::BlockNumber>>>;
+    pub type PermanentSlashes<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn attestation_targets)]
@@ -339,6 +330,7 @@ pub mod pallet {
         TargetAlreadyActive,
         TargetNotActive,
         XdnsTargetNotActive,
+        XdnsGatewayDoesNotHaveEscrowAddressRegistered,
         SfxAlreadyRequested,
         AddAttesterAlreadyRequested,
         RemoveAttesterAlreadyRequested,
@@ -491,6 +483,12 @@ pub mod pallet {
         pub fn force_activate_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
             ensure_root(origin)?;
 
+            // Ensure that gateway has the escrow address attached to it.
+            ensure!(
+                <T as Config>::Xdns::get_escrow_account(&target).is_ok(),
+                Error::<T>::XdnsGatewayDoesNotHaveEscrowAddressRegistered
+            );
+
             // Activate the new target
             PendingAttestationTargets::<T>::mutate(|pending| {
                 if let Some(index) = pending.iter().position(|x| x == &target) {
@@ -511,6 +509,12 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn add_attestation_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
             ensure_root(origin)?;
+
+            // Ensure that gateway has the escrow address attached to it.
+            ensure!(
+                <T as Config>::Xdns::get_escrow_account(&target).is_ok(),
+                Error::<T>::XdnsGatewayDoesNotHaveEscrowAddressRegistered
+            );
 
             ensure!(
                 !AttestationTargets::<T>::get().contains(&target),
@@ -586,23 +590,9 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::InvalidSignature)?;
 
             if !is_verified {
-                let slash: Vec<Slash<T::BlockNumber>> = match PendingSlashes::<T>::get(&account_id)
-                {
-                    Some(already_pending) => {
-                        let mut already_pending = already_pending;
-                        already_pending.extend_from_slice(&[Slash::Permanent]);
-                        already_pending
-                    },
-                    None => vec![Slash::Permanent],
-                };
-                // Apply permanent slash for colluding attestor
-                PendingSlashes::<T>::insert(&account_id, slash);
+                PermanentSlashes::<T>::append(account_id);
+                return Err(Error::<T>::RejectingFromSlashedAttester.into())
             }
-
-            ensure!(
-                PendingSlashes::<T>::get(&account_id).is_none(),
-                Error::<T>::RejectingFromSlashedAttester
-            );
 
             ensure!(is_verified, Error::<T>::AttestationSignatureInvalid);
 
@@ -915,6 +905,17 @@ pub mod pallet {
             CurrentCommittee::<T>::get()
         }
 
+        // Select the oldest batch with PendingAttestation and return the LatencyStatus
+        fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
+            let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
+            batches.sort_by(|a, b| a.created.cmp(&b.created));
+            let oldest_batch = batches.first();
+            match oldest_batch {
+                Some(batch) => Some(batch.latency.clone()),
+                None => None,
+            }
+        }
+
         fn active_set() -> Vec<T::AccountId> {
             ActiveSet::<T>::get()
         }
@@ -923,7 +924,7 @@ pub mod pallet {
             let active_set = ActiveSet::<T>::get();
             active_set
                 .into_iter()
-                .filter(|a| !PendingSlashes::<T>::contains_key(a))
+                .filter(|a| !Self::is_permanently_slashed(a))
                 .collect()
         }
 
@@ -1024,7 +1025,7 @@ pub mod pallet {
                 if let Some((account_id, _attester_info)) =
                     Attesters::<T>::iter().find(|(_, info)| info.index == attester_index)
                 {
-                    PendingSlashes::<T>::insert(&account_id, vec![Slash::Permanent]);
+                    PermanentSlashes::<T>::append(account_id);
                 } else {
                     log::error!("Colluding attester index: {:?} not found", attester_index);
                 }
@@ -1483,6 +1484,10 @@ pub mod pallet {
             aggregated_weight
         }
 
+        pub fn is_permanently_slashed(account: &T::AccountId) -> bool {
+            PermanentSlashes::<T>::get().contains(account)
+        }
+
         pub fn process_pending_unnominations(
             n: T::BlockNumber,
             mut aggregated_weight: Weight,
@@ -1584,7 +1589,7 @@ pub mod pallet {
                 ActiveSet::<T>::put(
                     SortedNominatedAttesters::<T>::get()
                         .iter()
-                        .filter(|(account_id, _)| PendingSlashes::<T>::get(account_id).is_none())
+                        .filter(|(account_id, _)| !Self::is_permanently_slashed(&account_id))
                         .take(32)
                         .cloned()
                         .map(|(account_id, _balance)| account_id)
@@ -1673,7 +1678,7 @@ pub mod attesters_test {
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
         Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards,
         CurrentCommittee, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
-        NextCommitteeOnTarget, Nominations, Origin, PendingSlashes, PendingUnnominations,
+        NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations, PermanentSlashes,
         PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters, System,
         XExecSignals,
     };
@@ -3108,10 +3113,13 @@ pub mod attesters_test {
 
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
 
+            let slashed_permanently = PermanentSlashes::<MiniRuntime>::get();
+
             // Check if all of the attesters have been slashed
             for counter in 1..33u8 {
                 let attester = AccountId::from([counter; 32]);
-                assert!(PendingSlashes::<MiniRuntime>::get(&attester).is_some());
+                assert!(Attesters::is_permanently_slashed(&attester));
+                assert!(slashed_permanently.contains(&attester));
             }
         });
     }
