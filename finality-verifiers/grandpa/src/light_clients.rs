@@ -422,8 +422,9 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         let last_finalized_height = to_local_block_number::<T, I>(*header.number())?;
         Ok(LightClientHeartbeat {
             last_heartbeat: frame_system::Pallet::<T>::block_number(),
-            last_finalized_height,
-            last_updated_height: last_finalized_height,
+            last_finalized_height: last_finalized_height.clone(),
+            last_rational_height: last_finalized_height.clone(),
+            last_fast_height: last_finalized_height,
             is_halted: Pallet::<T, I>::is_halted(),
             ever_initialized: Pallet::<T, I>::ever_initialized(),
         })

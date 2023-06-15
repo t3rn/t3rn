@@ -27,7 +27,8 @@ pub struct InclusionReceipt<BlockNumber> {
 pub struct LightClientHeartbeat<T: frame_system::Config> {
     pub last_heartbeat: T::BlockNumber,
     pub last_finalized_height: T::BlockNumber,
-    pub last_updated_height: T::BlockNumber,
+    pub last_rational_height: T::BlockNumber,
+    pub last_fast_height: T::BlockNumber,
     pub is_halted: bool,
     pub ever_initialized: bool,
 }
