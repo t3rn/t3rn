@@ -65,6 +65,8 @@ export class Attester {
                 async (event) => (await event.section) == 'attesters'
             )
 
+            this.prometheus.attestationsEvents.inc(attesterEvents.length)
+
             // Loop through the Vec<EventRecord>
             await Promise.all(
                 attesterEvents.map(async (record) => {
@@ -186,12 +188,12 @@ export class Attester {
                 },
                 'Error submitting attestation'
             )
-            this.prometheus.submitAttestationError.inc({ error: errorName })
+            this.prometheus.attestationSubmitError.inc({ error: errorName })
             return
         }
 
         logger.debug(result)
-        this.prometheus.submittedAttestation.inc({
+        this.prometheus.attestationSubmitted.inc({
             messageHash: messageHash,
             targetId: targetId,
             executionVendor: executionVendor,

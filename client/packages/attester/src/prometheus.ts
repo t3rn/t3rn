@@ -9,10 +9,10 @@ export class Prometheus {
     circuitHeight: client.Counter
     circuitDisconnected: client.Counter
     eventsTotal: client.Counter
-    eventsAttestationsTotal: client.Counter
+    attestationsEvents: client.Counter
     currentCommitteeMember: client.Gauge
-    submitAttestationError: client.Counter
-    submittedAttestation: client.Counter
+    attestationSubmitError: client.Counter
+    attestationSubmitted: client.Counter
     attestionsPending: client.Gauge
 
     constructor() {
@@ -52,7 +52,7 @@ export class Prometheus {
             labelNames: [],
         })
 
-        this.eventsAttestationsTotal = new client.Counter({
+        this.attestationsEvents = new client.Counter({
             name: 'events_attestations_total',
             help: 'Number of attestations received',
             registers: [this.register],
@@ -66,14 +66,14 @@ export class Prometheus {
             labelNames: [],
         })
 
-        this.submitAttestationError = new client.Counter({
+        this.attestationSubmitError = new client.Counter({
             name: 'submit_attestation_error_count',
             help: 'Number of errors when submitting an attestation',
             registers: [this.register],
             labelNames: ['error'],
         })
 
-        this.submittedAttestation = new client.Counter({
+        this.attestationSubmitted= new client.Counter({
             name: 'submit_attestation_count',
             help: 'Number of attestations submitted',
             registers: [this.register],
