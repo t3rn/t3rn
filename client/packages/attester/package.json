@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "fmt": "prettier --write src config tests",
+    "fmt": "prettier --check src config tests",
+    "fmt:fix": "prettier --write src config tests",
     "lint": "eslint --ext .ts src --fix",
     "lint:report": "eslint --ext .ts src --output-file eslint_report.json --format json",
     "test": "LOG_LEVEL=silent jest --verbose --no-warnings",
