@@ -61,43 +61,21 @@ export class Attester {
             const comittee = await this.getCommittee()
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
 
+            const attesterEvents = await events.filter(
+               async (event) => await event.section == 'attesters'
+            )
+
             // Loop through the Vec<EventRecord>
             await Promise.all(
-                events.map(async (record) => {
+                attesterEvents.map(async (record) => {
                     // Extract the phase, event and the event types
                     const { event } = record
-
-                    if (event.section == 'attesters') {
-                        logger.debug(
-                            { record: record.toHuman() },
-                            'Attestation Event'
-                        )
-                        this.prometheus.eventsAttestationsTotal.inc({
-                            method: event.method,
-                        })
-
-                        logger.debug(
-                            {
-                                section: event.section,
-                                method: event.method,
-                                phase: record.phase,
-                            },
-                            'Received an event for the attester'
-                        )
 
                         switch (event.method) {
                             case 'NewAttestationMessageHash': {
                                 const [targetId, messageHash, executionVendor] =
                                     event.data
-                                logger.info(
-                                    {
-                                        targetId: targetId.toString(),
-                                        messageHash: messageHash,
-                                        executionVendor:
-                                            executionVendor.toString(),
-                                    },
-                                    `Received NewAttestationMessageHash event to sign`
-                                )
+
                                 // Submit the attestation for the given target ID for the given message hash for each attester's key in the keys.json file
                                 if (executionVendor.toString() == 'Substrate') {
                                     logger.warn('Substrate not implemented')
@@ -115,28 +93,32 @@ export class Attester {
                                         executionVendor
                                     )
                                 }
-
                                 break
                             }
                             case 'CurrentPendingAttestationBatches': {
-                                logger.debug(
+                                const targetId = event.data[0].toString()
+                                const messageHashes = event.data[1]
+
+                                logger.error({
+                                    targetId: targetId,
+                                    messageHashes: messageHashes.length,
+                                },
                                     `Received CurrentPendingAttestationBatches event`
                                 )
-
-                                this.prometheus.attestionsPending.set(
-                                    {
-                                        targetId: event.data[0].toString(),
-                                    },
-                                    event.data[1].length
-                                )
-                                // Attest all pending attestations
-                                event.data[1].forEach(async (batch) => {
-                                    // Generate the signature for the message hash
-                                    await this.submitAttestationEVM(
-                                        batch[1], // messageHash
-                                        event.data[0], // target
-                                        'EVM'
+                                    this.prometheus.attestionsPending.set(
+                                        {
+                                            targetId: targetId,
+                                        },
+                                        messageHashes.length
                                     )
+
+                                // Attest all pending attestations
+                                messageHashes.forEach(async (messageHash) => {
+                                        await this.submitAttestationEVM(
+                                            messageHash[1],
+                                            targetId,
+                                            'EVM'
+                                        )
                                 })
                                 break
                             }
@@ -148,8 +130,8 @@ export class Attester {
                                 break
                             }
                         }
-                    }
                 })
+
             )
         })
     }
