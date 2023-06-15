@@ -233,13 +233,13 @@ export class Attester {
             return []
         }
 
-        return Object.values(committee).map(value => String(value))
+        return Object.values(committee.toJSON()).map(value => String(value))
     }
 
     private async checkIsInCommittee(committee: string[], accountId: string) {
         this.isInCurrentCommittee = committee.includes(accountId)
          
-        logger.info(
+        logger.debug(
             {
                 account: accountId,
                 committee: committee,
