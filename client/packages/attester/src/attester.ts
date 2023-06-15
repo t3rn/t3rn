@@ -146,6 +146,16 @@ export class Attester {
         targetId: string,
         executionVendor: string
     ) {
+        if (!this.config.targetsAllowed.includes(targetId)) {
+            logger.warn(
+                {
+                    targetId: targetId,
+                },
+                'Target not allowed'
+            )
+            return
+        }
+
         const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
 
         // const messageUint8Array = new Uint8Array(Buffer.from(messageHash.slice(2)))
