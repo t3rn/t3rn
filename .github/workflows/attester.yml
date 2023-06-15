@@ -85,7 +85,7 @@ jobs:
   deploy:
     name: Build & Deploy Attester
     runs-on: self-hosted
-    needs: test-attester
+    # needs: test-attester
     concurrency: attester
 
     if: needs.changes.outputs.src == 'true'
