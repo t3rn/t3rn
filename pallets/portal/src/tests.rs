@@ -301,19 +301,39 @@ mod tests {
             });
     }
 
+    fn test_get_latest_finalized_height_precompile(vendor: GatewayVendor) {
+        ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                let gateway_id = match vendor {
+                    GatewayVendor::Rococo => [0, 0, 0, 0],
+                    GatewayVendor::Kusama => *b"ksma",
+                    GatewayVendor::Polkadot => *b"pdot",
+                    _ => unreachable!(),
+                };
+                let result = Portal::get_finalized_height_precompile(gateway_id);
+                assert_eq!(result, 0);
+            });
+    }
+
     #[test]
     fn test_get_latest_finalized_height_rococo() {
         test_get_latest_finalized_height(GatewayVendor::Rococo);
+        test_get_latest_finalized_height_precompile(GatewayVendor::Rococo);
     }
 
     #[test]
     fn test_get_latest_finalized_height_kusama() {
         test_get_latest_finalized_height(GatewayVendor::Kusama);
+        test_get_latest_finalized_height_precompile(GatewayVendor::Kusama);
     }
 
     #[test]
     fn test_get_latest_finalized_height_polkadot() {
         test_get_latest_finalized_height(GatewayVendor::Polkadot);
+        test_get_latest_finalized_height_precompile(GatewayVendor::Polkadot);
     }
 
     #[test]
@@ -331,6 +351,11 @@ mod tests {
         test_turn_on(GatewayVendor::Polkadot);
     }
 
+    #[test]
+    fn test_turn_on_ethereum() {
+        test_turn_on(GatewayVendor::Ethereum);
+    }
+
     fn test_turn_on(vendor: GatewayVendor) {
         ExtBuilder::default()
             .with_standard_sfx_abi()
@@ -341,7 +366,7 @@ mod tests {
                     GatewayVendor::Rococo => [0, 0, 0, 0],
                     GatewayVendor::Kusama => *b"ksma",
                     GatewayVendor::Polkadot => *b"pdot",
-                    _ => unreachable!(),
+                    GatewayVendor::Ethereum => *b"eth2",
                 };
                 let origin = Origin::root();
                 let result = Portal::turn_on(origin, gateway_id);

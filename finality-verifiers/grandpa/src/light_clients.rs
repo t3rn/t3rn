@@ -721,7 +721,8 @@ pub mod grandpa_light_clients_test {
                     LightClientHeartbeat {
                         last_heartbeat: 1,
                         last_finalized_height: 5,
-                        last_updated_height: 5,
+                        last_rational_height: 5,
+                        last_fast_height: 5,
                         is_halted: false,
                         ever_initialized: true
                     }
