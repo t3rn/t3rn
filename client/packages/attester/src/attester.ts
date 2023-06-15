@@ -123,6 +123,12 @@ export class Attester {
                                     `Received CurrentPendingAttestationBatches event`
                                 )
 
+                                this.prometheus.attestionsPending.set(
+                                    {
+                                        targetId: event.data[0].toString(),
+                                    },
+                                    event.data[1].length
+                                )
                                 // Attest all pending attestations
                                 event.data[1].forEach(async (batch) => {
                                     // Generate the signature for the message hash
@@ -222,7 +228,7 @@ export class Attester {
         )
     }
 
-    private async getCommittee() : Promise<string[]> {
+    private async getCommittee(): Promise<string[]> {
         let committee
         try {
             committee =
@@ -233,12 +239,12 @@ export class Attester {
             return []
         }
 
-        return Object.values(committee.toJSON()).map(value => String(value))
+        return Object.values(committee.toJSON()).map((value) => String(value))
     }
 
     private async checkIsInCommittee(committee: string[], accountId: string) {
         this.isInCurrentCommittee = committee.includes(accountId)
-         
+
         logger.debug(
             {
                 account: accountId,

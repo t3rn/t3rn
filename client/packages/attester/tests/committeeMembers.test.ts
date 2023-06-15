@@ -4,7 +4,6 @@ import { Attester } from '../src/attester'
 jest.mock('../src/prometheus')
 console.warn = jest.fn()
 
-
 // Mock the dependencies
 const mockCircuit = {
     client: {
@@ -17,9 +16,9 @@ const mockCircuit = {
 }
 
 const mockPrometheus = {
-  currentCommitteeMember: {
-    set: jest.fn(),
-  },
+    currentCommitteeMember: {
+        set: jest.fn(),
+    },
 }
 
 describe('attesterCommittee', () => {
@@ -34,12 +33,9 @@ describe('attesterCommittee', () => {
             },
         }
         const keys = {
-            substrate: {
-            },
-            ethereum: {
-            },
-            btc: {
-            },
+            substrate: {},
+            ethereum: {},
+            btc: {},
         }
         attester = new Attester(config, keys)
         Object.defineProperty(attester, 'prometheus', {
@@ -56,13 +52,10 @@ describe('attesterCommittee', () => {
     })
 
     it('should return true if the address is in the committee', () => {
-        const committee = ['address1', 'address2', 'address3' ]
+        const committee = ['address1', 'address2', 'address3']
         const accountId = 'address2'
 
-        attester.checkIsInCommittee(
-            committee,
-            accountId
-           )
+        attester.checkIsInCommittee(committee, accountId)
 
         // Assert that the result is true
         expect(attester.isInCurrentCommittee).toBe(true)
@@ -72,13 +65,10 @@ describe('attesterCommittee', () => {
     })
 
     it('should return false if the address is not in the committee', async () => {
-        const committee = ['address1' ,'address3' ]
+        const committee = ['address1', 'address3']
         const accountId = 'address2'
-        
-        await attester.checkIsInCommittee(
-            committee,
-            accountId
-        )
+
+        await attester.checkIsInCommittee(committee, accountId)
 
         // Assert that the result is false
         expect(attester.isInCurrentCommittee).toBe(false)
@@ -98,10 +88,8 @@ describe('attesterCommittee', () => {
     //     attester.circuit.client.query.attesters.currentCommittee.mockResolvedValue(
     //         JSON.parse(JSON.stringify(committee))
 
-
     //     )
     //     // console.error()
-       
 
     //     // Call the `getCommittee` function
     //     const result = await attester.getCommittee()
@@ -109,5 +97,4 @@ describe('attesterCommittee', () => {
     //     // Assert that the result is false
     //     expect(result).toEqual(committee)
     // })
-
 })

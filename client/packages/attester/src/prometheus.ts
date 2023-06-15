@@ -13,6 +13,7 @@ export class Prometheus {
     currentCommitteeMember: client.Gauge
     submitAttestationError: client.Counter
     submittedAttestation: client.Counter
+    attestionsPending: client.Gauge
 
     constructor() {
         const Registry = client.Registry
@@ -78,6 +79,14 @@ export class Prometheus {
             registers: [this.register],
             labelNames: ['messageHash', 'targetId', 'executionVendor'],
         })
+
+        this.attestionsPending = new client.Gauge({
+            name: 'attestations_pending',
+            help: 'Number of attestations pending',
+            registers: [this.register],
+            labelNames: ['targetId'],
+        })
+
         this.startServer()
     }
 
