@@ -4,7 +4,7 @@ import { logger } from './logging'
 import { Prometheus } from './prometheus'
 import * as ethUtil from 'ethereumjs-util'
 import { Mutex } from 'async-mutex'
-
+// ts-ignore
 import { hexToU8a } from '@polkadot/util'
 
 export class Attester {
@@ -58,7 +58,8 @@ export class Attester {
             logger.debug({ events_count: events.length }, `Received events`)
             this.prometheus.eventsTotal.inc(events.length)
 
-            await this.checkIsInCommittee()
+            const comittee = await this.getCommittee()
+            this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
 
             // Loop through the Vec<EventRecord>
             await Promise.all(
@@ -221,7 +222,7 @@ export class Attester {
         )
     }
 
-    private async checkIsInCommittee() {
+    private async getCommittee() : Promise<string[]> {
         let committee
         try {
             committee =
@@ -229,19 +230,20 @@ export class Attester {
         } catch (error) {
             logger.error(error.stack, 'Error getting committee')
             this.prometheus.currentCommitteeMember.set(0)
-            return
+            return []
         }
 
-        let committeeArray = committee.map(function(item) {
-            return item.toString();
-          });
+        return Object.values(committee).map(value => String(value))
+    }
 
-        this.isInCurrentCommittee = committeeArray.includes(this.keys.substrate.accountId)
+    private async checkIsInCommittee(committee: string[], accountId: string) {
+        this.isInCurrentCommittee = committee.includes(accountId)
          
         logger.info(
             {
+                account: accountId,
+                committee: committee,
                 isInCurrentCommittee: this.isInCurrentCommittee,
-                accountId: this.keys.substrate.accountId,
             },
             'Current committee member'
         )
