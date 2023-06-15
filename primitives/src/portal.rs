@@ -198,15 +198,56 @@ impl<T: frame_system::Config> Into<Bytes> for PortalExecution<T> {
     }
 }
 
-#[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
+#[derive(Clone, Eq, Decode, PartialEq, Debug, TypeInfo)]
 pub enum PrecompileArgs {
     GetLatestFinalizedHeader(ChainId),
     GetFinalizedHeight(ChainId),
     GetRationalHeight(ChainId),
     GetFastHeight(ChainId),
-    VerifyEventInclusion([u8; 4], Bytes, SpeedMode, Bytes),
-    VerifyStateInclusion([u8; 4], Bytes, SpeedMode),
-    VerifyTxInclusion([u8; 4], Bytes, SpeedMode),
+    VerifyEventInclusion(ChainId, SpeedMode, Bytes),
+    VerifyStateInclusion(ChainId, SpeedMode, Bytes),
+    VerifyTxInclusion(ChainId, SpeedMode, Bytes),
+}
+impl Encode for PrecompileArgs {
+    fn encode_to<W: codec::Output + ?Sized>(&self, dest: &mut W) -> () {
+        match self {
+            PrecompileArgs::GetLatestFinalizedHeader(chain_id) => {
+                0u8.encode_to(dest);
+                chain_id.encode_to(dest);
+            },
+            PrecompileArgs::GetFinalizedHeight(chain_id) => {
+                1u8.encode_to(dest);
+                chain_id.encode_to(dest);
+            },
+            PrecompileArgs::GetRationalHeight(chain_id) => {
+                2u8.encode_to(dest);
+                chain_id.encode_to(dest);
+            },
+            PrecompileArgs::GetFastHeight(chain_id) => {
+                3u8.encode_to(dest);
+                chain_id.encode_to(dest);
+            },
+            PrecompileArgs::VerifyEventInclusion(chain_id, speed_mode, bytes) => {
+                4u8.encode_to(dest);
+                chain_id.encode_to(dest);
+                speed_mode.encode_to(dest);
+                dest.write(bytes);
+            },
+            PrecompileArgs::VerifyStateInclusion(chain_id, speed_mode, bytes) => {
+                5u8.encode_to(dest);
+                chain_id.encode_to(dest);
+                speed_mode.encode_to(dest);
+                dest.write(bytes);
+            },
+            PrecompileArgs::VerifyTxInclusion(chain_id, speed_mode, bytes) => {
+                6u8.encode_to(dest);
+                chain_id.encode_to(dest);
+                speed_mode.encode_to(dest);
+                dest.write(bytes);
+            },
+        }
+        ()
+    }
 }
 
 impl PrecompileArgs {
@@ -216,9 +257,9 @@ impl PrecompileArgs {
                 GetFinalizedHeight:Bytes4,\
                 GetRationalHeight:Bytes4,\
                 GetFastHeight:Bytes4,\
-                VerifyEventInclusion:Triple(Bytes4,Bytes,Byte,Bytes),\
-                VerifyStateInclusion:Tuple(Bytes4,Byte,Bytes),\
-                VerifyTxInclusion:Tuple(Bytes4,Bytes,Byte),\
+                VerifyEventInclusion:Triple(Bytes4,Byte,Bytes),\
+                VerifyStateInclusion:Triple(Bytes4,Byte,Bytes),\
+                VerifyTxInclusion:Triple(Bytes4,Bytes,Byte),\
         )"
         .to_vec()
     }
@@ -281,43 +322,42 @@ pub mod tests {
     #[test]
     fn portal_interface_abi_descriptor_parses() {
         let portal_interface_abi = PrecompileArgs::interface_abi().unwrap();
-        assert_eq!(
-            portal_interface_abi,
-            Abi::Enum(
-                Some(b"PrecompileArgs".to_vec()),
-                vec![
-                    Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeader".to_vec()))),
-                    Box::new(Abi::Bytes4(Some(b"GetFinalizedHeight".to_vec()))),
-                    Box::new(Abi::Bytes4(Some(b"GetRationalHeight".to_vec()))),
-                    Box::new(Abi::Bytes4(Some(b"GetFastHeight".to_vec()))),
-                    Box::new(Abi::Quadruple(
-                        Some(b"VerifyEventInclusion".to_vec()),
-                        (
-                            Box::new(Abi::Bytes4(None)),
-                            Box::new(Abi::Bytes(None)),
-                            Box::new(Abi::Byte(None)),
-                            Box::new(Abi::Bytes(None))
-                        ),
-                    )),
-                    Box::new(Abi::Triple(
-                        Some(b"VerifyStateInclusion".to_vec()),
-                        (
-                            Box::new(Abi::Bytes4(None)),
-                            Box::new(Abi::Bytes(None)),
-                            Box::new(Abi::Byte(None))
-                        ),
-                    )),
-                    Box::new(Abi::Triple(
-                        Some(b"VerifyTxInclusion".to_vec()),
-                        (
-                            Box::new(Abi::Bytes4(None)),
-                            Box::new(Abi::Bytes(None)),
-                            Box::new(Abi::Byte(None))
-                        ),
-                    )),
-                ]
-            )
+
+        let expected_abi = Abi::Enum(
+            Some(b"PrecompileArgs".to_vec()),
+            vec![
+                Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeader".to_vec()))),
+                Box::new(Abi::Bytes4(Some(b"GetFinalizedHeight".to_vec()))),
+                Box::new(Abi::Bytes4(Some(b"GetRationalHeight".to_vec()))),
+                Box::new(Abi::Bytes4(Some(b"GetFastHeight".to_vec()))),
+                Box::new(Abi::Triple(
+                    Some(b"VerifyEventInclusion".to_vec()),
+                    (
+                        Box::new(Abi::Bytes4(None)),
+                        Box::new(Abi::Byte(None)),
+                        Box::new(Abi::Bytes(None)),
+                    ),
+                )),
+                Box::new(Abi::Triple(
+                    Some(b"VerifyStateInclusion".to_vec()),
+                    (
+                        Box::new(Abi::Bytes4(None)),
+                        Box::new(Abi::Byte(None)),
+                        Box::new(Abi::Bytes(None)),
+                    ),
+                )),
+                Box::new(Abi::Triple(
+                    Some(b"VerifyTxInclusion".to_vec()),
+                    (
+                        Box::new(Abi::Bytes4(None)),
+                        Box::new(Abi::Byte(None)),
+                        Box::new(Abi::Bytes(None)),
+                    ),
+                )),
+            ],
         );
+
+        assert_eq!(portal_interface_abi.encode(), expected_abi.encode())
     }
 
     #[test]
@@ -388,32 +428,41 @@ pub mod tests {
         )
     }
 
+    use hex_literal::hex;
+    use sp_core::H256;
+
     #[test]
     fn portal_precompile_selects_enum_for_verify_event_inclusion() {
         let portal_precompile_interface = PrecompileArgs::interface_abi().unwrap();
 
+        let encoded_verify_event_inclusion_select = PrecompileArgs::VerifyEventInclusion(
+            [1u8; 4],
+            SpeedMode::Fast,
+            hex!("04040404040404040404040404040404040404040404040404040404040404040505050505")
+                .to_vec(),
+        )
+        .encode();
+
+        assert_eq!(
+            encoded_verify_event_inclusion_select,
+            hex!("04010101010004040404040404040404040404040404040404040404040404040404040404040505050505").to_vec()
+        );
+
         let filled_abi = FilledAbi::try_fill_abi(
             portal_precompile_interface,
-            PrecompileArgs::VerifyEventInclusion(
-                [1u8; 4],
-                vec![4u8; 32],
-                SpeedMode::Fast,
-                vec![5u8],
-            )
-            .encode(),
+            encoded_verify_event_inclusion_select,
             Codec::Scale,
         )
         .unwrap();
 
         assert_eq!(
             filled_abi,
-            FilledAbi::Quadruple(
+            FilledAbi::Triple(
                 Some(b"VerifyEventInclusion".to_vec()),
                 (
-                    Box::new(FilledAbi::Bytes4(None, vec![1u8; 4])),
-                    Box::new(FilledAbi::Bytes(None, vec![4u8; 32].encode())),
-                    Box::new(FilledAbi::Byte(None, vec![0u8].encode())),
-                    Box::new(FilledAbi::Bytes(None, vec![5u8].encode()))
+                    Box::new(FilledAbi::Bytes4(None, hex!("01010101").to_vec())),
+                    Box::new(FilledAbi::Byte(None, hex!("00").to_vec())),
+                    Box::new(FilledAbi::Bytes(None, hex!("04040404040404040404040404040404040404040404040404040404040404040505050505").to_vec()))
                 ),
             )
         )
@@ -481,12 +530,8 @@ pub mod tests {
     fn test_verify_event_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
-        let portal_call = PrecompileArgs::VerifyEventInclusion(
-            chain_id,
-            event.clone(),
-            SpeedMode::Finalized,
-            vec![4u8],
-        );
+        let portal_call =
+            PrecompileArgs::VerifyEventInclusion(chain_id, SpeedMode::Finalized, event.clone());
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -494,7 +539,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyEventInclusion(chain_id, event, SpeedMode::Finalized, vec![4u8])
+            PrecompileArgs::VerifyEventInclusion(chain_id, SpeedMode::Finalized, event)
         );
     }
 
@@ -503,7 +548,7 @@ pub mod tests {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
         let portal_call =
-            PrecompileArgs::VerifyStateInclusion(chain_id, event.clone(), SpeedMode::Rational);
+            PrecompileArgs::VerifyStateInclusion(chain_id, SpeedMode::Rational, event.clone());
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -511,7 +556,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyStateInclusion(chain_id, event, SpeedMode::Rational)
+            PrecompileArgs::VerifyStateInclusion(chain_id, SpeedMode::Rational, event)
         );
     }
 
@@ -520,7 +565,7 @@ pub mod tests {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
         let portal_call =
-            PrecompileArgs::VerifyTxInclusion(chain_id, event.clone(), SpeedMode::Rational);
+            PrecompileArgs::VerifyTxInclusion(chain_id, SpeedMode::Rational, event.clone());
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -528,7 +573,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyTxInclusion(chain_id, event, SpeedMode::Rational)
+            PrecompileArgs::VerifyTxInclusion(chain_id, SpeedMode::Rational, event)
         );
     }
 }
