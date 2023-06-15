@@ -9,5 +9,5 @@ export default {
             http: 'https://rpc.t0rn.io',
         },
     },
-    targetsAllowed: ['0x7365706c']
+    targetsAllowed: ['0x7365706c'],
 }
