@@ -53,7 +53,7 @@ export class Prometheus {
         })
 
         this.attestationsEvents = new client.Counter({
-            name: 'events_attestations_total',
+            name: 'attestation_events_total',
             help: 'Number of attestations received',
             registers: [this.register],
             labelNames: ['method'],
@@ -67,14 +67,14 @@ export class Prometheus {
         })
 
         this.attestationSubmitError = new client.Counter({
-            name: 'submit_attestation_error_count',
+            name: 'attestation_submit_error_count',
             help: 'Number of errors when submitting an attestation',
             registers: [this.register],
             labelNames: ['error'],
         })
 
         this.attestationSubmitted= new client.Counter({
-            name: 'submit_attestation_count',
+            name: 'attestation_submit_count',
             help: 'Number of attestations submitted',
             registers: [this.register],
             labelNames: ['messageHash', 'targetId', 'executionVendor'],
