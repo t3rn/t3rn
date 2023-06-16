@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "build-docs": "pnpm typedoc && cp -R docs ../../../docs/attester",
     "fmt": "prettier --check src config tests",
     "fmt:fix": "prettier --write src config tests",
     "lint": "eslint --ext .ts src --fix",
@@ -28,6 +29,7 @@
     "http": "0.0.1-security",
     "pino": "^8.14.1",
     "prom-client": "^14.2.0",
+    "typedoc": "^0.24.8",
     "typescript": "^5.1.3",
     "url": "^0.11.1"
   },
