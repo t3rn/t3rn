@@ -8,6 +8,9 @@ import queue from 'async/queue'
 // ts-ignore
 import { hexToU8a } from '@polkadot/util'
 
+/**
+ * @group Attester
+ */
 export class Attester {
     circuit: Connection
     config: any

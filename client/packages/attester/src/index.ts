@@ -3,6 +3,8 @@ require('dotenv').config()
 import { logger } from './logging'
 import { Attester } from './attester'
 import { checkKeys } from './utils'
+import { Prometheus } from './prometheus'
+import { Connection } from './connection'
 
 process.on('uncaughtException', (error) => {
     logger.error(error.stack)
@@ -37,3 +39,12 @@ process.on('uncaughtException', (error) => {
     const attester = new Attester(config, keys)
     await attester.start()
 })()
+
+
+export {
+  Attester,
+  Prometheus,
+  Connection,
+  checkKeys,
+}
+
