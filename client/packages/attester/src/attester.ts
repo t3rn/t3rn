@@ -3,8 +3,7 @@ import { cryptoWaitReady } from '@t3rn/sdk'
 import { logger } from './logging'
 import { Prometheus } from './prometheus'
 import * as ethUtil from 'ethereumjs-util'
-import { Mutex } from 'async-mutex'
-// import queue from 'async/queue';
+import queue from 'async/queue'
 
 // ts-ignore
 import { hexToU8a } from '@polkadot/util'
@@ -14,17 +13,17 @@ export class Attester {
     config: any
     prometheus: Prometheus
     keys: any
-    mutex: Mutex
     isInCurrentCommittee = false
-    // queue: Queue
+    q: any
+    boundProcessAttestation: any
 
     constructor(config: any, keys: any) {
         this.config = config
         this.prometheus = new Prometheus()
         this.keys = keys
-        this.mutex = new Mutex()
-        // this.queue = async.queue('function', 'concurrency value')
+        this.boundProcessAttestation = this.processAttestation.bind(this)
 
+        this.q = queue(this.boundProcessAttestation, 1)
     }
 
     async start() {
@@ -75,11 +74,6 @@ export class Attester {
             // Loop through the Vec<EventRecord>
             await Promise.all(
                 attesterEvents.map(async (record) => {
-                    // Before any attestation we need to check if we are in current committee
-                    if (!this.isInCurrentCommittee) {
-                        return
-                    }
-
                     // Extract the phase, event and the event types
                     const { event } = record
 
@@ -96,11 +90,14 @@ export class Attester {
                             ) {
                                 logger.warn('Ed25519 not implemented')
                             } else if (executionVendor.toString() == 'EVM') {
-                                // Generate the signature for the message hash
-                                await this.submitAttestationEVM(
-                                    messageHash,
-                                    targetId,
-                                    executionVendor
+                                // Add attestion to queue
+                                this.q.push({
+                                    messageHash: messageHash,
+                                    targetId: targetId,
+                                    executionVendor: 'EVM',
+                                })
+                                this.prometheus.attestationsInQueue.set(
+                                    this.q.length()
                                 )
                             }
                             break
@@ -125,12 +122,29 @@ export class Attester {
 
                             // Attest all pending attestations
                             messageHashes.forEach(async (messageHash) => {
-                                await this.submitAttestationEVM(
-                                    messageHash[1],
-                                    targetId,
-                                    'EVM'
-                                )
+                                if (
+                                    !this.config.targetsAllowed.includes(
+                                        targetId
+                                    )
+                                ) {
+                                    logger.warn(
+                                        {
+                                            targetId: targetId,
+                                        },
+                                        'Target not allowed'
+                                    )
+                                    return
+                                }
+
+                                this.q.push({
+                                    messageHash: messageHash[1],
+                                    targetId: targetId,
+                                    executionVendor: 'EVM',
+                                })
                             })
+                            this.prometheus.attestationsInQueue.set(
+                                this.q.length()
+                            )
                             break
                         }
                         case 'NewTargetProposed': {
@@ -146,24 +160,23 @@ export class Attester {
         })
     }
 
+    private async processAttestation(data: any) {
+        await this.submitAttestationEVM(
+            data.messageHash,
+            data.targetId,
+            data.executionVendor
+        )
+    }
+
     private async submitAttestationEVM(
         messageHash: string,
         targetId: string,
         executionVendor: string
     ) {
-        if (!this.config.targetsAllowed.includes(targetId)) {
-            logger.warn(
-                {
-                    targetId: targetId,
-                },
-                'Target not allowed'
-            )
-            return
-        }
         if (!this.isInCurrentCommittee) {
+            logger.warn('Not in current committee, not submitting attestation')
             return
         }
-        
 
         const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
 
@@ -184,18 +197,16 @@ export class Attester {
 
         let result
         try {
-            await this.mutex.runExclusive(async () => {
-                logger.debug(
-                    {
-                        executionVendor: executionVendor.toString(),
-                        targetId: targetId,
-                        messageHash: messageHash,
-                        signature: signature.toString(),
-                    },
-                    'Submitting attestation'
-                )
-                result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
-            })
+            logger.debug(
+                {
+                    executionVendor: executionVendor.toString(),
+                    targetId: targetId,
+                    messageHash: messageHash,
+                    signature: signature.toString(),
+                },
+                'Submitting attestation'
+            )
+            result = await this.circuit.sdk?.circuit.tx.signAndSendSafe(tx)
         } catch (error) {
             const errorName = error.stack.match(/^Error: (.*):/)[1] // Parse stack trace to get exact error which is not present in error object
             logger.error(
@@ -208,6 +219,9 @@ export class Attester {
                 'Error submitting attestation'
             )
             this.prometheus.attestationSubmitError.inc({ error: errorName })
+            return
+        }
+        if (!result) {
             return
         }
 

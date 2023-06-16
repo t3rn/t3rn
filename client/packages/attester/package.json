@@ -22,7 +22,6 @@
     "@polkadot/util": "^10.4.2",
     "@t3rn/sdk": "link:../sdk",
     "async": "^3.2.4",
-    "async-mutex": "^0.4.0",
     "axios": "^1.4.0",
     "dotenv": "^16.1.4",
     "ethereumjs-util": "^7.1.5",

@@ -14,6 +14,7 @@ export class Prometheus {
     attestationSubmitError: client.Counter
     attestationSubmitted: client.Counter
     attestionsPending: client.Gauge
+    attestationsInQueue: client.Gauge
 
     constructor() {
         const Registry = client.Registry
@@ -83,6 +84,13 @@ export class Prometheus {
         this.attestionsPending = new client.Gauge({
             name: 'attestations_pending',
             help: 'Number of attestations pending',
+            registers: [this.register],
+            labelNames: ['targetId'],
+        })
+
+        this.attestationsInQueue = new client.Gauge({
+            name: 'attestations_in_queue',
+            help: 'Number of attestations in queue',
             registers: [this.register],
             labelNames: ['targetId'],
         })
