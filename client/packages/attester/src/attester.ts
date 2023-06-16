@@ -4,6 +4,8 @@ import { logger } from './logging'
 import { Prometheus } from './prometheus'
 import * as ethUtil from 'ethereumjs-util'
 import { Mutex } from 'async-mutex'
+// import queue from 'async/queue';
+
 // ts-ignore
 import { hexToU8a } from '@polkadot/util'
 
@@ -14,12 +16,15 @@ export class Attester {
     keys: any
     mutex: Mutex
     isInCurrentCommittee = false
+    // queue: Queue
 
     constructor(config: any, keys: any) {
         this.config = config
         this.prometheus = new Prometheus()
         this.keys = keys
         this.mutex = new Mutex()
+        // this.queue = async.queue('function', 'concurrency value')
+
     }
 
     async start() {
@@ -155,6 +160,10 @@ export class Attester {
             )
             return
         }
+        if (!this.isInCurrentCommittee) {
+            return
+        }
+        
 
         const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
 

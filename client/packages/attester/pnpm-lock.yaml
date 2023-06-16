@@ -7,6 +7,9 @@ dependencies:
   '@t3rn/sdk':
     specifier: link:../sdk
     version: link:../sdk
+  async:
+    specifier: ^3.2.4
+    version: 3.2.4
   async-mutex:
     specifier: ^0.4.0
     version: 0.4.0
@@ -2098,6 +2101,10 @@ packages:
     resolution: {integrity: sha512-eJFZ1YhRR8UN8eBLoNzcDPcy/jqjsg6I1AP+KvWQX80BqOSW1oJPJXDylPUEeMr2ZQvHgnQ//Lp6f3RQ1zI7HA==}
     dependencies:
       tslib: 2.5.3
+    dev: false
+
+  /async@3.2.4:
+    resolution: {integrity: sha512-iAB+JbDEGXhyIUavoDl9WP/Jj106Kz9DEn1DPgYw5ruDn0e3Wgi3sKFm55sASdGBNOQB8F59d9qQ7deqrHA8wQ==}
     dev: false
 
   /asynckit@0.4.0:
