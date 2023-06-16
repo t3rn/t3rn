@@ -127,7 +127,7 @@ export class Attester {
                         )
 
                         // Purge queue
-                        this.q.drain()
+                        this.queuePurge()
 
                         // Attest all pending attestations
                         messageHashes.forEach(async (messageHash) => {
@@ -166,6 +166,13 @@ export class Attester {
                     }
                 }
             })
+        )
+    }
+
+    private queuePurge() {
+        this.q.remove(function testFn(item: { data: any }): boolean {
+            return true
+          }
         )
     }
 
