@@ -85,17 +85,6 @@ jobs:
       - name: 🏗 Build Docs
         run: pnpm run build-docs
         working-directory: client/packages/attester
-      - name: 👾 Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-args: '--force'
-          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID}}
-          vercel-project-id: ${{ secrets.VERCEL_ATTESTER_DOCS_PROJECT_ID }}
-          scope: "t3rn"
-          alias-domains: |
-            docs.attester.t3rn.io
-
 
   deploy:
     name: Build & Deploy Attester

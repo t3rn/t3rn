@@ -123,6 +123,9 @@ export class Attester {
                                 messageHashes.length
                             )
 
+                            // Purge queue
+                            this.q.purge()
+
                             // Attest all pending attestations
                             messageHashes.forEach(async (messageHash) => {
                                 if (
