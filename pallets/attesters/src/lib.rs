@@ -1921,6 +1921,32 @@ pub mod attesters_test {
     }
 
     #[test]
+    fn submitting_attestation_reads_as_on_time_latency_status() {
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
+        ext.execute_with(|| {
+            // Register an attester
+            let attester = AccountId::from([1; 32]);
+            let attester_info = register_attester_with_single_private_key([1u8; 32]);
+            // Submit an attestation signed with the Ed25519 key
+            let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
+            let (_hash, signature) = sign_and_submit_sfx_to_latest_attestation(
+                attester,
+                sfx_id_to_sign_on,
+                ECDSA_ATTESTER_KEY_TYPE_ID,
+                [0u8; 4],
+                [1u8; 32],
+            );
+
+            let batch_latency = Attesters::read_attestation_latency(&[0u8; 4]);
+            assert!(batch_latency.is_some());
+            assert_eq!(batch_latency, Some(LatencyStatus::OnTime));
+        });
+    }
+
+    #[test]
     fn register_and_submit_attestation_in_ecdsa() {
         let mut ext = ExtBuilder::default()
             .with_polkadot_gateway_record()

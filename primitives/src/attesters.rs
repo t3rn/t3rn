@@ -312,5 +312,13 @@ pub mod test {
             >>::get_activated_targets(),
             Vec::<TargetId>::new()
         );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::read_attestation_latency(&[0u8; 4]),
+            None
+        );
     }
 }
