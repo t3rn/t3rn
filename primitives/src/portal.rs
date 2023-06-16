@@ -198,7 +198,7 @@ impl<T: frame_system::Config> Into<Bytes> for PortalExecution<T> {
     }
 }
 
-#[derive(Clone, Eq, Decode, PartialEq, Debug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Debug, TypeInfo)]
 pub enum PrecompileArgs {
     GetLatestFinalizedHeader(ChainId),
     GetFinalizedHeight(ChainId),
@@ -249,6 +249,63 @@ impl Encode for PrecompileArgs {
         ()
     }
 }
+impl Decode for PrecompileArgs {
+    fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
+        let tag = u8::decode(input)?;
+        match tag {
+            0 => {
+                let chain_id = ChainId::decode(input)?;
+                Ok(PrecompileArgs::GetLatestFinalizedHeader(chain_id))
+            },
+            1 => {
+                let chain_id = ChainId::decode(input)?;
+                Ok(PrecompileArgs::GetFinalizedHeight(chain_id))
+            },
+            2 => {
+                let chain_id = ChainId::decode(input)?;
+                Ok(PrecompileArgs::GetRationalHeight(chain_id))
+            },
+            3 => {
+                let chain_id = ChainId::decode(input)?;
+                Ok(PrecompileArgs::GetFastHeight(chain_id))
+            },
+            4 => {
+                let chain_id = ChainId::decode(input)?;
+                let speed_mode = SpeedMode::decode(input)?;
+                let mut bytes = Vec::new();
+                while let Ok(byte) = input.read_byte() {
+                    bytes.push(byte);
+                }
+                Ok(PrecompileArgs::VerifyEventInclusion(
+                    chain_id, speed_mode, bytes,
+                ))
+            },
+            5 => {
+                let chain_id = ChainId::decode(input)?;
+                let speed_mode = SpeedMode::decode(input)?;
+                let mut bytes = Vec::new();
+                while let Ok(byte) = input.read_byte() {
+                    bytes.push(byte);
+                }
+                Ok(PrecompileArgs::VerifyStateInclusion(
+                    chain_id, speed_mode, bytes,
+                ))
+            },
+            6 => {
+                let chain_id = ChainId::decode(input)?;
+                let speed_mode = SpeedMode::decode(input)?;
+                let mut bytes = Vec::new();
+                while let Ok(byte) = input.read_byte() {
+                    bytes.push(byte);
+                }
+                Ok(PrecompileArgs::VerifyTxInclusion(
+                    chain_id, speed_mode, bytes,
+                ))
+            },
+            _ => Err("Invalid tag".into()),
+        }
+    }
+}
 
 impl PrecompileArgs {
     pub fn descriptor() -> Vec<u8> {
@@ -259,7 +316,7 @@ impl PrecompileArgs {
                 GetFastHeight:Bytes4,\
                 VerifyEventInclusion:Triple(Bytes4,Byte,Bytes),\
                 VerifyStateInclusion:Triple(Bytes4,Byte,Bytes),\
-                VerifyTxInclusion:Triple(Bytes4,Bytes,Byte),\
+                VerifyTxInclusion:Triple(Bytes4,Byte,Bytes),\
         )"
         .to_vec()
     }
@@ -357,7 +414,22 @@ pub mod tests {
             ],
         );
 
-        assert_eq!(portal_interface_abi.encode(), expected_abi.encode())
+        assert_eq!(
+            portal_interface_abi.encode(),
+            vec![
+                3, 1, 56, 80, 114, 101, 99, 111, 109, 112, 105, 108, 101, 65, 114, 103, 115, 28, 9,
+                1, 96, 71, 101, 116, 76, 97, 116, 101, 115, 116, 70, 105, 110, 97, 108, 105, 122,
+                101, 100, 72, 101, 97, 100, 101, 114, 9, 1, 72, 71, 101, 116, 70, 105, 110, 97,
+                108, 105, 122, 101, 100, 72, 101, 105, 103, 104, 116, 9, 1, 68, 71, 101, 116, 82,
+                97, 116, 105, 111, 110, 97, 108, 72, 101, 105, 103, 104, 116, 9, 1, 52, 71, 101,
+                116, 70, 97, 115, 116, 72, 101, 105, 103, 104, 116, 20, 1, 80, 86, 101, 114, 105,
+                102, 121, 69, 118, 101, 110, 116, 73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0,
+                14, 0, 8, 0, 20, 1, 80, 86, 101, 114, 105, 102, 121, 83, 116, 97, 116, 101, 73,
+                110, 99, 108, 117, 115, 105, 111, 110, 9, 0, 14, 0, 8, 0, 20, 1, 68, 86, 101, 114,
+                105, 102, 121, 84, 120, 73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0, 14, 0, 8,
+                0
+            ]
+        );
     }
 
     #[test]
