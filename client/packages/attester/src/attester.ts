@@ -85,7 +85,6 @@ export class Attester {
                             const [targetId, messageHash, executionVendor] =
                                 event.data
 
-                            // Submit the attestation for the given target ID for the given message hash for each attester's key in the keys.json file
                             if (executionVendor.toString() == 'Substrate') {
                                 logger.warn('Substrate not implemented')
                             } else if (

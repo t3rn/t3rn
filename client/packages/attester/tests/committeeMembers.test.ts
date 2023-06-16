@@ -76,25 +76,4 @@ describe('attesterCommittee', () => {
             attester.prometheus.currentCommitteeMember.set
         ).toHaveBeenCalledWith(0)
     })
-
-    // it('getCommittee should return array of strings', async () => {
-    //     const committee = [
-    //         'address1',
-    //         'address2',
-    //         'address3',
-    //     ]
-    //     const uint8ArrayArray = committee.map((address) => new Uint8Array(Buffer.from(address, 'utf8')))
-    //     JSON.stringify(uint8ArrayArray).toJSON()
-    //     attester.circuit.client.query.attesters.currentCommittee.mockResolvedValue(
-    //         JSON.parse(JSON.stringify(committee))
-
-    //     )
-    //     // console.error()
-
-    //     // Call the `getCommittee` function
-    //     const result = await attester.getCommittee()
-
-    //     // Assert that the result is false
-    //     expect(result).toEqual(committee)
-    // })
 })
