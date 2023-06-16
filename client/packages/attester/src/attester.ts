@@ -127,7 +127,6 @@ export class Attester {
                         // Purge queue
                         this.queuePurge()
 
-                        // Attest all pending attestations
                         messageHashes.forEach(async (messageHash) => {
                             if (
                                 !this.config.targetsAllowed.includes(targetId)
@@ -141,18 +140,13 @@ export class Attester {
                                 return
                             }
 
+                            // Add all pending attestations to queue
                             this.q.push({
                                 messageHash: messageHash[1],
                                 targetId: targetId,
                                 executionVendor: 'EVM',
                             })
                         })
-                        logger.error([
-                            'queue length',
-                            this.q.length(),
-                            typeof this.q.length(),
-                            this.q.length.toString(),
-                        ])
                         this.prometheus.attestationsInQueue.set(this.q.length())
                         break
                     }
@@ -192,20 +186,8 @@ export class Attester {
             return
         }
 
-        const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
-
-        // const messageUint8Array = new Uint8Array(Buffer.from(messageHash.slice(2)))
-        const messageUint8Array = ethUtil.hashPersonalMessage(
-            ethUtil.toBuffer(messageHash)
-        )
-        // logger.debug(['MessageHash', messageHash])
-        const sigObj = ethUtil.ecsign(messageUint8Array, privateKey)
-
-        const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s)
-
-        const tx = this.circuit.client.tx.attesters.submitAttestation(
+        const { signature, tx } = this.generateAttestationTx(
             messageHash,
-            signature,
             targetId
         )
 
@@ -255,6 +237,24 @@ export class Attester {
             },
             'Attestation submitted'
         )
+    }
+
+    private generateAttestationTx(messageHash: string, targetId: string) {
+        const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
+
+        const messageUint8Array = ethUtil.hashPersonalMessage(
+            ethUtil.toBuffer(messageHash)
+        )
+        const sigObj = ethUtil.ecsign(messageUint8Array, privateKey)
+
+        const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s)
+
+        const tx = this.circuit.client.tx.attesters.submitAttestation(
+            messageHash,
+            signature,
+            targetId
+        )
+        return { signature, tx }
     }
 
     private async getCommittee(): Promise<string[]> {

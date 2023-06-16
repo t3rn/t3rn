@@ -73,8 +73,9 @@ describe('queueTest', () => {
         }
 
         attester.q.push(item)
-        attester.queuePurge()
+        expect(attester.q.length()).toBe(1)
 
+        attester.queuePurge()
         expect(attester.q.length()).toBe(0)
     })
 })

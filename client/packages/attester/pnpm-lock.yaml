@@ -7,6 +7,9 @@ dependencies:
   '@t3rn/sdk':
     specifier: link:../sdk
     version: link:../sdk
+  '@t3rn/types':
+    specifier: link:../types
+    version: link:../types
   async:
     specifier: ^3.2.4
     version: 3.2.4
