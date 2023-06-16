@@ -15,6 +15,7 @@ export function checkKeys(keys: any) {
         logger.info(
             {
                 substratePublicKey: keys.substrate.publicKey,
+                substrateAccountId: keys.substrate.accountId,
                 ethereumPublicKey: keys.ethereum.publicKey,
                 btcPublicKey: keys.btc.publicKey,
             },
