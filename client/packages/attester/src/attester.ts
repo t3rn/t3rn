@@ -91,9 +91,7 @@ export class Attester {
 
                         if (executionVendor.toString() == 'Substrate') {
                             logger.warn('Substrate not implemented')
-                        } else if (
-                            executionVendor.toString() == 'Ed25519'
-                        ) {
+                        } else if (executionVendor.toString() == 'Ed25519') {
                             logger.warn('Ed25519 not implemented')
                         } else if (executionVendor.toString() == 'EVM') {
                             // Add attestion to queue
@@ -132,9 +130,7 @@ export class Attester {
                         // Attest all pending attestations
                         messageHashes.forEach(async (messageHash) => {
                             if (
-                                !this.config.targetsAllowed.includes(
-                                    targetId
-                                )
+                                !this.config.targetsAllowed.includes(targetId)
                             ) {
                                 logger.warn(
                                     {
@@ -151,10 +147,13 @@ export class Attester {
                                 executionVendor: 'EVM',
                             })
                         })
-                        logger.error(["queue length", this.q.length(), typeof this.q.length(), this.q.length.toString()])
-                        this.prometheus.attestationsInQueue.set(
-                            this.q.length()
-                        )
+                        logger.error([
+                            'queue length',
+                            this.q.length(),
+                            typeof this.q.length(),
+                            this.q.length.toString(),
+                        ])
+                        this.prometheus.attestationsInQueue.set(this.q.length())
                         break
                     }
                     case 'NewTargetProposed': {
@@ -172,8 +171,7 @@ export class Attester {
     private queuePurge() {
         this.q.remove(function testFn(item: { data: any }): boolean {
             return true
-          }
-        )
+        })
     }
 
     private async processAttestation(data: any) {

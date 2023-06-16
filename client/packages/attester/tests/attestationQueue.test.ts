@@ -55,7 +55,7 @@ describe('queueTest', () => {
         const item = {
             messageHash: '0x123',
             targetId: '0x456',
-            executionVendor: 'EVM'
+            executionVendor: 'EVM',
         }
 
         expect(attester.q.length()).toBe(0)
@@ -69,12 +69,12 @@ describe('queueTest', () => {
         const item = {
             messageHash: '0x123',
             targetId: '0x456',
-            executionVendor: 'EVM'
+            executionVendor: 'EVM',
         }
 
         attester.q.push(item)
         attester.queuePurge()
-          
+
         expect(attester.q.length()).toBe(0)
     })
 })
