@@ -40,11 +40,4 @@ process.on('uncaughtException', (error) => {
     await attester.start()
 })()
 
-
-export {
-  Attester,
-  Prometheus,
-  Connection,
-  checkKeys,
-}
-
+export { Attester, Prometheus, Connection, checkKeys }
