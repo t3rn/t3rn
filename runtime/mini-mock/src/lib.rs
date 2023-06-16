@@ -7,7 +7,7 @@ use frame_support::{
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
     Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, LatencyStatus, NextBatch,
-    NextCommitteeOnTarget, Nominations, PendingSlashes, PendingUnnominations, PreviousCommittee,
+    NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes, PreviousCommittee,
     SortedNominatedAttesters,
 };
 pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
