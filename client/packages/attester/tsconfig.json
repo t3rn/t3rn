@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node", "jest"],
     "incremental": true,
     "outDir": "./dist",
     "baseUrl": ".",

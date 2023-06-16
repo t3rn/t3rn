@@ -3,6 +3,7 @@ all:
 	cd sdk; yarn; yarn link; yarn build;
 	cd cli; yarn add ../sdk; yarn;
 	cd executor; yarn add ../sdk; yarn add ../types; yarn;
+	cd attester; pnpm i ; yarn add ../types; yarn;
 
 sdk:
 	cd sdk; yarn; yarn link; yarn build;

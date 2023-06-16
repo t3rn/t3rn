@@ -5,7 +5,6 @@ import { Prometheus } from './prometheus'
 import * as ethUtil from 'ethereumjs-util'
 import queue from 'async/queue'
 
-// ts-ignore
 import { hexToU8a } from '@polkadot/util'
 
 /**
@@ -68,101 +67,106 @@ export class Attester {
             const comittee = await this.getCommittee()
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
 
-            const attesterEvents = await events.filter(
-                async (event) => (await event.section) == 'attesters'
+            const attesterEvents = events.filter(
+                async (event) => event.section == 'attesters'
             )
 
             this.prometheus.attestationsEvents.inc(attesterEvents.length)
 
-            // Loop through the Vec<EventRecord>
-            await Promise.all(
-                attesterEvents.map(async (record) => {
-                    // Extract the phase, event and the event types
-                    const { event } = record
+            await this.processAttestationEvents(attesterEvents)
+        })
+    }
 
-                    switch (event.method) {
-                        case 'NewAttestationMessageHash': {
-                            const [targetId, messageHash, executionVendor] =
-                                event.data
+    private async processAttestationEvents(events: any) {
+        // Loop through the Vec<EventRecord>
+        await Promise.all(
+            events.map(async (record) => {
+                // Extract the phase, event and the event types
+                const { event } = record
 
-                            if (executionVendor.toString() == 'Substrate') {
-                                logger.warn('Substrate not implemented')
-                            } else if (
-                                executionVendor.toString() == 'Ed25519'
-                            ) {
-                                logger.warn('Ed25519 not implemented')
-                            } else if (executionVendor.toString() == 'EVM') {
-                                // Add attestion to queue
-                                this.q.push({
-                                    messageHash: messageHash,
-                                    targetId: targetId,
-                                    executionVendor: 'EVM',
-                                })
-                                this.prometheus.attestationsInQueue.set(
-                                    this.q.length()
-                                )
-                            }
-                            break
-                        }
-                        case 'CurrentPendingAttestationBatches': {
-                            const targetId = event.data[0].toString()
-                            const messageHashes = event.data[1]
+                switch (event.method) {
+                    case 'NewAttestationMessageHash': {
+                        const [targetId, messageHash, executionVendor] =
+                            event.data
 
-                            logger.info(
-                                {
-                                    targetId: targetId,
-                                    messageHashes: messageHashes.length,
-                                },
-                                `Received CurrentPendingAttestationBatches event`
-                            )
-                            this.prometheus.attestionsPending.set(
-                                {
-                                    targetId: targetId,
-                                },
-                                messageHashes.length
-                            )
-
-                            // Purge queue
-                            this.q.drain()
-
-                            // Attest all pending attestations
-                            messageHashes.forEach(async (messageHash) => {
-                                if (
-                                    !this.config.targetsAllowed.includes(
-                                        targetId
-                                    )
-                                ) {
-                                    logger.warn(
-                                        {
-                                            targetId: targetId,
-                                        },
-                                        'Target not allowed'
-                                    )
-                                    return
-                                }
-
-                                this.q.push({
-                                    messageHash: messageHash[1],
-                                    targetId: targetId,
-                                    executionVendor: 'EVM',
-                                })
+                        if (executionVendor.toString() == 'Substrate') {
+                            logger.warn('Substrate not implemented')
+                        } else if (
+                            executionVendor.toString() == 'Ed25519'
+                        ) {
+                            logger.warn('Ed25519 not implemented')
+                        } else if (executionVendor.toString() == 'EVM') {
+                            // Add attestion to queue
+                            this.q.push({
+                                messageHash: messageHash,
+                                targetId: targetId,
+                                executionVendor: 'EVM',
                             })
                             this.prometheus.attestationsInQueue.set(
                                 this.q.length()
                             )
-                            break
                         }
-                        case 'NewTargetProposed': {
-                            logger.info(`Received NewTargetProposed event`)
-                            break
-                        }
-                        default: {
-                            break
-                        }
+                        break
                     }
-                })
-            )
-        })
+                    case 'CurrentPendingAttestationBatches': {
+                        const targetId = event.data[0].toString()
+                        const messageHashes = event.data[1]
+
+                        logger.info(
+                            {
+                                targetId: targetId,
+                                messageHashes: messageHashes.length,
+                            },
+                            `Received CurrentPendingAttestationBatches event`
+                        )
+                        this.prometheus.attestionsPending.set(
+                            {
+                                targetId: targetId,
+                            },
+                            messageHashes.length
+                        )
+
+                        // Purge queue
+                        this.q.drain()
+
+                        // Attest all pending attestations
+                        messageHashes.forEach(async (messageHash) => {
+                            if (
+                                !this.config.targetsAllowed.includes(
+                                    targetId
+                                )
+                            ) {
+                                logger.warn(
+                                    {
+                                        targetId: targetId,
+                                    },
+                                    'Target not allowed'
+                                )
+                                return
+                            }
+
+                            this.q.push({
+                                messageHash: messageHash[1],
+                                targetId: targetId,
+                                executionVendor: 'EVM',
+                            })
+                        })
+                        logger.error(["queue length", this.q.length(), typeof this.q.length(), this.q.length.toString()])
+                        this.prometheus.attestationsInQueue.set(
+                            this.q.length()
+                        )
+                        break
+                    }
+                    case 'NewTargetProposed': {
+                        logger.info(`Received NewTargetProposed event`)
+                        break
+                    }
+                    default: {
+                        break
+                    }
+                }
+            })
+        )
     }
 
     private async processAttestation(data: any) {
