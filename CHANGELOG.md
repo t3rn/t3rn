@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.33.0-rc.0] - 2023-06-16
+### :sparkles: New Features
+- [`7e884bc`](https://github.com/t3rn/t3rn/commit/7e884bc7dc2218dad636a8c3a7fb9e003e560e91) - **attester**: submit attestation *(PR [#1037](https://github.com/t3rn/t3rn/pull/1037) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`be15410`](https://github.com/t3rn/t3rn/commit/be154103fb85a2fdb3a522b4552f6542c96e5fa8) - sdk ignores local gateway entry *(PR [#1061](https://github.com/t3rn/t3rn/pull/1061) by [@petscheit](https://github.com/petscheit))*
+
+### :recycle: Refactors
+- [`37933ab`](https://github.com/t3rn/t3rn/commit/37933abb08ed6adb8c897c4f67c2a3d0ec838217) - check XDNS entry exists before adding as attestation targets + permanent slash as StorageValue *(PR [#1064](https://github.com/t3rn/t3rn/pull/1064) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.32.3-rc.0] - 2023-06-14
 ### :bug: Bug Fixes
 - [`b80f031`](https://github.com/t3rn/t3rn/commit/b80f0314fe46d68cea24287c8517258a4788aa55) - add reboot self gateway extrinsic to XDNS *(PR [#1060](https://github.com/t3rn/t3rn/pull/1060) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1232,3 +1243,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.31.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.0-rc.0...v1.31.1-rc.0
 [v1.32.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.1-rc.0...v1.32.0-rc.0
 [v1.32.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.2-rc.0...v1.32.3-rc.0
+[v1.33.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.3-rc.0...v1.33.0-rc.0
