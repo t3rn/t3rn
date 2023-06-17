@@ -1,9 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use ::pallet_eth2_finality_verifier::{
-        mock::{generate_epoch_update, generate_initialization},
-        types::EthereumInitializationData,
-    };
+    use ::pallet_eth2_finality_verifier::mock::{generate_epoch_update, generate_initialization};
     use circuit_mock_runtime::{ExtBuilder, Portal, *};
     use circuit_test_utils::replay::*;
     use codec::Encode;
@@ -14,15 +11,11 @@ mod tests {
         types::RelaychainRegistrationData,
     };
 
-    use pallet_eth2_finality_verifier;
     use std::fs;
-    use t3rn_primitives::xdns::Xdns;
-
-    use sp_core::H256;
 
     use t3rn_primitives::{
         portal::{HeaderResult, HeightResult, Portal as PortalT},
-        EthereumToken, ExecutionVendor, GatewayVendor, SpeedMode, TokenInfo,
+        EthereumToken, ExecutionVendor, GatewayVendor, TokenInfo,
     };
 
     fn get_test_initialize_genesis_data() -> RelaychainRegistrationData<AccountId> {
