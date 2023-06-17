@@ -681,7 +681,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     pub fn confirm_event_inclusion(
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
@@ -692,11 +691,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
             let header = <ImportedHeaders<T, I>>::get(proof.block_hash)
                 .ok_or(Error::<T, I>::UnknownHeader)?;
-
-            if let Some(submission_target_height) = submission_target_height {
-                // ensures old equal side_effects can't be replayed
-                executed_after_creation::<T, I>(submission_target_height, &header)?;
-            }
 
             (
                 proof.payload_proof,
@@ -713,7 +707,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 proof.header_proof,
                 <ParachainIdMap<T, I>>::get(gateway_id)
                     .ok_or(Error::<T, I>::ParachainEntryNotFound)?,
-                submission_target_height,
             )?;
             (
                 proof.payload_proof,
@@ -874,14 +867,9 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
     parachain: ParachainRegistrationData,
-    submission_target_height: Option<T::BlockNumber>,
 ) -> Result<BridgedHeader<T, I>, DispatchError> {
     let relay_header =
         <ImportedHeaders<T, I>>::get(relay_block_hash).ok_or(Error::<T, I>::UnknownHeader)?;
-
-    if let Some(submission_target_height) = submission_target_height {
-        executed_after_creation::<T, I>(submission_target_height, &relay_header)?;
-    }
 
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec

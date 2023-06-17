@@ -11,7 +11,7 @@ use t3rn_abi::types::Bytes;
 pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
 use t3rn_primitives::{
     light_client::{HeaderResult, HeightResult, InclusionReceipt},
-    GatewayVendor, SpeedMode,
+    ExecutionSource, GatewayVendor, SpeedMode,
 };
 
 pub type RococoInstance = ();
@@ -186,29 +186,17 @@ where
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
-            PalletInstance::Rococo(pallet) => pallet.verify_event_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Kusama(pallet) => pallet.verify_event_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Polkadot(pallet) => pallet.verify_event_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_event_inclusion(gateway_id, speed_mode, source, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_event_inclusion(gateway_id, speed_mode, source, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_event_inclusion(gateway_id, speed_mode, source, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -216,29 +204,17 @@ where
     fn verify_state_inclusion(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
-            PalletInstance::Rococo(pallet) => pallet.verify_state_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Kusama(pallet) => pallet.verify_state_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Polkadot(pallet) => pallet.verify_state_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_state_inclusion(gateway_id, speed_mode, source, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_state_inclusion(gateway_id, speed_mode, source, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_state_inclusion(gateway_id, speed_mode, source, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -246,29 +222,17 @@ where
     fn verify_tx_inclusion(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
-            PalletInstance::Rococo(pallet) => pallet.verify_tx_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Kusama(pallet) => pallet.verify_tx_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Polkadot(pallet) => pallet.verify_tx_inclusion(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_tx_inclusion(gateway_id, speed_mode, source, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_tx_inclusion(gateway_id, speed_mode, source, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_tx_inclusion(gateway_id, speed_mode, source, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -276,29 +240,17 @@ where
     fn verify_event_inclusion_precompile(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError> {
         match self {
-            PalletInstance::Rococo(pallet) => pallet.verify_event_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Kusama(pallet) => pallet.verify_event_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Polkadot(pallet) => pallet.verify_event_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_event_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_event_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_event_inclusion_precompile(gateway_id, speed_mode, source, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -306,29 +258,17 @@ where
     fn verify_state_inclusion_precompile(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError> {
         match self {
-            PalletInstance::Rococo(pallet) => pallet.verify_state_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Kusama(pallet) => pallet.verify_state_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Polkadot(pallet) => pallet.verify_state_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_state_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_state_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_state_inclusion_precompile(gateway_id, speed_mode, source, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -336,29 +276,17 @@ where
     fn verify_tx_inclusion_precompile(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError> {
         match self {
-            PalletInstance::Rococo(pallet) => pallet.verify_tx_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Kusama(pallet) => pallet.verify_tx_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
-            PalletInstance::Polkadot(pallet) => pallet.verify_tx_inclusion_precompile(
-                gateway_id,
-                message,
-                speed_mode,
-                submission_target_height,
-            ),
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, speed_mode, source, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -458,42 +386,42 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        _source: Option<ExecutionSource>,
         message: Bytes,
-        _speed_mode: SpeedMode, // since grandpa has instant finality, the speed mode doesnt matter
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, submission_target_height)
+        // todo: handle ExecutionSource in grandpa
+        Pallet::<T, I>::confirm_event_inclusion(gateway_id, message)
     }
 
     fn verify_state_inclusion(
         &self,
         _gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        _source: Option<ExecutionSource>,
         _message: Bytes,
-        _speed_mode: SpeedMode, // since grandpa has instant finality, the speed mode doesnt matter
-        _submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        unimplemented!("GrandpaFV::verify_storage_inclusion not implemented yet")
+        Err("GrandpaFV::verify_storage_inclusion not implemented yet".into())
     }
 
     fn verify_tx_inclusion(
         &self,
         _gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        _source: Option<ExecutionSource>,
         _message: Bytes,
-        _speed_mode: SpeedMode, // since grandpa has instant finality, the speed mode doesnt matter
-        _submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        unimplemented!("GrandpaFV::verify_tx_inclusion not implemented yet")
+        Err("GrandpaFV::verify_tx_inclusion not implemented yet".into())
     }
 
     fn verify_event_inclusion_precompile(
         &self,
         gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        _source: ExecutionSource,
         message: Bytes,
-        _speed_mode: SpeedMode, // since grandpa has instant finality, the speed mode doesnt matter
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError> {
-        match Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, submission_target_height)
-        {
+        match Pallet::<T, I>::confirm_event_inclusion(gateway_id, message) {
             Ok(receipt) => Ok(receipt.message.encode()),
             Err(err) => Err(err),
         }
@@ -502,21 +430,21 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
     fn verify_state_inclusion_precompile(
         &self,
         _gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        _source: ExecutionSource,
         _message: Bytes,
-        _speed_mode: SpeedMode, // since grandpa has instant finality, the speed mode doesnt matter
-        _submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError> {
-        unimplemented!("GrandpaFV::verify_storage_inclusion not implemented yet")
+        Err("GrandpaFV::verify_storage_inclusion not implemented yet".into())
     }
 
     fn verify_tx_inclusion_precompile(
         &self,
         _gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        _source: ExecutionSource,
         _message: Bytes,
-        _speed_mode: SpeedMode, // since grandpa has instant finality, the speed mode doesnt matter
-        _submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError> {
-        unimplemented!("GrandpaFV::verify_tx_inclusion not implemented yet")
+        Err("GrandpaFV::verify_tx_inclusion not implemented yet".into())
     }
 }
 
