@@ -1,7 +1,7 @@
 pub use crate::light_client::{HeaderResult, HeightResult, InclusionReceipt};
 use crate::{
-    gateway::GatewayABIConfig, ChainId, ExecutionVendor, GatewayGenesisConfig, GatewayType,
-    GatewayVendor, SpeedMode, TokenInfo,
+    gateway::GatewayABIConfig, ChainId, ExecutionSource, ExecutionVendor, GatewayGenesisConfig,
+    GatewayType, GatewayVendor, SpeedMode, TokenInfo,
 };
 use codec::{Decode, Encode};
 
@@ -54,72 +54,69 @@ pub trait Portal<T: frame_system::Config> {
 
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        source: Option<Bytes>,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_state_inclusion(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_tx_inclusion(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_event_inclusion_precompile(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        source: Option<Bytes>,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError>;
 
     fn verify_state_inclusion_precompile(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError>;
 
     fn verify_tx_inclusion_precompile(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError>;
 
     fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        source: Option<Bytes>,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
@@ -204,10 +201,11 @@ pub enum PrecompileArgs {
     GetFinalizedHeight(ChainId),
     GetRationalHeight(ChainId),
     GetFastHeight(ChainId),
-    VerifyEventInclusion(ChainId, SpeedMode, Bytes),
-    VerifyStateInclusion(ChainId, SpeedMode, Bytes),
-    VerifyTxInclusion(ChainId, SpeedMode, Bytes),
+    VerifyEventInclusion(ChainId, SpeedMode, ExecutionSource, Bytes),
+    VerifyStateInclusion(ChainId, SpeedMode, ExecutionSource, Bytes),
+    VerifyTxInclusion(ChainId, SpeedMode, ExecutionSource, Bytes),
 }
+
 impl Encode for PrecompileArgs {
     fn encode_to<W: codec::Output + ?Sized>(&self, dest: &mut W) {
         match self {
@@ -227,22 +225,25 @@ impl Encode for PrecompileArgs {
                 3u8.encode_to(dest);
                 chain_id.encode_to(dest);
             },
-            PrecompileArgs::VerifyEventInclusion(chain_id, speed_mode, bytes) => {
+            PrecompileArgs::VerifyEventInclusion(chain_id, speed_mode, source, bytes) => {
                 4u8.encode_to(dest);
                 chain_id.encode_to(dest);
                 speed_mode.encode_to(dest);
+                source.encode_to(dest);
                 dest.write(bytes);
             },
-            PrecompileArgs::VerifyStateInclusion(chain_id, speed_mode, bytes) => {
+            PrecompileArgs::VerifyStateInclusion(chain_id, speed_mode, source, bytes) => {
                 5u8.encode_to(dest);
                 chain_id.encode_to(dest);
                 speed_mode.encode_to(dest);
+                source.encode_to(dest);
                 dest.write(bytes);
             },
-            PrecompileArgs::VerifyTxInclusion(chain_id, speed_mode, bytes) => {
+            PrecompileArgs::VerifyTxInclusion(chain_id, speed_mode, source, bytes) => {
                 6u8.encode_to(dest);
                 chain_id.encode_to(dest);
                 speed_mode.encode_to(dest);
+                source.encode_to(dest);
                 dest.write(bytes);
             },
         }
@@ -271,34 +272,37 @@ impl Decode for PrecompileArgs {
             4 => {
                 let chain_id = ChainId::decode(input)?;
                 let speed_mode = SpeedMode::decode(input)?;
+                let source = ExecutionSource::decode(input)?;
                 let mut bytes = Vec::new();
                 while let Ok(byte) = input.read_byte() {
                     bytes.push(byte);
                 }
                 Ok(PrecompileArgs::VerifyEventInclusion(
-                    chain_id, speed_mode, bytes,
+                    chain_id, speed_mode, source, bytes,
                 ))
             },
             5 => {
                 let chain_id = ChainId::decode(input)?;
                 let speed_mode = SpeedMode::decode(input)?;
+                let source = ExecutionSource::decode(input)?;
                 let mut bytes = Vec::new();
                 while let Ok(byte) = input.read_byte() {
                     bytes.push(byte);
                 }
                 Ok(PrecompileArgs::VerifyStateInclusion(
-                    chain_id, speed_mode, bytes,
+                    chain_id, speed_mode, source, bytes,
                 ))
             },
             6 => {
                 let chain_id = ChainId::decode(input)?;
                 let speed_mode = SpeedMode::decode(input)?;
+                let source = ExecutionSource::decode(input)?;
                 let mut bytes = Vec::new();
                 while let Ok(byte) = input.read_byte() {
                     bytes.push(byte);
                 }
                 Ok(PrecompileArgs::VerifyTxInclusion(
-                    chain_id, speed_mode, bytes,
+                    chain_id, speed_mode, source, bytes,
                 ))
             },
             _ => Err("Invalid tag".into()),
@@ -313,9 +317,9 @@ impl PrecompileArgs {
                 GetFinalizedHeight:Bytes4,\
                 GetRationalHeight:Bytes4,\
                 GetFastHeight:Bytes4,\
-                VerifyEventInclusion:Triple(Bytes4,Byte,Bytes),\
-                VerifyStateInclusion:Triple(Bytes4,Byte,Bytes),\
-                VerifyTxInclusion:Triple(Bytes4,Byte,Bytes),\
+                VerifyEventInclusion:Quadruple(Bytes4,Byte,H256,Bytes),\
+                VerifyStateInclusion:Quadruple(Bytes4,Byte,H256,Bytes),\
+                VerifyTxInclusion:Quadruple(Bytes4,Byte,H256,Bytes),\
         )"
         .to_vec()
     }
@@ -386,27 +390,30 @@ pub mod tests {
                 Box::new(Abi::Bytes4(Some(b"GetFinalizedHeight".to_vec()))),
                 Box::new(Abi::Bytes4(Some(b"GetRationalHeight".to_vec()))),
                 Box::new(Abi::Bytes4(Some(b"GetFastHeight".to_vec()))),
-                Box::new(Abi::Triple(
+                Box::new(Abi::Quadruple(
                     Some(b"VerifyEventInclusion".to_vec()),
                     (
                         Box::new(Abi::Bytes4(None)),
                         Box::new(Abi::Byte(None)),
+                        Box::new(Abi::H256(None)),
                         Box::new(Abi::Bytes(None)),
                     ),
                 )),
-                Box::new(Abi::Triple(
+                Box::new(Abi::Quadruple(
                     Some(b"VerifyStateInclusion".to_vec()),
                     (
                         Box::new(Abi::Bytes4(None)),
                         Box::new(Abi::Byte(None)),
+                        Box::new(Abi::H256(None)),
                         Box::new(Abi::Bytes(None)),
                     ),
                 )),
-                Box::new(Abi::Triple(
+                Box::new(Abi::Quadruple(
                     Some(b"VerifyTxInclusion".to_vec()),
                     (
                         Box::new(Abi::Bytes4(None)),
                         Box::new(Abi::Byte(None)),
+                        Box::new(Abi::H256(None)),
                         Box::new(Abi::Bytes(None)),
                     ),
                 )),
@@ -415,18 +422,18 @@ pub mod tests {
 
         assert_eq!(
             portal_interface_abi.encode(),
-            vec![
+            [
                 3, 1, 56, 80, 114, 101, 99, 111, 109, 112, 105, 108, 101, 65, 114, 103, 115, 28, 9,
                 1, 96, 71, 101, 116, 76, 97, 116, 101, 115, 116, 70, 105, 110, 97, 108, 105, 122,
                 101, 100, 72, 101, 97, 100, 101, 114, 9, 1, 72, 71, 101, 116, 70, 105, 110, 97,
                 108, 105, 122, 101, 100, 72, 101, 105, 103, 104, 116, 9, 1, 68, 71, 101, 116, 82,
                 97, 116, 105, 111, 110, 97, 108, 72, 101, 105, 103, 104, 116, 9, 1, 52, 71, 101,
-                116, 70, 97, 115, 116, 72, 101, 105, 103, 104, 116, 20, 1, 80, 86, 101, 114, 105,
+                116, 70, 97, 115, 116, 72, 101, 105, 103, 104, 116, 21, 1, 80, 86, 101, 114, 105,
                 102, 121, 69, 118, 101, 110, 116, 73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0,
-                14, 0, 8, 0, 20, 1, 80, 86, 101, 114, 105, 102, 121, 83, 116, 97, 116, 101, 73,
-                110, 99, 108, 117, 115, 105, 111, 110, 9, 0, 14, 0, 8, 0, 20, 1, 68, 86, 101, 114,
-                105, 102, 121, 84, 120, 73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0, 14, 0, 8,
-                0
+                14, 0, 7, 0, 8, 0, 21, 1, 80, 86, 101, 114, 105, 102, 121, 83, 116, 97, 116, 101,
+                73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0, 14, 0, 7, 0, 8, 0, 21, 1, 68, 86,
+                101, 114, 105, 102, 121, 84, 120, 73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0,
+                14, 0, 7, 0, 8, 0
             ]
         );
     }
@@ -508,6 +515,7 @@ pub mod tests {
         let encoded_verify_event_inclusion_select = PrecompileArgs::VerifyEventInclusion(
             [1u8; 4],
             SpeedMode::Fast,
+            hex!("0202020202020202020202020202020202020202020202020202020202020202"),
             hex!("04040404040404040404040404040404040404040404040404040404040404040505050505")
                 .to_vec(),
         )
@@ -515,7 +523,11 @@ pub mod tests {
 
         assert_eq!(
             encoded_verify_event_inclusion_select,
-            hex!("04010101010004040404040404040404040404040404040404040404040404040404040404040505050505").to_vec()
+            vec![
+                4, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5
+            ]
         );
 
         let filled_abi = FilledAbi::try_fill_abi(
@@ -527,11 +539,12 @@ pub mod tests {
 
         assert_eq!(
             filled_abi,
-            FilledAbi::Triple(
+            FilledAbi::Quadruple(
                 Some(b"VerifyEventInclusion".to_vec()),
                 (
                     Box::new(FilledAbi::Bytes4(None, hex!("01010101").to_vec())),
                     Box::new(FilledAbi::Byte(None, hex!("00").to_vec())),
+                    Box::new(FilledAbi::H256(None, hex!("0202020202020202020202020202020202020202020202020202020202020202").into())),
                     Box::new(FilledAbi::Bytes(None, hex!("04040404040404040404040404040404040404040404040404040404040404040505050505").to_vec()))
                 ),
             )
@@ -600,8 +613,13 @@ pub mod tests {
     fn test_verify_event_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
-        let portal_call =
-            PrecompileArgs::VerifyEventInclusion(chain_id, SpeedMode::Finalized, event.clone());
+        let source: [u8; 32] = [5; 32];
+        let portal_call = PrecompileArgs::VerifyEventInclusion(
+            chain_id,
+            SpeedMode::Finalized,
+            source,
+            event.clone(),
+        );
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -609,7 +627,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyEventInclusion(chain_id, SpeedMode::Finalized, event)
+            PrecompileArgs::VerifyEventInclusion(chain_id, SpeedMode::Finalized, source, event)
         );
     }
 
@@ -617,8 +635,14 @@ pub mod tests {
     fn test_verify_state_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
-        let portal_call =
-            PrecompileArgs::VerifyStateInclusion(chain_id, SpeedMode::Rational, event.clone());
+        let source: [u8; 32] = [5; 32];
+
+        let portal_call = PrecompileArgs::VerifyStateInclusion(
+            chain_id,
+            SpeedMode::Rational,
+            source,
+            event.clone(),
+        );
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -626,7 +650,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyStateInclusion(chain_id, SpeedMode::Rational, event)
+            PrecompileArgs::VerifyStateInclusion(chain_id, SpeedMode::Rational, source, event)
         );
     }
 
@@ -634,8 +658,10 @@ pub mod tests {
     fn test_verify_tx_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
+        let source: [u8; 32] = [5; 32];
+
         let portal_call =
-            PrecompileArgs::VerifyTxInclusion(chain_id, SpeedMode::Rational, event.clone());
+            PrecompileArgs::VerifyTxInclusion(chain_id, SpeedMode::Rational, source, event.clone());
         let encoded_portal_call = portal_call.encode();
         let recoded_portal_call =
             PrecompileArgs::recode_to_scale_and_decode(&t3rn_abi::Codec::Rlp, &encoded_portal_call)
@@ -643,7 +669,7 @@ pub mod tests {
 
         assert_eq!(
             recoded_portal_call,
-            PrecompileArgs::VerifyTxInclusion(chain_id, SpeedMode::Rational, event)
+            PrecompileArgs::VerifyTxInclusion(chain_id, SpeedMode::Rational, source, event)
         );
     }
 }

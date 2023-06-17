@@ -65,6 +65,16 @@ pub mod xdns;
 pub mod xtx;
 
 pub type ChainId = [u8; 4];
+pub type ExecutionSource = [u8; 32];
+pub const EMPTY_EXECUTION_SOURCE: [u8; 32] = [0u8; 32];
+
+pub fn execution_source_to_option(source: ExecutionSource) -> Option<ExecutionSource> {
+    if source == EMPTY_EXECUTION_SOURCE {
+        None
+    } else {
+        Some(source)
+    }
+}
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

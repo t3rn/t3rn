@@ -1,9 +1,9 @@
-use crate::SpeedMode;
+use crate::{ExecutionSource, SpeedMode};
 use codec::{Decode, Encode};
-
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use t3rn_abi::types::Bytes;
+
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub enum HeightResult<BlockNumber> {
     Height(BlockNumber),
@@ -68,48 +68,48 @@ pub trait LightClient<T: frame_system::Config> {
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_state_inclusion(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_tx_inclusion(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: Option<ExecutionSource>,
+        message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError>;
 
     fn verify_event_inclusion_precompile(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError>;
 
     fn verify_state_inclusion_precompile(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError>;
 
     fn verify_tx_inclusion_precompile(
         &self,
         gateway_id: [u8; 4],
-        message: Bytes,
         speed_mode: SpeedMode,
-        submission_target_height: Option<T::BlockNumber>,
+        source: ExecutionSource,
+        message: Bytes,
     ) -> Result<Bytes, DispatchError>;
 }
