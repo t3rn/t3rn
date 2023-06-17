@@ -210,7 +210,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 return height
             }
         }
-        return T::BlockNumber::zero()
+        T::BlockNumber::zero()
     }
 
     fn get_rational_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
@@ -220,7 +220,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 return height
             }
         }
-        return T::BlockNumber::zero()
+        T::BlockNumber::zero()
     }
 
     fn get_fast_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
@@ -230,14 +230,14 @@ impl<T: Config> Portal<T> for Pallet<T> {
                 return height
             }
         }
-        return T::BlockNumber::zero()
+        T::BlockNumber::zero()
     }
 
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
         message: Bytes,
         speed_mode: SpeedMode,
-        source: Option<Bytes>,
+        _source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         // ToDo: we need to verify the event source here
@@ -281,7 +281,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         message: Bytes,
         speed_mode: SpeedMode,
-        source: Option<Bytes>,
+        _source: Option<Bytes>,
         submission_target_height: Option<T::BlockNumber>,
     ) -> Result<Bytes, DispatchError> {
         // ToDo: we need to verify the event source here

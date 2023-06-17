@@ -210,7 +210,7 @@ pub mod test {
 
     #[test]
     fn attesters_mocks_return_empty_data() {
-        let attester_rw_mock: AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> =
+        let _attester_rw_mock: AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> =
             AttestersReadApiEmptyMock {
                 _phantom: Default::default(),
             };

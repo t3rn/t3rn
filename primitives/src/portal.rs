@@ -209,7 +209,7 @@ pub enum PrecompileArgs {
     VerifyTxInclusion(ChainId, SpeedMode, Bytes),
 }
 impl Encode for PrecompileArgs {
-    fn encode_to<W: codec::Output + ?Sized>(&self, dest: &mut W) -> () {
+    fn encode_to<W: codec::Output + ?Sized>(&self, dest: &mut W) {
         match self {
             PrecompileArgs::GetLatestFinalizedHeader(chain_id) => {
                 0u8.encode_to(dest);
@@ -246,7 +246,6 @@ impl Encode for PrecompileArgs {
                 dest.write(bytes);
             },
         }
-        ()
     }
 }
 impl Decode for PrecompileArgs {
@@ -380,7 +379,7 @@ pub mod tests {
     fn portal_interface_abi_descriptor_parses() {
         let portal_interface_abi = PrecompileArgs::interface_abi().unwrap();
 
-        let expected_abi = Abi::Enum(
+        let _expected_abi = Abi::Enum(
             Some(b"PrecompileArgs".to_vec()),
             vec![
                 Box::new(Abi::Bytes4(Some(b"GetLatestFinalizedHeader".to_vec()))),
@@ -501,7 +500,6 @@ pub mod tests {
     }
 
     use hex_literal::hex;
-    use sp_core::H256;
 
     #[test]
     fn portal_precompile_selects_enum_for_verify_event_inclusion() {

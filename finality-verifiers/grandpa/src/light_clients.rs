@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::{to_local_block_number, Config, Error, Pallet};
+use crate::{to_local_block_number, Config, Pallet};
 use codec::Encode;
 
 use frame_system::pallet_prelude::OriginFor;
@@ -422,8 +422,8 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         let last_finalized_height = to_local_block_number::<T, I>(*header.number())?;
         Ok(LightClientHeartbeat {
             last_heartbeat: frame_system::Pallet::<T>::block_number(),
-            last_finalized_height: last_finalized_height.clone(),
-            last_rational_height: last_finalized_height.clone(),
+            last_finalized_height,
+            last_rational_height: last_finalized_height,
             last_fast_height: last_finalized_height,
             is_halted: Pallet::<T, I>::is_halted(),
             ever_initialized: Pallet::<T, I>::ever_initialized(),

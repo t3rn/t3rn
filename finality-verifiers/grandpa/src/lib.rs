@@ -101,7 +101,7 @@ use crate::types::{
     RelaychainInclusionProof, RelaychainRegistrationData,
 };
 use frame_system::pallet_prelude::*;
-use t3rn_abi::types::Bytes;
+
 use t3rn_primitives::light_client::InclusionReceipt;
 
 #[frame_support::pallet]
