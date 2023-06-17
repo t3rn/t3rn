@@ -1143,10 +1143,9 @@ impl<T: Config> Pallet<T> {
         #[cfg(not(feature = "test-skip-verification"))]
         let inclusion_receipt = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
-            confirmation.inclusion_data.clone(),
             xtx.speed_mode,
             None, //ToDo - load pallet index or contract address here
-            Some(fsx.submission_target_height), // this enforces the submission height check!
+            confirmation.inclusion_data.clone(),
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
@@ -1170,6 +1169,13 @@ impl<T: Config> Pallet<T> {
             including_header: [0u8; 32].encode(),
             height: T::BlockNumber::zero(),
         }; // Empty encoded_event_params for testing purposes
+
+        #[cfg(not(feature = "test-skip-verification"))]
+        if inclusion_receipt.height > fsx.submission_target_height {
+            return Err(DispatchError::Other(
+                "SideEffect confirmation of inclusion failed - inclusion height is higher than target",
+            ))
+        }
 
         fsx.input.confirm(
             sfx_abi,
