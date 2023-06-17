@@ -54,12 +54,11 @@ pub fn ecdsa_pubkey_to_eth_address(pubkey: &[u8; 33]) -> Result<[u8; 20], Dispat
 
 #[test]
 fn test_ecdsa_pubkey_to_eth_address() {
-    let _pk_hex = hex_literal::hex!("79846fd12ed97f908d879fc03f1893eb1a18fb3e76d431d31602dd50f50fd9eff78e4603b994db0873fccc41e6ee7846e8050ea4909b4c5d89daf5a40b58b762");
-
     let compressed_ecdsa_pub_key: [u8; 33] = [
         3, 213, 51, 13, 232, 85, 194, 30, 34, 218, 22, 60, 149, 40, 220, 34, 77, 173, 31, 61, 164,
         213, 17, 67, 159, 112, 25, 151, 30, 247, 76, 130, 145,
     ];
+
     let address_res = ecdsa_pubkey_to_eth_address(&compressed_ecdsa_pub_key);
 
     frame_support::assert_ok!(address_res);
@@ -69,6 +68,108 @@ fn test_ecdsa_pubkey_to_eth_address() {
         hex::encode(address),
         "1e8f2abdffa8bf75802d24b5329d2351b6ab3486"
     );
+}
+
+#[test]
+fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_ethers_sign_message() {
+    use hex_literal::hex;
+
+    // test for example eth keys setting:
+    //     "ethereum": {
+    //       "privateKey": "0x115db6b0c74bef87e28879199e3ab3dda09ed0e7f0c3e1ff6cb92e228b221384",
+    //       "publicKey": "0x026c443c26ef9634344358a4848297ea45d09b59922aa4216c6e6ac97a7de37473",
+    //       "publicKeyUncompressed": "0x046c443c26ef9634344358a4848297ea45d09b59922aa4216c6e6ac97a7de3747361fedf02da3d46d5a859ab9b306561fcaefa9d486ae3eef1de7344e3252ad0be",
+    //       "address": "0x3a68c6b6f010017c9b330a7c86d4b19c46ab677a"
+    //     },
+
+    let compressed_ecdsa_pub_key: [u8; 33] =
+        hex!("026c443c26ef9634344358a4848297ea45d09b59922aa4216c6e6ac97a7de37473");
+
+    let message: [u8; 32] =
+        hex!("58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd");
+
+    let address_res = ecdsa_pubkey_to_eth_address(&compressed_ecdsa_pub_key);
+
+    frame_support::assert_ok!(address_res);
+    let address = address_res.unwrap();
+
+    assert_eq!(
+        hex::encode(address),
+        "3a68c6b6f010017c9b330a7c86d4b19c46ab677a"
+    );
+
+    let attester_info = AttesterInfo {
+        key_ed: [0u8; 32],
+        key_ec: compressed_ecdsa_pub_key,
+        key_sr: [0u8; 32],
+        commission: Percent::from_percent(0),
+        index: 0,
+    };
+
+    // Expected value from contracts tests: AttestationSignature::Should recover the correct signer from the signature ethers sign message
+    let signature: [u8; 65] = hex!("3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c");
+
+    let verify_result = attester_info.verify_attestation_signature(
+        ECDSA_ATTESTER_KEY_TYPE_ID,
+        &message.to_vec(),
+        signature.as_ref(),
+        address.to_vec(),
+        &GatewayVendor::Ethereum,
+    );
+
+    frame_support::assert_ok!(verify_result);
+    assert_eq!(verify_result, Ok(true));
+}
+
+#[test]
+fn test_ecdsa_verify_attestation_signature_derives_expected_eth_address_for_eth_utils_ecsign() {
+    use hex_literal::hex;
+
+    // test for example eth keys setting:
+    //     "ethereum": {
+    //       "privateKey": "0x115db6b0c74bef87e28879199e3ab3dda09ed0e7f0c3e1ff6cb92e228b221384",
+    //       "publicKey": "0x026c443c26ef9634344358a4848297ea45d09b59922aa4216c6e6ac97a7de37473",
+    //       "publicKeyUncompressed": "0x046c443c26ef9634344358a4848297ea45d09b59922aa4216c6e6ac97a7de3747361fedf02da3d46d5a859ab9b306561fcaefa9d486ae3eef1de7344e3252ad0be",
+    //       "address": "0x3a68c6b6f010017c9b330a7c86d4b19c46ab677a"
+    //     },
+
+    let compressed_ecdsa_pub_key: [u8; 33] =
+        hex!("026c443c26ef9634344358a4848297ea45d09b59922aa4216c6e6ac97a7de37473");
+
+    let message: [u8; 32] =
+        hex!("58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd");
+
+    let address_res = ecdsa_pubkey_to_eth_address(&compressed_ecdsa_pub_key);
+
+    frame_support::assert_ok!(address_res);
+    let address = address_res.unwrap();
+
+    assert_eq!(
+        hex::encode(address),
+        "3a68c6b6f010017c9b330a7c86d4b19c46ab677a"
+    );
+
+    let attester_info = AttesterInfo {
+        key_ed: [0u8; 32],
+        key_ec: compressed_ecdsa_pub_key,
+        key_sr: [0u8; 32],
+        commission: Percent::from_percent(0),
+        index: 0,
+    };
+
+    // Expected value from contracts tests: AttestationSignature::Should recover the correct signer from the signature escsign
+    let signature: [u8; 65] = hex!("97748ab697916ad7992e8d000360b1a44c8faf6d98b70632a1ce826ff50e995e4335f3234bd6964a722ca7ef95b731568d53499e62b078346fcb5790c94833171b");
+
+    let verify_result = attester_info.verify_attestation_signature(
+        ECDSA_ATTESTER_KEY_TYPE_ID,
+        &message.to_vec(),
+        signature.as_ref(),
+        address.to_vec(),
+        &GatewayVendor::Ethereum,
+    );
+
+    frame_support::assert_ok!(verify_result);
+    assert_eq!(verify_result, Ok(true));
 }
 
 impl AttesterInfo {
@@ -87,12 +188,7 @@ impl AttesterInfo {
                 let ecdsa_public = ecdsa::Public::from_raw(self.key_ec);
                 if target_finality == &GatewayVendor::Ethereum {
                     let recovered_address = ecdsa_pubkey_to_eth_address(&self.key_ec)?;
-                    let attested_recoverable = H160::decode(&mut &attested_recoverable[..])
-                        .map_err(|_| "InvalidRecoverable")?;
-
-                    if H160(recovered_address) != attested_recoverable {
-                        return Ok(false)
-                    }
+                    return Ok(recovered_address.to_vec() == attested_recoverable)
                 }
                 Ok(ecdsa_public.verify(message, &ecdsa_sig))
             },
