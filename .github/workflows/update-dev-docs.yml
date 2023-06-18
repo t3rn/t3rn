@@ -85,6 +85,38 @@ jobs:
           alias-domains: |
             docs.t3rn.io
 
+  attester:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client/packages
+    timeout-minutes: 15
+    if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
+
+    steps:
+      - name: 🎞️ Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Build local dependencies
+        run: make
+      - name: 📦 Install packages
+        run: pnpm i
+        working-directory: client/packages/attester
+      - name: 🏗 Build Docs
+        run: pnpm run build-docs
+        working-directory: client/packages/attester
+      - name: 👾 Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-args: '--force'
+          vercel-org-id: ${{ secrets.VERCEL_TEAM_ID}}
+          vercel-project-id: ${{ secrets.VERCEL_ATTESTER_DOCS_PROJECT_ID}}
+          scope: "t3rn"
+          alias-domains: |
+            docs.attester.t3rn.io
+
   executor:
     runs-on: ubuntu-latest
     defaults:

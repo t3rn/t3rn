@@ -42,6 +42,47 @@ const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
 const STANDARD_SFX_ABI_COUNT: usize = 7;
 
 #[test]
+fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .build()
+        .execute_with(|| {
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
+            assert_ok!(XDNS::reboot_self_gateway(
+                circuit_mock_runtime::Origin::root(),
+                GatewayVendor::Rococo
+            ));
+            assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
+            assert_eq!(
+                pallet_xdns::Gateways::<Runtime>::get(&[3, 3, 3, 3])
+                    .unwrap()
+                    .allowed_side_effects
+                    .len(),
+                7
+            );
+        });
+}
+
+#[test]
+fn reboot_self_gateway_populates_entry_if_does_not_exist_with_no_sfx() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 0);
+        assert_ok!(XDNS::reboot_self_gateway(
+            circuit_mock_runtime::Origin::root(),
+            GatewayVendor::Rococo
+        ));
+        assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
+        assert_eq!(
+            pallet_xdns::Gateways::<Runtime>::get(&[3, 3, 3, 3])
+                .unwrap()
+                .allowed_side_effects
+                .len(),
+            0
+        );
+    });
+}
+
+#[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
     ExtBuilder::default()
         .with_standard_sfx_abi()

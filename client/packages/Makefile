@@ -3,6 +3,10 @@ all:
 	cd sdk; yarn; yarn link; yarn build;
 	cd cli; yarn add ../sdk; yarn;
 	cd executor; yarn add ../sdk; yarn add ../types; yarn;
+	cd attester; pnpm i; pnpm add ../types; pnpm add ../sdk;
+
+attester:
+	cd attester; pnpm i; pnpm add ../types; pnpm add ../sdk;
 
 sdk:
 	cd sdk; yarn; yarn link; yarn build;
@@ -37,4 +41,4 @@ start_executor:
 
 test_confirm_xtx: register_roco submit_headers_roco submit_side_effects submit_headers_roco_x3
 
-.PHONY: all old sdk types
+.PHONY: all old sdk types attester
