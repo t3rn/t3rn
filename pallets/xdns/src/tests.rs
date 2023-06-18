@@ -659,6 +659,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
@@ -668,6 +669,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
@@ -677,6 +679,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
@@ -686,6 +689,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
@@ -695,6 +699,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
@@ -704,6 +709,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
@@ -713,6 +719,118 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    }
+                ]
+            );
+        });
+}
+
+#[test]
+fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_via_portal_and_adding_attestation_target(
+) {
+    use circuit_mock_runtime::Attesters;
+    use frame_support::traits::OnInitialize;
+    use sp_core::H256;
+    use t3rn_primitives::attesters::{AttestersWriteApi, LatencyStatus};
+
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            for gateway in XDNS::fetch_full_gateway_records().iter() {
+                // ToDo: Uncomment when eth2::turn_on implemented
+                if gateway.gateway_record.verification_vendor == Ethereum {
+                    continue
+                }
+                Portal::turn_on(
+                    circuit_mock_runtime::Origin::root(),
+                    gateway.gateway_record.gateway_id,
+                )
+                .unwrap();
+            }
+
+            Attesters::force_activate_target(circuit_mock_runtime::Origin::root(), [1, 1, 1, 1])
+                .unwrap();
+            Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1));
+            Attesters::on_initialize(6);
+
+            assert_eq!(XDNS::process_overview(10), ());
+            let overview = XDNS::gateways_overview();
+
+            assert_eq!(
+                overview,
+                vec![
+                    GatewayActivity {
+                        gateway_id: [0, 0, 0, 0],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [1, 1, 1, 1],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        attestation_latency: Some(LatencyStatus::OnTime),
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [3, 3, 3, 3],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [5, 5, 5, 5],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [103, 97, 116, 101],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [107, 115, 109, 97],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
+                        gateway_id: [112, 100, 111, 116],
+                        reported_at: 10,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     }
@@ -751,6 +869,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
@@ -760,6 +879,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
@@ -769,6 +889,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
@@ -778,6 +899,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
@@ -787,6 +909,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
@@ -796,6 +919,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
@@ -805,6 +929,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                         justified_height: 0,
                         finalized_height: 0,
                         updated_height: 0,
+                        attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     }

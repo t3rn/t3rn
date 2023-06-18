@@ -63,6 +63,8 @@ pub mod volatile;
 pub mod xdns;
 pub mod xtx;
 
+use crate::attesters::LatencyStatus;
+
 pub type ChainId = [u8; 4];
 use t3rn_types::sfx::{SecurityLvl, TargetId};
 
@@ -382,6 +384,8 @@ pub struct GatewayActivity<BlockNumber> {
     pub finalized_height: BlockNumber,
 
     pub updated_height: BlockNumber,
+
+    pub attestation_latency: Option<LatencyStatus>,
 
     pub security_lvl: SecurityLvl,
 

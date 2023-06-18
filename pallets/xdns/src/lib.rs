@@ -195,8 +195,11 @@ pub mod pallet {
                         finalized_height: Zero::zero(),
                         updated_height: Zero::zero(),
                         security_lvl: SecurityLvl::Optimistic,
+                        attestation_latency: None,
                         is_active: false,
                     });
+
+                let attestation_latency = T::AttestersRead::read_attestation_latency(&gateway_id);
 
                 let (justified_height, finalized_height, updated_height, security_lvl, is_active) =
                     if let Ok(heartbeat) = T::Portal::get_latest_heartbeat(&gateway_id) {
@@ -228,6 +231,7 @@ pub mod pallet {
                     justified_height,
                     finalized_height,
                     updated_height,
+                    attestation_latency,
                     security_lvl,
                     is_active,
                 };
