@@ -95,7 +95,9 @@ class Instance {
     this.circuitClient = await this.sdk.init();
 
     this.circuitClient.on("disconnected", () => {
-      Instance.prom.circuitDisconnects.inc();
+      Instance.prom.circuitDisconnects.inc({
+        endpoint: this.config.circuit.rpc,
+      });
       Instance.prom.circuitDisconnected.inc({
         endpoint: this.config.circuit.rpc,
       });
