@@ -93,7 +93,7 @@ export class Prometheus {
           const metrics = await this.register.metrics();
           res.setHeader("Content-Type", this.register.contentType);
           res.end(metrics);
-        } else if (req.url === "/status") {
+        } else if (req.url === "/healthz") {
           res.setHeader("Content-Type", "text/plain");
           res.statusCode = this.isActive ? 200 : 500;
           res.end(JSON.stringify({ isExecutorActive: this.isActive }));
