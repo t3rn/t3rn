@@ -102,4 +102,11 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
         amount: Balance,
         asset_id: Option<AssetId>,
     ) -> DispatchResult;
+
+    fn request_fast_confirmation_discount_settlement(
+        charge_id: Hash,
+        requester: AccountId,
+        recipient: AccountId,
+        applied_discount: Balance,
+    ) -> bool;
 }

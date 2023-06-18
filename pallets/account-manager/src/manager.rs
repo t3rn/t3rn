@@ -64,6 +64,31 @@ impl<T: Config>
         }
     }
 
+    fn request_fast_confirmation_discount_settlement(
+        charge_id: T::Hash,
+        requester: T::AccountId,
+        recipient: T::AccountId,
+        applied_discount: BalanceOf<T>,
+    ) -> bool {
+        // if exists or discount is zero, skip
+        if applied_discount.is_zero() || Self::get_settlement(charge_id).is_some() {
+            return false
+        }
+        SettlementsPerRound::<T>::insert(
+            T::Clock::current_round(),
+            charge_id,
+            Settlement {
+                requester,
+                recipient,
+                settlement_amount: applied_discount,
+                outcome: Outcome::Commit,
+                source: BenefitSource::FastTrafficFeesKickback,
+                role: CircuitRole::Executor,
+            },
+        );
+        true
+    }
+
     fn get_settlement(settlement_id: T::Hash) -> Option<Settlement<T::AccountId, BalanceOf<T>>> {
         SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
     }

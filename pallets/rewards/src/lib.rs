@@ -492,6 +492,39 @@ pub mod pallet {
                 return Zero::zero()
             }
 
+            // See if there's any fast confirmation kickback fees to distribute first
+            let fast_confirmation_kickback_fees = Self::fast_fee_discounts_this_round();
+            let total_fast_confirmation_kickback_fees = fast_confirmation_kickback_fees
+                .iter()
+                .map(|(_, fee)| *fee)
+                .fold(BalanceOf::<T>::zero(), |acc, x| acc.saturating_add(x));
+
+            let proportion_of_total_fast_confirmation_kickback_fees =
+                if total_fast_confirmation_kickback_fees == Zero::zero() {
+                    Zero::zero()
+                } else {
+                    Percent::from_rational(
+                        total_fast_confirmation_kickback_fees,
+                        current_distribution,
+                    )
+                };
+
+            let mut left_over_distribution = current_distribution;
+
+            for (executor, fee) in fast_confirmation_kickback_fees {
+                let amount_to_distribute_to_executor =
+                    proportion_of_total_fast_confirmation_kickback_fees.mul_ceil(fee);
+                Self::update_pending_claims(
+                    &executor,
+                    CircuitRole::Executor,
+                    amount_to_distribute_to_executor,
+                    BenefitSource::Inflation,
+                );
+                left_over_distribution =
+                    left_over_distribution.saturating_sub(amount_to_distribute_to_executor);
+            }
+
+            let current_distribution = left_over_distribution;
             let accumulated_settlements = AccumulatedSettlements::<T>::iter().collect::<Vec<_>>();
 
             // Get the total settled executions this round
@@ -591,6 +624,17 @@ pub mod pallet {
         pub fn executions_this_round() -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)>
         {
             T::AccountManager::get_settlements_by_role(CircuitRole::Executor)
+                .filter(|(account, settlement)| settlement.source == BenefitSource::TrafficRewards)
+                .collect()
+        }
+
+        pub fn fast_fee_discounts_this_round(
+        ) -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)> {
+            T::AccountManager::get_settlements_by_role(CircuitRole::Executor)
+                .filter(|(account, settlement)| {
+                    settlement.source == BenefitSource::FastTrafficFeesKickback
+                })
+                .collect()
         }
 
         pub fn author() -> Option<T::AccountId> {

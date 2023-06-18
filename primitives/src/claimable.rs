@@ -22,6 +22,7 @@ pub enum BenefitSource {
     BootstrapPool,
     Inflation,
     TrafficFees,
+    FastTrafficFeesKickback,
     TrafficRewards,
     Unsettled,
     SlashTreasury,
@@ -33,4 +34,5 @@ pub struct ClaimableArtifacts<Account, Balance> {
     pub role: CircuitRole,
     pub total_round_claim: Balance,
     pub benefit_source: BenefitSource,
+    pub blocks_after_expected: u32,
 }

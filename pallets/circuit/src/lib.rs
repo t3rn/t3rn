@@ -731,6 +731,36 @@ pub mod pallet {
                         Self::request_sfx_attestation(local_ctx);
                         // ToDo: uncomment when price + costs estimates are implemented
                         // T::Xdns::estimate_costs(Machine::read_current_step_fsx(local_ctx));
+                        // See if qualifies for a fast confirmation fee discount
+                        let current_block = <frame_system::Pallet<T>>::block_number();
+                        let blocks_before_timeout = local_ctx
+                            .xtx
+                            .timeouts_at
+                            .checked_sub(current_block)
+                            .unwrap_or(Zero::zero());
+
+                        if blocks_before_timeout > Zero::zero() {
+                            for fsx in local_ctx.full_side_effects.iter() {
+                                let target = fsx.input.target;
+                                let requester = &local_ctx.xtx.requester;
+                                let executor = match fsx.input.enforce_executor {
+                                    Some(executor) => executor,
+                                    None => continue,
+                                };
+                                let percentage: Percent = blocks_before_timeout
+                                    .checked_div(T::Xdns::get_gateway_confirmation_timeout(target))
+                                    .unwrap_or(Zero::zero());
+                                let discount: BalanceOf<T> =
+                                    T::Xdns::get_cost_estimation_unit(target)
+                                        .checked_mul(percentage)
+                                        .unwrap_or(Zero::zero());
+                                let _was_discount_applied = T::AccountManager::request_fast_confirmation_discount_settlement(
+                                    requester.clone(),
+                                    executor.clone(),
+                                    discount,
+                                );
+                            }
+                        }
                     }
                     // Emit: From Circuit events
                     Self::emit_status_update(

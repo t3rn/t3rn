@@ -283,6 +283,12 @@ pub trait Xdns<T: frame_system::Config, Balance> {
 
     fn get_escrow_account(chain_id: &ChainId) -> Result<Vec<u8>, DispatchError>;
 
+    fn get_gateway_confirmation_timeout(
+        chain_id: &ChainId,
+    ) -> Result<T::BlockNumber, DispatchError>;
+
+    fn get_cost_estimation_unit(chain_id: &ChainId) -> Balance;
+
     fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>>;
 
     fn verify_active(

@@ -353,6 +353,11 @@ pub mod pallet {
     pub type AllGatewayIds<T: Config> = StorageValue<_, Vec<TargetId>, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn all_gateway_ids)]
+    pub type LastWindowCostOverview<T: Config> =
+        StorageValue<_, Vec<(TargetId, BalanceOf<T>)>, ValueQuery>;
+
+    #[pallet::storage]
     #[pallet::getter(fn per_target_asset_estimates)]
     pub type PerTargetAssetEstimates<T: Config> = StorageDoubleMap<
         _,
@@ -679,6 +684,37 @@ pub mod pallet {
 
         fn get_sfx_abi(gateway_id: &ChainId, sfx_4b_id: Sfx4bId) -> Option<SFXAbi> {
             <SFXABIRegistry<T>>::get(gateway_id, sfx_4b_id)
+        }
+
+        fn get_gateway_confirmation_timeout(chain_id: &ChainId) -> T::BlockNumber {
+            // Retreive finality vendor of the gateway and return the set confirmation timeout based on that
+            let gateway = match <Gateways<T>>::get(chain_id) {
+                Some(gateway) => gateway,
+                None => return T::BlockNumber::from(0),
+            };
+
+            let finality_vendor = gateway.verification_vendor;
+            let confirmation_timeout = match finality_vendor {
+                GatewayVendor::Polkadot | GatewayVendor::Kusama | GatewayVendor::Rococo => {
+                    // Assume approx. 12s block time on the Parachain - 50 blocks should definitely be enough
+                    T::BlockNumber::from(50);
+                },
+                GatewayVendor::Ethereum => {
+                    // Assume approx. 12s block time on Ethereum - 100 blocks should definitely be enough to find reasonable gas price
+                    T::BlockNumber::from(100);
+                },
+            };
+            Ok(confirmation_timeout)
+        }
+
+        fn get_cost_estimation_unit(chain_id: &ChainId) -> Balance {
+            // Based on last batching window statistic for the given chain_id, return the cost estimation unit
+            // e.g. for Ethereum, it would be estimate of 20k gas with the gas price of the last batching window
+            <LastWindowCostOverview<T>>::get()
+                .iter()
+                .find(|(id, cost_unit)| id == chain_id)
+                .map(|(_, cost_unit)| *cost_unit)
+                .unwrap_or(Zero::zero());
         }
 
         fn add_escrow_account(
