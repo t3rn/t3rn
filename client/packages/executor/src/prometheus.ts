@@ -53,13 +53,14 @@ export class Prometheus {
     this.circuitDisconnected = new Counter({
       name: "circuit_disconnect",
       help: "Information on circuit disconnections",
-      registers: [this.register],
       labelNames: ["endpoint"],
+      registers: [this.register],
     });
 
     this.circuitDisconnects = new Counter({
       name: "circuit_disconnects_total",
       help: "Number of times circuit rpc server has disconnected",
+      labelNames: ["endpoint"],
       registers: [this.register],
     });
 
