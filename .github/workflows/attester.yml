@@ -47,12 +47,12 @@ jobs:
   test-attester:
     name: Test Attester
     needs: [changes]
-    if: needs.changes.outputs.src == 'true'
+    runs-on: self-hosted
     defaults:
       run:
         working-directory: client/packages/attester
 
-    runs-on: self-hosted
+    if: needs.changes.outputs.src == 'true'
     steps:
       - uses: actions/checkout@v3
 
@@ -82,26 +82,17 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/attester/eslint_report.json
 
-  build-docker:
-    name: Build Docker Attester
-    needs: [changes]
-    if: needs.changes.outputs.src == 'true'
-
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build Docker
-        working-directory: ./client
-        run: |
-          docker build . -f attester.Dockerfile
+      - name: 🏗 Build Docs
+        run: pnpm run build-docs
+        working-directory: client/packages/attester
 
   deploy:
-    name: Deploy Attester
+    name: Build & Deploy Attester
     runs-on: self-hosted
-    needs: test-attester
+    needs: [changes, test-attester]
     concurrency: attester
-    if: github.ref == 'refs/heads/development'
+
+    if: needs.changes.outputs.src == 'true'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -128,8 +119,10 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: EKS
+        if: github.ref == 'refs/heads/development'
         run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
 
       - name: Helm Upgrade
+        if: github.ref == 'refs/heads/development'
         working-directory: ./client/packages/attester
         run: helm upgrade attester helm -n attester -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-attester"

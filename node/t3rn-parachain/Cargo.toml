@@ -12,15 +12,15 @@ name = "t3rn-collator"
 path = "src/main.rs"
 
 [dependencies]
-clap                   = { version = "3.1", features = [ "derive" ] }
-codec                  = { package = "parity-scale-codec", version = "3" }
-derive_more            = "0.99.2"
-futures                = "0.3.21"
-hex-literal            = "0.3.4"
-jsonrpc-core           = "18.0.0"
-jsonrpsee              = { version = "0.14.0", features = [ "server" ] }
-log                    = "0.4.14"
-serde                  = { version = "1.0", features = [ "derive" ] }
+clap         = { version = "3.1", features = [ "derive" ] }
+codec        = { package = "parity-scale-codec", version = "3" }
+derive_more  = "0.99.2"
+futures      = "0.3.21"
+hex-literal  = "0.3.4"
+jsonrpc-core = "18.0.0"
+jsonrpsee    = { version = "0.14.0", features = [ "server" ] }
+log          = "0.4.19"
+serde        = { version = "1.0", features = [ "derive" ] }
 
 # Local
 circuit-parachain-runtime = { path = "../../runtime/t3rn-parachain", package = "t3rn-parachain-runtime" }

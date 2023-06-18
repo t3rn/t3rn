@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node", "jest"],
     "incremental": true,
     "outDir": "./dist",
     "baseUrl": ".",
@@ -18,6 +19,10 @@
     "noImplicitThis": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+  },
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"],
+    "out": "docs"
   },
   "exclude": ["node_modules", "dist", "*.d.ts"],
 }

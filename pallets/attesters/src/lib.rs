@@ -32,7 +32,7 @@ pub mod pallet {
 
     pub use t3rn_primitives::attesters::{
         AttesterInfo, AttestersChange, AttestersReadApi, AttestersWriteApi, BatchConfirmedSfxId,
-        CommitteeTransitionIndices, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
+        CommitteeTransitionIndices, LatencyStatus, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use t3rn_primitives::{
@@ -53,14 +53,6 @@ pub mod pallet {
         Repatriated,
         Expired,
         Committed,
-    }
-
-    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
-    pub enum LatencyStatus {
-        #[default]
-        OnTime,
-        // Late: (n amount of missed latency windows, total amount of successful repatriations)
-        Late(u32, u32),
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -132,6 +124,17 @@ pub mod pallet {
             keccak.finalize(&mut res);
             H256::from(res)
         }
+
+        pub fn is_empty(&self) -> bool {
+            self.next_committee.is_none()
+                && self.banned_committee.is_none()
+                && self.committed_sfx.is_none()
+                && self.reverted_sfx.is_none()
+        }
+
+        pub fn has_no_sfx(&self) -> bool {
+            self.committed_sfx.is_none() && self.reverted_sfx.is_none()
+        }
     }
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
@@ -182,7 +185,7 @@ pub mod pallet {
         type Portal: Portal<Self>;
         type Rewards: RewardsWriteApi<Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
         type ReadSFX: ReadSFX<Self::Hash, Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
-        type Xdns: Xdns<Self>;
+        type Xdns: Xdns<Self, BalanceOf<Self>>;
     }
 
     #[pallet::pallet]
@@ -217,8 +220,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn pending_slashes)]
-    pub type PendingSlashes<T: Config> =
-        StorageMap<_, Identity, T::AccountId, Vec<Slash<T::BlockNumber>>>;
+    pub type PermanentSlashes<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn attestation_targets)]
@@ -241,6 +243,11 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn next_batches)]
     pub type NextBatch<T: Config> = StorageMap<_, Identity, TargetId, BatchMessage<T::BlockNumber>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn next_committee_on_target)]
+    pub type NextCommitteeOnTarget<T: Config> =
+        StorageMap<_, Identity, TargetId, CommitteeTransition>;
 
     #[pallet::storage]
     #[pallet::getter(fn batches_to_sign)]
@@ -291,6 +298,7 @@ pub mod pallet {
         NewTargetActivated(TargetId),
         NewTargetProposed(TargetId),
         AttesterAgreedToNewTarget(T::AccountId, TargetId, Vec<u8>),
+        CurrentPendingAttestationBatches(TargetId, Vec<(u32, H256)>),
     }
 
     #[pallet::error]
@@ -318,9 +326,11 @@ pub mod pallet {
         BatchNotFound,
         CollusionWithPermanentSlashDetected,
         BatchFoundWithUnsignableStatus,
+        RejectingFromSlashedAttester,
         TargetAlreadyActive,
         TargetNotActive,
         XdnsTargetNotActive,
+        XdnsGatewayDoesNotHaveEscrowAddressRegistered,
         SfxAlreadyRequested,
         AddAttesterAlreadyRequested,
         RemoveAttesterAlreadyRequested,
@@ -473,6 +483,12 @@ pub mod pallet {
         pub fn force_activate_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
             ensure_root(origin)?;
 
+            // Ensure that gateway has the escrow address attached to it.
+            ensure!(
+                <T as Config>::Xdns::get_escrow_account(&target).is_ok(),
+                Error::<T>::XdnsGatewayDoesNotHaveEscrowAddressRegistered
+            );
+
             // Activate the new target
             PendingAttestationTargets::<T>::mutate(|pending| {
                 if let Some(index) = pending.iter().position(|x| x == &target) {
@@ -493,6 +509,12 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn add_attestation_target(origin: OriginFor<T>, target: TargetId) -> DispatchResult {
             ensure_root(origin)?;
+
+            // Ensure that gateway has the escrow address attached to it.
+            ensure!(
+                <T as Config>::Xdns::get_escrow_account(&target).is_ok(),
+                Error::<T>::XdnsGatewayDoesNotHaveEscrowAddressRegistered
+            );
 
             ensure!(
                 !AttestationTargets::<T>::get().contains(&target),
@@ -568,23 +590,9 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::InvalidSignature)?;
 
             if !is_verified {
-                let slash: Vec<Slash<T::BlockNumber>> = match PendingSlashes::<T>::get(&account_id)
-                {
-                    Some(already_pending) => {
-                        let mut already_pending = already_pending;
-                        already_pending.extend_from_slice(&[Slash::Permanent]);
-                        already_pending
-                    },
-                    None => vec![Slash::Permanent],
-                };
-                // Apply permanent slash for colluding attestor
-                PendingSlashes::<T>::insert(&account_id, slash);
+                PermanentSlashes::<T>::append(account_id);
+                return Err(Error::<T>::RejectingFromSlashedAttester.into())
             }
-
-            ensure!(
-                PendingSlashes::<T>::get(&account_id).is_none(),
-                Error::<T>::AttestationSignatureInvalid
-            );
 
             ensure!(is_verified, Error::<T>::AttestationSignatureInvalid);
 
@@ -781,13 +789,16 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> AttestersWriteApi<T::AccountId, Error<T>> for Pallet<T> {
-        fn request_sfx_attestation_commit(target: TargetId, sfx_id: H256) -> Result<(), Error<T>> {
+    impl<T: Config> AttestersWriteApi<T::AccountId, DispatchError> for Pallet<T> {
+        fn request_sfx_attestation_commit(
+            target: TargetId,
+            sfx_id: H256,
+        ) -> Result<(), DispatchError> {
             NextBatch::<T>::try_mutate(target, |next_batch| {
                 if let Some(ref mut next_batch) = next_batch {
                     if let Some(ref mut batch_sfx) = &mut next_batch.committed_sfx {
                         if batch_sfx.contains(&sfx_id) {
-                            return Err(Error::<T>::SfxAlreadyRequested)
+                            return Err("SfxAlreadyRequested".into())
                         } else {
                             batch_sfx.push(sfx_id);
                         }
@@ -796,17 +807,20 @@ pub mod pallet {
                     }
                     Ok(())
                 } else {
-                    Err(Error::<T>::BatchNotFound)
+                    Err("BatchNotFound".into())
                 }
             })
         }
 
-        fn request_sfx_attestation_revert(target: TargetId, sfx_id: H256) -> Result<(), Error<T>> {
+        fn request_sfx_attestation_revert(
+            target: TargetId,
+            sfx_id: H256,
+        ) -> Result<(), DispatchError> {
             NextBatch::<T>::try_mutate(target, |next_batch| {
                 if let Some(ref mut next_batch) = next_batch {
                     if let Some(ref mut batch_sfx) = &mut next_batch.reverted_sfx {
                         if batch_sfx.contains(&sfx_id) {
-                            return Err(Error::<T>::SfxAlreadyRequested)
+                            return Err(Error::<T>::SfxAlreadyRequested.into())
                         } else {
                             batch_sfx.push(sfx_id);
                         }
@@ -815,18 +829,22 @@ pub mod pallet {
                     }
                     Ok(())
                 } else {
-                    Err(Error::<T>::BatchNotFound)
+                    Err(Error::<T>::BatchNotFound.into())
                 }
             })
         }
 
-        fn request_ban_attesters_attestation(ban_attester: &T::AccountId) -> Result<(), Error<T>> {
+        fn request_ban_attesters_attestation(
+            ban_attester: &T::AccountId,
+        ) -> Result<(), DispatchError> {
             for target in AttestationTargets::<T>::get() {
                 let attester_recoverable = AttestersAgreements::<T>::get(ban_attester, target)
                     .ok_or(Error::<T>::AttesterDidNotAgreeToNewTarget)?;
 
                 NextBatch::<T>::try_mutate(target, |next_batch| {
-                    let next_batch = next_batch.as_mut().ok_or(Error::<T>::BatchNotFound)?;
+                    let next_batch = next_batch
+                        .as_mut()
+                        .ok_or::<DispatchError>(Error::<T>::BatchNotFound.into())?;
 
                     match &mut next_batch.banned_committee {
                         Some(attesters) => {
@@ -840,7 +858,7 @@ pub mod pallet {
                             next_batch.banned_committee = Some(vec![attester_recoverable]);
                         },
                     }
-                    Ok(())
+                    Ok::<(), DispatchError>(())
                 })?;
             }
 
@@ -854,17 +872,24 @@ pub mod pallet {
                         let committee_transition_for_target =
                             Self::get_current_committee_transition_for_target(&target);
                         let committee_recoverable_on_target = committee_transition_for_target
+                            .clone()
                             .into_iter()
                             .map(|(_index, recoverable)| recoverable)
                             .collect::<Vec<Vec<u8>>>();
+
+                        let next_committee = match committee_recoverable_on_target.len() {
+                            0 => None,
+                            _ => Some(committee_recoverable_on_target),
+                        };
                         // We only update the next_committee if it was None.
                         NextBatch::<T>::insert(
                             target,
                             BatchMessage {
-                                next_committee: Some(committee_recoverable_on_target),
+                                next_committee,
                                 ..next_batch
                             },
                         );
+                        NextCommitteeOnTarget::<T>::insert(target, committee_transition_for_target);
                     }
                 }
             }
@@ -880,6 +905,17 @@ pub mod pallet {
             CurrentCommittee::<T>::get()
         }
 
+        // Select the oldest batch with PendingAttestation and return the LatencyStatus
+        fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
+            let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
+            batches.sort_by(|a, b| a.created.cmp(&b.created));
+            let oldest_batch = batches.first();
+            match oldest_batch {
+                Some(batch) => Some(batch.latency.clone()),
+                None => None,
+            }
+        }
+
         fn active_set() -> Vec<T::AccountId> {
             ActiveSet::<T>::get()
         }
@@ -888,7 +924,7 @@ pub mod pallet {
             let active_set = ActiveSet::<T>::get();
             active_set
                 .into_iter()
-                .filter(|a| !PendingSlashes::<T>::contains_key(a))
+                .filter(|a| !Self::is_permanently_slashed(a))
                 .collect()
         }
 
@@ -989,7 +1025,7 @@ pub mod pallet {
                 if let Some((account_id, _attester_info)) =
                     Attesters::<T>::iter().find(|(_, info)| info.index == attester_index)
                 {
-                    PendingSlashes::<T>::insert(&account_id, vec![Slash::Permanent]);
+                    PermanentSlashes::<T>::append(account_id);
                 } else {
                     log::error!("Colluding attester index: {:?} not found", attester_index);
                 }
@@ -1382,23 +1418,39 @@ pub mod pallet {
                                     batch.message(),
                                     batch.message_hash(),
                                 ));
+                            } else {
+                                // Mark the batch as late if it has not been attested for. Skip if BatchingWindow overlaps with RepatriationPeriod
+                                if !((n % T::RepatriationPeriod::get()).is_zero()
+                                    && !batch.has_no_sfx())
+                                {
+                                    batch.latency = match batch.latency {
+                                        LatencyStatus::OnTime => LatencyStatus::Late(1, 0),
+                                        LatencyStatus::Late(n, r) =>
+                                            LatencyStatus::Late(n.saturating_add(1), r),
+                                    };
+                                }
                             }
                         }
                     }
                 });
 
+                let batches_pending_attestation =
+                    Self::get_batches(target, BatchStatus::PendingAttestation);
+                if !batches_pending_attestation.is_empty() {
+                    // Emit all pending attestation batches for the target with indexes and message hashes
+                    Self::deposit_event(Event::CurrentPendingAttestationBatches(
+                        target,
+                        batches_pending_attestation
+                            .iter()
+                            .map(|batch| (batch.index, batch.message_hash()))
+                            .collect::<Vec<(u32, H256)>>(),
+                    ));
+                }
+
                 if let Some(mut next_batch) = NextBatch::<T>::get(target) {
-                    // Message will always bne at least 4 bytes long since encoding the index
-                    let has_pending_messages = !next_batch.message().len() > 4usize;
-
-                    // ToDo: Validate below consideration about coalescing batches f the target batch is still awaiting (late) attestation
-                    let target_batch_still_awaiting_attestation =
-                        Self::get_latest_batch_to_sign(target).is_some();
-
                     // Check if batch has pending messages to attest for
-                    if !has_pending_messages || target_batch_still_awaiting_attestation {
-                        // Leave the batch empty if it has no messages to attest for
-                    } else {
+                    // Leave the batch empty if it has no messages to attest for
+                    if !next_batch.is_empty() {
                         let message_hash = next_batch.message_hash();
                         next_batch.status = BatchStatus::PendingAttestation;
                         // Push the batch to the batches vector
@@ -1426,9 +1478,14 @@ pub mod pallet {
                 } else {
                     // Create a new !first! empty batch for the next window on the newly accepted target
                     NextBatch::<T>::insert(target, new_next_batch);
+                    Self::request_next_committee_attestation();
                 }
             }
             aggregated_weight
+        }
+
+        pub fn is_permanently_slashed(account: &T::AccountId) -> bool {
+            PermanentSlashes::<T>::get().contains(account)
         }
 
         pub fn process_pending_unnominations(
@@ -1532,7 +1589,7 @@ pub mod pallet {
                 ActiveSet::<T>::put(
                     SortedNominatedAttesters::<T>::get()
                         .iter()
-                        .filter(|(account_id, _)| PendingSlashes::<T>::get(account_id).is_none())
+                        .filter(|(account_id, _)| !Self::is_permanently_slashed(&account_id))
                         .take(32)
                         .cloned()
                         .map(|(account_id, _balance)| account_id)
@@ -1541,13 +1598,10 @@ pub mod pallet {
                 aggregated_weight += T::DbWeight::get().reads_writes(1, 1);
 
                 // Call shuffle_committee
-                if !Self::shuffle_committee() {
-                    log::error!("Failed to shuffle committee");
-                    aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
-                } else {
-                    Self::request_next_committee_attestation();
-                    aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
-                }
+                Self::shuffle_committee();
+                aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
+                Self::request_next_committee_attestation();
+                aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
 
                 return aggregated_weight
             }
@@ -1566,7 +1620,8 @@ pub mod pallet {
     // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        phantom: PhantomData<T>,
+        pub phantom: PhantomData<T>,
+        pub attestation_targets: Vec<TargetId>,
     }
 
     // The default value for the genesis config type.
@@ -1575,6 +1630,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 phantom: Default::default(),
+                attestation_targets: Default::default(),
             }
         }
     }
@@ -1583,6 +1639,11 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
+            // Extend the list of attestation targets
+            for target in self.attestation_targets.iter() {
+                AttestationTargets::<T>::append(target);
+            }
+
             for target in AttestationTargets::<T>::get() {
                 let mut new_next_batch = BatchMessage::default();
                 new_next_batch.created = frame_system::Pallet::<T>::block_number();
@@ -1603,7 +1664,7 @@ pub mod attesters_test {
 
     use codec::Encode;
     use frame_support::{
-        assert_err, assert_ok,
+        assert_err, assert_noop, assert_ok,
         traits::{Currency, Get, Hooks, Len},
         StorageValue,
     };
@@ -1617,8 +1678,9 @@ pub mod attesters_test {
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
         Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards,
         CurrentCommittee, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
-        Nominations, Origin, PendingSlashes, PendingUnnominations, PreviousCommittee, Rewards,
-        SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals,
+        NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations, PermanentSlashes,
+        PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters, System,
+        XExecSignals,
     };
     use t3rn_primitives::{
         attesters::{
@@ -1694,13 +1756,14 @@ pub mod attesters_test {
         // Run to the next shuffling window
         let shuffling_frequency = <MiniRuntime as ConfigAttesters>::ShufflingFrequency::get();
         let current_block = System::block_number();
-        let _shuffling_multiplier = current_block / shuffling_frequency;
 
         if current_block < shuffling_frequency {
             Attesters::on_initialize(shuffling_frequency);
+            System::set_block_number(shuffling_frequency);
         } else {
             let shuffling_multiplier = current_block / shuffling_frequency;
             Attesters::on_initialize(shuffling_multiplier * shuffling_frequency);
+            System::set_block_number(shuffling_multiplier * shuffling_frequency);
         }
         assert!(!ActiveSet::<MiniRuntime>::get().is_empty(),);
         assert!(!CurrentCommittee::<MiniRuntime>::get().is_empty(),);
@@ -1789,10 +1852,10 @@ pub mod attesters_test {
         assert_eq!(next_batch.index, index);
         assert_eq!(next_batch.committed_sfx, None);
         assert_eq!(next_batch.reverted_sfx, None);
-        assert_eq!(next_batch.next_committee, None);
         assert_eq!(next_batch.banned_committee, None);
         assert_eq!(next_batch.signatures, Vec::new());
 
+        System::set_block_number(closest_block);
         closest_block
     }
 
@@ -1855,6 +1918,32 @@ pub mod attesters_test {
         ));
 
         (latest_batch_hash, signature)
+    }
+
+    #[test]
+    fn submitting_attestation_reads_as_on_time_latency_status() {
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
+        ext.execute_with(|| {
+            // Register an attester
+            let attester = AccountId::from([1; 32]);
+            let attester_info = register_attester_with_single_private_key([1u8; 32]);
+            // Submit an attestation signed with the Ed25519 key
+            let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
+            let (_hash, signature) = sign_and_submit_sfx_to_latest_attestation(
+                attester,
+                sfx_id_to_sign_on,
+                ECDSA_ATTESTER_KEY_TYPE_ID,
+                [0u8; 4],
+                [1u8; 32],
+            );
+
+            let batch_latency = Attesters::read_attestation_latency(&[0u8; 4]);
+            assert!(batch_latency.is_some());
+            assert_eq!(batch_latency, Some(LatencyStatus::OnTime));
+        });
     }
 
     #[test]
@@ -2583,11 +2672,9 @@ pub mod attesters_test {
             let sfx_id_a = H256::repeat_byte(1);
             assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id_a));
 
-            assert_eq!(
-                Attesters::request_sfx_attestation_commit(target, sfx_id_a)
-                    .unwrap_err()
-                    .encode(),
-                AttestersError::<MiniRuntime>::SfxAlreadyRequested.encode(),
+            assert_noop!(
+                Attesters::request_sfx_attestation_commit(target, sfx_id_a),
+                "SfxAlreadyRequested",
             );
         });
     }
@@ -2668,6 +2755,94 @@ pub mod attesters_test {
             empty_batch.created = batching_window * 2;
             empty_batch.index += 1;
             assert_eq!(NextBatch::<MiniRuntime>::get(target), Some(empty_batch));
+        });
+    }
+
+    #[test]
+    fn committee_transition_generates_next_3_batches_pending_attestations_when_late() {
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
+
+        ext.execute_with(|| {
+            // On initialization, the current committee should be empty and the previous committee should be None
+            assert!(CurrentCommittee::<MiniRuntime>::get().is_empty());
+            assert_eq!(PreviousCommittee::<MiniRuntime>::get(), vec![]);
+
+            const TARGET_0: TargetId = [0u8; 4];
+
+            // Register multiple attesters
+            let attester_count = 100;
+            for counter in 1..=attester_count {
+                let _attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+            }
+            // Trigger the committee first setup
+            select_new_committee();
+            add_target_and_transition_to_next_batch(TARGET_0, 0);
+
+            // Check if the committee is set up and has the correct size
+            let committee = CurrentCommittee::<MiniRuntime>::get();
+            let committee_size: u32 = <MiniRuntime as ConfigAttesters>::CommitteeSize::get();
+            assert_eq!(committee.len(), committee_size as usize);
+
+            // Check that each member of the committee is in the registered attesters
+            for member in &committee {
+                assert!(AttestersStore::<MiniRuntime>::contains_key(member));
+            }
+
+            // Expect NextBatch message to have committee transition awaiting attestation on registered target
+            let next_batch = NextBatch::<MiniRuntime>::get(TARGET_0).unwrap();
+            assert_eq!(next_batch.status, BatchStatus::PendingMessage);
+            assert_eq!(next_batch.latency, LatencyStatus::OnTime);
+            assert_eq!(next_batch.index, 0);
+            assert_eq!(next_batch.committed_sfx, None);
+            assert_eq!(next_batch.reverted_sfx, None);
+            assert!(next_batch.next_committee.is_some());
+            assert!(!next_batch.next_committee.clone().unwrap().is_empty());
+            assert_eq!(next_batch.banned_committee, None);
+            assert_eq!(next_batch.signatures, Vec::new());
+
+            let batch_0_hash = next_batch.message_hash();
+            // If no attestations are received, the next batch should be empty, and the current batch should be pending attestation with indication of late submission
+            add_target_and_transition_to_next_batch(TARGET_0, 1);
+
+            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
+            assert_eq!(batch_0.latency, LatencyStatus::OnTime);
+
+            // Next batch should mark the initial batch as late, but don't modify the batch_1 since there's no new messages to attest for
+            add_target_and_transition_to_next_batch(TARGET_0, 1);
+            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
+            assert_eq!(batch_0.latency, LatencyStatus::Late(1, 0));
+
+            let committee_0_on_target =
+                NextCommitteeOnTarget::<MiniRuntime>::get(TARGET_0).unwrap();
+
+            add_target_and_transition_to_next_batch(TARGET_0, 1);
+            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
+            assert_eq!(batch_0.latency, LatencyStatus::Late(2, 0));
+            // Trigger the next committee transition
+            select_new_committee();
+            // Retreive next batch
+            let batch_1 = NextBatch::<MiniRuntime>::get(TARGET_0).unwrap();
+            assert!(batch_1.next_committee.is_some());
+            assert_eq!(batch_1.index, 1);
+            let committee_1_on_target =
+                NextCommitteeOnTarget::<MiniRuntime>::get(TARGET_0).unwrap();
+            let batch_1_hash = batch_1.message_hash();
+            // todo: fix the randomness source on mini-mock (yields 0)
+            // assert!(committee_0_on_target != committee_1_on_target);
+            add_target_and_transition_to_next_batch(TARGET_0, 2);
+            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
+            assert_eq!(batch_0.latency, LatencyStatus::Late(3, 0));
+            let batch_1 = Attesters::get_batch_by_message_hash(TARGET_0, batch_1_hash).unwrap();
+            assert_eq!(batch_1.status, BatchStatus::PendingAttestation);
+            assert_eq!(batch_1.latency, LatencyStatus::OnTime);
         });
     }
 
@@ -2756,10 +2931,11 @@ pub mod attesters_test {
                     [counter; 32],
                 );
             }
-
-            let batch = Attesters::get_batch_by_message([0u8; 4], expected_message_bytes)
-                .expect("get_batch_by_message should return a batch");
-            assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
+            assert_eq!(
+                Attesters::get_batches([0u8; 4], BatchStatus::ReadyForSubmissionFullyApproved)
+                    .len(),
+                1
+            );
         });
     }
 
@@ -2796,14 +2972,14 @@ pub mod attesters_test {
                 );
             }
 
-            let batch = Attesters::get_batch_by_message([0u8; 4], expected_message_bytes.clone())
-                .expect("get_batch_by_message should return a batch");
+            let batch = Attesters::get_latest_batch_to_sign([0u8; 4])
+                .expect("get_latest_batch_to_sign should return a batch");
 
             assert_eq!(batch.status, BatchStatus::PendingAttestation);
 
             // Trigger batching transition
-            add_target_and_transition_to_next_batch([0u8; 4], 2);
-            let batch = Attesters::get_batch_by_message([0u8; 4], expected_message_bytes)
+            add_target_and_transition_to_next_batch([0u8; 4], 1);
+            let batch = Attesters::get_batch_by_message([0u8; 4], batch.message())
                 .expect("get_batch_by_message should return a batch");
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionByMajority);
         });
@@ -2857,10 +3033,13 @@ pub mod attesters_test {
                 );
             }
 
-            // Check if the attestations have been added to the batch
-            let first_batch = Attesters::get_batch_by_message(target, message_bytes.clone())
-                .expect("Batch by message should exist");
+            let attested_batches =
+                Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
 
+            assert_eq!(attested_batches.len(), 1);
+            let first_batch = attested_batches[0].clone();
+
+            // Check if the attestations have been added to the batch
             let first_batch_hash = first_batch.message_hash();
             let first_batch_message = first_batch.message();
 
@@ -2875,8 +3054,6 @@ pub mod attesters_test {
                 hash: first_batch_hash,
                 message: first_batch_message.clone(),
             };
-
-            assert_eq!(first_batch_message, message_bytes);
 
             // Commit the batch
             assert_ok!(Attesters::commit_batch(
@@ -2930,14 +3107,12 @@ pub mod attesters_test {
             }
 
             // Check if the attestations have been added to the batch
-            let first_batch =
-                Attesters::get_batch_by_message(target, expected_message_bytes.clone())
-                    .expect("Batch by message should exist");
+
+            let fist_batches =
+                Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
+            assert_eq!(fist_batches.len(), 1);
+            let first_batch = fist_batches[0].clone();
             assert_eq!(first_batch.signatures.len(), 32);
-            assert_eq!(
-                first_batch.status,
-                BatchStatus::ReadyForSubmissionFullyApproved
-            );
 
             let colluded_message: [u8; 32] = *b"_message_that_was_colluded_by_32";
 
@@ -2959,15 +3134,18 @@ pub mod attesters_test {
             );
 
             // Check if the batch status has not been updated to Committed
-            let batch = Attesters::get_batch_by_message(target, expected_message_bytes)
+            let batch = Attesters::get_batch_by_message_hash(target, latest_batch_hash)
                 .expect("Batch by message should exist");
 
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
 
+            let slashed_permanently = PermanentSlashes::<MiniRuntime>::get();
+
             // Check if all of the attesters have been slashed
             for counter in 1..33u8 {
                 let attester = AccountId::from([counter; 32]);
-                assert!(PendingSlashes::<MiniRuntime>::get(&attester).is_some());
+                assert!(Attesters::is_permanently_slashed(&attester));
+                assert!(slashed_permanently.contains(&attester));
             }
         });
     }
