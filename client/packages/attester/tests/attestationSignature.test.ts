@@ -6,6 +6,7 @@ import {
     toBuffer,
     privateToPublic,
     hashPersonalMessage,
+    keccak,
 } from 'ethereumjs-util'
 
 jest.mock('../src/prometheus')
@@ -52,7 +53,6 @@ describe('generateAttestationTx', () => {
                 privateKey:
                     '0x0123456789012345678901234567890123456789012345678901234567890123',
             },
-
             btc: {},
         }
         attester = new Attester(config, keys)
@@ -70,10 +70,10 @@ describe('generateAttestationTx', () => {
     })
 
     it('Should generate correct signature', async () => {
-        const data = attester.generateAttestationTx(messageHash, 'sepl')
+        const data = await attester.generateAttestationTx(messageHash, 'sepl')
 
         expect(data.signature).toEqual(
-            ''
+            '0x534dd0cbadf9a92af5d32533231af6769b3a1e479e5dde49ea4e431028a66e0a2611b13e55034973e1c5f4edcab425af4f164c5a50025204db06f439ad5e977c1c'
         )
         const signatureBytes = toBuffer(data.signature)
         expect(signatureBytes.length).toEqual(65)
@@ -84,13 +84,17 @@ describe('generateAttestationTx', () => {
             toBuffer(attester.keys.ethereum.privateKey)
         )
 
+        const prefix = 'Ethereum Signed Message'
+        const prefixBuffer = Buffer.from(prefix)
+        const messageBuffer = toBuffer(messageHash)
+
         // Recover the signer's address
         const sigObj = ecsign(
-            hashPersonalMessage(toBuffer(messageHash)),
+            keccak(Buffer.concat([prefixBuffer, messageBuffer])),
             toBuffer(attester.keys.ethereum.privateKey)
         )
         const signedFrom = ecrecover(
-            hashPersonalMessage(toBuffer(messageHash)),
+            keccak(Buffer.concat([prefixBuffer, messageBuffer])),
             sigObj.v,
             sigObj.r,
             sigObj.s

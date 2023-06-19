@@ -27,6 +27,7 @@
     "axios": "^1.4.0",
     "dotenv": "^16.1.4",
     "ethereumjs-util": "^7.1.5",
+    "ethers": "^6.6.0",
     "http": "0.0.1-security",
     "pino": "^8.14.1",
     "prom-client": "^14.2.0",
