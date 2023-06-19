@@ -176,6 +176,9 @@ pub mod pallet {
     pub type IsSettlementAccumulationHalted<T: Config> = StorageValue<_, bool, ValueQuery>;
 
     #[pallet::storage]
+    pub type MaxRewardExecutorsKickback<T: Config> = StorageValue<_, Percent, ValueQuery>;
+
+    #[pallet::storage]
     pub type IsClaimingHalted<T: Config> = StorageValue<_, bool, ValueQuery>;
 
     #[pallet::storage]
@@ -193,6 +196,8 @@ pub mod pallet {
         AttesterRewarded(T::AccountId, BalanceOf<T>),
         CollatorRewarded(T::AccountId, BalanceOf<T>),
         ExecutorRewarded(T::AccountId, BalanceOf<T>),
+        // old, new kickbacks to executors (in percent of max_reward)
+        NewMaxRewardExecutorsKickbackSet(Percent, Percent),
         Claimed(T::AccountId, BalanceOf<T>),
         PendingClaim(T::AccountId, BalanceOf<T>),
     }
@@ -209,6 +214,21 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::weight(10_000)]
+        pub fn set_max_rewards_executors_kickback(
+            origin: OriginFor<T>,
+            new_kickback: Percent,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            let old_kickback = MaxRewardExecutorsKickback::<T>::get();
+            MaxRewardExecutorsKickback::<T>::put(new_kickback);
+            Self::deposit_event(Event::NewMaxRewardExecutorsKickbackSet(
+                old_kickback,
+                new_kickback,
+            ));
+            Ok(())
+        }
+
         #[pallet::weight(10_000)]
         pub fn trigger_distribution(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
@@ -467,6 +487,11 @@ pub mod pallet {
         }
 
         pub fn distribute_executor_rewards(current_distribution: BalanceOf<T>) -> BalanceOf<T> {
+            let max_reward_executors_kickback = MaxRewardExecutorsKickback::<T>::get();
+            if max_reward_executors_kickback == Zero::zero() {
+                return Zero::zero()
+            }
+
             let accumulated_settlements = AccumulatedSettlements::<T>::iter().collect::<Vec<_>>();
 
             // Get the total settled executions this round
@@ -498,7 +523,7 @@ pub mod pallet {
                 let reward = proportion.mul_ceil(current_distribution);
 
                 // Ensure the reward does not exceed 90% of the accumulated settlement amount
-                let max_reward = Perbill::from_percent(90).mul_ceil(accumulated_settlement);
+                let max_reward = max_reward_executors_kickback.mul_ceil(accumulated_settlement);
                 let capped_reward = reward.min(max_reward);
 
                 // Update the pending claims for the executor
@@ -817,6 +842,7 @@ pub mod pallet {
             IsDistributionHalted::<T>::put(false);
             IsSettlementAccumulationHalted::<T>::put(false);
             RepatriationPercentage::<T>::put(T::StartingRepatriationPercentage::get());
+            MaxRewardExecutorsKickback::<T>::put(Percent::from_percent(0));
         }
     }
 }
@@ -829,6 +855,7 @@ pub mod test {
     };
     use sp_core::H256;
 
+    use sp_runtime::Percent;
     use t3rn_mini_mock_runtime::{
         AccountId, Authors, AuthorsThisPeriod, Balance, Balances, Clock, ConfigRewards,
         DistributionHistory, ExtBuilder, MiniRuntime, Origin, PendingClaims, Rewards, RewardsError,
@@ -841,7 +868,6 @@ pub mod test {
         rewards::RewardsWriteApi,
         TreasuryAccount, TreasuryAccountProvider,
     };
-
     #[test]
     fn test_available_distribution_totals_to_max_4_4_percent_after_almost_1_year() {
         let _total_supply_account = AccountId::from([99u8; 32]);
@@ -917,6 +943,56 @@ pub mod test {
     }
 
     #[test]
+    fn test_distribution_to_executors_skips_with_max_kickback_unset() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // create 10 Settlements to 10 different executors in AccountManager
+            for counter in 1..11u8 {
+                let requester = AccountId::from([counter + 100u8; 32]);
+                let executor = AccountId::from([counter; 32]);
+                let sfx_id = H256::from([counter; 32]);
+                let settlement_amount = 100 as Balance;
+                SettlementsPerRound::<MiniRuntime>::insert(
+                    Clock::current_round(),
+                    sfx_id,
+                    Settlement {
+                        requester,
+                        recipient: executor,
+                        settlement_amount,
+                        outcome: Outcome::Commit,
+                        source: BenefitSource::TrafficRewards,
+                        role: CircuitRole::Executor,
+                    },
+                );
+            }
+
+            Rewards::process_accumulated_settlements();
+
+            let available_rewards_10x_less_of_total_settlements = 100 as Balance;
+
+            let rewards_res = Rewards::distribute_executor_rewards(
+                available_rewards_10x_less_of_total_settlements,
+            );
+
+            assert_eq!(rewards_res, 0); // All rewards are distributed to executors
+
+            for counter in 1..11u8 {
+                let executor = AccountId::from([counter; 32]);
+                let pending_claim = Rewards::get_pending_claims(executor.clone());
+                assert_eq!(
+                    pending_claim,
+                    Some(vec![ClaimableArtifacts {
+                        beneficiary: executor.clone(),
+                        role: CircuitRole::Executor,
+                        total_round_claim: 100 as Balance, // Settlement amount
+                        benefit_source: BenefitSource::TrafficRewards,
+                    },])
+                );
+            }
+        });
+    }
+
+    #[test]
     fn test_distribution_to_executors_subsidies_settlement_proportionally_with_others() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
@@ -941,6 +1017,8 @@ pub mod test {
             }
 
             Rewards::process_accumulated_settlements();
+
+            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
 
             let available_rewards_10x_less_of_total_settlements = 100 as Balance;
 
@@ -1111,6 +1189,8 @@ pub mod test {
 
             let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
 
+            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
+
             let rewards_res =
                 Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
 
@@ -1268,6 +1348,8 @@ pub mod test {
             Rewards::process_accumulated_settlements();
 
             let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
+
+            Rewards::set_max_rewards_executors_kickback(Origin::root(), Percent::from_percent(90));
 
             let rewards_res =
                 Rewards::distribute_executor_rewards(available_rewards_more_than_total_settlements);
