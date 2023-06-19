@@ -4,6 +4,7 @@ import { logger } from './logging'
 import { Prometheus } from './prometheus'
 import * as ethUtil from 'ethereumjs-util'
 import queue from 'async/queue'
+import { ethers } from 'ethers'
 
 import { hexToU8a } from '@polkadot/util'
 
@@ -18,12 +19,14 @@ export class Attester {
     isInCurrentCommittee = false
     q: any
     boundProcessAttestation: any
+    wallet: ethers.Wallet
 
     constructor(config: any, keys: any) {
         this.config = config
         this.prometheus = new Prometheus()
         this.keys = keys
         this.boundProcessAttestation = this.processAttestation.bind(this)
+        this.wallet = new ethers.Wallet(this.keys.ethereum.privateKey)
 
         this.q = queue(this.boundProcessAttestation, 1)
     }
@@ -91,8 +94,6 @@ export class Attester {
 
                         if (executionVendor.toString() == 'Substrate') {
                             logger.warn('Substrate not implemented')
-                        } else if (executionVendor.toString() == 'Ed25519') {
-                            logger.warn('Ed25519 not implemented')
                         } else if (executionVendor.toString() == 'EVM') {
                             // Add attestion to queue
                             this.q.push({
@@ -186,7 +187,7 @@ export class Attester {
             return
         }
 
-        const { signature, tx } = this.generateAttestationTx(
+        const { signature, tx } = await this.generateAttestationTx(
             messageHash,
             targetId
         )
@@ -239,19 +240,15 @@ export class Attester {
         )
     }
 
-    private generateAttestationTx(messageHash: string, targetId: string) {
-        const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
-
-        const messageUint8Array = ethUtil.hashPersonalMessage(
-            ethUtil.toBuffer(messageHash)
+    private async generateAttestationTx(messageHash: string, targetId: string) {
+        // TODO: move to class property
+        const signature = await this.wallet.signMessage(
+            ethers.getBytes(messageHash)
         )
-        const sigObj = ethUtil.ecsign(messageUint8Array, privateKey)
-
-        const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s)
 
         const tx = this.circuit.client.tx.attesters.submitAttestation(
             messageHash,
-            signature,
+            signature.toString(),
             targetId
         )
         return { signature, tx }
