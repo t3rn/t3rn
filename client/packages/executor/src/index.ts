@@ -98,12 +98,6 @@ class Instance {
       Instance.prom.circuitDisconnects.inc({
         endpoint: this.config.circuit.rpc,
       });
-      Instance.prom.circuitDisconnected.inc({
-        endpoint: this.config.circuit.rpc,
-      });
-    });
-    this.circuitClient.on("connected", () => {
-      Instance.prom.circuitDisconnected.reset();
     });
 
     this.executionManager = new ExecutionManager(
