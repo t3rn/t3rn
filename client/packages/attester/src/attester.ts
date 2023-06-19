@@ -91,8 +91,6 @@ export class Attester {
 
                         if (executionVendor.toString() == 'Substrate') {
                             logger.warn('Substrate not implemented')
-                        } else if (executionVendor.toString() == 'Ed25519') {
-                            logger.warn('Ed25519 not implemented')
                         } else if (executionVendor.toString() == 'EVM') {
                             // Add attestion to queue
                             this.q.push({
