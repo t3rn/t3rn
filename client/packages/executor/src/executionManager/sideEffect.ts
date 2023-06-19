@@ -16,6 +16,7 @@ import { EventEmitter } from "events";
 import { floatToBn, toFloat } from "@t3rn/sdk/dist/circuit";
 import { bnToFloat } from "@t3rn/sdk/dist/converters/amounts";
 import { InclusionProof } from "../gateways/types";
+import { Instance } from "../index";
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];
