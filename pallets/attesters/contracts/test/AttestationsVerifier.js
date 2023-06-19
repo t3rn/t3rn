@@ -1,5 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const ethUtil = require('ethereumjs-util');
+const { toCompactSig } = require('ethereumjs-util/dist/signature');
 
 
 async function parseAllEvents(receipt, contract) {
@@ -36,6 +38,53 @@ function batchDecodePacked(packedBatch) {
       packedBatch
     );
 }
+
+describe("AttestationSignature", function() {
+    it('Should recover the correct signer from the signature with ethers.signMessage', async () => {
+        let messageHash32b = "0x58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd";
+        // Private Key of the signer
+        const privateKey = "0x0123456789012345678901234567890123456789012345678901234567890123";
+        const wallet = new ethers.Wallet(privateKey);
+        expect(wallet.address).to.equal("0x14791697260E4c9A71f18484C9f997B308e59325")
+        const flatSig = await wallet.signMessage(ethers.utils.arrayify(messageHash32b));
+        const signatureBytes = ethers.utils.arrayify(flatSig);
+
+        expect(signatureBytes.length).to.equal(65);
+        expect(flatSig).to.equal("0x534dd0cbadf9a92af5d32533231af6769b3a1e479e5dde49ea4e431028a66e0a2611b13e55034973e1c5f4edcab425af4f164c5a50025204db06f439ad5e977c1c");
+        // Recover the signer's address
+        const recovered = ethers.utils.recoverAddress(ethers.utils.hashMessage(ethers.utils.arrayify(messageHash32b)), flatSig);
+
+        expect(recovered).to.equal(wallet.address);
+    });
+
+    it('Should recover the correct signer from the signature escsign', async () => {
+        let messageHash32b = "0x58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd";
+        // Private Key of the signer
+        const privateKey = "0x115db6b0c74bef87e28879199e3ab3dda09ed0e7f0c3e1ff6cb92e228b221384";
+        const wallet = new ethers.Wallet(privateKey);
+        const flatSig = await wallet.signMessage(ethers.utils.arrayify(messageHash32b));
+        expect(flatSig).to.equal("0x3c20151678cbbf6c3547c5f911c613e630b0e1be11b24b6b815582db0e47801175421540c660de2a93b46e48f9ff503e5858279ba157fa9b13fbee0a8cf6806e1c");
+
+        const sigObj = ethUtil.ecsign(
+          Buffer.from(ethers.utils.arrayify(messageHash32b)),
+          Buffer.from(ethers.utils.arrayify(privateKey))
+        )
+
+        const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s)
+
+        expect(signature).to.equal("0x97748ab697916ad7992e8d000360b1a44c8faf6d98b70632a1ce826ff50e995e4335f3234bd6964a722ca7ef95b731568d53499e62b078346fcb5790c94833171b");
+        // Recover the signer's address
+        const recovered = ethers.utils.recoverAddress(messageHash32b, signature);
+        expect(recovered).to.equal(wallet.address);
+        const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
+        const attestationsVerifier = await AttestationsVerifier.deploy([]);
+        await attestationsVerifier.deployed();
+
+        const recoveredByContract = await attestationsVerifier.recoverSigner(ethers.utils.hashMessage(ethers.utils.arrayify(messageHash32b)), ethers.utils.arrayify(signature));
+
+        expect(recoveredByContract).to.equal(wallet.address);
+    });
+});
 
 describe("AttestationsVerifier", function() {
     it('Should recover the correct signer from the signature', async () => {
