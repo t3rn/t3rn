@@ -106,6 +106,7 @@ std = [
   "rand/std",
   "t3rn-primitives/std",
   "t3rn-sdk-primitives/std",
+  "bitflags/std"
 ]
 try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime" ]
 # Make contract callable functions marked as __unstable__ available. Do not enable
