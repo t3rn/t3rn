@@ -1,25 +1,24 @@
 name: Automatic
 
+on:
+  pull_request:
+    types: [opened, labeled, synchronize]
+
 permissions:
   contents: read
   pull-requests: write
 
-on:
-  pull_request:
-  pull_request_review_comment:
-    types: [created]
-
+# Automatically cancel older in-progress jobs on the same branch
 concurrency:
-  group:
-    ${{ github.repository }}-${{ github.event.number || github.head_ref ||
-    github.sha }}-${{ github.workflow }}-${{ github.event_name ==
-    'pull_request_review_comment' && 'pr_comment' || 'pr' }}
-  cancel-in-progress: ${{ github.event_name != 'pull_request_review_comment' }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   summary:
-    name: PR Summary
+    name: PR Review
     runs-on: self-hosted
+
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'review') }}
     steps:
       - uses: fluxninja/openai-pr-reviewer@0.54.0
         env:
@@ -27,6 +26,6 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
           debug: false
-          disable_review: true
+          disable_review: false
           review_simple_changes: false
           review_comment_lgtm: false
