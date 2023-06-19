@@ -91,7 +91,7 @@ jobs:
       run:
         working-directory: client/packages
     timeout-minutes: 15
-    if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
+    # if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
 
     steps:
       - name: 🎞️ Checkout repo
@@ -121,7 +121,7 @@ jobs:
       run:
         working-directory: client/packages
     timeout-minutes: 15
-    if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
+    # if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
 
     steps:
       - name: 🎞️ Checkout repo
@@ -151,7 +151,7 @@ jobs:
       run:
         working-directory: client/packages
     timeout-minutes: 15
-    if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
+    # if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
     steps:
       - name: 🎞️ Checkout repo
         uses: actions/checkout@v3
