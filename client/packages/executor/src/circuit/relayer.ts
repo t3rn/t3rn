@@ -5,6 +5,7 @@ import createDebug from "debug";
 import { BN } from "@polkadot/util";
 import { Sdk, ApiPromise } from "@t3rn/sdk";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
+// @ts-ignore - Typescript does not know about this type
 import { T3rnTypesSfxConfirmedSideEffect } from "@polkadot/types/lookup";
 import fs from "fs";
 
