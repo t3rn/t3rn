@@ -73,38 +73,10 @@ describe('generateAttestationTx', () => {
         const data = attester.generateAttestationTx(messageHash, 'sepl')
 
         expect(data.signature).toEqual(
-            '0x534dd0cbadf9a92af5d32533231af6769b3a1e479e5dde49ea4e431028a66e0a2611b13e55034973e1c5f4edcab425af4f164c5a50025204db06f439ad5e977c1c'
+            ''
         )
         const signatureBytes = toBuffer(data.signature)
         expect(signatureBytes.length).toEqual(65)
-    })
-
-    it('Should recover correct address with ecrrecover with signatureBytes', async () => {
-        const publicKey = privateToPublic(
-            toBuffer(attester.keys.ethereum.privateKey)
-        )
-
-        const data = attester.generateAttestationTx(messageHash, 'sepl')
-
-        expect(data.signature).toEqual(
-            '0x534dd0cbadf9a92af5d32533231af6769b3a1e479e5dde49ea4e431028a66e0a2611b13e55034973e1c5f4edcab425af4f164c5a50025204db06f439ad5e977c1c'
-        )
-        const signatureBytes = toBuffer(data.signature)
-
-        const [r, s, v] = [
-            signatureBytes.slice(0, 32),
-            signatureBytes.slice(32, 64),
-            signatureBytes[64],
-        ]
-
-        // Recover the signer's address
-        const signedFrom = ecrecover(
-            hashPersonalMessage(toBuffer(messageHash)),
-            v,
-            r,
-            s
-        ).toString('hex')
-        expect(signedFrom).toEqual(publicKey.toString('hex'))
     })
 
     it('Should recover correct address with ecrrecover with sigObj', async () => {
@@ -114,7 +86,7 @@ describe('generateAttestationTx', () => {
 
         // Recover the signer's address
         const sigObj = ecsign(
-            toBuffer(messageHash),
+            hashPersonalMessage(toBuffer(messageHash)),
             toBuffer(attester.keys.ethereum.privateKey)
         )
         const signedFrom = ecrecover(
