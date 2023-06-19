@@ -17,9 +17,6 @@ export class Prometheus {
   // Number of times circuit rpc server has disconnected
   circuitDisconnects: Counter;
 
-  // Information on circuit disconnections
-  circuitDisconnected: Counter;
-
   // Number of times no bid and no competition
   noBidAndNoCompetition: Counter;
 
@@ -47,13 +44,6 @@ export class Prometheus {
     this.events = new Counter({
       name: "events",
       help: "Number of events",
-      registers: [this.register],
-    });
-
-    this.circuitDisconnected = new Counter({
-      name: "circuit_disconnect",
-      help: "Information on circuit disconnections",
-      labelNames: ["endpoint"],
       registers: [this.register],
     });
 
