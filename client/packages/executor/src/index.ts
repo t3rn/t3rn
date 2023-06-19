@@ -73,6 +73,11 @@ class Instance {
       : undefined;
     this.stateFile = join(this.baseDir.toString(), "state.json");
     this.configFile = join(this.baseDir.toString(), "config.json");
+
+    if (Instance.prom) {
+      Instance.prom.stopServer();
+    }
+
     Instance.prom = new Prometheus();
   }
 
