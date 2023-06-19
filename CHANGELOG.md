@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.34.1-rc.0] - 2023-06-19
+### :bug: Bug Fixes
+- [`b79e72a`](https://github.com/t3rn/t3rn/commit/b79e72aeb89e67896a9d0b1510d30b5d66329d56) - skip decoding to H160 in attestation signature verification  *(PR [#1067](https://github.com/t3rn/t3rn/pull/1067) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.34.0-rc.0] - 2023-06-19
 ### :recycle: Refactors
 - [`293a7a6`](https://github.com/t3rn/t3rn/commit/293a7a6fed8cae763b62830eb653eeb38a579791) - customise max rewards executors kickback and default to zero *(PR [#1068](https://github.com/t3rn/t3rn/pull/1068) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1253,3 +1258,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.32.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.2-rc.0...v1.32.3-rc.0
 [v1.33.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.3-rc.0...v1.33.0-rc.0
 [v1.34.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.33.1-rc.0...v1.34.0-rc.0
+[v1.34.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.0-rc.0...v1.34.1-rc.0
