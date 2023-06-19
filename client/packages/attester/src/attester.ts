@@ -2,11 +2,8 @@ import { Connection } from './connection'
 import { cryptoWaitReady } from '@t3rn/sdk'
 import { logger } from './logging'
 import { Prometheus } from './prometheus'
-import * as ethUtil from 'ethereumjs-util'
 import queue from 'async/queue'
 import { ethers } from 'ethers'
-
-import { hexToU8a } from '@polkadot/util'
 
 /**
  * @group Attester
@@ -20,6 +17,7 @@ export class Attester {
     q: any
     boundProcessAttestation: any
     wallet: ethers.Wallet
+    attestationsDone: string[] = []
 
     constructor(config: any, keys: any) {
         this.config = config
@@ -170,6 +168,15 @@ export class Attester {
     }
 
     private async processAttestation(data: any) {
+        if (this.attestationsDone.includes(data.messageHash)) {
+            logger.warn('This messageHash has already been already signed')
+            return
+        }
+        if (!this.isInCurrentCommittee) {
+            logger.warn('Not in current committee, not submitting attestation')
+            return
+        }
+
         await this.submitAttestationEVM(
             data.messageHash,
             data.targetId,
@@ -182,11 +189,6 @@ export class Attester {
         targetId: string,
         executionVendor: string
     ) {
-        if (!this.isInCurrentCommittee) {
-            logger.warn('Not in current committee, not submitting attestation')
-            return
-        }
-
         const { signature, tx } = await this.generateAttestationTx(
             messageHash,
             targetId
@@ -216,15 +218,24 @@ export class Attester {
                 'Error submitting attestation'
             )
             this.prometheus.attestationSubmitError.inc({ error: errorName })
+            if (errorName == 'attesters::AttestationDoubleSignAttempt') {
+                this.attestationsDone.push(messageHash)
+                logger.warn(
+                    {
+                        messageHash: messageHash,
+                        targetId: targetId,
+                    },
+                    'Attestation already submitted'
+                )
+            }
             return
         }
         if (!result) {
             return
         }
 
-        logger.debug(result)
+        logger.debug(['result object', result])
         this.prometheus.attestationSubmitted.inc({
-            messageHash: messageHash,
             targetId: targetId,
             executionVendor: executionVendor,
         })
@@ -238,6 +249,7 @@ export class Attester {
             },
             'Attestation submitted'
         )
+        this.attestationsDone.push(messageHash)
     }
 
     private async generateAttestationTx(messageHash: string, targetId: string) {
