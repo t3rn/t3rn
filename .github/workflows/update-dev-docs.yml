@@ -4,7 +4,7 @@ name: Deploy Documentation
 on:
   # Triggers the workflow on push to the development branch
   push:
-    # branches: [ development ]
+    branches: [ development ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -91,21 +91,22 @@ jobs:
       run:
         working-directory: client/packages
     timeout-minutes: 15
-    # if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
+    if: ${{ (contains(github.event.head_commit.message, 'build(release):')) }}
 
     steps:
       - name: 🎞️ Checkout repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
+
       - name: 📦 Install dependencies
         run: make all
       
       # Attester
-      - name: 🏗 Build Docs
+      - name: 🏗 Build Attester Docs
         run: pnpm run build-docs
         working-directory: client/packages/attester
-      - name: 👾 Deploy to Vercel
+      - name: 👾 Deploy Attester Docs to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -117,10 +118,10 @@ jobs:
             docs.attester.t3rn.io
 
       # Executor
-      - name: 🏗 Build Docs
+      - name: 🏗 Build Executor Docs
         run: yarn build-docs
         working-directory: client/packages/executor
-      - name: 👾 Deploy to Vercel
+      - name: 👾 Deploy Executor Docs to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -132,10 +133,10 @@ jobs:
             docs.executor.t3rn.io
 
       # ts-sdk
-      - name: 🏗 Build Docs
+      - name: 🏗 Build SDK Docs
         run: yarn build:docs
         working-directory: client/packages/sdk
-      - name: 👾 Deploy to Vercel
+      - name: 👾 Deploy SDK docs to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
