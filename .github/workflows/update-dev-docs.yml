@@ -4,7 +4,7 @@ name: Deploy Documentation
 on:
   # Triggers the workflow on push to the development branch
   push:
-    branches: [ development ]
+    # branches: [ development ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -59,7 +59,7 @@ jobs:
             docs.chain.t3rn.io
 
   main:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     defaults:
       run:
         working-directory: docs/main
@@ -86,7 +86,7 @@ jobs:
             docs.t3rn.io
 
   attester:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     defaults:
       run:
         working-directory: client/packages
@@ -98,8 +98,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
-      - name: Build local dependencies
-        run: make
       - name: 📦 Install packages
         run: pnpm i
         working-directory: client/packages/attester
@@ -118,7 +116,7 @@ jobs:
             docs.attester.t3rn.io
 
   executor:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     defaults:
       run:
         working-directory: client/packages
@@ -130,8 +128,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
-      - name: Build local dependencies
-        run: make
       - name: 📦 Install packages
         run: yarn
         working-directory: client/packages/executor
@@ -150,7 +146,7 @@ jobs:
             docs.executor.t3rn.io
 
   ts-sdk:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     defaults:
       run:
         working-directory: client/packages
@@ -161,8 +157,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
-      - name: Build local dependencies
-        run: make
       - name: 📦 Install packages
         run: yarn
         working-directory: client/packages/sdk
