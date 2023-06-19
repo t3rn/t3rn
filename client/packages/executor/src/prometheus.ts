@@ -2,6 +2,7 @@ import http from "http";
 import { Registry, Counter, collectDefaultMetrics } from "prom-client";
 
 export class Prometheus {
+  server: ReturnType<typeof http.createServer>;
   register: Registry;
 
   // State
@@ -76,8 +77,8 @@ export class Prometheus {
   }
 
   startServer() {
-    const port = process.env.PROMETHEUS_PORT || 4001;
-    const server = http.createServer(async (req, res) => {
+    const port = process.env.PROMETHEUS_PORT || 4002;
+    this.server = http.createServer(async (req, res) => {
       try {
         if (req.url === "/metrics") {
           const metrics = await this.register.metrics();
@@ -97,8 +98,12 @@ export class Prometheus {
       }
     });
 
-    server.listen(port, () => {
+    this.server.listen(port, () => {
       console.log(`Metrics server listening on port ${port}`);
     });
+  }
+
+  stopServer() {
+    this.server.close();
   }
 }
