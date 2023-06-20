@@ -119,10 +119,10 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: EKS
-        # if: github.ref == 'refs/heads/development'
+        if: github.ref == 'refs/heads/development'
         run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
 
       - name: Helm Upgrade
-        # if: github.ref == 'refs/heads/development'
+        if: github.ref == 'refs/heads/development'
         working-directory: ./client/packages/attester
         run: helm upgrade attester helm -n attester -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-attester"
