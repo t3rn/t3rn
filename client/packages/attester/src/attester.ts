@@ -99,7 +99,7 @@ export class Attester {
                             event: event.method,
                             data: event.data,
                         },
-                        'Received event from attesters service',
+                        'Received event from attesters service'
                     )
                 }
 
