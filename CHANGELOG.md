@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.34.2-rc.0] - 2023-06-19
+### :bug: Bug Fixes
+- [`85d9a26`](https://github.com/t3rn/t3rn/commit/85d9a26d3bd461348fdc0543285e26cf01b6127b) - remove unused labeled metric  *(PR [#1073](https://github.com/t3rn/t3rn/pull/1073) by [@petscheit](https://github.com/petscheit))*
+- [`42ef660`](https://github.com/t3rn/t3rn/commit/42ef6601fca29018b7116b422153e6a94efb374d) - quorum calculates Committee not ActiveSet size *(PR [#1074](https://github.com/t3rn/t3rn/pull/1074) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`eb92841`](https://github.com/t3rn/t3rn/commit/eb92841e2617badd58385e213423a8be0cb3312d) - run review only when label is added *(PR [#1072](https://github.com/t3rn/t3rn/pull/1072) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.34.1-rc.0] - 2023-06-19
 ### :bug: Bug Fixes
 - [`b79e72a`](https://github.com/t3rn/t3rn/commit/b79e72aeb89e67896a9d0b1510d30b5d66329d56) - skip decoding to H160 in attestation signature verification  *(PR [#1067](https://github.com/t3rn/t3rn/pull/1067) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1259,3 +1268,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.33.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.3-rc.0...v1.33.0-rc.0
 [v1.34.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.33.1-rc.0...v1.34.0-rc.0
 [v1.34.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.0-rc.0...v1.34.1-rc.0
+[v1.34.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.1-rc.0...v1.34.2-rc.0

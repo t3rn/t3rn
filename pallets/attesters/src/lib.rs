@@ -624,8 +624,8 @@ pub mod pallet {
                 batch.signatures.push((attester.index, signature_65b));
 
                 // Update the status of the batch
-                let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
-                let full_approval = T::ActiveSetSize::get() as usize;
+                let quorum = (T::CommitteeSize::get() * 2 / 3) as usize;
+                let full_approval = T::CommitteeSize::get() as usize;
                 if batch.signatures.len() >= quorum {
                     log::debug!(
                         "Batch {:?} is ready for submission by majority",
@@ -1399,7 +1399,7 @@ pub mod pallet {
         }
 
         pub fn process_next_batch_window(n: T::BlockNumber, aggregated_weight: Weight) -> Weight {
-            let quorum = (T::ActiveSetSize::get() * 2 / 3) as usize;
+            let quorum = (T::CommitteeSize::get() * 2 / 3) as usize;
 
             for target in AttestationTargets::<T>::get() {
                 let mut new_next_batch = BatchMessage::default();
