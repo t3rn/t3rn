@@ -2,17 +2,15 @@
 
 /.github/ @3h4x @t3rn/dev
 
-/pallets/3vm @AwesomeIbex @t3rn/dev
-/pallets/account-manager @AwesomeIbex @t3rn/dev
-/pallets/circuit-portal @petscheit @t3rn/dev
+/pallets/3vm @t3rn/dev
+/pallets/account-manager @t3rn/dev
+/pallets/attesters @MaciejBaj @t3rn/dev
 /pallets/circuit @MaciejBaj @t3rn/dev
+/pallets/contracts @t3rn/dev
+/pallets/evm @t3rn/dev
+/pallets/portal @petscheit @t3rn/dev
+
+/scripts @3h4x @t3rn/dev
+/specs @t3rn/dev
+/types @t3rn/dev
 /types/abi @MaciejBaj @t3rn/dev
-
-
-/pallets/contracts @AwesomeIbex @t3rn/dev
-/pallets/evm @AwesomeIbex @t3rn/dev
-/devnet @chiefbiiko @t3rn/dev
-/specs @chiefbiiko @t3rn/dev
-/scripts @chiefbiiko @3h4x @t3rn/dev
-/types @AwesomeIbex @t3rn/dev
-
