@@ -1,7 +1,7 @@
 import "@polkadot/api-augment";
 import * as dotenv from "dotenv";
 import { Sdk } from "@t3rn/sdk";
-import { ApiPromise, Keyring } from "@polkadot/api";
+import { Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { PathLike, existsSync } from "fs";
@@ -45,7 +45,7 @@ dotenv.config();
 /** An executor instance. */
 class Instance {
   name: string;
-  circuitClient: ApiPromise;
+  circuitClient: Sdk["client"];
   executionManager: ExecutionManager;
   sdk: Sdk;
   signer: KeyringPair;
@@ -88,23 +88,23 @@ class Instance {
     await this.configureLogging();
     await this.loadConfig();
     await cryptoWaitReady();
-    this.signer = new Keyring({ type: "sr25519" })
-      // loadConfig asserts that config.circuit.signerKey is set
-      .addFromSeed(
-        Uint8Array.from(
-          Buffer.from(this.config.circuit.signerKey!.slice(2), "hex")
-        )
-      ) as KeyringPair;
-    this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
-    // @ts-ignore
-    this.circuitClient = await this.sdk.init();
 
+    if (!this.config.circuit.signerKey) {
+      throw Error("Instance::setup: missing circuit signer key");
+    }
+
+    this.signer = new Keyring({ type: "sr25519" }).addFromSeed(
+      Uint8Array.from(
+        Buffer.from(this.config.circuit.signerKey.slice(2), "hex")
+      )
+    );
+    this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
+    this.circuitClient = await this.sdk.init();
     this.circuitClient.on("disconnected", () => {
       Instance.prom.circuitDisconnects.inc({
         endpoint: this.config.circuit.rpc,
       });
     });
-
     this.executionManager = new ExecutionManager(
       this.circuitClient,
       this.sdk,
@@ -150,7 +150,7 @@ class Instance {
     if (!config.circuit.signerKey?.startsWith("0x")) {
       config.circuit.signerKey = process.env.CIRCUIT_SIGNER_KEY as string;
     }
-    config.gateways.forEach((gateway) => {
+    config.gateways.forEach((gateway: Gateway) => {
       if (
         gateway.signerKey !== undefined &&
         !problySubstrateSeed(gateway.signerKey)
@@ -164,7 +164,9 @@ class Instance {
       throw Error("Instance::loadConfig: missing circuit signer key");
     }
     if (
-      !config.gateways.some((gateway) => problySubstrateSeed(gateway.signerKey))
+      !config.gateways.some((gateway: Gateway) =>
+        problySubstrateSeed(gateway.signerKey)
+      )
     ) {
       throw Error("Instance::loadConfig: missing gateway signer key");
     }
