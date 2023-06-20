@@ -102,12 +102,8 @@ export class ExecutionManager {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
     this.biddingEngine = new BiddingEngine(logger);
-    this.circuitClient = circuitClient;
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
-    this.sdk = sdk;
-    this.logger = logger;
-    this.config = config;
   }
 
   /** Injects persisted execution state.
