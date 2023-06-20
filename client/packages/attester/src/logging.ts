@@ -7,11 +7,11 @@ const isPrettyPrintEnabled =
 
 const { stderr } = process
 // Create a writable stream that discards the output
-const NullWritable = fs.createWriteStream('/dev/null')
+// const NullWritable = fs.createWriteStream('/dev/null')
 
 // Redirect stdout to the NullWritable stream
 // stdout.write = NullWritable.write.bind(NullWritable)
-stderr.write = NullWritable.write.bind(NullWritable)
+// stderr.write = NullWritable.write.bind(NullWritable)
 
 const loggerConfig = {
     level: process.env.LOG_LEVEL || 'info',

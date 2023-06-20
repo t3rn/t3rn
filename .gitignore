@@ -30,6 +30,7 @@ docs/ts-sdk
 
 
 .direnv
+.envrc
 
 # ignore dev folders
 **/node_modules

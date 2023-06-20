@@ -9,4 +9,5 @@ export default {
             http: 'http://localhost:9933',
         },
     },
+    targetsAllowed: ['0x7365706c'],
 }

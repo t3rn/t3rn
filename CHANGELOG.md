@@ -4,6 +4,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.35.0-rc.0] - 2023-06-20
+### :sparkles: New Features
+- [`3ce9ff9`](https://github.com/t3rn/t3rn/commit/3ce9ff9c7e3aa05c712a7ba85b1e8631cd9095cb) - added attestationsDone array *(PR [#1075](https://github.com/t3rn/t3rn/pull/1075) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`e09d383`](https://github.com/t3rn/t3rn/commit/e09d383ed0e1646c48f0726e3e66687f07fdbf5a) - update CODEOWNERS and remove obsoleted files *(PR [#1076](https://github.com/t3rn/t3rn/pull/1076) by [@3h4x](https://github.com/3h4x))*
+- [`2466847`](https://github.com/t3rn/t3rn/commit/2466847b54e56c0eb9415630e07b91618cacb81d) - move pr template to t3rn repo *(PR [#1077](https://github.com/t3rn/t3rn/pull/1077) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.34.2-rc.0] - 2023-06-19
+### :bug: Bug Fixes
+- [`85d9a26`](https://github.com/t3rn/t3rn/commit/85d9a26d3bd461348fdc0543285e26cf01b6127b) - remove unused labeled metric  *(PR [#1073](https://github.com/t3rn/t3rn/pull/1073) by [@petscheit](https://github.com/petscheit))*
+- [`42ef660`](https://github.com/t3rn/t3rn/commit/42ef6601fca29018b7116b422153e6a94efb374d) - quorum calculates Committee not ActiveSet size *(PR [#1074](https://github.com/t3rn/t3rn/pull/1074) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`eb92841`](https://github.com/t3rn/t3rn/commit/eb92841e2617badd58385e213423a8be0cb3312d) - run review only when label is added *(PR [#1072](https://github.com/t3rn/t3rn/pull/1072) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.34.1-rc.0] - 2023-06-19
+### :bug: Bug Fixes
+- [`b79e72a`](https://github.com/t3rn/t3rn/commit/b79e72aeb89e67896a9d0b1510d30b5d66329d56) - skip decoding to H160 in attestation signature verification  *(PR [#1067](https://github.com/t3rn/t3rn/pull/1067) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.34.0-rc.0] - 2023-06-19
+### :recycle: Refactors
+- [`293a7a6`](https://github.com/t3rn/t3rn/commit/293a7a6fed8cae763b62830eb653eeb38a579791) - customise max rewards executors kickback and default to zero *(PR [#1068](https://github.com/t3rn/t3rn/pull/1068) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :wrench: Chores
+- [`6b3b797`](https://github.com/t3rn/t3rn/commit/6b3b797dd4ee56fa2243f9650e899b7f0ce4a50d) - deploy docs on self hosted runners *(PR [#1071](https://github.com/t3rn/t3rn/pull/1071) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.33.0-rc.0] - 2023-06-16
+### :sparkles: New Features
+- [`7e884bc`](https://github.com/t3rn/t3rn/commit/7e884bc7dc2218dad636a8c3a7fb9e003e560e91) - **attester**: submit attestation *(PR [#1037](https://github.com/t3rn/t3rn/pull/1037) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`be15410`](https://github.com/t3rn/t3rn/commit/be154103fb85a2fdb3a522b4552f6542c96e5fa8) - sdk ignores local gateway entry *(PR [#1061](https://github.com/t3rn/t3rn/pull/1061) by [@petscheit](https://github.com/petscheit))*
+
+### :recycle: Refactors
+- [`37933ab`](https://github.com/t3rn/t3rn/commit/37933abb08ed6adb8c897c4f67c2a3d0ec838217) - check XDNS entry exists before adding as attestation targets + permanent slash as StorageValue *(PR [#1064](https://github.com/t3rn/t3rn/pull/1064) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.32.3-rc.0] - 2023-06-14
+### :bug: Bug Fixes
+- [`b80f031`](https://github.com/t3rn/t3rn/commit/b80f0314fe46d68cea24287c8517258a4788aa55) - add reboot self gateway extrinsic to XDNS *(PR [#1060](https://github.com/t3rn/t3rn/pull/1060) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.32.0-rc.0] - 2023-06-13
 ### :sparkles: New Features
 - [`dcece94`](https://github.com/t3rn/t3rn/commit/dcece94a68375054d918ab735ea9751311d18b14) - connect XDNS with Assets to create, purge, lookup via Overlay trait *(PR [#1027](https://github.com/t3rn/t3rn/pull/1027) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1226,3 +1273,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.31.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.30.0-rc.0...v1.31.0-rc.0
 [v1.31.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.0-rc.0...v1.31.1-rc.0
 [v1.32.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.31.1-rc.0...v1.32.0-rc.0
+[v1.32.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.2-rc.0...v1.32.3-rc.0
+[v1.33.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.32.3-rc.0...v1.33.0-rc.0
+[v1.34.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.33.1-rc.0...v1.34.0-rc.0
+[v1.34.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.0-rc.0...v1.34.1-rc.0
+[v1.34.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.1-rc.0...v1.34.2-rc.0
+[v1.35.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.2-rc.0...v1.35.0-rc.0

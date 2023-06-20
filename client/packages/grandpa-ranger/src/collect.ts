@@ -10,7 +10,6 @@ export const generateRange = async (config: any, circuitConnection: Connection, 
 			const targetHeight = await currentTargetHeight(targetConnection)
 
 			prometheus.circuitHeight.set({target}, circuitHeight)
-			prometheus.targetHeight.set({target}, targetHeight)
 
 			if(targetHeight > circuitHeight) {
 				let batches = await generateBatchProof(circuitConnection.client, targetConnection.client, config.targetGatewayId, circuitHeight + 1, targetHeight)
