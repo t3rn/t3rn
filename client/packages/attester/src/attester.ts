@@ -111,6 +111,9 @@ export class Attester {
                         const [targetId, messageHash, executionVendor] =
                             event.data
 
+                        if (!this.isValidAttestation(messageHash, targetId))
+                            return
+
                         if (executionVendor.toString() == 'Substrate') {
                             logger.warn('Substrate not implemented')
                         } else if (executionVendor.toString() == 'EVM') {
@@ -139,7 +142,12 @@ export class Attester {
 
                         messageHashes.forEach(async (messageHash) => {
                             // If attestation was already done, skip
-                            if (!this.isValidAttestation(messageHash[1], targetId))
+                            if (
+                                !this.isValidAttestation(
+                                    messageHash[1],
+                                    targetId
+                                )
+                            )
                                 return
 
                             // Add all pending attestations to queue
@@ -178,7 +186,11 @@ export class Attester {
     }
 
     private isValidAttestation(messageHash: string, targetId: string) {
-        return !this.isAttestationDone(messageHash) && this.isTargetAllowed(targetId) && this.isInCurrentCommittee
+        return (
+            !this.isAttestationDone(messageHash) &&
+            this.isTargetAllowed(targetId) &&
+            this.isInCurrentCommittee
+        )
     }
 
     private isAttestationDone(messageHash: string) {
@@ -190,8 +202,7 @@ export class Attester {
     }
 
     private async processAttestation(data: any) {
-        if (!this.isValidAttestation(data.messageHash, data.targetId))
-            return
+        if (!this.isValidAttestation(data.messageHash, data.targetId)) return
 
         this.attestationsDone.push(data.messageHash)
         await this.submitAttestationEVM(
