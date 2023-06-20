@@ -63,7 +63,6 @@ export class Attester {
         // Subscribe to the NewAttestationMessageHash event
         this.circuit.sdk?.client.query.system.events(async (events) => {
             logger.debug({ events_count: events.length }, `Received events`)
-            this.prometheus.eventsTotal.inc(events.length)
 
             const comittee = await this.getCommittee()
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
@@ -78,6 +77,9 @@ export class Attester {
                 async (event) => event.section == 'attesters'
             )
 
+            // Update metrics
+            this.prometheus.eventsTotal.inc(events.length)
+            this.prometheus.attestationsInQueue.set(this.q.length())
             this.prometheus.attestationsEvents.inc(attesterEvents.length)
 
             await this.processAttestationEvents(attesterEvents)
@@ -90,6 +92,16 @@ export class Attester {
             events.map(async (record) => {
                 // Extract the phase, event and the event types
                 const { event } = record
+
+                if (record.service == 'attesters') {
+                    logger.info(
+                        {
+                            event: event.method,
+                            data: event.data,
+                        },
+                        'Received event from attesters service',
+                    )
+                }
 
                 switch (event.method) {
                     case 'NewAttestationMessageHash': {
@@ -115,13 +127,6 @@ export class Attester {
                         const targetId = event.data[0].toString()
                         const messageHashes = event.data[1]
 
-                        logger.info(
-                            {
-                                targetId: targetId,
-                                messageHashes: messageHashes.length,
-                            },
-                            `Received CurrentPendingAttestationBatches event`
-                        )
                         this.prometheus.attestionsPending.set(
                             {
                                 targetId: targetId,
@@ -146,10 +151,16 @@ export class Attester {
                         break
                     }
                     case 'NewTargetProposed': {
-                        logger.info(`Received NewTargetProposed event`)
                         break
                     }
+
                     default: {
+                        logger.warn(
+                            {
+                                event: event.method,
+                            },
+                            'Received unhandled event'
+                        )
                         break
                     }
                 }
