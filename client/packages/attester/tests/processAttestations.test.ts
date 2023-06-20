@@ -21,7 +21,7 @@ const mockPrometheus = {
     },
 }
 
-describe('attesterCommittee', () => {
+describe('processAttestation', () => {
     let attester
 
     beforeEach(() => {
@@ -54,29 +54,35 @@ describe('attesterCommittee', () => {
         jest.clearAllMocks()
     })
 
-    it('should return true if the address is in the committee', () => {
-        const committee = ['address1', 'address2', 'address3']
-        const accountId = 'address2'
+    it('should return true when attestationsDone has messageHash', async () => {
+        attester.attestationsDone = ['0x1234']
 
-        attester.checkIsInCommittee(committee, accountId)
+        const result = attester.isAttestationDone('0x1234')
 
-        // Assert that the result is true
-        expect(attester.isInCurrentCommittee).toBe(true)
-        expect(
-            attester.prometheus.currentCommitteeMember.set
-        ).toHaveBeenCalledWith(1)
+        expect(result).toBe(true)
     })
 
-    it('should return false if the address is not in the committee', async () => {
-        const committee = ['address1', 'address3']
-        const accountId = 'address2'
+    it('should return false when attestationsDone doesnt have messageHash', async () => {
+        attester.attestationsDone = []
 
-        await attester.checkIsInCommittee(committee, accountId)
+        const result = await attester.isAttestationDone('0x1234')
 
-        // Assert that the result is false
-        expect(attester.isInCurrentCommittee).toBe(false)
-        expect(
-            attester.prometheus.currentCommitteeMember.set
-        ).toHaveBeenCalledWith(0)
+        expect(result).toBe(false)
+    })
+
+    it('should return false when target is not allowed', async () => {
+        attester.config.targetsAllowed = ['0x1234']
+
+        const result = await attester.isTargetAllowed('0x5678')
+
+        expect(result).toBe(false)
+    })
+
+    it('should return true when target is allowed', async () => {
+        attester.config.targetsAllowed = ['0x1234']
+
+        const result = await attester.isTargetAllowed('0x1234')
+
+        expect(result).toBe(true)
     })
 })

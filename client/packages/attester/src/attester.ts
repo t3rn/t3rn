@@ -2,10 +2,8 @@ import { Connection } from './connection'
 import { cryptoWaitReady } from '@t3rn/sdk'
 import { logger } from './logging'
 import { Prometheus } from './prometheus'
-import * as ethUtil from 'ethereumjs-util'
 import queue from 'async/queue'
-
-import { hexToU8a } from '@polkadot/util'
+import { ethers } from 'ethers'
 
 /**
  * @group Attester
@@ -18,12 +16,15 @@ export class Attester {
     isInCurrentCommittee = false
     q: any
     boundProcessAttestation: any
+    wallet: ethers.Wallet
+    attestationsDone: string[] = []
 
     constructor(config: any, keys: any) {
         this.config = config
         this.prometheus = new Prometheus()
         this.keys = keys
         this.boundProcessAttestation = this.processAttestation.bind(this)
+        this.wallet = new ethers.Wallet(this.keys.ethereum.privateKey)
 
         this.q = queue(this.boundProcessAttestation, 1)
     }
@@ -66,6 +67,12 @@ export class Attester {
 
             const comittee = await this.getCommittee()
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
+            if (!this.isInCurrentCommittee) {
+                logger.debug(
+                    'Not in current committee, not submitting attestation'
+                )
+                return
+            }
 
             const attesterEvents = events.filter(
                 async (event) => event.section == 'attesters'
@@ -91,8 +98,6 @@ export class Attester {
 
                         if (executionVendor.toString() == 'Substrate') {
                             logger.warn('Substrate not implemented')
-                        } else if (executionVendor.toString() == 'Ed25519') {
-                            logger.warn('Ed25519 not implemented')
                         } else if (executionVendor.toString() == 'EVM') {
                             // Add attestion to queue
                             this.q.push({
@@ -124,19 +129,9 @@ export class Attester {
                             messageHashes.length
                         )
 
-                        // Purge queue
-                        this.queuePurge()
-
                         messageHashes.forEach(async (messageHash) => {
-                            if (
-                                !this.config.targetsAllowed.includes(targetId)
-                            ) {
-                                logger.warn(
-                                    {
-                                        targetId: targetId,
-                                    },
-                                    'Target not allowed'
-                                )
+                            // If attestation was already done, skip
+                            if (this.isAttestationDone(messageHash[1])) {
                                 return
                             }
 
@@ -168,7 +163,31 @@ export class Attester {
         })
     }
 
+    private isAttestationDone(messageHash: string) {
+        return this.attestationsDone.includes(messageHash)
+    }
+
+    private isTargetAllowed(targetId: string) {
+        return this.config.targetsAllowed.includes(targetId)
+    }
+
     private async processAttestation(data: any) {
+        if (this.isAttestationDone(data.messageHash)) {
+            logger.debug('This messageHash has already been already signed')
+            return
+        }
+
+        if (!this.isInCurrentCommittee) {
+            logger.debug('Not in current committee, not submitting attestation')
+            return
+        }
+
+        if (!this.isTargetAllowed(data.targetId)) {
+            logger.debug('Target not allowed')
+            return
+        }
+
+        this.attestationsDone.push(data.messageHash)
         await this.submitAttestationEVM(
             data.messageHash,
             data.targetId,
@@ -181,12 +200,7 @@ export class Attester {
         targetId: string,
         executionVendor: string
     ) {
-        if (!this.isInCurrentCommittee) {
-            logger.warn('Not in current committee, not submitting attestation')
-            return
-        }
-
-        const { signature, tx } = this.generateAttestationTx(
+        const { signature, tx } = await this.generateAttestationTx(
             messageHash,
             targetId
         )
@@ -215,15 +229,20 @@ export class Attester {
                 'Error submitting attestation'
             )
             this.prometheus.attestationSubmitError.inc({ error: errorName })
-            return
-        }
-        if (!result) {
+            if (errorName == 'attesters::AttestationDoubleSignAttempt') {
+                this.attestationsDone.push(messageHash)
+                logger.warn(
+                    {
+                        messageHash: messageHash,
+                        targetId: targetId,
+                    },
+                    'Attestation already submitted'
+                )
+            }
             return
         }
 
-        logger.debug(result)
         this.prometheus.attestationSubmitted.inc({
-            messageHash: messageHash,
             targetId: targetId,
             executionVendor: executionVendor,
         })
@@ -233,25 +252,21 @@ export class Attester {
                 executionVendor: executionVendor,
                 targetId: targetId,
                 messageHash: messageHash,
-                // hash: result.hash.toHex(),
+                block: result,
             },
             'Attestation submitted'
         )
     }
 
-    private generateAttestationTx(messageHash: string, targetId: string) {
-        const privateKey = Buffer.from(hexToU8a(this.keys.ethereum.privateKey))
-
-        const messageUint8Array = ethUtil.hashPersonalMessage(
-            ethUtil.toBuffer(messageHash)
+    private async generateAttestationTx(messageHash: string, targetId: string) {
+        // TODO: move to class property
+        const signature = await this.wallet.signMessage(
+            ethers.getBytes(messageHash)
         )
-        const sigObj = ethUtil.ecsign(messageUint8Array, privateKey)
-
-        const signature = ethUtil.toRpcSig(sigObj.v, sigObj.r, sigObj.s)
 
         const tx = this.circuit.client.tx.attesters.submitAttestation(
             messageHash,
-            signature,
+            signature.toString(),
             targetId
         )
         return { signature, tx }

@@ -34,7 +34,10 @@ describe('queueTest', () => {
         }
         const keys = {
             substrate: {},
-            ethereum: {},
+            ethereum: {
+                privateKey:
+                    '0x0123456789012345678901234567890123456789012345678901234567890123',
+            },
             btc: {},
         }
         attester = new Attester(config, keys)
