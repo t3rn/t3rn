@@ -1,0 +1,19 @@
+{
+    "LogsBloom": "([u8; 256])",
+    "Topics": "(Vec<H256>)",
+    "Receipt": {
+        "status": "bool",
+        "cumulativeGasUsed": "U256",
+        "logsBloom": "LogsBloom",
+        "logs": "Vec<Event>"
+    },
+    "Event": {
+        "address": "H160",
+        "topics": "Topics",
+        "data": "Vec<u8>"
+    },
+    "Proof": {
+        "bytes": "Vec<Vec<u8>>",
+        "index": "Vec<u8>"
+    }
+}

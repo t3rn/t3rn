@@ -48,7 +48,9 @@
     "ts-mockito": "^2.6.1",
     "ts-node": "^10.9.1",
     "typedoc": "^0.24.7",
-    "types": "link:@polkadot/keyring/types"
+    "types": "link:@polkadot/keyring/types",
+    "typescript": "^5.1.3",
+    "web3": "^4.0.1"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.61.0",
