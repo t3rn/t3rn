@@ -156,7 +156,7 @@ export class Attester {
                     }
 
                     default: {
-                        logger.warn(
+                        logger.debug(
                             {
                                 event: event,
                                 section: event.section,
