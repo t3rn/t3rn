@@ -66,6 +66,7 @@ export class Attester {
 
             const comittee = await this.getCommittee()
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
+
             if (!this.isInCurrentCommittee) {
                 logger.debug(
                     'Not in current committee, not submitting attestation'
@@ -73,9 +74,9 @@ export class Attester {
                 return
             }
 
-            const attesterEvents = events.filter(
-                async (event) => event.section == 'attesters'
-            )
+            const attesterEvents = events
+                .toHuman()
+                .filter((event) => event.event.section == 'attesters')
 
             // Update metrics
             this.prometheus.eventsTotal.inc(events.length)
@@ -93,8 +94,8 @@ export class Attester {
                 // Extract the phase, event and the event types
                 const { event } = record
 
-                if (record.service == 'attesters') {
-                    logger.info(
+                if (record.event.section == 'attesters') {
+                    logger.debug(
                         {
                             event: event.method,
                             data: event.data,
@@ -157,7 +158,8 @@ export class Attester {
                     default: {
                         logger.warn(
                             {
-                                event: event.method,
+                                event: event,
+                                section: event.section,
                             },
                             'Received unhandled event'
                         )
