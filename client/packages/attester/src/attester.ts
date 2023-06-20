@@ -67,6 +67,10 @@ export class Attester {
 
             const comittee = await this.getCommittee()
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
+            if (!this.isInCurrentCommittee) {
+                logger.debug('Not in current committee, not submitting attestation')
+                return
+            }
 
             const attesterEvents = events.filter(
                 async (event) => event.section == 'attesters'
@@ -123,19 +127,9 @@ export class Attester {
                             messageHashes.length
                         )
 
-                        // Purge queue
-                        this.queuePurge()
-
                         messageHashes.forEach(async (messageHash) => {
-                            if (
-                                !this.config.targetsAllowed.includes(targetId)
-                            ) {
-                                logger.warn(
-                                    {
-                                        targetId: targetId,
-                                    },
-                                    'Target not allowed'
-                                )
+                            // If attestation was already done, skip
+                            if (this.isAttestationDone(messageHash[1])) {
                                 return
                             }
 
@@ -167,21 +161,37 @@ export class Attester {
         })
     }
 
+    private isAttestationDone(messageHash: string) {
+        return this.attestationsDone.includes(messageHash)
+    }
+
+    private isTargetAllowed(targetId: string) {
+        return this.config.targetsAllowed.includes(targetId)
+    }
+
     private async processAttestation(data: any) {
-        if (this.attestationsDone.includes(data.messageHash)) {
-            logger.warn('This messageHash has already been already signed')
-            return
-        }
-        if (!this.isInCurrentCommittee) {
-            logger.warn('Not in current committee, not submitting attestation')
+        if (this.isAttestationDone(data.messageHash)) {
+            logger.debug('This messageHash has already been already signed')
             return
         }
 
+        if (!this.isInCurrentCommittee) {
+            logger.debug('Not in current committee, not submitting attestation')
+            return
+        }
+
+        if (!this.isTargetAllowed(data.targetId)) {
+            logger.debug('Target not allowed')
+            return
+        }
+
+        this.attestationsDone.push(data.messageHash)
         await this.submitAttestationEVM(
             data.messageHash,
             data.targetId,
             data.executionVendor
         )
+        return true
     }
 
     private async submitAttestationEVM(
@@ -234,7 +244,6 @@ export class Attester {
             return
         }
 
-        logger.debug(['result object', result])
         this.prometheus.attestationSubmitted.inc({
             targetId: targetId,
             executionVendor: executionVendor,
@@ -245,11 +254,10 @@ export class Attester {
                 executionVendor: executionVendor,
                 targetId: targetId,
                 messageHash: messageHash,
-                // hash: result.hash.toHex(),
+                hash: result.hash.toHex(),
             },
             'Attestation submitted'
         )
-        this.attestationsDone.push(messageHash)
     }
 
     private async generateAttestationTx(messageHash: string, targetId: string) {
