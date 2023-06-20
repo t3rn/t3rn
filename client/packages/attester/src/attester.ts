@@ -83,6 +83,8 @@ export class Attester {
             this.prometheus.attestationsInQueue.set(this.q.length())
             this.prometheus.attestationsEvents.inc(attesterEvents.length)
 
+            logger.debug(this.q, 'Queue content')
+
             await this.processAttestationEvents(attesterEvents)
         })
     }
