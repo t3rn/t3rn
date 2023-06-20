@@ -165,7 +165,7 @@ class Instance {
     }
     if (
       !config.gateways.some((gateway: Gateway) =>
-        problySubstrateSeed(gateway.signerKey)
+        problySubstrateSeed(gateway.signerKey as string)
       )
     ) {
       throw Error("Instance::loadConfig: missing gateway signer key");
