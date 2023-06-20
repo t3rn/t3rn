@@ -52,7 +52,6 @@ export class CircuitListener extends EventEmitter {
 
   constructor(public client: Sdk["client"]) {
     super();
-    this.client = client;
   }
 
   async start() {
