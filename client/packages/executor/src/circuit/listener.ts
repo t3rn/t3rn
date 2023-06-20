@@ -1,6 +1,7 @@
 import "@t3rn/types";
 import { EventEmitter } from "events";
 import { Sdk } from "@t3rn/sdk";
+import { Codec } from "@polkadot/types/types";
 
 /**
  * Enum for the different types of events emitted by the relayer
@@ -36,6 +37,8 @@ export type ListEventData = Array<{
   toNumber: () => number;
 }>;
 
+export type EventData = ListEventData | PropEventData | Codec;
+
 /**
  * Type for transporting events
  *
@@ -43,7 +46,7 @@ export type ListEventData = Array<{
  */
 export type ListenerEventData = {
   type: ListenerEvents;
-  data: ListEventData | PropEventData;
+  data: EventData;
 };
 
 /** @group t3rn Circuit */
