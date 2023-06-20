@@ -8,6 +8,7 @@ import { Sdk } from "@t3rn/sdk";
 import { BiddingEngine } from "../bidding";
 import {
   CircuitListener,
+  EventData,
   ListenerEventData,
   ListenerEvents,
   ListEventData,
@@ -19,6 +20,7 @@ import { XtxStatus } from "@t3rn/sdk/dist/side-effects/types";
 import { Config, Gateway } from "../../config/config";
 import { Instance } from "../index";
 import { Logger } from "pino";
+import BN from "bn.js";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -245,7 +247,7 @@ export class ExecutionManager {
 
                 this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects
                   .get(eventData.sfxId)
-                  ?.addHeaderProof(proof.toJSON().proof, blockHash);
+                  ?.addHeaderProof(proof.toJSON().proof, blockHash.toString());
               }
               break;
             case RelayerEvents.SfxExecutionError:
@@ -323,15 +325,15 @@ export class ExecutionManager {
    * @param xtxData The SCALE encoded XTX data, as emitted by the circuit
    * @param sdk The SDK instance
    */
-  async addXtx(xtxData: unknown, sdk: Sdk) {
+  async addXtx(xtxData: EventData, sdk: Sdk) {
     // create the XTX object
     const xtx = new Execution(
+      this.logger,
+      sdk.signer.address,
       xtxData,
       sdk,
       this.strategyEngine,
-      this.biddingEngine,
-      sdk.signer.address,
-      this.logger
+      this.biddingEngine
     );
 
     // Run the XTX strategy checks
@@ -537,9 +539,12 @@ export class ExecutionManager {
       switch (notification.type) {
         case NotificationType.SubmitBid: {
           this.circuitRelayer
-            .bidSfx(notification.payload.sfxId, notification.payload.bidAmount)
+            .bidSfx(
+              notification.payload.sfxId,
+              notification.payload.bidAmount as BN
+            )
             .then(() => {
-              sfx.bidAccepted(notification.payload.bidAmount);
+              sfx.bidAccepted(notification.payload.bidAmount as number);
             })
             .catch((e) => {
               this.logger.info(`Bid rejected for SFX ${sfx.humanId} ❌`);
