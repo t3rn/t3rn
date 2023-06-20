@@ -102,7 +102,7 @@ export class Attester {
                             event: event.method,
                             data: event.data,
                         },
-                        'Received event from attesters service'
+                        'Received attesters event'
                     )
                 }
 
@@ -139,9 +139,8 @@ export class Attester {
 
                         messageHashes.forEach(async (messageHash) => {
                             // If attestation was already done, skip
-                            if (this.isAttestationDone(messageHash[1])) {
+                            if (!this.isValidAttestation(messageHash[1], targetId))
                                 return
-                            }
 
                             // Add all pending attestations to queue
                             this.q.push({
@@ -178,6 +177,10 @@ export class Attester {
         })
     }
 
+    private isValidAttestation(messageHash: string, targetId: string) {
+        return !this.isAttestationDone(messageHash) && this.isTargetAllowed(targetId) && this.isInCurrentCommittee
+    }
+
     private isAttestationDone(messageHash: string) {
         return this.attestationsDone.includes(messageHash)
     }
@@ -187,20 +190,8 @@ export class Attester {
     }
 
     private async processAttestation(data: any) {
-        if (this.isAttestationDone(data.messageHash)) {
-            logger.debug('This messageHash has already been already signed')
+        if (!this.isValidAttestation(data.messageHash, data.targetId))
             return
-        }
-
-        if (!this.isInCurrentCommittee) {
-            logger.debug('Not in current committee, not submitting attestation')
-            return
-        }
-
-        if (!this.isTargetAllowed(data.targetId)) {
-            logger.debug('Target not allowed')
-            return
-        }
 
         this.attestationsDone.push(data.messageHash)
         await this.submitAttestationEVM(
