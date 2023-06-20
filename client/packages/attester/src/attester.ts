@@ -68,7 +68,9 @@ export class Attester {
             const comittee = await this.getCommittee()
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
             if (!this.isInCurrentCommittee) {
-                logger.debug('Not in current committee, not submitting attestation')
+                logger.debug(
+                    'Not in current committee, not submitting attestation'
+                )
                 return
             }
 
@@ -191,7 +193,6 @@ export class Attester {
             data.targetId,
             data.executionVendor
         )
-        return true
     }
 
     private async submitAttestationEVM(
@@ -240,9 +241,6 @@ export class Attester {
             }
             return
         }
-        if (!result) {
-            return
-        }
 
         this.prometheus.attestationSubmitted.inc({
             targetId: targetId,
@@ -254,7 +252,7 @@ export class Attester {
                 executionVendor: executionVendor,
                 targetId: targetId,
                 messageHash: messageHash,
-                hash: result.hash.toHex(),
+                block: result,
             },
             'Attestation submitted'
         )

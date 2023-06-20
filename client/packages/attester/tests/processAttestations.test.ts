@@ -56,25 +56,23 @@ describe('processAttestation', () => {
 
     it('should return true when attestationsDone has messageHash', async () => {
         attester.attestationsDone = ['0x1234']
-        
-        const result = attester.isAttestationDone( '0x1234')
+
+        const result = attester.isAttestationDone('0x1234')
 
         expect(result).toBe(true)
     })
 
     it('should return false when attestationsDone doesnt have messageHash', async () => {
         attester.attestationsDone = []
-        
-        const result = await attester.isAttestationDone(
-            '0x1234'
-       )
+
+        const result = await attester.isAttestationDone('0x1234')
 
         expect(result).toBe(false)
     })
 
     it('should return false when target is not allowed', async () => {
         attester.config.targetsAllowed = ['0x1234']
-        
+
         const result = await attester.isTargetAllowed('0x5678')
 
         expect(result).toBe(false)
@@ -82,7 +80,7 @@ describe('processAttestation', () => {
 
     it('should return true when target is allowed', async () => {
         attester.config.targetsAllowed = ['0x1234']
-        
+
         const result = await attester.isTargetAllowed('0x1234')
 
         expect(result).toBe(true)
