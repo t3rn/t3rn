@@ -1,6 +1,7 @@
 import "@t3rn/types";
 import { EventEmitter } from "events";
-import { ApiPromise } from "@polkadot/api";
+import { Sdk } from "@t3rn/sdk";
+import { Codec } from "@polkadot/types/types";
 
 /**
  * Enum for the different types of events emitted by the relayer
@@ -26,6 +27,18 @@ export enum ListenerEvents {
   RevertTimedOut,
 }
 
+export type PropEventData = {
+  vendor?: string;
+  height?: number;
+};
+
+export type ListEventData = Array<{
+  toString: () => string;
+  toNumber: () => number;
+}>;
+
+export type EventData = ListEventData | PropEventData | Codec;
+
 /**
  * Type for transporting events
  *
@@ -33,17 +46,15 @@ export enum ListenerEvents {
  */
 export type ListenerEventData = {
   type: ListenerEvents;
-  data: any;
+  data: EventData;
 };
 
 /** @group t3rn Circuit */
 export class CircuitListener extends EventEmitter {
-  client: ApiPromise;
-  stop: any;
+  stop: () => void;
 
-  constructor(client: ApiPromise) {
+  constructor(public client: Sdk["client"]) {
     super();
-    this.client = client;
   }
 
   async start() {
@@ -69,7 +80,8 @@ export class CircuitListener extends EventEmitter {
           });
         } else if (notifications[i].event.method === "HeadersAdded") {
           console.log(notifications[i].toHuman());
-          let vendor;
+
+          let vendor = "";
           if (notifications[i].event.section === "rococoBridge") {
             vendor = "Rococo";
           }
