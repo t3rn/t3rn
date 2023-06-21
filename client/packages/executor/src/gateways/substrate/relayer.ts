@@ -7,8 +7,9 @@ import { SfxType } from "@t3rn/sdk/dist/side-effects/types";
 import { InclusionProof, RelayerEventData, RelayerEvents } from "../types";
 import Estimator from "./estimator";
 import { CostEstimator, Estimate } from "./estimator/cost";
-import { Utils } from "@t3rn/sdk";
+import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
+import { Logger } from "pino";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -24,15 +25,15 @@ export class SubstrateRelayer extends EventEmitter {
   /** Target chain client */
   client: ApiPromise;
   /** Signer for target */
-  signer: any;
+  signer: Sdk["signer"];
   /** Nonce of the signer, tracked locally to enable optimistic nonce increment */
   nonce: number;
   /** Name of the target */
   name: string;
-  logger: any;
+  logger: Logger;
   nativeId: string;
 
-  async setup(config: Gateway, logger: any) {
+  async setup(config: Gateway, logger: Logger) {
     this.client = await ApiPromise.create({
       provider: new WsProvider(config.rpc),
     });
@@ -59,7 +60,7 @@ export class SubstrateRelayer extends EventEmitter {
     switch (sideEffect.action) {
       case SfxType.Transfer: {
         const data = sideEffect.execute();
-        return this.client.tx.balances.transfer(data[0], data[1]);
+        return this.client.tx.balances.transfer(data[0] as string, data[1]);
       }
       default:
         return;
@@ -118,7 +119,7 @@ export class SubstrateRelayer extends EventEmitter {
           } else if (status.isFinalized) {
             const blockNumber = await this.generateSfxInclusionProof(
               sfx,
-              status.asFinalized,
+              status.asFinalized as never,
               events
             );
             this.logger.info(
@@ -148,18 +149,16 @@ export class SubstrateRelayer extends EventEmitter {
    */
   async generateSfxInclusionProof(
     sfx: SideEffect,
-    blockHash: any,
-    events: any[]
+    blockHash: string,
+    events: unknown
   ): Promise<number> {
     const blockNumber = await this.getBlockNumber(blockHash);
-    const event = this.getEvent(sfx.action, events);
-
+    const event = this.getEvent(sfx.action, events as never);
     const inclusionProof = await getEventProofs(this.client, blockHash);
     const inclusionData: InclusionProof = {
-      encoded_payload: event.toHex(),
+      encoded_payload: (event as unknown as { toHex: () => string }).toHex(),
       payload_proof: {
-        // @ts-ignore
-        trieNodes: inclusionProof.toJSON().proof,
+        trieNodes: inclusionProof.toJSON().proof as string,
       },
       block_hash: blockHash,
     };
@@ -207,7 +206,7 @@ export class SubstrateRelayer extends EventEmitter {
    * @returns Block number of the relaychain block
    */
   async fetchCorrespondingRelaychainHeaderNumber(
-    parachainBlockHash: any
+    parachainBlockHash: string
   ): Promise<number> {
     const parachainBlock = await this.client.rpc.chain.getBlock(
       parachainBlockHash
@@ -258,7 +257,7 @@ export class SubstrateRelayer extends EventEmitter {
    * @param hash Of block
    * @returns Block number
    */
-  async getBlockNumber(hash: any) {
+  async getBlockNumber(hash: string) {
     return (await this.client.rpc.chain.getHeader(hash)).number;
   }
 
@@ -269,17 +268,20 @@ export class SubstrateRelayer extends EventEmitter {
    * @param events Array of events in that block
    * @returns Event emitted by the transaction
    */
-  getEvent(transactionType: SfxType, events: any[]) {
+  getEvent(
+    transactionType: SfxType,
+    events: Array<{ event: { method: string } }>
+  ) {
     const event = events.find((item) => {
       return item.event.method === EventMapper[transactionType];
     });
 
-    if (event) {
-      return event.event;
-    } else {
-      //Todo: deal with this somehow
+    if (!event) {
       console.log("Event not found");
+      return;
     }
+
+    return event.event;
   }
 
   /**

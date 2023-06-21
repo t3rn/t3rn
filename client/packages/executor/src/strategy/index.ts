@@ -86,14 +86,13 @@ export class StrategyEngine {
    * @param xtx Object of XTX to be evaluated
    */
   evaluateXtx(xtx: Execution): void | Error {
-    for (const [_id, sfx] of xtx.sideEffects) {
+    for (const [, sfx] of xtx.sideEffects) {
       const strategy = this.xtxStrategies[sfx.target];
       try {
         this.minInsuranceAmountRejected(sfx, strategy);
         this.minInsuranceShareRejected(sfx, strategy);
       } catch (e) {
-        break;
-        throw e;
+        throw new Error(e);
       }
     }
   }
@@ -103,7 +102,7 @@ export class StrategyEngine {
    *
    * @param sfx Object of SFX to be evaluated
    */
-  evaluateSfx(sfx: SideEffect): void | Error {
+  evaluateSfx(sfx: SideEffect) {
     const strategy = this.sfxStrategies[sfx.target];
 
     try {
@@ -115,7 +114,7 @@ export class StrategyEngine {
       this.maxTxFeeShareRejected(sfx, strategy);
       this.maxAssetCostRejected(sfx, strategy);
     } catch (e) {
-      throw e;
+      throw new Error(e);
     }
   }
 
@@ -124,7 +123,7 @@ export class StrategyEngine {
    *
    * @param sfx Object of SFX to be evaluated
    */
-  isSupportedGateway(sfx: SideEffect): void | Error {
+  isSupportedGateway(sfx: SideEffect) {
     if (!(sfx.target in this.sfxStrategies)) {
       throw new Error("Gateway not supported");
     }
@@ -196,7 +195,8 @@ export class StrategyEngine {
    * @returns Error if asset is not supported
    */
   assetIsSupported(sfx: SideEffect): void | Error {
-    const assetTicker = sfx.getTxOutputs()!.asset;
+    const txOutputs = sfx.getTxOutputs();
+    const assetTicker = txOutputs?.asset;
     if (!this.supportedAssets[sfx.target].includes(assetTicker)) {
       throw new Error("Asset is not supported by the target gateway!");
     }

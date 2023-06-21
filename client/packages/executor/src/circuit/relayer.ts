@@ -1,12 +1,13 @@
+import fs from "fs";
 import { createType } from "@t3rn/types";
 import { EventEmitter } from "events";
 import { SideEffect } from "../executionManager/sideEffect";
 import createDebug from "debug";
 import { BN } from "@polkadot/util";
 import { Sdk, ApiPromise } from "@t3rn/sdk";
-import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
+import { Codec } from "@polkadot/types/types";
+// @ts-ignore - Typescript does not know about this type
 import { T3rnTypesSfxConfirmedSideEffect } from "@polkadot/types/lookup";
-import fs from "fs";
 
 /**
  * Class responsible for submitting any type of transaction to the circuit. All communication with the circuit is done through the circuit relayer.
@@ -17,15 +18,12 @@ export class CircuitRelayer extends EventEmitter {
   static debug = createDebug("circuit-relayer");
 
   api: ApiPromise;
-  sdk: Sdk;
   id: string;
   rpc: string;
 
-  constructor(sdk: Sdk) {
+  constructor(public sdk: Sdk) {
     super();
-    // @ts-ignore
     this.api = sdk.client;
-    this.sdk = sdk;
   }
 
   /**
@@ -51,15 +49,13 @@ export class CircuitRelayer extends EventEmitter {
    * @returns The block height of the included tx
    */
   async confirmSideEffects(sfxs: SideEffect[]): Promise<string> {
-    const txs: SubmittableExtrinsic[] = sfxs.map((sfx) =>
-      this.createConfirmTx(sfx)
-    );
+    const txs = sfxs.map((sfx) => this.createConfirmTx(sfx));
     if (txs.length > 1) {
       // only batch if more than one tx
-      const batch = await this.sdk.circuit.tx.createBatch(txs);
+      const batch = this.sdk.circuit.tx.createBatch(txs);
       return this.sdk.circuit.tx.signAndSendSafe(batch);
     } else {
-      return this.sdk.circuit.tx.signAndSendSafe(txs[0] as any);
+      return this.sdk.circuit.tx.signAndSendSafe(txs[0] as never);
     }
   }
 
@@ -68,8 +64,8 @@ export class CircuitRelayer extends EventEmitter {
    *
    * @param sfx The SideEffect to confirm
    */
-  createConfirmTx(sfx: SideEffect): any {
-    let inclusionData;
+  createConfirmTx(sfx: SideEffect) {
+    let inclusionData: ReturnType<typeof this.api.createType>;
 
     if (sfx.target === "roco") {
       inclusionData = this.api.createType("RelaychainInclusionProof", {
@@ -110,18 +106,21 @@ const indexes = [
   7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 9999, 111111, 222222, 33333, 444444,
 ];
 let counter = 0;
+
 export const exportData = (
-  data: any,
+  data: Array<unknown> | Record<string, unknown>,
   fileName: string,
   transactionType: string
 ) => {
-  let deepCopy;
+  let deepCopy: Record<string, unknown> | unknown[];
+
   // since its pass-by-reference
   if (Array.isArray(data)) {
     deepCopy = [...data];
   } else {
     deepCopy = { ...data };
   }
+
   const encoded = encodeExport(deepCopy, transactionType);
   fs.writeFile(
     "exports/" + indexes[counter] + "-" + fileName,
@@ -129,7 +128,6 @@ export const exportData = (
     (err) => {
       if (err) {
         console.log("Err", err);
-      } else {
       }
     }
   );
@@ -140,15 +138,18 @@ export const exportData = (
 // encodes data for exporting. We export in encoded and human format.
 // Encoded: We use for seeding protal rust tests
 // Human: Debugging those tests and viewing data
-export const encodeExport = (data: any, transactionType: string) => {
+export const encodeExport = (
+  data: Array<unknown> | Record<string, unknown> | Codec,
+  transactionType: string
+) => {
   if (Array.isArray(data)) {
     return data.map((entry) => iterateEncode(entry, transactionType));
   } else {
-    return iterateEncode(data, transactionType);
+    return iterateEncode(data as Codec, transactionType);
   }
 };
 
-const iterateEncode = (data: any, transactionType: string) => {
+const iterateEncode = (data: Codec, transactionType: string) => {
   const keys = Object.keys(data);
   const result = {};
   if (keys.includes("initialU8aLength")) {
@@ -171,9 +172,12 @@ const iterateEncode = (data: any, transactionType: string) => {
   }
 };
 
-const toSnakeCase = (str) =>
+const toSnakeCase = (str: string) =>
   str &&
-  str
-    .match(/[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g)
-    .map((x) => x.toLowerCase())
+  (
+    str.match(
+      /[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g
+    ) ?? []
+  )
+    .map((x: string) => x.toLowerCase())
     .join("_");
