@@ -6,9 +6,9 @@ use frame_support::{
 };
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
-    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, LatencyStatus, NextBatch,
-    NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes, PreviousCommittee,
-    SortedNominatedAttesters,
+    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, Event as AttestersEvent,
+    LatencyStatus, NextBatch, NextCommitteeOnTarget, Nominations, PendingUnnominations,
+    PermanentSlashes, PreviousCommittee, SortedNominatedAttesters,
 };
 pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
 mod treasuries_config;

@@ -221,6 +221,14 @@ pub enum LatencyStatus {
     Late(u32, u32),
 }
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
+pub struct BatchingFactor {
+    pub latest_confirmed: u16,
+    pub latest_signed: u16,
+    pub current_next: u16,
+    pub up_to_last_10_confirmed: Vec<u16>,
+}
+
 pub type CommitteeTransitionIndices = [u32; COMMITTEE_SIZE];
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
 pub struct GenericCommitteeTransition([(u32, Vec<u8>); COMMITTEE_SIZE]);
@@ -249,6 +257,7 @@ pub trait AttestersReadApi<Account, Balance> {
     fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)>;
     fn get_activated_targets() -> Vec<TargetId>;
     fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus>;
+    fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor>;
 }
 
 pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {
@@ -287,6 +296,10 @@ impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
     }
 
     fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
+        None
+    }
+
+    fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
         None
     }
 }
@@ -414,6 +427,14 @@ pub mod test {
                 AccountId32,
                 u128,
             >>::read_attestation_latency(&[0u8; 4]),
+            None
+        );
+
+        assert_eq!(
+            <AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> as AttestersReadApi<
+                AccountId32,
+                u128,
+            >>::read_latest_batching_factor(&[0u8; 4]),
             None
         );
     }

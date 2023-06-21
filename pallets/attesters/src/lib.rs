@@ -17,7 +17,7 @@ pub mod pallet {
     use frame_support::{
         dispatch::DispatchResult,
         pallet_prelude::*,
-        traits::{Currency, ExistenceRequirement, Randomness, ReservableCurrency},
+        traits::{Currency, ExistenceRequirement, Len, Randomness, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
     use sp_core::{hexdisplay::AsBytesRef, H256};
@@ -36,7 +36,7 @@ pub mod pallet {
         ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use t3rn_primitives::{
-        attesters::{CommitteeRecoverable, CommitteeTransition},
+        attesters::{BatchingFactor, CommitteeRecoverable, CommitteeTransition},
         circuit::{Cause, CircuitStatus, ReadSFX},
         portal::Portal,
         rewards::RewardsWriteApi,
@@ -130,6 +130,18 @@ pub mod pallet {
                 && self.banned_committee.is_none()
                 && self.committed_sfx.is_none()
                 && self.reverted_sfx.is_none()
+        }
+
+        pub fn read_batching_factor(&self) -> u16 {
+            let mut batching_factor = 0u16;
+            if let Some(ref sfx) = self.committed_sfx {
+                batching_factor = sfx.len() as u16;
+            }
+            if let Some(ref sfx) = self.reverted_sfx {
+                batching_factor = batching_factor.saturating_add(sfx.len() as u16)
+            }
+
+            batching_factor
         }
 
         pub fn has_no_sfx(&self) -> bool {
@@ -291,6 +303,7 @@ pub mod pallet {
         AttesterDeregistrationScheduled(T::AccountId, T::BlockNumber),
         AttesterDeregistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
+        BatchingFactorRead(TargetId, Option<BatchingFactor>),
         NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
         NewAttestationMessageHash(TargetId, H256, ExecutionVendor),
         NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>, Vec<u8>, H256),
@@ -739,6 +752,23 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
+        pub fn read_latest_batching_factor_overview(origin: OriginFor<T>) -> DispatchResult {
+            ensure_signed(origin)?;
+
+            for target in AttestationTargets::<T>::get() {
+                let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
+                log::debug!(
+                    "Batching factor for target {:?} is {:?}",
+                    target,
+                    batching_factor
+                );
+                Self::deposit_event(Event::BatchingFactorRead(target, batching_factor));
+            }
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
         pub fn nominate(
             origin: OriginFor<T>,
             attester: T::AccountId,
@@ -899,6 +929,43 @@ pub mod pallet {
     impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>> for Pallet<T> {
         fn previous_committee() -> Vec<T::AccountId> {
             PreviousCommittee::<T>::get()
+        }
+
+        fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
+            // If target isn't active yet, return None
+            if !AttestationTargets::<T>::get().contains(target) {
+                return None
+            }
+
+            // Read amount of confirmed and reverted sfx out of last 10 confirmed batches, or fill with 0 if there aren't enough
+            let up_to_last_10_confirmed: Vec<u16> =
+                Self::get_batches(*target, BatchStatus::Committed)
+                    .iter()
+                    .rev()
+                    .take(10)
+                    .map(|batch| batch.read_batching_factor())
+                    .collect::<Vec<u16>>()
+                    .try_into()
+                    .unwrap_or(vec![]);
+
+            let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0) as u16;
+
+            let latest_signed = match Self::get_latest_batch_to_sign(*target) {
+                Some(batch) => batch.read_batching_factor(),
+                None => 0,
+            };
+
+            let current_next = match NextBatch::<T>::get(target) {
+                Some(batch) => batch.read_batching_factor(),
+                None => 0,
+            };
+
+            Some(BatchingFactor {
+                latest_confirmed,
+                latest_signed,
+                current_next,
+                up_to_last_10_confirmed,
+            })
         }
 
         fn current_committee() -> Vec<T::AccountId> {
@@ -1675,17 +1742,17 @@ pub mod attesters_test {
     use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
-        Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards,
-        CurrentCommittee, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
-        NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations, PermanentSlashes,
-        PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters, System,
-        XExecSignals,
+        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
+        AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters,
+        ConfigRewards, CurrentCommittee, Event, ExtBuilder, FullSideEffects, LatencyStatus,
+        MiniRuntime, NextBatch, NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations,
+        PermanentSlashes, PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters,
+        System, XExecSignals,
     };
     use t3rn_primitives::{
         attesters::{
             ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
-            CommitteeRecoverable, CommitteeTransitionIndices,
+            BatchingFactor, CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
@@ -2997,6 +3064,25 @@ pub mod attesters_test {
         (res, message_bytes)
     }
 
+    fn expect_latest_confirmed_batching_factor(target: TargetId, latest_confirmed_factor: u16) {
+        // Recover system event
+        let events = System::events();
+        let expect_batching_factor_read_event = events.last().clone();
+        assert!(expect_batching_factor_read_event.clone().is_some());
+        assert_eq!(
+            expect_batching_factor_read_event.unwrap().event,
+            Event::Attesters(AttestersEvent::BatchingFactorRead(
+                target,
+                Some(BatchingFactor {
+                    latest_confirmed: latest_confirmed_factor,
+                    latest_signed: 0,
+                    current_next: 0,
+                    up_to_last_10_confirmed: vec![latest_confirmed_factor],
+                })
+            ))
+        );
+    }
+
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
     ) {
@@ -3066,6 +3152,12 @@ pub mod attesters_test {
             let batch = Attesters::get_batch_by_message(target, first_batch_message)
                 .expect("Batch by message should exist");
             assert_eq!(batch.status, BatchStatus::Committed);
+
+            Attesters::read_latest_batching_factor_overview(Origin::signed(AccountId::from(
+                [1; 32],
+            )));
+
+            expect_latest_confirmed_batching_factor(target, 1);
         });
     }
 
