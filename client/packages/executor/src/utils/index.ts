@@ -15,18 +15,18 @@ export async function getStorage(
   return {
     value: res.toHex(),
     status: res !== undefined ? true : false,
-  }
+  };
 }
 
 function generateKeyForStorageValue(module: string, variableName: string) {
   // lets prepare the storage key for system events.
-  let module_hash = xxhashAsU8a(module, 128)
-  let storage_value_hash = xxhashAsU8a(variableName, 128)
+  let module_hash = xxhashAsU8a(module, 128);
+  let storage_value_hash = xxhashAsU8a(variableName, 128);
 
   // Special syntax to concatenate Uint8Array
-  let final_key = new Uint8Array([...module_hash, ...storage_value_hash])
+  let final_key = new Uint8Array([...module_hash, ...storage_value_hash]);
 
-  return u8aToHex(final_key)
+  return u8aToHex(final_key);
 }
 
 export const getEventProofs = async (api: ApiPromise, blockHash: string) => {

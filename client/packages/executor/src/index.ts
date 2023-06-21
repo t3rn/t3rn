@@ -216,11 +216,11 @@ class Instance {
   private registerStateListener(): Instance {
     const set =
       (instance: Instance) =>
-        (target: Queue, prop: string | symbol, receiver: never) => {
-          // wait until reflected, then persist state
-          setTimeout((instance) => instance.persistState(), 100, instance);
-          return Reflect.set(target, prop, receiver);
-        };
+      (target: Queue, prop: string | symbol, receiver: never) => {
+        // wait until reflected, then persist state
+        setTimeout((instance) => instance.persistState(), 100, instance);
+        return Reflect.set(target, prop, receiver);
+      };
 
     new Proxy(this.executionManager.queue, {
       set: set(this),

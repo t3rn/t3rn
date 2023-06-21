@@ -5,6 +5,8 @@ import { expect } from "chai";
 import { mock, instance, when } from "ts-mockito";
 import { BehaviorSubject } from "rxjs";
 const pino = require("pino");
+
+
 describe("Bidding: Configuration loading", () => {
   it("Correct config values are loaded", () => {
     const be = new BiddingEngine(pino());

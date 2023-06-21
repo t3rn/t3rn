@@ -616,7 +616,7 @@ export class ExecutionManager {
         this.removeFromQueue("isExecuting", sfx.id, sfx.vendor);
         let confirmBatch =
           this.queue[sfx.vendor].isConfirming[
-          sfx.targetInclusionHeight.toString()
+            sfx.targetInclusionHeight.toString()
           ];
         if (!confirmBatch) confirmBatch = [];
         if (confirmBatch.includes(sfx.id)) {
