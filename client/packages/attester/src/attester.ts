@@ -113,10 +113,14 @@ export class Attester {
                         const [targetId, messageHash, executionVendor] =
                             event.data
 
+                        this.prometheus.attestionsReceived.inc({
+                            targetId: targetId,
+                        })
+
                         if (!this.isValidAttestation(messageHash, targetId))
                             return
 
-                        this.prometheus.attestionsReceived.inc({
+                        this.prometheus.attestionsReceivedValid.inc({
                             targetId: targetId,
                         })
 
@@ -140,7 +144,11 @@ export class Attester {
                         const messageHashes = event.data[1]
 
                         messageHashes.forEach(async (messageHash) => {
-                            // If attestation was already done, skip
+                            this.prometheus.attestionsReceived.inc({
+                                targetId: targetId,
+                            })
+
+                            // If attestation is not valid, skip
                             if (
                                 !this.isValidAttestation(
                                     messageHash[1],
@@ -149,15 +157,15 @@ export class Attester {
                             )
                                 return
 
+                            this.prometheus.attestionsReceivedValid.inc({
+                                targetId: targetId,
+                            })
+
                             // Add all pending attestations to queue
                             this.q.push({
                                 messageHash: messageHash[1],
                                 targetId: targetId,
                                 executionVendor: 'EVM',
-                            })
-
-                            this.prometheus.attestionsReceived.inc({
-                                targetId: targetId,
                             })
                         })
                         this.prometheus.attestationsInQueue.set(this.q.length())
@@ -191,8 +199,7 @@ export class Attester {
     private isValidAttestation(messageHash: string, targetId: string) {
         return (
             !this.isAttestationDone(messageHash) &&
-            this.isTargetAllowed(targetId) &&
-            this.isInCurrentCommittee
+            this.isTargetAllowed(targetId)
         )
     }
 
@@ -206,6 +213,7 @@ export class Attester {
 
     private async processAttestation(data: any) {
         if (!this.isValidAttestation(data.messageHash, data.targetId)) return
+        if (!this.isInCurrentCommittee) return
 
         this.attestationsDone.push(data.messageHash)
         await this.submitAttestationEVM(
