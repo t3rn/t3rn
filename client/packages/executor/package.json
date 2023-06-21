@@ -18,7 +18,7 @@
     "./tests/"
   ],
   "dependencies": {
-    "@polkadot/api": "^10.7.1",
+    "@polkadot/api": "^10.9.1",
     "@polkadot/keyring": "^12.2.2",
     "@polkadot/types": "^8.9.1",
     "@polkadot/util": "^12.2.2",
