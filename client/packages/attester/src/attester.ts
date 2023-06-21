@@ -81,7 +81,6 @@ export class Attester {
             // Update metrics
             this.prometheus.eventsTotal.inc(events.length)
             this.prometheus.attestationsInQueue.set(this.q.length())
-            this.prometheus.attestationsEvents.inc(attesterEvents.length)
 
             logger.debug(this.q, 'Queue content')
 
@@ -96,15 +95,18 @@ export class Attester {
                 // Extract the phase, event and the event types
                 const { event } = record
 
-                if (record.event.section == 'attesters') {
-                    logger.debug(
-                        {
-                            event: event.method,
-                            data: event.data,
-                        },
-                        'Received attesters event'
-                    )
+                if (record.event.section != 'attesters') {
+                    return
                 }
+
+                logger.debug(
+                    {
+                        event: event.method,
+                        data: event.data,
+                    },
+                    'Received attesters event'
+                )
+                this.prometheus.attestationsEvents.inc({ method: event.method })
 
                 switch (event.method) {
                     case 'NewAttestationMessageHash': {
@@ -113,6 +115,10 @@ export class Attester {
 
                         if (!this.isValidAttestation(messageHash, targetId))
                             return
+
+                        this.prometheus.attestionsReceived.inc({
+                            targetId: targetId,
+                        })
 
                         if (executionVendor.toString() == 'Substrate') {
                             logger.warn('Substrate not implemented')
@@ -133,13 +139,6 @@ export class Attester {
                         const targetId = event.data[0].toString()
                         const messageHashes = event.data[1]
 
-                        this.prometheus.attestionsPending.set(
-                            {
-                                targetId: targetId,
-                            },
-                            messageHashes.length
-                        )
-
                         messageHashes.forEach(async (messageHash) => {
                             // If attestation was already done, skip
                             if (
@@ -155,6 +154,10 @@ export class Attester {
                                 messageHash: messageHash[1],
                                 targetId: targetId,
                                 executionVendor: 'EVM',
+                            })
+
+                            this.prometheus.attestionsReceived.inc({
+                                targetId: targetId,
                             })
                         })
                         this.prometheus.attestationsInQueue.set(this.q.length())

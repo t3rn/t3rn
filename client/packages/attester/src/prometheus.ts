@@ -13,7 +13,7 @@ export class Prometheus {
     currentCommitteeMember: client.Gauge
     attestationSubmitError: client.Counter
     attestationSubmitted: client.Counter
-    attestionsPending: client.Gauge
+    attestionsReceived: client.Counter
     attestationsInQueue: client.Gauge
 
     constructor() {
@@ -81,9 +81,9 @@ export class Prometheus {
             labelNames: ['messageHash', 'targetId', 'executionVendor'],
         })
 
-        this.attestionsPending = new client.Gauge({
-            name: 'attestations_pending',
-            help: 'Number of attestations pending',
+        this.attestionsReceived = new client.Counter({
+            name: 'attestations_received',
+            help: 'Number of received attestations',
             registers: [this.register],
             labelNames: ['targetId'],
         })
