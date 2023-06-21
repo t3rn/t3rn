@@ -4,7 +4,12 @@ import { SideEffect, TransactionType } from "../../utils/types"
 import { getProof } from "./merkle"
 import createDebug from "debug"
 import { scaleEncodeProof, scaleEncodeReceipt } from "./encoder";
-import { abi } from './interfaces/ERC20.json'
+// import { abi } from './interfaces/ERC20.json'
+import { erc20ABI } from 'wagmi'
+
+// In case we need the full ERC20 schema
+// import { Convert, Erc20, ABI } from "./interfaces/ERC20";
+// const erc20: Erc20 = Convert.toErc20("./interfaces/ERC20.json");
 
 export default class EVMRelayer extends EventEmitter {
     static debug = createDebug("bsc-relayer")
@@ -26,9 +31,8 @@ export default class EVMRelayer extends EventEmitter {
 
     async createAssetInstance(asset: string) {
         return new this.api.eth.Contract(
-            abi as any,
-            // FIXME was this the address?
-            asset
+            erc20ABI, // abi, // erc20.abi overloads the function call
+            asset,    // FIXME was this the address?
         );
     }
 
@@ -41,7 +45,7 @@ export default class EVMRelayer extends EventEmitter {
             case TransactionType.Erc20Transfer: {
                 const [to, asset, amount] = sideEffect.getTransactionArguments()
                 const contract = await this.createAssetInstance(asset)
-                const tx = contract.methods.transfer(to, amount)
+                contract.methods.transfer(to, amount)
                     .send({ from: this.sender.address, gas: this.api.utils.toHex(100000) })
                     .then(async (res: any) => {
                         let [proof, index] = await getProof(res.transactionHash, this.api)

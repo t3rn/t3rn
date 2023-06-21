@@ -5,8 +5,6 @@ export const getProof = async (txId: string, instance: any) => {
     const blockReceipts = await getBlockReceipts(receipt.blockNumber, instance)
     const proof = (await generateProof(blockReceipts, receipt.transactionIndex))
 
-    // console.log(proof[0].toString('hex'))
-
     return [proof, receipt.transactionIndex]
 }
 
@@ -32,9 +30,8 @@ const getBlockReceipts = async (blockId: string, instance: any) => {
 const getBlock = async (blockId: string, instance: any) => {
     await sleep(2000); // need to wait for RPC to by synced
     const block = await instance.eth.getBlock(blockId)
-        .catch((err: any) => {
-            console.log("errrrr")
-            console.log(err)
+        .catch((err: any) => {
+            console.log(`Error catched: ${err}`)
         })
     return block
 }
@@ -52,6 +49,6 @@ const generateProof = async (receipts: any[], index: number) => {
     return proof
 }
 
-export const sleep = async (time) => {
+export const sleep = async (time: number) => {
     return new Promise((resolve) => setTimeout(resolve, time));
 }

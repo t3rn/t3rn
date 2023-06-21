@@ -1,9 +1,6 @@
-// import "@t3rn/types"
-import { AccountId32, H256 } from "@polkadot/types/interfaces/runtime"
-import { T3rnPrimitivesSideEffect } from "@polkadot/types/lookup"
 import { TextDecoder } from "util"
 import { u8aToHex } from "@polkadot/util"
-const BN = require("bn.js")
+import { BN } from "bn.js"
 
 export enum TransactionType {
   Transfer,
@@ -66,7 +63,7 @@ export class SideEffect {
     executed: boolean,
     substrate: boolean = true,
   ) {
-    if(substrate) {
+    if (substrate) {
       console.log("in substrate")
       this.confirmedSideEffect = {
         err: null,
