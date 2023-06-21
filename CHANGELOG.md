@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.36.0-rc.0] - 2023-06-21
+### :sparkles: New Features
+- [`e9e52ce`](https://github.com/t3rn/t3rn/commit/e9e52ce1b772da87348fe14b65e8a514ad9e732c) - add telemetry to executor *(PR [#1051](https://github.com/t3rn/t3rn/pull/1051) by [@ahkohd](https://github.com/ahkohd))*
+- [`d3672dd`](https://github.com/t3rn/t3rn/commit/d3672dd762cb1e7bcf7de958993e3d2caaad5b93) - process gateways activity overview in XDNS *(PR [#1054](https://github.com/t3rn/t3rn/pull/1054) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`0f711aa`](https://github.com/t3rn/t3rn/commit/0f711aaeb5a5cc0779f5f8f5e9ab49bffa1e5895) - log all attester events and update metrics *(PR [#1078](https://github.com/t3rn/t3rn/pull/1078) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.35.0-rc.0] - 2023-06-20
 ### :sparkles: New Features
 - [`3ce9ff9`](https://github.com/t3rn/t3rn/commit/3ce9ff9c7e3aa05c712a7ba85b1e8631cd9095cb) - added attestationsDone array *(PR [#1075](https://github.com/t3rn/t3rn/pull/1075) by [@3h4x](https://github.com/3h4x))*
@@ -1279,3 +1288,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.34.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.0-rc.0...v1.34.1-rc.0
 [v1.34.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.1-rc.0...v1.34.2-rc.0
 [v1.35.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.2-rc.0...v1.35.0-rc.0
+[v1.36.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.35.0-rc.0...v1.36.0-rc.0
