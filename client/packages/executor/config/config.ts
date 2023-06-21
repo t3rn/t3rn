@@ -1,5 +1,5 @@
 import { BiddingStrategy } from "src/bidding";
-import { SfxStrategy, XtxStrategy } from "../src";
+import { SfxStrategy, XtxStrategy } from "src/index";
 
 const WS_CIRCUIT_ENDPOINT =
   process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944";

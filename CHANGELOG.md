@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.35.0-rc.0] - 2023-06-20
+### :sparkles: New Features
+- [`3ce9ff9`](https://github.com/t3rn/t3rn/commit/3ce9ff9c7e3aa05c712a7ba85b1e8631cd9095cb) - added attestationsDone array *(PR [#1075](https://github.com/t3rn/t3rn/pull/1075) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`e09d383`](https://github.com/t3rn/t3rn/commit/e09d383ed0e1646c48f0726e3e66687f07fdbf5a) - update CODEOWNERS and remove obsoleted files *(PR [#1076](https://github.com/t3rn/t3rn/pull/1076) by [@3h4x](https://github.com/3h4x))*
+- [`2466847`](https://github.com/t3rn/t3rn/commit/2466847b54e56c0eb9415630e07b91618cacb81d) - move pr template to t3rn repo *(PR [#1077](https://github.com/t3rn/t3rn/pull/1077) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.34.2-rc.0] - 2023-06-19
 ### :bug: Bug Fixes
 - [`85d9a26`](https://github.com/t3rn/t3rn/commit/85d9a26d3bd461348fdc0543285e26cf01b6127b) - remove unused labeled metric  *(PR [#1073](https://github.com/t3rn/t3rn/pull/1073) by [@petscheit](https://github.com/petscheit))*
@@ -1269,3 +1278,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.34.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.33.1-rc.0...v1.34.0-rc.0
 [v1.34.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.0-rc.0...v1.34.1-rc.0
 [v1.34.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.1-rc.0...v1.34.2-rc.0
+[v1.35.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.2-rc.0...v1.35.0-rc.0
