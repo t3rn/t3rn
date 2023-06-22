@@ -1,8 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const ethUtil = require('ethereumjs-util');
-const { toCompactSig } = require('ethereumjs-util/dist/signature');
-
 
 async function parseAllEvents(receipt, contract) {
     const iface = new ethers.utils.Interface(contract.interface.format());

@@ -155,6 +155,13 @@ export type Config = {
   };
   /** Parameters for tunning the behavior in the bidding stage */
   bidding: BiddingStrategy;
+
+  /** Configuration for ethereum */
+  ethereum: {
+    rpc: string;
+    attestationVerifierAddress: string;
+    privateKey: string | undefined;
+  }
 };
 
 export const config: Config = {
@@ -244,4 +251,9 @@ export const config: Config = {
     overrideNoCompetition: true,
     equalMinProfitBid: false,
   },
+  ethereum: {
+    rpc: "https://eth-sepolia.public.blastapi.io",
+    attestationVerifierAddress: '0x9d73cAEc7B58a9070BAb2EadB75580054e31E437',
+    privateKey: process.env.ETHEREUM_PRIVATE_KEY,
+  }
 };
