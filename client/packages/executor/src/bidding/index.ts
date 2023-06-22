@@ -1,5 +1,7 @@
 import { SideEffect } from "../executionManager/sideEffect";
 import { config } from "../../config/config";
+import { Instance } from "../index";
+import { Logger } from "pino";
 
 /**
  * The bidding engine is used for determining the bidding amount for a given
@@ -19,8 +21,6 @@ export class BiddingEngine {
   // numberOfBidsOnSfx = new Map<SideEffect, number>()
   /** Number of bid by executor */
   numberOfBidsByExecutor = new Map<string, number>();
-  /** Logger */
-  logger: any;
   /** Being aggressive when bidding means to oubtbid everyone to get the SFX */
   bidAggressive: boolean = config.bidding.bidAggressive;
   /** Being meek when bidding means to obtain the max profit */
@@ -34,9 +34,7 @@ export class BiddingEngine {
   /** Which executors are bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
   whoBidsOnWhat = new Map<string, string[]>();
 
-  constructor(logger: any) {
-    this.logger = logger;
-  }
+  constructor(public logger: Logger) {}
 
   /**
    * Computes the bidding amount for a given SFX for a certain scenario.
@@ -50,12 +48,15 @@ export class BiddingEngine {
     switch (scenario) {
       case Scenario.noBidAndNoCompetition:
         bid = this.computeNoBidAndNoCompetition(sfx);
+        Instance.prom.noBidAndNoCompetition.inc();
         break;
       case Scenario.noBidButCompetition:
         bid = this.computeNoBidButCompetition(sfx);
+        Instance.prom.noBidButCompetition.inc();
         break;
       case Scenario.beenOutbid:
         bid = this.computeBeenOutbid(sfx);
+        Instance.prom.beenOutBid.inc();
         break;
     }
     return bid;

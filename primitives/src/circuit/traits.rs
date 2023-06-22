@@ -1,11 +1,15 @@
 use crate::{circuit::CircuitStatus, xtx::LocalState, SpeedMode};
 use codec::{Decode, Encode};
-use frame_support::dispatch::{DispatchError, DispatchResult};
+use frame_support::dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo};
 use frame_system::{pallet_prelude::OriginFor, Config as ConfigSystem};
 use sp_std::{fmt::Debug, vec::Vec};
 
 use t3rn_sdk_primitives::signal::ExecutionSignal;
-use t3rn_types::{fsx::FullSideEffect, sfx::HardenedSideEffect};
+use t3rn_types::{
+    fsx::FullSideEffect,
+    sfx::{HardenedSideEffect, SideEffect},
+};
+
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalTrigger<T: ConfigSystem> {
     /// Id of the contract which generated the side effects
@@ -55,6 +59,14 @@ impl<T: ConfigSystem, Balance> LocalStateExecutionView<T, Balance> {
             steps_cnt,
         }
     }
+}
+
+pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
+    fn on_extrinsic_trigger(
+        origin: OriginFor<T>,
+        side_effects: Vec<SideEffect<T::AccountId, Balance>>,
+        speed_mode: SpeedMode,
+    ) -> DispatchResultWithPostInfo;
 }
 
 pub trait OnLocalTrigger<T: ConfigSystem, Balance> {

@@ -4,14 +4,15 @@ use crate::{to_local_block_number, Config, Pallet};
 use codec::Encode;
 
 use frame_system::pallet_prelude::OriginFor;
-pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
-
+use num_traits::Zero;
 use sp_runtime::{traits::Header, DispatchError};
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, vec};
 use t3rn_abi::types::Bytes;
+pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
 use t3rn_primitives::{
+    execution_source_to_option,
     light_client::{HeaderResult, HeightResult, InclusionReceipt},
-    GatewayVendor, SpeedMode,
+    ExecutionSource, GatewayVendor, SpeedMode,
 };
 
 pub type RococoInstance = ();
@@ -103,6 +104,42 @@ where
         }
     }
 
+    fn get_latest_finalized_header_precompile(&self) -> Bytes {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.get_latest_finalized_header_precompile(),
+            PalletInstance::Kusama(pallet) => pallet.get_latest_finalized_header_precompile(),
+            PalletInstance::Polkadot(pallet) => pallet.get_latest_finalized_header_precompile(),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn get_finalized_height_precompile(&self) -> T::BlockNumber {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Polkadot(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn get_rational_height_precompile(&self) -> T::BlockNumber {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Polkadot(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn get_fast_height_precompile(&self) -> T::BlockNumber {
+        match self {
+            PalletInstance::Rococo(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Kusama(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Polkadot(pallet) => pallet.get_finalized_height_precompile(),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
     fn initialize(
         &self,
         origin: OriginFor<T>,
@@ -147,31 +184,20 @@ where
         }
     }
 
-    fn header_speed_mode_satisfied(&self, header: Bytes, speed_mode: SpeedMode) -> bool {
-        match self {
-            PalletInstance::Rococo(pallet) =>
-                pallet.header_speed_mode_satisfied(header, speed_mode),
-            PalletInstance::Kusama(pallet) =>
-                pallet.header_speed_mode_satisfied(header, speed_mode),
-            PalletInstance::Polkadot(pallet) =>
-                pallet.header_speed_mode_satisfied(header, speed_mode),
-            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
-        }
-    }
-
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        source: Option<ExecutionSource>,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
-                pallet.verify_event_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_event_inclusion(gateway_id, speed_mode, source, message),
             PalletInstance::Kusama(pallet) =>
-                pallet.verify_event_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_event_inclusion(gateway_id, speed_mode, source, message),
             PalletInstance::Polkadot(pallet) =>
-                pallet.verify_event_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_event_inclusion(gateway_id, speed_mode, source, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -179,16 +205,16 @@ where
     fn verify_state_inclusion(
         &self,
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
-                pallet.verify_state_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_state_inclusion(gateway_id, speed_mode, message),
             PalletInstance::Kusama(pallet) =>
-                pallet.verify_state_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_state_inclusion(gateway_id, speed_mode, message),
             PalletInstance::Polkadot(pallet) =>
-                pallet.verify_state_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_state_inclusion(gateway_id, speed_mode, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -196,16 +222,68 @@ where
     fn verify_tx_inclusion(
         &self,
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match self {
             PalletInstance::Rococo(pallet) =>
-                pallet.verify_tx_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_tx_inclusion(gateway_id, speed_mode, message),
             PalletInstance::Kusama(pallet) =>
-                pallet.verify_tx_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_tx_inclusion(gateway_id, speed_mode, message),
             PalletInstance::Polkadot(pallet) =>
-                pallet.verify_tx_inclusion(gateway_id, message, submission_target_height),
+                pallet.verify_tx_inclusion(gateway_id, speed_mode, message),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn verify_event_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        source: ExecutionSource,
+        message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        match self {
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_event_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_event_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_event_inclusion_precompile(gateway_id, speed_mode, source, message),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn verify_state_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        match self {
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_state_inclusion_precompile(gateway_id, speed_mode, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_state_inclusion_precompile(gateway_id, speed_mode, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_state_inclusion_precompile(gateway_id, speed_mode, message),
+            PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
+        }
+    }
+
+    fn verify_tx_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        match self {
+            PalletInstance::Rococo(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, speed_mode, message),
+            PalletInstance::Kusama(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, speed_mode, message),
+            PalletInstance::Polkadot(pallet) =>
+                pallet.verify_tx_inclusion_precompile(gateway_id, speed_mode, message),
             PalletInstance::Phantom(_) => unreachable!("Phantom variant should not be used"),
         }
     }
@@ -236,13 +314,42 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         HeightResult::Height(local_number)
     }
 
+    fn get_latest_finalized_header_precompile(&self) -> Bytes {
+        match Pallet::<T, I>::get_best_block_hash() {
+            Some(header) => header.encode(),
+            None => vec![],
+        }
+    }
+
+    fn get_fast_height_precompile(&self) -> T::BlockNumber {
+        match self.get_finalized_height() {
+            HeightResult::Height(height) => height,
+            HeightResult::NotActive => T::BlockNumber::zero(),
+        }
+    }
+
+    fn get_rational_height_precompile(&self) -> T::BlockNumber {
+        match self.get_finalized_height() {
+            HeightResult::Height(height) => height,
+            HeightResult::NotActive => T::BlockNumber::zero(),
+        }
+    }
+
+    fn get_finalized_height_precompile(&self) -> T::BlockNumber {
+        match self.get_finalized_height() {
+            HeightResult::Height(height) => height,
+            HeightResult::NotActive => T::BlockNumber::zero(),
+        }
+    }
+
     fn get_latest_heartbeat(&self) -> Result<LightClientHeartbeat<T>, DispatchError> {
         let header = Pallet::<T, I>::best_finalized_map();
         let last_finalized_height = to_local_block_number::<T, I>(*header.number())?;
         Ok(LightClientHeartbeat {
             last_heartbeat: frame_system::Pallet::<T>::block_number(),
             last_finalized_height,
-            last_updated_height: last_finalized_height,
+            last_rational_height: last_finalized_height,
+            last_fast_height: last_finalized_height,
             is_halted: Pallet::<T, I>::is_halted(),
             ever_initialized: Pallet::<T, I>::ever_initialized(),
         })
@@ -273,49 +380,82 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         Ok(true)
     }
 
-    fn header_speed_mode_satisfied(
-        &self,
-        _including_header: Bytes,
-        _speed_mode: SpeedMode,
-    ) -> bool {
-        true
-    }
-
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],
+        // GrandpaFV does not support speed mode - it is always set to Finalized since it's fast
+        _speed_mode: SpeedMode,
+        source: Option<ExecutionSource>,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, submission_target_height)
+        // todo: handle ExecutionSource in grandpa
+        Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, source)
     }
 
     fn verify_state_inclusion(
         &self,
         _gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
         _message: Bytes,
-        _submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        unimplemented!("GrandpaFV::verify_storage_inclusion not implemented yet")
+        Err("GrandpaFV::verify_state_inclusion not implemented yet".into())
     }
 
     fn verify_tx_inclusion(
         &self,
         _gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
         _message: Bytes,
-        _submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        unimplemented!("GrandpaFV::verify_tx_inclusion not implemented yet")
+        Err("GrandpaFV::verify_tx_inclusion not implemented yet".into())
+    }
+
+    fn verify_event_inclusion_precompile(
+        &self,
+        gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        source: ExecutionSource,
+        message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        match Pallet::<T, I>::confirm_event_inclusion(
+            gateway_id,
+            message,
+            execution_source_to_option(source),
+        ) {
+            Ok(receipt) => Ok(receipt.message.encode()),
+            Err(err) => Err(err),
+        }
+    }
+
+    fn verify_state_inclusion_precompile(
+        &self,
+        _gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        _message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        Err("GrandpaFV::verify_state_inclusion not implemented yet".into())
+    }
+
+    fn verify_tx_inclusion_precompile(
+        &self,
+        _gateway_id: [u8; 4],
+        _speed_mode: SpeedMode,
+        _message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        Err("GrandpaFV::verify_tx_inclusion not implemented yet".into())
     }
 }
 
 #[cfg(all(feature = "testing"))]
+#[cfg(test)]
 pub mod grandpa_light_clients_test {
     use super::*;
     use codec::Encode;
 
-    use crate::{bridges::test_utils::authorities, mock::*, types::RelaychainRegistrationData};
-    use frame_support::{assert_ok, traits::OriginTrait};
+    use crate::{
+        bridges::test_utils::authorities, mock::*, types::RelaychainRegistrationData, Error,
+    };
+    use frame_support::{assert_err, assert_ok, traits::OriginTrait};
 
     use crate::{mock::TestRuntime, types::GrandpaHeaderData};
     use hex_literal::hex;
@@ -510,7 +650,8 @@ pub mod grandpa_light_clients_test {
                     LightClientHeartbeat {
                         last_heartbeat: 1,
                         last_finalized_height: 5,
-                        last_updated_height: 5,
+                        last_rational_height: 5,
+                        last_fast_height: 5,
                         is_halted: false,
                         ever_initialized: true
                     }
@@ -578,6 +719,316 @@ pub mod grandpa_light_clients_test {
         });
     }
 
+    #[test]
+    fn get_heights_for_polkadot_for_fast_justified_finalized_gives_same_results_as_precompile() {
+        stage_test_and_init_instance::<TestRuntime, PolkadotInstance>(
+            || {
+                let light_client = select_grandpa_light_client_instance::<TestRuntime, ()>(
+                    GatewayVendor::Polkadot,
+                )
+                .expect("GatewayVendor must be covered by select_grandpa_light_client_instance");
+
+                // Check the fast height
+                let height_fast = light_client.get_fast_height();
+                assert_eq!(height_fast, HeightResult::Height(0));
+                let height_fast_precompile = light_client.get_fast_height_precompile();
+                assert_eq!(height_fast_precompile, 0);
+
+                // Check the justified height
+                let height_justified = light_client.get_rational_height();
+                assert_eq!(height_justified, HeightResult::Height(0));
+                let height_justified_precompile = light_client.get_rational_height_precompile();
+                assert_eq!(height_justified_precompile, 0);
+
+                // Check the finalized height
+                let height_finalized = light_client.get_finalized_height();
+                assert_eq!(height_finalized, HeightResult::Height(0));
+                let height_finalized_precompile = light_client.get_finalized_height_precompile();
+                assert_eq!(height_finalized_precompile, 0);
+            },
+            GatewayVendor::Polkadot,
+            [0, 0, 0, 2],
+        );
+    }
+
+    #[test]
+    fn verify_tx_and_state_inclusion_for_kusama_are_not_active_yet() {
+        stage_test_and_init_instance::<TestRuntime, KusamaInstance>(
+            || {
+                let light_client =
+                    select_grandpa_light_client_instance::<TestRuntime, ()>(GatewayVendor::Kusama)
+                        .expect(
+                            "GatewayVendor must be covered by select_grandpa_light_client_instance",
+                        );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion_precompile(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion_precompile(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion_precompile(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        hex!("0000000000000000000000000000000000000000000000000000000000000000"),
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, KusamaInstance>::HeaderDataDecodingError
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        None,
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, KusamaInstance>::HeaderDataDecodingError
+                );
+            },
+            GatewayVendor::Kusama,
+            [0, 0, 0, 1],
+        );
+    }
+
+    #[test]
+    fn verify_tx_and_state_inclusion_for_rococo_are_not_active_yet() {
+        stage_test_and_init_instance::<TestRuntime, RococoInstance>(
+            || {
+                let light_client =
+                    select_grandpa_light_client_instance::<TestRuntime, ()>(GatewayVendor::Rococo)
+                        .expect(
+                            "GatewayVendor must be covered by select_grandpa_light_client_instance",
+                        );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion_precompile(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion_precompile(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion_precompile(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        hex!("0000000000000000000000000000000000000000000000000000000000000000"),
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, RococoInstance>::HeaderDataDecodingError
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        None,
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, RococoInstance>::HeaderDataDecodingError
+                );
+            },
+            GatewayVendor::Rococo,
+            [0, 0, 0, 0],
+        );
+    }
+
+    #[test]
+    fn verify_tx_and_state_inclusion_for_polkadot_are_not_active_yet() {
+        stage_test_and_init_instance::<TestRuntime, PolkadotInstance>(
+            || {
+                let light_client = select_grandpa_light_client_instance::<TestRuntime, ()>(
+                    GatewayVendor::Polkadot,
+                )
+                .expect("GatewayVendor must be covered by select_grandpa_light_client_instance");
+
+                assert_err!(
+                    light_client.verify_tx_inclusion(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion_precompile(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion_precompile(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion_precompile(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        hex!("0000000000000000000000000000000000000000000000000000000000000000"),
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, PolkadotInstance>::HeaderDataDecodingError
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        None,
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, PolkadotInstance>::HeaderDataDecodingError
+                );
+            },
+            GatewayVendor::Polkadot,
+            [0, 0, 0, 2],
+        );
+    }
+
+    #[test]
+    fn get_heights_for_kusama_for_fast_justified_finalized_gives_same_results_as_precompile() {
+        stage_test_and_init_instance::<TestRuntime, KusamaInstance>(
+            || {
+                let light_client =
+                    select_grandpa_light_client_instance::<TestRuntime, ()>(GatewayVendor::Kusama)
+                        .expect(
+                            "GatewayVendor must be covered by select_grandpa_light_client_instance",
+                        );
+
+                // Check the fast height
+                let height_fast = light_client.get_fast_height();
+                assert_eq!(height_fast, HeightResult::Height(0));
+                let height_fast_precompile = light_client.get_fast_height_precompile();
+                assert_eq!(height_fast_precompile, 0);
+
+                // Check the justified height
+                let height_justified = light_client.get_rational_height();
+                assert_eq!(height_justified, HeightResult::Height(0));
+                let height_justified_precompile = light_client.get_rational_height_precompile();
+                assert_eq!(height_justified_precompile, 0);
+
+                // Check the finalized height
+                let height_finalized = light_client.get_finalized_height();
+                assert_eq!(height_finalized, HeightResult::Height(0));
+                let height_finalized_precompile = light_client.get_finalized_height_precompile();
+                assert_eq!(height_finalized_precompile, 0);
+            },
+            GatewayVendor::Kusama,
+            [0, 0, 0, 1],
+        );
+    }
+
+    #[test]
+    fn get_heights_for_rococo_for_fast_justified_finalized_gives_same_results_as_precompile() {
+        stage_test_and_init_instance::<TestRuntime, RococoInstance>(
+            || {
+                let light_client =
+                    select_grandpa_light_client_instance::<TestRuntime, ()>(GatewayVendor::Rococo)
+                        .expect(
+                            "GatewayVendor must be covered by select_grandpa_light_client_instance",
+                        );
+
+                // Check the fast height
+                let height_fast = light_client.get_fast_height();
+                assert_eq!(height_fast, HeightResult::Height(0));
+                let height_fast_precompile = light_client.get_fast_height_precompile();
+                assert_eq!(height_fast_precompile, 0);
+
+                // Check the justified height
+                let height_justified = light_client.get_rational_height();
+                assert_eq!(height_justified, HeightResult::Height(0));
+                let height_justified_precompile = light_client.get_rational_height_precompile();
+                assert_eq!(height_justified_precompile, 0);
+
+                // Check the finalized height
+                let height_finalized = light_client.get_finalized_height();
+                assert_eq!(height_finalized, HeightResult::Height(0));
+                let height_finalized_precompile = light_client.get_finalized_height_precompile();
+                assert_eq!(height_finalized_precompile, 0);
+            },
+            GatewayVendor::Rococo,
+            [0, 0, 0, 0],
+        );
+    }
+
     // returns the last header in encoded form
     pub fn insert_headers_range_to_roco(headers_range: GrandpaHeaderData<TestHeader>) -> Bytes {
         let roco_light_client =
@@ -588,57 +1039,5 @@ pub mod grandpa_light_clients_test {
         assert_ok!(submit_res);
 
         headers_range.signed_header.hash().encode()
-    }
-
-    #[test]
-    fn given_rococo_instance_header_fast_speed_mode_is_satisfied_with_imported_header() {
-        stage_test_and_init_instance::<TestRuntime, RococoInstance>(
-            || {
-                let roco_light_client =
-                    grab_lc_instance_unsafe::<TestRuntime, RococoInstance>(GatewayVendor::Rococo);
-
-                let last_header = insert_headers_range_to_roco(produce_mock_headers_range(1, 2));
-
-                assert!(
-                    roco_light_client.header_speed_mode_satisfied(last_header, SpeedMode::Fast,)
-                );
-            },
-            GatewayVendor::Rococo,
-            [0, 0, 0, 0],
-        );
-    }
-
-    #[test]
-    fn given_rococo_instance_header_rational_speed_mode_is_satisfied_with_imported_header() {
-        stage_test_and_init_instance::<TestRuntime, RococoInstance>(
-            || {
-                let roco_light_client =
-                    grab_lc_instance_unsafe::<TestRuntime, RococoInstance>(GatewayVendor::Rococo);
-
-                let last_header = insert_headers_range_to_roco(produce_mock_headers_range(1, 2));
-
-                assert!(roco_light_client
-                    .header_speed_mode_satisfied(last_header, SpeedMode::Rational,));
-            },
-            GatewayVendor::Rococo,
-            [0, 0, 0, 0],
-        );
-    }
-
-    #[test]
-    fn given_rococo_instance_header_finalized_speed_mode_is_satisfied_with_imported_header() {
-        stage_test_and_init_instance::<TestRuntime, RococoInstance>(
-            || {
-                let roco_light_client =
-                    grab_lc_instance_unsafe::<TestRuntime, RococoInstance>(GatewayVendor::Rococo);
-
-                let last_header = insert_headers_range_to_roco(produce_mock_headers_range(1, 2));
-
-                assert!(roco_light_client
-                    .header_speed_mode_satisfied(last_header, SpeedMode::Finalized,));
-            },
-            GatewayVendor::Rococo,
-            [0, 0, 0, 0],
-        );
     }
 }

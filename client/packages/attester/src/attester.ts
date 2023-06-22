@@ -63,10 +63,10 @@ export class Attester {
         // Subscribe to the NewAttestationMessageHash event
         this.circuit.sdk?.client.query.system.events(async (events) => {
             logger.debug({ events_count: events.length }, `Received events`)
-            this.prometheus.eventsTotal.inc(events.length)
 
             const comittee = await this.getCommittee()
             this.checkIsInCommittee(comittee, this.keys.substrate.accountId)
+
             if (!this.isInCurrentCommittee) {
                 logger.debug(
                     'Not in current committee, not submitting attestation'
@@ -74,11 +74,15 @@ export class Attester {
                 return
             }
 
-            const attesterEvents = events.filter(
-                async (event) => event.section == 'attesters'
-            )
+            const attesterEvents = events
+                .toHuman()
+                .filter((event) => event.event.section == 'attesters')
 
-            this.prometheus.attestationsEvents.inc(attesterEvents.length)
+            // Update metrics
+            this.prometheus.eventsTotal.inc(events.length)
+            this.prometheus.attestationsInQueue.set(this.q.length())
+
+            logger.debug(this.q, 'Queue content')
 
             await this.processAttestationEvents(attesterEvents)
         })
@@ -91,10 +95,34 @@ export class Attester {
                 // Extract the phase, event and the event types
                 const { event } = record
 
+                if (record.event.section != 'attesters') {
+                    return
+                }
+
+                logger.debug(
+                    {
+                        event: event.method,
+                        data: event.data,
+                    },
+                    'Received attesters event'
+                )
+                this.prometheus.attestationsEvents.inc({ method: event.method })
+
                 switch (event.method) {
                     case 'NewAttestationMessageHash': {
                         const [targetId, messageHash, executionVendor] =
                             event.data
+
+                        this.prometheus.attestionsReceived.inc({
+                            targetId: targetId,
+                        })
+
+                        if (!this.isValidAttestation(messageHash, targetId))
+                            return
+
+                        this.prometheus.attestionsReceivedValid.inc({
+                            targetId: targetId,
+                        })
 
                         if (executionVendor.toString() == 'Substrate') {
                             logger.warn('Substrate not implemented')
@@ -115,25 +143,23 @@ export class Attester {
                         const targetId = event.data[0].toString()
                         const messageHashes = event.data[1]
 
-                        logger.info(
-                            {
-                                targetId: targetId,
-                                messageHashes: messageHashes.length,
-                            },
-                            `Received CurrentPendingAttestationBatches event`
-                        )
-                        this.prometheus.attestionsPending.set(
-                            {
-                                targetId: targetId,
-                            },
-                            messageHashes.length
-                        )
-
                         messageHashes.forEach(async (messageHash) => {
-                            // If attestation was already done, skip
-                            if (this.isAttestationDone(messageHash[1])) {
+                            this.prometheus.attestionsReceived.inc({
+                                targetId: targetId,
+                            })
+
+                            // If attestation is not valid, skip
+                            if (
+                                !this.isValidAttestation(
+                                    messageHash[1],
+                                    targetId
+                                )
+                            )
                                 return
-                            }
+
+                            this.prometheus.attestionsReceivedValid.inc({
+                                targetId: targetId,
+                            })
 
                             // Add all pending attestations to queue
                             this.q.push({
@@ -146,10 +172,17 @@ export class Attester {
                         break
                     }
                     case 'NewTargetProposed': {
-                        logger.info(`Received NewTargetProposed event`)
                         break
                     }
+
                     default: {
+                        logger.debug(
+                            {
+                                event: event,
+                                section: event.section,
+                            },
+                            'Received unhandled event'
+                        )
                         break
                     }
                 }
@@ -163,6 +196,13 @@ export class Attester {
         })
     }
 
+    private isValidAttestation(messageHash: string, targetId: string) {
+        return (
+            !this.isAttestationDone(messageHash) &&
+            this.isTargetAllowed(targetId)
+        )
+    }
+
     private isAttestationDone(messageHash: string) {
         return this.attestationsDone.includes(messageHash)
     }
@@ -172,20 +212,8 @@ export class Attester {
     }
 
     private async processAttestation(data: any) {
-        if (this.isAttestationDone(data.messageHash)) {
-            logger.debug('This messageHash has already been already signed')
-            return
-        }
-
-        if (!this.isInCurrentCommittee) {
-            logger.debug('Not in current committee, not submitting attestation')
-            return
-        }
-
-        if (!this.isTargetAllowed(data.targetId)) {
-            logger.debug('Target not allowed')
-            return
-        }
+        if (!this.isValidAttestation(data.messageHash, data.targetId)) return
+        if (!this.isInCurrentCommittee) return
 
         this.attestationsDone.push(data.messageHash)
         await this.submitAttestationEVM(

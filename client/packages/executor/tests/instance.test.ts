@@ -119,4 +119,6 @@ describe("Instance", () => {
       expect(logged).to.match(/hallo/);
     });
   });
+}).afterAll(() => {
+  process.exit(0);
 });

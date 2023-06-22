@@ -8,6 +8,7 @@
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
 
+use sp_runtime::traits::Zero;
 use sp_std::prelude::*;
 pub use t3rn_types::{
     gateway::GatewayABIConfig,
@@ -56,12 +57,14 @@ pub mod pallet {
         light_client::LightClientHeartbeat,
         portal::Portal,
         xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
-        Bytes, ChainId, ExecutionVendor, GatewayType, GatewayVendor, TokenInfo, TreasuryAccount,
-        TreasuryAccountProvider,
+        Bytes, ChainId, ExecutionVendor, GatewayActivity, GatewayType, GatewayVendor, TokenInfo,
+        TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
     use t3rn_types::{fsx::FullSideEffect, sfx::SecurityLvl};
+
+    pub const MAX_GATEWAY_OVERVIEW_RECORDS: u32 = 1000;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -168,6 +171,85 @@ pub mod pallet {
                 }
             })
             .unwrap_or(0)
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        pub fn process_overview(n: BlockNumberFor<T>) {
+            let mut all_overviews: Vec<GatewayActivity<T::BlockNumber>> = Vec::new();
+
+            for gateway in Self::fetch_full_gateway_records() {
+                let gateway_id = gateway.gateway_record.gateway_id;
+                // ToDo: Uncomment when eth2::turn_on implemented
+                if gateway.gateway_record.verification_vendor == GatewayVendor::Ethereum {
+                    continue
+                }
+
+                let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(gateway_id)
+                    .last()
+                    .cloned()
+                    .unwrap_or_else(|| GatewayActivity {
+                        gateway_id,
+                        reported_at: Zero::zero(),
+                        justified_height: Zero::zero(),
+                        finalized_height: Zero::zero(),
+                        updated_height: Zero::zero(),
+                        security_lvl: SecurityLvl::Optimistic,
+                        attestation_latency: None,
+                        is_active: false,
+                    });
+
+                let attestation_latency = T::AttestersRead::read_attestation_latency(&gateway_id);
+
+                let (justified_height, finalized_height, updated_height, security_lvl, is_active) =
+                    if let Ok(heartbeat) = T::Portal::get_latest_heartbeat(&gateway_id) {
+                        let security_lvl = match gateway.gateway_record.escrow_account {
+                            Some(_) => SecurityLvl::Escrow,
+                            None => SecurityLvl::Optimistic,
+                        };
+                        let is_active = !heartbeat.is_halted;
+                        (
+                            heartbeat.last_rational_height,
+                            heartbeat.last_finalized_height,
+                            heartbeat.last_fast_height,
+                            security_lvl,
+                            is_active,
+                        )
+                    } else {
+                        (
+                            last_active_activity.justified_height,
+                            last_active_activity.finalized_height,
+                            last_active_activity.updated_height,
+                            last_active_activity.security_lvl,
+                            false,
+                        )
+                    };
+
+                let activity = GatewayActivity {
+                    gateway_id,
+                    reported_at: n,
+                    justified_height,
+                    finalized_height,
+                    updated_height,
+                    attestation_latency,
+                    security_lvl,
+                    is_active,
+                };
+
+                // Add the new activity to the historic overview of the gateway
+                let mut historic_overview = GatewaysOverviewStoreHistory::<T>::get(gateway_id);
+                if historic_overview.len() == MAX_GATEWAY_OVERVIEW_RECORDS as usize {
+                    let _ = historic_overview.remove(0);
+                }
+                historic_overview.push(activity.clone());
+                GatewaysOverviewStoreHistory::<T>::insert(gateway_id, historic_overview);
+
+                // Add the new activity to the general overview
+                all_overviews.push(activity);
+            }
+
+            // Update the general overview
+            GatewaysOverviewStore::<T>::put(all_overviews);
         }
     }
 
@@ -286,6 +368,8 @@ pub mod pallet {
         GatewayRecordAlreadyExists,
         /// XDNS Record not found
         XdnsRecordNotFound,
+        /// Escrow account not found
+        EscrowAccountNotFound,
         /// Stored token has already been added before
         TokenRecordAlreadyExists,
         /// XDNS Token not found in assets overlay
@@ -379,6 +463,21 @@ pub mod pallet {
     pub type AssetCostEstimatesInNative<T: Config> =
         StorageMap<_, Identity, AssetId, BalanceOf<T>, ValueQuery>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn gateways_overview)]
+    pub type GatewaysOverviewStore<T: Config> =
+        StorageValue<_, Vec<GatewayActivity<T::BlockNumber>>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn gateways_overview_history)]
+    pub type GatewaysOverviewStoreHistory<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        TargetId,                             // Gateway Id
+        Vec<GatewayActivity<T::BlockNumber>>, // Activity
+        ValueQuery,
+    >;
+
     // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
@@ -403,31 +502,28 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
-                let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
+                let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
                     .unwrap_or("invalid utf8 4b sfx id format");
-                log::info!("XDNS -- on-genesis: add standard SFX ABI: {:?}", sfx_4b_str);
                 <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
             }
 
             for gateway_record in self.known_gateway_records.clone() {
-                <Gateways<T>>::insert(gateway_record.gateway_id, gateway_record.clone());
-                // Populate standard side effect ABI registry
-                for (sfx_4b_id, memo_prefix) in gateway_record.allowed_side_effects.iter() {
-                    match <StandardSFXABIs<T>>::get(sfx_4b_id) {
-                        Some(mut abi) => {
-                            abi.maybe_prefix_memo = *memo_prefix;
-                            <SFXABIRegistry<T>>::insert(gateway_record.gateway_id, sfx_4b_id, abi)
-                        },
-                        None => {
-                            let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
-                                .unwrap_or("invalid utf8 4b sfx id format");
-                            log::error!(
-                                "XDNS -- on-genesis: standard SFX ABI not found: {:?}",
-                                sfx_4b_str
-                            )
-                        },
-                    }
-                }
+                Pallet::<T>::override_gateway(
+                    gateway_record.gateway_id,
+                    gateway_record.verification_vendor,
+                    gateway_record.execution_vendor,
+                    gateway_record.codec,
+                    gateway_record.registrant,
+                    gateway_record.escrow_account,
+                    gateway_record.allowed_side_effects,
+                )
+                .map_err(|e| {
+                    log::error!(
+                        "XDNS -- on-genesis: failed to add gateway via override_gateway: {:?}",
+                        e
+                    );
+                })
+                .ok();
             }
         }
     }
@@ -499,6 +595,10 @@ pub mod pallet {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
             }
 
+            if <AllTokenIds<T>>::get().contains(&token_id) {
+                return Err(Error::<T>::TokenRecordAlreadyExists.into())
+            }
+
             let admin: T::AccountId = ensure_signed_or_root(origin.clone())?.unwrap_or(
                 T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
             );
@@ -515,6 +615,8 @@ pub mod pallet {
 
             Self::link_token_to_gateway(token_id, gateway_id, token_props)?;
 
+            <AllTokenIds<T>>::append(token_id);
+
             Self::deposit_event(Event::<T>::NewTokenAssetRegistered(token_id, gateway_id));
 
             Ok(())
@@ -527,7 +629,8 @@ pub mod pallet {
             token_props: TokenInfo,
         ) -> DispatchResult {
             // fetch record and ensure it exists
-            let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
+            let _record =
+                <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
 
             // early exit if record already exists in storage
             if <Tokens<T>>::contains_key(token_id, gateway_id) {
@@ -608,7 +711,15 @@ pub mod pallet {
                         abi.maybe_prefix_memo = *maybe_event_memo_prefix;
                         <SFXABIRegistry<T>>::insert(gateway_id, sfx_4b_id, abi)
                     },
-                    None => return Err(Error::<T>::SideEffectABINotFound.into()),
+                    None => {
+                        let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
+                            .unwrap_or("invalid utf8 4b sfx id format");
+                        log::error!(
+                            "ABI not found for {:?}; override_gateway failed.",
+                            sfx_4b_id
+                        );
+                        return Err(Error::<T>::SideEffectABINotFound.into())
+                    },
                 }
             }
             <Gateways<T>>::insert(
@@ -738,7 +849,10 @@ pub mod pallet {
 
         fn get_escrow_account(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
             match <Gateways<T>>::get(chain_id) {
-                Some(rec) => Ok(rec.escrow_account.encode()),
+                Some(rec) => match rec.escrow_account {
+                    Some(account) => Ok(account.encode()),
+                    None => Err(Error::<T>::EscrowAccountNotFound.into()),
+                },
                 None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
         }
@@ -755,6 +869,17 @@ pub mod pallet {
                     }
                 })
                 .collect()
+        }
+
+        fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<T::BlockNumber>> {
+            <GatewaysOverviewStore<T>>::get()
+                .iter()
+                .find(|activity| activity.gateway_id == gateway_id)
+                .cloned()
+        }
+
+        fn read_last_activity_overview() -> Vec<GatewayActivity<T::BlockNumber>> {
+            <GatewaysOverviewStore<T>>::get()
         }
 
         fn verify_active(

@@ -30,7 +30,6 @@ use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
-    ensure,
     traits::{Currency, ExistenceRequirement::AllowDeath, Get},
     weights::Weight,
     RuntimeDebug,
@@ -119,7 +118,9 @@ pub mod pallet {
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         attesters::AttestersWriteApi,
-        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX},
+        circuit::{
+            CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX,
+        },
         portal::Portal,
         xdns::Xdns,
         SpeedMode,
@@ -449,6 +450,16 @@ pub mod pallet {
             XExecSignals::<T>::get(xtx_id)
                 .map(|xtx| xtx.status)
                 .ok_or(Error::<T>::XtxNotFound.into())
+        }
+    }
+
+    impl<T: Config> CircuitSubmitAPI<T, BalanceOf<T>> for Pallet<T> {
+        fn on_extrinsic_trigger(
+            origin: OriginFor<T>,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            Self::on_extrinsic_trigger(origin, side_effects, speed_mode)
         }
     }
 
@@ -858,6 +869,7 @@ pub mod pallet {
         ApplyTriggeredWithUnexpectedStatus,
         BidderNotEnoughBalance,
         RequesterNotEnoughBalance,
+        AssetsFailedToWithdraw,
         SanityAfterCreatingSFXDepositsFailed,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
@@ -1042,6 +1054,9 @@ impl<T: Config> Pallet<T> {
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
             let security_lvl = determine_security_lvl(gateway_type);
+
+            // ToDo: Verify each requested asset is supported by the gateway
+
             // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
             // let _last_update = <T as Config>::Xdns::verify_active(
             //     &sfx.target,
@@ -1137,32 +1152,20 @@ impl<T: Config> Pallet<T> {
                 )),
         };
         log::debug!("Order confirmed!");
+        let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
         #[cfg(not(feature = "test-skip-verification"))]
         let inclusion_receipt = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
+            xtx.speed_mode,
+            None, //ToDo - load pallet index or contract address here
             confirmation.inclusion_data.clone(),
-            Some(fsx.submission_target_height), // this enforces the submission height check!
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
         log::debug!("Inclusion confirmed!");
-
-        let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
-
-        #[cfg(not(feature = "test-skip-verification"))]
-        ensure!(
-            T::Portal::header_speed_mode_satisfied(
-                fsx.input.target,
-                inclusion_receipt.including_header.clone(),
-                xtx.speed_mode,
-            )?,
-            "Speed mode not satisfied"
-        );
-
-        log::debug!("Speed mode satisfied!");
 
         // ToDo: handle misbehavior
         #[cfg(not(feature = "test-skip-verification"))]
@@ -1182,6 +1185,13 @@ impl<T: Config> Pallet<T> {
             including_header: [0u8; 32].encode(),
             height: T::BlockNumber::zero(),
         }; // Empty encoded_event_params for testing purposes
+
+        #[cfg(not(feature = "test-skip-verification"))]
+        if inclusion_receipt.height > fsx.submission_target_height {
+            return Err(DispatchError::Other(
+                "SideEffect confirmation of inclusion failed - inclusion height is higher than target",
+            ))
+        }
 
         fsx.input.confirm(
             sfx_abi,

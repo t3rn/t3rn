@@ -4,6 +4,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.39.4-rc.0] - 2023-07-14
+### :bug: Bug Fixes
+- [`2fa3304`](https://github.com/t3rn/t3rn/commit/2fa33046c256c43b62cab43d3877e721a1579aeb) - current committee transitions to next committee correctly *(PR [#1165](https://github.com/t3rn/t3rn/pull/1165) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.39.3-rc.0] - 2023-07-14
+### :wrench: Chores
+- [`2a4fd88`](https://github.com/t3rn/t3rn/commit/2a4fd881d61245a7dc10f3441b3eb168919c7f43) - skip t0rn-release only when commit starts with  build(release) *(PR [#1134](https://github.com/t3rn/t3rn/pull/1134) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.39.0-rc.0] - 2023-07-13
+### :sparkles: New Features
+- [`65030ad`](https://github.com/t3rn/t3rn/commit/65030ad8e60ff7c0682de9957e867258e3eb5a94) - add vacuum pallet to enhance transfer assets SFX path *(PR [#1132](https://github.com/t3rn/t3rn/pull/1132) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.38.2-rc.0] - 2023-07-11
+### :wrench: Chores
+- [`fd40dba`](https://github.com/t3rn/t3rn/commit/fd40dba403e9a18f6e17084f347942de5b71b393) - empty PR template *(PR [#1148](https://github.com/t3rn/t3rn/pull/1148) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.38.1-rc.0] - 2023-07-10
+### :bug: Bug Fixes
+- [`a88c4ad`](https://github.com/t3rn/t3rn/commit/a88c4ad00122f28b8a438861c7800c4ad754d302) - filter modification *(PR [#1135](https://github.com/t3rn/t3rn/pull/1135) by [@palozano](https://github.com/palozano))*
+
+
+## [v1.38.0-rc.0] - 2023-07-10
+### :sparkles: New Features
+- [`af3fd73`](https://github.com/t3rn/t3rn/commit/af3fd731f9ce2755b300799468ba457d685cf481) - executor send batches to sepl *(PR [#1087](https://github.com/t3rn/t3rn/pull/1087) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.37.0-rc.0] - 2023-07-05
+### :sparkles: New Features
+- [`213bce9`](https://github.com/t3rn/t3rn/commit/213bce9ec42f41c8d27f5523704ef045c973c0b8) - include smart contract targets in source verification  *(PR [#1065](https://github.com/t3rn/t3rn/pull/1065) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :recycle: Refactors
+- [`e9ab115`](https://github.com/t3rn/t3rn/commit/e9ab115255aaed6ec9a803148e80a35abd8506f3) - check lock files *(PR [#1118](https://github.com/t3rn/t3rn/pull/1118) by [@ahkohd](https://github.com/ahkohd))*
+
+### :wrench: Chores
+- [`257019c`](https://github.com/t3rn/t3rn/commit/257019c80ade92770afd4e384af3473f18daf15e) - only one package manager to rule them all [skip release] *(PR [#1116](https://github.com/t3rn/t3rn/pull/1116) by [@palozano](https://github.com/palozano))*
+
+
+## [v1.36.4-rc.0] - 2023-06-28
+### :bug: Bug Fixes
+- [`60d2017`](https://github.com/t3rn/t3rn/commit/60d2017fe52407ba1e0098ec8d51bb9ac74ee7d3) - update SDK metadata *(PR [#1095](https://github.com/t3rn/t3rn/pull/1095) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`5f76d56`](https://github.com/t3rn/t3rn/commit/5f76d56c4146bd1925190f544e13220d0c4c6cba) - **grandpa-ranger**: types/SDK changes should trigger deploy *(PR [#1099](https://github.com/t3rn/t3rn/pull/1099) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.36.2-rc.0] - 2023-06-26
+### :bug: Bug Fixes
+- [`90bee60`](https://github.com/t3rn/t3rn/commit/90bee60e22a53cbc81c8daffeca9a897692611ad) - deploy phase should not be run by dependabot *(PR [#1085](https://github.com/t3rn/t3rn/pull/1085) by [@3h4x](https://github.com/3h4x))*
+- [`9d6b2e3`](https://github.com/t3rn/t3rn/commit/9d6b2e3ecb5a04005158ce4543fe911c78a2cf99) - executor deploy step *(PR [#1086](https://github.com/t3rn/t3rn/pull/1086) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.36.0-rc.0] - 2023-06-21
+### :sparkles: New Features
+- [`e9e52ce`](https://github.com/t3rn/t3rn/commit/e9e52ce1b772da87348fe14b65e8a514ad9e732c) - add telemetry to executor *(PR [#1051](https://github.com/t3rn/t3rn/pull/1051) by [@ahkohd](https://github.com/ahkohd))*
+- [`d3672dd`](https://github.com/t3rn/t3rn/commit/d3672dd762cb1e7bcf7de958993e3d2caaad5b93) - process gateways activity overview in XDNS *(PR [#1054](https://github.com/t3rn/t3rn/pull/1054) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :bug: Bug Fixes
+- [`0f711aa`](https://github.com/t3rn/t3rn/commit/0f711aaeb5a5cc0779f5f8f5e9ab49bffa1e5895) - log all attester events and update metrics *(PR [#1078](https://github.com/t3rn/t3rn/pull/1078) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.35.0-rc.0] - 2023-06-20
+### :sparkles: New Features
+- [`3ce9ff9`](https://github.com/t3rn/t3rn/commit/3ce9ff9c7e3aa05c712a7ba85b1e8631cd9095cb) - added attestationsDone array *(PR [#1075](https://github.com/t3rn/t3rn/pull/1075) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`e09d383`](https://github.com/t3rn/t3rn/commit/e09d383ed0e1646c48f0726e3e66687f07fdbf5a) - update CODEOWNERS and remove obsoleted files *(PR [#1076](https://github.com/t3rn/t3rn/pull/1076) by [@3h4x](https://github.com/3h4x))*
+- [`2466847`](https://github.com/t3rn/t3rn/commit/2466847b54e56c0eb9415630e07b91618cacb81d) - move pr template to t3rn repo *(PR [#1077](https://github.com/t3rn/t3rn/pull/1077) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.34.2-rc.0] - 2023-06-19
 ### :bug: Bug Fixes
 - [`85d9a26`](https://github.com/t3rn/t3rn/commit/85d9a26d3bd461348fdc0543285e26cf01b6127b) - remove unused labeled metric  *(PR [#1073](https://github.com/t3rn/t3rn/pull/1073) by [@petscheit](https://github.com/petscheit))*
@@ -1269,3 +1342,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.34.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.33.1-rc.0...v1.34.0-rc.0
 [v1.34.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.0-rc.0...v1.34.1-rc.0
 [v1.34.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.1-rc.0...v1.34.2-rc.0
+[v1.35.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.2-rc.0...v1.35.0-rc.0
+[v1.36.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.35.0-rc.0...v1.36.0-rc.0
+[v1.36.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.1-rc.0...v1.36.2-rc.0
+[v1.36.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.3-rc.0...v1.36.4-rc.0
+[v1.37.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.5-rc.0...v1.37.0-rc.0
+[v1.38.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.37.1-rc.0...v1.38.0-rc.0
+[v1.38.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.0-rc.0...v1.38.1-rc.0
+[v1.38.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.1-rc.0...v1.38.2-rc.0
+[v1.39.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.5-rc.0...v1.39.0-rc.0
+[v1.39.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.2-rc.0...v1.39.3-rc.0
+[v1.39.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.3-rc.0...v1.39.4-rc.0

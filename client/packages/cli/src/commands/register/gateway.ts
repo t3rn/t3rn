@@ -33,6 +33,8 @@ export const handleRegisterGateway = async (
     log("ERROR", `Gateway ID ${gatewayId} not found in config file`)
     process.exit(1)
   }
+  console.log("Found gateway!", foundGateway)
+
   spinner.text = `Registering ${foundGateway.name} gateway...`
   spinner.start()
 
@@ -72,6 +74,13 @@ const registerGateway = async (
 
   try {
     const registrationData = await getRegistrationData(circuit, gatewayData)
+
+    // need to call xdns.rebootSelfGateway to add 0x03030303
+    await sdk.circuit.tx.signAndSendSafe(
+      sdk.circuit.tx.createSudo(
+        circuit.tx.xdns.rebootSelfGateway(verificationVendor)
+      )
+    )
 
     if (!registrationData) {
       throw new Error(`${gatewayData.name} gateway registration failed!`)

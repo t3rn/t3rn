@@ -1,13 +1,13 @@
 import "@polkadot/api-augment";
+import * as dotenv from "dotenv";
 import { Sdk } from "@t3rn/sdk";
-import { ApiPromise, Keyring } from "@polkadot/api";
+import { Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { PathLike, existsSync } from "fs";
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { homedir } from "os";
-require("dotenv").config();
 import "@t3rn/types";
 import {
   SubstrateRelayer,
@@ -38,11 +38,14 @@ import { CircuitRelayer } from "./circuit/relayer";
 import * as defaultConfig from "../config.json";
 import { problySubstrateSeed, createLogger } from "./utils";
 import { Logger } from "pino";
+import { Prometheus } from "./prometheus";
+
+dotenv.config();
 
 /** An executor instance. */
 class Instance {
   name: string;
-  circuitClient: ApiPromise;
+  circuitClient: Sdk["client"];
   executionManager: ExecutionManager;
   sdk: Sdk;
   signer: KeyringPair;
@@ -52,6 +55,9 @@ class Instance {
   logsDir: undefined | PathLike;
   configFile: PathLike;
   stateFile: PathLike;
+
+  // A Prometheus instance shared across all instances
+  static prom: Prometheus;
 
   /**
    * Initializes an executor instance.
@@ -67,6 +73,12 @@ class Instance {
       : undefined;
     this.stateFile = join(this.baseDir.toString(), "state.json");
     this.configFile = join(this.baseDir.toString(), "config.json");
+
+    if (Instance.prom) {
+      Instance.prom.stopServer();
+    }
+
+    Instance.prom = new Prometheus();
   }
 
   /**
@@ -76,16 +88,23 @@ class Instance {
     await this.configureLogging();
     await this.loadConfig();
     await cryptoWaitReady();
-    this.signer = new Keyring({ type: "sr25519" })
-      // loadConfig asserts that config.circuit.signerKey is set
-      .addFromSeed(
-        Uint8Array.from(
-          Buffer.from(this.config.circuit.signerKey!.slice(2), "hex")
-        )
-      ) as KeyringPair;
+
+    if (!this.config.circuit.signerKey) {
+      throw Error("Instance::setup: missing circuit signer key");
+    }
+
+    this.signer = new Keyring({ type: "sr25519" }).addFromSeed(
+      Uint8Array.from(
+        Buffer.from(this.config.circuit.signerKey.slice(2), "hex")
+      )
+    );
     this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
-    // @ts-ignore
     this.circuitClient = await this.sdk.init();
+    this.circuitClient.on("disconnected", () => {
+      Instance.prom.circuitDisconnects.inc({
+        endpoint: this.config.circuit.rpc,
+      });
+    });
     this.executionManager = new ExecutionManager(
       this.circuitClient,
       this.sdk,
@@ -131,7 +150,7 @@ class Instance {
     if (!config.circuit.signerKey?.startsWith("0x")) {
       config.circuit.signerKey = process.env.CIRCUIT_SIGNER_KEY as string;
     }
-    config.gateways.forEach((gateway) => {
+    config.gateways.forEach((gateway: Gateway) => {
       if (
         gateway.signerKey !== undefined &&
         !problySubstrateSeed(gateway.signerKey)
@@ -145,7 +164,9 @@ class Instance {
       throw Error("Instance::loadConfig: missing circuit signer key");
     }
     if (
-      !config.gateways.some((gateway) => problySubstrateSeed(gateway.signerKey))
+      !config.gateways.some((gateway: Gateway) =>
+        problySubstrateSeed(gateway.signerKey as string)
+      )
     ) {
       throw Error("Instance::loadConfig: missing gateway signer key");
     }
@@ -193,15 +214,19 @@ class Instance {
 
   /** Registers a state listener that persists to disk. */
   private registerStateListener(): Instance {
-    const self = this;
-    const _proxy = new Proxy(this.executionManager.queue, {
-      set(target, prop, receiver) {
+    const set =
+      (instance: Instance) =>
+      (target: Queue, prop: string | symbol, receiver: never) => {
         // wait until reflected, then persist state
-        setTimeout(() => self.persistState(), 100);
+        setTimeout((instance) => instance.persistState(), 100, instance);
         return Reflect.set(target, prop, receiver);
-      },
+      };
+
+    new Proxy(this.executionManager.queue, {
+      set: set(this),
     });
-    return self;
+
+    return this;
   }
 
   private async persistState() {

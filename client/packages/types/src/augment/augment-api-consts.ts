@@ -7,7 +7,7 @@ import '@polkadot/api-base/types/consts';
 
 import type { ApiTypes, AugmentedConst } from '@polkadot/api-base/types';
 import type { Option, U8aFixed, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
-import type { AccountId32, Permill } from '@polkadot/types/interfaces/runtime';
+import type { AccountId32, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type { FrameSupportPalletId, FrameSupportWeightsRuntimeDbWeight, FrameSystemLimitsBlockLength, FrameSystemLimitsBlockWeights, PalletContractsSchedule, SpVersionRuntimeVersion } from '@polkadot/types/lookup';
 
 export type __AugmentedConst<ApiType extends ApiTypes> = AugmentedConst<ApiType>;
@@ -167,11 +167,79 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       schedule: PalletContractsSchedule & AugmentedConst<ApiType>;
     };
-    grandpa: {
+    escrowTreasury: {
       /**
-       * Max Authorities in use
+       * Percentage of spare funds (if any) that are burnt per spend period.
        **/
-      maxAuthorities: u32 & AugmentedConst<ApiType>;
+      burn: Permill & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of approvals that can wait in the spending queue.
+       * 
+       * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
+       **/
+      maxApprovals: u32 & AugmentedConst<ApiType>;
+      /**
+       * The treasury's pallet id, used for deriving its sovereign account ID.
+       **/
+      palletId: FrameSupportPalletId & AugmentedConst<ApiType>;
+      /**
+       * Fraction of a proposal's value that should be bonded in order to place the proposal.
+       * An accepted proposal gets these back. A rejected proposal does not.
+       **/
+      proposalBond: Permill & AugmentedConst<ApiType>;
+      /**
+       * Maximum amount of funds that should be placed in a deposit for making a proposal.
+       **/
+      proposalBondMaximum: Option<u128> & AugmentedConst<ApiType>;
+      /**
+       * Minimum amount of funds that should be placed in a deposit for making a proposal.
+       **/
+      proposalBondMinimum: u128 & AugmentedConst<ApiType>;
+      /**
+       * Period between successive spends.
+       **/
+      spendPeriod: u32 & AugmentedConst<ApiType>;
+    };
+    ethereumBridge: {
+      committeeMajorityThreshold: u32 & AugmentedConst<ApiType>;
+      epochsPerSyncCommitteePeriod: u32 & AugmentedConst<ApiType>;
+      genesisValidatorRoot: U8aFixed & AugmentedConst<ApiType>;
+      headersToStore: u32 & AugmentedConst<ApiType>;
+      slotsPerEpoch: u32 & AugmentedConst<ApiType>;
+      syncCommitteeSize: u32 & AugmentedConst<ApiType>;
+    };
+    feeTreasury: {
+      /**
+       * Percentage of spare funds (if any) that are burnt per spend period.
+       **/
+      burn: Permill & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of approvals that can wait in the spending queue.
+       * 
+       * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
+       **/
+      maxApprovals: u32 & AugmentedConst<ApiType>;
+      /**
+       * The treasury's pallet id, used for deriving its sovereign account ID.
+       **/
+      palletId: FrameSupportPalletId & AugmentedConst<ApiType>;
+      /**
+       * Fraction of a proposal's value that should be bonded in order to place the proposal.
+       * An accepted proposal gets these back. A rejected proposal does not.
+       **/
+      proposalBond: Permill & AugmentedConst<ApiType>;
+      /**
+       * Maximum amount of funds that should be placed in a deposit for making a proposal.
+       **/
+      proposalBondMaximum: Option<u128> & AugmentedConst<ApiType>;
+      /**
+       * Minimum amount of funds that should be placed in a deposit for making a proposal.
+       **/
+      proposalBondMinimum: u128 & AugmentedConst<ApiType>;
+      /**
+       * Period between successive spends.
+       **/
+      spendPeriod: u32 & AugmentedConst<ApiType>;
     };
     identity: {
       /**
@@ -213,6 +281,39 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       headersToStore: u32 & AugmentedConst<ApiType>;
     };
+    parachainTreasury: {
+      /**
+       * Percentage of spare funds (if any) that are burnt per spend period.
+       **/
+      burn: Permill & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of approvals that can wait in the spending queue.
+       * 
+       * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
+       **/
+      maxApprovals: u32 & AugmentedConst<ApiType>;
+      /**
+       * The treasury's pallet id, used for deriving its sovereign account ID.
+       **/
+      palletId: FrameSupportPalletId & AugmentedConst<ApiType>;
+      /**
+       * Fraction of a proposal's value that should be bonded in order to place the proposal.
+       * An accepted proposal gets these back. A rejected proposal does not.
+       **/
+      proposalBond: Permill & AugmentedConst<ApiType>;
+      /**
+       * Maximum amount of funds that should be placed in a deposit for making a proposal.
+       **/
+      proposalBondMaximum: Option<u128> & AugmentedConst<ApiType>;
+      /**
+       * Minimum amount of funds that should be placed in a deposit for making a proposal.
+       **/
+      proposalBondMinimum: u128 & AugmentedConst<ApiType>;
+      /**
+       * Period between successive spends.
+       **/
+      spendPeriod: u32 & AugmentedConst<ApiType>;
+    };
     polkadotBridge: {
       /**
        * Maximal number of finalized headers to keep in the storage.
@@ -223,6 +324,50 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       headersToStore: u32 & AugmentedConst<ApiType>;
     };
+    rewards: {
+      /**
+       * The attester's portion of the total inflation, expressed as a Perbill.
+       * 
+       * Default: 1.1% (11 / 100)
+       **/
+      attesterInflation: Perbill & AugmentedConst<ApiType>;
+      /**
+       * The collator's portion of the total inflation, expressed as a Perbill.
+       * 
+       * Default: 0.5% (5 / 100)
+       **/
+      collatorInflation: Perbill & AugmentedConst<ApiType>;
+      /**
+       * The executor's portion of the total inflation, expressed as a Perbill.
+       * 
+       * Default: 0.8% (8 / 100)
+       **/
+      executorInflation: Perbill & AugmentedConst<ApiType>;
+      /**
+       * The number of blocks between inflation distribution.
+       * 
+       * Default: 100_800 (assuming one distribution per two weeks)
+       **/
+      inflationDistributionPeriod: u32 & AugmentedConst<ApiType>;
+      /**
+       * The number of blocks in one year.
+       * 
+       * Default: 2_628_000 (assuming 12s block time)
+       **/
+      oneYear: u32 & AugmentedConst<ApiType>;
+      /**
+       * The total inflation per year, expressed as a Perbill.
+       * 
+       * Default: 4.4% (44_000_000 / 1_000_000_000)
+       **/
+      totalInflation: Perbill & AugmentedConst<ApiType>;
+      /**
+       * The treasury's portion of the total inflation, expressed as a Perbill.
+       * 
+       * Default: 2% (20 / 100)
+       **/
+      treasuryInflation: Perbill & AugmentedConst<ApiType>;
+    };
     rococoBridge: {
       /**
        * Maximal number of finalized headers to keep in the storage.
@@ -232,6 +377,51 @@ declare module '@polkadot/api-base/types/consts' {
        * in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
        **/
       headersToStore: u32 & AugmentedConst<ApiType>;
+    };
+    scheduler: {
+      /**
+       * The maximum weight that may be scheduled per block for any dispatchables of less
+       * priority than `schedule::HARD_DEADLINE`.
+       **/
+      maximumWeight: u64 & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of scheduled calls in the queue for a single block.
+       * Not strictly enforced, but used for weight estimation.
+       **/
+      maxScheduledPerBlock: u32 & AugmentedConst<ApiType>;
+    };
+    slashTreasury: {
+      /**
+       * Percentage of spare funds (if any) that are burnt per spend period.
+       **/
+      burn: Permill & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of approvals that can wait in the spending queue.
+       * 
+       * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
+       **/
+      maxApprovals: u32 & AugmentedConst<ApiType>;
+      /**
+       * The treasury's pallet id, used for deriving its sovereign account ID.
+       **/
+      palletId: FrameSupportPalletId & AugmentedConst<ApiType>;
+      /**
+       * Fraction of a proposal's value that should be bonded in order to place the proposal.
+       * An accepted proposal gets these back. A rejected proposal does not.
+       **/
+      proposalBond: Permill & AugmentedConst<ApiType>;
+      /**
+       * Maximum amount of funds that should be placed in a deposit for making a proposal.
+       **/
+      proposalBondMaximum: Option<u128> & AugmentedConst<ApiType>;
+      /**
+       * Minimum amount of funds that should be placed in a deposit for making a proposal.
+       **/
+      proposalBondMinimum: u128 & AugmentedConst<ApiType>;
+      /**
+       * Period between successive spends.
+       **/
+      spendPeriod: u32 & AugmentedConst<ApiType>;
     };
     system: {
       /**
@@ -346,6 +536,15 @@ declare module '@polkadot/api-base/types/consts' {
        * The limit on the number of batched calls.
        **/
       batchedCallsLimit: u32 & AugmentedConst<ApiType>;
+    };
+    xbiPortal: {
+      checkInLimit: u32 & AugmentedConst<ApiType>;
+      checkInterval: u32 & AugmentedConst<ApiType>;
+      checkOutLimit: u32 & AugmentedConst<ApiType>;
+      expectedBlockTimeMs: u32 & AugmentedConst<ApiType>;
+      notificationWeight: u64 & AugmentedConst<ApiType>;
+      parachainId: u32 & AugmentedConst<ApiType>;
+      timeoutChecksLimit: u32 & AugmentedConst<ApiType>;
     };
   } // AugmentedConsts
 } // declare module

@@ -10,14 +10,14 @@ export const transact = async () => {
 	const { sdk, signer } = await setupSdk()
 	const abi = getAbi();
 
-	const ballot = new Contract(abi, "0xb217046b34543c709f60ba4c4d9d33d787ed616e");
-	const tx = ballot.methods.vote(0);
+	const snorkle = new Contract(abi, "0x55e7925b1015c13cd2c4340d5db1949e6679dadf");
+	const tx = snorkle.methods.getHeight();
 
 	const txT3rn = sdk.client.tx.evm.call(
-		"0xb217046b34543c709f60ba4c4d9d33d787ed616e",
+		"0x55e7925b1015c13cd2c4340d5db1949e6679dadf",
 		tx.encodeABI(),
 		"0",
-		"500000",
+		"50000000",
 		"100",
 		null,
 		null,

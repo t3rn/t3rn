@@ -5,3 +5,4 @@
 **/package-lock.json    binary linguist-generated
 **/Cargo.lock binary linguist-generated
 **/pnpm-lock.yaml linguist-generated
+**/*.abi.json linguist-generated

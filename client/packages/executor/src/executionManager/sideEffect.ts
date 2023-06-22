@@ -1,5 +1,5 @@
 import "@t3rn/types";
-// @ts-ignore
+// @ts-ignore - Typescript does not know about this type
 import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
 import { TextDecoder } from "util";
 import {
@@ -16,6 +16,11 @@ import { EventEmitter } from "events";
 import { floatToBn, toFloat } from "@t3rn/sdk/dist/circuit";
 import { bnToFloat } from "@t3rn/sdk/dist/converters/amounts";
 import { InclusionProof } from "../gateways/types";
+import { Instance } from "../index";
+import { Logger } from "pino";
+import { Subscription } from "rxjs";
+import { Codec } from "@polkadot/types/types";
+import { BN } from "@polkadot/util";
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];
@@ -63,7 +68,10 @@ export enum TxStatus {
  */
 export type Notification = {
   type: NotificationType;
-  payload: any;
+  payload: {
+    sfxId: string;
+    bidAmount: number | BN;
+  };
 };
 
 /**
@@ -88,8 +96,6 @@ export class SideEffect extends EventEmitter {
   gateway: Gateway;
   /** Security Level, e.g. Escrow or Optimistic */
   securityLevel: SecurityLevel;
-  /** Executor address on circuit */
-  circuitSignerAddress: string;
   /** Is currently the winning bidder of the SFX */
   isBidder = false;
   /** The minimum profit in USD required for executing this SFX. Number is computed by strategy engine */
@@ -133,7 +139,7 @@ export class SideEffect extends EventEmitter {
   /** Price for reward assert in USD */
   rewardAssetPrice: BehaviorSubject<number> = new BehaviorSubject<number>(0);
 
-  subscriptions: any[] = [];
+  subscriptions: Array<Subscription> = [];
   /** Tx cost in USD */
   txCostUsd = 0;
   /** Cost of output assets in USD */
@@ -142,11 +148,7 @@ export class SideEffect extends EventEmitter {
   rewardUsd = 0;
 
   /** Tx receipt of the execution on target */
-  txReceipt: any; // store tx receipt
-  logger: any;
-
-  strategyEngine: StrategyEngine;
-  biddingEngine: BiddingEngine;
+  txReceipt: unknown; // store tx receipt
 
   /**
    * @param sideEffect Scale encoded side effect
@@ -159,15 +161,16 @@ export class SideEffect extends EventEmitter {
    * @param logger The logger instance
    * @returns SideEffect instance
    */
+
   constructor(
     sideEffect: T3rnTypesSideEffect,
     id: string,
     xtxId: string,
     sdk: Sdk,
-    strategyEngine: StrategyEngine,
-    biddingEngine: BiddingEngine,
-    circuitSignerAddress: string,
-    logger: any
+    public strategyEngine: StrategyEngine,
+    public biddingEngine: BiddingEngine,
+    public circuitSignerAddress: string,
+    public logger: Logger
   ) {
     super();
     if (this.decodeAction(sideEffect.action)) {
@@ -175,7 +178,9 @@ export class SideEffect extends EventEmitter {
       this.id = id;
       this.humanId = id.substring(0, 8);
       this.xtxId = xtxId;
-      this.arguments = sideEffect.encodedArgs.map((entry) => entry.toString());
+      this.arguments = sideEffect.encodedArgs.map((entry: SideEffect) =>
+        entry.toString()
+      );
       this.target = new TextDecoder().decode(sideEffect.target.toU8a());
       this.gateway = sdk.gateways[this.target];
       this.reward = new BehaviorSubject(
@@ -185,7 +190,6 @@ export class SideEffect extends EventEmitter {
       this.strategyEngine = strategyEngine;
       this.biddingEngine = biddingEngine;
       this.circuitSignerAddress = circuitSignerAddress;
-      this.logger = logger;
       this.vendor = this.gateway.vendor;
     }
   }
@@ -291,11 +295,11 @@ export class SideEffect extends EventEmitter {
     if (result?.trigger) {
       this.addLog({
         msg: "Bid generated",
-        bid: result?.bidAmount.toString(),
+        bid: result?.bidAmount?.toString(),
       });
       this.logger.info(
         `Bidding on SFX ${this.humanId}: ${bnToFloat(
-          result.bidAmount,
+          result.bidAmount as BN,
           12
         )} TRN 🎰`
       );
@@ -320,7 +324,7 @@ export class SideEffect extends EventEmitter {
    * @returns Any
    */
   // ToDo fix return type
-  private generateBid(): any {
+  private generateBid() {
     if (this.isBidder) return { trigger: false, reason: "Already a bidder" };
     if (this.txStatus !== TxStatus.Ready)
       return { trigger: false, reason: "Tx not ready" };
@@ -329,7 +333,7 @@ export class SideEffect extends EventEmitter {
 
     try {
       this.strategyEngine.evaluateSfx(this);
-    } catch (e: any) {
+    } catch (e) {
       this.logger.info(`Not bidding SFX ${this.humanId}`);
       return { trigger: false, reason: e.toString() };
     }
@@ -337,8 +341,10 @@ export class SideEffect extends EventEmitter {
     // we have passed all checks and need to compute the bid amount
     this.txStatus = TxStatus.Pending; // acts as mutex lock
     this.minProfitUsd = this.strategyEngine.getMinProfitUsd(this);
+
     const bidUsd = this.biddingEngine.computeBid(this);
     const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue();
+    Instance.prom.bids.inc();
 
     return { trigger: true, bidAmount: floatToBn(bidRewardAsset) };
   }
@@ -348,7 +354,7 @@ export class SideEffect extends EventEmitter {
    *
    * @returns Any[] - Array of arguments for the SFX execution in the corresponding type
    */
-  execute(): any[] {
+  execute() {
     switch (this.action) {
       case SfxType.Transfer: {
         return this.getTransferArguments();
@@ -364,9 +370,11 @@ export class SideEffect extends EventEmitter {
   getTxOutputs(): TxOutput {
     switch (this.action) {
       case SfxType.Transfer: {
-        const amount = this.getTransferArguments()[1];
+        let amount = this.getTransferArguments()[1];
+        amount = parseInt(amount.toString());
+
         return {
-          amount: amount,
+          amount: BigInt(amount),
           amountHuman: this.gateway.toFloat(amount), // converts to human format
           asset: this.gateway.ticker,
         };
@@ -403,7 +411,7 @@ export class SideEffect extends EventEmitter {
    *
    * @param error Error message used for logging
    */
-  bidRejected(error: any) {
+  bidRejected(error: Error) {
     // a better bid was submitted before this one was accepted. A new eval will be triggered with the incoming bid event
     this.txStatus = TxStatus.Ready; // open mutex lock
     this.isBidder = false;
@@ -463,7 +471,7 @@ export class SideEffect extends EventEmitter {
   }
 
   /** If the SFX required  */
-  addHeaderProof(headerProof: string, blockHash: any) {
+  addHeaderProof(headerProof: string, blockHash: string) {
     this.inclusionProof.header_proof = { trieNodes: headerProof };
     this.inclusionProof.block_hash = blockHash;
   }
@@ -489,12 +497,11 @@ export class SideEffect extends EventEmitter {
   }
 
   /** Maps action to enum */
-  private decodeAction(action: any): boolean {
+  private decodeAction(action: Codec): boolean {
     switch (action.toHuman()) {
       case "tran": {
         this.action = SfxType.Transfer;
         return true;
-        break;
       }
       default: {
         return false;
@@ -503,7 +510,7 @@ export class SideEffect extends EventEmitter {
   }
 
   // returns the arguments
-  private getTransferArguments(): any[] {
+  private getTransferArguments() {
     return [
       this.arguments[0],
       this.gateway.parseLe(this.arguments[1]).toNumber(),
@@ -516,7 +523,12 @@ export class SideEffect extends EventEmitter {
     });
   }
 
-  private addLog(msg: any, debug = true) {
+  private addLog(
+    msg: {
+      [x: string]: string | number | undefined;
+    },
+    debug = true
+  ) {
     msg.component = "SFX";
     msg.sfxId = this.id;
     msg.xtxId = this.xtxId;

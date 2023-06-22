@@ -17,10 +17,7 @@ pub mod test {
         tests::ESCROW_ACCOUNT,
     };
     use hex_literal::hex;
-    use t3rn_primitives::{
-        attesters::{AttestersReadApi, AttestersWriteApi},
-        circuit::{Cause, CircuitStatus},
-    };
+    use t3rn_primitives::circuit::{Cause, CircuitStatus};
     use t3rn_types::fsx::SecurityLvl;
 
     #[test]
@@ -42,7 +39,7 @@ pub mod test {
                 local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
                 local_ctx.full_side_effects[0][0].security_lvl = SecurityLvl::Escrow;
 
-                let res = Circuit::request_sfx_attestation(&local_ctx);
+                Circuit::request_sfx_attestation(&local_ctx);
 
                 let next_batch = Attesters::next_batches(target_0);
 
@@ -76,7 +73,7 @@ pub mod test {
                 local_ctx.xtx.status = CircuitStatus::Reverted(Cause::Timeout);
                 local_ctx.full_side_effects[0][0].security_lvl = SecurityLvl::Escrow;
 
-                let res = Circuit::request_sfx_attestation(&local_ctx);
+                Circuit::request_sfx_attestation(&local_ctx);
 
                 let next_batch = Attesters::next_batches(target_0);
 
@@ -110,7 +107,7 @@ pub mod test {
                 local_ctx.xtx.status = CircuitStatus::Committed;
                 local_ctx.full_side_effects[0][0].security_lvl = SecurityLvl::Optimistic;
 
-                let res = Circuit::request_sfx_attestation(&local_ctx);
+                Circuit::request_sfx_attestation(&local_ctx);
 
                 let next_batch = Attesters::next_batches(target_0);
                 assert_eq!(next_batch.clone().unwrap().reverted_sfx, None);
@@ -137,7 +134,7 @@ pub mod test {
                 local_ctx.xtx.status = CircuitStatus::Committed;
                 local_ctx.full_side_effects[0][0].security_lvl = SecurityLvl::Escrow;
 
-                let res = Circuit::request_sfx_attestation(&local_ctx);
+                Circuit::request_sfx_attestation(&local_ctx);
 
                 let next_batch = Attesters::next_batches(target_0);
 
@@ -193,7 +190,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -263,7 +260,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -285,7 +282,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -353,7 +350,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -376,7 +373,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );

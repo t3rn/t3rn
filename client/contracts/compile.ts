@@ -6,7 +6,7 @@ const contractSourceCode = fs.readFileSync('contract.sol', 'utf8');
 const compilationInput = {
     language: 'Solidity',
     sources: {
-        'MyContract.sol': {
+        'contract.sol': {
             content: contractSourceCode
         }
     },
@@ -21,12 +21,13 @@ const compilationInput = {
 
 export const compile = () => {
     const compiledContract = solc.compile(JSON.stringify(compilationInput));
-    const contractBytecode = JSON.parse(compiledContract).contracts['MyContract.sol']['Ballot'].evm.bytecode.object;
+    console.log(compiledContract);
+    const contractBytecode = JSON.parse(compiledContract).contracts['contract.sol']['Snorkle'].evm.bytecode.object;
     return contractBytecode;
 }
 
 export const getAbi = () => {
     const compiledContract = solc.compile(JSON.stringify(compilationInput));
-    const contractAbi = JSON.parse(compiledContract).contracts['MyContract.sol']['Ballot'].abi;
+    const contractAbi = JSON.parse(compiledContract).contracts['contract.sol']['Snorkle'].abi;
     return contractAbi;
 }

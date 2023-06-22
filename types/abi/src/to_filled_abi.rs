@@ -672,12 +672,9 @@ impl FilledAbi {
                     .try_into()
                     .map_err(|_| "Account20::InvalidDataSize: expected 20 bytes")?;
 
-                Ok((
-                    FilledAbi::Account20(name, account_20.to_vec()),
-                    field_data.len(),
-                ))
+                Ok((FilledAbi::Account20(name, account_20.to_vec()), 20usize))
             },
-            Abi::Account32(name) | Abi::H256(name) => {
+            Abi::Account32(name) => {
                 // strip the prefix memo if present
                 let data_maybe_stripped_prefix = if field_data.len() == 33 {
                     &field_data[1..]
@@ -693,6 +690,15 @@ impl FilledAbi {
                     FilledAbi::Account32(name, data_32b.to_vec()),
                     field_data.len(),
                 ))
+            },
+            Abi::H256(name) => {
+                ensure!(
+                    field_data.len() >= 32,
+                    "H256/Account32::InvalidDataSize: expected 32 bytes"
+                );
+                let data_32b: Vec<u8> = field_data[..32].to_vec();
+
+                Ok((FilledAbi::H256(name, data_32b), 32usize))
             },
             Abi::Value256(name) => Ok((
                 FilledAbi::Value256(name, field_data.to_vec()),
@@ -797,22 +803,18 @@ impl FilledAbi {
             Abi::Quadruple(name, (field1, field2, field3, field4)) => {
                 let (field1, size1) =
                     Self::recursive_fill_abi(*field1, field_data, in_codec.clone())?;
-
                 let (field2, size2) =
                     Self::recursive_fill_abi(*field2, &field_data[size1..], in_codec.clone())?;
-
                 let (field3, size3) = Self::recursive_fill_abi(
                     *field3,
                     &field_data[size1 + size2..],
                     in_codec.clone(),
                 )?;
-
                 let (field4, size4) = Self::recursive_fill_abi(
                     *field4,
                     &field_data[size1 + size2 + size3..],
                     in_codec,
                 )?;
-
                 Ok((
                     FilledAbi::Quadruple(
                         name,
