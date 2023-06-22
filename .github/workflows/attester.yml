@@ -82,6 +82,10 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/attester/eslint_report.json
 
+      - name: 🏗 Build Docs
+        run: pnpm run build-docs
+        working-directory: client/packages/attester          
+
   build-docker:
     name: Build Attester Docker
     needs: [changes]
