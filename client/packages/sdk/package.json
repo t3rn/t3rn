@@ -2,6 +2,7 @@
   "name": "@t3rn/sdk",
   "version": "0.1.5",
   "description": "t3rn's client side SDK",
+  "type": "module",
   "files": [
     "dist"
   ],
@@ -20,7 +21,8 @@
     "ci": "rm -rf node_modules && rm yarn.lock && yarn",
     "clean:build": "rm -rf ./dist",
     "build": "yarn clean:build && tsup && tsup --dts",
-    "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk"
+    "build:docs": "typedoc --out docs src/ && cp -R docs ../../../docs/ts-sdk",
+    "test": "jest"
   },
   "keywords": [
     "t3rn",
@@ -42,8 +44,12 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "devDependencies": {
+    "@types/jest": "^29.5.2",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
     "typedoc": "^0.23.21",
-    "typescript": "^4.9.4"
+    "typescript": "^5.1.3"
   }
 }
