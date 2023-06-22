@@ -78,7 +78,7 @@ jobs:
   build-docker:
     name: Build Docker Grandpa Ranger
     needs: [changes]
-    if: needs.changes.outputs.src == 'true'
+    if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
 
     runs-on: self-hosted
     steps:
