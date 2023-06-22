@@ -2,6 +2,9 @@ use crate::GatewayVendor;
 
 use frame_support::pallet_prelude::*;
 use num_traits::Zero;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
 use sp_core::{H160, H256};
 use sp_runtime::Percent;
@@ -215,6 +218,7 @@ pub type PublicKeyEcdsa33b = [u8; 33];
 pub const COMMITTEE_SIZE: usize = 32;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum LatencyStatus {
     #[default]
     OnTime,
@@ -223,6 +227,7 @@ pub enum LatencyStatus {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct BatchingFactor {
     pub latest_confirmed: u16,
     pub latest_signed: u16,

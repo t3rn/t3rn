@@ -1,7 +1,7 @@
 import "@t3rn/types";
 import { AccountId32, H256 } from "@polkadot/types/interfaces";
 import { SideEffect } from "./sideEffect";
-// @ts-ignore
+// @ts-ignore - Typescript does not know about this type
 import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
 import { EventEmitter } from "events";
 
@@ -13,6 +13,8 @@ import {
 import { Sdk } from "@t3rn/sdk";
 import { StrategyEngine } from "../strategy";
 import { BiddingEngine } from "../bidding";
+import { Logger } from "pino";
+import { EventData } from "src/circuit/listener";
 
 /**
  * Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.
@@ -36,9 +38,6 @@ export class Execution extends EventEmitter {
   phases: string[][] = [[], []];
   /** The current phase of the XTX */
   currentPhase: number;
-  /** The circuit signer address */
-  circuitSignerAddress: string;
-  logger: any;
 
   /**
    * Creates a new Execution instance.
@@ -51,20 +50,18 @@ export class Execution extends EventEmitter {
    * @param logger The logger instance.
    */
   constructor(
-    eventData: any,
+    public logger: Logger,
+    public circuitSignerAddress: string,
+    eventData: EventData,
     sdk: Sdk,
     strategyEngine: StrategyEngine,
-    biddingEngine: BiddingEngine,
-    circuitSignerAddress: string,
-    logger: any
+    biddingEngine: BiddingEngine
   ) {
     super();
     this.owner = eventData[0];
     this.xtxId = eventData[1];
     this.id = this.xtxId.toHex();
     this.humanId = this.id.slice(0, 8);
-    this.circuitSignerAddress = circuitSignerAddress;
-    this.logger = logger;
     this.initializeSideEffects(
       eventData[2],
       eventData[3],
@@ -132,7 +129,7 @@ export class Execution extends EventEmitter {
     this.status = XtxStatus.ReadyToExecute;
 
     //Updates each Sfx
-    for (const [_sfxId, sfx] of this.sideEffects) {
+    for (const [, sfx] of this.sideEffects) {
       sfx.readyToExecute();
     }
 
@@ -150,7 +147,7 @@ export class Execution extends EventEmitter {
   /** Update XTX and all its SFX status to ready. */
   droppedAtBidding() {
     this.status = XtxStatus.DroppedAtBidding;
-    for (const [_sfxId, sfx] of this.sideEffects) {
+    for (const [, sfx] of this.sideEffects) {
       sfx.droppedAtBidding();
     }
     this.logger.info(`Dropped XTX: ${this.humanId}`);
@@ -160,7 +157,7 @@ export class Execution extends EventEmitter {
   /** Update XTX and all its SFX status to reverted. */
   revertTimeout() {
     this.status = XtxStatus.RevertTimedOut;
-    for (const [_sfxId, sfx] of this.sideEffects) {
+    for (const [, sfx] of this.sideEffects) {
       sfx.reverted();
     }
 
@@ -175,7 +172,7 @@ export class Execution extends EventEmitter {
    */
   getReadyToExecute(): SideEffect[] {
     const result: SideEffect[] = [];
-    for (const [_sfxId, sfx] of this.sideEffects) {
+    for (const [, sfx] of this.sideEffects) {
       if (
         sfx.status === SfxStatus.ReadyToExecute &&
         sfx.isBidder &&
@@ -187,7 +184,15 @@ export class Execution extends EventEmitter {
     return result;
   }
 
-  private addLog(msg: any, debug = true) {
+  private addLog(
+    msg: {
+      msg: string;
+      component?: string;
+      id?: string;
+      xtxId?: string;
+    },
+    debug = true
+  ) {
     msg.component = "XTX";
     msg.id = this.id;
 

@@ -84,15 +84,29 @@ jobs:
 
       - name: 🏗 Build Docs
         run: pnpm run build-docs
-        working-directory: client/packages/attester
+        working-directory: client/packages/attester          
+
+  build-docker:
+    name: Build Attester Docker
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Docker
+        working-directory: ./client
+        run: |
+          docker build . -f attester.Dockerfile
 
   deploy:
     name: Build & Deploy Attester
     runs-on: self-hosted
-    needs: [changes, test-attester]
+    needs: test-attester
     concurrency: attester
 
-    if: needs.changes.outputs.src == 'true'
+    if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -119,10 +133,8 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: EKS
-        if: github.ref == 'refs/heads/development'
         run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
 
       - name: Helm Upgrade
-        if: github.ref == 'refs/heads/development'
         working-directory: ./client/packages/attester
         run: helm upgrade attester helm -n attester -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-attester"
