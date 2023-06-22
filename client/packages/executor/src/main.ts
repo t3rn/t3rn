@@ -1,12 +1,19 @@
+import { Keyring, Sdk, cryptoWaitReady } from "@t3rn/sdk";
 import { AttestationManager } from "./attestationManager";
 import { Instance } from "./index";
-import * as fs from 'fs';
-async function main() {
-  const instance = new Instance(process.env.EXECUTOR);
-  const attestationManager = new AttestationManager(instance.sdk);
-  attestationManager.receiveAttestationBatchCall();
 
-  // await instance.setup();
+async function main() {
+  await cryptoWaitReady();
+  const keyring = new Keyring({ type: "sr25519" })
+  const signer = keyring.addFromUri("//Bob");
+
+  const sdk = new Sdk(process.env.WS_CIRCUIT_ENDPOINT || "ws://localhost:9944", signer)
+  await sdk.init();
+
+  const instance = new Instance(process.env.EXECUTOR);
+  await instance.setup();
+
+  new AttestationManager(instance.circuitClient);
 }
 
 main();
