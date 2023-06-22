@@ -30,11 +30,7 @@ export class AttestationManager {
         this.rpc = config.ethereum.rpc;
         this.web3 = new Web3(this.rpc);
 
-        // pub 0xF85A57d965aEcD289c625Cae6161d0Ab5141bC66
-        // priv 0x78d3cbf37f1197996246b95bd42af04b14314bc23aa1b607410b0a72b5600156
-
         this.wallet = this.web3.eth.accounts.privateKeyToAccount(config.ethereum.privateKey); 
-        // this.wallet = this.web3.eth.accounts.privateKeyToAccount('0x78d3cbf37f1197996246b95bd42af04b14314bc23aa1b607410b0a72b5600156'); 
 
         const receiveAttestationBatchAbi = JSON.parse(fs.readFileSync('./src/attestationManager/contracts/AttestationsVerifier.abi.json', 'utf8'))
         const receiveAttestationBatchAddress = config.ethereum.attestationVerifierAddress;
