@@ -25,7 +25,7 @@ pub mod pallet {
     pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
-        traits::{CheckedAdd, CheckedMul, Saturating, Zero},
+        traits::{CheckedAdd, CheckedDiv, CheckedMul, Saturating, Zero},
         Percent,
     };
     use sp_std::{convert::TryInto, prelude::*};
@@ -296,6 +296,15 @@ pub mod pallet {
     pub type FastConfirmationCost<T: Config> =
         StorageMap<_, Blake2_128Concat, TargetId, BalanceOf<T>>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn paid_finality_fees)]
+    pub type PaidFinalityFees<T: Config> =
+        StorageMap<_, Blake2_128Concat, TargetId, Vec<BalanceOf<T>>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn auto_regression_param)]
+    pub type AutoRegressionParam<T: Config> = StorageMap<_, Blake2_128Concat, TargetId, Percent>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -312,6 +321,8 @@ pub mod pallet {
         NewTargetProposed(TargetId),
         AttesterAgreedToNewTarget(T::AccountId, TargetId, Vec<u8>),
         CurrentPendingAttestationBatches(TargetId, Vec<(u32, H256)>),
+        UserFinalityFeeEstimated(TargetId, BalanceOf<T>, u16),
+        FutureTotalFinalityFeeEstimated(TargetId, BalanceOf<T>, u16),
     }
 
     #[pallet::error]
@@ -769,6 +780,62 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
+        pub fn estimate_future_finality_fee(
+            origin: OriginFor<T>,
+            target: TargetId,
+            n_windows_from_now: u16,
+        ) -> DispatchResult {
+            ensure_signed(origin)?;
+            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
+            match batching_factor {
+                Some(batching_factor) => {
+                    let future_finality_fee = <Pallet<T> as AttestersReadApi<
+                        T::AccountId,
+                        BalanceOf<T>,
+                    >>::estimate_future_finality_fee(
+                        &target, n_windows_from_now, batching_factor
+                    );
+                    log::debug!(
+                        "Future finality fee for target {:?} is {:?}",
+                        target,
+                        future_finality_fee
+                    );
+                    Self::deposit_event(Event::FutureTotalFinalityFeeEstimated(
+                        target,
+                        future_finality_fee,
+                        n_windows_from_now,
+                    ));
+                    Ok(())
+                },
+                None => Err(Error::<T>::TargetNotActive.into()),
+            }
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn estimate_user_finality_fee(
+            origin: OriginFor<T>,
+            target: TargetId,
+            n_windows_from_now: u16,
+        ) -> DispatchResult {
+            ensure_signed(origin)?;
+
+            let finality_fee = <Pallet<T> as AttestersReadApi<
+                T::AccountId,
+                BalanceOf<T>,
+            >>::estimate_user_finality_fee(
+                &target, n_windows_from_now
+            )?;
+
+            Self::deposit_event(Event::UserFinalityFeeEstimated(
+                target,
+                finality_fee,
+                n_windows_from_now,
+            ));
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
         pub fn nominate(
             origin: OriginFor<T>,
             attester: T::AccountId,
@@ -929,6 +996,96 @@ pub mod pallet {
     impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>> for Pallet<T> {
         fn previous_committee() -> Vec<T::AccountId> {
             PreviousCommittee::<T>::get()
+        }
+
+        fn estimate_user_finality_fee(
+            target: &TargetId,
+            n_epochs_from_now: u16,
+        ) -> Result<BalanceOf<T>, DispatchError> {
+            // Retrieve the latest batching factor for the target
+            let batching_factor = match Self::read_latest_batching_factor(target) {
+                Some(batching_factor) => batching_factor,
+                None => return Err("BatchingFactorNotFoundForGivenTarget".into()),
+            };
+
+            let number_of_users = match n_epochs_from_now {
+                0 => batching_factor.latest_confirmed,
+                1 => batching_factor.latest_signed,
+                _ => batching_factor
+                    .up_to_last_10_confirmed
+                    .get(n_epochs_from_now as usize)
+                    .cloned()
+                    .unwrap_or_default(),
+            };
+
+            // Retrieve the latest paid finality fee for the target
+            let paid_finality_fees =
+                PaidFinalityFees::<T>::get(target).unwrap_or(vec![Zero::zero()]);
+            let total_fee = paid_finality_fees.get(0).unwrap_or(&Zero::zero()).clone();
+
+            // Calculate the base user fee
+            let base_user_fee = total_fee
+                .checked_div(&BalanceOf::<T>::from(number_of_users as u32))
+                .unwrap_or(Zero::zero());
+
+            // Define an overcharge factor as a constant (here we use 5% for example)
+            const OVERCHARGE_FACTOR: Percent = Percent::from_percent(5);
+
+            // Calculate the total user fee with the overcharge
+            let user_fee = OVERCHARGE_FACTOR
+                .mul_ceil(base_user_fee)
+                .saturating_add(base_user_fee);
+
+            Ok(user_fee)
+        }
+
+        fn estimate_future_finality_fee(
+            target: &TargetId,
+            n_windows_from_now: u16,
+            batching_factor: BatchingFactor,
+        ) -> BalanceOf<T> {
+            // Cache Zero::zero() as a constant
+            let zero_balance: BalanceOf<T> = Zero::zero();
+
+            let paid_finality_fees = PaidFinalityFees::<T>::get(target).unwrap_or_default();
+            let last_paid_finality_fee = paid_finality_fees.get(0).unwrap_or(&zero_balance).clone();
+
+            let last_batching_factor = batching_factor.latest_confirmed;
+            let next_batching_factor = batching_factor.latest_signed;
+
+            // Convert batching_factor ratio to Percent once before loop
+            let batching_factor_ratio =
+                Percent::from_rational(next_batching_factor, last_batching_factor);
+
+            // Get the autoregressive parameter from storage
+            let auto_regression_param: Percent =
+                AutoRegressionParam::<T>::get(target).unwrap_or(Percent::from_percent(50));
+
+            let mut prediction = last_paid_finality_fee;
+
+            // Define decay factor for the influence of past fees
+            const DECAY_FACTOR: Percent = Percent::from_percent(90);
+            let mut decayed_param = auto_regression_param;
+
+            // Loop n_windows_from_now times to predict future finality fee
+            for i in 0..n_windows_from_now {
+                prediction = prediction.saturating_add(
+                    decayed_param.mul_ceil(
+                        paid_finality_fees
+                            .get(i as usize)
+                            .unwrap_or(&zero_balance)
+                            .clone(),
+                    ),
+                );
+
+                // Decay the influence of past fees
+                decayed_param = decayed_param.saturating_mul(DECAY_FACTOR);
+            }
+
+            // Adjust for expected change in batching factor
+            prediction = batching_factor_ratio.mul_ceil(prediction);
+
+            prediction
         }
 
         fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
@@ -3083,6 +3240,42 @@ pub mod attesters_test {
         );
     }
 
+    fn expect_latest_user_finality_fees_estimated(
+        target: TargetId,
+        n_from_now: u16,
+        per_user_fees: u128,
+    ) {
+        // Recover system event
+        let events = System::events();
+        let expect_batching_factor_read_event = events.last().clone();
+        assert!(expect_batching_factor_read_event.clone().is_some());
+        assert_eq!(
+            expect_batching_factor_read_event.unwrap().event,
+            Event::Attesters(AttestersEvent::UserFinalityFeeEstimated(
+                target,
+                per_user_fees,
+                n_from_now
+            ))
+        );
+    }
+
+    fn expect_latest_future_total_finality_fees_estimated(
+        target: TargetId,
+        n_from_now: u16,
+        total_fees: u128,
+    ) {
+        // Recover system event
+        let events = System::events();
+        let expect_batching_factor_read_event = events.last().clone();
+        assert!(expect_batching_factor_read_event.clone().is_some());
+        assert_eq!(
+            expect_batching_factor_read_event.unwrap().event,
+            Event::Attesters(AttestersEvent::FutureTotalFinalityFeeEstimated(
+                target, total_fees, n_from_now
+            ))
+        );
+    }
+
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
     ) {
@@ -3158,6 +3351,22 @@ pub mod attesters_test {
             )));
 
             expect_latest_confirmed_batching_factor(target, 1);
+
+            Attesters::estimate_future_finality_fee(
+                Origin::signed(AccountId::from([1; 32])),
+                target,
+                0,
+            );
+
+            expect_latest_future_total_finality_fees_estimated(target, 0, 0);
+
+            Attesters::estimate_user_finality_fee(
+                Origin::signed(AccountId::from([1; 32])),
+                target,
+                0,
+            );
+
+            expect_latest_user_finality_fees_estimated(target, 0, 0);
         });
     }
 

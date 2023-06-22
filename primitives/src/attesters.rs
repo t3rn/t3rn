@@ -1,6 +1,7 @@
 use crate::GatewayVendor;
 
 use frame_support::pallet_prelude::*;
+use num_traits::Zero;
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
 use sp_core::{H160, H256};
 use sp_runtime::Percent;
@@ -258,13 +259,22 @@ pub trait AttestersReadApi<Account, Balance> {
     fn get_activated_targets() -> Vec<TargetId>;
     fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus>;
     fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor>;
+    fn estimate_future_finality_fee(
+        target: &TargetId,
+        n_windows_from_now: u16,
+        batching_factor: BatchingFactor,
+    ) -> Balance;
+    fn estimate_user_finality_fee(
+        target: &TargetId,
+        n_epochs_from_now: u16,
+    ) -> Result<Balance, DispatchError>;
 }
 
 pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {
     _phantom: PhantomData<(Account, Balance, Error)>,
 }
 
-impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
+impl<Account, Balance: num_traits::Zero, Error> AttestersReadApi<Account, Balance>
     for AttestersReadApiEmptyMock<Account, Balance, Error>
 {
     fn previous_committee() -> Vec<Account> {
@@ -301,6 +311,21 @@ impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
 
     fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
         None
+    }
+
+    fn estimate_future_finality_fee(
+        target: &TargetId,
+        n_windows_from_now: u16,
+        batching_factor: BatchingFactor,
+    ) -> Balance {
+        Zero::zero()
+    }
+
+    fn estimate_user_finality_fee(
+        target: &TargetId,
+        n_epochs_from_now: u16,
+    ) -> Result<Balance, DispatchError> {
+        Ok(Zero::zero())
     }
 }
 
