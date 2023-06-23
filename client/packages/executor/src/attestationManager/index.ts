@@ -56,10 +56,10 @@ export class AttestationManager {
 
         const convertedData: ConfirmationBatch[] = fetchedData.map((batch: any) => {
           return {
-            newCommittee: batch.newCommittee || [],
+            newCommittee: batch.nextCommittee || [],
             bannedCommittee: batch.bannedCommittee || [],
-            confirmedSFXs: batch.confirmedSFXs || [],
-            revertedSFXs: batch.revertedSFXs || [],
+            confirmedSFXs: batch.committedSfx || [],
+            revertedSFXs: batch.revertedSfx || [],
             index: batch.index,
             expectedBatchHash: batch.expectedBatchHash,
             signatures: batch.signatures.map(([id, signature]) => signature),
@@ -115,7 +115,7 @@ export class AttestationManager {
           this.batches[1].revertedSFXs,
           this.batches[1].index,
           messageHash,
-          this.batches[0].signatures,]
+          this.batches[1].signatures,]
 )
 
       // TODO: align naming of the contract with circuit
