@@ -5,7 +5,9 @@ import Web3 from 'web3';
 import { logger } from "../../src/logging";
 import { ConfirmationBatch } from "./attestationBatch";
 import abi from 'ethereumjs-abi';
-import { keccak256 } from 'ethereumjs-util';
+import { keccakAsHex } from "@polkadot/util-crypto";
+import { ethers } from "ethers";
+// import { keccak256 } from 'ethereumjs-util';
 
 
 
@@ -34,10 +36,18 @@ export class AttestationManager {
         this.web3 = new Web3(this.rpc);
 
         this.wallet = this.web3.eth.accounts.privateKeyToAccount(config.attestations.ethereum.privateKey); 
+        logger.info('Wallet address: ' + this.wallet.address)
 
         const receiveAttestationBatchAbi = JSON.parse(fs.readFileSync('./src/attestationManager/contracts/AttestationsVerifier.abi.json', 'utf8'))
         const receiveAttestationBatchAddress = config.attestations.ethereum.attestationVerifierAddress;
         this.receiveAttestationBatchContract = new this.web3.eth.Contract(receiveAttestationBatchAbi.abi, receiveAttestationBatchAddress);
+    }
+
+   batchEncodePacked(batch) {
+        return ethers.solidityPacked(
+          ['address[]', 'address[]', 'bytes32[]', 'bytes32[]', 'uint32'],
+          [batch.newCommittee, batch.bannedCommittee, batch.confirmedSFXs, batch.revertedSFXs, batch.index]
+        );
     }
 
     async fetchBatches() {
@@ -64,6 +74,23 @@ export class AttestationManager {
       })
     }
 
+    async listener() {
+        // Subscribe to all events and filter based on the specified event type
+        this.client.query.system.events((events) => {
+          // Iterate through the events and filter based on the event type
+          events.forEach((record) => {
+            const { event } = record;
+
+            // Check if the event type matches the specified event type
+            if (event.section === 'attesters' && event.method === 'NewConfirmationBatch') {
+              // Event of the specified type found, process it
+              logger.error(`Event: ${event.section}.${event.method}`);
+              logger.error(`Data: ${event.data}`);
+            }
+          });
+        });
+    }
+
     async receiveAttestationBatchCall() {
       // console.log([this.receiveAttestationBatchContract.methods])
       const committeeSize = await this.receiveAttestationBatchContract.methods.committeeSize().call()
@@ -71,51 +98,45 @@ export class AttestationManager {
       const currentBatchIndex = await this.receiveAttestationBatchContract.methods.currentBatchIndex().call()
       console.log(['Batch Index: ', currentBatchIndex])
 
-      const blockHash = await this.client.rpc.chain.getBlockHash(this.batches[0].expectedBatchHash)
-
-      logger.error(this.batches[0])
-
       const batch = {
-            newCommittee: this.batches[0].newCommittee,
-            bannedCommittee:  this.batches[0].bannedCommittee,
-            confirmedSFXs: this.batches[0].confirmedSFXs,
-            revertedSFXs: this.batches[0].revertedSFXs,
-            index: this.batches[0].index,
-            expectedBatchHash: blockHash,
-            signatures: this.batches[0].signatures,
+            newCommittee: this.batches[1].newCommittee,
+            bannedCommittee:  this.batches[1].bannedCommittee,
+            confirmedSFXs: this.batches[1].confirmedSFXs,
+            revertedSFXs: this.batches[1].revertedSFXs,
+            index: this.batches[1].index,
       }
+      const messageHash = ethers.keccak256(this.batchEncodePacked(batch))
 
       // fetch batch 0 from t0rn 
       logger.error([
-        batch
-      ])
-
-      const encodedBatch = abi.rawEncode(
-        ['address[]', 'address[]', 'bytes32[]', 'bytes32[]', 'uint32'],
-        [batch.newCommittee, batch.bannedCommittee, batch.confirmedSFXs, batch.revertedSFXs, batch.index]
-      );
-
-
+          this.batches[1].newCommittee,
+          this.batches[1].bannedCommittee,
+          this.batches[1].confirmedSFXs,
+          this.batches[1].revertedSFXs,
+          this.batches[1].index,
+          messageHash,
+          this.batches[0].signatures,]
+)
 
       // TODO: align naming of the contract with circuit
       await this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
-        this.batches[0].newCommittee,
-        this.batches[0].bannedCommittee,
-        this.batches[0].confirmedSFXs,
-        this.batches[0].revertedSFXs,
-        this.batches[0].index,
-        Buffer.from(blockHash, 'hex'),
-        this.batches[0].signatures,
+          this.batches[1].newCommittee,
+          this.batches[1].bannedCommittee,
+          this.batches[1].confirmedSFXs,
+          this.batches[1].revertedSFXs,
+          this.batches[1].index,
+          messageHash,
+          this.batches[1].signatures,
       )
-        .send({ from: this.wallet.address, gas: 200000 })
+        .send({ from: this.wallet.address, gas: 2000000 })
         .on('transactionHash', (hash) => {
-          console.log('Transaction hash:', hash);
+          logger.info('Transaction hash:', hash);
         })
         .on('receipt', (receipt) => {
-          console.log('Receipt:', receipt);
+          logger.info('Receipt:', receipt);
         })
         .on('error', (error) => {
-          console.error('Error:', error);
+          logger.error({error: error, request: error.request}, 'Error:');
         });
 
     }
