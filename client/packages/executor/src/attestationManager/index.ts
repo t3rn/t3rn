@@ -4,6 +4,9 @@ import fs from 'fs';
 import Web3 from 'web3';
 import { logger } from "../../src/logging";
 import { ConfirmationBatch } from "./attestationBatch";
+import abi from 'ethereumjs-abi';
+import { keccak256 } from 'ethereumjs-util';
+
 
 
 /**
@@ -72,16 +75,26 @@ export class AttestationManager {
 
       logger.error(this.batches[0])
 
+      const batch = {
+            newCommittee: this.batches[0].newCommittee,
+            bannedCommittee:  this.batches[0].bannedCommittee,
+            confirmedSFXs: this.batches[0].confirmedSFXs,
+            revertedSFXs: this.batches[0].revertedSFXs,
+            index: this.batches[0].index,
+            expectedBatchHash: blockHash,
+            signatures: this.batches[0].signatures,
+      }
+
       // fetch batch 0 from t0rn 
       logger.error([
-        this.batches[0].newCommittee,
-        this.batches[0].bannedCommittee,
-        this.batches[0].confirmedSFXs,
-        this.batches[0].revertedSFXs,
-        this.batches[0].index,
-        blockHash,
-        this.batches[0].signatures,
+        batch
       ])
+
+      const encodedBatch = abi.rawEncode(
+        ['address[]', 'address[]', 'bytes32[]', 'bytes32[]', 'uint32'],
+        [batch.newCommittee, batch.bannedCommittee, batch.confirmedSFXs, batch.revertedSFXs, batch.index]
+      );
+
 
 
       // TODO: align naming of the contract with circuit
