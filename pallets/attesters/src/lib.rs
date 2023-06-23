@@ -1023,6 +1023,79 @@ pub mod pallet {
             PreviousCommittee::<T>::get()
         }
 
+        // # Finality Fee Estimation and User Base Projection
+        //
+        // This module provides functionalities for estimating future finality fees and user base in a decentralized system, drawing inspiration from the concept of a pension scheme.
+        //
+        // ## Overview
+        //
+        // The aim of this module is to estimate future fees and user base in a way that balances the interests of all participants. This is achieved by employing methods similar to those used in pension systems, where fees paid by current participants are used to support earlier generations.
+        //
+        // Three primary functions provided by this module are:
+        //
+        // 1. `estimate_future_finality_fee`
+        // 2. `estimate_user_finality_fee`
+        // 3. `estimate_future_user_base`
+        //
+        // ## Functionality
+        //
+        // ### estimate_future_finality_fee
+        //
+        // This function is responsible for estimating the finality fee a certain number of epochs into the future.
+        // The estimate is based on past fees and the projected change in the batching factor (i.e., the rate of transaction bundling).
+        // The approach involves an autoregressive model, where the influence of past fees decreases over time (decay factor).
+        // The final prediction is adjusted based on the expected change in the batching factor.
+        // This function parallels how pension systems estimate the contributions required from future participants.
+        //
+        // ### estimate_user_finality_fee
+        //
+        // This function estimates the finality fee for an individual user.
+        // The function considers the total fee paid in the most recent epoch and divides it by the number of users in that epoch to calculate a base user fee.
+        // An overcharge factor is then added to this base fee to account for fluctuations and provide a buffer.
+        // This calculation mirrors the process in pension systems where individual contributions are calculated based on total liabilities and the number of current contributors.
+        //
+        // ### estimate_future_user_base
+        //
+        // The estimate_future_user_base function forecasts the user base size for a future epoch.
+        // The function calculates the average growth rate of the user base over the past few epochs and applies this rate iteratively to project future growth.
+        // This function is similar to population projections in pension systems, which are critical in determining future contribution rates.
+        //
+        // ## Concluding Remarks
+        //
+        // The functions in this module draw inspiration from pension systems, projecting future conditions based on past data and current trends.
+        // While the context is different – a decentralized system instead of a pension scheme – the fundamental concepts are the same.
+        // The ability to estimate future fees and user base size contributes to system sustainability and fairness, much like in a well-managed pension scheme.
+        fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16 {
+            // Get user base data
+            let user_base_data = &batching_factor.up_to_last_10_confirmed;
+
+            // Calculate average user base growth rate
+            let total_growth_rate = user_base_data
+                .windows(2)
+                .map(|w| {
+                    let old = Percent::from_percent(w[0] as u8);
+                    let new = Percent::from_percent(w[1] as u8);
+                    // Assuming `saturating_sub` and `saturating_div` are methods to subtract and divide percentages
+                    if old != Percent::zero() {
+                        new.saturating_sub(old) / old
+                    } else {
+                        Percent::zero()
+                    }
+                })
+                .fold(Percent::zero(), |acc, x| acc.saturating_add(x));
+
+            let average_growth_rate = total_growth_rate
+                .saturating_mul(Percent::from_percent((user_base_data.len() - 1) as u8));
+
+            // Estimate future user base size
+            let current_user_base = user_base_data.last().unwrap_or(&1);
+            let future_user_base: u16 = (0..n_epochs_ahead).fold(*current_user_base, |acc, _| {
+                average_growth_rate.mul_ceil(acc)
+            });
+
+            future_user_base as u16
+        }
+
         fn estimate_user_finality_fee(
             target: &TargetId,
             n_epochs_from_now: u16,
@@ -1036,11 +1109,16 @@ pub mod pallet {
             let number_of_users = match n_epochs_from_now {
                 0 => batching_factor.latest_confirmed,
                 1 => batching_factor.latest_signed,
-                _ => batching_factor
-                    .up_to_last_10_confirmed
-                    .get(n_epochs_from_now as usize)
-                    .cloned()
-                    .unwrap_or_default(),
+                _ => {
+                    // Estimate future user base size
+                    let future_user_base =
+                        Self::estimate_future_user_base(&batching_factor, n_epochs_from_now);
+                    batching_factor
+                        .up_to_last_10_confirmed
+                        .get(n_epochs_from_now as usize)
+                        .cloned()
+                        .unwrap_or(future_user_base)
+                },
             };
 
             // Retrieve the latest paid finality fee for the target

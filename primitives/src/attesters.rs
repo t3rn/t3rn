@@ -262,6 +262,7 @@ pub trait AttestersReadApi<Account, Balance> {
     fn get_activated_targets() -> Vec<TargetId>;
     fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus>;
     fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor>;
+    fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16;
     fn estimate_future_finality_fee(
         target: &TargetId,
         n_windows_from_now: u16,
@@ -329,6 +330,10 @@ impl<Account, Balance: num_traits::Zero, Error> AttestersReadApi<Account, Balanc
         n_epochs_from_now: u16,
     ) -> Result<Balance, DispatchError> {
         Ok(Zero::zero())
+    }
+
+    fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16 {
+        0
     }
 }
 
