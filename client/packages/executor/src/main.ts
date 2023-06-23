@@ -13,7 +13,9 @@ async function main() {
   const instance = new Instance(process.env.EXECUTOR);
   await instance.setup();
 
-  new AttestationManager(instance.circuitClient);
+  const attestationManager = new AttestationManager(instance.circuitClient);
+  await attestationManager.fetchBatches()
+  await attestationManager.receiveAttestationBatchCall()
 }
 
 main();

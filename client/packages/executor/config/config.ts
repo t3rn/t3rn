@@ -157,10 +157,13 @@ export type Config = {
   bidding: BiddingStrategy;
 
   /** Configuration for ethereum */
-  ethereum: {
-    rpc: string;
-    attestationVerifierAddress: string;
-    privateKey: string | undefined;
+  attestations: {
+    ethereum: {
+      rpc: string;
+      attestationVerifierAddress: string;
+      privateKey: string | undefined;
+    },
+    batchesCatchUp: boolean
   }
 };
 
@@ -251,9 +254,13 @@ export const config: Config = {
     overrideNoCompetition: true,
     equalMinProfitBid: false,
   },
-  ethereum: {
-    rpc: "https://eth-sepolia.public.blastapi.io",
-    attestationVerifierAddress: '0x9d73cAEc7B58a9070BAb2EadB75580054e31E437',
-    privateKey: process.env.ETHEREUM_PRIVATE_KEY,
+  attestations: {
+    ethereum: {
+      rpc: "https://eth-sepolia.public.blastapi.io",
+      attestationVerifierAddress: '0x9d73cAEc7B58a9070BAb2EadB75580054e31E437',
+      privateKey: process.env.ETHEREUM_PRIVATE_KEY,
+    },
+    batchesCatchUp: process.env.BATCHES_CATCH_UP == "true" ? true : false
+
   }
 };

@@ -1,9 +1,9 @@
-      import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Keyring, Sdk } from "@t3rn/sdk";
+import { Sdk } from "@t3rn/sdk";
 import { config } from "../../config/config";
 import fs from 'fs';
 import Web3 from 'web3';
 import { logger } from "../../src/logging";
+import { ConfirmationBatch } from "./attestationBatch";
 
 
 /**
@@ -22,48 +22,77 @@ export class AttestationManager {
 
 
     constructor(client: Sdk["client"]) {
-        if (config.ethereum.privateKey === undefined) {
+        if (config.attestations.ethereum.privateKey === undefined) {
             throw new Error('Ethereum private key is not defined');
         }
 
         this.client = client
-        this.rpc = config.ethereum.rpc;
+        this.rpc = config.attestations.ethereum.rpc;
         this.web3 = new Web3(this.rpc);
 
-        this.wallet = this.web3.eth.accounts.privateKeyToAccount(config.ethereum.privateKey); 
+        this.wallet = this.web3.eth.accounts.privateKeyToAccount(config.attestations.ethereum.privateKey); 
 
         const receiveAttestationBatchAbi = JSON.parse(fs.readFileSync('./src/attestationManager/contracts/AttestationsVerifier.abi.json', 'utf8'))
-        const receiveAttestationBatchAddress = config.ethereum.attestationVerifierAddress;
+        const receiveAttestationBatchAddress = config.attestations.ethereum.attestationVerifierAddress;
         this.receiveAttestationBatchContract = new this.web3.eth.Contract(receiveAttestationBatchAbi.abi, receiveAttestationBatchAddress);
-
-        // fetch batches
-        this.fetchBatches()
     }
 
-    private async fetchBatches() {
-      this.client.query.attesters.batches('sepl').then((data) => {
-        console.log('Batches: ', data.toHuman())
-        this.batches = data
+    async fetchBatches() {
+      await this.client.query.attesters.batches('sepl').then((data) => {
+        const fetchedData: any = data.toJSON();
+
+        const convertedData: ConfirmationBatch[] = fetchedData.map((batch: any) => {
+          return {
+            newCommittee: batch.newCommittee || [],
+            bannedCommittee: batch.bannedCommittee || [],
+            confirmedSFXs: batch.confirmedSFXs || [],
+            revertedSFXs: batch.revertedSFXs || [],
+            index: batch.index,
+            expectedBatchHash: batch.expectedBatchHash,
+            signatures: batch.signatures.map(([id, signature]) => signature),
+          };
+        });
+
+        // console.log('Batches: ', data.toHuman())
+        logger.info('We have ' + data.toJSON().length + ' batches')
+        // logger.info(['Batch 0: ', data.toJSON()[0]])
+        // logger.info(['Batch 1: ', data.toJSON()[1]])
+        this.batches = convertedData;
       })
     }
 
     async receiveAttestationBatchCall() {
       // console.log([this.receiveAttestationBatchContract.methods])
       const committeeSize = await this.receiveAttestationBatchContract.methods.committeeSize().call()
-      const currentBatchIndex = await this.receiveAttestationBatchContract.methods.currentBatchIndex().call()
       console.log(['Committee size: ',  committeeSize])
+      const currentBatchIndex = await this.receiveAttestationBatchContract.methods.currentBatchIndex().call()
       console.log(['Batch Index: ', currentBatchIndex])
 
-      // fetch batch 0 from t0rn 
+      const blockHash = await this.client.rpc.chain.getBlockHash(this.batches[0].expectedBatchHash)
 
-      this.receiveAttestationBatchContract.methods.receiveAttestationBatchCall(
-        // address[] memory newCommittee,
-        // address[] memory bannedCommittee,
-        // bytes32[] memory confirmedSFXs,
-        // bytes32[] memory revertedSFXs,
-        // uint32 index,
-        // bytes32 expectedBatchHash,
-        // bytes[] memory signatures
+      logger.error(this.batches[0])
+
+      // fetch batch 0 from t0rn 
+      logger.error([
+        this.batches[0].newCommittee,
+        this.batches[0].bannedCommittee,
+        this.batches[0].confirmedSFXs,
+        this.batches[0].revertedSFXs,
+        this.batches[0].index,
+        blockHash,
+        this.batches[0].signatures,
+      ])
+
+
+      // TODO: align naming of the contract with circuit
+      await this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
+        this.batches[0].newCommittee,
+        this.batches[0].bannedCommittee,
+        this.batches[0].confirmedSFXs,
+        this.batches[0].revertedSFXs,
+        this.batches[0].index,
+        Buffer.from(blockHash, 'hex'),
+        this.batches[0].signatures,
       )
         .send({ from: this.wallet.address, gas: 200000 })
         .on('transactionHash', (hash) => {
