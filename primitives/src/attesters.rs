@@ -268,9 +268,11 @@ pub trait AttestersReadApi<Account, Balance> {
         n_windows_from_now: u16,
         batching_factor: BatchingFactor,
     ) -> Balance;
+
     fn estimate_user_finality_fee(
         target: &TargetId,
         n_epochs_from_now: u16,
+        batching_factor: BatchingFactor,
     ) -> Result<Balance, DispatchError>;
 }
 
@@ -328,6 +330,7 @@ impl<Account, Balance: num_traits::Zero, Error> AttestersReadApi<Account, Balanc
     fn estimate_user_finality_fee(
         target: &TargetId,
         n_epochs_from_now: u16,
+        batching_factor: BatchingFactor,
     ) -> Result<Balance, DispatchError> {
         Ok(Zero::zero())
     }
