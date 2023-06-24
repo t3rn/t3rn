@@ -1,4 +1,5 @@
-import { getGasPrice } from "price-estimation/eth";
+import { describe, expect, it } from "@jest/globals";
+import { getGasPrice } from "../eth";
 
 describe("eth", () => {
   describe("getGasPrice", () => {
