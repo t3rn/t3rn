@@ -6,6 +6,7 @@ import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
 import { handleDgfCmd } from "./commands/dgf.ts"
+import { handleEstimateFees } from "./commands/estimate.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -70,6 +71,14 @@ withExportMode(
       "30"
     )
     .action(wrapCryptoWaitReady(handleDgfCmd))
+)
+
+withExportMode(
+  program
+    .command("estimate-fees")
+    .option("-s, --sfx <file-path>", "Path to the sfx JSON file")
+    .description("Estimate the fees for executing an Sfx.")
+    .action(wrapCryptoWaitReady(handleEstimateFees))
 )
 
 program.parse(process.argv)
