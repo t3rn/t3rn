@@ -1,4 +1,4 @@
-FROM node:20.1
+FROM node:20.3
 
 RUN apt update -y
 RUN apt install -y python
