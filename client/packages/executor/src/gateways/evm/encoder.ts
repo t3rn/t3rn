@@ -49,7 +49,7 @@ export const scaleEncodeReceipt = async (txId: string, instance: any) => {
       },
     ],
   };
-  let encoded = api.createType("Receipt", receiptObj);
+  const encoded = api.createType("Receipt", receiptObj);
 
   return encoded.toHex();
 };

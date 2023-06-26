@@ -116,7 +116,9 @@ export class SideEffect {
     return this.xtxId.toString();
   }
 
-  /// returns target as string
+  // /**
+  // Return the target as a string.
+  // */
   getTarget() {
     return new TextDecoder().decode(this.object.target.toU8a());
   }

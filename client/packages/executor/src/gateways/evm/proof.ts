@@ -2,6 +2,7 @@ import { BaseTrie as Trie } from "merkle-patricia-tree";
 import { encode, receiptToRlp } from "./encoder";
 import Web3, { Numbers, TransactionReceipt } from "web3";
 
+
 /**
  * Construct the proof for a transaction, given its hash
  *
@@ -10,10 +11,10 @@ import Web3, { Numbers, TransactionReceipt } from "web3";
  * */
 export const getProof = async (
   txHash: string,
-  // client: Web3
+  client: Web3
 ) => {
   // Infura's endpoint. If it fails, generate a new one
-  const client = new Web3("https://sepolia.infura.io/v3/278f7a23305a406089f7dbfb7f4ef50d");
+  // const client = new Web3(getConfig().SEPOLIA);
 
   // get the transaction (object) receipt given the ID
   const receipt = await getReceipt(txHash, client);

@@ -5,6 +5,7 @@ import { getProof } from "./proof";
 import createDebug from "debug";
 import { scaleEncodeProof, scaleEncodeReceipt } from "./encoder";
 import { erc20ABI } from "wagmi";
+import { getConfig } from "./utils";
 
 export class EVMRelayer extends EventEmitter {
   static debug = createDebug("evm-relayer");
@@ -18,7 +19,7 @@ export class EVMRelayer extends EventEmitter {
 
   async setup(rpc: string, priv: string) {
     this.rpc = rpc;
-    this.api = new Web3(rpc);
+    this.api = new Web3(getConfig().SEPOLIA)  // new Web3(rpc);
     this.sender = this.api.eth.accounts.privateKeyToAccount(priv);
     console.log(this.sender);
     this.api.eth.accounts.wallet.add(this.sender);
@@ -55,7 +56,7 @@ export class EVMRelayer extends EventEmitter {
           .then(async (res: any) => {
             let { proof, index } = await getProof(
               res.transactionHash,
-              // this.api
+              this.api
             );
             const encoded = await scaleEncodeProof(proof, index);
             let encodedReceipt = await scaleEncodeReceipt(
