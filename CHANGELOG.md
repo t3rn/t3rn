@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.36.2-rc.0] - 2023-06-26
+### :bug: Bug Fixes
+- [`90bee60`](https://github.com/t3rn/t3rn/commit/90bee60e22a53cbc81c8daffeca9a897692611ad) - deploy phase should not be run by dependabot *(PR [#1085](https://github.com/t3rn/t3rn/pull/1085) by [@3h4x](https://github.com/3h4x))*
+- [`9d6b2e3`](https://github.com/t3rn/t3rn/commit/9d6b2e3ecb5a04005158ce4543fe911c78a2cf99) - executor deploy step *(PR [#1086](https://github.com/t3rn/t3rn/pull/1086) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.36.0-rc.0] - 2023-06-21
 ### :sparkles: New Features
 - [`e9e52ce`](https://github.com/t3rn/t3rn/commit/e9e52ce1b772da87348fe14b65e8a514ad9e732c) - add telemetry to executor *(PR [#1051](https://github.com/t3rn/t3rn/pull/1051) by [@ahkohd](https://github.com/ahkohd))*
@@ -1289,3 +1295,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.34.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.1-rc.0...v1.34.2-rc.0
 [v1.35.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.2-rc.0...v1.35.0-rc.0
 [v1.36.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.35.0-rc.0...v1.36.0-rc.0
+[v1.36.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.1-rc.0...v1.36.2-rc.0
