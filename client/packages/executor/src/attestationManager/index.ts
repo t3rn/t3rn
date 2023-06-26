@@ -4,7 +4,6 @@ import fs from 'fs';
 import Web3 from 'web3';
 import { logger } from "../../src/logging";
 import { ConfirmationBatch } from "./attestationBatch";
-import abi from 'ethereumjs-abi';
 import { keccakAsHex } from "@polkadot/util-crypto";
 import { ethers } from "ethers";
 // import { keccak256 } from 'ethereumjs-util';
