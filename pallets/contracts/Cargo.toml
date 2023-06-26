@@ -51,7 +51,7 @@ env_logger        = "0.10"
 glob              = "0.3"
 hex-literal       = "0.3"
 pretty_assertions = "1"
-serde_json        = "1.0.97"
+serde_json        = "1.0.99"
 wat               = "1"
 
 # Substrate Dependencies
