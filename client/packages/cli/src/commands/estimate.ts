@@ -1,5 +1,9 @@
 import ora from "ora"
-import { ethGasFeeEstimationUtils } from "@t3rn/sdk"
+import {
+  EthActions,
+  EthSpeedModes,
+  calculateGasFee,
+} from "@t3rn/sdk/price-estimation"
 import { ExtrinsicSchema, SpeedMode, SpeedModes } from "@/schemas/extrinsic.ts"
 import { getConfig } from "@/utils/config.ts"
 import { validate } from "@/utils/fns.ts"
@@ -73,9 +77,6 @@ const estimateEthFees = async (
   sideEffect: SideEffect,
   speedMode: SpeedMode
 ) => {
-  const { EthSpeedModes, EthActions, calculateGasFee } =
-    ethGasFeeEstimationUtils
-
   const mapSfxSpeedModeToEthSpeedMode = (speedMode: SpeedMode) => {
     switch (speedMode) {
       case SpeedModes.Fast:
