@@ -166,7 +166,7 @@
       "allowed_side_effects":"Vec<(Sfx4bId, Option<u8>)>"
    },
    "TokenRecord":{
-      "token_id":"[u8; 4]",
+      "token_id":"u32",
       "gateway_id":"[u8; 4]",
       "token_props":"TokenInfo"
    },

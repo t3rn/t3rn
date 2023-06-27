@@ -8,13 +8,12 @@ import '@polkadot/api-base/types/calls';
 import type { ApiTypes, AugmentedCall, DecoratedCallBase } from '@polkadot/api-base/types';
 import type { Bytes, Null, Option, Vec, u32, u64 } from '@polkadot/types-codec';
 import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
-import type { OpaqueKeyOwnershipProof } from '@polkadot/types/interfaces/babe';
 import type { CheckInherentsResult, InherentData } from '@polkadot/types/interfaces/blockbuilder';
 import type { BlockHash } from '@polkadot/types/interfaces/chain';
 import type { AuthorityId } from '@polkadot/types/interfaces/consensus';
 import type { CodeUploadResult, ContractExecResult, ContractInstantiateResult } from '@polkadot/types/interfaces/contracts';
+import type { CollationInfo } from '@polkadot/types/interfaces/cumulus';
 import type { Extrinsic } from '@polkadot/types/interfaces/extrinsics';
-import type { AuthorityList, GrandpaEquivocationProof, SetId } from '@polkadot/types/interfaces/grandpa';
 import type { OpaqueMetadata } from '@polkadot/types/interfaces/metadata';
 import type { FeeDetails, RuntimeDispatchInfo } from '@polkadot/types/interfaces/payment';
 import type { AccountId, Balance, Block, Header, Index, KeyTypeId, SlotDuration } from '@polkadot/types/interfaces/runtime';
@@ -65,6 +64,13 @@ declare module '@polkadot/api-base/types/calls' {
        **/
       inherentExtrinsics: AugmentedCall<ApiType, (inherent: InherentData | { data?: any } | string | Uint8Array) => Observable<Vec<Extrinsic>>>;
     };
+    /** 0xea93e3f16f3d6962/2 */
+    collectCollationInfo: {
+      /**
+       * Collect information about a collation.
+       **/
+      collectCollationInfo: AugmentedCall<ApiType, (header: Header | { parentHash?: any; number?: any; stateRoot?: any; extrinsicsRoot?: any; digest?: any } | string | Uint8Array) => Observable<CollationInfo>>;
+    };
     /** 0x68b66ba122c93fa7/1 */
     contractsApi: {
       /**
@@ -98,25 +104,6 @@ declare module '@polkadot/api-base/types/calls' {
        * Returns the version of the runtime.
        **/
       version: AugmentedCall<ApiType, () => Observable<RuntimeVersion>>;
-    };
-    /** 0xed99c5acb25eedf5/3 */
-    grandpaApi: {
-      /**
-       * Get current GRANDPA authority set id.
-       **/
-      currentSetId: AugmentedCall<ApiType, () => Observable<SetId>>;
-      /**
-       * Generates a proof of key ownership for the given authority in the given set.
-       **/
-      generateKeyOwnershipProof: AugmentedCall<ApiType, (setId: SetId | AnyNumber | Uint8Array, authorityId: AuthorityId | string | Uint8Array) => Observable<Option<OpaqueKeyOwnershipProof>>>;
-      /**
-       * Get the current GRANDPA authorities and weights. This should not change except for when changes are scheduled and the corresponding delay has passed.
-       **/
-      grandpaAuthorities: AugmentedCall<ApiType, () => Observable<AuthorityList>>;
-      /**
-       * Submits an unsigned extrinsic to report an equivocation.
-       **/
-      submitReportEquivocationUnsignedExtrinsic: AugmentedCall<ApiType, (equivocationProof: GrandpaEquivocationProof | { setId?: any; equivocation?: any } | string | Uint8Array, keyOwnerProof: OpaqueKeyOwnershipProof | string | Uint8Array) => Observable<Option<Null>>>;
     };
     /** 0x37e397fc7c91f5e4/1 */
     metadata: {
