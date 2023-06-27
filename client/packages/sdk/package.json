@@ -49,8 +49,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "require": "./dist/index.cjs",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./price-estimation": {
       "types": "./dist/price-estimation/index.d.ts",
