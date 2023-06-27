@@ -84,7 +84,7 @@ describe('generateAttestationTx', () => {
             toBuffer(attester.keys.ethereum.privateKey)
         )
 
-        const prefix = 'Ethereum Signed Message'
+        const prefix = '\x19Ethereum Signed Message:\n32'
         const prefixBuffer = Buffer.from(prefix)
         const messageBuffer = toBuffer(messageHash)
 

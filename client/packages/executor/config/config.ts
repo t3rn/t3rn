@@ -162,9 +162,9 @@ export type Config = {
       rpc: string;
       attestationVerifierAddress: string;
       privateKey: string | undefined;
-    },
-    batchesCatchUp: boolean
-  }
+    };
+    batchesCatchUp: boolean;
+  };
 };
 
 export const config: Config = {
@@ -257,10 +257,9 @@ export const config: Config = {
   attestations: {
     ethereum: {
       rpc: "https://endpoints.omniatech.io/v1/eth/sepolia/public",
-      attestationVerifierAddress: '0xAF1e49B67B4c8274f20d278f1f888b33Da5Ec284',
+      attestationVerifierAddress: "0xAF1e49B67B4c8274f20d278f1f888b33Da5Ec284",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
-    batchesCatchUp: process.env.BATCHES_CATCH_UP == "true" ? true : false
-
-  }
+    batchesCatchUp: process.env.BATCHES_CATCH_UP == "true" ? true : false,
+  },
 };

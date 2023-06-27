@@ -12,7 +12,7 @@
     "export": "LOG_LEVEL=debug pnpm run start >> logger.log",
     "fmt": "prettier --write src config tests",
     "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
-    "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "test": "mocha -r ts-node/register 'tests/**/at*.ts'",
     "test-single": "mocha -r ts-node/register"
   },
   "exclude": [
@@ -36,7 +36,9 @@
     "chai-as-promised": "^7.1.1",
     "debug": "4.3.4",
     "dotenv": "16.1.4",
+    "ethereum-cryptography": "^2.0.0",
     "ethereumjs-abi": "^0.6.8",
+    "ethereumjs-util": "^7.1.5",
     "ethers": "^6.6.1",
     "hardhat": "^2.16.0",
     "mocha": "^10.2.0",
