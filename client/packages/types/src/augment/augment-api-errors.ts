@@ -25,6 +25,24 @@ declare module '@polkadot/api-base/types/errors' {
       TransferDepositFailedOldChargeNotFound: AugmentedError<ApiType>;
       TransferDepositFailedToReleasePreviousCharge: AugmentedError<ApiType>;
     };
+    assetRegistry: {
+      /**
+       * One of the passed capabilities is not valid for this asset
+       **/
+      CapabilitiesNotPermitted: AugmentedError<ApiType>;
+      /**
+       * This location mapping was unallowed for this user
+       **/
+      LocationUnallowed: AugmentedError<ApiType>;
+      /**
+       * The mapping or asset could not be found
+       **/
+      NotFound: AugmentedError<ApiType>;
+      /**
+       * The XCM message shouldnt be executed for given asset
+       **/
+      ShouldntExecuteMessage: AugmentedError<ApiType>;
+    };
     assets: {
       /**
        * The asset-account already exists.
@@ -88,6 +106,43 @@ declare module '@polkadot/api-base/types/errors' {
        * The source account would not survive the transfer and it needs to stay alive.
        **/
       WouldDie: AugmentedError<ApiType>;
+    };
+    attesters: {
+      AddAttesterAlreadyRequested: AugmentedError<ApiType>;
+      AlreadyNominated: AugmentedError<ApiType>;
+      AlreadyRegistered: AugmentedError<ApiType>;
+      ArithmeticOverflow: AugmentedError<ApiType>;
+      AttestationDoubleSignAttempt: AugmentedError<ApiType>;
+      AttestationSignatureInvalid: AugmentedError<ApiType>;
+      AttesterBondTooSmall: AugmentedError<ApiType>;
+      AttesterDidNotAgreeToNewTarget: AugmentedError<ApiType>;
+      AttesterNotFound: AugmentedError<ApiType>;
+      BanAttesterAlreadyRequested: AugmentedError<ApiType>;
+      BatchAlreadyCommitted: AugmentedError<ApiType>;
+      BatchFoundWithUnsignableStatus: AugmentedError<ApiType>;
+      BatchHashMismatch: AugmentedError<ApiType>;
+      BatchNotFound: AugmentedError<ApiType>;
+      CollusionWithPermanentSlashDetected: AugmentedError<ApiType>;
+      CommitteeSizeTooLarge: AugmentedError<ApiType>;
+      InvalidMessage: AugmentedError<ApiType>;
+      InvalidSignature: AugmentedError<ApiType>;
+      InvalidTargetInclusionProof: AugmentedError<ApiType>;
+      MissingNominations: AugmentedError<ApiType>;
+      NextCommitteeAlreadyRequested: AugmentedError<ApiType>;
+      NominatorBondTooSmall: AugmentedError<ApiType>;
+      NominatorNotEnoughBalance: AugmentedError<ApiType>;
+      NoNominationFound: AugmentedError<ApiType>;
+      NotActiveSet: AugmentedError<ApiType>;
+      NotInCurrentCommittee: AugmentedError<ApiType>;
+      NotRegistered: AugmentedError<ApiType>;
+      PublicKeyMissing: AugmentedError<ApiType>;
+      RejectingFromSlashedAttester: AugmentedError<ApiType>;
+      RemoveAttesterAlreadyRequested: AugmentedError<ApiType>;
+      SfxAlreadyRequested: AugmentedError<ApiType>;
+      TargetAlreadyActive: AugmentedError<ApiType>;
+      TargetNotActive: AugmentedError<ApiType>;
+      XdnsGatewayDoesNotHaveEscrowAddressRegistered: AugmentedError<ApiType>;
+      XdnsTargetNotActive: AugmentedError<ApiType>;
     };
     authorship: {
       /**
@@ -175,6 +230,7 @@ declare module '@polkadot/api-base/types/errors' {
       DeterminedForbiddenXtxStatus: AugmentedError<ApiType>;
       EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished: AugmentedError<ApiType>;
       FailedToCheckInOverXBI: AugmentedError<ApiType>;
+      FailedToCommitFSX: AugmentedError<ApiType>;
       FailedToConvertSFX2XBI: AugmentedError<ApiType>;
       FailedToConvertXBIResult2SFXConfirmation: AugmentedError<ApiType>;
       FailedToCreateXBIMetadataDueToWrongAccountConversion: AugmentedError<ApiType>;
@@ -227,8 +283,51 @@ declare module '@polkadot/api-base/types/errors' {
       XtxChargeBondDepositFailedCantAccessBid: AugmentedError<ApiType>;
       XtxChargeFailedRequesterBalanceTooLow: AugmentedError<ApiType>;
       XtxDoesNotExist: AugmentedError<ApiType>;
+      XtxNotFound: AugmentedError<ApiType>;
     };
     clock: {
+    };
+    collatorSelection: {
+      /**
+       * User is already a candidate
+       **/
+      AlreadyCandidate: AugmentedError<ApiType>;
+      /**
+       * User is already an Invulnerable
+       **/
+      AlreadyInvulnerable: AugmentedError<ApiType>;
+      /**
+       * Account has no associated validator ID
+       **/
+      NoAssociatedValidatorId: AugmentedError<ApiType>;
+      /**
+       * User is not a candidate
+       **/
+      NotCandidate: AugmentedError<ApiType>;
+      /**
+       * Permission issue
+       **/
+      Permission: AugmentedError<ApiType>;
+      /**
+       * Too few candidates
+       **/
+      TooFewCandidates: AugmentedError<ApiType>;
+      /**
+       * Too many candidates
+       **/
+      TooManyCandidates: AugmentedError<ApiType>;
+      /**
+       * Too many invulnerables
+       **/
+      TooManyInvulnerables: AugmentedError<ApiType>;
+      /**
+       * Unknown error
+       **/
+      Unknown: AugmentedError<ApiType>;
+      /**
+       * Validator ID is not yet registered
+       **/
+      ValidatorNotRegistered: AugmentedError<ApiType>;
     };
     contracts: {
       /**
@@ -379,6 +478,74 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnknownContract: AugmentedError<ApiType>;
     };
+    cumulusXcm: {
+    };
+    dmpQueue: {
+      /**
+       * The amount of weight given is possibly not enough for executing the message.
+       **/
+      OverLimit: AugmentedError<ApiType>;
+      /**
+       * The message index given is unknown.
+       **/
+      Unknown: AugmentedError<ApiType>;
+    };
+    escrowTreasury: {
+      /**
+       * The spend origin is valid but the amount it is allowed to spend is lower than the
+       * amount to be spent.
+       **/
+      InsufficientPermission: AugmentedError<ApiType>;
+      /**
+       * Proposer's balance is too low.
+       **/
+      InsufficientProposersBalance: AugmentedError<ApiType>;
+      /**
+       * No proposal or bounty at that index.
+       **/
+      InvalidIndex: AugmentedError<ApiType>;
+      /**
+       * Proposal has not been approved.
+       **/
+      ProposalNotApproved: AugmentedError<ApiType>;
+      /**
+       * Too many approvals in the queue.
+       **/
+      TooManyApprovals: AugmentedError<ApiType>;
+    };
+    ethereumBridge: {
+      AlreadyInitialized: AugmentedError<ApiType>;
+      BeaconCheckpointHashTreeRootFailed: AugmentedError<ApiType>;
+      BeaconHeaderHashTreeRootFailed: AugmentedError<ApiType>;
+      BeaconHeaderNotFinalized: AugmentedError<ApiType>;
+      BeaconHeaderNotFound: AugmentedError<ApiType>;
+      BLSPubkeyAggregationFaild: AugmentedError<ApiType>;
+      CurrentSyncCommitteePeriodNotAvailable: AugmentedError<ApiType>;
+      EventNotInReceipt: AugmentedError<ApiType>;
+      ExecutionHeaderHashTreeRootFailed: AugmentedError<ApiType>;
+      ExecutionHeaderNotFound: AugmentedError<ApiType>;
+      ForkNotDetected: AugmentedError<ApiType>;
+      Halted: AugmentedError<ApiType>;
+      InvalidBLSPublicKeyUsedForVerification: AugmentedError<ApiType>;
+      InvalidBLSSignature: AugmentedError<ApiType>;
+      InvalidCheckpoint: AugmentedError<ApiType>;
+      InvalidEncodedEpochUpdate: AugmentedError<ApiType>;
+      InvalidExecutionRange: AugmentedError<ApiType>;
+      InvalidExecutionRangeLinkage: AugmentedError<ApiType>;
+      InvalidFork: AugmentedError<ApiType>;
+      InvalidInclusionProof: AugmentedError<ApiType>;
+      InvalidInitializationData: AugmentedError<ApiType>;
+      InvalidMerkleProof: AugmentedError<ApiType>;
+      InvalidSyncCommitteePeriod: AugmentedError<ApiType>;
+      MathError: AugmentedError<ApiType>;
+      NotPeriodsFirstEpoch: AugmentedError<ApiType>;
+      SSZForkDataHashTreeRootFailed: AugmentedError<ApiType>;
+      SSZSigningDataHashTreeRootFailed: AugmentedError<ApiType>;
+      SubmittedHeaderToOld: AugmentedError<ApiType>;
+      SyncCommitteeInvalid: AugmentedError<ApiType>;
+      SyncCommitteeParticipantsNotSupermajority: AugmentedError<ApiType>;
+      ValidSyncCommitteeNotAvailable: AugmentedError<ApiType>;
+    };
     evm: {
       /**
        * Not enough balance to perform action
@@ -415,37 +582,28 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       WithdrawFailed: AugmentedError<ApiType>;
     };
-    grandpa: {
+    feeTreasury: {
       /**
-       * Attempt to signal GRANDPA change with one already pending.
+       * The spend origin is valid but the amount it is allowed to spend is lower than the
+       * amount to be spent.
        **/
-      ChangePending: AugmentedError<ApiType>;
+      InsufficientPermission: AugmentedError<ApiType>;
       /**
-       * A given equivocation report is valid but already previously reported.
+       * Proposer's balance is too low.
        **/
-      DuplicateOffenceReport: AugmentedError<ApiType>;
+      InsufficientProposersBalance: AugmentedError<ApiType>;
       /**
-       * An equivocation proof provided as part of an equivocation report is invalid.
+       * No proposal or bounty at that index.
        **/
-      InvalidEquivocationProof: AugmentedError<ApiType>;
+      InvalidIndex: AugmentedError<ApiType>;
       /**
-       * A key ownership proof provided as part of an equivocation report is invalid.
+       * Proposal has not been approved.
        **/
-      InvalidKeyOwnershipProof: AugmentedError<ApiType>;
+      ProposalNotApproved: AugmentedError<ApiType>;
       /**
-       * Attempt to signal GRANDPA pause when the authority set isn't live
-       * (either paused or already pending pause).
+       * Too many approvals in the queue.
        **/
-      PauseFailed: AugmentedError<ApiType>;
-      /**
-       * Attempt to signal GRANDPA resume when the authority set isn't paused
-       * (either live or already pending resume).
-       **/
-      ResumeFailed: AugmentedError<ApiType>;
-      /**
-       * Cannot signal forced change so soon after last.
-       **/
-      TooSoon: AugmentedError<ApiType>;
+      TooManyApprovals: AugmentedError<ApiType>;
     };
     identity: {
       /**
@@ -599,6 +757,74 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnsupportedScheduledChange: AugmentedError<ApiType>;
     };
+    maintenanceMode: {
+      /**
+       * The chain cannot enter maintenance mode because it is already in maintenance mode
+       **/
+      AlreadyInMaintenanceMode: AugmentedError<ApiType>;
+      /**
+       * The chain cannot resume normal operation because it is not in maintenance mode
+       **/
+      NotInMaintenanceMode: AugmentedError<ApiType>;
+    };
+    parachainSystem: {
+      /**
+       * The inherent which supplies the host configuration did not run this block
+       **/
+      HostConfigurationNotAvailable: AugmentedError<ApiType>;
+      /**
+       * No code upgrade has been authorized.
+       **/
+      NothingAuthorized: AugmentedError<ApiType>;
+      /**
+       * No validation function upgrade is currently scheduled.
+       **/
+      NotScheduled: AugmentedError<ApiType>;
+      /**
+       * Attempt to upgrade validation function while existing upgrade pending
+       **/
+      OverlappingUpgrades: AugmentedError<ApiType>;
+      /**
+       * Polkadot currently prohibits this parachain from upgrading its validation function
+       **/
+      ProhibitedByPolkadot: AugmentedError<ApiType>;
+      /**
+       * The supplied validation function has compiled into a blob larger than Polkadot is
+       * willing to run
+       **/
+      TooBig: AugmentedError<ApiType>;
+      /**
+       * The given code upgrade has not been authorized.
+       **/
+      Unauthorized: AugmentedError<ApiType>;
+      /**
+       * The inherent which supplies the validation data did not run this block
+       **/
+      ValidationDataNotAvailable: AugmentedError<ApiType>;
+    };
+    parachainTreasury: {
+      /**
+       * The spend origin is valid but the amount it is allowed to spend is lower than the
+       * amount to be spent.
+       **/
+      InsufficientPermission: AugmentedError<ApiType>;
+      /**
+       * Proposer's balance is too low.
+       **/
+      InsufficientProposersBalance: AugmentedError<ApiType>;
+      /**
+       * No proposal or bounty at that index.
+       **/
+      InvalidIndex: AugmentedError<ApiType>;
+      /**
+       * Proposal has not been approved.
+       **/
+      ProposalNotApproved: AugmentedError<ApiType>;
+      /**
+       * Too many approvals in the queue.
+       **/
+      TooManyApprovals: AugmentedError<ApiType>;
+    };
     polkadotBridge: {
       /**
        * The block height couldn't be converted
@@ -685,6 +911,63 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnsupportedScheduledChange: AugmentedError<ApiType>;
     };
+    polkadotXcm: {
+      /**
+       * The location is invalid since it already has a subscription from us.
+       **/
+      AlreadySubscribed: AugmentedError<ApiType>;
+      /**
+       * The given location could not be used (e.g. because it cannot be expressed in the
+       * desired version of XCM).
+       **/
+      BadLocation: AugmentedError<ApiType>;
+      /**
+       * The version of the `Versioned` value used is not able to be interpreted.
+       **/
+      BadVersion: AugmentedError<ApiType>;
+      /**
+       * Could not re-anchor the assets to declare the fees for the destination chain.
+       **/
+      CannotReanchor: AugmentedError<ApiType>;
+      /**
+       * The destination `MultiLocation` provided cannot be inverted.
+       **/
+      DestinationNotInvertible: AugmentedError<ApiType>;
+      /**
+       * The assets to be sent are empty.
+       **/
+      Empty: AugmentedError<ApiType>;
+      /**
+       * The message execution fails the filter.
+       **/
+      Filtered: AugmentedError<ApiType>;
+      /**
+       * Origin is invalid for sending.
+       **/
+      InvalidOrigin: AugmentedError<ApiType>;
+      /**
+       * The referenced subscription could not be found.
+       **/
+      NoSubscription: AugmentedError<ApiType>;
+      /**
+       * There was some other issue (i.e. not to do with routing) in sending the message. Perhaps
+       * a lack of space for buffering the message.
+       **/
+      SendFailure: AugmentedError<ApiType>;
+      /**
+       * Too many assets have been attempted for transfer.
+       **/
+      TooManyAssets: AugmentedError<ApiType>;
+      /**
+       * The desired destination was unreachable, generally because there is a no way of routing
+       * to it.
+       **/
+      Unreachable: AugmentedError<ApiType>;
+      /**
+       * The message's weight could not be determined.
+       **/
+      UnweighableMessage: AugmentedError<ApiType>;
+    };
     portal: {
       /**
        * The gateways vendor is not available, which is a result of a missing XDNS record.
@@ -730,6 +1013,40 @@ declare module '@polkadot/api-base/types/errors' {
        * The creation of the XDNS record was not successful
        **/
       XdnsRecordCreationFailed: AugmentedError<ApiType>;
+    };
+    preimage: {
+      /**
+       * Preimage has already been noted on-chain.
+       **/
+      AlreadyNoted: AugmentedError<ApiType>;
+      /**
+       * The user is not authorized to perform this action.
+       **/
+      NotAuthorized: AugmentedError<ApiType>;
+      /**
+       * The preimage cannot be removed since it has not yet been noted.
+       **/
+      NotNoted: AugmentedError<ApiType>;
+      /**
+       * The preimage request cannot be removed since no outstanding requests exist.
+       **/
+      NotRequested: AugmentedError<ApiType>;
+      /**
+       * A preimage may not be removed when there are outstanding requests.
+       **/
+      Requested: AugmentedError<ApiType>;
+      /**
+       * Preimage is too large to store on-chain.
+       **/
+      TooLarge: AugmentedError<ApiType>;
+    };
+    rewards: {
+      ArithmeticOverflow: AugmentedError<ApiType>;
+      AttesterNotFound: AugmentedError<ApiType>;
+      DistributionPeriodNotElapsed: AugmentedError<ApiType>;
+      Halted: AugmentedError<ApiType>;
+      NoPendingClaims: AugmentedError<ApiType>;
+      TryIntoConversionU128ToBalanceFailed: AugmentedError<ApiType>;
     };
     rococoBridge: {
       /**
@@ -816,6 +1133,69 @@ declare module '@polkadot/api-base/types/errors' {
        * A forced change was detected, which is not supported
        **/
       UnsupportedScheduledChange: AugmentedError<ApiType>;
+    };
+    scheduler: {
+      /**
+       * Failed to schedule a call
+       **/
+      FailedToSchedule: AugmentedError<ApiType>;
+      /**
+       * Cannot find the scheduled call.
+       **/
+      NotFound: AugmentedError<ApiType>;
+      /**
+       * Reschedule failed because it does not change scheduled time.
+       **/
+      RescheduleNoChange: AugmentedError<ApiType>;
+      /**
+       * Given target block number is in the past.
+       **/
+      TargetBlockNumberInPast: AugmentedError<ApiType>;
+    };
+    session: {
+      /**
+       * Registered duplicate key.
+       **/
+      DuplicatedKey: AugmentedError<ApiType>;
+      /**
+       * Invalid ownership proof.
+       **/
+      InvalidProof: AugmentedError<ApiType>;
+      /**
+       * Key setting account is not live, so it's impossible to associate keys.
+       **/
+      NoAccount: AugmentedError<ApiType>;
+      /**
+       * No associated validator ID for account.
+       **/
+      NoAssociatedValidatorId: AugmentedError<ApiType>;
+      /**
+       * No keys are associated with this account.
+       **/
+      NoKeys: AugmentedError<ApiType>;
+    };
+    slashTreasury: {
+      /**
+       * The spend origin is valid but the amount it is allowed to spend is lower than the
+       * amount to be spent.
+       **/
+      InsufficientPermission: AugmentedError<ApiType>;
+      /**
+       * Proposer's balance is too low.
+       **/
+      InsufficientProposersBalance: AugmentedError<ApiType>;
+      /**
+       * No proposal or bounty at that index.
+       **/
+      InvalidIndex: AugmentedError<ApiType>;
+      /**
+       * Proposal has not been approved.
+       **/
+      ProposalNotApproved: AugmentedError<ApiType>;
+      /**
+       * Too many approvals in the queue.
+       **/
+      TooManyApprovals: AugmentedError<ApiType>;
     };
     sudo: {
       /**
@@ -929,7 +1309,53 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TooManyCalls: AugmentedError<ApiType>;
     };
+    xbiPortal: {
+      AlreadyCheckedIn: AugmentedError<ApiType>;
+      ArithmeticErrorOverflow: AugmentedError<ApiType>;
+      AssetsUnsupported: AugmentedError<ApiType>;
+      CallbackUnsupported: AugmentedError<ApiType>;
+      CallCustomUnsupported: AugmentedError<ApiType>;
+      CallNativeUnsupported: AugmentedError<ApiType>;
+      DefiUnsupported: AugmentedError<ApiType>;
+      EvmUnsupported: AugmentedError<ApiType>;
+      FailedToCastAddress: AugmentedError<ApiType>;
+      FailedToCastHash: AugmentedError<ApiType>;
+      FailedToCastValue: AugmentedError<ApiType>;
+      InstructionuctionNotAllowedHere: AugmentedError<ApiType>;
+      NotificationTimeoutDelivery: AugmentedError<ApiType>;
+      NotificationTimeoutExecution: AugmentedError<ApiType>;
+      ResponseAlreadyStored: AugmentedError<ApiType>;
+      TransferFailed: AugmentedError<ApiType>;
+      TransferUnsupported: AugmentedError<ApiType>;
+      WasmUnsupported: AugmentedError<ApiType>;
+    };
+    xcmpQueue: {
+      /**
+       * Bad overweight index.
+       **/
+      BadOverweightIndex: AugmentedError<ApiType>;
+      /**
+       * Bad XCM data.
+       **/
+      BadXcm: AugmentedError<ApiType>;
+      /**
+       * Bad XCM origin.
+       **/
+      BadXcmOrigin: AugmentedError<ApiType>;
+      /**
+       * Failed to send XCM message.
+       **/
+      FailedToSend: AugmentedError<ApiType>;
+      /**
+       * Provided weight is possibly not enough to execute the message.
+       **/
+      WeightOverLimit: AugmentedError<ApiType>;
+    };
     xdns: {
+      /**
+       * Gateway verified as inactive
+       **/
+      GatewayNotActive: AugmentedError<ApiType>;
       /**
        * Stored gateway has already been added before
        **/
@@ -959,15 +1385,11 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TokenRecordAlreadyExists: AugmentedError<ApiType>;
       /**
-       * Access of unknown xdns_record
+       * XDNS Token not found in assets overlay
        **/
-      UnknownXdnsRecord: AugmentedError<ApiType>;
+      TokenRecordNotFoundInAssetsOverlay: AugmentedError<ApiType>;
       /**
-       * Stored xdns_record has already been added before
-       **/
-      XdnsRecordAlreadyExists: AugmentedError<ApiType>;
-      /**
-       * Xdns Record not found
+       * XDNS Record not found
        **/
       XdnsRecordNotFound: AugmentedError<ApiType>;
     };
