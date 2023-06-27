@@ -1,20 +1,16 @@
 import ora from "ora"
-import {
-  EthActions,
-  EthSpeedModes,
-  calculateGasFee,
-} from "@t3rn/sdk/price-estimation"
-import { ExtrinsicSchema, SpeedMode, SpeedModes } from "@/schemas/extrinsic.ts"
+import { calculateGasFee } from "@t3rn/sdk/price-estimation"
+import { ExtrinsicSchema, SpeedMode } from "@/schemas/extrinsic.ts"
 import { getConfig } from "@/utils/config.ts"
 import { validate } from "@/utils/fns.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"
 import { readSfxFile } from "@/utils/sfx.ts"
 import { Args } from "@/types.ts"
+import { SideEffect } from "@/schemas/sfx.ts"
 import {
-  SideEffect,
-  SideEffectAction,
-  SideEffectActions,
-} from "@/schemas/sfx.ts"
+  mapSfxActionToEthAction,
+  mapSfxSpeedModeToEthSpeedMode,
+} from "@/utils/eth.ts"
 
 export const spinner = ora()
 
@@ -77,23 +73,6 @@ const estimateEthFees = async (
   sideEffect: SideEffect,
   speedMode: SpeedMode
 ) => {
-  const mapSfxSpeedModeToEthSpeedMode = (speedMode: SpeedMode) => {
-    switch (speedMode) {
-      case SpeedModes.Fast:
-        return EthSpeedModes.Fast
-      case SpeedModes.Rational:
-      case SpeedModes.Finalized:
-        return EthSpeedModes.Standard
-    }
-  }
-  const mapSfxActionToEthAction = (action: SideEffectAction) => {
-    switch (action) {
-      case SideEffectActions.Transfer:
-      default:
-        return EthActions.Transfer
-    }
-  }
-
   spinner.info(colorLogMsg("INFO", `Estimating fees for ${tag}...`))
 
   try {
@@ -108,6 +87,7 @@ const estimateEthFees = async (
     spinner.fail(
       colorLogMsg("ERROR", `Failed to estimate fees for ${tag}: ${e}`)
     )
+    process.exit(1)
   }
 }
 
@@ -118,4 +98,5 @@ const estimateSubstrateFees = async (tag: string, sideEffect: SideEffect) => {
       `Skip fees estimation for ${tag}. REASON: price estimation for ${sideEffect.target} target is not yet supported!`
     )
   )
+  process.exit(1)
 }
