@@ -13,7 +13,6 @@ import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
 import * as Encodings from "./encodings";
 import * as Converters from "./converters";
 import { Circuit, Tx } from "./circuit";
-import * as ethGasFeeEstimationUtils from "./price-estimation/eth";
 
 /**
  * The main class for the SDK
@@ -82,5 +81,4 @@ export {
   WsProvider,
   Keyring,
   cryptoWaitReady,
-  ethGasFeeEstimationUtils,
 };
