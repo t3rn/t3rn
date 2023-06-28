@@ -25,9 +25,23 @@ export type GasPrice = {
   priceUsd: number;
 };
 
-export const getGasPrice = async () => {
-  const endpoint = "https://beaconcha.in/api/v1/execution/gasnow";
-  const req = await fetch(endpoint);
+export type EthTarget = "eth" | "sepl";
+export const EthTargets = {
+  Eth: "eth",
+  Sepolia: "sepl",
+};
+
+const getEndpoint = (target: EthTarget) => {
+  switch (target) {
+    case EthTargets.Eth:
+      return "https://beaconcha.in/api/v1/execution/gasnow";
+    case EthTargets.Sepolia:
+      return "https://sepolia.beaconcha.in/api/v1/execution/gasnow";
+  }
+};
+
+export const getGasPrice = async (target: EthTarget) => {
+  const req = await fetch(getEndpoint(target));
 
   if (req.status !== 200) {
     throw new Error("Failed to fetch gas price. ERROR_STATUS: " + req.status);
@@ -45,10 +59,11 @@ export const getGasAmount = (action: EthAction) => {
 };
 
 export const calculateGasFee = async (
+  target: EthTarget,
   action: EthAction,
   speedMode: EthSpeedMode
 ) => {
-  const gasPrice = (await getGasPrice())[speedMode];
+  const gasPrice = (await getGasPrice(target))[speedMode];
   const gasAmount = getGasAmount(action);
   const gasFeeInWei = BigInt(gasPrice) * BigInt(gasAmount);
   const gasFeeInEther = Number(gasFeeInWei) / 1e18;
