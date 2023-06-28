@@ -1,5 +1,5 @@
 import ora from "ora"
-import { calculateGasFee } from "@t3rn/sdk/price-estimation"
+import { EthTarget, calculateGasFee } from "@t3rn/sdk/price-estimation"
 import { ExtrinsicSchema, SpeedMode } from "@/schemas/extrinsic.ts"
 import { getConfig } from "@/utils/config.ts"
 import { validate } from "@/utils/fns.ts"
@@ -61,8 +61,11 @@ const estimateFees = async (
 
   switch (sideEffect.target) {
     case "roco":
+    case "polk":
+    case "ksma":
       return await withArgs(estimateSubstrateFees)
     case "eth":
+    case "sepl":
     default:
       return await withArgs(estimateEthFees)
   }
@@ -77,6 +80,7 @@ const estimateEthFees = async (
 
   try {
     const gasFeesInEth = await calculateGasFee(
+      sideEffect.target as EthTarget,
       mapSfxActionToEthAction(sideEffect.action),
       mapSfxSpeedModeToEthSpeedMode(speedMode)
     )
