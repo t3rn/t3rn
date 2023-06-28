@@ -4,10 +4,7 @@ import fs from "fs";
 import Web3 from "web3";
 import { logger } from "../../src/logging";
 import { Batch, ConfirmationBatch } from "./batch";
-import { keccakAsHex } from "@polkadot/util-crypto";
 import { ethers } from "ethers";
-import { t } from "@t3rn/sdk/dist/types-922c6188";
-// import { keccak256 } from 'ethereumjs-util';
 
 /**
 
@@ -144,8 +141,6 @@ export class AttestationManager {
 
     logger.debug(`Found ${filteredEvents.length} NewAttestationMessageHash events`); 
 
-    logger.error(filteredEvents)
-
     for (const event of filteredEvents) {
         const messageHash = event.event.data[1]
         logger.debug(`Found messageHash: ${messageHash}`)
@@ -163,7 +158,7 @@ export class AttestationManager {
     for (const batch of this.batches.slice(1)) {
       logger.info({batch: batch}, `Batch ${batch.index} processing`);
       const messageHash = await this.getMessageHashFromCircuit(batch.created);
-      this.receiveAttestationBatchCall(batch, messageHash);
+      await this.receiveAttestationBatchCall(batch, messageHash);
     }
   }
 
@@ -171,11 +166,10 @@ export class AttestationManager {
     const committeeSize = await this.receiveAttestationBatchContract.methods
       .committeeSize()
       .call();
-    logger.debug("Committee size: " + committeeSize);
     const currentBatchIndex = await this.receiveAttestationBatchContract.methods
       .currentBatchIndex()
       .call();
-    logger.debug("Batch Index: " + currentBatchIndex);
+    logger.debug({committeeSize: committeeSize, currentBatchIndex: currentBatchIndex}, "Contract Data" );
 
     const contractMethod = this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
       batch.nextCommittee,
@@ -183,7 +177,7 @@ export class AttestationManager {
       batch.committedSfx,
       batch.revertedSfx,
       batch.index,
-      messageHash,
+      "0x82c789944deff12a6158496b7eed5504c67a6591b24084841348eaaf5d563f7e",
       batch.signatures,
     );
     
@@ -196,7 +190,7 @@ export class AttestationManager {
       to: this.receiveAttestationBatchContract.options.address,
       from: this.wallet.address,
       data: encodedABI,
-      gas: gasPrice, // Set the gas limit accordingly
+      gas: gasPrice,
       estimatedGas: estimatedGas,
     };
     
