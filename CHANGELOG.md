@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.36.4-rc.0] - 2023-06-28
+### :bug: Bug Fixes
+- [`60d2017`](https://github.com/t3rn/t3rn/commit/60d2017fe52407ba1e0098ec8d51bb9ac74ee7d3) - update SDK metadata *(PR [#1095](https://github.com/t3rn/t3rn/pull/1095) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`5f76d56`](https://github.com/t3rn/t3rn/commit/5f76d56c4146bd1925190f544e13220d0c4c6cba) - **grandpa-ranger**: types/SDK changes should trigger deploy *(PR [#1099](https://github.com/t3rn/t3rn/pull/1099) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.36.2-rc.0] - 2023-06-26
 ### :bug: Bug Fixes
 - [`90bee60`](https://github.com/t3rn/t3rn/commit/90bee60e22a53cbc81c8daffeca9a897692611ad) - deploy phase should not be run by dependabot *(PR [#1085](https://github.com/t3rn/t3rn/pull/1085) by [@3h4x](https://github.com/3h4x))*
@@ -1296,3 +1304,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.35.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.34.2-rc.0...v1.35.0-rc.0
 [v1.36.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.35.0-rc.0...v1.36.0-rc.0
 [v1.36.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.1-rc.0...v1.36.2-rc.0
+[v1.36.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.3-rc.0...v1.36.4-rc.0
