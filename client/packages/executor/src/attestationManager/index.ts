@@ -75,12 +75,12 @@ export class AttestationManager {
             index: batch.index,
             expectedBatchHash: batch.expectedBatchHash,
             signatures: batch.signatures.map(([id, signature]) => signature),
+            created: batch.created,
           };
         }
       );
 
-      // console.log('Batches: ', data.toHuman())
-      logger.info("We have " + data.toJSON().length + " batches");
+      logger.info("We have " + data.toJSON().length + " batches pending");
       // logger.info(['Batch 0: ', data.toJSON()[0]])
       // logger.info(['Batch 1: ', data.toJSON()[1]])
       this.batches = convertedData;
@@ -88,20 +88,17 @@ export class AttestationManager {
   }
 
   async listener() {
-    // Subscribe to all events and filter based on the specified event type
+    // Subscribe to all events and filter based on the specified event method
     this.client.query.system.events((events) => {
-      // Iterate through the events and filter based on the event type
       events.forEach((record) => {
         const { event } = record;
 
-        // Check if the event type matches the specified event type
+        // Check if the event type matches the specified event
         if (
           event.section === "attesters" &&
           event.method === "NewConfirmationBatch"
         ) {
-          // Event of the specified type found, process it
-          logger.error(`Event: ${event.section}.${event.method}`);
-          logger.error(`Data: ${event.data}`);
+          logger.debug({data: event.data}, `Event ${event.section}.${event.method} received`);
         }
       });
     });
@@ -113,6 +110,13 @@ export class AttestationManager {
     return messageHash;
   }
 
+  // TODO: not used
+  getMessageHashFromString(data: string) {
+    const messageHash = ethers.keccak256(data);
+    return messageHash;
+  }
+
+  // TODO: not used
   getMessageHashWithPrefix(batch: Batch) {
     const prefix = ethers.hexlify(
       ethers.toUtf8Bytes("\x19Ethereum Signed Message:\n32")
@@ -124,31 +128,43 @@ export class AttestationManager {
     return messageHash;
   }
 
-  async receiveAttestationBatchCall() {
-    // console.log([this.receiveAttestationBatchContract.methods])
+  async getMessageHashFromCircuit(blockNumber: number) {
+    const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber)
+    logger.debug(`Block ${blockNumber} is ${blockHash.toHex()}`)
+    const events = await this.client.query.system.events.at(blockHash.toHex())
+    logger.debug(`Found ${events.length} events in ${blockHash.toHex()}`); // check entries()
+
+    const pendingBatches = events
+    .toHuman()
+    .filter((event) => event.event.method == 'NewAttestationMessageHash')
+
+    for (const event of pendingBatches) {
+        const messageHash = event.event.data[1]
+        logger.debug(`Found messageHash: ${messageHash}`)
+        return messageHash
+    }
+  }
+
+  async processPendingAttestationBatches() {
+    await this.fetchBatches();
+
+
+    // iterate over batches
+    // const messageHash = await this.getMessageHashFromCircuit(this.batches[1].created);
+    // this.receiveAttestationBatchCall(batch, messageHash);
+  }
+
+  async receiveAttestationBatchCall(batch: Batch, messageHash: string) {
     const committeeSize = await this.receiveAttestationBatchContract.methods
       .committeeSize()
       .call();
-    console.log(["Committee size: ", committeeSize]);
+    logger.debug(["Committee size: ", committeeSize]);
     const currentBatchIndex = await this.receiveAttestationBatchContract.methods
       .currentBatchIndex()
       .call();
-    console.log(["Batch Index: ", currentBatchIndex]);
+    logger.debug(["Batch Index: ", currentBatchIndex]);
 
-    const batch = {
-      nextCommittee: this.batches[1].nextCommittee,
-      bannedCommittee: this.batches[1].bannedCommittee,
-      committedSfx: this.batches[1].committedSfx,
-      revertedSfx: this.batches[1].revertedSfx,
-      index: this.batches[0].index,
-    };
-    const messageHash = this.getMessageHash(batch);
-    // const messageHash = this.getMessageHash(batch)
 
-    // fetch batch 0 from t0rn
-    logger.error([batch, messageHash, this.batches[1].signatures]);
-
-    throw Error("stop");
     // TODO: align naming of the contract with circuit
     // await this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
     //     this.batches[1].nextCommittee,

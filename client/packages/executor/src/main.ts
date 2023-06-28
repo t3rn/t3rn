@@ -7,8 +7,7 @@ async function main() {
 
   const attestationManager = new AttestationManager(instance.circuitClient);
   // await attestationManager.listener()
-  await attestationManager.fetchBatches()
-  await attestationManager.receiveAttestationBatchCall()
+  await attestationManager.processPendingAttestationBatches()
 }
 
 main();

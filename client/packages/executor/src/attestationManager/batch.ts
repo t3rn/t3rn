@@ -6,6 +6,8 @@
 type ConfirmationBatch = Batch & {
   messageHash: string;
   signatures: string[];
+  created: number;
+  status: string;
 };
 
 type Batch = {
