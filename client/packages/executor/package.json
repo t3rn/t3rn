@@ -55,6 +55,6 @@
     "@typescript-eslint/parser": "^5.60.0",
     "eslint": "^8.43.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
-    "typescript": "4.9.4"
+    "typescript": "5.1.5"
   }
 }
