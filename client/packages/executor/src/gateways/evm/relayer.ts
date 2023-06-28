@@ -17,11 +17,24 @@ export class EVMRelayer extends EventEmitter {
   nonce: bigint;
   sender: any;
 
-  async setup(rpc: string, priv: string) {
-    this.rpc = rpc;
-    this.api = new Web3(getConfig().SEPOLIA)  // new Web3(rpc);
+  /**
+   * Setup the instance of the relayer.
+   *
+   * Default value for the API endpoints is loaded
+   * from config if not provided.
+   *
+   * @param priv Private key to the eth account
+   * @param rpc? (Optional) Endpoint for the API. Defaults to Sepolia.
+   * */
+  async setup(priv: string, rpc?: string) {
+    if (rpc) {
+      this.rpc = rpc;
+      this.api = new Web3(rpc)
+    } else {
+
+      this.api = new Web3(getConfig().SEPOLIA)  // new Web3(rpc);
+    }
     this.sender = this.api.eth.accounts.privateKeyToAccount(priv);
-    console.log(this.sender);
     this.api.eth.accounts.wallet.add(this.sender);
   }
 
@@ -53,22 +66,22 @@ export class EVMRelayer extends EventEmitter {
             from: this.sender.address,
             gas: this.api.utils.toHex(100000),
           })
-          .then(async (res: any) => {
+          .then(async (response: any) => {
             let { proof, index } = await getProof(
-              res.transactionHash,
+              response.transactionHash,
               this.api
             );
-            const encoded = await scaleEncodeProof(proof, index);
+            const encodedProof = await scaleEncodeProof(proof, index);
             let encodedReceipt = await scaleEncodeReceipt(
-              res.transactionHash,
+              response.transactionHash,
               this.api
             );
             sideEffect.execute(
               encodedReceipt,
-              res.blockNumber,
+              response.blockNumber,
               "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-              encoded,
-              res.blockHash,
+              encodedProof,
+              response.blockHash,
               true,
               false
             );

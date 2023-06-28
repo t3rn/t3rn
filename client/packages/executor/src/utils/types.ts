@@ -64,7 +64,6 @@ export class SideEffect {
     substrate: boolean = true
   ) {
     if (substrate) {
-      console.log("in substrate");
       this.confirmedSideEffect = {
         err: null,
         output: null,
@@ -79,7 +78,6 @@ export class SideEffect {
       this.inclusionProof = inclusionProof;
       this.execBlockHeader = blockHeader;
     } else {
-      console.log("in bsc");
       this.confirmedSideEffect = {
         err: null,
         output: null,
@@ -117,7 +115,7 @@ export class SideEffect {
   }
 
   // /**
-  // Return the target as a string.
+  // Return the side effect's target as a string.
   // */
   getTarget() {
     return new TextDecoder().decode(this.object.target.toU8a());

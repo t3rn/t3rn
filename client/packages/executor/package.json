@@ -36,6 +36,7 @@
     "chai-as-promised": "^7.1.1",
     "debug": "4.3.4",
     "dotenv": "16.3.1",
+    "merkle-patricia-tree": "^4.2.4",
     "mocha": "^10.2.0",
     "node-gyp": "^9.3.1",
     "pino": "^8.14.1",
