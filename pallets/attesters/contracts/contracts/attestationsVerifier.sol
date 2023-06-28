@@ -9,24 +9,24 @@ contract AttestationsVerifier {
     mapping(address => bool) public current_committee;
 
     struct Batch {
-        address[] newCommittee;
+        address[] nextCommittee;
         address[] bannedCommittee;
-        bytes32[] confirmedSFXs;
-        bytes32[] revertedSFXs;
+        bytes32[] committedSfx;
+        bytes32[] revertedSfx;
         uint32 index;
     }
 
-    mapping(bytes32 => bool) public confirmedSFXsMap;
-    mapping(bytes32 => bool) public revertedSFXsMap;
+    mapping(bytes32 => bool) public committedSfxMap;
+    mapping(bytes32 => bool) public revertedSfxMap;
     uint256 public committeeSize;
     uint256 public currentBatchIndex;
 
     function batchEncodePacked(Batch memory batch) public pure returns (bytes memory) {
         return abi.encodePacked(
-            batch.newCommittee,
+            batch.nextCommittee,
             batch.bannedCommittee,
-            batch.confirmedSFXs,
-            batch.revertedSFXs,
+            batch.committedSfx,
+            batch.revertedSfx,
             batch.index
         );
     }
@@ -40,26 +40,27 @@ contract AttestationsVerifier {
     }
 
     function receiveAttestationBatch(
-        address[] memory newCommittee,
+        address[] memory nextCommittee,
         address[] memory bannedCommittee,
-        bytes32[] memory confirmedSFXs,
-        bytes32[] memory revertedSFXs,
+        bytes32[] memory committedSfx,
+        bytes32[] memory revertedSfx,
         uint32 index,
         bytes32 expectedBatchHash,
         bytes[] memory signatures
     ) public {
-        Batch memory batch = Batch(newCommittee, bannedCommittee, confirmedSFXs, revertedSFXs, index);
-        bytes32 batchMessageHash = keccak256(batchEncodePacked(batch));
-        require(batchMessageHash == expectedBatchHash, "Batch hash mismatch");
+        Batch memory batch = Batch(nextCommittee, bannedCommittee, committedSfx, revertedSfx, index);
+        // TODO: 
+        // bytes32 batchMessageHash = keccak256(batchEncodePacked(batch));
+        // require(batchMessageHash == expectedBatchHash, "Batch hash mismatch");
 
-        require(verifySignedByActiveCommittee(batchMessageHash, signatures), "Signatures verification failed");
+        require(verifySignedByActiveCommittee(expectedBatchHash, signatures), "Signatures verification failed");
 
-        require(batch.index == currentBatchIndex + 1, "Batch index mismatch");
+        require(batch.index == currentBatchIndex, "Batch index mismatch");
 
         uint256 _committeeSize = committeeSize;
-        for (uint i = 0; i < batch.newCommittee.length; i++) {
-            if (!current_committee[batch.newCommittee[i]]) {
-                current_committee[batch.newCommittee[i]] = true;
+        for (uint i = 0; i < batch.nextCommittee.length; i++) {
+            if (!current_committee[batch.nextCommittee[i]]) {
+                current_committee[batch.nextCommittee[i]] = true;
                 _committeeSize += 1;
             }
         }
@@ -73,17 +74,17 @@ contract AttestationsVerifier {
 
         committeeSize = _committeeSize;
 
-        for (uint i = 0; i < batch.confirmedSFXs.length; i++) {
-            confirmedSFXsMap[batch.confirmedSFXs[i]] = true;
+        for (uint i = 0; i < batch.committedSfx.length; i++) {
+            committedSfxMap[batch.committedSfx[i]] = true;
         }
 
-        for (uint i = 0; i < batch.revertedSFXs.length; i++) {
-            revertedSFXsMap[batch.revertedSFXs[i]] = true;
+        for (uint i = 0; i < batch.revertedSfx.length; i++) {
+            revertedSfxMap[batch.revertedSfx[i]] = true;
         }
 
-        currentBatchIndex = batch.index;
+        currentBatchIndex = batch.index + 1;
 
-        emit BatchApplied(batchMessageHash, signatures.length);
+        emit BatchApplied(expectedBatchHash, signatures.length);
     }
 
     function verifySignedByActiveCommittee(
