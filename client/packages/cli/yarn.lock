@@ -759,21 +759,21 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@lodestar/config@^1.8.0":
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/@lodestar/config/-/config-1.8.0.tgz#7d213066f79ac4fb0065afa8ff902532cba51326"
-  integrity sha512-rtuuVWzbc9H0CjwC7AoEvs7+iymGJmzTvt6OaT9tckK+l9TU1ywXfybbUlqduF+w3xQa5OHAZC9vq1trfCp9og==
+"@lodestar/config@^1.9.0":
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/@lodestar/config/-/config-1.9.0.tgz#9866ed8d1bc72793c4e8da9b6ded7bb8a10be770"
+  integrity sha512-NEolBR1eFDEUgqo8nZd34AniW+ZdnYUokyhaPAKysP2X86n6py0wliHU/LFYYGG33Q7scCLcYe5MHmPDSAmROw==
   dependencies:
     "@chainsafe/ssz" "^0.10.2"
-    "@lodestar/params" "^1.8.0"
-    "@lodestar/types" "^1.8.0"
+    "@lodestar/params" "^1.9.0"
+    "@lodestar/types" "^1.9.0"
 
-"@lodestar/params@^1.8.0", "@lodestar/params@^1.9.0":
+"@lodestar/params@^1.9.0":
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/@lodestar/params/-/params-1.9.0.tgz#f58a4ed8276dbb07b86ce3ec985480ccce541463"
   integrity sha512-Nc6C4tfvUjG3K2dsgZK31b5K549LJ4SB5fn91Nj37Psh6ggll/0zXwQ93Ujj2XlmjshDZyt/NehVIMZ7XqZvWA==
 
-"@lodestar/types@^1.8.0", "@lodestar/types@^1.9.0":
+"@lodestar/types@^1.9.0":
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/@lodestar/types/-/types-1.9.0.tgz#3a73a464366651f8a6234edcb852e1a521708da2"
   integrity sha512-JBnhtlk8/rDyZzDjSa+AnPaAqoCRCyXpa4xccM0vgmlaoHcS4+4GwdFy28yMpl3ba+Q/H1pH5CrOBr4N8qaTKw==
