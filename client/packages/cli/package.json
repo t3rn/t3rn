@@ -20,7 +20,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@lodestar/config": "^1.8.0",
+    "@lodestar/config": "^1.9.0",
     "@lodestar/types": "^1.9.0",
     "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
