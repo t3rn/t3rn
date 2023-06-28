@@ -6,6 +6,7 @@ import { logger } from "../../src/logging";
 import { Batch, ConfirmationBatch } from "./batch";
 import { keccakAsHex } from "@polkadot/util-crypto";
 import { ethers } from "ethers";
+import { t } from "@t3rn/sdk/dist/types-922c6188";
 // import { keccak256 } from 'ethereumjs-util';
 
 /**
@@ -29,9 +30,12 @@ export class AttestationManager {
     this.rpc = config.attestations.ethereum.rpc;
     this.web3 = new Web3(this.rpc);
 
-    this.wallet = this.web3.eth.accounts.privateKeyToAccount(
+    this.wallet = this.web3.eth.accounts.create(
       config.attestations.ethereum.privateKey
     );
+    if (this.wallet.address === undefined) {
+      throw new Error("Ethereum wallet address is not defined");
+    }
     logger.info("Wallet address: " + this.wallet.address);
 
     const receiveAttestationBatchAbi = JSON.parse(
@@ -173,29 +177,37 @@ export class AttestationManager {
       .call();
     logger.debug("Batch Index: " + currentBatchIndex);
 
-    logger.error(typeof messageHash)
+    const contractMethod = this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
+      batch.nextCommittee,
+      batch.bannedCommittee,
+      batch.committedSfx,
+      batch.revertedSfx,
+      batch.index,
+      messageHash,
+      batch.signatures,
+    );
+    
+    const encodedABI = contractMethod.encodeABI();
+    
+    const gasPrice = await this.web3.eth.getGasPrice();
+    const estimatedGas = await contractMethod.estimateGas({ from: this.wallet.address });
 
-    // TODO: align naming of the contract with circuit
-    logger.debug([messageHash, batch])
-    await this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
-        batch.nextCommittee,
-        batch.bannedCommittee,
-        batch.committedSfx,
-        batch.revertedSfx,
-        batch.index,
-        messageHash,
-        batch.signatures,
-    )
-      .send({ from: this.wallet.address, gas: 2000000 })
-      .on('transactionHash', (hash) => {
-        logger.info('Transaction hash:', hash);
-      })
-      .on('receipt', (receipt) => {
-        logger.info('Receipt:', receipt);
-      })
-      .on('error', (error) => {
-        logger.error({error: error, request: error.request}, 'Error:');
-      });
+    const transactionObject = {
+      to: this.receiveAttestationBatchContract.options.address,
+      from: this.wallet.address,
+      data: encodedABI,
+      gas: gasPrice, // Set the gas limit accordingly
+      estimatedGas: estimatedGas,
+    };
+    
+    const signedTransaction = await this.wallet.signTransaction(transactionObject);
+    
+    try {
+      const transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
+      logger.info('Transaction receipt:', transactionReceipt);
+    } catch (error) {
+      logger.error('Error:', error);
+    }
   }
 
   async listenForConfirmedAttestationBatch() {
