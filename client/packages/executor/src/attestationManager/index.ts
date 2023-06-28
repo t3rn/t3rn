@@ -128,63 +128,74 @@ export class AttestationManager {
     return messageHash;
   }
 
-  async getMessageHashFromCircuit(blockNumber: number) {
+  async getMessageHashFromCircuit(blockNumber: number) : Promise<string> {
     const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber)
-    logger.debug(`Block ${blockNumber} is ${blockHash.toHex()}`)
+    logger.debug(`Looking for messageHash in ${blockNumber}/${blockHash.toHex()}`)
     const events = await this.client.query.system.events.at(blockHash.toHex())
-    logger.debug(`Found ${events.length} events in ${blockHash.toHex()}`); // check entries()
+    logger.debug(`Found ${events.length} events in ${blockHash.toHex()}`); 
 
-    const pendingBatches = events
+    const filteredEvents = events
     .toHuman()
     .filter((event) => event.event.method == 'NewAttestationMessageHash')
 
-    for (const event of pendingBatches) {
+    logger.debug(`Found ${filteredEvents.length} NewAttestationMessageHash events`); 
+
+    logger.error(filteredEvents)
+
+    for (const event of filteredEvents) {
         const messageHash = event.event.data[1]
         logger.debug(`Found messageHash: ${messageHash}`)
         return messageHash
     }
+
+    throw new Error(`No messageHash found in block ${blockNumber}`)
   }
 
   async processPendingAttestationBatches() {
     await this.fetchBatches();
 
-
-    // iterate over batches
-    // const messageHash = await this.getMessageHashFromCircuit(this.batches[1].created);
-    // this.receiveAttestationBatchCall(batch, messageHash);
+    // iterate over batches, ignore empty 0 batch
+    // 0 batch didnt have a message hash in block found in batch.created
+    for (const batch of this.batches.slice(1)) {
+      logger.info({batch: batch}, `Batch ${batch.index} processing`);
+      const messageHash = await this.getMessageHashFromCircuit(batch.created);
+      this.receiveAttestationBatchCall(batch, messageHash);
+    }
   }
 
-  async receiveAttestationBatchCall(batch: Batch, messageHash: string) {
+  async receiveAttestationBatchCall(batch: ConfirmationBatch, messageHash: string) {
     const committeeSize = await this.receiveAttestationBatchContract.methods
       .committeeSize()
       .call();
-    logger.debug(["Committee size: ", committeeSize]);
+    logger.debug("Committee size: " + committeeSize);
     const currentBatchIndex = await this.receiveAttestationBatchContract.methods
       .currentBatchIndex()
       .call();
-    logger.debug(["Batch Index: ", currentBatchIndex]);
+    logger.debug("Batch Index: " + currentBatchIndex);
 
+    logger.error(typeof messageHash)
 
     // TODO: align naming of the contract with circuit
-    // await this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
-    //     this.batches[1].nextCommittee,
-    //     this.batches[1].bannedCommittee,
-    //     this.batches[1].committedSfx,
-    //     this.batches[1].revertedSfx,
-    //     this.batches[1].index,
-    //     messageHash,
-    //     this.batches[1].signatures,
-    // )
-    //   .send({ from: this.wallet.address, gas: 2000000 })
-    //   .on('transactionHash', (hash) => {
-    //     logger.info('Transaction hash:', hash);
-    //   })
-    //   .on('receipt', (receipt) => {
-    //     logger.info('Receipt:', receipt);
-    //   })
-    //   .on('error', (error) => {
-    //     logger.error({error: error, request: error.request}, 'Error:');
-    //   });
+    logger.debug([messageHash, batch])
+    await this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
+        batch.nextCommittee,
+        batch.bannedCommittee,
+        batch.committedSfx,
+        batch.revertedSfx,
+        batch.index,
+        messageHash,
+        batch.signatures,
+    )
+      .send({ from: this.wallet.address, gas: 2000000 })
+      .on('transactionHash', (hash) => {
+        logger.info('Transaction hash:', hash);
+      })
+      .on('receipt', (receipt) => {
+        logger.info('Receipt:', receipt);
+      })
+      .on('error', (error) => {
+        logger.error({error: error, request: error.request}, 'Error:');
+      });
   }
 
   async listenForConfirmedAttestationBatch() {
