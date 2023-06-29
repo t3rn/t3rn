@@ -260,6 +260,6 @@ export const config: Config = {
       attestationVerifierAddress: "0x4f251bfdb64894e0ec69e2a269838213a902b851",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
-    batchesCatchUp: process.env.BATCHES_CATCH_UP == "true" ? true : false,
+    batchesCatchUp: process.env.PROCESS_PENDING_BATCHES == "true" ? true : false,
   },
 };
