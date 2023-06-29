@@ -243,155 +243,145 @@ describe("AttestationsVerifier", function() {
         const attestationsVerifier = await AttestationsVerifier.deploy(initialCommittee);
         await attestationsVerifier.deployed();
 
-        // we need to confirm 0 batch first
-        // otherwise we will fail with Batch mismatch
-
         let txEncodedBatchOutput = await attestationsVerifier.batchEncodePacked(batch);
         expect(txEncodedBatchOutput).to.equal(encodedBatchMessage);
 
     });
 
+    it("Should initialize committee and verify signatures for empty batch", async function() {
+        const wallets = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
+        const [defaultSigner] = await ethers.getSigners();
 
-//     it("Should initialize committee and verify signatures for empty batch", async function() {
-//         const wallets = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
-//         const [defaultSigner] = await ethers.getSigners();
+        for (let i = 0; i < wallets.length; i++) {
+            const tx = await defaultSigner.sendTransaction({
+                to: wallets[i].address,
+                value: ethers.utils.parseEther("1")
+            });
+            await tx.wait();
+        }
 
-//         for (let i = 0; i < wallets.length; i++) {
-//             const tx = await defaultSigner.sendTransaction({
-//                 to: wallets[i].address,
-//                 value: ethers.utils.parseEther("1")
-//             });
-//             await tx.wait();
-//         }
+        // Create an array of addresses
+        const initialCommittee = wallets.map(wallet => wallet.address);
 
-//         // Create an array of addresses
-//         const initialCommittee = wallets.map(wallet => wallet.address);
+        const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
+        const attestationsVerifier = await AttestationsVerifier.deploy(initialCommittee);
+        await attestationsVerifier.deployed();
 
-//         const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
-//         const attestationsVerifier = await AttestationsVerifier.deploy(initialCommittee);
-//         await attestationsVerifier.deployed();
+        // Constructing the Batch struct with empty arrays
+        let batch = {
+            nextCommittee: [],
+            bannedCommittee: [],
+            committedSfx: [],
+            revertedSfx: [],
+            index: 0
+        };
 
-//         // Constructing the Batch struct with empty arrays
-//         let batch = {
-//             nextCommittee: [],
-//             bannedCommittee: [],
-//             committedSfx: [],
-//             revertedSfx: [],
-//             index: 0
-//         };
+        // Encoding the Batch struct
+        const encodedBatchMessage = batchEncodePacked(batch);
+        // Hashing the encoded Batch struct
+        const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
 
-//         // Encoding the Batch struct
-//         const encodedBatchMessage = batchEncodePacked(batch);
-//         // Hashing the encoded Batch struct
-//         const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
+        const signatures = [];
 
-//         const signatures = [];
+        // Pre-check for the validity of signature before sending the batch message
+        for (let i = 0; i < wallets.length; i++) {
+            const wallet = wallets[i];
+            const signerAddress = wallet.address;
+            const flatSig = await wallet.signMessage(ethers.utils.arrayify(batchMessageHash));
+            const signatureBytes = ethers.utils.arrayify(flatSig);
+            // Recover the signer's address
+            const recovered = await attestationsVerifier.recoverSigner(batchMessageHash, signatureBytes);
+            expect(recovered).to.equal(signerAddress);
+            // console.log("Signature is valid for signer: ", signerAddress);
+            signatures.push(signatureBytes);
+        }
 
-//         // Pre-check for the validity of signature before sending the batch message
-//         for (let i = 0; i < wallets.length; i++) {
-//             const wallet = wallets[i];
-//             const signerAddress = wallet.address;
-//             const flatSig = await wallet.signMessage(ethers.utils.arrayify(batchMessageHash));
-//             const signatureBytes = ethers.utils.arrayify(flatSig);
-//             // Recover the signer's address
-//             const recovered = await attestationsVerifier.recoverSigner(batchMessageHash, signatureBytes);
-//             expect(recovered).to.equal(signerAddress);
-//             // console.log("Signature is valid for signer: ", signerAddress);
-//             signatures.push(signatureBytes);
-//         }
+        // Send the batch message
+        let tx = await attestationsVerifier.receiveAttestationBatch(batch.nextCommittee, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, batchMessageHash, signatures);
 
-//         // Send the batch message
-//         let tx = await attestationsVerifier.receiveAttestationBatch(batch.nextCommittee, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, batchMessageHash, signatures);
+        // Wait for the transaction to be mined and get the logs
+        const receipt = await tx.wait();
 
-//         // Wait for the transaction to be mined and get the logs
-//         const receipt = await tx.wait();
-//         const logs = receipt.logs;
+        let allEvents = await parseAllEvents(receipt, attestationsVerifier);
+        // Get the SignerEmitted events from the logs
 
-//         let allEvents = await parseAllEvents(receipt, attestationsVerifier);
-//         // Get the SignerEmitted events from the logs
+        // Check that the correct addresses and indexes were emitted
+        const parsedBatchAppliedEvents = allEvents["BatchApplied"];
+        expect(parsedBatchAppliedEvents.length).to.equal(1);
 
-//         // Check that the correct addresses and indexes were emitted
-//         const parsedBatchAppliedEvents = allEvents["BatchApplied"];
-//         expect(parsedBatchAppliedEvents.length).to.equal(1);
+        let batchAppliedEvent = parsedBatchAppliedEvents[0];
+    });
 
-//         let batchAppliedEvent = parsedBatchAppliedEvents[0];
-//         console.log("batchAppliedEvent", batchAppliedEvent.toString());
-//     });
+    it("Should initialize committee and verify signatures for full batch", async function() {
+        const wallets = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
+        const wallets_next_committee = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
 
+        const [defaultSigner] = await ethers.getSigners();
 
-//     it("Should initialize committee and verify signatures for full batch", async function() {
-//         const wallets = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
-//         const wallets_next_committee = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
+        for (let i = 0; i < wallets.length; i++) {
+            const tx = await defaultSigner.sendTransaction({
+                to: wallets[i].address,
+                value: ethers.utils.parseEther("1")
+            });
+            await tx.wait();
+        }
+        // Create an array of addresses
+        const initialCommittee = wallets.map(wallet => wallet.address);
+        const nextCommittee = wallets_next_committee.map(wallet => wallet.address);
 
-//         const [defaultSigner] = await ethers.getSigners();
+        const bannedCommittee = [nextCommittee[0], nextCommittee[1], nextCommittee[2]];
 
-//         for (let i = 0; i < wallets.length; i++) {
-//             const tx = await defaultSigner.sendTransaction({
-//                 to: wallets[i].address,
-//                 value: ethers.utils.parseEther("1")
-//             });
-//             await tx.wait();
-//         }
-//         // Create an array of addresses
-//         const initialCommittee = wallets.map(wallet => wallet.address);
-//         const nextCommittee = wallets_next_committee.map(wallet => wallet.address);
+        const committedSfx = [ethers.utils.id("sfx#1"), ethers.utils.id("sfx#2"), ethers.utils.id("sfx#3")];
 
-//         const bannedCommittee = [nextCommittee[0], nextCommittee[1], nextCommittee[2]];
+        const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
+        const attestationsVerifier = await AttestationsVerifier.deploy(initialCommittee);
+        await attestationsVerifier.deployed();
 
-//         const committedSfx = [ethers.utils.id("sfx#1"), ethers.utils.id("sfx#2"), ethers.utils.id("sfx#3")];
-
-//         const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
-//         const attestationsVerifier = await AttestationsVerifier.deploy(initialCommittee);
-//         await attestationsVerifier.deployed();
-
-//         // Constructing the Batch struct
-//         let batch = {
-//             // nexCommitteeLen: 32,
-//             // bannedCommitteeLen: 3,
-//             // committedSfxLen: 3,
-//             // revertedSfxLen: 0,
-//             nextCommittee,
-//             bannedCommittee,
-//             committedSfx,
-//             revertedSfx: [],
-//             index: 0
-//         };
-//         // Encoding the Batch struct
-//         const encodedBatchMessage = batchEncodePacked(batch);
+        // Constructing the Batch struct
+        let batch = {
+            // nexCommitteeLen: 32,
+            // bannedCommitteeLen: 3,
+            // committedSfxLen: 3,
+            // revertedSfxLen: 0,
+            nextCommittee,
+            bannedCommittee,
+            committedSfx,
+            revertedSfx: [],
+            index: 0
+        };
+        // Encoding the Batch struct
+        const encodedBatchMessage = batchEncodePacked(batch);
 
 
-//         // Hashing the encoded Batch struct
-//         const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
+        // Hashing the encoded Batch struct
+        const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
 
-//         const signatures = [];
+        const signatures = [];
 
-//         // Pre-check for the validity of signature before sending the batch message
-//         for (let i = 0; i < wallets.length; i++) {
-//             const wallet = wallets[i];
-//             const signerAddress = wallet.address;
-//             const flatSig = await wallet.signMessage(ethers.utils.arrayify(batchMessageHash));
-//             const signatureBytes = ethers.utils.arrayify(flatSig);
-//             // Recover the signer's address
-//             const recovered = await attestationsVerifier.recoverSigner(batchMessageHash, signatureBytes);
+        // Pre-check for the validity of signature before sending the batch message
+        for (let i = 0; i < wallets.length; i++) {
+            const wallet = wallets[i];
+            const signerAddress = wallet.address;
+            const flatSig = await wallet.signMessage(ethers.utils.arrayify(batchMessageHash));
+            const signatureBytes = ethers.utils.arrayify(flatSig);
+            // Recover the signer's address
+            const recovered = await attestationsVerifier.recoverSigner(batchMessageHash, signatureBytes);
 
-//             expect(recovered).to.equal(signerAddress);
-//             // console.log("Signature is valid for signer: ", signerAddress);
-//             signatures.push(signatureBytes);
-//         }
+            expect(recovered).to.equal(signerAddress);
+            // console.log("Signature is valid for signer: ", signerAddress);
+            signatures.push(signatureBytes);
+        }
 
-//         // Send the batch message
-//         let tx = await attestationsVerifier.receiveAttestationBatch(batch.nextCommittee, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, batchMessageHash, signatures);
+        // Send the batch message
+        let tx = await attestationsVerifier.receiveAttestationBatch(batch.nextCommittee, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, batchMessageHash, signatures);
 
-//         // Wait for the transaction to be mined and get the logs
-//         const receipt = await tx.wait();
-//         let allEvents = await parseAllEvents(receipt, attestationsVerifier);
-//         // Get the SignerEmitted events from the logs
+        // Wait for the transaction to be mined and get the logs
+        const receipt = await tx.wait();
+        let allEvents = await parseAllEvents(receipt, attestationsVerifier);
+        // Get the SignerEmitted events from the logs
 
-//         // Check that the correct addresses and indexes were emitted
-//         const parsedBatchAppliedEvents = allEvents["BatchApplied"];
-//         expect(parsedBatchAppliedEvents.length).to.equal(1);
-
-//         let batchAppliedEvent = parsedBatchAppliedEvents[0];
-//         console.log("batchAppliedEvent", batchAppliedEvent.toString());
-//     });
+        // Check that the correct addresses and indexes were emitted
+        const parsedBatchAppliedEvents = allEvents["BatchApplied"];
+        expect(parsedBatchAppliedEvents.length).to.equal(1);
+    });
 });
