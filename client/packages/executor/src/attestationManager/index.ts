@@ -158,7 +158,7 @@ export class AttestationManager {
   async processPendingAttestationBatches() {
     await this.fetchBatches();
 
-    // config.attestations.processPendingBatches is where we start processing batches
+    // config.attestations.processPendingBatches is set to process pending batches
     for (const [index, batch] of this.batches.slice(config.attestations.processPendingBatchesIndex).entries()) {
       if (index + 2 == this.batches.length) {
         // last batch is not yet confirmed

@@ -1,4 +1,5 @@
 // Import necessary dependencies and modules
+import { logger } from 'src/logging'
 import { Attester } from '../src/attester'
 import {
     ecsign,
@@ -51,7 +52,7 @@ describe('generateAttestationTx', () => {
             substrate: {},
             ethereum: {
                 privateKey:
-                    '0x0123456789012345678901234567890123456789012345678901234567890123',
+                    '0xe29186ac6e188f0c469f759c68fb2f07bac12ef1f38e111dfa21b66f2eee9858',
             },
             btc: {},
         }
@@ -73,7 +74,7 @@ describe('generateAttestationTx', () => {
         const data = await attester.generateAttestationTx(messageHash, 'sepl')
 
         expect(data.signature).toEqual(
-            '0x534dd0cbadf9a92af5d32533231af6769b3a1e479e5dde49ea4e431028a66e0a2611b13e55034973e1c5f4edcab425af4f164c5a50025204db06f439ad5e977c1c'
+            '0x6493e3336802d9f01c2a0482d1d4a8b14a579c888a4eb18cd211fd88da9b62ec313e82c2a9db5c53618370d6baab60a06ca4f0d23995f280ed9e7401d1357d8f1b'
         )
         const signatureBytes = toBuffer(data.signature)
         expect(signatureBytes.length).toEqual(65)
