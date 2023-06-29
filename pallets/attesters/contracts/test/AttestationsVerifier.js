@@ -390,7 +390,7 @@ describe("AttestationsVerifier", function() {
 });
 
 describe("AttestationsCommittee", function() {
-    it("should correctly calculate amount of committeeSize", async function() {
+    it("should correctly calculate committeeSize", async function() {
         throw new Error("Not implemented");
     });
 
@@ -398,7 +398,7 @@ describe("AttestationsCommittee", function() {
         throw new Error("Not implemented");
     });
 
-    it("should remove from committee old members", async function() {
+    it("should correctly update mapping current_committee", async function() {
         throw new Error("Not implemented");
     });
 

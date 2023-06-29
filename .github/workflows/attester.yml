@@ -87,7 +87,7 @@ jobs:
         working-directory: client/packages/attester          
 
   test-attestations-verifier:
-    name: Test Attestations Verifier
+    name: Test Attestations Verifier Contract
     runs-on: self-hosted
     defaults:
       run:
