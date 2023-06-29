@@ -99,7 +99,10 @@ export class AttestationManager {
           event.section === "attesters" &&
           event.method === "NewConfirmationBatch"
         ) {
-          logger.debug({data: event.data}, `Event ${event.section}.${event.method} received`);
+          logger.debug(
+            { data: event.data },
+            `Event ${event.section}.${event.method} received`
+          );
         }
       });
     });
@@ -130,36 +133,40 @@ export class AttestationManager {
   }
 
   // this is not reliable, because the messageHash is not always in the event
-  async getMessageHashFromCircuit(blockNumber: number) : Promise<string> {
-    const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber)
-    logger.debug(`Looking for messageHash in ${blockHash.toHex()}`)
-    const events = await this.client.query.system.events.at(blockHash.toHex())
-    logger.debug(`Found ${events.length} events in block ${blockHash.toHex()}`); 
+  async getMessageHashFromCircuit(blockNumber: number): Promise<string> {
+    const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber);
+    logger.debug(`Looking for messageHash in ${blockHash.toHex()}`);
+    const events = await this.client.query.system.events.at(blockHash.toHex());
+    logger.debug(`Found ${events.length} events in block ${blockHash.toHex()}`);
 
     const filteredEvents = events
-    .toHuman()
-    .filter((event) => event.event.method == 'NewAttestationMessageHash')
+      .toHuman()
+      .filter((event) => event.event.method == "NewAttestationMessageHash");
 
-    logger.debug(`Found ${filteredEvents.length} NewAttestationMessageHash events`); 
+    logger.debug(
+      `Found ${filteredEvents.length} NewAttestationMessageHash events`
+    );
 
     for (const event of filteredEvents) {
-      if (event.event.data[0] != 'sepl') {
+      if (event.event.data[0] != "sepl") {
         // ignore events from other chains than sepl
-        continue 
+        continue;
       }
-        const messageHash = event.event.data[1]
-        logger.debug(`Found messageHash: ${messageHash}`)
-        return messageHash
+      const messageHash = event.event.data[1];
+      logger.debug(`Found messageHash: ${messageHash}`);
+      return messageHash;
     }
 
-    throw new Error(`No messageHash found in block ${blockNumber}`)
+    throw new Error(`No messageHash found in block ${blockNumber}`);
   }
 
   async processPendingAttestationBatches() {
     await this.fetchBatches();
 
     // config.attestations.processPendingBatches is set to process pending batches
-    for (const [index, batch] of this.batches.slice(config.attestations.processPendingBatchesIndex).entries()) {
+    for (const [index, batch] of this.batches
+      .slice(config.attestations.processPendingBatchesIndex)
+      .entries()) {
       if (index + 2 == this.batches.length) {
         // last batch is not yet confirmed
         break;
@@ -167,35 +174,46 @@ export class AttestationManager {
 
       // fetching messageHash is hack to get around the fact that the messageHash is not always in the event
       // this.batches[index+2].created correct message hash is here
-      const messageHash = await this.getMessageHashFromCircuit(this.batches[index+2].created);
+      const messageHash = await this.getMessageHashFromCircuit(
+        this.batches[index + 2].created
+      );
       await this.receiveAttestationBatchCall(batch, messageHash);
     }
   }
 
-  async receiveAttestationBatchCall(batch: ConfirmationBatch, messageHash: string) {
+  async receiveAttestationBatchCall(
+    batch: ConfirmationBatch,
+    messageHash: string
+  ) {
     const committeeSize = await this.receiveAttestationBatchContract.methods
       .committeeSize()
       .call();
     const currentBatchIndex = await this.receiveAttestationBatchContract.methods
       .currentBatchIndex()
       .call();
-    logger.debug({committeeSize: committeeSize, currentBatchIndex: currentBatchIndex}, "Contract Data" );
-    logger.debug({batch: batch}, `Batch ${batch.index} processing`);
-
-    const contractMethod = this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
-      batch.nextCommittee,
-      batch.bannedCommittee,
-      batch.committedSfx,
-      batch.revertedSfx,
-      batch.index,
-      ethers.toQuantity(messageHash), 
-      batch.signatures,
+    logger.debug(
+      { committeeSize: committeeSize, currentBatchIndex: currentBatchIndex },
+      "Contract Data"
     );
-    
+    logger.debug({ batch: batch }, `Batch ${batch.index} processing`);
+
+    const contractMethod =
+      this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
+        batch.nextCommittee,
+        batch.bannedCommittee,
+        batch.committedSfx,
+        batch.revertedSfx,
+        batch.index,
+        ethers.toQuantity(messageHash),
+        batch.signatures
+      );
+
     const encodedABI = contractMethod.encodeABI();
-    
+
     const gasPrice = await this.web3.eth.getGasPrice();
-    const estimatedGas = await contractMethod.estimateGas({ from: this.wallet.address });
+    const estimatedGas = await contractMethod.estimateGas({
+      from: this.wallet.address,
+    });
 
     const transactionObject = {
       to: this.receiveAttestationBatchContract.options.address,
@@ -205,14 +223,21 @@ export class AttestationManager {
       gasPrice: gasPrice,
       estimatedGas: estimatedGas,
     };
-    
-    const signedTransaction = await this.wallet.signTransaction(transactionObject);
-    
+
+    const signedTransaction = await this.wallet.signTransaction(
+      transactionObject
+    );
+
     try {
-      const transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
-      logger.info({receipt: transactionReceipt}, `Batch ${batch.index} procesed!`);
+      const transactionReceipt = await this.web3.eth.sendSignedTransaction(
+        signedTransaction.rawTransaction
+      );
+      logger.info(
+        { receipt: transactionReceipt },
+        `Batch ${batch.index} procesed!`
+      );
     } catch (error) {
-      logger.error({error: error}, "Error sending transaction: ");
+      logger.error({ error: error }, "Error sending transaction: ");
       throw new Error("Error sending transaction: " + error);
     }
   }

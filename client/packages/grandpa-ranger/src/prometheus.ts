@@ -1,4 +1,4 @@
-	const client = require('prom-client');
+const client = require('prom-client');
 const http = require('http')
 const url = require('url')
 export class Prometheus {
