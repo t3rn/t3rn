@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 contract AttestationsVerifier {
     event SignerEmitted(address indexed signer);
-    event BatchApplied(bytes32 indexed batchHash, uint256 numSignatures);
+    event BatchApplied(bytes32 indexed batchHash);
     event SignerNotInCommittee(address indexed signer);
 
     mapping(address => bool) public current_committee;
@@ -84,7 +84,7 @@ contract AttestationsVerifier {
 
         currentBatchIndex = batch.index + 1;
 
-        emit BatchApplied(expectedBatchHash, signatures.length);
+        emit BatchApplied(expectedBatchHash);
     }
 
     function verifySignedByActiveCommittee(
