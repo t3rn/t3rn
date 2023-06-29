@@ -8,6 +8,29 @@ const encodedEmptyBatch = '0x00000000'
 const prefix = '\x19Ethereum Signed Message:\n32'
 const prefixBuffer = Buffer.from(prefix)
 
+async function generateSignatures(wallets, messageHash, attestationsVerifier) {
+    let signatures = []
+    for (let i = 0; i < wallets.length; i++) {
+        const wallet = wallets[i];
+        const signerAddress = wallet.address;
+        const flatSig = await wallet.signMessage(ethers.utils.arrayify(messageHash));
+        const signatureBytes = ethers.utils.arrayify(flatSig);
+
+        // Recover the signer's address
+        const recovered = await attestationsVerifier.recoverSigner(messageHash, signatureBytes);
+        expect(recovered).to.equal(signerAddress);
+
+        signatures.push(signatureBytes);
+    }
+    return signatures
+}
+
+function getMessageHash(batch) {
+    const encodedBatch = batchEncodePacked(batch)
+    const messageHash = ethers.utils.keccak256(encodedBatch);
+    return messageHash;
+  }
+
 async function parseAllEvents(receipt, contract) {
     const iface = new ethers.utils.Interface(contract.interface.format());
 
@@ -311,8 +334,6 @@ describe("AttestationsVerifier", function() {
         // Check that the correct addresses and indexes were emitted
         const parsedBatchAppliedEvents = allEvents["BatchApplied"];
         expect(parsedBatchAppliedEvents.length).to.equal(1);
-
-        let batchAppliedEvent = parsedBatchAppliedEvents[0];
     });
 
     it("Should initialize committee and verify signatures for full batch", async function() {
@@ -355,7 +376,6 @@ describe("AttestationsVerifier", function() {
         // Encoding the Batch struct
         const encodedBatchMessage = batchEncodePacked(batch);
 
-
         // Hashing the encoded Batch struct
         const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
 
@@ -391,24 +411,62 @@ describe("AttestationsVerifier", function() {
 
 describe("AttestationsCommittee", function() {
     it("should correctly calculate committeeSize", async function() {
-        throw new Error("Not implemented");
+        const wallets = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
+        const wallets_next_committee = Array.from({ length: 16 }, () => ethers.Wallet.createRandom());
+
+        const initialCommittee = wallets.map(wallet => wallet.address);
+
+        const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
+        const attestationsVerifier = await AttestationsVerifier.deploy(initialCommittee);
+        await attestationsVerifier.deployed();
+
+        const initialCommitteeSize = await attestationsVerifier.committeeSize()
+        expect(initialCommitteeSize).to.equal(32);
+
+        let batch = {
+            nextCommittee: wallets_next_committee.map(wallet => wallet.address),
+            bannedCommittee: [],
+            committedSfx: [],
+            revertedSfx: [],
+            index: 0
+        };
+
+        const messageHash = getMessageHash(batch)
+        console.log("messageHash: ", messageHash);
+
+        // Generate signatures
+        const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
+        console.log('signatures: ', signatures)
+
+        await attestationsVerifier.receiveAttestationBatch(
+            batch.nextCommittee,
+            batch.bannedCommittee,
+            batch.committedSfx,
+            batch.revertedSfx,
+            batch.index,
+            ethers.utils.arrayify(messageHash),
+            signatures,
+        );
+
+        let nextCommitteeSize = await attestationsVerifier.committeeSize()
+        expect(nextCommitteeSize).to.equal(32);
     });
 
-    it("should remove from committee old members", async function() {
-        throw new Error("Not implemented");
-    });
+    // it("should remove from committee old members", async function() {
+    //     throw new Error("Not implemented");
+    // });
 
-    it("should correctly update mapping current_committee", async function() {
-        throw new Error("Not implemented");
-    });
+    // it("should correctly update mapping current_committee", async function() {
+    //     throw new Error("Not implemented");
+    // });
 
-    it("should remove from committee banned members", async function() {
-        throw new Error("Not implemented");
-    });
+    // it("should remove from committee banned members", async function() {
+    //     throw new Error("Not implemented");
+    // });
 
-    describe("AttestationsBatch", function() {
-        it("should increase batch after receiveAttestationBatch", async function() {
-            throw new Error("Not implemented");
-        });
-    });
+    // describe("AttestationsBatch", function() {
+    //     it("should increase batch after receiveAttestationBatch", async function() {
+    //         throw new Error("Not implemented");
+    //     });
+    // });
 });
