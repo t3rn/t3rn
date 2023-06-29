@@ -4,6 +4,7 @@ const ethUtil = require('ethereumjs-util');
 
 const encodedEmptyBatch = '0x00000000'
 
+// Standardized prefix for Ethereum signed messages that has message of 32 bytes
 const prefix = '\x19Ethereum Signed Message:\n32'
 const prefixBuffer = Buffer.from(prefix)
 
@@ -153,7 +154,7 @@ describe("AttestationsVerifier", function() {
 
     it("Should produces the correct message hash for empty batch", async function() {
         let batch = {
-            // nexCommitteeLen: 0,
+            // nextCommitteeLen: 0,
             // bannedCommitteeLen: 0,
             // committedSfxLen: 0,
             // revertedSfxLen: 0,
@@ -341,7 +342,7 @@ describe("AttestationsVerifier", function() {
 
         // Constructing the Batch struct
         let batch = {
-            // nexCommitteeLen: 32,
+            // nextCommitteeLen: 32,
             // bannedCommitteeLen: 3,
             // committedSfxLen: 3,
             // revertedSfxLen: 0,
@@ -385,5 +386,29 @@ describe("AttestationsVerifier", function() {
         // Check that the correct addresses and indexes were emitted
         const parsedBatchAppliedEvents = allEvents["BatchApplied"];
         expect(parsedBatchAppliedEvents.length).to.equal(1);
+    });
+});
+
+describe("AttestationsCommittee", function() {
+    it("should correctly calculate amount of committeeSize", async function() {
+        throw new Error("Not implemented");
+    });
+
+    it("should remove from committee old members", async function() {
+        throw new Error("Not implemented");
+    });
+
+    it("should remove from committee old members", async function() {
+        throw new Error("Not implemented");
+    });
+
+    it("should remove from committee banned members", async function() {
+        throw new Error("Not implemented");
+    });
+
+    describe("AttestationsBatch", function() {
+        it("should increase batch after receiveAttestationBatch", async function() {
+            throw new Error("Not implemented");
+        });
     });
 });
