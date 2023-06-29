@@ -449,24 +449,24 @@ describe("AttestationsCommittee", function() {
         );
 
         let nextCommitteeSize = await attestationsVerifier.committeeSize()
-        expect(nextCommitteeSize).to.equal(32);
+        expect(nextCommitteeSize.toNumber()).to.equal(16);
     });
 
-    // it("should remove from committee old members", async function() {
-    //     throw new Error("Not implemented");
-    // });
+    it("should remove from committee old members", async function() {
+        throw new Error("Not implemented");
+    });
 
-    // it("should correctly update mapping current_committee", async function() {
-    //     throw new Error("Not implemented");
-    // });
+    it("should correctly update mapping current_committee", async function() {
+        throw new Error("Not implemented");
+    });
 
-    // it("should remove from committee banned members", async function() {
-    //     throw new Error("Not implemented");
-    // });
+    it("should remove from committee banned members", async function() {
+        throw new Error("Not implemented");
+    });
 
-    // describe("AttestationsBatch", function() {
-    //     it("should increase batch after receiveAttestationBatch", async function() {
-    //         throw new Error("Not implemented");
-    //     });
-    // });
+    describe("AttestationsBatch", function() {
+        it("should increase batch after receiveAttestationBatch", async function() {
+            throw new Error("Not implemented");
+        });
+    });
 });
