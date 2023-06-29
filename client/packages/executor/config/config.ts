@@ -163,7 +163,8 @@ export type Config = {
       attestationVerifierAddress: string;
       privateKey: string | undefined;
     };
-    batchesCatchUp: boolean;
+    processPendingBatches: boolean;
+    processPendingBatchesIndex: number;
   };
 };
 
@@ -260,6 +261,7 @@ export const config: Config = {
       attestationVerifierAddress: "0x4f251bfdb64894e0ec69e2a269838213a902b851",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
-    batchesCatchUp: process.env.PROCESS_PENDING_BATCHES == "true" ? true : false,
+    processPendingBatches: process.env.PROCESS_PENDING_BATCHES == "true" ? true : false,
+    processPendingBatchesIndex: process.env.PROCESS_PENDING_BATCHES_INDEX ? parseInt(process.env.PROCESS_PENDING_BATCHES_INDEX) : 0,
   },
 };

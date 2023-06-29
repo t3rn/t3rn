@@ -27,7 +27,7 @@ export class AttestationManager {
     this.rpc = config.attestations.ethereum.rpc;
     this.web3 = new Web3(this.rpc);
 
-    this.wallet = this.web3.eth.accounts.create(
+    this.wallet = this.web3.eth.accounts.privateKeyToAccount(
       config.attestations.ethereum.privateKey
     );
     if (this.wallet.address === undefined) {
@@ -124,16 +124,17 @@ export class AttestationManager {
     );
     const encodedBatch = ethers.keccak256(this.batchEncodePacked(batch));
     const messageHash = ethers.keccak256(ethers.concat([prefix, encodedBatch]));
-    logger.error("MsgHash with prefix: " + messageHash);
+    logger.debug("MsgHash with prefix: " + messageHash);
 
     return messageHash;
   }
 
+  // this is not reliable, because the messageHash is not always in the event
   async getMessageHashFromCircuit(blockNumber: number) : Promise<string> {
     const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber)
-    logger.debug(`Looking for messageHash in ${blockNumber}/${blockHash.toHex()}`)
+    logger.debug(`Looking for messageHash in ${blockHash.toHex()}`)
     const events = await this.client.query.system.events.at(blockHash.toHex())
-    logger.debug(`Found ${events.length} events in ${blockHash.toHex()}`); 
+    logger.debug(`Found ${events.length} events in block ${blockHash.toHex()}`); 
 
     const filteredEvents = events
     .toHuman()
@@ -142,6 +143,10 @@ export class AttestationManager {
     logger.debug(`Found ${filteredEvents.length} NewAttestationMessageHash events`); 
 
     for (const event of filteredEvents) {
+      if (event.event.data[0] != 'sepl') {
+        // ignore events from other chains than sepl
+        continue 
+      }
         const messageHash = event.event.data[1]
         logger.debug(`Found messageHash: ${messageHash}`)
         return messageHash
@@ -153,11 +158,16 @@ export class AttestationManager {
   async processPendingAttestationBatches() {
     await this.fetchBatches();
 
-    // iterate over batches, ignore empty 0 batch
-    // 0 batch didnt have a message hash in block found in batch.created
-    for (const batch of this.batches.slice(1)) {
-      logger.info({batch: batch}, `Batch ${batch.index} processing`);
-      const messageHash = await this.getMessageHashFromCircuit(batch.created);
+    // config.attestations.processPendingBatches is where we start processing batches
+    for (const [index, batch] of this.batches.slice(config.attestations.processPendingBatchesIndex).entries()) {
+      if (index + 2 == this.batches.length) {
+        // last batch is not yet confirmed
+        break;
+      }
+
+      // fetching messageHash is hack to get around the fact that the messageHash is not always in the event
+      // this.batches[index+2].created correct message hash is here
+      const messageHash = await this.getMessageHashFromCircuit(this.batches[index+2].created);
       await this.receiveAttestationBatchCall(batch, messageHash);
     }
   }
@@ -170,6 +180,7 @@ export class AttestationManager {
       .currentBatchIndex()
       .call();
     logger.debug({committeeSize: committeeSize, currentBatchIndex: currentBatchIndex}, "Contract Data" );
+    logger.debug({batch: batch}, `Batch ${batch.index} processing`);
 
     const contractMethod = this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
       batch.nextCommittee,
@@ -177,7 +188,7 @@ export class AttestationManager {
       batch.committedSfx,
       batch.revertedSfx,
       batch.index,
-      "0x82c789944deff12a6158496b7eed5504c67a6591b24084841348eaaf5d563f7e",
+      ethers.toQuantity(messageHash), 
       batch.signatures,
     );
     
@@ -190,7 +201,8 @@ export class AttestationManager {
       to: this.receiveAttestationBatchContract.options.address,
       from: this.wallet.address,
       data: encodedABI,
-      gas: gasPrice,
+      gas: 500000,
+      gasPrice: gasPrice,
       estimatedGas: estimatedGas,
     };
     
@@ -198,9 +210,10 @@ export class AttestationManager {
     
     try {
       const transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
-      logger.info('Transaction receipt:', transactionReceipt);
+      logger.info({receipt: transactionReceipt}, `Batch ${batch.index} procesed!`);
     } catch (error) {
-      logger.error('Error:', error);
+      logger.error({error: error}, "Error sending transaction: ");
+      throw new Error("Error sending transaction: " + error);
     }
   }
 
