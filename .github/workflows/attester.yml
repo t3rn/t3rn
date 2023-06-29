@@ -100,8 +100,8 @@ jobs:
         with:
           node-version: 20
 
-      - run: yarn
-      - run: yarn test
+      - run: npm
+      - run: npm run test
 
   build-docker:
     name: Build Attester Docker
