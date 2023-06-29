@@ -571,9 +571,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.3.2"
+version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6dbe3c979c178231552ecba20214a8272df4e09f232a87aef4320cf06539aded"
+checksum = "630be753d4e58660abd17930c71b647fe46c27ea6b63cc59e1e3851406972e42"
 
 [[package]]
 name = "bitvec"
@@ -6340,7 +6340,7 @@ name = "pallet-contracts"
 version = "1.0.0-alpha.0"
 dependencies = [
  "assert_matches",
- "bitflags 2.3.2",
+ "bitflags 2.3.3",
  "env_logger 0.10.0",
  "frame-benchmarking",
  "frame-support",
@@ -6652,7 +6652,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
- "hex-literal 0.2.2",
+ "hex-literal 0.4.1",
  "log",
  "pallet-3vm",
  "pallet-account-manager",
@@ -12575,7 +12575,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.36.3-rc.0"
+version = "1.36.4-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12651,7 +12651,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.36.3-rc.0"
+version = "1.36.4-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -13397,7 +13397,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.10.2",
+ "parking_lot 0.11.2",
  "regex",
  "serde",
  "serde_json",
