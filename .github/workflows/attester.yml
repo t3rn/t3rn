@@ -100,7 +100,7 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm
+      - run: npm i
       - run: npm run test
 
   build-docker:
