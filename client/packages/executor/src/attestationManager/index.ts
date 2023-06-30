@@ -64,7 +64,7 @@ export class AttestationManager {
 
   async fetchBatches() {
     logger.info('Fetching batches from chain...')
-    await this.client.query.attesters.batches("sepl").then((data) => {
+    await this.client.query.attesters.batches(config.attestations.ethereum.name).then((data) => {
       const fetchedData: any = data.toJSON();
 
       const convertedData: ConfirmationBatch[] = fetchedData.map(
@@ -149,8 +149,8 @@ export class AttestationManager {
     // );
 
     for (const event of filteredEvents) {
-      if (event.event.data[0] != "sepl") {
-        // ignore events from other chains than sepl
+      // allow only events from configured chain
+      if (event.event.data[0] != config.attestations.ethereum.name) {
         continue;
       }
       const messageHash = event.event.data[1];

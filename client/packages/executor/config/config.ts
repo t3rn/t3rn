@@ -159,6 +159,7 @@ export type Config = {
   /** Configuration for ethereum */
   attestations: {
     ethereum: {
+      name: string;
       rpc: string;
       attestationVerifierAddress: string;
       privateKey: string | undefined;
@@ -257,6 +258,7 @@ export const config: Config = {
   },
   attestations: {
     ethereum: {
+      name: "sepl",
       rpc: "https://endpoints.omniatech.io/v1/eth/sepolia/public",
       attestationVerifierAddress: "0x4f251bfdb64894e0ec69e2a269838213a902b851",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
