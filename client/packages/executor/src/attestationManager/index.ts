@@ -63,6 +63,7 @@ export class AttestationManager {
   }
 
   async fetchBatches() {
+    logger.info('Fetching batches from chain...')
     await this.client.query.attesters.batches("sepl").then((data) => {
       const fetchedData: any = data.toJSON();
 
@@ -137,15 +138,15 @@ export class AttestationManager {
     const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber);
     logger.debug(`Looking for messageHash in ${blockHash.toHex()}`);
     const events = await this.client.query.system.events.at(blockHash.toHex());
-    logger.debug(`Found ${events.length} events in block ${blockHash.toHex()}`);
+    // logger.debug(`Found ${events.length} events in block ${blockHash.toHex()}`);
 
     const filteredEvents = events
       .toHuman()
       .filter((event) => event.event.method == "NewAttestationMessageHash");
 
-    logger.debug(
-      `Found ${filteredEvents.length} NewAttestationMessageHash events`
-    );
+    // logger.debug(
+    //   `Found ${filteredEvents.length} NewAttestationMessageHash events`
+    // );
 
     for (const event of filteredEvents) {
       if (event.event.data[0] != "sepl") {
@@ -153,7 +154,7 @@ export class AttestationManager {
         continue;
       }
       const messageHash = event.event.data[1];
-      logger.debug(`Found messageHash: ${messageHash}`);
+      logger.info(`Found messageHash: ${messageHash}`);
       return messageHash;
     }
 
@@ -171,6 +172,9 @@ export class AttestationManager {
         // last batch is not yet confirmed
         break;
       }
+
+      logger.info(`Batch ${batch.index} processing`);
+      logger.debug({ batch: batch }, `Batch data`);
 
       // fetching messageHash is hack to get around the fact that the messageHash is not always in the event
       // this.batches[index+2].created correct message hash is here
@@ -193,9 +197,8 @@ export class AttestationManager {
       .call();
     logger.debug(
       { committeeSize: committeeSize, currentBatchIndex: currentBatchIndex },
-      "Contract Data"
+      "Etherum Contract State"
     );
-    logger.debug({ batch: batch }, `Batch ${batch.index} processing`);
 
     const contractMethod =
       this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
@@ -237,8 +240,8 @@ export class AttestationManager {
         `Batch ${batch.index} procesed!`
       );
     } catch (error) {
-      logger.error({ error: error }, "Error sending transaction: ");
-      throw new Error("Error sending transaction: " + error);
+      logger.warn({ error: error }, "Error sending transaction: ");
+      // throw new Error("Error sending transaction: " + error);
     }
   }
 
