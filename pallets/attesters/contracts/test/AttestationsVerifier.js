@@ -412,7 +412,7 @@ describe("AttestationsVerifier", function() {
 describe("AttestationsCommittee", function() {
     it("should correctly calculate committeeSize", async function() {
         const wallets = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
-        const wallets_next_committee = Array.from({ length: 16 }, () => ethers.Wallet.createRandom());
+        const wallets_next_committee = Array.from({ length: 32 }, () => ethers.Wallet.createRandom());
 
         const initialCommittee = wallets.map(wallet => wallet.address);
 
@@ -449,7 +449,7 @@ describe("AttestationsCommittee", function() {
         );
 
         let nextCommitteeSize = await attestationsVerifier.committeeSize()
-        expect(nextCommitteeSize.toNumber()).to.equal(16);
+        expect(nextCommitteeSize.toNumber()).to.equal(32);
     });
 
     it("should remove from committee old members", async function() {

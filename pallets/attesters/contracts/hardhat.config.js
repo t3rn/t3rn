@@ -1,4 +1,11 @@
 require("@nomicfoundation/hardhat-toolbox");
+let ETHEREUM_PRIVATE_KEY
+
+if (process.env.ETHEREUM_PRIVATE_KEY != null) {
+  ETHEREUM_PRIVATE_KEY = process.env.ETHEREUM_PRIVATE_KEY
+} else {
+  ETHEREUM_PRIVATE_KEY = "0x6bfa80bcf02789b719e4b47c26063b1caec900aebc0d09034d3cf2e4f6bfad98"
+}
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -13,7 +20,7 @@ module.exports = {
     sepolia: {
       url: "https://eth-sepolia.public.blastapi.io", 
       chainId: 11155111, 
-      accounts: [process.env.ETHEREUM_PRIVATE_KEY], 
+      accounts: [ETHEREUM_PRIVATE_KEY], 
     },
   },
 
