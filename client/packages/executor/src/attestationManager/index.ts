@@ -63,30 +63,32 @@ export class AttestationManager {
   }
 
   async fetchBatches() {
-    logger.info('Fetching batches from chain...')
-    await this.client.query.attesters.batches(config.attestations.ethereum.name).then((data) => {
-      const fetchedData: any = data.toJSON();
+    logger.info("Fetching batches from chain...");
+    await this.client.query.attesters
+      .batches(config.attestations.ethereum.name)
+      .then((data) => {
+        const fetchedData: any = data.toJSON();
 
-      const convertedData: ConfirmationBatch[] = fetchedData.map(
-        (batch: any) => {
-          return {
-            nextCommittee: batch.nextCommittee || [],
-            bannedCommittee: batch.bannedCommittee || [],
-            committedSfx: batch.committedSfx || [],
-            revertedSfx: batch.revertedSfx || [],
-            index: batch.index,
-            expectedBatchHash: batch.expectedBatchHash,
-            signatures: batch.signatures.map(([id, signature]) => signature),
-            created: batch.created,
-          };
-        }
-      );
+        const convertedData: ConfirmationBatch[] = fetchedData.map(
+          (batch: any) => {
+            return {
+              nextCommittee: batch.nextCommittee || [],
+              bannedCommittee: batch.bannedCommittee || [],
+              committedSfx: batch.committedSfx || [],
+              revertedSfx: batch.revertedSfx || [],
+              index: batch.index,
+              expectedBatchHash: batch.expectedBatchHash,
+              signatures: batch.signatures.map(([id, signature]) => signature),
+              created: batch.created,
+            };
+          }
+        );
 
-      logger.info("We have " + data.toJSON().length + " batches pending");
-      // logger.info(['Batch 0: ', data.toJSON()[0]])
-      // logger.info(['Batch 1: ', data.toJSON()[1]])
-      this.batches = convertedData;
-    });
+        logger.info("We have " + data.toJSON().length + " batches pending");
+        // logger.info(['Batch 0: ', data.toJSON()[0]])
+        // logger.info(['Batch 1: ', data.toJSON()[1]])
+        this.batches = convertedData;
+      });
   }
 
   async listener() {
@@ -147,6 +149,7 @@ export class AttestationManager {
     // logger.debug(
     //   `Found ${filteredEvents.length} NewAttestationMessageHash events`
     // );
+    // logger.debug(filteredEvents)
 
     for (const event of filteredEvents) {
       // allow only events from configured chain
@@ -177,10 +180,22 @@ export class AttestationManager {
       logger.debug({ batch: batch }, `Batch data`);
 
       // fetching messageHash is hack to get around the fact that the messageHash is not always in the event
-      // this.batches[index+2].created correct message hash is here
-      const messageHash = await this.getMessageHashFromCircuit(
-        this.batches[index + 2].created
-      );
+      // for 0 batch its in this.batches[index+1].created
+      // for other batches its in this.batches[index+3].created 
+      let messageHash: string;
+      if (index + config.attestations.processPendingBatchesIndex == 0) {
+        messageHash = await this.getMessageHashFromCircuit(
+          this.batches[1].created
+        );
+      } else if (index + config.attestations.processPendingBatchesIndex == 1) {
+        messageHash = await this.getMessageHashFromCircuit(
+          this.batches[index + 2].created
+        );
+      } else {
+        messageHash = await this.getMessageHashFromCircuit(
+          this.batches[index + 3].created
+        );
+      }
       await this.receiveAttestationBatchCall(batch, messageHash);
     }
   }
