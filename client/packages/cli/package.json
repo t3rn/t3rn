@@ -32,7 +32,7 @@
     "node-fetch": "^3.3.1",
     "node-gyp-build": "^4.6.0",
     "ora": "^5.4.1",
-    "tslib": "^2.5.2",
+    "tslib": "^2.6.0",
     "zod": "^3.21.4"
   },
   "devDependencies": {
