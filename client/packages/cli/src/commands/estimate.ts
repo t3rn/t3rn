@@ -77,6 +77,7 @@ const estimateEthFees = async (
   speedMode: SpeedMode
 ) => {
   spinner.info(colorLogMsg("INFO", `Estimating fees for ${tag}...`))
+  console.table(sideEffect)
 
   try {
     const gasFeesInEth = await calculateGasFee(
