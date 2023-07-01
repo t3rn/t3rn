@@ -31,6 +31,10 @@ contract AttestationsVerifier {
         );
     }
 
+    function messageHash(Batch memory batch) public pure returns (bytes32) {
+        return keccak256(batchEncodePacked(batch));
+    }
+
     constructor(address[] memory initialCommittee) {
         for (uint i = 0; i < initialCommittee.length; i++) {
             current_committee[initialCommittee[i]] = true;
@@ -49,14 +53,12 @@ contract AttestationsVerifier {
         bytes[] memory signatures
     ) public {
         Batch memory batch = Batch(nextCommittee, bannedCommittee, committedSfx, revertedSfx, index);
-        
-        require(batch.index == currentBatchIndex, "Batch index mismatch");
-        // TODO: 
-        // bytes32 batchMessageHash = keccak256(batchEncodePacked(batch));
-        // require(batchMessageHash == expectedBatchHash, "Batch hash mismatch");
+        bytes32 batchMessageHash = keccak256(batchEncodePacked(batch));
+        require(batchMessageHash == expectedBatchHash, "Batch hash mismatch");
 
         require(verifySignedByActiveCommittee(expectedBatchHash, signatures), "Signatures verification failed");
 
+        require(batch.index == currentBatchIndex + 1, "Batch index mismatch");
 
         uint256 _committeeSize = committeeSize;
         for (uint i = 0; i < batch.nextCommittee.length; i++) {
