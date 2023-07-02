@@ -2,11 +2,10 @@
 pragma solidity ^0.8.0;
 
 contract AttestationsVerifier {
+
     event SignerEmitted(address indexed signer);
     event BatchApplied(bytes32 indexed batchHash);
     event SignerNotInCommittee(address indexed signer);
-
-    mapping(address => bool) public current_committee;
 
     struct Batch {
         address[] nextCommittee;
@@ -18,8 +17,12 @@ contract AttestationsVerifier {
 
     mapping(bytes32 => bool) public committedSfxMap;
     mapping(bytes32 => bool) public revertedSfxMap;
+    mapping(address => uint256) public attestersIndices;
+    address public owner;
     uint256 public committeeSize;
+    uint256 public currentCommitteeTransitionCount;
     uint256 public currentBatchIndex;
+    uint256 public totalAttesters; // added a counter to track total attestors.
 
     function batchEncodePacked(Batch memory batch) public pure returns (bytes memory) {
         return abi.encodePacked(
@@ -35,12 +38,20 @@ contract AttestationsVerifier {
         return keccak256(batchEncodePacked(batch));
     }
 
-    constructor(address[] memory initialCommittee) {
-        for (uint i = 0; i < initialCommittee.length; i++) {
-            current_committee[initialCommittee[i]] = true;
+    constructor(address[] memory initialCommittee, uint256 startingIndex) {
+        currentCommitteeTransitionCount = 1;
+        for(uint i = 0; i < initialCommittee.length; i++) {
+            attestersIndices[initialCommittee[i]] = currentCommitteeTransitionCount;
         }
+        totalAttesters = initialCommittee.length;
+        currentBatchIndex = startingIndex;
+        owner = msg.sender;
         committeeSize = initialCommittee.length;
-        currentBatchIndex = 0;
+    }
+
+    function updateCommitteeSize(uint256 newCommitteeSize) public {
+        require(msg.sender == owner, "Only owner can update committee size");
+        committeeSize = newCommitteeSize;
     }
 
     function receiveAttestationBatch(
@@ -60,22 +71,26 @@ contract AttestationsVerifier {
 
         require(batch.index == currentBatchIndex + 1, "Batch index mismatch");
 
-        uint256 _committeeSize = committeeSize;
-        for (uint i = 0; i < batch.nextCommittee.length; i++) {
-            if (!current_committee[batch.nextCommittee[i]]) {
-                current_committee[batch.nextCommittee[i]] = true;
-                _committeeSize += 1;
+        if (batch.nextCommittee.length > 0) {
+            currentCommitteeTransitionCount += 1;
+            // Add new attesters to the attestersIndices mapping
+            for(uint i = 0; i < batch.nextCommittee.length; i++) {
+                uint256 attesterIndex = attestersIndices[batch.nextCommittee[i]];
+                if (attesterIndex == 0) {
+                    totalAttesters += 1;
+                }
+                if (attesterIndex != type(uint256).max) {
+                    attestersIndices[batch.nextCommittee[i]] = currentCommitteeTransitionCount;
+                }
             }
         }
 
-        for (uint i = 0; i < batch.bannedCommittee.length; i++) {
-            if (current_committee[batch.bannedCommittee[i]]) {
-                delete current_committee[batch.bannedCommittee[i]];
-                _committeeSize -= 1;
+        // Preserve the list of banned committee indices
+        for(uint i = 0; i < batch.bannedCommittee.length; i++) {
+            if (attestersIndices[batch.bannedCommittee[i]] != type(uint256).max) {
+                attestersIndices[batch.bannedCommittee[i]] = type(uint256).max;
             }
         }
-
-        committeeSize = _committeeSize;
 
         for (uint i = 0; i < batch.committedSfx.length; i++) {
             committedSfxMap[batch.committedSfx[i]] = true;
@@ -85,7 +100,7 @@ contract AttestationsVerifier {
             revertedSfxMap[batch.revertedSfx[i]] = true;
         }
 
-        currentBatchIndex = batch.index + 1;
+        currentBatchIndex = batch.index;
 
         emit BatchApplied(expectedBatchHash);
     }
@@ -97,15 +112,53 @@ contract AttestationsVerifier {
         uint256 validSignatures = 0;
         uint256 quorum = committeeSize * 2 / 3;
         for (uint i = 0; i < signatures.length; i++) {
-            address signer = recoverSigner(messageHash, signatures[i]);
-            if (signer != address(0) && current_committee[signer]) {
-                validSignatures += 1;
-                if (validSignatures >= quorum) {
-                    return true;
+            bytes32 r;
+            bytes32 s;
+            uint8 v;
+
+            bytes memory signature = signatures[i];
+
+            if (signature.length != 65) {
+                continue;
+            }
+
+            assembly {
+                r := mload(add(signature, 32))
+                s := mload(add(signature, 64))
+                v := byte(0, mload(add(signature, 96)))
+            }
+
+            if (v < 27) {
+                v += 27;
+            }
+
+            if (v != 27 && v != 28) {
+                continue;
+            } else {
+                bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+                address signer = ecrecover(prefixedHash, v, r, s);
+                uint256 attesterIndex = attestersIndices[signer];
+
+                if (attesterIndex == currentCommitteeTransitionCount) {
+                    validSignatures += 1;
                 }
             }
+
+            if (validSignatures >= quorum) {
+                return true;
+            }
         }
-        return validSignatures > committeeSize * 2 / 3;
+
+        return validSignatures >= quorum;
+    }
+
+    function arrayContains(uint256[] memory array, uint256 value) private pure returns (bool) {
+        for(uint256 i = 0; i < array.length; i++) {
+            if(array[i] == value) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function recoverSigner(bytes32 messageHash, bytes memory signature) public pure returns (address) {
