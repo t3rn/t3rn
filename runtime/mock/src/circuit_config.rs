@@ -410,6 +410,7 @@ parameter_types! {
 impl pallet_eth2_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+    type Event = Event;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type SlotsPerEpoch = SlotsPerEpoch;

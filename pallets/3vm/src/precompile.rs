@@ -252,22 +252,12 @@ pub(crate) fn invoke<T: Config>(
                     event,
                 )
                 .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyStateInclusion(chain_id, speed_mode, source, event) =>
-                T::Portal::verify_state_inclusion(
-                    chain_id,
-                    speed_mode,
-                    execution_source_to_option(source),
-                    event,
-                )
-                .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyTxInclusion(chain_id, speed_mode, source, event) =>
-                T::Portal::verify_tx_inclusion(
-                    chain_id,
-                    speed_mode,
-                    execution_source_to_option(source),
-                    event,
-                )
-                .map(|x| PrecompileInvocation::Portal(x.into())),
+            PortalPrecompileArgs::VerifyStateInclusion(chain_id, speed_mode, event) =>
+                T::Portal::verify_state_inclusion(chain_id, speed_mode, event)
+                    .map(|x| PrecompileInvocation::Portal(x.into())),
+            PortalPrecompileArgs::VerifyTxInclusion(chain_id, speed_mode, event) =>
+                T::Portal::verify_tx_inclusion(chain_id, speed_mode, event)
+                    .map(|x| PrecompileInvocation::Portal(x.into())),
         },
     }
 }

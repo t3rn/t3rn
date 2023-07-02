@@ -247,21 +247,19 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn verify_state_inclusion(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
-        source: Option<ExecutionSource>,
         message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?
-            .verify_state_inclusion(gateway_id, speed_mode, source, message)
+            .verify_state_inclusion(gateway_id, speed_mode, message)
     }
 
     fn verify_tx_inclusion(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
-        source: Option<ExecutionSource>,
         message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         match_light_client_by_gateway_id::<T>(gateway_id)?
-            .verify_tx_inclusion(gateway_id, speed_mode, source, message)
+            .verify_tx_inclusion(gateway_id, speed_mode, message)
     }
 
     fn verify_event_inclusion_precompile(
@@ -283,15 +281,10 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn verify_state_inclusion_precompile(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
-        source: ExecutionSource,
         message: Bytes,
     ) -> Result<Bytes, DispatchError> {
-        let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_state_inclusion(
-            gateway_id,
-            speed_mode,
-            execution_source_to_option(source),
-            message,
-        )?;
+        let result = match_light_client_by_gateway_id::<T>(gateway_id)?
+            .verify_state_inclusion(gateway_id, speed_mode, message)?;
 
         Ok(result.message)
     }
@@ -299,32 +292,21 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn verify_tx_inclusion_precompile(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
-        source: ExecutionSource,
         message: Bytes,
     ) -> Result<Bytes, DispatchError> {
-        let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_tx_inclusion(
-            gateway_id,
-            speed_mode,
-            execution_source_to_option(source),
-            message,
-        )?;
+        let result = match_light_client_by_gateway_id::<T>(gateway_id)?
+            .verify_tx_inclusion(gateway_id, speed_mode, message)?;
         Ok(result.message)
     }
 
     fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
-        source: ExecutionSource,
         message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        let mut inclusion_check = Self::verify_state_inclusion(
-            gateway_id,
-            speed_mode,
-            execution_source_to_option(source),
-            message,
-        )?;
+        let mut inclusion_check = Self::verify_state_inclusion(gateway_id, speed_mode, message)?;
 
         let in_codec = match_vendor_with_codec(
             <T as Config>::Xdns::get_verification_vendor(&gateway_id)
@@ -345,17 +327,11 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
         speed_mode: SpeedMode,
-        source: ExecutionSource,
         message: Bytes,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        let mut inclusion_check = Self::verify_tx_inclusion(
-            gateway_id,
-            speed_mode,
-            execution_source_to_option(source),
-            message,
-        )?;
+        let mut inclusion_check = Self::verify_tx_inclusion(gateway_id, speed_mode, message)?;
 
         let in_codec = match_vendor_with_codec(
             <T as Config>::Xdns::get_verification_vendor(&gateway_id)
