@@ -181,7 +181,7 @@ export class AttestationManager {
 
       // fetching messageHash is hack to get around the fact that the messageHash is not always in the event
       // for 0 batch its in this.batches[index+1].created
-      // for other batches its in this.batches[index+3].created 
+      // for other batches its in this.batches[index+3].created
       let messageHash: string;
       if (index + config.attestations.processPendingBatchesIndex == 0) {
         messageHash = await this.getMessageHashFromCircuit(
