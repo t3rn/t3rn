@@ -158,6 +158,7 @@ export class SubstrateRelayer extends EventEmitter {
     const inclusionData: InclusionProof = {
       encoded_payload: (event as unknown as { toHex: () => string }).toHex(),
       payload_proof: {
+        // @ts-ignore - property does not exist on type
         trieNodes: inclusionProof.toJSON().proof as string,
       },
       block_hash: blockHash,
@@ -208,26 +209,30 @@ export class SubstrateRelayer extends EventEmitter {
   async fetchCorrespondingRelaychainHeaderNumber(
     parachainBlockHash: string
   ): Promise<number> {
-    const parachainBlock = await this.client.rpc.chain.getBlock(
+    const number = await this.client.rpc.chain.getBlock(
       parachainBlockHash
-    );
-
-    // ToDo: we should verify that this block is correct. Could be done by running a state query on the relaychain, decoding the block and ensuring the height is correct
-    for (let i = 0; i < parachainBlock.block.extrinsics.length; i++) {
-      const extrinsic = parachainBlock.block.extrinsics[i];
-      if (
-        extrinsic.method.method === "setValidationData" &&
-        extrinsic.method.section === "parachainSystem"
-      ) {
-        return (
-          // @ts-ignore - TS does not know about the type
-          extrinsic.method.args[0].validationData.relayParentNumber.toNumber() +
-          2
-        ); // im not exactly sure why we need to add 2 here, +1 makes sense as its parent.
+      // ToDo: we should verify that this block is correct. Could be done by running a state query on the relaychain, decoding the block and ensuring the height is correct
+    ).then((parachainBlock) => {
+      // @ts-ignore - property does not exist on type
+      let block = parachainBlock.block;
+      for (let i = 0; i < block.extrinsics.length; i++) {
+        const extrinsic = block.extrinsics[i];
+        if (
+          extrinsic.method.method === "setValidationData" &&
+          extrinsic.method.section === "parachainSystem"
+        ) {
+          return (
+            // @ts-ignore - TS does not know about the type
+            extrinsic.method.args[0].validationData.relayParentNumber.toNumber() +
+            2
+          ); // im not exactly sure why we need to add 2 here, +1 makes sense as its parent.
+        }
       }
-    }
+    }).catch((err) => {
+      throw Error("Could not find relaychain header number. Error: " + err);
+    });
 
-    throw Error("Could not find relaychain header number");
+    return number
   }
 
   async generateHeaderInclusionProof(
@@ -258,7 +263,10 @@ export class SubstrateRelayer extends EventEmitter {
    * @returns Block number
    */
   async getBlockNumber(hash: string) {
-    return (await this.client.rpc.chain.getHeader(hash)).number;
+    return await this.client.rpc.chain.getHeader(hash)
+      // @ts-ignore - property does not exist on type
+      .then(header => header.number)
+      .catch(err => { throw Error("Could not fetch block number. Error: " + err) });
   }
 
   /**
@@ -292,8 +300,14 @@ export class SubstrateRelayer extends EventEmitter {
    * @returns Nonce of the signer
    */
   async fetchNonce(api: ApiPromise, address: string): Promise<number> {
-    return parseInt((await api.rpc.system.accountNextIndex(address)).toHuman());
+    return await api.rpc.system.accountNextIndex(address).then(
+      (nextIndex) => {
+        // @ts-ignore - property does not exist on type
+        return parseInt(nextIndex.toHuman());
+      }
+    )
   }
+
 }
 
 export { Estimator, CostEstimator, Estimate, InclusionProof };
