@@ -289,7 +289,7 @@ impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
         vec![]
     }
 
-    fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
+    fn read_attestation_latency(_target: &TargetId) -> Option<LatencyStatus> {
         None
     }
 }

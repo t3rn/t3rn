@@ -307,9 +307,9 @@ impl PrecompileArgs {
                 GetFinalizedHeight:Bytes4,\
                 GetRationalHeight:Bytes4,\
                 GetFastHeight:Bytes4,\
-                VerifyEventInclusion:Quadruple(Bytes4,Byte,Bytes),\
-                VerifyStateInclusion:Quadruple(Bytes4,Byte,Bytes),\
-                VerifyTxInclusion:Quadruple(Bytes4,Byte,H256,Bytes),\
+                VerifyEventInclusion:Quadruple(Bytes4,Byte,H256,Bytes),\
+                VerifyStateInclusion:Triple(Bytes4,Byte,Bytes),\
+                VerifyTxInclusion:Triple(Bytes4,Byte,Bytes),\
         )"
         .to_vec()
     }
@@ -418,10 +418,10 @@ pub mod tests {
                 97, 116, 105, 111, 110, 97, 108, 72, 101, 105, 103, 104, 116, 9, 1, 52, 71, 101,
                 116, 70, 97, 115, 116, 72, 101, 105, 103, 104, 116, 21, 1, 80, 86, 101, 114, 105,
                 102, 121, 69, 118, 101, 110, 116, 73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0,
-                14, 0, 7, 0, 8, 0, 21, 1, 80, 86, 101, 114, 105, 102, 121, 83, 116, 97, 116, 101,
-                73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0, 14, 0, 7, 0, 8, 0, 21, 1, 68, 86,
-                101, 114, 105, 102, 121, 84, 120, 73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0,
-                14, 0, 7, 0, 8, 0
+                14, 0, 7, 0, 8, 0, 20, 1, 80, 86, 101, 114, 105, 102, 121, 83, 116, 97, 116, 101,
+                73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0, 14, 0, 8, 0, 20, 1, 68, 86, 101,
+                114, 105, 102, 121, 84, 120, 73, 110, 99, 108, 117, 115, 105, 111, 110, 9, 0, 14,
+                0, 8, 0
             ]
         );
     }
@@ -623,7 +623,7 @@ pub mod tests {
     fn test_verify_state_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
-        let source: [u8; 32] = [5; 32];
+        let _source: [u8; 32] = [5; 32];
 
         let portal_call =
             PrecompileArgs::VerifyStateInclusion(chain_id, SpeedMode::Rational, event.clone());
@@ -642,7 +642,7 @@ pub mod tests {
     fn test_verify_tx_inclusion_recodes_correctly_to_scale() {
         let chain_id: [u8; 4] = [9, 9, 9, 9];
         let event = vec![1, 2, 3, 4];
-        let source: [u8; 32] = [5; 32];
+        let _source: [u8; 32] = [5; 32];
 
         let portal_call =
             PrecompileArgs::VerifyTxInclusion(chain_id, SpeedMode::Rational, event.clone());
