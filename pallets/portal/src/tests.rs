@@ -133,19 +133,12 @@ mod tests {
     #[test]
     fn test_initialize_and_submit_ethereum() {
         let init = generate_initialization(None, None);
-
         let submission_data = generate_epoch_update(
             0,
             3,
             Some(
                 init.checkpoint
-                    .justified_beacon
-                    .hash_tree_root::<Runtime>()
-                    .unwrap(),
-            ),
-            Some(
-                init.checkpoint
-                    .finalized_beacon
+                    .attested_beacon
                     .hash_tree_root::<Runtime>()
                     .unwrap(),
             ),
