@@ -2,7 +2,7 @@ all:
 	cd types; yarn; yarn link; yarn build;
 	cd sdk; yarn; yarn link; yarn build;
 	cd cli; yarn add ../sdk; yarn;
-	cd executor; pnpm i; pnpm add ../sdk; pnpm add ../types;
+	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm i;
 	cd attester; pnpm i; pnpm add ../types; pnpm add ../sdk;
 
 executor:
