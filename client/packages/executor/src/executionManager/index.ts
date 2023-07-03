@@ -239,16 +239,19 @@ export class ExecutionManager {
                 ].generateHeaderInclusionProof(
                   eventData.blockNumber,
                   parseInt(eventData.data)
-                );
+                ).then(event => { return event.toJSON().proof });
 
                 const blockHash = await this.relayers[
                   eventData.target
-                ].getBlockHash(eventData.blockNumber);
+                ].getBlockHash(eventData.blockNumber).then(
+                  // @ts-ignore
+                  hash => hash.toString()
+                );
 
                 // @ts-ignore - cannot find property in type never
                 this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects
                   .get(eventData.sfxId)
-                  ?.addHeaderProof(proof.toJSON().proof, blockHash.toString());
+                  ?.addHeaderProof(proof, blockHash);
               }
               break;
             case RelayerEvents.SfxExecutionError:
