@@ -209,9 +209,9 @@ pub mod pallet {
                         };
                         let is_active = !heartbeat.is_halted;
                         (
-                            heartbeat.last_updated_height,
+                            heartbeat.last_rational_height,
                             heartbeat.last_finalized_height,
-                            heartbeat.last_updated_height,
+                            heartbeat.last_fast_height,
                             security_lvl,
                             is_active,
                         )
