@@ -58,7 +58,7 @@ export class CostEstimator {
    *
    */
   async update() {
-    for (const [_sfxId, estimate] of this.trackingMap.entries()) {
+    for (const [, estimate] of this.trackingMap.entries()) {
       const txCost = await this.currentTransactionCost(estimate.tx);
       if (txCost !== estimate.costSubject.getValue()) {
         estimate.costSubject.next(txCost);

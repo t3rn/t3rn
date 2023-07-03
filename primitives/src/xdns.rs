@@ -1,6 +1,6 @@
 use crate::{
     gateway::GatewayABIConfig, light_client::LightClientHeartbeat, ChainId, ExecutionVendor,
-    GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
+    GatewayActivity, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
@@ -284,6 +284,10 @@ pub trait Xdns<T: frame_system::Config, Balance> {
     fn get_escrow_account(chain_id: &ChainId) -> Result<Vec<u8>, DispatchError>;
 
     fn fetch_full_gateway_records() -> Vec<FullGatewayRecord<T::AccountId>>;
+
+    fn read_last_activity_overview() -> Vec<GatewayActivity<T::BlockNumber>>;
+
+    fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<T::BlockNumber>>;
 
     fn verify_active(
         gateway_id: &ChainId,

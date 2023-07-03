@@ -86,12 +86,27 @@ jobs:
       - run: pnpm test
         timeout-minutes: 5
 
+  build-docker:
+    name: Build Executor Docker
+    needs: [changes]
+    if: needs.changes.outputs.src == 'true' && github.ref != 'refs/heads/development'
+
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Docker
+        working-directory: ./client
+        run: |
+          docker build . -f executor.Dockerfile
+
   deploy:
     name: Build & Deploy Executor
     runs-on: self-hosted
-    if: needs.changes.outputs.src == 'true'
     needs: test-executor
     concurrency: executor
+
+    if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -102,11 +117,11 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-  
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-  
+
       - name: Build executor
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -118,10 +133,8 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: EKS
-        if: github.ref == 'refs/heads/development'
         run: aws eks --region ${{ secrets.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ secrets.AWS_EKS_CLUSTER }}
 
       - name: Helm Upgrade
-        if: github.ref == 'refs/heads/development'
         working-directory: ./client/packages/executor
         run: helm upgrade executor helm -n executor -f helm/values.yaml --set tag=${{ github.sha }},repository="${{ steps.login-ecr.outputs.registry }}/test-t0rn-executor"

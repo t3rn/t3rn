@@ -30,6 +30,7 @@
     "format": "prettier ./ --write",
     "checks": "yarn build && madge --circular ./ && prettier ./ --check && yarn lint",
     "load:meta": "curl -s -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://127.0.0.1:9933 > metadata-t3rn.json",
+    "load:meta:t0rn": "curl -s -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' https://rpc.t0rn.io > metadata-t3rn.json",
     "generate:interfaces": "yarn ts-node node_modules/.bin/polkadot-types-from-defs --package . --input ./src/augment --endpoint metadata-t3rn.json  && rm ./src/augment/index.ts ./src/augment/types.ts",
     "generate:meta": "yarn ts-node node_modules/.bin/polkadot-types-from-chain --package . --endpoint metadata-t3rn.json --output ./src/augment --strict",
     "generate:all": "yarn generate:interfaces && yarn generate:meta"

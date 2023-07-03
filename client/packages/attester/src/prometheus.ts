@@ -1,14 +1,21 @@
 import client from 'prom-client'
 import http from 'http'
 import { logger } from './logging'
+
 export class Prometheus {
+    register: client.Registry
     circuitActive: boolean
-    circuitDisconnectsTotal: any
-    register: any
-    circuitHeight: any
-    circuitDisconnected: any
-    eventsTotal: any
-    eventsAttestationsTotal: any
+    circuitDisconnectsTotal: client.Counter
+    circuitHeight: client.Counter
+    circuitDisconnected: client.Counter
+    eventsTotal: client.Counter
+    attestationsEvents: client.Counter
+    currentCommitteeMember: client.Gauge
+    attestationSubmitError: client.Counter
+    attestationSubmitted: client.Counter
+    attestionsReceived: client.Counter
+    attestionsReceivedValid: client.Counter
+    attestationsInQueue: client.Gauge
 
     constructor() {
         const Registry = client.Registry
@@ -47,11 +54,53 @@ export class Prometheus {
             labelNames: [],
         })
 
-        this.eventsAttestationsTotal = new client.Counter({
-            name: 'events_attestations_total',
+        this.attestationsEvents = new client.Counter({
+            name: 'attestation_events_total',
             help: 'Number of attestations received',
             registers: [this.register],
             labelNames: ['method'],
+        })
+
+        this.currentCommitteeMember = new client.Gauge({
+            name: 'current_committee_member',
+            help: 'Is member of current committee',
+            registers: [this.register],
+            labelNames: [],
+        })
+
+        this.attestationSubmitError = new client.Counter({
+            name: 'attestation_submit_error_count',
+            help: 'Number of errors when submitting an attestation',
+            registers: [this.register],
+            labelNames: ['error'],
+        })
+
+        this.attestationSubmitted = new client.Counter({
+            name: 'attestation_submit_count',
+            help: 'Number of attestations submitted',
+            registers: [this.register],
+            labelNames: ['messageHash', 'targetId', 'executionVendor'],
+        })
+
+        this.attestionsReceived = new client.Counter({
+            name: 'attestations_received',
+            help: 'Number of attestations received',
+            registers: [this.register],
+            labelNames: ['targetId'],
+        })
+
+        this.attestionsReceivedValid = new client.Counter({
+            name: 'attestations_received_valid',
+            help: 'Number of valid attestations received',
+            registers: [this.register],
+            labelNames: ['targetId'],
+        })
+
+        this.attestationsInQueue = new client.Gauge({
+            name: 'attestations_in_queue',
+            help: 'Number of attestations in queue',
+            registers: [this.register],
+            labelNames: ['targetId'],
         })
 
         this.startServer()

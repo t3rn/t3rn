@@ -3,15 +3,16 @@ import { ApiPromise } from "@polkadot/api";
 import { u8aToHex } from "@polkadot/util";
 import { xxhashAsU8a } from "@polkadot/util-crypto";
 import { BN } from "@polkadot/util";
-import { mkdir } from "fs/promises";
 import { default as pino, Logger } from "pino";
 
-export async function getStorage(api: ApiPromise, parameters: any) {
-  const res = await api.rpc.state.getStorage(parameters.key);
+export async function getStorage(
+  api: ApiPromise,
+  parameters: Record<string, unknown>
+) {
+  const res = (await api.rpc.state.getStorage(parameters.key)) as unknown as {
+    toHex: () => string;
+  };
   return {
-    // @ts-ignore
-    // { value: '0x1c86d8cbffffffffffffffffffffffff', status: true }
-    // We may have to change it later down the line.
     value: res.toHex(),
     status: res !== undefined ? true : false,
   };
@@ -28,7 +29,7 @@ function generateKeyForStorageValue(module: string, variableName: string) {
   return u8aToHex(final_key);
 }
 
-export const getEventProofs = async (api: ApiPromise, blockHash: any) => {
+export const getEventProofs = async (api: ApiPromise, blockHash: string) => {
   const key = generateKeyForStorageValue("System", "Events");
   const proofs = await api.rpc.state.getReadProof([key], blockHash);
   return proofs;
@@ -54,13 +55,14 @@ export async function fetchNonce(
  * @param x string in question
  * @returns bool
  */
-export function problySubstrateSeed(x: any): boolean {
+export function problySubstrateSeed(x: string): boolean {
   return /^0x[0-9a-f]{64}$/.test(x);
 }
 
 /** Creates a pino logger. */
 export function createLogger(name: string, logsDir?: string): Logger {
-  let logger;
+  let logger: Logger;
+
   if (logsDir) {
     logger = pino(
       {
@@ -83,6 +85,6 @@ export function createLogger(name: string, logsDir?: string): Logger {
       },
     });
   }
-  logger.logsDir = logsDir;
+
   return logger;
 }

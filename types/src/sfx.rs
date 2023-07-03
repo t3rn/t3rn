@@ -13,6 +13,8 @@ use scale_info::{
     prelude::{fmt::Debug, vec, vec::Vec},
     TypeInfo,
 };
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 
 use t3rn_abi::{Codec, SFXAbi};
@@ -392,6 +394,7 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo, Default)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum SecurityLvl {
     #[default]
     Optimistic,

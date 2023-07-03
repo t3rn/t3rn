@@ -9,4 +9,5 @@ export default {
             http: 'https://rpc.t0rn.io',
         },
     },
+    targetsAllowed: ['sepl'],
 }
