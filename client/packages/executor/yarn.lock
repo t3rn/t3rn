@@ -5169,6 +5169,7 @@ typedoc@^0.24.7:
 
 "types@link:@polkadot/keyring/types":
   version "0.0.0"
+  uid ""
 
 typescript@4.9.4:
   version "4.9.4"
