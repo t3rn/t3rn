@@ -2293,9 +2293,9 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 
 [[package]]
 name = "dtoa"
-version = "1.0.7"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c904bbebf8a5ecde84d81e5d3e5fe085104462a4bec7888608a4b408b117fecf"
+checksum = "519b83cd10f5f6e969625a409f735182bea5558cd8b64c655806ceaae36f1999"
 
 [[package]]
 name = "dyn-clonable"
@@ -3971,9 +3971,9 @@ dependencies = [
 
 [[package]]
 name = "itoa"
-version = "1.0.7"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0aa48fab2893d8a49caa94082ae8488f4e1050d73b367881dcd2198f4199fd8"
+checksum = "62b02a5381cc465bd3041d84623d0fa3b66738b52b8e2fc3bab8ad63ab032f4a"
 
 [[package]]
 name = "jobserver"
@@ -6559,7 +6559,7 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?branch=feat/source-check#46f4f81f86ff504126dff625cfb36ea876a09b90"
+source = "git+https://github.com/t3rn/eth2-light-client?branch=main#5c49afd3c137a727a1a94ee25960e3c2e2cf0683"
 dependencies = [
  "eth_trie",
  "ethereum-types 0.14.1",
@@ -9614,18 +9614,18 @@ dependencies = [
 
 [[package]]
 name = "ref-cast"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f43faa91b1c8b36841ee70e97188a869d37ae21759da6846d4be66de5bf7b12c"
+checksum = "85d07b1a5f16b5548f4255a978c94259971aff73f39e8d67e8250e8b2f6667c3"
 dependencies = [
  "ref-cast-impl",
 ]
 
 [[package]]
 name = "ref-cast-impl"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d2275aab483050ab2a7364c1a46604865ee7d6906684e08db0f090acf74f9e7"
+checksum = "a930b010d9effee5834317bb7ff406b76af7724348fd572b38705b4bd099fa92"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -10037,9 +10037,9 @@ dependencies = [
 
 [[package]]
 name = "ryu"
-version = "1.0.13"
+version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f91339c0467de62360649f8d3e185ca8de4224ff281f66000de5eb2a77a79041"
+checksum = "fe232bdf6be8c8de797b22184ee71118d63780ea42ac85b61d1baa6d3b782ae9"
 
 [[package]]
 name = "safe-mix"
