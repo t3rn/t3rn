@@ -1,6 +1,6 @@
 FROM node:20.1
 
-RUN npm install -g typescript ts-node pnpm
+RUN npm install -g typescript ts-node yarn
 
 ADD packages/sdk /app/sdk
 RUN cd /app/sdk && yarn install && yarn build
@@ -9,7 +9,7 @@ ADD packages/types /app/types
 RUN cd /app/types && yarn install && yarn build
 
 ADD packages/attester /app/attester
-RUN cd /app/attester && pnpm i 
+RUN cd /app/attester && yarn
 
 WORKDIR /app/attester
 
