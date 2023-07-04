@@ -10,6 +10,7 @@ use sp_std::{marker::PhantomData, vec};
 use t3rn_abi::types::Bytes;
 pub use t3rn_primitives::light_client::{LightClient, LightClientHeartbeat};
 use t3rn_primitives::{
+    execution_source_to_option,
     light_client::{HeaderResult, HeightResult, InclusionReceipt},
     ExecutionSource, GatewayVendor, SpeedMode,
 };
@@ -382,12 +383,13 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
     fn verify_event_inclusion(
         &self,
         gateway_id: [u8; 4],
+        // GrandpaFV does not support speed mode - it is always set to Finalized since it's fast
         _speed_mode: SpeedMode,
-        _source: Option<ExecutionSource>,
+        source: Option<ExecutionSource>,
         message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         // todo: handle ExecutionSource in grandpa
-        Pallet::<T, I>::confirm_event_inclusion(gateway_id, message)
+        Pallet::<T, I>::confirm_event_inclusion(gateway_id, message, source)
     }
 
     fn verify_state_inclusion(
@@ -412,10 +414,14 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         &self,
         gateway_id: [u8; 4],
         _speed_mode: SpeedMode,
-        _source: ExecutionSource,
+        source: ExecutionSource,
         message: Bytes,
     ) -> Result<Bytes, DispatchError> {
-        match Pallet::<T, I>::confirm_event_inclusion(gateway_id, message) {
+        match Pallet::<T, I>::confirm_event_inclusion(
+            gateway_id,
+            message,
+            execution_source_to_option(source),
+        ) {
             Ok(receipt) => Ok(receipt.message.encode()),
             Err(err) => Err(err),
         }
@@ -708,6 +714,104 @@ pub mod grandpa_light_clients_test {
 
             assert_eq!(heartbeat.is_halted, true);
         });
+    }
+
+    #[test]
+    fn get_heights_for_polkadot_for_fast_justified_finalized_gives_same_results_as_precompile() {
+        stage_test_and_init_instance::<TestRuntime, PolkadotInstance>(
+            || {
+                let light_client = select_grandpa_light_client_instance::<TestRuntime, ()>(
+                    GatewayVendor::Polkadot,
+                )
+                .expect("GatewayVendor must be covered by select_grandpa_light_client_instance");
+
+                // Check the fast height
+                let height_fast = light_client.get_fast_height();
+                assert_eq!(height_fast, HeightResult::Height(0));
+                let height_fast_precompile = light_client.get_fast_height_precompile();
+                assert_eq!(height_fast_precompile, 0);
+
+                // Check the justified height
+                let height_justified = light_client.get_rational_height();
+                assert_eq!(height_justified, HeightResult::Height(0));
+                let height_justified_precompile = light_client.get_rational_height_precompile();
+                assert_eq!(height_justified_precompile, 0);
+
+                // Check the finalized height
+                let height_finalized = light_client.get_finalized_height();
+                assert_eq!(height_finalized, HeightResult::Height(0));
+                let height_finalized_precompile = light_client.get_finalized_height_precompile();
+                assert_eq!(height_finalized_precompile, 0);
+            },
+            GatewayVendor::Polkadot,
+            [0, 0, 0, 2],
+        );
+    }
+
+    #[test]
+    fn get_heights_for_kusama_for_fast_justified_finalized_gives_same_results_as_precompile() {
+        stage_test_and_init_instance::<TestRuntime, KusamaInstance>(
+            || {
+                let light_client =
+                    select_grandpa_light_client_instance::<TestRuntime, ()>(GatewayVendor::Kusama)
+                        .expect(
+                            "GatewayVendor must be covered by select_grandpa_light_client_instance",
+                        );
+
+                // Check the fast height
+                let height_fast = light_client.get_fast_height();
+                assert_eq!(height_fast, HeightResult::Height(0));
+                let height_fast_precompile = light_client.get_fast_height_precompile();
+                assert_eq!(height_fast_precompile, 0);
+
+                // Check the justified height
+                let height_justified = light_client.get_rational_height();
+                assert_eq!(height_justified, HeightResult::Height(0));
+                let height_justified_precompile = light_client.get_rational_height_precompile();
+                assert_eq!(height_justified_precompile, 0);
+
+                // Check the finalized height
+                let height_finalized = light_client.get_finalized_height();
+                assert_eq!(height_finalized, HeightResult::Height(0));
+                let height_finalized_precompile = light_client.get_finalized_height_precompile();
+                assert_eq!(height_finalized_precompile, 0);
+            },
+            GatewayVendor::Kusama,
+            [0, 0, 0, 1],
+        );
+    }
+
+    #[test]
+    fn get_heights_for_rococo_for_fast_justified_finalized_gives_same_results_as_precompile() {
+        stage_test_and_init_instance::<TestRuntime, RococoInstance>(
+            || {
+                let light_client =
+                    select_grandpa_light_client_instance::<TestRuntime, ()>(GatewayVendor::Rococo)
+                        .expect(
+                            "GatewayVendor must be covered by select_grandpa_light_client_instance",
+                        );
+
+                // Check the fast height
+                let height_fast = light_client.get_fast_height();
+                assert_eq!(height_fast, HeightResult::Height(0));
+                let height_fast_precompile = light_client.get_fast_height_precompile();
+                assert_eq!(height_fast_precompile, 0);
+
+                // Check the justified height
+                let height_justified = light_client.get_rational_height();
+                assert_eq!(height_justified, HeightResult::Height(0));
+                let height_justified_precompile = light_client.get_rational_height_precompile();
+                assert_eq!(height_justified_precompile, 0);
+
+                // Check the finalized height
+                let height_finalized = light_client.get_finalized_height();
+                assert_eq!(height_finalized, HeightResult::Height(0));
+                let height_finalized_precompile = light_client.get_finalized_height_precompile();
+                assert_eq!(height_finalized_precompile, 0);
+            },
+            GatewayVendor::Rococo,
+            [0, 0, 0, 0],
+        );
     }
 
     // returns the last header in encoded form

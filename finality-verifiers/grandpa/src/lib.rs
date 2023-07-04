@@ -102,6 +102,8 @@ use crate::types::{
 };
 use frame_system::pallet_prelude::*;
 
+use t3rn_primitives::ExecutionSource;
+
 use t3rn_primitives::light_client::InclusionReceipt;
 
 #[frame_support::pallet]
@@ -248,6 +250,10 @@ pub mod pallet {
         StorageRootMismatch,
         /// The header couldn't be found in storage
         UnknownHeader,
+        /// Failed to decode the source of the event
+        UnexpectedEventLength,
+        /// The source of event is not valid
+        UnexpectedSource,
         /// The events paramaters couldn't be decoded
         EventDecodingFailed,
         /// The side effect is not known for this vendor
@@ -678,9 +684,50 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         Ok(())
     }
 
+    // ACHTUNG: experimental - if the check_source is set, try to establish whether the source was emitted by EVM or WASM VM by assuming following:
+    // - source preceeded with 12 bytes of 0x00 is EVM, otherwise WASM
+    // - events order on both EVM and WASM are known and fixed
+    //  - EVM emits Log event as the first event (index=0), with the first field being the source on 20 bytes
+    //  - WASM emits the source as the fourth (index=3) event, with the first field being the source on 32 bytes
+    pub fn check_vm_source(source: ExecutionSource, message: Vec<u8>) -> Result<(), DispatchError> {
+        // Check if the source is EVM
+        if source[0..12] == [0u8; 12] {
+            // Skip the first 3 bytes of the message:
+            // 1. 0x?? - pallet evm index on target
+            // 2. 0x00 - Log event index of pallet evm
+            // 3. 0x?? - SCALE-encoded prefix of the Log event struct
+            ensure!(message.len() >= 23, Error::<T, I>::UnexpectedEventLength);
+            // Ensure we're looking at the EVM::Log event (index=0)
+            ensure!(message[1] == 0u8, Error::<T, I>::UnexpectedSource);
+
+            let assumed_evm_source_bytes = &message[3..23];
+            if &source[12..] != assumed_evm_source_bytes {
+                return Err(Error::<T, I>::UnexpectedSource.into())
+            }
+        } else {
+            // Skip the first 3 bytes of the message:
+            // 1. 0x?? - pallet contracts index on target
+            // 2. 0x03 - ContractEmitted event index of pallet contracts
+            // 3. 0x?? - SCALE-encoded prefix of the ContractEmitted event struct
+            // Check if the source is WASM
+            ensure!(message.len() >= 35, Error::<T, I>::UnexpectedEventLength);
+            // Ensure we're looking at the Contracts::ContractEmitted event (index=3)
+            ensure!(message[1] == 3u8, Error::<T, I>::UnexpectedSource);
+
+            // Assume following 32 bytes are the source
+            let assumed_wasm_source_bytes = &message[3..35];
+            if &source[..] != assumed_wasm_source_bytes {
+                return Err(Error::<T, I>::UnexpectedSource.into())
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn confirm_event_inclusion(
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
+        maybe_source: Option<ExecutionSource>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
@@ -718,6 +765,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
         let message =
             verify_event_storage_proof::<T, I>(payload_proof, header.clone(), encoded_payload)?;
+
+        if let Some(source) = maybe_source {
+            Self::check_vm_source(source, message.clone())?;
+        }
 
         Ok(InclusionReceipt::<T::BlockNumber> {
             height: to_local_block_number::<T, I>(*header.number())?,
