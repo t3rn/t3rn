@@ -8,6 +8,9 @@ dependencies:
   '@polkadot/api':
     specifier: ^10.9.1
     version: 10.9.1
+  '@polkadot/api-augment':
+    specifier: ^10.9.1
+    version: 10.9.1
   '@polkadot/keyring':
     specifier: ^12.2.2
     version: 12.2.2(@polkadot/util-crypto@12.2.2)(@polkadot/util@12.2.2)
