@@ -54,7 +54,7 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
             ));
             assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
             assert_eq!(
-                pallet_xdns::Gateways::<Runtime>::get(&[3, 3, 3, 3])
+                pallet_xdns::Gateways::<Runtime>::get([3, 3, 3, 3])
                     .unwrap()
                     .allowed_side_effects
                     .len(),
@@ -73,7 +73,7 @@ fn reboot_self_gateway_populates_entry_if_does_not_exist_with_no_sfx() {
         ));
         assert_eq!(pallet_xdns::Gateways::<Runtime>::iter().count(), 1);
         assert_eq!(
-            pallet_xdns::Gateways::<Runtime>::get(&[3, 3, 3, 3])
+            pallet_xdns::Gateways::<Runtime>::get([3, 3, 3, 3])
                 .unwrap()
                 .allowed_side_effects
                 .len(),

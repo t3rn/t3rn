@@ -11,12 +11,12 @@ mod tests;
 
 use t3rn_abi::types::Bytes;
 use t3rn_primitives::{
-    self,
+    self, execution_source_to_option,
     light_client::LightClient,
     portal::{HeaderResult, HeightResult, Portal},
     reexport_currency_types,
     xdns::Xdns,
-    ChainId, GatewayVendor, SpeedMode, TokenInfo,
+    ChainId, ExecutionSource, GatewayVendor, SpeedMode, TokenInfo,
 };
 
 pub mod weights;
@@ -25,6 +25,7 @@ pub trait SelectLightClient<T: frame_system::Config> {
     fn select(vendor: GatewayVendor) -> Result<Box<dyn LightClient<T>>, Error<T>>;
 }
 use frame_support::transactional;
+use sp_runtime::traits::Zero;
 use t3rn_primitives::{light_client::LightClientHeartbeat, portal::InclusionReceipt};
 
 reexport_currency_types!();
@@ -43,7 +44,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
+        /// Currency access
         type Currency: Currency<Self::AccountId>;
         /// Access to XDNS pallet
         type Xdns: Xdns<Self, BalanceOf<Self>>;
@@ -192,60 +193,120 @@ impl<T: Config> Portal<T> for Pallet<T> {
         Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_fast_height())
     }
 
-    fn header_speed_mode_satisfied(
-        gateway_id: [u8; 4],
-        header: Bytes,
-        speed_mode: SpeedMode,
-    ) -> Result<bool, DispatchError> {
-        Ok(match_light_client_by_gateway_id::<T>(gateway_id)?
-            .header_speed_mode_satisfied(header, speed_mode))
+    fn get_latest_finalized_header_precompile(gateway_id: ChainId) -> Bytes {
+        log::debug!(target: "portal", "Getting latest finalized header for gateway id {:?}", gateway_id);
+        if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
+            if let HeaderResult::Header(header) = light_client.get_latest_finalized_header() {
+                return header
+            }
+        }
+        vec![]
+    }
+
+    fn get_finalized_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
+            if let HeightResult::Height(height) = light_client.get_finalized_height() {
+                return height
+            }
+        }
+        T::BlockNumber::zero()
+    }
+
+    fn get_rational_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
+            if let HeightResult::Height(height) = light_client.get_rational_height() {
+                return height
+            }
+        }
+        T::BlockNumber::zero()
+    }
+
+    fn get_fast_height_precompile(gateway_id: ChainId) -> T::BlockNumber {
+        log::debug!(target: "portal", "Getting latest finalized height for gateway id {:?}", gateway_id);
+        if let Ok(light_client) = match_light_client_by_gateway_id::<T>(gateway_id) {
+            if let HeightResult::Height(height) = light_client.get_fast_height() {
+                return height
+            }
+        }
+        T::BlockNumber::zero()
     }
 
     fn verify_event_inclusion(
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        source: Option<ExecutionSource>,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
-            gateway_id,
-            message,
-            submission_target_height,
-        )
+        // ToDo: we need to verify the event source here
+        match_light_client_by_gateway_id::<T>(gateway_id)?
+            .verify_event_inclusion(gateway_id, speed_mode, source, message)
     }
 
     fn verify_state_inclusion(
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.verify_state_inclusion(
-            gateway_id,
-            message,
-            submission_target_height,
-        )
+        match_light_client_by_gateway_id::<T>(gateway_id)?
+            .verify_state_inclusion(gateway_id, speed_mode, message)
     }
 
     fn verify_tx_inclusion(
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        match_light_client_by_gateway_id::<T>(gateway_id)?.verify_tx_inclusion(
+        match_light_client_by_gateway_id::<T>(gateway_id)?
+            .verify_tx_inclusion(gateway_id, speed_mode, message)
+    }
+
+    fn verify_event_inclusion_precompile(
+        gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        source: ExecutionSource,
+        message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        // ToDo: we need to verify the event source here
+        let result = match_light_client_by_gateway_id::<T>(gateway_id)?.verify_event_inclusion(
             gateway_id,
+            speed_mode,
+            execution_source_to_option(source),
             message,
-            submission_target_height,
-        )
+        )?;
+        Ok(result.message)
+    }
+
+    fn verify_state_inclusion_precompile(
+        gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        let result = match_light_client_by_gateway_id::<T>(gateway_id)?
+            .verify_state_inclusion(gateway_id, speed_mode, message)?;
+
+        Ok(result.message)
+    }
+
+    fn verify_tx_inclusion_precompile(
+        gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        message: Bytes,
+    ) -> Result<Bytes, DispatchError> {
+        let result = match_light_client_by_gateway_id::<T>(gateway_id)?
+            .verify_tx_inclusion(gateway_id, speed_mode, message)?;
+        Ok(result.message)
     }
 
     fn verify_state_inclusion_and_recode(
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        let mut inclusion_check =
-            Self::verify_state_inclusion(gateway_id, message, submission_target_height)?;
+        let mut inclusion_check = Self::verify_state_inclusion(gateway_id, speed_mode, message)?;
 
         let in_codec = match_vendor_with_codec(
             <T as Config>::Xdns::get_verification_vendor(&gateway_id)
@@ -265,13 +326,12 @@ impl<T: Config> Portal<T> for Pallet<T> {
 
     fn verify_tx_inclusion_and_recode(
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        let mut inclusion_check =
-            Self::verify_tx_inclusion(gateway_id, message, submission_target_height)?;
+        let mut inclusion_check = Self::verify_tx_inclusion(gateway_id, speed_mode, message)?;
 
         let in_codec = match_vendor_with_codec(
             <T as Config>::Xdns::get_verification_vendor(&gateway_id)
@@ -291,13 +351,18 @@ impl<T: Config> Portal<T> for Pallet<T> {
 
     fn verify_event_inclusion_and_recode(
         gateway_id: [u8; 4],
+        speed_mode: SpeedMode,
+        source: ExecutionSource,
         message: Bytes,
-        submission_target_height: Option<T::BlockNumber>,
         abi_descriptor: Bytes,
         out_codec: Codec,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        let mut inclusion_check =
-            Self::verify_event_inclusion(gateway_id, message, submission_target_height)?;
+        let mut inclusion_check = Self::verify_event_inclusion(
+            gateway_id,
+            speed_mode,
+            execution_source_to_option(source),
+            message,
+        )?;
 
         let in_codec = match_vendor_with_codec(
             <T as Config>::Xdns::get_verification_vendor(&gateway_id)
