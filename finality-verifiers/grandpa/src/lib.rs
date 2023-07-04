@@ -38,6 +38,8 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+extern crate core;
+
 use crate::weights::WeightInfo;
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
@@ -83,6 +85,12 @@ pub type BridgedBlockHash<T, I> = HashOf<<T as Config<I>>::BridgedChain>;
 pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub enum VMSource {
+    EVM([u8; 20]),
+    WASM([u8; 32]),
+}
 
 pub fn to_local_block_number<T: Config<I>, I: 'static>(
     block_number: BridgedBlockNumber<T, I>,
@@ -689,39 +697,48 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     // - events order on both EVM and WASM are known and fixed
     //  - EVM emits Log event as the first event (index=0), with the first field being the source on 20 bytes
     //  - WASM emits the source as the fourth (index=3) event, with the first field being the source on 32 bytes
-    pub fn check_vm_source(source: ExecutionSource, message: Vec<u8>) -> Result<(), DispatchError> {
+    pub fn check_vm_source(
+        source: ExecutionSource,
+        message: Vec<u8>,
+    ) -> Result<VMSource, DispatchError> {
         // Check if the source is EVM
         if source[0..12] == [0u8; 12] {
-            // Skip the first 3 bytes of the message:
+            // Skip the first 2 bytes of the message:
             // 1. 0x?? - pallet evm index on target
             // 2. 0x00 - Log event index of pallet evm
-            // 3. 0x?? - SCALE-encoded prefix of the Log event struct
-            ensure!(message.len() >= 23, Error::<T, I>::UnexpectedEventLength);
+            ensure!(message.len() >= 22, Error::<T, I>::UnexpectedEventLength);
             // Ensure we're looking at the EVM::Log event (index=0)
             ensure!(message[1] == 0u8, Error::<T, I>::UnexpectedSource);
 
-            let assumed_evm_source_bytes = &message[3..23];
+            println!("message: {:?}", message);
+
+            let assumed_evm_source_bytes = &message[2..22];
+
+            println!("assumed_evm_source_bytes: {:?}", assumed_evm_source_bytes);
+            println!("source: {:?}", &source[12..]);
+
             if &source[12..] != assumed_evm_source_bytes {
                 return Err(Error::<T, I>::UnexpectedSource.into())
             }
+            let source = sp_core::H160::from_slice(&source[12..]);
+            Ok(VMSource::EVM(source.0))
         } else {
-            // Skip the first 3 bytes of the message:
+            // Skip the first 2 bytes of the message:
             // 1. 0x?? - pallet contracts index on target
             // 2. 0x03 - ContractEmitted event index of pallet contracts
-            // 3. 0x?? - SCALE-encoded prefix of the ContractEmitted event struct
             // Check if the source is WASM
-            ensure!(message.len() >= 35, Error::<T, I>::UnexpectedEventLength);
+            ensure!(message.len() >= 34, Error::<T, I>::UnexpectedEventLength);
             // Ensure we're looking at the Contracts::ContractEmitted event (index=3)
             ensure!(message[1] == 3u8, Error::<T, I>::UnexpectedSource);
 
             // Assume following 32 bytes are the source
-            let assumed_wasm_source_bytes = &message[3..35];
+            let assumed_wasm_source_bytes = &message[2..34];
             if &source[..] != assumed_wasm_source_bytes {
                 return Err(Error::<T, I>::UnexpectedSource.into())
             }
+            let source = sp_core::H256::from_slice(&source[..]);
+            Ok(VMSource::WASM(source.0))
         }
-
-        Ok(())
     }
 
     pub fn confirm_event_inclusion(
@@ -990,9 +1007,9 @@ pub mod tests {
             JustificationGeneratorParams, ALICE, BOB, DAVE,
         },
     };
-
     use codec::Encode;
     use frame_support::{assert_noop, assert_ok};
+    use sp_core::{crypto::AccountId32, H160, H256};
     use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
@@ -1645,6 +1662,82 @@ pub mod tests {
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
         })
+    }
+
+    #[test]
+    fn confirm_valid_evm_source_from_encoded_evm_event() {
+        run_test(|| {
+            #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+            struct Log {
+                address: H160,
+                topics: Vec<H256>,
+                data: Vec<u8>,
+            }
+            #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+            enum EvmEventsMock {
+                Log(Log),
+            }
+
+            let evm_source: ExecutionSource = hex_literal::hex!(
+                "0000000000000000000000003333333333333333333333333333333333333333"
+            );
+            let evm_address = H160::from_slice(
+                hex_literal::hex!("3333333333333333333333333333333333333333").as_slice(),
+            );
+            let mut message = EvmEventsMock::Log(Log {
+                address: evm_address,
+                topics: vec![],
+                data: vec![],
+            })
+            .encode();
+            // insert pallet index prefix to the message
+            message.insert(0, 120u8);
+            assert_eq!(
+                Pallet::<TestRuntime>::check_vm_source(evm_source, message),
+                Ok(VMSource::EVM(evm_address.0))
+            );
+        });
+    }
+
+    #[test]
+    fn confirm_valid_account_id_source_from_encoded_wasm_event() {
+        run_test(|| {
+            #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+            enum WasmEventsMock {
+                Instantiated {
+                    deployer: AccountId32,
+                    contract: AccountId32,
+                },
+                Terminated {
+                    contract: AccountId32,
+                    beneficiary: AccountId32,
+                },
+                CodeStored {
+                    code_hash: H256,
+                },
+                ContractEmitted {
+                    contract: AccountId32,
+                    data: Vec<u8>,
+                },
+            }
+
+            let wasm_source: ExecutionSource = hex_literal::hex!(
+                "4444444400000000000000003333333333333333333333333333333333333333"
+            );
+
+            let wasm_address: AccountId32 = wasm_source.into();
+            let mut message = WasmEventsMock::ContractEmitted {
+                contract: wasm_address,
+                data: vec![1, 2, 3],
+            }
+            .encode();
+            // insert pallet index prefix to the message
+            message.insert(0, 121u8);
+            assert_eq!(
+                Pallet::<TestRuntime>::check_vm_source(wasm_source, message),
+                Ok(VMSource::WASM(wasm_source))
+            );
+        });
     }
 
     #[test]
