@@ -398,7 +398,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         _speed_mode: SpeedMode,
         _message: Bytes,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
-        Err("GrandpaFV::verify_storage_inclusion not implemented yet".into())
+        Err("GrandpaFV::verify_state_inclusion not implemented yet".into())
     }
 
     fn verify_tx_inclusion(
@@ -433,7 +433,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
         _speed_mode: SpeedMode,
         _message: Bytes,
     ) -> Result<Bytes, DispatchError> {
-        Err("GrandpaFV::verify_storage_inclusion not implemented yet".into())
+        Err("GrandpaFV::verify_state_inclusion not implemented yet".into())
     }
 
     fn verify_tx_inclusion_precompile(
@@ -451,8 +451,10 @@ pub mod grandpa_light_clients_test {
     use super::*;
     use codec::Encode;
 
-    use crate::{bridges::test_utils::authorities, mock::*, types::RelaychainRegistrationData};
-    use frame_support::{assert_ok, traits::OriginTrait};
+    use crate::{
+        bridges::test_utils::authorities, mock::*, types::RelaychainRegistrationData, Error,
+    };
+    use frame_support::{assert_err, assert_ok, traits::OriginTrait};
 
     use crate::{mock::TestRuntime, types::GrandpaHeaderData};
     use hex_literal::hex;
@@ -742,6 +744,218 @@ pub mod grandpa_light_clients_test {
                 assert_eq!(height_finalized, HeightResult::Height(0));
                 let height_finalized_precompile = light_client.get_finalized_height_precompile();
                 assert_eq!(height_finalized_precompile, 0);
+            },
+            GatewayVendor::Polkadot,
+            [0, 0, 0, 2],
+        );
+    }
+
+    #[test]
+    fn verify_tx_and_state_inclusion_for_kusama_are_not_active_yet() {
+        stage_test_and_init_instance::<TestRuntime, KusamaInstance>(
+            || {
+                let light_client =
+                    select_grandpa_light_client_instance::<TestRuntime, ()>(GatewayVendor::Kusama)
+                        .expect(
+                            "GatewayVendor must be covered by select_grandpa_light_client_instance",
+                        );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion_precompile(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion_precompile(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion_precompile(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        hex!("0000000000000000000000000000000000000000000000000000000000000000"),
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, KusamaInstance>::HeaderDataDecodingError
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion(
+                        [0, 0, 0, 1],
+                        SpeedMode::Finalized,
+                        None,
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, KusamaInstance>::HeaderDataDecodingError
+                );
+            },
+            GatewayVendor::Kusama,
+            [0, 0, 0, 1],
+        );
+    }
+
+    #[test]
+    fn verify_tx_and_state_inclusion_for_rococo_are_not_active_yet() {
+        stage_test_and_init_instance::<TestRuntime, RococoInstance>(
+            || {
+                let light_client =
+                    select_grandpa_light_client_instance::<TestRuntime, ()>(GatewayVendor::Rococo)
+                        .expect(
+                            "GatewayVendor must be covered by select_grandpa_light_client_instance",
+                        );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion_precompile(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion_precompile(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion_precompile(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        hex!("0000000000000000000000000000000000000000000000000000000000000000"),
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, RococoInstance>::HeaderDataDecodingError
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion(
+                        [0, 0, 0, 0],
+                        SpeedMode::Finalized,
+                        None,
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, RococoInstance>::HeaderDataDecodingError
+                );
+            },
+            GatewayVendor::Rococo,
+            [0, 0, 0, 0],
+        );
+    }
+
+    #[test]
+    fn verify_tx_and_state_inclusion_for_polkadot_are_not_active_yet() {
+        stage_test_and_init_instance::<TestRuntime, PolkadotInstance>(
+            || {
+                let light_client = select_grandpa_light_client_instance::<TestRuntime, ()>(
+                    GatewayVendor::Polkadot,
+                )
+                .expect("GatewayVendor must be covered by select_grandpa_light_client_instance");
+
+                assert_err!(
+                    light_client.verify_tx_inclusion(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_tx_inclusion_precompile(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_tx_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_state_inclusion_precompile(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        b"any message".to_vec()
+                    ),
+                    "GrandpaFV::verify_state_inclusion not implemented yet"
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion_precompile(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        hex!("0000000000000000000000000000000000000000000000000000000000000000"),
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, PolkadotInstance>::HeaderDataDecodingError
+                );
+
+                assert_err!(
+                    light_client.verify_event_inclusion(
+                        [0, 0, 0, 2],
+                        SpeedMode::Finalized,
+                        None,
+                        b"any message".to_vec()
+                    ),
+                    Error::<TestRuntime, PolkadotInstance>::HeaderDataDecodingError
+                );
             },
             GatewayVendor::Polkadot,
             [0, 0, 0, 2],
