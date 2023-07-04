@@ -41,7 +41,7 @@ pub mod pallet {
         portal::Portal,
         rewards::RewardsWriteApi,
         xdns::Xdns,
-        ExecutionVendor, GatewayVendor, TreasuryAccount, TreasuryAccountProvider,
+        ExecutionVendor, GatewayVendor, SpeedMode,
     };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
@@ -715,8 +715,12 @@ pub mod pallet {
             .to_vec();
 
             #[cfg(not(feature = "test-skip-verification"))]
-            let escrow_inclusion_receipt =
-                T::Portal::verify_event_inclusion(target, target_inclusion_proof_encoded, None)?;
+            let escrow_inclusion_receipt = T::Portal::verify_event_inclusion(
+                target,
+                SpeedMode::Finalized,
+                None,
+                target_inclusion_proof_encoded,
+            )?; // Todo: add escrow address
             #[cfg(feature = "test-skip-verification")]
             let escrow_inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
                 height: Zero::zero(),
@@ -3681,6 +3685,7 @@ pub mod attesters_test {
 
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
+            let (_message_hash, _message_bytes) = calculate_hash_for_sfx_message(message, 0);
 
             let confirmed_batch_message =
                 full_route_register_32_attesters_submit_n_sfx_attest_all_and_commit(

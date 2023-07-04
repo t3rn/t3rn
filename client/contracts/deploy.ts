@@ -19,10 +19,11 @@ export const setupSdk = async () =>  {
 export const deploy = async () => {
 	const { sdk, signer } = await setupSdk()
 	const bytecode = compile()
-	let params = web3.eth.abi.encodeParameter('bytes32[]', ['0x11111', '0x22222']).substring(2);
+	// let params = web3.eth.abi.encodeParameter('bytes32[]', ['0x11111', '0x22222']).substring(2);
 
 	const tx = sdk.client.tx.evm.create(
-		`0x${bytecode}${params}`,
+		`0x${bytecode}`,
+		// `0x${bytecode}${params}`,
 		web3.utils.toWei("0"),
 		"1200000",
 		"100",
@@ -35,4 +36,4 @@ export const deploy = async () => {
 		.catch((e) => console.error(e))
 }
 
-deploy()
+// deploy()

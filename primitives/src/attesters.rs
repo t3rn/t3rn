@@ -313,7 +313,7 @@ impl<Account, Balance: num_traits::Zero, Error> AttestersReadApi<Account, Balanc
         vec![]
     }
 
-    fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
+    fn read_attestation_latency(_target: &TargetId) -> Option<LatencyStatus> {
         None
     }
 
@@ -370,7 +370,7 @@ pub mod test {
 
     #[test]
     fn attesters_mocks_return_empty_data() {
-        let attester_rw_mock: AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> =
+        let _attester_rw_mock: AttestersReadApiEmptyMock<AccountId32, u128, DispatchError> =
             AttestersReadApiEmptyMock {
                 _phantom: Default::default(),
             };

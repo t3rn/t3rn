@@ -209,9 +209,9 @@ pub mod pallet {
                         };
                         let is_active = !heartbeat.is_halted;
                         (
-                            heartbeat.last_updated_height,
+                            heartbeat.last_rational_height,
                             heartbeat.last_finalized_height,
-                            heartbeat.last_updated_height,
+                            heartbeat.last_fast_height,
                             security_lvl,
                             is_active,
                         )
@@ -624,7 +624,8 @@ pub mod pallet {
             token_props: TokenInfo,
         ) -> DispatchResult {
             // fetch record and ensure it exists
-            let record = <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
+            let _record =
+                <Gateways<T>>::get(gateway_id).ok_or(Error::<T>::GatewayRecordNotFound)?;
 
             // early exit if record already exists in storage
             if <Tokens<T>>::contains_key(token_id, gateway_id) {
