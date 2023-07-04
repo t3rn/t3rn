@@ -47,7 +47,9 @@ export const getGasPrice = async (target: EthTarget) => {
     throw new Error("Failed to fetch gas price. ERROR_STATUS: " + req.status);
   }
 
-  return (await req.json()).data as GasPrice;
+  return ((await req.json()) as {
+    data: GasPrice
+  }).data;
 };
 
 export const getGasAmount = (action: EthAction) => {
