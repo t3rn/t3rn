@@ -38,6 +38,8 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+extern crate core;
+
 use crate::weights::WeightInfo;
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
@@ -84,6 +86,12 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub enum VMSource {
+    EVM([u8; 20]),
+    WASM([u8; 32]),
+}
+
 pub fn to_local_block_number<T: Config<I>, I: 'static>(
     block_number: BridgedBlockNumber<T, I>,
 ) -> Result<T::BlockNumber, DispatchError> {
@@ -101,6 +109,9 @@ use crate::types::{
     RelaychainInclusionProof, RelaychainRegistrationData,
 };
 use frame_system::pallet_prelude::*;
+
+use t3rn_primitives::ExecutionSource;
+
 use t3rn_primitives::light_client::InclusionReceipt;
 
 #[frame_support::pallet]
@@ -247,6 +258,10 @@ pub mod pallet {
         StorageRootMismatch,
         /// The header couldn't be found in storage
         UnknownHeader,
+        /// Failed to decode the source of the event
+        UnexpectedEventLength,
+        /// The source of event is not valid
+        UnexpectedSource,
         /// The events paramaters couldn't be decoded
         EventDecodingFailed,
         /// The side effect is not known for this vendor
@@ -257,6 +272,10 @@ pub mod pallet {
         Halted,
         /// The block height couldn't be converted
         BlockHeightConversionError,
+        /// The payload source is invalid
+        InvalidPayloadSource,
+        /// The payload source format is invalid
+        InvalidSourceFormat,
     }
 
     #[pallet::call]
@@ -673,10 +692,53 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         Ok(())
     }
 
+    // ACHTUNG: experimental - if the check_source is set, try to establish whether the source was emitted by EVM or WASM VM by assuming following:
+    // - source preceeded with 12 bytes of 0x00 is EVM, otherwise WASM
+    // - events order on both EVM and WASM are known and fixed
+    //  - EVM emits Log event as the first event (index=0), with the first field being the source on 20 bytes
+    //  - WASM emits the source as the fourth (index=3) event, with the first field being the source on 32 bytes
+    pub fn check_vm_source(
+        source: ExecutionSource,
+        message: Vec<u8>,
+    ) -> Result<VMSource, DispatchError> {
+        // Check if the source is EVM
+        if source[0..12] == [0u8; 12] {
+            // Skip the first 2 bytes of the message:
+            // 1. 0x?? - pallet evm index on target
+            // 2. 0x00 - Log event index of pallet evm
+            ensure!(message.len() >= 22, Error::<T, I>::UnexpectedEventLength);
+            // Ensure we're looking at the EVM::Log event (index=0)
+            ensure!(message[1] == 0u8, Error::<T, I>::UnexpectedSource);
+
+            let assumed_evm_source_bytes = &message[2..22];
+            if &source[12..] != assumed_evm_source_bytes {
+                return Err(Error::<T, I>::UnexpectedSource.into())
+            }
+            let source = sp_core::H160::from_slice(&source[12..]);
+            Ok(VMSource::EVM(source.0))
+        } else {
+            // Skip the first 2 bytes of the message:
+            // 1. 0x?? - pallet contracts index on target
+            // 2. 0x03 - ContractEmitted event index of pallet contracts
+            // Check if the source is WASM
+            ensure!(message.len() >= 34, Error::<T, I>::UnexpectedEventLength);
+            // Ensure we're looking at the Contracts::ContractEmitted event (index=3)
+            ensure!(message[1] == 3u8, Error::<T, I>::UnexpectedSource);
+
+            // Assume following 32 bytes are the source
+            let assumed_wasm_source_bytes = &message[2..34];
+            if &source[..] != assumed_wasm_source_bytes {
+                return Err(Error::<T, I>::UnexpectedSource.into())
+            }
+            let source = sp_core::H256::from_slice(&source[..]);
+            Ok(VMSource::WASM(source.0))
+        }
+    }
+
     pub fn confirm_event_inclusion(
         gateway_id: ChainId,
         encoded_inclusion_proof: Vec<u8>,
-        submission_target_height: Option<T::BlockNumber>,
+        maybe_source: Option<ExecutionSource>,
     ) -> Result<InclusionReceipt<T::BlockNumber>, DispatchError> {
         let is_relaychain = Some(gateway_id) == <RelayChainId<T, I>>::get();
 
@@ -687,11 +749,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
             let header = <ImportedHeaders<T, I>>::get(proof.block_hash)
                 .ok_or(Error::<T, I>::UnknownHeader)?;
-
-            if let Some(submission_target_height) = submission_target_height {
-                // ensures old equal side_effects can't be replayed
-                executed_after_creation::<T, I>(submission_target_height, &header)?;
-            }
 
             (
                 proof.payload_proof,
@@ -708,7 +765,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 proof.header_proof,
                 <ParachainIdMap<T, I>>::get(gateway_id)
                     .ok_or(Error::<T, I>::ParachainEntryNotFound)?,
-                submission_target_height,
             )?;
             (
                 proof.payload_proof,
@@ -720,6 +776,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
         let message =
             verify_event_storage_proof::<T, I>(payload_proof, header.clone(), encoded_payload)?;
+
+        if let Some(source) = maybe_source {
+            Self::check_vm_source(source, message.clone())?;
+        }
 
         Ok(InclusionReceipt::<T::BlockNumber> {
             height: to_local_block_number::<T, I>(*header.number())?,
@@ -869,14 +929,9 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
     parachain: ParachainRegistrationData,
-    submission_target_height: Option<T::BlockNumber>,
 ) -> Result<BridgedHeader<T, I>, DispatchError> {
     let relay_header =
         <ImportedHeaders<T, I>>::get(relay_block_hash).ok_or(Error::<T, I>::UnknownHeader)?;
-
-    if let Some(submission_target_height) = submission_target_height {
-        executed_after_creation::<T, I>(submission_target_height, &relay_header)?;
-    }
 
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
@@ -946,9 +1001,9 @@ pub mod tests {
             JustificationGeneratorParams, ALICE, BOB, DAVE,
         },
     };
-
     use codec::Encode;
     use frame_support::{assert_noop, assert_ok};
+    use sp_core::{crypto::AccountId32, H160, H256};
     use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
@@ -1601,6 +1656,82 @@ pub mod tests {
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
         })
+    }
+
+    #[test]
+    fn confirm_valid_evm_source_from_encoded_evm_event() {
+        run_test(|| {
+            #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+            struct Log {
+                address: H160,
+                topics: Vec<H256>,
+                data: Vec<u8>,
+            }
+            #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+            enum EvmEventsMock {
+                Log(Log),
+            }
+
+            let evm_source: ExecutionSource = hex_literal::hex!(
+                "0000000000000000000000003333333333333333333333333333333333333333"
+            );
+            let evm_address = H160::from_slice(
+                hex_literal::hex!("3333333333333333333333333333333333333333").as_slice(),
+            );
+            let mut message = EvmEventsMock::Log(Log {
+                address: evm_address,
+                topics: vec![],
+                data: vec![],
+            })
+            .encode();
+            // insert pallet index prefix to the message
+            message.insert(0, 120u8);
+            assert_eq!(
+                Pallet::<TestRuntime>::check_vm_source(evm_source, message),
+                Ok(VMSource::EVM(evm_address.0))
+            );
+        });
+    }
+
+    #[test]
+    fn confirm_valid_account_id_source_from_encoded_wasm_event() {
+        run_test(|| {
+            #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+            enum WasmEventsMock {
+                Instantiated {
+                    deployer: AccountId32,
+                    contract: AccountId32,
+                },
+                Terminated {
+                    contract: AccountId32,
+                    beneficiary: AccountId32,
+                },
+                CodeStored {
+                    code_hash: H256,
+                },
+                ContractEmitted {
+                    contract: AccountId32,
+                    data: Vec<u8>,
+                },
+            }
+
+            let wasm_source: ExecutionSource = hex_literal::hex!(
+                "4444444400000000000000003333333333333333333333333333333333333333"
+            );
+
+            let wasm_address: AccountId32 = wasm_source.into();
+            let mut message = WasmEventsMock::ContractEmitted {
+                contract: wasm_address,
+                data: vec![1, 2, 3],
+            }
+            .encode();
+            // insert pallet index prefix to the message
+            message.insert(0, 121u8);
+            assert_eq!(
+                Pallet::<TestRuntime>::check_vm_source(wasm_source, message),
+                Ok(VMSource::WASM(wasm_source))
+            );
+        });
     }
 
     #[test]

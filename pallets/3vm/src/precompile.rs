@@ -5,6 +5,7 @@ use frame_system::ensure_signed;
 use sp_std::prelude::*;
 use t3rn_primitives::{
     circuit::{LocalTrigger, OnLocalTrigger},
+    execution_source_to_option,
     portal::{Portal, PrecompileArgs as PortalPrecompileArgs},
     threevm::{
         GetState, LocalStateAccess, PrecompileArgs, PrecompileInvocation, GET_STATE, PORTAL,
@@ -243,14 +244,19 @@ pub(crate) fn invoke<T: Config>(
                     .map(|x| PrecompileInvocation::Portal(x.into())),
             PortalPrecompileArgs::GetFastHeight(chain_id) =>
                 T::Portal::get_fast_height(chain_id).map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyEventInclusion(chain_id, event) =>
-                T::Portal::verify_event_inclusion(chain_id, event, None)
+            PortalPrecompileArgs::VerifyEventInclusion(chain_id, speed_mode, source, event) =>
+                T::Portal::verify_event_inclusion(
+                    chain_id,
+                    speed_mode,
+                    execution_source_to_option(source),
+                    event,
+                )
+                .map(|x| PrecompileInvocation::Portal(x.into())),
+            PortalPrecompileArgs::VerifyStateInclusion(chain_id, speed_mode, event) =>
+                T::Portal::verify_state_inclusion(chain_id, speed_mode, event)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyStateInclusion(chain_id, event) =>
-                T::Portal::verify_state_inclusion(chain_id, event, None)
-                    .map(|x| PrecompileInvocation::Portal(x.into())),
-            PortalPrecompileArgs::VerifyTxInclusion(chain_id, event) =>
-                T::Portal::verify_tx_inclusion(chain_id, event, None)
+            PortalPrecompileArgs::VerifyTxInclusion(chain_id, speed_mode, event) =>
+                T::Portal::verify_tx_inclusion(chain_id, speed_mode, event)
                     .map(|x| PrecompileInvocation::Portal(x.into())),
         },
     }

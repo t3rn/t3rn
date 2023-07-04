@@ -41,7 +41,7 @@ pub mod pallet {
         portal::Portal,
         rewards::RewardsWriteApi,
         xdns::Xdns,
-        ExecutionVendor, GatewayVendor,
+        ExecutionVendor, GatewayVendor, SpeedMode,
     };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
@@ -675,8 +675,12 @@ pub mod pallet {
             .to_vec();
 
             #[cfg(not(feature = "test-skip-verification"))]
-            let escrow_inclusion_receipt =
-                T::Portal::verify_event_inclusion(target, target_inclusion_proof_encoded, None)?;
+            let escrow_inclusion_receipt = T::Portal::verify_event_inclusion(
+                target,
+                SpeedMode::Finalized,
+                None,
+                target_inclusion_proof_encoded,
+            )?; // Todo: add escrow address
             #[cfg(feature = "test-skip-verification")]
             let escrow_inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
                 height: Zero::zero(),
@@ -2818,7 +2822,7 @@ pub mod attesters_test {
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::Late(1, 0));
 
-            let committee_0_on_target =
+            let _committee_0_on_target =
                 NextCommitteeOnTarget::<MiniRuntime>::get(TARGET_0).unwrap();
 
             add_target_and_transition_to_next_batch(TARGET_0, 1);
@@ -2831,7 +2835,7 @@ pub mod attesters_test {
             let batch_1 = NextBatch::<MiniRuntime>::get(TARGET_0).unwrap();
             assert!(batch_1.next_committee.is_some());
             assert_eq!(batch_1.index, 1);
-            let committee_1_on_target =
+            let _committee_1_on_target =
                 NextCommitteeOnTarget::<MiniRuntime>::get(TARGET_0).unwrap();
             let batch_1_hash = batch_1.message_hash();
             // todo: fix the randomness source on mini-mock (yields 0)
@@ -2911,7 +2915,7 @@ pub mod attesters_test {
 
         ext.execute_with(|| {
             let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
-            let (_message_hash, expected_message_bytes) =
+            let (_message_hash, _expected_message_bytes) =
                 calculate_hash_for_sfx_message(sfx_id_to_sign_on, 0);
 
             for counter in 1..33u8 {
@@ -2949,7 +2953,7 @@ pub mod attesters_test {
 
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            let (_message_hash, expected_message_bytes) =
+            let (_message_hash, _expected_message_bytes) =
                 calculate_hash_for_sfx_message(message, 0);
 
             for counter in 1..22u8 {
@@ -3010,7 +3014,7 @@ pub mod attesters_test {
 
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            let (_message_hash, message_bytes) = calculate_hash_for_sfx_message(message, 0);
+            let (_message_hash, _message_bytes) = calculate_hash_for_sfx_message(message, 0);
 
             for counter in 1..33u8 {
                 // Register an attester

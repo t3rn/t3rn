@@ -21,6 +21,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
+
 pub use t3rn_abi::recode::Codec as T3rnCodec;
 pub use t3rn_types::{gateway, types::Bytes};
 
@@ -64,9 +65,19 @@ pub mod xdns;
 pub mod xtx;
 
 use crate::attesters::LatencyStatus;
+use t3rn_types::sfx::{SecurityLvl, TargetId};
 
 pub type ChainId = [u8; 4];
-use t3rn_types::sfx::{SecurityLvl, TargetId};
+pub type ExecutionSource = [u8; 32];
+pub const EMPTY_EXECUTION_SOURCE: [u8; 32] = [0u8; 32];
+
+pub fn execution_source_to_option(source: ExecutionSource) -> Option<ExecutionSource> {
+    if source == EMPTY_EXECUTION_SOURCE {
+        None
+    } else {
+        Some(source)
+    }
+}
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
