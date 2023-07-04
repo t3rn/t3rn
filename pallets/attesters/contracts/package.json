@@ -5,6 +5,7 @@
     "hardhat": "^2.14.0"
   },
   "scripts": {
+    "preinstall": "npx -y only-allow yarn",
     "compile": "hardhat compile",
     "test": "hardhat test"
   },
