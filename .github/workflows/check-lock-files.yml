@@ -1,5 +1,3 @@
-name: Check for lock files
-
 on: [push, pull_request]
 
 jobs:
@@ -11,13 +9,18 @@ jobs:
 
     - name: Check for package-lock.json
       run: |
-        if [[ -f package-lock.json ]]; then
-          echo "package-lock.json exists. Only yarn.lock is allowed!"
+        FILE=$(find . -name 'package-lock.json')
+        if [[ ! -z "$FILE" ]]; then
+          echo
+          echo "$FILE exists. Only yarn.lock is allowed!"
           exit 1
         fi
+
     - name: Check for pnpm-lock.yaml
       run: |
-        if [[ -f pnpm-lock.yaml ]]; then
-          echo "pnpm-lock.yaml exists. Only yarn.lock is allowed!"
+        FILE=$(find . -name 'pnpm-lock.yaml')
+        if [[ ! -z "$FILE" ]]; then
+          echo
+          echo "$FILE exists. Only yarn.lock is allowed!"
           exit 1
         fi
