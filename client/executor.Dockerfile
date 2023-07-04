@@ -1,6 +1,6 @@
 FROM node:20.2
 
-RUN npm install -g typescript yarn
+RUN yarn global add typescript
 
 ADD packages/sdk /app/sdk
 RUN cd /app/sdk && yarn install && yarn build
