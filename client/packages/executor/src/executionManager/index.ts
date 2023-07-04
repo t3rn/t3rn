@@ -245,6 +245,7 @@ export class ExecutionManager {
                   eventData.target
                 ].getBlockHash(eventData.blockNumber);
 
+                // @ts-ignore - cannot find property in type never
                 this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects
                   .get(eventData.sfxId)
                   ?.addHeaderProof(proof.toJSON().proof, blockHash.toString());
@@ -613,7 +614,7 @@ export class ExecutionManager {
         this.removeFromQueue("isExecuting", sfx.id, sfx.vendor);
         let confirmBatch =
           this.queue[sfx.vendor].isConfirming[
-            sfx.targetInclusionHeight.toString()
+          sfx.targetInclusionHeight.toString()
           ];
         if (!confirmBatch) confirmBatch = [];
         if (confirmBatch.includes(sfx.id)) {
