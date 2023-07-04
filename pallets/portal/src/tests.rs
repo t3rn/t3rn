@@ -271,7 +271,7 @@ mod tests {
         );
     }
 
-    fn test_get_latest_finalized_height(vendor: GatewayVendor) {
+    fn test_get_latest_finalized_rational_fast_heights(vendor: GatewayVendor) {
         ExtBuilder::default()
             .with_standard_sfx_abi()
             .with_default_xdns_records()
@@ -283,13 +283,22 @@ mod tests {
                     GatewayVendor::Polkadot => *b"pdot",
                     _ => unreachable!(),
                 };
-                let result = Portal::get_finalized_height(gateway_id);
-                assert_ok!(result.clone());
-                assert_eq!(result.unwrap(), HeightResult::Height(0));
+                assert_eq!(
+                    Portal::get_finalized_height(gateway_id),
+                    Ok(HeightResult::Height(0))
+                );
+                assert_eq!(
+                    Portal::get_fast_height(gateway_id),
+                    Ok(HeightResult::Height(0))
+                );
+                assert_eq!(
+                    Portal::get_rational_height(gateway_id),
+                    Ok(HeightResult::Height(0))
+                );
             });
     }
 
-    fn test_get_latest_finalized_height_precompile(vendor: GatewayVendor) {
+    fn test_get_latest_finalized_rational_fast_heights_precompile(vendor: GatewayVendor) {
         ExtBuilder::default()
             .with_standard_sfx_abi()
             .with_default_xdns_records()
@@ -301,27 +310,28 @@ mod tests {
                     GatewayVendor::Polkadot => *b"pdot",
                     _ => unreachable!(),
                 };
-                let result = Portal::get_finalized_height_precompile(gateway_id);
-                assert_eq!(result, 0);
+                assert_eq!(Portal::get_finalized_height_precompile(gateway_id), 0);
+                assert_eq!(Portal::get_fast_height_precompile(gateway_id), 0);
+                assert_eq!(Portal::get_rational_height_precompile(gateway_id), 0);
             });
     }
 
     #[test]
     fn test_get_latest_finalized_height_rococo() {
-        test_get_latest_finalized_height(GatewayVendor::Rococo);
-        test_get_latest_finalized_height_precompile(GatewayVendor::Rococo);
+        test_get_latest_finalized_rational_fast_heights(GatewayVendor::Rococo);
+        test_get_latest_finalized_rational_fast_heights_precompile(GatewayVendor::Rococo);
     }
 
     #[test]
     fn test_get_latest_finalized_height_kusama() {
-        test_get_latest_finalized_height(GatewayVendor::Kusama);
-        test_get_latest_finalized_height_precompile(GatewayVendor::Kusama);
+        test_get_latest_finalized_rational_fast_heights(GatewayVendor::Kusama);
+        test_get_latest_finalized_rational_fast_heights_precompile(GatewayVendor::Kusama);
     }
 
     #[test]
     fn test_get_latest_finalized_height_polkadot() {
-        test_get_latest_finalized_height(GatewayVendor::Polkadot);
-        test_get_latest_finalized_height_precompile(GatewayVendor::Polkadot);
+        test_get_latest_finalized_rational_fast_heights(GatewayVendor::Polkadot);
+        test_get_latest_finalized_rational_fast_heights_precompile(GatewayVendor::Polkadot);
     }
 
     #[test]
