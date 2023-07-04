@@ -11,8 +11,7 @@ jobs:
       run: |
         FILE=$(find . -name 'package-lock.json')
         if [[ ! -z "$FILE" ]]; then
-          echo
-          echo "$FILE exists. Only yarn.lock is allowed!"
+          echo -e "\n $FILE exists. Only yarn.lock is allowed!"
           exit 1
         fi
 
