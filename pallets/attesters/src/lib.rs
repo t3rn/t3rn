@@ -41,7 +41,7 @@ pub mod pallet {
         portal::Portal,
         rewards::RewardsWriteApi,
         xdns::Xdns,
-        ExecutionVendor, GatewayVendor,
+        ExecutionVendor, GatewayVendor, SpeedMode,
     };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
@@ -690,8 +690,12 @@ pub mod pallet {
             .to_vec();
 
             #[cfg(not(feature = "test-skip-verification"))]
-            let escrow_inclusion_receipt =
-                T::Portal::verify_event_inclusion(target, target_inclusion_proof_encoded, None)?;
+            let escrow_inclusion_receipt = T::Portal::verify_event_inclusion(
+                target,
+                SpeedMode::Finalized,
+                None,
+                target_inclusion_proof_encoded,
+            )?; // Todo: add escrow address
             #[cfg(feature = "test-skip-verification")]
             let escrow_inclusion_receipt = InclusionReceipt::<T::BlockNumber> {
                 height: Zero::zero(),

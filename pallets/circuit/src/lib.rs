@@ -30,7 +30,6 @@ use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
-    ensure,
     traits::{Currency, ExistenceRequirement::AllowDeath, Get},
     weights::Weight,
     RuntimeDebug,
@@ -1137,32 +1136,20 @@ impl<T: Config> Pallet<T> {
                 )),
         };
         log::debug!("Order confirmed!");
+        let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
         #[cfg(not(feature = "test-skip-verification"))]
         let inclusion_receipt = <T as Config>::Portal::verify_event_inclusion(
             fsx.input.target,
+            xtx.speed_mode,
+            None, //ToDo - load pallet index or contract address here
             confirmation.inclusion_data.clone(),
-            Some(fsx.submission_target_height), // this enforces the submission height check!
         )
         .map_err(|_| DispatchError::Other("SideEffect confirmation of inclusion failed"))?;
 
         log::debug!("Inclusion confirmed!");
-
-        let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
-
-        #[cfg(not(feature = "test-skip-verification"))]
-        ensure!(
-            T::Portal::header_speed_mode_satisfied(
-                fsx.input.target,
-                inclusion_receipt.including_header.clone(),
-                xtx.speed_mode,
-            )?,
-            "Speed mode not satisfied"
-        );
-
-        log::debug!("Speed mode satisfied!");
 
         // ToDo: handle misbehavior
         #[cfg(not(feature = "test-skip-verification"))]
@@ -1182,6 +1169,13 @@ impl<T: Config> Pallet<T> {
             including_header: [0u8; 32].encode(),
             height: T::BlockNumber::zero(),
         }; // Empty encoded_event_params for testing purposes
+
+        #[cfg(not(feature = "test-skip-verification"))]
+        if inclusion_receipt.height > fsx.submission_target_height {
+            return Err(DispatchError::Other(
+                "SideEffect confirmation of inclusion failed - inclusion height is higher than target",
+            ))
+        }
 
         fsx.input.confirm(
             sfx_abi,

@@ -1,0 +1,26 @@
+name: Check for lock files
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Check for package-lock.json
+      run: |
+        FILE=$(find . -name 'package-lock.json')
+        if [[ ! -z "$FILE" ]]; then
+          echo -e "$FILE \nOnly yarn.lock is allowed!"
+          exit 1
+        fi
+
+    - name: Check for pnpm-lock.yaml
+      run: |
+        FILE=$(find . -name 'pnpm-lock.yaml')
+        if [[ ! -z "$FILE" ]]; then
+          echo -e "$FILE \nOnly yarn.lock is allowed!"
+          exit 1
+        fi
