@@ -1,3 +1,5 @@
+name: Check for lock files
+
 on: [push, pull_request]
 
 jobs:
