@@ -710,13 +710,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             // Ensure we're looking at the EVM::Log event (index=0)
             ensure!(message[1] == 0u8, Error::<T, I>::UnexpectedSource);
 
-            println!("message: {:?}", message);
-
             let assumed_evm_source_bytes = &message[2..22];
-
-            println!("assumed_evm_source_bytes: {:?}", assumed_evm_source_bytes);
-            println!("source: {:?}", &source[12..]);
-
             if &source[12..] != assumed_evm_source_bytes {
                 return Err(Error::<T, I>::UnexpectedSource.into())
             }
