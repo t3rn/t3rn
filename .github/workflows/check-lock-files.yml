@@ -19,7 +19,6 @@ jobs:
       run: |
         FILE=$(find . -name 'pnpm-lock.yaml')
         if [[ ! -z "$FILE" ]]; then
-          echo
-          echo "$FILE exists. Only yarn.lock is allowed!"
+          echo -e "$FILE \nOnly yarn.lock is allowed!"
           exit 1
         fi
