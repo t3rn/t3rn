@@ -4,8 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "build-docs": "pnpm typedoc && cp -R docs ../../../docs/attester",
+    "preinstall": "npx only-allow yarn",
+    "build-docs": "yarn typedoc && cp -R docs ../../../docs/attester",
     "fmt": "prettier --check src config tests",
     "fmt:fix": "prettier --write src config tests",
     "lint": "eslint --ext .ts src --fix",
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@polkadot/util": "^10.4.2",
-    "@t3rn/sdk": "link:../sdk",
+    "@t3rn/sdk": "../sdk",
     "@t3rn/types": "link:../types",
     "async": "^3.2.4",
     "axios": "^1.4.0",

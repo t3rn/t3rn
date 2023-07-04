@@ -2,14 +2,14 @@ all:
 	cd types; yarn; yarn link; yarn build;
 	cd sdk; yarn; yarn link; yarn build;
 	cd cli; yarn add ../sdk; yarn;
-	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm i;
-	cd attester; pnpm i; pnpm add ../types; pnpm add ../sdk;
+	cd executor; yarn add ../sdk; yarn add ../types; yarn; 
+	cd attester; yarn add ../types; yarn add ../sdk; yarn;
 
 executor:
-	cd executor; pnpm i; pnpm add ../sdk; pnpm add ../types;
+	cd executor; yarn add ../sdk; yarn add ../types; yarn;
 
 attester:
-	cd attester; pnpm i; pnpm add ../types; pnpm add ../sdk;
+	cd attester; yarn add ../types; yarn add ../sdk; yarn;
 
 sdk:
 	cd sdk; yarn; yarn link; yarn build;
@@ -21,7 +21,7 @@ clean:
 	find . -type d -name node_modules | xargs rm -rf {}\;
 
 test:
-	cd cli; pnpm run test
+	cd cli; yarn run test
 	cd executor; yarn test
 
 register_roco:

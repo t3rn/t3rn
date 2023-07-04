@@ -5,10 +5,10 @@ Attester is a TypeScript application that performs attestation tasks.
 ## Prerequisites
 
 - Node.js and npm should be installed on your machine.
-- pnpm should be installed globally. If not, you can install it by running the following command:
+- yarn should be installed globally. If not, you can install it by running the following command:
 
   ```bash
-  npm install -g pnpm
+  npm install -g yarn
   ```
 
 ## Installation
@@ -26,11 +26,11 @@ Attester is a TypeScript application that performs attestation tasks.
    make all
    ```
 
-1. Install dependencies using pnpm:
+1. Install dependencies using yarn:
 
    ```bash
    cd client/packages/attester
-   pnpm install
+   yarn install
    ```
 
 1. Copy .envrc-example to .envrc and supply it with base64 encoded keys used for attester
@@ -38,7 +38,7 @@ Attester is a TypeScript application that performs attestation tasks.
 1. Run it
    ```bash
    cd client/packages/attester
-   pnpm run start
+   yarn run start
    ```
 
 ## Configuration
@@ -52,17 +52,17 @@ Attester is a TypeScript application that performs attestation tasks.
 To start the Attester application, run the following command:
 
 ```bash
-pnpm start
+yarn start
 ```
 
 The application will connect to the required clients and start listening to events for attestation.
 
 ## Scripts
 
-- `pnpm fmt`: Formats the source code using Prettier.
-- `pnpm lint`: Lints the source code using ESLint.
-- `pnpm lint:report`: Generates an ESLint report in JSON format.
-- `pnpm start`: Starts the Attester application.
+- `yarn fmt`: Formats the source code using Prettier.
+- `yarn lint`: Lints the source code using ESLint.
+- `yarn lint:report`: Generates an ESLint report in JSON format.
+- `yarn start`: Starts the Attester application.
 
 ## Issues
 
