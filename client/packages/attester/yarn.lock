@@ -1842,9 +1842,16 @@
     "@polkadot/api" "^8.9.1"
     dotenv "^16.0.3"
 
-"@t3rn/types@link:../types":
-  version "0.0.0"
-  uid ""
+"@t3rn/types@../types":
+  version "0.1.5"
+  dependencies:
+    "@polkadot/api" "^8.9.1"
+    "@polkadot/keyring" "^9.5.1"
+    "@polkadot/types" "^8.9.1"
+    "@types/lodash" "^4.14.157"
+    lodash "^4.17.15"
+    moment "^2.24.0"
+    ts-node "^10.2.1"
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.9"
