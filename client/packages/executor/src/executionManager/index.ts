@@ -244,7 +244,7 @@ export class ExecutionManager {
                 const blockHash = await this.relayers[
                   eventData.target
                 ].getBlockHash(eventData.blockNumber).then(
-                  // @ts-ignore
+                  // @ts-ignore - cannot find property on type `never`
                   hash => hash.toString()
                 );
 
@@ -615,9 +615,7 @@ export class ExecutionManager {
         // sfx could either be in isExecuting or isConfirming
         this.removeFromQueue("isExecuting", sfx.id, sfx.vendor);
         let confirmBatch =
-          this.queue[sfx.vendor].isConfirming[
-            sfx.targetInclusionHeight.toString()
-          ];
+          this.queue[sfx.vendor].isConfirming[sfx.targetInclusionHeight.toString()];
         if (!confirmBatch) confirmBatch = [];
         if (confirmBatch.includes(sfx.id)) {
           const index = confirmBatch.indexOf(sfx.id);
