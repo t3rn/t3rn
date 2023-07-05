@@ -46,14 +46,6 @@ where
     type Error = DispatchError;
 
     fn try_into(self) -> Result<SideEffect<AccountId, Balance>, Self::Error> {
-        // Here you would convert the fields of OrderSFX into the fields of SideEffect
-        // This is a very basic example and you will need to fill in the details based on your specific requirements
-
-        let _action: Sfx4bId = match self.sfx_action {
-            SFXAction::Call(_, _, _, _, _) => *b"call",
-            SFXAction::Transfer(_, _, _) => *b"tass",
-        };
-
         let (action, encoded_args) = match self.sfx_action {
             SFXAction::Call(_target, _destination, _value, _max_cost, _input) => {
                 let encoded_args = vec![];
