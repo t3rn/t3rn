@@ -34,6 +34,7 @@ members = [
   "pallets/3vm",
   "pallets/account-manager",
   "pallets/circuit",
+  "pallets/circuit/vacuum",
   "pallets/clock",
   "pallets/contracts",
   "pallets/contracts-registry",

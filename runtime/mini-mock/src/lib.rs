@@ -74,6 +74,7 @@ frame_support::construct_runtime!(
         AccountManager: pallet_account_manager = 103,
         Clock: pallet_clock = 104,
         Circuit: pallet_circuit = 105,
+        Vacuum: pallet_circuit_vacuum = 106,
         // Portal
         Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
@@ -386,6 +387,12 @@ impl pallet_circuit::Config for MiniRuntime {
     type XtxTimeoutDefault = ConstU32<400u32>;
 }
 
+impl pallet_circuit_vacuum::Config for MiniRuntime {
+    type CircuitSubmitAPI = Circuit;
+    type Currency = Balances;
+    type Event = Event;
+}
+
 impl pallet_portal::Config for MiniRuntime {
     type Currency = Balances;
     type Event = Event;
@@ -650,6 +657,42 @@ impl ExtBuilder {
         self
     }
 
+    pub fn with_astar_gateway_record(mut self) -> Self {
+        let target: TargetId = [8u8; 4];
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: target,
+            verification_vendor: GatewayVendor::Polkadot,
+            execution_vendor: ExecutionVendor::Substrate,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![
+                (*b"tran", Some(2)),
+                (*b"tass", Some(4)),
+                (*b"call", Some(10)),
+                (*b"cevm", Some(88)),
+                (*b"wasm", Some(99)),
+            ],
+        });
+        self
+    }
+
+    pub fn with_kusama_gateway_record(mut self) -> Self {
+        let target: TargetId = [2u8; 4];
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: target,
+            verification_vendor: GatewayVendor::Polkadot,
+            execution_vendor: ExecutionVendor::Substrate,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
+        });
+        self
+    }
+
     pub fn with_polkadot_gateway_record(mut self) -> Self {
         let target: TargetId = [1u8; 4];
         let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
@@ -660,7 +703,7 @@ impl ExtBuilder {
             codec: t3rn_abi::Codec::Rlp,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
-            allowed_side_effects: vec![],
+            allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
         });
         self
     }
@@ -675,13 +718,19 @@ impl ExtBuilder {
             codec: t3rn_abi::Codec::Rlp,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
-            allowed_side_effects: vec![],
+            allowed_side_effects: vec![
+                (*b"tran", Some(2)),
+                (*b"tass", Some(4)),
+                (*b"cevm", Some(88)),
+            ],
         });
         self
     }
 
-    pub fn with_standard_sfx_abi(mut self, standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>) -> Self {
-        self.standard_sfx_abi = standard_sfx_abi;
+    pub fn with_standard_sfx_abi(mut self) -> ExtBuilder {
+        // map side_effects to id, keeping lib.rs clean
+        self.standard_sfx_abi = t3rn_abi::standard::standard_sfx_abi();
+
         self
     }
 
