@@ -1,0 +1,40 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/3h4x/workspace/t3rn/t3rn/pallets/attesters/contracts/contracts/attestationsVerifier.sol": {
+      "lastModificationDate": 1688045568890,
+      "contentHash": "8e74ee17e35e8eeebcb80bf7d665b191",
+      "sourceName": "contracts/attestationsVerifier.sol",
+      "solcConfig": {
+        "version": "0.8.18",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "AttestationsVerifier"
+      ]
+    }
+  }
+}
