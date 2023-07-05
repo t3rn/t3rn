@@ -118,7 +118,9 @@ pub mod pallet {
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         attesters::AttestersWriteApi,
-        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX},
+        circuit::{
+            CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX,
+        },
         portal::Portal,
         xdns::Xdns,
         SpeedMode,
@@ -448,6 +450,16 @@ pub mod pallet {
             XExecSignals::<T>::get(xtx_id)
                 .map(|xtx| xtx.status)
                 .ok_or(Error::<T>::XtxNotFound.into())
+        }
+    }
+
+    impl<T: Config> CircuitSubmitAPI<T, BalanceOf<T>> for Pallet<T> {
+        fn on_extrinsic_trigger(
+            origin: OriginFor<T>,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            Self::on_extrinsic_trigger(origin, side_effects, speed_mode)
         }
     }
 
@@ -857,6 +869,7 @@ pub mod pallet {
         ApplyTriggeredWithUnexpectedStatus,
         BidderNotEnoughBalance,
         RequesterNotEnoughBalance,
+        AssetsFailedToWithdraw,
         SanityAfterCreatingSFXDepositsFailed,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
@@ -1041,6 +1054,9 @@ impl<T: Config> Pallet<T> {
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
             let security_lvl = determine_security_lvl(gateway_type);
+
+            // ToDo: Verify each requested asset is supported by the gateway
+
             // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
             // let _last_update = <T as Config>::Xdns::verify_active(
             //     &sfx.target,
