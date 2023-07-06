@@ -82,36 +82,39 @@ mod tests {
     use frame_support::assert_ok;
     use sp_runtime::AccountId32;
     use t3rn_mini_mock_runtime::{
-        AccountId, Balance, Balances, Circuit, ExtBuilder, Origin, Vacuum,
+        prepare_ext_builder_playground, AccountId, Assets, Balance, Balances, Circuit, ExtBuilder,
+        MiniRuntime, Origin, Vacuum, ASSET_DOT, ASSET_ETH, ASSET_KSM, ASSET_TRN, ASSET_USDT,
+        ASTAR_TARGET, KUSAMA_TARGET, POLKADOT_TARGET, XDNS,
     };
     use t3rn_primitives::{
         circuit::{
             traits::CircuitSubmitAPI,
             types::{OrderSFX, SFXAction},
         },
-        SpeedMode,
+        monetary::TRN,
+        SpeedMode, TreasuryAccount, TreasuryAccountProvider,
     };
 
-    pub type TargetId = [u8; 4];
-    const ETHEREUM_TARGET: TargetId = [0u8; 4];
-    const ASTAR_TARGET: TargetId = [8u8; 4];
-    const POLKADOT_TARGET: TargetId = [1u8; 4];
-    const KUSAMA_TARGET: TargetId = [2u8; 4];
-
-    const TRN: Balance = 1_000_000_000_000u128;
     use frame_support::traits::Currency;
+    use t3rn_primitives::monetary::EXISTENTIAL_DEPOSIT;
 
     #[test]
     fn order_single_sfx_vacuum_delivers_to_circuit() {
-        let mut ext = ExtBuilder::default()
-            .with_standard_sfx_abi()
-            .with_polkadot_gateway_record()
-            .with_eth_gateway_record()
-            .build();
+        let mut ext = prepare_ext_builder_playground();
         ext.execute_with(|| {
+            assert!(XDNS::all_token_ids().contains(&ASSET_DOT));
             // Load requester with some funds
             let requester = AccountId::from([1u8; 32]);
-            Balances::deposit_creating(&requester, 100_000 * TRN);
+            let issuer_is_escrow_account =
+                MiniRuntime::get_treasury_account(TreasuryAccount::Escrow);
+            Balances::deposit_creating(&requester, (100_000 * TRN) as Balance); // To cover fees
+            assert_ok!(ssets::mint(
+                Origin::signed(issuer_is_escrow_account),
+                ASSET_DOT,
+                requester.clone(),
+                200u128 + (EXISTENTIAL_DEPOSIT as Balance),
+            ));
+            assert_eq!(Assets::balance(ASSET_DOT, &requester), 201u128);
 
             let sfx_action =
                 SFXAction::Transfer(POLKADOT_TARGET, 1u32, AccountId32::new([2u8; 32]), 100u128);
@@ -119,8 +122,9 @@ mod tests {
                 sfx_action,
                 max_reward: 200u128,
                 insurance: 50u128,
-                reward_asset: 1u32,
+                reward_asset: ASSET_DOT,
             };
+
             let res = Vacuum::order(
                 Origin::signed(requester.clone()),
                 vec![sfx_order],
