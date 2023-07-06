@@ -843,7 +843,10 @@ impl ExtBuilder {
     }
 
     pub fn with_eth_gateway_record(mut self) -> Self {
-        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        // 0x25641Ce424aDec01a8504e92E96523D4cBb84005 batch verify contract on Sepolia
+        let mock_escrow_account: AccountId = AccountId::new(hex!(
+            "00000000000000000000000025641Ce424aDec01a8504e92E96523D4cBb84005"
+        ));
         self.known_gateway_records.push(GatewayRecord {
             gateway_id: ETHEREUM_TARGET,
             verification_vendor: GatewayVendor::Ethereum,
@@ -861,7 +864,10 @@ impl ExtBuilder {
     }
 
     pub fn with_sepl_gateway_record(mut self) -> Self {
-        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        // 0x25641Ce424aDec01a8504e92E96523D4cBb84005 batch verify contract on Sepolia
+        let mock_escrow_account: AccountId = AccountId::new(hex!(
+            "00000000000000000000000025641Ce424aDec01a8504e92E96523D4cBb84005"
+        ));
         self.known_gateway_records.push(GatewayRecord {
             gateway_id: SEPOLIA_TARGET,
             verification_vendor: GatewayVendor::Ethereum,
