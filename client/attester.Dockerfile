@@ -1,6 +1,6 @@
 FROM node:20.1
 
-RUN npm i -g add yarn pnpm typescript ts-node
+RUN npm i -g add pnpm typescript ts-node
 
 ADD packages/sdk /app/sdk
 RUN cd /app/sdk && yarn install && yarn build
