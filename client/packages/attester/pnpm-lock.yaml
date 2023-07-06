@@ -5,10 +5,10 @@ dependencies:
     specifier: ^10.4.2
     version: 10.4.2
   '@t3rn/sdk':
-    specifier: ../sdk
+    specifier: link:../sdk
     version: link:../sdk
   '@t3rn/types':
-    specifier: ../types
+    specifier: link:../types
     version: link:../types
   async:
     specifier: ^3.2.4
