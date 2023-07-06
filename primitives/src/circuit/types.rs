@@ -490,10 +490,13 @@ where
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{OrderSFX, SFXAction};
     use frame_support::assert_ok;
-    use sp_runtime::AccountId32;
+    use sp_core::crypto::AccountId32;
+    use sp_std::convert::TryInto;
+    use t3rn_types::sfx::SideEffect;
 
     #[test]
     fn test_try_into_transfer() {

@@ -14,7 +14,7 @@ pub use pallet_attesters::{
 };
 pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
 mod treasuries_config;
-use sp_runtime::{traits::Zero, DispatchResult};
+use sp_runtime::DispatchResult;
 
 use hex_literal::hex;
 pub use pallet_account_manager::{
@@ -38,7 +38,7 @@ pub use pallet_rewards::{
     Error as RewardsError, PendingClaims,
 };
 
-use sp_core::{H160, H256};
+use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
     generic, parameter_types,
@@ -145,8 +145,8 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
         min_balance: Balance,
     ) -> DispatchResult {
         println!("MiniMock::force_create_asset");
-        println!("asset_id: {:?}", asset_id);
-        println!("admin: {:?}", admin);
+        println!("asset_id: {asset_id:?}");
+        println!("admin: {admin:?}");
         Assets::force_create(origin, asset_id, admin, is_sufficient, min_balance)
     }
 
@@ -975,10 +975,10 @@ pub fn prepare_ext_builder_playground() -> TestExternalities {
     ext
 }
 
-pub fn reboot_and_link_assets(mut ext: &mut TestExternalities) {
-    reboot_gateway(&mut ext);
+pub fn reboot_and_link_assets(ext: &mut TestExternalities) {
+    reboot_gateway(ext);
     link_assets(
-        &mut ext,
+        ext,
         vec![
             (
                 SEPOLIA_TARGET,
@@ -1009,7 +1009,7 @@ pub fn reboot_and_link_assets(mut ext: &mut TestExternalities) {
     );
 }
 
-pub fn reboot_gateway(mut ext: &mut TestExternalities) {
+pub fn reboot_gateway(ext: &mut TestExternalities) {
     ext.execute_with(|| {
         let _ = XDNS::reboot_self_gateway(Origin::root(), GatewayVendor::Rococo)
             .expect("ExtBuilder::reboot_self_gateway should fail with root privileges");
@@ -1017,32 +1017,32 @@ pub fn reboot_gateway(mut ext: &mut TestExternalities) {
 }
 
 pub fn link_assets(
-    mut ext: &mut TestExternalities,
+    ext: &mut TestExternalities,
     linked_assets_map: Vec<(TargetId, Vec<(u32, TokenInfo)>)>,
 ) {
     ext.execute_with(|| {
         // let records_now = XDNS::fetch_full_gateway_records();
         let records_now = XDNS::all_gateway_ids();
-        let tokens_now = XDNS::all_token_ids();
+        let _tokens_now = XDNS::all_token_ids();
 
         for (target_id, asset_ids) in linked_assets_map {
             if !records_now.contains(&target_id) {
-                println!("ExtBuilder::link_assets expects target_id = {:?} to be registered; please call XDNS::register_gateway prior", target_id);
+                println!("ExtBuilder::link_assets expects target_id = {target_id:?} to be registered; please call XDNS::register_gateway prior");
                 log::error!("ExtBuilder::link_assets expects target_id  = {:?} to be registered; please call XDNS::register_gateway prior", target_id);
                 continue;
             }
             for (asset_id, token_info) in asset_ids {
                 if !XDNS::all_token_ids().contains(&asset_id) {
-                    println!("ExtBuilder::link_assets register_new_token = {:?}", asset_id);
+                    println!("ExtBuilder::link_assets register_new_token = {asset_id:?}");
 
-                    let _ = XDNS::register_new_token(
+                    XDNS::register_new_token(
                         &Origin::root(),
                         asset_id,
                         token_info.clone(),
                     ).expect("ExtBuilder::link_asset_to_gateway register_new_token = {:?} should not fail after ensuring target_id is registered");
                 }
 
-                let _ = XDNS::link_token_to_gateway(
+                XDNS::link_token_to_gateway(
                     asset_id,
                     target_id,
                     token_info,
