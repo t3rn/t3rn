@@ -3,7 +3,7 @@ name: Check for lock files
 on: [push, pull_request]
 
 env:
-  EXCLUDE_DIRS: "path/to/exclude/dir1,client/packages/attester"
+  EXCLUDE_DIRS: "path/to/exclude/dir1,client/packages/attester,pallets/attesters/contracts"
 
 jobs:
   build:

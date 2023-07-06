@@ -19,7 +19,7 @@
     "typescript": ">=4.5.0"
   },
   "scripts": {
-    "preinstall": "npx -y only-allow yarn",
+    "preinstall": "npx -y only-allow pnpm",
     "compile": "hardhat compile",
     "test": "hardhat test"
   },
