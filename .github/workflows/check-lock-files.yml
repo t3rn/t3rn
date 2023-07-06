@@ -2,6 +2,9 @@ name: Check for lock files
 
 on: [push, pull_request]
 
+env:
+  EXCLUDE_DIRS: "path/to/exclude/dir1,client/packages/attesters"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,16 +14,29 @@ jobs:
 
     - name: Check for package-lock.json
       run: |
-        FILE=$(find . -name 'package-lock.json')
-        if [[ ! -z "$FILE" ]]; then
-          echo -e "$FILE \nOnly yarn.lock is allowed!"
+        IFS=','
+        read -ra DIRS <<< "$EXCLUDE_DIRS"
+        FIND_COMMAND="find . -name 'package-lock.json'"
+        for DIR in "${DIRS[@]}"; do
+          FIND_COMMAND+=" -not -path './${DIR}/*'"
+        done
+        FILES=$(eval $FIND_COMMAND)
+        if [[ ! -z "$FILES" ]]; then
+          echo -e "$FILES \nOnly yarn.lock is allowed!"
           exit 1
         fi
 
     - name: Check for pnpm-lock.yaml
       run: |
-        FILE=$(find . -name 'pnpm-lock.yaml')
-        if [[ ! -z "$FILE" ]]; then
-          echo -e "$FILE \nOnly yarn.lock is allowed!"
+        IFS=','
+        read -ra DIRS <<< "$EXCLUDE_DIRS"
+        FIND_COMMAND="find . -name 'pnpm-lock.yaml'"
+        for DIR in "${DIRS[@]}"; do
+          FIND_COMMAND+=" -not -path './${DIR}/*'"
+        done
+        FILES=$(eval $FIND_COMMAND)
+        if [[ ! -z "$FILES" ]]; then
+          echo -e "$FILES \nOnly yarn.lock is allowed!"
           exit 1
         fi
+
