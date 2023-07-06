@@ -138,7 +138,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -155,7 +154,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -172,7 +170,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -216,7 +213,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
