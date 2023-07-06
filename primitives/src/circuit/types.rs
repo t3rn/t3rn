@@ -7,7 +7,7 @@ use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchError;
 use frame_system::Config;
 use scale_info::TypeInfo;
-use sp_core::Hasher;
+use sp_core::{hexdisplay::AsBytesRef, Hasher};
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 use sp_runtime::{traits::Zero, RuntimeDebug};
@@ -447,7 +447,9 @@ impl<AccountId, Asset, Balance, Destination, Input, MaxCost> TryInto<SideEffect<
 where
     u32: From<Asset>,
     Balance: Encode,
+    MaxCost: Encode,
     AccountId: Encode,
+    Input: AsBytesRef,
     Destination: From<[u8; 4]>,
     [u8; 4]: From<Destination>,
 {
@@ -455,15 +457,14 @@ where
 
     fn try_into(self) -> Result<SideEffect<AccountId, Balance>, Self::Error> {
         let (action, target, encoded_args) = match self.sfx_action {
-            SFXAction::Call(target, _destination, _value, _max_cost, _input) => {
-                let encoded_args = vec![];
+            SFXAction::Call(target, destination, value, max_cost, input) => {
+                let mut encoded_args = vec![];
                 // todo: lookup destination target and derive the ActionType (call evm / wasm / composable)
-                // encoded_args.extend_from_slice(&target);
-                // encoded_args.extend_from_slice(&destination);
-                // encoded_args.extend_from_slice(&value.encode());
-                // encoded_args.extend_from_slice(&max_cost.encode());
-                // encoded_args.extend_from_slice(&input);
-                (*b"call", target.into(), encoded_args)
+                encoded_args.push(destination.encode()); // target
+                encoded_args.push(value.encode()); // value
+                encoded_args.push(input.as_bytes_ref().to_vec()); // value
+                encoded_args.push(max_cost.encode()); // value
+                (*b"cevm", target.into(), encoded_args)
             },
             SFXAction::Transfer(target, asset, destination, amount) => {
                 let mut encoded_args: Vec<Vec<u8>> = vec![];
@@ -474,19 +475,15 @@ where
             },
         };
 
-        // You will need to convert the other fields of OrderSFX into the corresponding fields of SideEffect
-        // For example, you might need to encode the arguments for the `encoded_args` field of SideEffect
-        // This will depend on the specific details of your implementation
-
         let side_effect = SideEffect {
-            target, // You will need to determine the target based on the details of the SFXAction
+            target,
             max_reward: self.max_reward,
             insurance: self.insurance,
             action,
-            encoded_args, // You will need to encode the arguments based on the details of the SFXAction
-            signature: vec![], // You will need to determine the signature based on the details of the SFXAction
-            enforce_executor: None, // You will need to determine the executor based on the details of the SFXAction
-            reward_asset_id: Some(self.reward_asset.into()), // You will need to determine the asset ID based on the details of the SFXAction
+            encoded_args,
+            signature: vec![],
+            enforce_executor: None,
+            reward_asset_id: Some(self.reward_asset.into()),
         };
 
         Ok(side_effect)
@@ -546,7 +543,7 @@ mod tests {
         let side_effect = result.unwrap();
         assert_eq!(side_effect.max_reward, 200);
         assert_eq!(side_effect.insurance, 50);
-        assert_eq!(side_effect.action, *b"call");
+        assert_eq!(side_effect.action, *b"cevm");
         assert_eq!(side_effect.reward_asset_id, Some(1u32));
     }
 }

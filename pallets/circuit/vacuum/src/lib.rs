@@ -108,7 +108,7 @@ mod tests {
             let issuer_is_escrow_account =
                 MiniRuntime::get_treasury_account(TreasuryAccount::Escrow);
             Balances::deposit_creating(&requester, (100_000 * TRN) as Balance); // To cover fees
-            assert_ok!(ssets::mint(
+            assert_ok!(Assets::mint(
                 Origin::signed(issuer_is_escrow_account),
                 ASSET_DOT,
                 requester.clone(),
