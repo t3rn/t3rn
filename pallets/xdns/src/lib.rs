@@ -507,24 +507,22 @@ pub mod pallet {
             }
 
             for gateway_record in self.known_gateway_records.clone() {
-                <Gateways<T>>::insert(gateway_record.gateway_id, gateway_record.clone());
-                // Populate standard side effect ABI registry
-                for (sfx_4b_id, memo_prefix) in gateway_record.allowed_side_effects.iter() {
-                    match <StandardSFXABIs<T>>::get(sfx_4b_id) {
-                        Some(mut abi) => {
-                            abi.maybe_prefix_memo = *memo_prefix;
-                            <SFXABIRegistry<T>>::insert(gateway_record.gateway_id, sfx_4b_id, abi)
-                        },
-                        None => {
-                            let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
-                                .unwrap_or("invalid utf8 4b sfx id format");
-                            log::error!(
-                                "XDNS -- on-genesis: standard SFX ABI not found: {:?}",
-                                sfx_4b_str
-                            )
-                        },
-                    }
-                }
+                Pallet::<T>::override_gateway(
+                    gateway_record.gateway_id,
+                    gateway_record.verification_vendor,
+                    gateway_record.execution_vendor,
+                    gateway_record.codec,
+                    gateway_record.registrant,
+                    gateway_record.escrow_account,
+                    gateway_record.allowed_side_effects,
+                )
+                .map_err(|e| {
+                    log::error!(
+                        "XDNS -- on-genesis: failed to add gateway via override_gateway: {:?}",
+                        e
+                    );
+                })
+                .ok();
             }
         }
     }
@@ -596,6 +594,10 @@ pub mod pallet {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
             }
 
+            if <AllTokenIds<T>>::get().contains(&token_id) {
+                return Err(Error::<T>::TokenRecordAlreadyExists.into())
+            }
+
             let admin: T::AccountId = ensure_signed_or_root(origin.clone())?.unwrap_or(
                 T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
             );
@@ -611,6 +613,8 @@ pub mod pallet {
             let gateway_id = T::SelfGatewayId::get();
 
             Self::link_token_to_gateway(token_id, gateway_id, token_props)?;
+
+            <AllTokenIds<T>>::append(token_id);
 
             Self::deposit_event(Event::<T>::NewTokenAssetRegistered(token_id, gateway_id));
 
