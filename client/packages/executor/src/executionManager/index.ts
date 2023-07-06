@@ -234,19 +234,21 @@ export class ExecutionManager {
               break;
             case RelayerEvents.HeaderInclusionProofRequest:
               {
-                const proof = await this.relayers[
-                  eventData.target
-                ].generateHeaderInclusionProof(
-                  eventData.blockNumber,
-                  parseInt(eventData.data)
-                ).then(event => { return event.toJSON().proof });
+                const proof = await this.relayers[eventData.target]
+                  .generateHeaderInclusionProof(
+                    eventData.blockNumber,
+                    parseInt(eventData.data)
+                  )
+                  .then((event) => {
+                    return event.toJSON().proof;
+                  });
 
-                const blockHash = await this.relayers[
-                  eventData.target
-                ].getBlockHash(eventData.blockNumber).then(
-                  // @ts-ignore
-                  hash => hash.toString()
-                );
+                const blockHash = await this.relayers[eventData.target]
+                  .getBlockHash(eventData.blockNumber)
+                  .then(
+                    // @ts-ignore - cannot find property in type never
+                    (hash) => hash.toString()
+                  );
 
                 // @ts-ignore - cannot find property in type never
                 this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects

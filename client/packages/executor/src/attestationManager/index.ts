@@ -1,24 +1,34 @@
 import { Sdk } from "@t3rn/sdk";
 import { config } from "../../config/config";
 import fs from "fs";
-import Web3 from "web3";
+import Web3, { Contract } from "web3";
 import { logger } from "../../src/logging";
 import { Batch, ConfirmationBatch } from "./batch";
 import { ethers } from "ethers";
+
+interface IBatch {
+  nextCommittee: string[];
+  bannedCommittee: string[];
+  committedSfx: string[];
+  revertedSfx: string[];
+  index: number;
+  expectedBatchHash: string;
+  signatures: [string, string][];
+  created: number;
+}
 
 /**
 
  * @group Attestions
  */
 export class AttestationManager {
-  web3: any;
+  batches: ConfirmationBatch[] = [];
   rpc: string;
-  receiveAttestationBatchContract: any;
-  wallet: any;
-  client: any;
-  batches: any;
+  receiveAttestationBatchContract: Contract<never>;
+  web3: Web3;
+  wallet: ReturnType<typeof this.web3.eth.accounts.privateKeyToAccount>;
 
-  constructor(client: Sdk["client"]) {
+  constructor(public client: Sdk["client"]) {
     if (config.attestations.ethereum.privateKey === undefined) {
       throw new Error("Ethereum private key is not defined");
     }
@@ -30,9 +40,11 @@ export class AttestationManager {
     this.wallet = this.web3.eth.accounts.privateKeyToAccount(
       config.attestations.ethereum.privateKey
     );
+
     if (this.wallet.address === undefined) {
       throw new Error("Ethereum wallet address is not defined");
     }
+
     logger.info("Wallet address: " + this.wallet.address);
 
     const receiveAttestationBatchAbi = JSON.parse(
@@ -64,50 +76,50 @@ export class AttestationManager {
 
   async fetchBatches() {
     logger.info("Fetching batches from chain...");
-    await this.client.query.attesters
-      .batches(config.attestations.ethereum.name)
-      .then((data) => {
-        const fetchedData: any = data.toJSON();
-
-        const convertedData: ConfirmationBatch[] = fetchedData.map(
-          (batch: any) => {
-            return {
-              nextCommittee: batch.nextCommittee || [],
-              bannedCommittee: batch.bannedCommittee || [],
-              committedSfx: batch.committedSfx || [],
-              revertedSfx: batch.revertedSfx || [],
-              index: batch.index,
-              expectedBatchHash: batch.expectedBatchHash,
-              signatures: batch.signatures.map(([id, signature]) => signature),
-              created: batch.created,
-            };
-          }
-        );
-
-        logger.info("We have " + data.toJSON().length + " batches pending");
-        // logger.info(['Batch 0: ', data.toJSON()[0]])
-        // logger.info(['Batch 1: ', data.toJSON()[1]])
-        this.batches = convertedData;
-      });
+    const attesters = this.client.query.attesters;
+    const rawBatches = await attesters.batches(
+      config.attestations.ethereum.name
+    );
+    const fetchedData = rawBatches.toJSON() as unknown as Array<IBatch>;
+    const batches = fetchedData.map((batch) => {
+      return {
+        nextCommittee: batch.nextCommittee || [],
+        bannedCommittee: batch.bannedCommittee || [],
+        committedSfx: batch.committedSfx || [],
+        revertedSfx: batch.revertedSfx || [],
+        index: batch.index,
+        expectedBatchHash: batch.expectedBatchHash,
+        signatures: batch.signatures.map(([, signature]) => signature),
+        created: batch.created,
+      };
+    });
+    logger.info("We have " + fetchedData.length + " batches pending");
+    // logger.info(['Batch 0: ', data.toJSON()[0]])
+    // logger.info(['Batch 1: ', data.toJSON()[1]])
+    return batches as unknown as ConfirmationBatch[];
   }
 
   async listener() {
     // Subscribe to all events and filter based on the specified event method
-    this.client.query.system.events((events) => {
-      events.forEach((record) => {
-        const { event } = record;
+    this.client.query.system.events((events: Array<never>) => {
+      events.forEach(
+        (record: {
+          event: { section: string; method: string; data: string[] };
+        }) => {
+          const { event } = record;
 
-        // Check if the event type matches the specified event
-        if (
-          event.section === "attesters" &&
-          event.method === "NewConfirmationBatch"
-        ) {
-          logger.debug(
-            { data: event.data },
-            `Event ${event.section}.${event.method} received`
-          );
+          // Check if the event type matches the specified event
+          if (
+            event.section === "attesters" &&
+            event.method === "NewConfirmationBatch"
+          ) {
+            logger.debug(
+              { data: event.data },
+              `Event ${event.section}.${event.method} received`
+            );
+          }
         }
-      });
+      );
     });
   }
 
@@ -142,9 +154,16 @@ export class AttestationManager {
     const events = await this.client.query.system.events.at(blockHash.toHex());
     // logger.debug(`Found ${events.length} events in block ${blockHash.toHex()}`);
 
-    const filteredEvents = events
-      .toHuman()
-      .filter((event) => event.event.method == "NewAttestationMessageHash");
+    const filteredEvents = (
+      events.toHuman() as [
+        {
+          event: {
+            method: string;
+            data: [string, string];
+          };
+        }
+      ]
+    ).filter((event) => event.event.method == "NewAttestationMessageHash");
 
     // logger.debug(
     //   `Found ${filteredEvents.length} NewAttestationMessageHash events`
@@ -165,7 +184,7 @@ export class AttestationManager {
   }
 
   async processPendingAttestationBatches() {
-    await this.fetchBatches();
+    this.batches = await this.fetchBatches();
 
     // config.attestations.processPendingBatches is set to process pending batches
     for (const [index, batch] of this.batches
@@ -196,6 +215,7 @@ export class AttestationManager {
           this.batches[index + 3].created
         );
       }
+
       await this.receiveAttestationBatchCall(batch, messageHash);
     }
   }
@@ -217,6 +237,7 @@ export class AttestationManager {
 
     const contractMethod =
       this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
+        // @ts-ignore - ethers.js types are not up to date
         batch.nextCommittee,
         batch.bannedCommittee,
         batch.committedSfx,
