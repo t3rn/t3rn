@@ -2,7 +2,6 @@ use crate::types::*;
 use codec::{Decode, Encode};
 use sp_std::iter::Peekable;
 
-use frame_support::log;
 use scale_info::prelude::string::String;
 use sp_runtime::DispatchError;
 use sp_std::{prelude::*, vec::IntoIter};
@@ -333,7 +332,7 @@ impl TryFrom<Data> for Abi {
                     ))
                 },
                 _ => {
-                    log::error!("CrossCodec::failed to parse field descriptor - '{:?}' field not recognized", field_str);
+                    println!("CrossCodec::failed to parse field descriptor - '{:?}' field not recognized", field_str);
                     Err(DispatchError::Other(
                         "CrossCodec::failed to parse field descriptor - field not recognized",
                     ))
