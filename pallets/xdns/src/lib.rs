@@ -368,6 +368,8 @@ pub mod pallet {
         GatewayRecordAlreadyExists,
         /// XDNS Record not found
         XdnsRecordNotFound,
+        /// Escrow account not found
+        EscrowAccountNotFound,
         /// Stored token has already been added before
         TokenRecordAlreadyExists,
         /// XDNS Token not found in assets overlay
@@ -840,7 +842,10 @@ pub mod pallet {
 
         fn get_escrow_account(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
             match <Gateways<T>>::get(chain_id) {
-                Some(rec) => Ok(rec.escrow_account.encode()),
+                Some(rec) => match rec.escrow_account {
+                    Some(account) => Ok(account.encode()),
+                    None => Err(Error::<T>::EscrowAccountNotFound.into()),
+                },
                 None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
         }
