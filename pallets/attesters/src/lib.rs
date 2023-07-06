@@ -912,10 +912,7 @@ pub mod pallet {
             let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
             batches.sort_by(|a, b| a.created.cmp(&b.created));
             let oldest_batch = batches.first();
-            match oldest_batch {
-                Some(batch) => Some(batch.latency.clone()),
-                None => None,
-            }
+            oldest_batch.map(|batch| batch.latency.clone())
         }
 
         fn active_set() -> Vec<T::AccountId> {
@@ -1591,7 +1588,7 @@ pub mod pallet {
                 ActiveSet::<T>::put(
                     SortedNominatedAttesters::<T>::get()
                         .iter()
-                        .filter(|(account_id, _)| !Self::is_permanently_slashed(&account_id))
+                        .filter(|(account_id, _)| !Self::is_permanently_slashed(account_id))
                         .take(32)
                         .cloned()
                         .map(|(account_id, _balance)| account_id)
@@ -1932,10 +1929,10 @@ pub mod attesters_test {
         ext.execute_with(|| {
             // Register an attester
             let attester = AccountId::from([1; 32]);
-            let attester_info = register_attester_with_single_private_key([1u8; 32]);
+            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
             // Submit an attestation signed with the Ed25519 key
             let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
-            let (_hash, signature) = sign_and_submit_sfx_to_latest_attestation(
+            let (_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
                 attester,
                 sfx_id_to_sign_on,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
