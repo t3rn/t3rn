@@ -22,9 +22,10 @@ use circuit_mock_runtime::{ExtBuilder, Portal, *};
 use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
+use sp_core::crypto::AccountId32;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
-    circuit::SecurityLvl::Optimistic,
+    circuit::SecurityLvl::{Escrow, Optimistic},
     portal::Portal as PortalT,
     xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, Xdns},
     EthereumToken, ExecutionVendor,
@@ -39,7 +40,7 @@ use t3rn_abi::Codec::{Rlp, Scale};
 use t3rn_types::fsx::SecurityLvl;
 
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
-const STANDARD_SFX_ABI_COUNT: usize = 7;
+const STANDARD_SFX_ABI_COUNT: usize = 6;
 
 #[test]
 fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
@@ -450,6 +451,7 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
 #[test]
 fn gate_gateway_vendor_returns_error_for_unknown_record() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -461,6 +463,7 @@ fn gate_gateway_vendor_returns_error_for_unknown_record() {
 #[test]
 fn gate_gateway_vendor_returns_vendor_for_known_record() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -472,6 +475,7 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
 #[test]
 fn xdns_returns_full_gateway_record() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -493,7 +497,6 @@ fn xdns_returns_full_gateway_record() {
                                 ([97, 108, 105, 113], Some(3)),
                                 ([99, 101, 118, 109], Some(10)),
                                 ([119, 97, 115, 109], Some(10)),
-                                ([99, 97, 108, 108], Some(10))
                             ]
                         },
                         tokens: vec![]
@@ -513,7 +516,6 @@ fn xdns_returns_full_gateway_record() {
                                 ([97, 108, 105, 113], Some(3)),
                                 ([99, 101, 118, 109], Some(10)),
                                 ([119, 97, 115, 109], Some(10)),
-                                ([99, 97, 108, 108], Some(10))
                             ]
                         },
                         tokens: vec![]
@@ -533,7 +535,6 @@ fn xdns_returns_full_gateway_record() {
                                 ([97, 108, 105, 113], Some(3)),
                                 ([99, 101, 118, 109], Some(10)),
                                 ([119, 97, 115, 109], Some(10)),
-                                ([99, 97, 108, 108], Some(10))
                             ]
                         },
                         tokens: vec![]
@@ -553,7 +554,6 @@ fn xdns_returns_full_gateway_record() {
                                 ([97, 108, 105, 113], Some(3)),
                                 ([99, 101, 118, 109], Some(10)),
                                 ([119, 97, 115, 109], Some(10)),
-                                ([99, 97, 108, 108], Some(10))
                             ]
                         },
                         tokens: vec![]
@@ -620,6 +620,7 @@ fn xdns_returns_full_gateway_record() {
 #[test]
 fn xdns_returns_error_for_inactive_gateway() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -631,6 +632,7 @@ fn xdns_returns_error_for_inactive_gateway() {
 #[test]
 fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_via_portal() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .with_default_attestation_targets()
         .build()
@@ -737,6 +739,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
     use t3rn_primitives::attesters::{AttestersWriteApi, LatencyStatus};
 
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .with_default_attestation_targets()
         .build()
@@ -752,6 +755,12 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                 )
                 .unwrap();
             }
+
+            assert_ok!(XDNS::add_escrow_account(
+                circuit_mock_runtime::Origin::root(),
+                [1, 1, 1, 1],
+                AccountId32::new([1; 32])
+            ));
 
             Attesters::force_activate_target(circuit_mock_runtime::Origin::root(), [1, 1, 1, 1])
                 .unwrap();
@@ -781,7 +790,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         finalized_height: 0,
                         updated_height: 0,
                         attestation_latency: Some(LatencyStatus::OnTime),
-                        security_lvl: Optimistic,
+                        security_lvl: Escrow,
                         is_active: true
                     },
                     GatewayActivity {
@@ -842,6 +851,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
 #[test]
 fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turning_off() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .with_default_attestation_targets()
         .build()
