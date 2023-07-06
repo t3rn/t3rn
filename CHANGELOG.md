@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.37.0-rc.0] - 2023-07-05
+### :sparkles: New Features
+- [`213bce9`](https://github.com/t3rn/t3rn/commit/213bce9ec42f41c8d27f5523704ef045c973c0b8) - include smart contract targets in source verification  *(PR [#1065](https://github.com/t3rn/t3rn/pull/1065) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :recycle: Refactors
+- [`e9ab115`](https://github.com/t3rn/t3rn/commit/e9ab115255aaed6ec9a803148e80a35abd8506f3) - check lock files *(PR [#1118](https://github.com/t3rn/t3rn/pull/1118) by [@ahkohd](https://github.com/ahkohd))*
+
+### :wrench: Chores
+- [`257019c`](https://github.com/t3rn/t3rn/commit/257019c80ade92770afd4e384af3473f18daf15e) - only one package manager to rule them all [skip release] *(PR [#1116](https://github.com/t3rn/t3rn/pull/1116) by [@palozano](https://github.com/palozano))*
+
+
 ## [v1.36.4-rc.0] - 2023-06-28
 ### :bug: Bug Fixes
 - [`60d2017`](https://github.com/t3rn/t3rn/commit/60d2017fe52407ba1e0098ec8d51bb9ac74ee7d3) - update SDK metadata *(PR [#1095](https://github.com/t3rn/t3rn/pull/1095) by [@3h4x](https://github.com/3h4x))*
@@ -1305,3 +1316,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.36.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.35.0-rc.0...v1.36.0-rc.0
 [v1.36.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.1-rc.0...v1.36.2-rc.0
 [v1.36.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.3-rc.0...v1.36.4-rc.0
+[v1.37.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.5-rc.0...v1.37.0-rc.0
