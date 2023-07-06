@@ -8,20 +8,16 @@ use frame_support::{
 
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
-use scale_info::TypeInfo;
 
 use sp_std::{convert::TryInto, vec::Vec};
 use t3rn_primitives::{
-    circuit::{
-        traits::CircuitSubmitAPI,
-        types::{OrderSFX, SFXAction},
-    },
+    circuit::{traits::CircuitSubmitAPI, types::OrderSFX},
     SpeedMode,
 };
 pub type Asset = u32;
 pub type Destination = [u8; 4];
 pub type Input = Vec<u8>;
-use t3rn_abi::types::Sfx4bId;
+
 use t3rn_primitives::circuit::SideEffect;
 
 t3rn_primitives::reexport_currency_types!();
@@ -82,15 +78,11 @@ mod tests {
     use frame_support::assert_ok;
     use sp_runtime::AccountId32;
     use t3rn_mini_mock_runtime::{
-        prepare_ext_builder_playground, AccountId, Assets, Balance, Balances, Circuit, ExtBuilder,
-        MiniRuntime, Origin, Vacuum, ASSET_DOT, ASSET_ETH, ASSET_KSM, ASSET_TRN, ASSET_USDT,
-        ASTAR_TARGET, KUSAMA_TARGET, POLKADOT_TARGET, XDNS,
+        prepare_ext_builder_playground, AccountId, Assets, Balance, Balances, MiniRuntime, Origin,
+        Vacuum, ASSET_DOT, POLKADOT_TARGET, XDNS,
     };
     use t3rn_primitives::{
-        circuit::{
-            traits::CircuitSubmitAPI,
-            types::{OrderSFX, SFXAction},
-        },
+        circuit::types::{OrderSFX, SFXAction},
         monetary::TRN,
         SpeedMode, TreasuryAccount, TreasuryAccountProvider,
     };
@@ -125,11 +117,7 @@ mod tests {
                 reward_asset: ASSET_DOT,
             };
 
-            let res = Vacuum::order(
-                Origin::signed(requester.clone()),
-                vec![sfx_order],
-                SpeedMode::Fast,
-            );
+            let res = Vacuum::order(Origin::signed(requester), vec![sfx_order], SpeedMode::Fast);
 
             assert_ok!(res);
         });

@@ -57,8 +57,8 @@ pub mod pallet {
         light_client::LightClientHeartbeat,
         portal::Portal,
         xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
-        Bytes, ChainId, ExecutionVendor, GatewayActivity, GatewayType, GatewayVendor,
-        GatewaysOverview, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
+        Bytes, ChainId, ExecutionVendor, GatewayActivity, GatewayType, GatewayVendor, TokenInfo,
+        TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -185,7 +185,7 @@ pub mod pallet {
                     continue
                 }
 
-                let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(&gateway_id)
+                let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(gateway_id)
                     .last()
                     .cloned()
                     .unwrap_or_else(|| GatewayActivity {
@@ -237,12 +237,12 @@ pub mod pallet {
                 };
 
                 // Add the new activity to the historic overview of the gateway
-                let mut historic_overview = GatewaysOverviewStoreHistory::<T>::get(&gateway_id);
+                let mut historic_overview = GatewaysOverviewStoreHistory::<T>::get(gateway_id);
                 if historic_overview.len() == MAX_GATEWAY_OVERVIEW_RECORDS as usize {
                     let _ = historic_overview.remove(0);
                 }
                 historic_overview.push(activity.clone());
-                GatewaysOverviewStoreHistory::<T>::insert(&gateway_id, historic_overview);
+                GatewaysOverviewStoreHistory::<T>::insert(gateway_id, historic_overview);
 
                 // Add the new activity to the general overview
                 all_overviews.push(activity);
@@ -502,7 +502,7 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
-                let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
+                let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
                     .unwrap_or("invalid utf8 4b sfx id format");
                 <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
             }
@@ -712,7 +712,7 @@ pub mod pallet {
                         <SFXABIRegistry<T>>::insert(gateway_id, sfx_4b_id, abi)
                     },
                     None => {
-                        let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
+                        let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
                             .unwrap_or("invalid utf8 4b sfx id format");
                         log::error!(
                             "ABI not found for {:?}; override_gateway failed.",
