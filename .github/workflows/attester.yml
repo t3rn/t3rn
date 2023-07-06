@@ -64,16 +64,17 @@ jobs:
           node-version: ${{ env.NVMRC }}
 
       - run: cd .. && make all
-      - run: yarn install
-      - run: yarn fmt
+      - run: npm i -g pnpm
+      - run: pnpm install
+      - run: pnpm fmt
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'
-        run: yarn lint:report
+        run: pnpm lint:report
         # Continue to the next step even if this fails
         continue-on-error: true
 
-      - run: yarn test
+      - run: pnpm test
 
       - name: Annotate Code Linting Results
         if: github.event_name == 'pull_request'
@@ -83,7 +84,7 @@ jobs:
           report-json: client/packages/attester/eslint_report.json
 
       - name: 🏗 Build Docs
-        run: yarn build-docs
+        run: pnpm build-docs
         working-directory: client/packages/attester          
 
   test-attestations-verifier:
@@ -100,8 +101,9 @@ jobs:
         with:
           node-version: 20
 
-      - run: yarn install
-      - run: yarn run test
+      - run: npm i -g pnpm
+      - run: pnpm install
+      - run: pnpm run test
 
   build-docker:
     name: Build Attester Docker
