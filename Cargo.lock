@@ -6291,6 +6291,7 @@ dependencies = [
  "t3rn-abi",
  "t3rn-mini-mock-runtime",
  "t3rn-primitives",
+ "t3rn-types 1.5.0-rc.0",
 ]
 
 [[package]]

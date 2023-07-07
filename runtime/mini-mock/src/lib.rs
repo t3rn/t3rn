@@ -12,8 +12,15 @@ pub use pallet_attesters::{
     Pallet as PalletAttesters, PendingUnnominations, PermanentSlashes, PreviousCommittee,
     SortedNominatedAttesters,
 };
-pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
+
+pub use pallet_circuit::{
+    Config as ConfigCircuit, Event as CircuitEvent, FullSideEffects, SFX2XTXLinksMap, XExecSignals,
+};
+
+pub use pallet_circuit_vacuum::{Config as ConfigVacuum, Event as VacuumEvent, OrderStatusRead};
+mod hooks;
 mod treasuries_config;
+pub use hooks::GlobalOnInitQueues;
 use sp_runtime::DispatchResult;
 
 use hex_literal::hex;
@@ -51,6 +58,7 @@ pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Mini
 pub type Block = frame_system::mocking::MockBlock<MiniRuntime>;
 pub type BlockNumber = u32;
 pub type Balance = u128;
+pub type Hash = sp_core::H256;
 type Header = generic::Header<u32, BlakeTwo256>;
 
 use pallet_grandpa_finality_verifier::light_clients::LightClient;
@@ -181,7 +189,7 @@ impl pallet_clock::Config for MiniRuntime {
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
-    type OnInitializeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
+    type OnInitializeQueues = GlobalOnInitQueues;
     type RoundDuration = ConstU32<400>;
 }
 use t3rn_primitives::monetary::TRN;
@@ -400,6 +408,7 @@ impl pallet_circuit_vacuum::Config for MiniRuntime {
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
     type Event = Event;
+    type ReadSFX = Circuit;
 }
 
 impl pallet_portal::Config for MiniRuntime {

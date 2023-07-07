@@ -52,8 +52,8 @@ pallet-treasury  = { git = "https://github.com/paritytech/substrate.git", branch
 # t3rn pallets
 pallet-account-manager           = { path = "../../pallets/account-manager" }
 pallet-attesters                 = { path = "../../pallets/attesters" }
-pallet-circuit                   = { path = "../../pallets/circuit" }
-pallet-circuit-vacuum                   = { path = "../../pallets/circuit/vacuum" }
+pallet-circuit                   = { path = "../../pallets/circuit", features = ["test-skip-verification"] }
+pallet-circuit-vacuum            = { path = "../../pallets/circuit/vacuum" }
 pallet-clock                     = { path = "../../pallets/clock" }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa" }
 pallet-portal                    = { path = "../../pallets/portal" }

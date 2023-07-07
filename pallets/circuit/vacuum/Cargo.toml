@@ -27,6 +27,7 @@ sp-std                = { default-features = false, git = "https://github.com/pa
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.27', optional = true }
 
 t3rn-abi        = { path = "../../../types/abi", default-features = false }
+t3rn-types      = { path = "../../../types", default-features = false, features = [ "runtime" ] }
 t3rn-primitives = { path = "../../../primitives", default-features = false }
 
 [dev-dependencies]
@@ -48,9 +49,10 @@ std = [
     "frame-system/std",
     "t3rn-primitives/std",
     "t3rn-abi/std",
+    "t3rn-types/std",
 ]
 
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "t3rn-abi/std" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "t3rn-abi/std", "t3rn-types/std" ]
 
 runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-support/runtime-benchmarks", "frame-system/runtime-benchmarks", "sp-runtime/runtime-benchmarks" ]
 
