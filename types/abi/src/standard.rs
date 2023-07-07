@@ -67,7 +67,7 @@ pub fn get_sfx_transfer_asset_abi() -> SFXAbi {
                 b"Assets:Log(asset_id+:Account20,from+:Account20,to+:Account20,amount+:Value128)"
                     .to_vec(),
             for_scale:
-                b"Assets:Struct(Transfer:Event(asset_id:Account32,from:Account32,to:Account32,amount:Value128))"
+                b"Assets:Struct(Transferred:Event(asset_id:Value32,from:Account32,to:Account32,amount:Value128))"
                     .to_vec(),
         },
         egress_abi_descriptors: PerCodecAbiDescriptors {
