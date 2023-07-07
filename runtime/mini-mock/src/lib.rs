@@ -344,6 +344,13 @@ impl pallet_portal::SelectLightClient<MiniRuntime> for SelectLightClientRegistry
                 select_grandpa_light_client_instance::<MiniRuntime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<MiniRuntime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<MiniRuntime>>),
+            GatewayVendor::Ethereum => select_grandpa_light_client_instance::<
+                MiniRuntime,
+                PolkadotInstance,
+            >(GatewayVendor::Rococo)
+            .ok_or(PortalError::<MiniRuntime>::LightClientNotFoundByVendor)
+            .map(|lc| Box::new(lc) as Box<dyn LightClient<MiniRuntime>>),
+
             _ => Err(PortalError::<MiniRuntime>::UnimplementedGatewayVendor),
         }
     }

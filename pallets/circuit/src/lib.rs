@@ -30,6 +30,7 @@ use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
+    ensure,
     traits::{Currency, ExistenceRequirement::AllowDeath, Get},
     weights::Weight,
     RuntimeDebug,
@@ -70,9 +71,10 @@ pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
 
-use t3rn_primitives::attesters::AttestersWriteApi;
 pub use t3rn_primitives::light_client::InclusionReceipt;
+use t3rn_primitives::{attesters::AttestersWriteApi, circuit::ReadSFX};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
+use t3rn_types::fsx::TargetId;
 
 #[cfg(test)]
 pub mod tests;
@@ -219,6 +221,16 @@ pub mod pallet {
                 >,
             >,
         >,
+        OptionQuery,
+    >;
+
+    #[pallet::storage]
+    #[pallet::getter(fn get_dlq)]
+    pub type DLQ<T> = StorageMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        <T as frame_system::Config>::BlockNumber,
         OptionQuery,
     >;
 
@@ -894,6 +906,7 @@ pub mod pallet {
         InvalidFTXStateEmptyConfirmationForFinishedXtx,
         InvalidFTXStateUnassignedExecutorForReadySFX,
         InvalidFTXStateIncorrectExecutorForReadySFX,
+        GatewayNotActive,
         SetupFailed,
         SetupFailedXtxNotFound,
         SetupFailedXtxStorageArtifactsNotFound,
@@ -1051,18 +1064,20 @@ impl<T: Config> Pallet<T> {
             return Ok(())
         }
 
+        // Verify each requested asset is supported by the gateway
+        let all_targets = side_effects
+            .iter()
+            .map(|sfx| sfx.target.clone())
+            .collect::<Vec<TargetId>>();
+
+        ensure!(
+            Self::ensure_all_gateways_are_active(all_targets),
+            Error::<T>::GatewayNotActive
+        );
+
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
             let security_lvl = determine_security_lvl(gateway_type);
-
-            // ToDo: Verify each requested asset is supported by the gateway
-
-            // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
-            // let _last_update = <T as Config>::Xdns::verify_active(
-            //     &sfx.target,
-            //     <T as Config>::XtxTimeoutDefault::get(),
-            //     &security_lvl,
-            // )?;
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
@@ -1206,6 +1221,28 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
+    /// At the XTX submission fn verify ensures that all of the gateways are active.
+    /// At either confirmation or revert attempt, ensure that all of the gateways are active, so that Executor won't be slashed.
+    pub fn ensure_all_gateways_are_active(targets: Vec<TargetId>) -> bool {
+        for target in targets.into_iter() {
+            let gateway_activity_overview = match <T as Config>::Xdns::read_last_activity(target) {
+                Some(gateway_activity_overview) => gateway_activity_overview,
+                None => {
+                    log::warn!("Failing to ensure_all_gateways_are_active. Target gateway is not registered in XDNS. Observe XDNS::gateway_activity_overview for more updates");
+                    return false
+                },
+            };
+
+            if !gateway_activity_overview.is_active {
+                log::warn!(
+                    "Failing to ensure_all_gateways_are_active. Target gateway is currently not active. Observe XDNS::gateway_activity_overview for more updates"
+                );
+                return false
+            }
+        }
+        true
+    }
+
     // ToDo: This should be called as a 3vm trait injection @Don
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
@@ -1300,7 +1337,7 @@ impl<T: Config> Pallet<T> {
                 .map(|(xtx_id, _timeout_at)| {
                     if current_weight <= max_allowed_weight {
                         current_weight =
-                            current_weight.saturating_add(Self::process_revert_one(xtx_id));
+                            current_weight.saturating_add(Self::process_revert_one(xtx_id).0);
                     }
                 })
                 .count();
@@ -1308,17 +1345,55 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
-    pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> Weight {
+    pub fn process_dlq(n: T::BlockNumber) -> Weight {
+        let mut weight: Weight = 0;
+        // Process the DLQ
+        for (xtx_id, _block_number) in <DLQ<T>>::iter() {
+            // Retry the revert, or handle the failed Xtx in some other way
+            let (mut weight, success) = Self::process_revert_one(xtx_id);
+            weight = weight.saturating_add(weight);
+            // If the retry was successful, remove the Xtx from the DLQ
+            if success {
+                <DLQ<T>>::remove(xtx_id);
+            }
+        }
+
+        weight
+    }
+
+    pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> (Weight, bool) {
         const REVERT_WRITES: Weight = 2;
         const REVERT_READS: Weight = 1;
 
-        let _success: bool =
+        // Check if all gateways are active
+        let fsx_of_xtx = <Pallet<T>>::get_fsx_of_xtx(xtx_id).unwrap_or(vec![]);
+        if fsx_of_xtx.is_empty() {
+            return (0, false)
+        }
+        let all_targets = fsx_of_xtx
+            .into_iter()
+            .map(|fsx_id| {
+                <Pallet<T>>::get_fsx(fsx_id)
+                    .map(|fsx| fsx.input.target)
+                    .unwrap_or(TargetId::default())
+            })
+            .collect::<Vec<TargetId>>();
+
+        if !Self::ensure_all_gateways_are_active(all_targets) {
+            // If not all gateways are active, add the Xtx to the DLQ
+            <DLQ<T>>::insert(xtx_id, <frame_system::Module<T>>::block_number());
+            return (T::DbWeight::get().reads_writes(1, 1), false)
+        }
+        let success: bool =
             Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, local_ctx| {
                 Self::request_sfx_attestation(local_ctx);
                 Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id));
             });
 
-        T::DbWeight::get().reads_writes(REVERT_READS, REVERT_WRITES)
+        (
+            T::DbWeight::get().reads_writes(REVERT_READS, REVERT_WRITES),
+            success,
+        )
     }
 
     pub fn request_sfx_attestation(local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) {
