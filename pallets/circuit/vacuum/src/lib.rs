@@ -115,8 +115,9 @@ mod tests {
     use t3rn_mini_mock_runtime::{
         prepare_ext_builder_playground, AccountId, Assets, Balance, Balances, BlockNumber, Circuit,
         CircuitEvent, Clock, Event, Hash, MiniRuntime, MockedAssetEvent, OrderStatusRead, Origin,
-        System, Vacuum, VacuumEvent, ASSET_DOT, POLKADOT_TARGET, XDNS,
+        Portal, System, Vacuum, VacuumEvent, ASSET_DOT, POLKADOT_TARGET, XDNS,
     };
+    use t3rn_primitives::portal::Portal as PortalT;
 
     use t3rn_primitives::{
         circuit::types::{OrderSFX, SFXAction},
@@ -128,6 +129,14 @@ mod tests {
     use frame_support::traits::Currency;
     use t3rn_abi::Abi::H256;
     use t3rn_primitives::{circuit::CircuitStatus, monetary::EXISTENTIAL_DEPOSIT};
+
+    fn activate_all_light_clients() {
+        for &gateway in XDNS::all_gateway_ids().iter() {
+            Portal::turn_on(Origin::root(), gateway).unwrap();
+        }
+
+        XDNS::process_overview(System::block_number());
+    }
 
     fn mint_required_assets_for_optimistic_actors(
         requester: AccountId,
@@ -221,6 +230,8 @@ mod tests {
                 reward_asset: ASSET_DOT,
             };
 
+            activate_all_light_clients();
+
             assert_ok!(Vacuum::order(
                 Origin::signed(requester.clone()),
                 vec![sfx_order],
@@ -272,6 +283,8 @@ mod tests {
                 insurance: 50u128,
                 reward_asset: ASSET_DOT,
             };
+
+            activate_all_light_clients();
 
             assert_ok!(Vacuum::order(
                 Origin::signed(requester.clone()),
