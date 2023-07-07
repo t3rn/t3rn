@@ -35,3 +35,4 @@ docs/ts-sdk
 # ignore dev folders
 **/node_modules
 **/parachains-integration-tests
+Session.vim
