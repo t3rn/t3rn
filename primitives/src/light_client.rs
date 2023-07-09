@@ -1,8 +1,10 @@
-use crate::{ExecutionSource, SpeedMode};
+use crate::{ExecutionSource, GatewayVendor, SpeedMode};
 use codec::{Decode, Encode};
+use num_traits::Zero;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use t3rn_abi::types::Bytes;
+use t3rn_types::sfx::TargetId;
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub enum HeightResult<BlockNumber> {
@@ -31,6 +33,27 @@ pub struct LightClientHeartbeat<T: frame_system::Config> {
     pub last_fast_height: T::BlockNumber,
     pub is_halted: bool,
     pub ever_initialized: bool,
+}
+
+impl<T: frame_system::Config> Default for LightClientHeartbeat<T> {
+    fn default() -> Self {
+        LightClientHeartbeat {
+            last_heartbeat: Zero::zero(),
+            last_finalized_height: Zero::zero(),
+            last_rational_height: Zero::zero(),
+            last_fast_height: Zero::zero(),
+            is_halted: false,
+            ever_initialized: false,
+        }
+    }
+}
+
+pub trait LightClientAsyncAPI<T: frame_system::Config> {
+    fn on_new_epoch(
+        verifier: GatewayVendor,
+        new_epoch: T::BlockNumber,
+        current_hearbeat: LightClientHeartbeat<T>,
+    );
 }
 
 pub trait LightClient<T: frame_system::Config> {

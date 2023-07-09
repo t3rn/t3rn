@@ -132,6 +132,19 @@ pub enum GatewayVendor {
     Ethereum,
 }
 
+use sp_std::slice::Iter;
+impl GatewayVendor {
+    pub fn iterator() -> Iter<'static, GatewayVendor> {
+        static VENDORS: [GatewayVendor; 4] = [
+            GatewayVendor::Polkadot,
+            GatewayVendor::Kusama,
+            GatewayVendor::Rococo,
+            GatewayVendor::Ethereum,
+        ];
+        VENDORS.iter()
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
@@ -381,6 +394,24 @@ pub enum GatewayExpectedOutput {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewaysOverview<BlockNumber> {
     data: Vec<(TargetId, BlockNumber, Vec<GatewayActivity<BlockNumber>>)>,
+}
+
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct FinalityVerifierActivity<BlockNumber> {
+    pub verifier: GatewayVendor,
+
+    pub reported_at: BlockNumber,
+
+    pub justified_height: BlockNumber,
+
+    pub finalized_height: BlockNumber,
+
+    pub updated_height: BlockNumber,
+
+    pub epoch: BlockNumber,
+
+    pub is_active: bool,
 }
 
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]

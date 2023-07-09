@@ -1,6 +1,9 @@
 use crate::{circuit::CircuitStatus, xtx::LocalState, SpeedMode};
 use codec::{Decode, Encode};
-use frame_support::dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo};
+use frame_support::{
+    dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo},
+    weights::Weight,
+};
 use frame_system::{pallet_prelude::OriginFor, Config as ConfigSystem};
 use sp_std::{fmt::Debug, vec::Vec};
 
@@ -67,6 +70,10 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
         side_effects: Vec<SideEffect<T::AccountId, Balance>>,
         speed_mode: SpeedMode,
     ) -> DispatchResultWithPostInfo;
+}
+
+pub trait CircuitDLQ<T: ConfigSystem> {
+    fn process_dlq(n: T::BlockNumber) -> Weight;
 }
 
 pub trait OnLocalTrigger<T: ConfigSystem, Balance> {

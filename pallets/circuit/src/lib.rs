@@ -121,7 +121,8 @@ pub mod pallet {
     use t3rn_primitives::{
         attesters::AttestersWriteApi,
         circuit::{
-            CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX,
+            CircuitDLQ, CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger,
+            ReadSFX,
         },
         portal::Portal,
         xdns::Xdns,
@@ -391,6 +392,12 @@ pub mod pallet {
         }
     }
 
+    impl<T: Config> CircuitDLQ<T> for Pallet<T> {
+        fn process_dlq(n: T::BlockNumber) -> Weight {
+            Self::process_dlq(n)
+        }
+    }
+
     impl<T: Config> ReadSFX<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
         fn get_fsx_of_xtx(xtx_id: T::Hash) -> Result<Vec<T::Hash>, DispatchError> {
             let full_side_effects = FullSideEffects::<T>::get(xtx_id)
@@ -657,6 +664,13 @@ pub mod pallet {
             ensure_root(origin)?;
             let _success =
                 Machine::<T>::revert(xtx_id, Cause::IntentionalKill, infallible_no_post_updates);
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
+        pub fn trigger_dlq(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            ensure_signed(origin)?;
+            Self::process_dlq(<frame_system::Pallet<T>>::block_number());
             Ok(().into())
         }
 

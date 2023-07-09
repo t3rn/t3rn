@@ -154,6 +154,7 @@ mod threevm_mock {
             DispatchError,
         >;
         type Balances = Balances;
+        type CircuitDLQ = Circuit;
         type Currency = Balances;
         type Event = Event;
         type Portal = CircuitPortal;
