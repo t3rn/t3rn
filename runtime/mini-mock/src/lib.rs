@@ -345,13 +345,9 @@ impl pallet_portal::SelectLightClient<MiniRuntime> for SelectLightClientRegistry
                 select_grandpa_light_client_instance::<MiniRuntime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<MiniRuntime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<MiniRuntime>>),
-            GatewayVendor::Ethereum => Ok(Box::new(
-                pallet_eth2_light_client::Pallet::<MiniRuntime>(PhantomData),
-            )),
-            GatewayVendor::Sepolia => Ok(Box::new(pallet_sepolia_light_client::Pallet::<
-                MiniRuntime,
-            >(PhantomData))),
-
+            // GatewayVendor::Ethereum => Ok(Box::new(
+            //     pallet_eth2_light_client::Pallet::<MiniRuntime>(PhantomData),
+            // )),
             _ => Err(PortalError::<MiniRuntime>::UnimplementedGatewayVendor),
         }
     }
@@ -374,6 +370,7 @@ impl pallet_xdns::Config for MiniRuntime {
     type AssetsOverlay = MiniRuntime;
     type AttestersRead = Attesters;
     type Balances = Balances;
+    type CircuitDLQ = Circuit;
     type Currency = Balances;
     type Event = Event;
     type Portal = Portal;

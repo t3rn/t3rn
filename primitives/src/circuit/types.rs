@@ -440,6 +440,8 @@ pub struct OrderSFX<AccountId, Asset, Balance, Destination, Input, MaxCost> {
     pub max_reward: Balance,
     pub reward_asset: Asset,
     pub insurance: Balance,
+    // pub remote_reward_target: Option<Destination>,
+    // pub remote_origin_nonce: Option<u32>,
 }
 
 impl<AccountId, Asset, Balance, Destination, Input, MaxCost> TryInto<SideEffect<AccountId, Balance>>

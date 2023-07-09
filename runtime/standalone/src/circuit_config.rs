@@ -206,6 +206,7 @@ impl pallet_xdns::Config for Runtime {
     type AssetsOverlay = Runtime;
     type AttestersRead = Attesters;
     type Balances = Balances;
+    type CircuitDLQ = Circuit;
     type Currency = Balances;
     type Event = Event;
     type Portal = Portal;

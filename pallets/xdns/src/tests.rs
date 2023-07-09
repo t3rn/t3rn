@@ -20,7 +20,7 @@
 use super::*;
 use circuit_mock_runtime::{ExtBuilder, Portal, *};
 use codec::Decode;
-use frame_support::{assert_err, assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
 use frame_system::Origin;
 use sp_core::crypto::AccountId32;
 use sp_runtime::DispatchError;
@@ -30,8 +30,8 @@ use t3rn_primitives::{
     xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, Xdns},
     EthereumToken, ExecutionVendor,
     ExecutionVendor::{Substrate, EVM},
-    GatewayActivity, GatewayVendor,
-    GatewayVendor::{Ethereum, Polkadot, Rococo},
+    FinalityVerifierActivity, GatewayActivity, GatewayVendor,
+    GatewayVendor::{Ethereum, Kusama, Polkadot, Rococo},
     SubstrateToken, TokenInfo,
 };
 
@@ -649,6 +649,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                 .unwrap();
             }
 
+            assert_eq!(XDNS::process_all_verifier_overviews(10), ());
             assert_eq!(XDNS::process_overview(10), ());
             let overview = XDNS::gateways_overview();
 
@@ -734,7 +735,6 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
 fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_via_portal_and_adding_attestation_target(
 ) {
     use circuit_mock_runtime::Attesters;
-    use frame_support::traits::OnInitialize;
     use sp_core::H256;
     use t3rn_primitives::attesters::{AttestersWriteApi, LatencyStatus};
 
@@ -767,6 +767,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
             Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1));
             Attesters::on_initialize(6);
 
+            assert_eq!(XDNS::process_all_verifier_overviews(10), ());
             assert_eq!(XDNS::process_overview(10), ());
             let overview = XDNS::gateways_overview();
 
@@ -849,6 +850,64 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
 }
 
 #[test]
+fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each_50_blocks() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            assert_eq!(XDNS::verifier_overview(), vec![]);
+            XDNS::on_initialize(1);
+            assert_eq!(XDNS::verifier_overview(), vec![]);
+            XDNS::on_initialize(16);
+            assert_eq!(XDNS::verifier_overview(), vec![]);
+            XDNS::on_initialize(51);
+            assert_eq!(
+                XDNS::verifier_overview(),
+                vec![
+                    FinalityVerifierActivity {
+                        verifier: Polkadot,
+                        reported_at: 51,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        epoch: 0,
+                        is_active: true
+                    },
+                    FinalityVerifierActivity {
+                        verifier: Kusama,
+                        reported_at: 51,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        epoch: 0,
+                        is_active: true
+                    },
+                    FinalityVerifierActivity {
+                        verifier: Rococo,
+                        reported_at: 51,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        epoch: 0,
+                        is_active: true
+                    },
+                    FinalityVerifierActivity {
+                        verifier: Ethereum,
+                        reported_at: 51,
+                        justified_height: 0,
+                        finalized_height: 0,
+                        updated_height: 0,
+                        epoch: 0,
+                        is_active: true
+                    },
+                ]
+            );
+        });
+}
+
+#[test]
 fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turning_off() {
     ExtBuilder::default()
         .with_standard_sfx_abi()
@@ -867,6 +926,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                 )
                 .unwrap();
             }
+            assert_eq!(XDNS::process_all_verifier_overviews(10), ());
             assert_eq!(XDNS::process_overview(10), ());
             let overview = XDNS::gateways_overview();
 

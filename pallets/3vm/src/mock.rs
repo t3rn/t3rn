@@ -248,6 +248,7 @@ impl pallet_xdns::Config for Test {
     type AttestersRead =
         t3rn_primitives::attesters::AttestersReadApiEmptyMock<AccountId, Balance, DispatchError>;
     type Balances = Balances;
+    type CircuitDLQ = Circuit;
     type Currency = Balances;
     type Event = Event;
     type Portal = Portal;
