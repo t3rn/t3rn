@@ -246,6 +246,15 @@ impl ExtBuilder {
         self
     }
 
+    fn activate_all_light_clients() {
+        use t3rn_primitives::portal::Portal as PortalT;
+        for &gateway in XDNS::all_gateway_ids().iter() {
+            Portal::turn_on(Origin::root(), gateway).unwrap();
+        }
+
+        XDNS::process_overview(System::block_number());
+    }
+
     pub fn build(self) -> sp_io::TestExternalities {
         let mut t = frame_system::GenesisConfig::default()
             .build_storage::<Runtime>()
@@ -281,6 +290,7 @@ impl ExtBuilder {
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(|| Self::activate_all_light_clients());
         ext
     }
 }

@@ -11,6 +11,7 @@ pub use pallet_attesters::{
     NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes, PreviousCommittee,
     SortedNominatedAttesters,
 };
+use std::marker::PhantomData;
 
 pub use pallet_circuit::{
     Config as ConfigCircuit, Event as CircuitEvent, FullSideEffects, SFX2XTXLinksMap, XExecSignals,
@@ -344,12 +345,12 @@ impl pallet_portal::SelectLightClient<MiniRuntime> for SelectLightClientRegistry
                 select_grandpa_light_client_instance::<MiniRuntime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<MiniRuntime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<MiniRuntime>>),
-            GatewayVendor::Ethereum => select_grandpa_light_client_instance::<
+            GatewayVendor::Ethereum => Ok(Box::new(
+                pallet_eth2_light_client::Pallet::<MiniRuntime>(PhantomData),
+            )),
+            GatewayVendor::Sepolia => Ok(Box::new(pallet_sepolia_light_client::Pallet::<
                 MiniRuntime,
-                PolkadotInstance,
-            >(GatewayVendor::Rococo)
-            .ok_or(PortalError::<MiniRuntime>::LightClientNotFoundByVendor)
-            .map(|lc| Box::new(lc) as Box<dyn LightClient<MiniRuntime>>),
+            >(PhantomData))),
 
             _ => Err(PortalError::<MiniRuntime>::UnimplementedGatewayVendor),
         }

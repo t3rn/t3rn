@@ -1029,7 +1029,14 @@ impl<T: Config> Pallet<T> {
     fn authorize(
         origin: OriginFor<T>,
         role: CircuitRole,
+        // sfx: &Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
     ) -> Result<T::AccountId, sp_runtime::traits::BadOrigin> {
+        // handle remote origin
+        // if sfx.len() == 1 {
+        //     let se = &sfx[0];
+        //     let se_id = se.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0);
+        //     if se.is_remote() { sfx.requester() }
+
         match role {
             CircuitRole::Requester | CircuitRole::ContractAuthor => ensure_signed(origin),
             // ToDo: Handle active Relayer authorisation
