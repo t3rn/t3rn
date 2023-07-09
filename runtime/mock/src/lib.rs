@@ -251,7 +251,7 @@ impl ExtBuilder {
         for &gateway in XDNS::all_gateway_ids().iter() {
             Portal::turn_on(Origin::root(), gateway).unwrap();
         }
-
+        XDNS::process_all_verifier_overviews(System::block_number());
         XDNS::process_overview(System::block_number());
     }
 
