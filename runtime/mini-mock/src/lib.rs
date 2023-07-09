@@ -15,10 +15,11 @@ pub use pallet_attesters::{
 use std::marker::PhantomData;
 
 pub use pallet_circuit::{
-    Config as ConfigCircuit, Event as CircuitEvent, FullSideEffects, SFX2XTXLinksMap, XExecSignals,
+    Config as ConfigCircuit, Error as CircuitError, Event as CircuitEvent, FullSideEffects,
+    SFX2XTXLinksMap, XExecSignals,
 };
-
 pub use pallet_circuit_vacuum::{Config as ConfigVacuum, Event as VacuumEvent, OrderStatusRead};
+use pallet_eth2_finality_verifier::types::Root;
 mod hooks;
 mod treasuries_config;
 pub use hooks::GlobalOnInitQueues;
@@ -94,6 +95,7 @@ frame_support::construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        EthereumBridge: pallet_eth2_finality_verifier = 132,
 
     }
 );
@@ -346,9 +348,9 @@ impl pallet_portal::SelectLightClient<MiniRuntime> for SelectLightClientRegistry
                 select_grandpa_light_client_instance::<MiniRuntime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<MiniRuntime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<MiniRuntime>>),
-            // GatewayVendor::Ethereum => Ok(Box::new(
-            //     pallet_eth2_light_client::Pallet::<MiniRuntime>(PhantomData),
-            // )),
+            GatewayVendor::Ethereum => Ok(Box::new(pallet_eth2_finality_verifier::Pallet::<
+                MiniRuntime,
+            >(PhantomData))),
             _ => Err(PortalError::<MiniRuntime>::UnimplementedGatewayVendor),
         }
     }
@@ -357,6 +359,27 @@ const SLOT_DURATION: u64 = 12000;
 
 parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+}
+
+parameter_types! {
+    pub const HeadersToStoreEth: u32 = 64 + 1; // we want a multiple of slots_per_epoch + 1
+    pub const SessionLength: u64 = 5;
+    pub const SyncCommitteeSize: u32 = 26;
+    pub const GenesisValidatorsRoot: Root = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
+    pub const SlotsPerEpoch: u32 = 32;
+    pub const EpochsPerSyncCommitteePeriod: u32 = 6;
+    pub const CommitteeMajorityThreshold: u32 = 80;
+}
+
+impl pallet_eth2_finality_verifier::Config for MiniRuntime {
+    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
+    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+    type Event = Event;
+    type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEth;
+    type SlotsPerEpoch = SlotsPerEpoch;
+    type SyncCommitteeSize = SyncCommitteeSize;
+    type WeightInfo = ();
 }
 
 impl pallet_timestamp::Config for MiniRuntime {

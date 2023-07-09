@@ -1172,6 +1172,18 @@ impl<T: Config> Pallet<T> {
             return Err(DispatchError::Other("Xtx has an empty single step."))
         }
 
+        // Ensure all gateways are active
+        // Verify each requested asset is supported by the gateway
+        let all_targets = step_side_effects
+            .iter()
+            .map(|sfx| sfx.input.target.clone())
+            .collect::<Vec<TargetId>>();
+
+        ensure!(
+            Self::ensure_all_gateways_are_active(all_targets),
+            Error::<T>::GatewayNotActive
+        );
+
         let fsx_opt = step_side_effects
             .iter_mut()
             .find(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == *sfx_id);
@@ -1376,6 +1388,9 @@ impl<T: Config> Pallet<T> {
             // If the retry was successful, remove the Xtx from the DLQ
             if success {
                 <DLQ<T>>::remove(xtx_id);
+                // Update Xtx new delivery timeout
+                let new_timeout_at = n + T::XtxTimeoutDefault::get();
+                <PendingXtxTimeoutsMap<T>>::insert(xtx_id, new_timeout_at);
             }
         }
 

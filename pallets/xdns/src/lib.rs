@@ -219,14 +219,13 @@ pub mod pallet {
             let activity = {
                 let is_active = !latest_heartbeat.is_halted;
 
-                let (justified_height, finalized_height, updated_height, is_active) = (
-                    latest_heartbeat.last_rational_height,
-                    latest_heartbeat.last_finalized_height,
-                    latest_heartbeat.last_fast_height,
-                    is_active,
-                );
-
                 if is_active {
+                    let (justified_height, finalized_height, updated_height, is_active) = (
+                        latest_heartbeat.last_rational_height,
+                        latest_heartbeat.last_finalized_height,
+                        latest_heartbeat.last_fast_height,
+                        is_active,
+                    );
                     FinalityVerifierActivity {
                         verifier: verifier.clone(),
                         reported_at: n,
@@ -237,7 +236,7 @@ pub mod pallet {
                         is_active,
                     }
                 } else {
-                    VerifierOverviewStoreHistory::<T>::get(&verifier)
+                    let mut last = VerifierOverviewStoreHistory::<T>::get(&verifier)
                         .last()
                         .cloned()
                         .unwrap_or_else(|| FinalityVerifierActivity {
@@ -248,7 +247,10 @@ pub mod pallet {
                             updated_height: Zero::zero(),
                             epoch: Zero::zero(),
                             is_active: false,
-                        })
+                        });
+                    last.reported_at = n;
+                    last.is_active = false;
+                    last
                 }
             };
 
