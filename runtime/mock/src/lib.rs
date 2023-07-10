@@ -19,7 +19,6 @@ pub mod signed_extrinsics_config;
 use circuit_runtime_pallets::pallet_attesters::TargetId;
 pub use circuit_runtime_pallets::*;
 pub use circuit_runtime_types::*;
-
 pub type AccountId = sp_runtime::AccountId32;
 pub use crate::signed_extrinsics_config::*;
 mod accounts_config;
@@ -177,7 +176,7 @@ impl ExtBuilder {
             },
             GatewayRecord {
                 gateway_id: *b"ksma",
-                verification_vendor: GatewayVendor::Polkadot,
+                verification_vendor: GatewayVendor::Kusama,
                 execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,

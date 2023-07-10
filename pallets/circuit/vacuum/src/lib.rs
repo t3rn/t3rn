@@ -24,10 +24,11 @@ use t3rn_primitives::circuit::{CircuitStatus, ReadSFX, SideEffect};
 t3rn_primitives::reexport_currency_types!();
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
-pub struct OrderStatusRead<Hash> {
+pub struct OrderStatusRead<Hash, BlockNumber> {
     pub xtx_id: Hash,
     pub status: CircuitStatus,
     pub all_included_sfx: Vec<(Hash, CircuitStatus)>,
+    pub timeouts_at: BlockNumber,
 }
 
 #[frame_support::pallet]
@@ -49,7 +50,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        OrderStatusRead(OrderStatusRead<T::Hash>),
+        OrderStatusRead(OrderStatusRead<T::Hash, T::BlockNumber>),
     }
 
     #[pallet::error]
@@ -85,7 +86,7 @@ pub mod pallet {
             _origin: OriginFor<T>,
             xtx_id: T::Hash,
         ) -> DispatchResultWithPostInfo {
-            let status = T::ReadSFX::get_xtx_status(xtx_id)?;
+            let (status, timeouts_at) = T::ReadSFX::get_xtx_status(xtx_id)?;
             let sfx_of_xtx = T::ReadSFX::get_fsx_of_xtx(xtx_id)?;
             let mut all_included_sfx = sfx_of_xtx
                 .into_iter()
@@ -99,6 +100,7 @@ pub mod pallet {
                 xtx_id,
                 status,
                 all_included_sfx,
+                timeouts_at,
             }));
 
             Ok(().into())
@@ -193,7 +195,7 @@ mod tests {
         }
     }
 
-    fn expect_last_event_to_read_order_status() -> OrderStatusRead<Hash> {
+    fn expect_last_event_to_read_order_status() -> OrderStatusRead<Hash, BlockNumber> {
         // Recover system event
         let events = System::events();
         let expect_order_status_read = events.last();
@@ -366,6 +368,7 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
+                    timeouts_at: 401,
                 }
             );
 
@@ -426,6 +429,7 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::FinishedAllSteps,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps),],
+                    timeouts_at: 401,
                 }
             );
         });
@@ -494,6 +498,7 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
+                    timeouts_at: 401,
                 }
             );
 
@@ -577,8 +582,11 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::FinishedAllSteps,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps),],
+                    timeouts_at: 869,
                 }
             );
+
+            assert_eq!(Circuit::get_dlq(xtx_id), None);
         });
     }
 }

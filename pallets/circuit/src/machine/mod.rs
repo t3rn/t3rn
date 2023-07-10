@@ -553,6 +553,7 @@ impl<T: Config> Machine<T> {
                 });
 
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::DLQ::remove(local_ctx.xtx_id);
 
                 SquareUp::<T>::finalize(local_ctx);
 
@@ -576,6 +577,7 @@ impl<T: Config> Machine<T> {
                 });
 
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::DLQ::remove(local_ctx.xtx_id);
 
                 // Update set of full side effects - only makes sense for Xtx with single SFX.
                 //  for the rest FSX are updated in sequence

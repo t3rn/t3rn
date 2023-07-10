@@ -2,6 +2,7 @@
 pub mod test {
     use circuit_mock_runtime::{
         AccountId, Attesters, Balance, Balances, BlockNumber, Circuit, ExtBuilder, Hash, Runtime,
+        System,
     };
     use circuit_runtime_pallets::pallet_circuit::machine::{Machine, PrecompileResult};
     use frame_support::{assert_err, assert_ok};
@@ -304,7 +305,7 @@ pub mod test {
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_xtx_status(
                         xtx_id
                     ),
-                    Ok(CircuitStatus::Ready)
+                    Ok((CircuitStatus::Ready, System::block_number() + 400))
                 );
             });
     }

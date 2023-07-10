@@ -420,7 +420,7 @@ pub mod pallet {
             let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
 
-            Self::get_xtx_status(xtx_id)
+            Ok(Self::get_xtx_status(xtx_id)?.0)
         }
 
         // Look up the FSX by its ID and return the FSX if it exists
@@ -465,9 +465,11 @@ pub mod pallet {
             Ok(xtx.requester)
         }
 
-        fn get_xtx_status(xtx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
+        fn get_xtx_status(
+            xtx_id: T::Hash,
+        ) -> Result<(CircuitStatus, T::BlockNumber), DispatchError> {
             XExecSignals::<T>::get(xtx_id)
-                .map(|xtx| xtx.status)
+                .map(|xtx| (xtx.status, xtx.timeouts_at))
                 .ok_or(Error::<T>::XtxNotFound.into())
         }
     }
@@ -966,8 +968,6 @@ pub mod pallet {
     }
 }
 
-pub fn get_xtx_status() {}
-
 /// Payload used by this example crate to hold price
 /// data required to submit a transaction.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
@@ -1388,9 +1388,21 @@ impl<T: Config> Pallet<T> {
             // If the retry was successful, remove the Xtx from the DLQ
             if success {
                 <DLQ<T>>::remove(xtx_id);
+            } else {
                 // Update Xtx new delivery timeout
                 let new_timeout_at = n + T::XtxTimeoutDefault::get();
-                <PendingXtxTimeoutsMap<T>>::insert(xtx_id, new_timeout_at);
+                <PendingXtxTimeoutsMap<T>>::insert(xtx_id, &new_timeout_at);
+                <XExecSignals<T>>::mutate(xtx_id, |xtx| match xtx {
+                    Some(xtx) => {
+                        xtx.timeouts_at = new_timeout_at;
+                    },
+                    None => {
+                        log::error!(
+                            "Xtx not found in XExecSignals for xtx_id when processing DLQ: {:?}",
+                            xtx_id
+                        )
+                    },
+                });
             }
         }
 
