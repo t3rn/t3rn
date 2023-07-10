@@ -12803,6 +12803,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-contracts 4.0.0-dev",
+ "pallet-eth2-finality-verifier",
  "pallet-grandpa-finality-verifier",
  "pallet-portal",
  "pallet-randomness-collective-flip",
