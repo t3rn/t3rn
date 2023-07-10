@@ -218,24 +218,6 @@ impl Contains<Call> for BaseCallFilter {
             ),
             // Portal
             Call::Portal(method) => matches!(method, pallet_portal::Call::register_gateway { .. }),
-            //
-            // Disabled by Maciej
-            //
-            // Call::RococoBridge(method) => matches!(
-            //     method,
-            //     pallet_grandpa_finality_verifier::Call::submit_headers { .. }
-            // ),
-            // Call::PolkadotBridge(method) => matches!(
-            //     method,
-            //     pallet_grandpa_finality_verifier::Call::submit_headers { .. }
-            // ),
-            // Call::KusamaBridge(method) => matches!(
-            //     method,
-            //     pallet_grandpa_finality_verifier::Call::submit_headers { .. }
-            // ),
-            // // Admin
-            // Call::Sudo(_) => true,
-            // _ => false,
             _ => true,
         }
     }
