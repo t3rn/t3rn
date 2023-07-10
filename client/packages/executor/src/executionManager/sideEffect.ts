@@ -1,6 +1,6 @@
 import "@t3rn/types";
 // @ts-ignore - Typescript does not know about this type
-import { T3rnTypesSideEffect } from "@polkadot/types/lookup";
+import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup";
 import { TextDecoder } from "util";
 import {
   SecurityLevel,
@@ -376,10 +376,12 @@ export class SideEffect extends EventEmitter {
       case SfxType.Transfer: {
         let amount = this.getTransferArguments()[1];
         if (!invalidExecutionValidProofCondition) {
+          // @ts-ignore - amount is a number
           amount *= 2;
         }
         return {
           amount: BigInt(amount),
+          // @ts-ignore - amount is assignable
           amountHuman: this.gateway.toFloat(amount), // converts to human format
           asset: this.gateway.ticker,
         };

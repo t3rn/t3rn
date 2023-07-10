@@ -171,12 +171,13 @@ export class ExecutionManager {
           this.circuitListener.once("Event", recheckQueue);
         }
       }
-    };
-
-    return new Promise((resolve) => {
-      this.circuitListener.once("Event", recheckQueue);
-      recheckQueue(this, resolve);
-    });
+    }
+      // FIXME unreachable code
+      // return new Promise((resolve) => {
+      //   this.circuitListener.once("Event", recheckQueue);
+      //   recheckQueue(this, resolve);
+      // });
+    )
   }
 
   initializeVendors(vendors: string[]) {
