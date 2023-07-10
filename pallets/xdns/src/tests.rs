@@ -585,7 +585,7 @@ fn xdns_returns_full_gateway_record() {
                     FullGatewayRecord {
                         gateway_record: GatewayRecord {
                             gateway_id: [107, 115, 109, 97],
-                            verification_vendor: Polkadot,
+                            verification_vendor: Kusama,
                             execution_vendor: Substrate,
                             codec: Scale,
                             registrant: None,
@@ -857,52 +857,102 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
         .with_default_attestation_targets()
         .build()
         .execute_with(|| {
-            assert_eq!(XDNS::verifier_overview(), vec![]);
+            // Turn all the gateways off at the beginning. expect that the verifiers overview will be updated only after 50 blocks
+            for gateway in XDNS::fetch_full_gateway_records().iter() {
+                Portal::turn_off(
+                    circuit_mock_runtime::Origin::root(),
+                    gateway.gateway_record.gateway_id,
+                )
+                .unwrap();
+            }
+
+            let expected_verifier_overview_all_off = vec![
+                FinalityVerifierActivity {
+                    verifier: Polkadot,
+                    reported_at: 52,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: Kusama,
+                    reported_at: 52,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: Rococo,
+                    reported_at: 52,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: Ethereum,
+                    reported_at: 52,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
+            ];
+
+            let expected_verifier_overview_all_on = vec![
+                FinalityVerifierActivity {
+                    verifier: Polkadot,
+                    reported_at: 1,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Kusama,
+                    reported_at: 1,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Rococo,
+                    reported_at: 1,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Ethereum,
+                    reported_at: 1,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: true,
+                },
+            ];
+
+            assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
             XDNS::on_initialize(1);
-            assert_eq!(XDNS::verifier_overview(), vec![]);
+            assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
             XDNS::on_initialize(16);
-            assert_eq!(XDNS::verifier_overview(), vec![]);
-            XDNS::on_initialize(51);
+            assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
+            XDNS::on_initialize(52);
             assert_eq!(
                 XDNS::verifier_overview(),
-                vec![
-                    FinalityVerifierActivity {
-                        verifier: Polkadot,
-                        reported_at: 51,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
-                        epoch: 0,
-                        is_active: true
-                    },
-                    FinalityVerifierActivity {
-                        verifier: Kusama,
-                        reported_at: 51,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
-                        epoch: 0,
-                        is_active: true
-                    },
-                    FinalityVerifierActivity {
-                        verifier: Rococo,
-                        reported_at: 51,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
-                        epoch: 0,
-                        is_active: true
-                    },
-                    FinalityVerifierActivity {
-                        verifier: Ethereum,
-                        reported_at: 51,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
-                        epoch: 0,
-                        is_active: true
-                    },
-                ]
+                expected_verifier_overview_all_off
             );
         });
 }

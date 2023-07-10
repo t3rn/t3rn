@@ -37,6 +37,7 @@ use sp_runtime::{
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 // pub use orml_traits;
 
+use num_traits::Zero;
 use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;
@@ -396,7 +397,7 @@ pub struct GatewaysOverview<BlockNumber> {
     data: Vec<(TargetId, BlockNumber, Vec<GatewayActivity<BlockNumber>>)>,
 }
 
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct FinalityVerifierActivity<BlockNumber> {
     pub verifier: GatewayVendor,
@@ -412,6 +413,20 @@ pub struct FinalityVerifierActivity<BlockNumber> {
     pub epoch: BlockNumber,
 
     pub is_active: bool,
+}
+
+impl<BlockNumber: Zero> Default for FinalityVerifierActivity<BlockNumber> {
+    fn default() -> Self {
+        FinalityVerifierActivity {
+            verifier: GatewayVendor::Rococo,
+            reported_at: Zero::zero(),
+            justified_height: Zero::zero(),
+            finalized_height: Zero::zero(),
+            updated_height: Zero::zero(),
+            epoch: Zero::zero(),
+            is_active: false,
+        }
+    }
 }
 
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
