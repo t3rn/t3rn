@@ -29,7 +29,7 @@ pub use crate::pallet::*;
 use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo},
+    dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
     ensure,
     traits::{Currency, ExistenceRequirement::AllowDeath, Get},
     weights::Weight,
@@ -42,7 +42,7 @@ use frame_system::{
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{CheckedAdd, Zero},
+    traits::{BadOrigin, CheckedAdd, Zero},
     DispatchError, KeyTypeId,
 };
 use sp_std::{convert::TryInto, vec, vec::Vec};
@@ -482,6 +482,15 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             Self::on_extrinsic_trigger(origin, side_effects, speed_mode)
         }
+
+        fn on_remote_origin_trigger(
+            origin: OriginFor<T>,
+            order_origin: T::AccountId,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            Self::on_remote_origin_trigger(origin, order_origin, side_effects, speed_mode)
+        }
     }
 
     impl<T: Config> OnLocalTrigger<T, BalanceOf<T>> for Pallet<T> {
@@ -677,6 +686,25 @@ pub mod pallet {
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
+        pub fn on_remote_origin_trigger(
+            origin: OriginFor<T>,
+            order_origin: T::AccountId,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            // Authorize: Retrieve sender of the transaction.
+            let _ = Self::authorize(origin, CircuitRole::Executor)?;
+
+            // Skip remote origin withdrawals - they are already handled by the remote origin
+            let requester = match OrderOrigin::<T::AccountId>::new(&order_origin) {
+                OrderOrigin::Local(_) => return Err(Error::<T>::InvalidOrderOrigin.into()),
+                OrderOrigin::Remote(_) => order_origin.clone(),
+            };
+
+            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
@@ -684,22 +712,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
-            // Setup: new xtx context with SFX validation
-            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
 
-            fresh_xtx.xtx.set_speed_mode(speed_mode);
-            // Compile: apply the new state post squaring up and emit
-            Machine::<T>::compile(
-                &mut fresh_xtx,
-                |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
-                |_status_change, local_ctx| {
-                    // Emit: circuit events
-                    Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
-                    Ok(())
-                },
-            )?;
-
-            Ok(().into())
+            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
@@ -894,6 +908,7 @@ pub mod pallet {
         UpdateForcedStateTransitionDisallowed,
         UpdateXtxTriggeredWithUnexpectedStatus,
         ConfirmationFailed,
+        InvalidOrderOrigin,
         ApplyTriggeredWithUnexpectedStatus,
         BidderNotEnoughBalance,
         RequesterNotEnoughBalance,
@@ -1040,17 +1055,33 @@ impl<T: Config> Pallet<T> {
         }
     }
 
+    fn do_on_extrinsic_trigger(
+        requester: T::AccountId,
+        side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+        speed_mode: SpeedMode,
+    ) -> DispatchResultWithPostInfo {
+        // Setup: new xtx context with SFX validation
+        let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+
+        fresh_xtx.xtx.set_speed_mode(speed_mode);
+        // Compile: apply the new state post squaring up and emit
+        Machine::<T>::compile(
+            &mut fresh_xtx,
+            |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
+            |_status_change, local_ctx| {
+                // Emit: circuit events
+                Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
+                Ok(())
+            },
+        )?;
+
+        Ok(().into())
+    }
+
     fn authorize(
         origin: OriginFor<T>,
         role: CircuitRole,
-        // sfx: &Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
     ) -> Result<T::AccountId, sp_runtime::traits::BadOrigin> {
-        // handle remote origin
-        // if sfx.len() == 1 {
-        //     let se = &sfx[0];
-        //     let se_id = se.generate_id::<SystemHashing<T>>(xtx_id.as_ref(), 0);
-        //     if se.is_remote() { sfx.requester() }
-
         match role {
             CircuitRole::Requester | CircuitRole::ContractAuthor => ensure_signed(origin),
             // ToDo: Handle active Relayer authorisation

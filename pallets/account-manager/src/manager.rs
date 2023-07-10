@@ -23,6 +23,7 @@ use t3rn_primitives::{
 
 use crate::monetary::Monetary;
 use substrate_abi::{SubstrateAbiConverter as Sabi, Value256};
+use t3rn_primitives::circuit::OrderOrigin;
 
 pub fn percent_ratio<BalanceOf: Zero + CheckedDiv + CheckedMul + From<u8>>(
     amt: BalanceOf,
@@ -197,9 +198,15 @@ impl<T: Config>
                 Some(recipient) => recipient,
                 None => T::EscrowAccount::get(),
             };
+
             if charge.offered_reward > Zero::zero() {
                 match outcome {
                     Outcome::Commit => {
+                        // Skip remote origin settlements - they are handled by the remote origin
+                        if OrderOrigin::<T::AccountId>::new(&charge.payee).is_remote() {
+                            return false
+                        }
+
                         SettlementsPerRound::<T>::insert(
                             T::Clock::current_round(),
                             charge_id,
@@ -338,6 +345,10 @@ impl<T: Config>
         amount: BalanceOf<T>,
         asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
     ) -> bool {
+        // Skip remote origin withdrawals - they are already handled by the remote origin
+        if OrderOrigin::<T::AccountId>::new(payee).is_remote() {
+            return true
+        }
         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::can_withdraw(
             payee, asset_id, amount,
         )
@@ -360,6 +371,11 @@ impl<T: Config>
         amount: BalanceOf<T>,
         asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
     ) -> DispatchResult {
+        // Skip remote origin withdrawals - they are already handled by the remote origin
+        if OrderOrigin::<T::AccountId>::new(payee).is_remote() {
+            return Ok(())
+        }
+
         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::withdraw(
             payee, amount, asset_id,
         )
