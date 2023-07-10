@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "build-docs": "pnpm typedoc && cp -R docs ../../../docs/attester",
     "fmt": "prettier --check src config tests",
     "fmt:fix": "prettier --write src config tests",
