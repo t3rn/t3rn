@@ -68,6 +68,13 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
         side_effects: Vec<SideEffect<T::AccountId, Balance>>,
         speed_mode: SpeedMode,
     ) -> DispatchResultWithPostInfo;
+
+    fn on_remote_origin_trigger(
+        origin: OriginFor<T>,
+        order_origin: T::AccountId,
+        side_effects: Vec<SideEffect<T::AccountId, Balance>>,
+        speed_mode: SpeedMode,
+    ) -> DispatchResultWithPostInfo;
 }
 
 pub trait OnLocalTrigger<T: ConfigSystem, Balance> {
