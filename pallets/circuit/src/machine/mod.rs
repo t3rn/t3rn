@@ -73,9 +73,12 @@ impl<T: Config> Machine<T> {
             None,
         );
 
+        let adaptive_timeout =
+            AdaptiveTimeout::<T::BlockNumber, TargetId>::new_emergency(timeouts_at);
+
         let (xtx_id, xtx) = XExecSignal::<T::AccountId, T::BlockNumber>::setup_fresh::<T>(
             requester,
-            timeouts_at,
+            adaptive_timeout,
             SpeedMode::Finalized,
             delay_steps_at,
         );
@@ -472,10 +475,10 @@ impl<T: Config> Machine<T> {
                     local_ctx.xtx_id,
                     local_ctx.local_state.clone(),
                 );
-                <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::insert::<
-                    XExecSignalId<T>,
-                    T::BlockNumber,
-                >(local_ctx.xtx_id, local_ctx.xtx.timeouts_at);
+                <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::insert(
+                    local_ctx.xtx_id,
+                    &local_ctx.xtx.timeouts_at,
+                );
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::insert::<
                     XExecSignalId<T>,
                     T::BlockNumber,
