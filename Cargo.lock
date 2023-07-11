@@ -6559,7 +6559,7 @@ dependencies = [
 [[package]]
 name = "pallet-eth2-finality-verifier"
 version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/eth2-light-client?branch=main#6ae63e6ad69d1b79138098676bcd3d33202642f4"
+source = "git+https://github.com/t3rn/eth2-light-client?branch=main#1866d35384c358d3904fdd8074d3cc88b70ccd0a"
 dependencies = [
  "eth_trie",
  "ethereum-types 0.14.1",
@@ -6604,7 +6604,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
- "hex-literal 0.4.1",
+ "hex-literal 0.2.2",
  "log",
  "pallet-3vm",
  "pallet-account-manager",
@@ -13369,7 +13369,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.11.2",
+ "parking_lot 0.10.2",
  "regex",
  "serde",
  "serde_json",
