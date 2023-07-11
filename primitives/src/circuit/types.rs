@@ -12,7 +12,6 @@ use sp_core::{hexdisplay::AsBytesRef, Hasher};
 use sp_runtime::RuntimeDebug as Debug;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::{convert::TryInto, default::Default, fmt::Debug, prelude::*};
-use std::error::Error;
 pub use t3rn_types::sfx::{FullSideEffect, SecurityLvl, SideEffect};
 
 type SystemHashing<T> = <T as Config>::Hashing;
