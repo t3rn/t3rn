@@ -2,27 +2,27 @@
 const privateKey = process.env.ETHEREUM_PRIVATE_KEY;
 // committee on first attestation message
 const initialCommittee = [
-  "0x1e32952b2c7111382fa09211b5731ba68576bc7a",
-  "0x47557d67b3ac57c92e2e49901c07c69bb76e1440",
-  "0xf57c633244822ad46f54598b28ec80ac33343e6c",
-  "0x8d7fd1baf2a5501208cbf93934f7884c4eab7bd1",
-  "0x517c62488386f687d3954a2382df8fb69416d6f3",
-  "0xde23f5f6db5e39f7c0ee091dc5b144469663a67b",
-  "0xdd3bd377debddc0737fa8811f3f9d78f8eff2f04",
-  "0x5a03164c6d13e3542f4457e4012c69e362023afd",
-  "0xede6fd9dec2dd2f1db3487a2ce576f6269af7e2a",
+  "0x1caed6f9330c3cff01902bce5470bdd397a1dae2",
+  "0x3a68c6b6f010017C9b330a7C86D4B19c46ab677a",
+  "0x82dd70f6bc734abc7315d23ada119bb892d54f6d",
   "0x14a530582bd8d8076f6d506fc80fe1bfdb950e88",
-  "0xc34d6b2b7841b4406457f0132bfe3819e650b26c",
-  "0x2df305dbc27eb622e41bf1b92241d5cdc6c74c80",
-  "0xd61bb6b923931b07bd00482891d2e9c862ffef8a",
-  "0x1e5cf658e5a248c0057e70b383b0fad897a0f844",
-  "0x6ba4fc474d5636cb030b98448d7d8ec4237434a7",
-  "0xbae84cfc2759292ca397c17ba0a10a63c96979df"
+  "0xC34D6B2B7841B4406457f0132BFE3819e650b26c",
+  "0x8d7fd1baf2a5501208cbf93934f7884c4eab7bd1",
+  "0xf07f036C552538377bEDa8341f66B84E26ed0Dfc",
+  "0x5A03164C6d13e3542F4457e4012C69E362023AfD",
+  "0xede6fd9dec2dd2f1db3487a2ce576f6269af7e2a",
+  "0x76c31c9F8F315f68d21C1bB07a0C25FEcb07131b",
+  "0x517C62488386f687D3954A2382dF8Fb69416d6F3",
+  "0xf57C633244822ad46F54598B28EC80aC33343E6C",
+  "0x1e32952B2C7111382FA09211b5731ba68576BC7A",
+  "0x6Ba4fC474D5636cb030b98448D7d8EC4237434A7",
+  "0x8cf51a7d2281a3f9e9074a621390e7e29ef9d486",
+  "0xa2f47cfd4608bda4701d5593f28f119192938158",
   ]
 
 async function main() {
     const Contract = await ethers.getContractFactory('AttestationsVerifier');
-    const contract = await Contract.deploy(initialCommittee)
+    const contract = await Contract.deploy(initialCommittee, 489)
   
     console.log('Contract deployed to address:', contract.address);
   }

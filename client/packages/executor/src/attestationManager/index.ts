@@ -129,6 +129,11 @@ export class AttestationManager {
     return messageHash;
   }
 
+  async getBlockHash(blockNumber: number): Promise<string> {
+    const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber);
+    return blockHash.toHex();
+  }
+
   // TODO: not used
   getMessageHashFromString(data: string) {
     const messageHash = ethers.keccak256(data);
@@ -147,42 +152,6 @@ export class AttestationManager {
     return messageHash;
   }
 
-  // this is not reliable, because the messageHash is not always in the event
-  async getMessageHashFromCircuit(blockNumber: number): Promise<string> {
-    const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber);
-    logger.debug(`Looking for messageHash in ${blockHash.toHex()}`);
-    const events = await this.client.query.system.events.at(blockHash.toHex());
-    // logger.debug(`Found ${events.length} events in block ${blockHash.toHex()}`);
-
-    const filteredEvents = (
-      events.toHuman() as [
-        {
-          event: {
-            method: string;
-            data: [string, string];
-          };
-        }
-      ]
-    ).filter((event) => event.event.method == "NewAttestationMessageHash");
-
-    // logger.debug(
-    //   `Found ${filteredEvents.length} NewAttestationMessageHash events`
-    // );
-    // logger.debug(filteredEvents)
-
-    for (const event of filteredEvents) {
-      // allow only events from configured chain
-      if (event.event.data[0] != config.attestations.ethereum.name) {
-        continue;
-      }
-      const messageHash = event.event.data[1];
-      logger.info(`Found messageHash: ${messageHash}`);
-      return messageHash;
-    }
-
-    throw new Error(`No messageHash found in block ${blockNumber}`);
-  }
-
   async processPendingAttestationBatches() {
     this.batches = await this.fetchBatches();
 
@@ -190,31 +159,13 @@ export class AttestationManager {
     for (const [index, batch] of this.batches
       .slice(config.attestations.processPendingBatchesIndex)
       .entries()) {
-      if (index + 2 == this.batches.length) {
-        // last batch is not yet confirmed
-        break;
-      }
 
-      logger.info(`Batch ${batch.index} processing`);
-      logger.debug({ batch: batch }, `Batch data`);
+      const blockHash = await this.getBlockHash(batch.created)
 
-      // fetching messageHash is hack to get around the fact that the messageHash is not always in the event
-      // for 0 batch its in this.batches[index+1].created
-      // for other batches its in this.batches[index+3].created
-      let messageHash: string;
-      if (index + config.attestations.processPendingBatchesIndex == 0) {
-        messageHash = await this.getMessageHashFromCircuit(
-          this.batches[1].created
-        );
-      } else if (index + config.attestations.processPendingBatchesIndex == 1) {
-        messageHash = await this.getMessageHashFromCircuit(
-          this.batches[index + 2].created
-        );
-      } else {
-        messageHash = await this.getMessageHashFromCircuit(
-          this.batches[index + 3].created
-        );
-      }
+      logger.info(`Batch ${batch.index} processing, created at block ${blockHash}`);
+
+      const messageHash = this.getMessageHash(batch);
+      logger.debug({ batch, messageHash }, `Batch data`);
 
       await this.receiveAttestationBatchCall(batch, messageHash);
     }
