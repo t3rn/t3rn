@@ -4,12 +4,12 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "preinstall": "npx only-allow yarn",
+    "preinstall": "npx only-allow pnpm",
     "start": "EXECUTOR=example ts-node src/main.ts",
     "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts | npx pino-pretty -c -S",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
-    "export": "LOG_LEVEL=debug yarn start >> logger.log",
+    "export": "LOG_LEVEL=debug pnpm run start >> logger.log",
     "fmt": "prettier --write src config tests",
     "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
     "test": "mocha -r ts-node/register 'tests/**/*.ts'",
@@ -59,8 +59,8 @@
     "web3": "^4.0.1"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.61.0",
-    "@typescript-eslint/parser": "^5.61.0",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
     "eslint": "^8.43.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
     "typescript": "4.9.4"

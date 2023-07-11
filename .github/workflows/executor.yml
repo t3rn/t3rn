@@ -64,9 +64,9 @@ jobs:
           node-version: ${{ env.NVMRC }}
 
       - run: cd .. && make all
-      - run: yarn install
-      - run: yarn fmt
-      - run: yarn build-docs
+      - run: pnpm install
+      - run: pnpm run fmt
+      - run: pnpm run build-docs
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'
@@ -83,7 +83,7 @@ jobs:
         # TODO: remove at some point
         continue-on-error: true
 
-      - run: yarn test
+      - run: pnpm run test
         timeout-minutes: 5
 
   build-docker:
@@ -106,7 +106,7 @@ jobs:
     needs: test-executor
     concurrency: executor
 
-    if: github.ref == 'refs/heads/development'
+    # if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
