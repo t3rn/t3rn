@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.38.2-rc.0] - 2023-07-11
+### :wrench: Chores
+- [`fd40dba`](https://github.com/t3rn/t3rn/commit/fd40dba403e9a18f6e17084f347942de5b71b393) - empty PR template *(PR [#1148](https://github.com/t3rn/t3rn/pull/1148) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.38.1-rc.0] - 2023-07-10
 ### :bug: Bug Fixes
 - [`a88c4ad`](https://github.com/t3rn/t3rn/commit/a88c4ad00122f28b8a438861c7800c4ad754d302) - filter modification *(PR [#1135](https://github.com/t3rn/t3rn/pull/1135) by [@palozano](https://github.com/palozano))*
@@ -1329,3 +1334,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.37.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.5-rc.0...v1.37.0-rc.0
 [v1.38.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.37.1-rc.0...v1.38.0-rc.0
 [v1.38.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.0-rc.0...v1.38.1-rc.0
+[v1.38.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.1-rc.0...v1.38.2-rc.0
