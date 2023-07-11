@@ -502,7 +502,7 @@ pub mod pallet {
             let local_ctx = match maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -572,7 +572,7 @@ pub mod pallet {
             let mut local_ctx = match trigger.maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -692,7 +692,7 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Setup: new xtx context with SFX validation
-            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
+            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester, None)?;
 
             fresh_xtx.xtx.set_speed_mode(speed_mode);
             // Compile: apply the new state post squaring up and emit

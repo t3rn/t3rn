@@ -105,7 +105,7 @@ pub fn setup_xtx_with_10_sfx(
         ));
     }
 
-    let mut local_ctx = Machine::<Runtime>::setup(&sfx_arr_of_10, requester).unwrap();
+    let mut local_ctx = Machine::<Runtime>::setup(&sfx_arr_of_10, requester, None).unwrap();
     assert!(Machine::<Runtime>::compile(
         &mut local_ctx,
         |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
