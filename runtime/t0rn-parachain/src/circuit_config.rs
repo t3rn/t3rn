@@ -89,16 +89,16 @@ impl pallet_clock::traits::OnHookQueues<Runtime> for GlobalOnInitQueues {
                 .last()
                 .expect("Circuit::process_xtx_tick_queue consumed weight")
         );
-        weights_consumed.push(Circuit::process_revert_xtx_queue(
+        weights_consumed.push(Circuit::process_emergency_revert_xtx_queue(
             n,
             10u32,
             Perbill::from_percent(REVERT_XTX_SHARE) * on_init_weight_limit,
         ));
         log::debug!(
-            "Circuit::process_revert_xtx_queue consumed: {:?}",
+            "Circuit::process_emergency_revert_xtx_queue consumed: {:?}",
             weights_consumed
                 .last()
-                .expect("Circuit::process_revert_xtx_queue consumed weight")
+                .expect("Circuit::process_emergency_revert_xtx_queue consumed weight")
         );
         weights_consumed.push(Clock::check_bump_round(
             n,

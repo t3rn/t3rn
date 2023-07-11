@@ -1,4 +1,4 @@
-use crate::{circuit::CircuitStatus, xtx::LocalState, SpeedMode};
+use crate::{circuit::CircuitStatus, xtx::LocalState, SpeedMode, TargetId};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo},
@@ -7,6 +7,7 @@ use frame_support::{
 use frame_system::{pallet_prelude::OriginFor, Config as ConfigSystem};
 use sp_std::{fmt::Debug, vec::Vec};
 
+use crate::circuit::AdaptiveTimeout;
 use t3rn_sdk_primitives::signal::ExecutionSignal;
 use t3rn_types::{
     fsx::FullSideEffect,
@@ -102,7 +103,9 @@ pub trait ReadSFX<Hash, Account, Balance, BlockNumber> {
         fsx_id: Hash,
     ) -> Result<FullSideEffect<Account, BlockNumber, Balance>, DispatchError>;
 
-    fn get_xtx_status(xtx_id: Hash) -> Result<(CircuitStatus, BlockNumber), DispatchError>;
+    fn get_xtx_status(
+        xtx_id: Hash,
+    ) -> Result<(CircuitStatus, AdaptiveTimeout<BlockNumber, TargetId>), DispatchError>;
 
     fn get_fsx_requester(fsx_id: Hash) -> Result<Account, DispatchError>;
 }

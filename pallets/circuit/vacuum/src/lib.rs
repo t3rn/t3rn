@@ -542,7 +542,7 @@ mod tests {
             // Wait for after XTX timeout
             System::set_block_number(System::block_number() + 401);
             // Trigger XTX revert queue and expect move to DLQ
-            Circuit::process_revert_xtx_queue(
+            Circuit::process_emergency_revert_xtx_queue(
                 System::block_number(),
                 System::block_number(),
                 u64::MAX,

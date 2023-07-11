@@ -14,7 +14,8 @@ use circuit_runtime_pallets::pallet_circuit::{
     state::{Cause, CircuitStatus, LocalXtxCtx},
     Config, Error, XExecSignal,
 };
-use t3rn_primitives::SpeedMode;
+use t3rn_primitives::{circuit::AdaptiveTimeout, SpeedMode};
+
 use t3rn_types::sfx::{ConfirmedSideEffect, FullSideEffect};
 
 use t3rn_primitives::xtx::LocalState;
@@ -247,7 +248,7 @@ pub fn check_all_single_xtx_state_correct(
         Some(XExecSignal {
             status: success_state,
             requester: ALICE,
-            timeouts_at: 401u32,
+            timeouts_at: AdaptiveTimeout::default_401(),
             delay_steps_at: None,
             requester_nonce,
             steps_cnt: expected_steps_cnt,
@@ -271,7 +272,7 @@ pub fn check_all_state_revert(
         Some(XExecSignal {
             status: CircuitStatus::Reverted(Cause::Timeout),
             requester: ALICE,
-            timeouts_at: 401u32,
+            timeouts_at: AdaptiveTimeout::default_401(),
             delay_steps_at: None,
             requester_nonce,
             steps_cnt: (0, 1),

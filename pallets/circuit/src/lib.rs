@@ -154,7 +154,9 @@ pub mod pallet {
         _,
         Identity,
         XExecSignalId<T>,
-        <T as frame_system::Config>::BlockNumber,
+        // Collection of timeout blocks (on the slowest remote target (there) and here (on t3rn/t0rn)), where the emergency height is a set constant via config (400blocks),
+        //  but the primary timeout to look at is AdaptiveTimeout here and there calculated based on advancing epochs of each target.
+        AdaptiveTimeout<<T as frame_system::Config>::BlockNumber, [u8; 4]>,
         OptionQuery,
     >;
 
@@ -231,7 +233,11 @@ pub mod pallet {
         _,
         Identity,
         XExecSignalId<T>,
-        <T as frame_system::Config>::BlockNumber,
+        (
+            <T as frame_system::Config>::BlockNumber,
+            Vec<TargetId>,
+            SpeedMode,
+        ),
         OptionQuery,
     >;
 
@@ -467,7 +473,8 @@ pub mod pallet {
 
         fn get_xtx_status(
             xtx_id: T::Hash,
-        ) -> Result<(CircuitStatus, T::BlockNumber), DispatchError> {
+        ) -> Result<(CircuitStatus, AdaptiveTimeout<T::BlockNumber, TargetId>), DispatchError>
+        {
             XExecSignals::<T>::get(xtx_id)
                 .map(|xtx| (xtx.status, xtx.timeouts_at))
                 .ok_or(Error::<T>::XtxNotFound.into())
@@ -1254,6 +1261,24 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
+    pub fn get_all_xtx_targets(xtx_id: XExecSignalId<T>) -> Vec<TargetId> {
+        // Get FSX of XTX
+        let fsx_of_xtx = match <Pallet<T>>::get_fsx_of_xtx(xtx_id) {
+            Ok(fsx) => fsx,
+            Err(_) => return vec![],
+        };
+
+        // Map FSX to targets
+        fsx_of_xtx
+            .into_iter()
+            .filter_map(|fsx_id| {
+                <Pallet<T>>::get_fsx(fsx_id)
+                    .ok()
+                    .map(|fsx| fsx.input.target)
+            })
+            .collect()
+    }
+
     /// At the XTX submission fn verify ensures that all of the gateways are active.
     /// At either confirmation or revert attempt, ensure that all of the gateways are active, so that Executor won't be slashed.
     pub fn ensure_all_gateways_are_active(targets: Vec<TargetId>) -> bool {
@@ -1352,7 +1377,7 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
-    pub fn process_revert_xtx_queue(
+    pub fn process_emergency_revert_xtx_queue(
         n: T::BlockNumber,
         revert_interval: T::BlockNumber,
         max_allowed_weight: Weight,
@@ -1366,7 +1391,7 @@ impl<T: Config> Pallet<T> {
         } else if n % revert_interval == T::BlockNumber::zero() {
             // Go over all unfinished Xtx to find those that timed out
             let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
-                .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
+                .filter(|(_xtx_id, adaptive_timeout)| adaptive_timeout.emergency_timeout_here <= n)
                 .map(|(xtx_id, _timeout_at)| {
                     if current_weight <= max_allowed_weight {
                         current_weight =
@@ -1378,60 +1403,143 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
-    pub fn process_dlq(n: T::BlockNumber) -> Weight {
-        let mut weight: Weight = 0;
-        // Process the DLQ
-        for (xtx_id, _block_number) in <DLQ<T>>::iter() {
-            // Retry the revert, or handle the failed Xtx in some other way
-            let (mut weight, success) = Self::process_revert_one(xtx_id);
-            weight = weight.saturating_add(weight);
-            // If the retry was successful, remove the Xtx from the DLQ
-            if success {
-                <DLQ<T>>::remove(xtx_id);
-            } else {
-                // Update Xtx new delivery timeout
-                let new_timeout_at = n + T::XtxTimeoutDefault::get();
-                <PendingXtxTimeoutsMap<T>>::insert(xtx_id, &new_timeout_at);
-                <XExecSignals<T>>::mutate(xtx_id, |xtx| match xtx {
-                    Some(xtx) => {
-                        xtx.timeouts_at = new_timeout_at;
-                    },
-                    None => {
-                        log::error!(
-                            "Xtx not found in XExecSignals for xtx_id when processing DLQ: {:?}",
-                            xtx_id
-                        )
-                    },
-                });
-            }
-        }
-
-        weight
+    pub fn get_adaptive_timeout(
+        xtx_id: T::Hash,
+        maybe_speed_mode: Option<SpeedMode>,
+    ) -> AdaptiveTimeout<T::BlockNumber, TargetId> {
+        let all_targets = Self::get_all_xtx_targets(xtx_id);
+        // T::Xdns::estimate_adaptive_timeout_on_slowest_target(
+        //     all_targets,
+        //     maybe_speed_mode.unwrap_or(SpeedMode::Finalized),
+        // );
+        AdaptiveTimeout::default_401()
     }
 
+    /// Adds a cross-chain transaction (Xtx) to the Dead Letter Queue (DLQ).
+    ///
+    /// # Arguments
+    ///
+    /// * `xtx_id` - The ID of the Xtx to be added to the DLQ.
+    /// * `targets` - The targets of the Xtx.
+    /// * `speed_mode` - The speed mode of the Xtx.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the weight of the operation and a boolean indicating whether the operation was successful.
+    pub fn add_xtx_to_dlq(
+        xtx_id: T::Hash,
+        targets: Vec<TargetId>,
+        speed_mode: SpeedMode,
+    ) -> (Weight, bool) {
+        if <DLQ<T>>::contains_key(&xtx_id) {
+            return (T::DbWeight::get().reads(1), false)
+        }
+
+        <DLQ<T>>::insert(
+            &xtx_id,
+            (
+                <frame_system::Module<T>>::block_number(),
+                targets,
+                speed_mode,
+            ),
+        );
+
+        <XExecSignals<T>>::mutate(&xtx_id, |xtx| {
+            if let Some(xtx) = xtx {
+                xtx.timeouts_at.dlq = Some(<frame_system::Module<T>>::block_number());
+            } else {
+                log::error!(
+                    "Xtx not found in XExecSignals for xtx_id when add_xtx_to_dlq: {:?}",
+                    xtx_id
+                )
+            }
+        });
+
+        // Remove the Xtx from the PendingXtxTimeoutsMap if exists
+        if <PendingXtxTimeoutsMap<T>>::contains_key(&xtx_id) {
+            <PendingXtxTimeoutsMap<T>>::remove(&xtx_id);
+        }
+
+        (
+            T::DbWeight::get().reads_writes(2, 3), // 2 reads (DLQ, XExecSignals), 3 writes (DLQ, XExecSignals, PendingXtxTimeoutsMap)
+            true,
+        )
+    }
+
+    /// Removes a cross-chain transaction (Xtx) from the Dead Letter Queue (DLQ).
+    ///
+    /// # Arguments
+    ///
+    /// * `xtx_id` - The ID of the Xtx to be removed from the DLQ.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the weight of the operation and a boolean indicating whether the operation was successful.
+    pub fn remove_xtx_from_dlq(xtx_id: T::Hash) -> (Weight, bool) {
+        let dlq_entry = match <DLQ<T>>::take(&xtx_id) {
+            Some(dlq_entry) => dlq_entry,
+            None => return (T::DbWeight::get().reads(1), false),
+        };
+
+        let adaptive_timeout = Self::get_adaptive_timeout(xtx_id, Some(dlq_entry.2));
+        <PendingXtxTimeoutsMap<T>>::insert(&xtx_id, &adaptive_timeout);
+
+        <XExecSignals<T>>::mutate(&xtx_id, |xtx| {
+            if let Some(xtx) = xtx {
+                xtx.timeouts_at = adaptive_timeout;
+            } else {
+                log::error!(
+                    "Xtx not found in XExecSignals for xtx_id when remove_xtx_from_dlq: {:?}",
+                    xtx_id
+                )
+            }
+        });
+
+        (
+            T::DbWeight::get().reads_writes(2, 3), // 2 reads (DLQ, XExecSignals), 3 writes (DLQ, XExecSignals, PendingXtxTimeoutsMap)
+            true,
+        )
+    }
+
+    /// Processes the Dead Letter Queue (DLQ).
+    ///
+    /// # Arguments
+    ///
+    /// * `_n` - The current block number.
+    ///
+    /// # Returns
+    ///
+    /// The total weight of the operation.
+    pub fn process_dlq(_n: T::BlockNumber) -> Weight {
+        <DLQ<T>>::iter()
+            .map(|(xtx_id, (_block_number, targets, _speed_mode))| {
+                if Self::ensure_all_gateways_are_active(targets) {
+                    Self::remove_xtx_from_dlq(xtx_id).0
+                } else {
+                    T::DbWeight::get().reads(1)
+                }
+            })
+            .sum()
+    }
+
+    /// Processes a single cross-chain transaction (Xtx) revert operation.
+    ///
+    /// # Arguments
+    ///
+    /// * `xtx_id` - The ID of the Xtx to be processed.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the weight of the operation and a boolean indicating whether the operation was successful.
     pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> (Weight, bool) {
         const REVERT_WRITES: Weight = 2;
         const REVERT_READS: Weight = 1;
 
-        // Check if all gateways are active
-        let fsx_of_xtx = <Pallet<T>>::get_fsx_of_xtx(xtx_id).unwrap_or(vec![]);
-        if fsx_of_xtx.is_empty() {
-            return (0, false)
+        let all_targets = Self::get_all_xtx_targets(xtx_id);
+        if !Self::ensure_all_gateways_are_active(all_targets.clone()) {
+            return Self::add_xtx_to_dlq(xtx_id, all_targets, SpeedMode::Finalized)
         }
-        let all_targets = fsx_of_xtx
-            .into_iter()
-            .map(|fsx_id| {
-                <Pallet<T>>::get_fsx(fsx_id)
-                    .map(|fsx| fsx.input.target)
-                    .unwrap_or(TargetId::default())
-            })
-            .collect::<Vec<TargetId>>();
 
-        if !Self::ensure_all_gateways_are_active(all_targets) {
-            // If not all gateways are active, add the Xtx to the DLQ
-            <DLQ<T>>::insert(xtx_id, <frame_system::Module<T>>::block_number());
-            return (T::DbWeight::get().reads_writes(1, 1), false)
-        }
         let success: bool =
             Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, local_ctx| {
                 Self::request_sfx_attestation(local_ctx);

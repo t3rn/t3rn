@@ -7,11 +7,14 @@ use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchError;
 use frame_system::Config;
 use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_core::{hexdisplay::AsBytesRef, Hasher};
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::{convert::TryInto, default::Default, fmt::Debug, prelude::*};
+use t3rn_types::sfx::TargetId;
 pub use t3rn_types::sfx::{FullSideEffect, SecurityLvl, SideEffect};
 
 type SystemHashing<T> = <T as Config>::Hashing;
@@ -332,7 +335,7 @@ pub struct XExecSignal<AccountId, BlockNumber> {
     pub requester_nonce: u32,
 
     /// Expiry timeout
-    pub timeouts_at: BlockNumber,
+    pub timeouts_at: AdaptiveTimeout<BlockNumber, TargetId>,
 
     /// Speed of confirmation
     pub speed_mode: SpeedMode,
@@ -358,7 +361,7 @@ impl<
         // Requester' nonce of xtx
         requester_nonce: u32,
         // Expiry timeout
-        timeouts_at: BlockNumber,
+        timeouts_at: AdaptiveTimeout<BlockNumber, TargetId>,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<BlockNumber>>,
         // Speed of confirmation
@@ -401,7 +404,7 @@ impl<
         // Requester of xtx
         requester: &T::AccountId,
         // Expiry timeout
-        timeouts_at: T::BlockNumber,
+        timeouts_at: AdaptiveTimeout<T::BlockNumber, TargetId>,
         // Speed of confirmation
         speed_mode: SpeedMode,
         // Schedule execution of steps in the future intervals
@@ -426,6 +429,58 @@ impl<
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct AdaptiveTimeout<BlockNumber, TargetId> {
+    pub estimated_height_here: BlockNumber,
+    pub estimated_height_there: BlockNumber,
+    pub estimated_epoch_there: BlockNumber,
+    pub emergency_timeout_here: BlockNumber,
+    pub there: TargetId,
+    pub dlq: Option<BlockNumber>,
+}
+
+impl<BlockNumber: Zero + From<u32>, TargetId: Default> AdaptiveTimeout<BlockNumber, TargetId> {
+    pub fn default_401() -> Self {
+        AdaptiveTimeout {
+            estimated_height_here: Zero::zero(),
+            estimated_height_there: Zero::zero(),
+            estimated_epoch_there: Zero::zero(),
+            emergency_timeout_here: BlockNumber::from(401u32),
+            there: TargetId::default(),
+            dlq: None,
+        }
+    }
+
+    pub fn new_emergency(emergency_timeout_here: BlockNumber) -> Self {
+        AdaptiveTimeout {
+            estimated_height_here: Zero::zero(),
+            estimated_height_there: Zero::zero(),
+            estimated_epoch_there: Zero::zero(),
+            emergency_timeout_here,
+            there: TargetId::default(),
+            dlq: None,
+        }
+    }
+
+    pub fn new(
+        estimated_height_here: BlockNumber,
+        estimated_height_there: BlockNumber,
+        estimated_epoch_there: BlockNumber,
+        emergency_timeout_here: BlockNumber,
+        there: TargetId,
+    ) -> Self {
+        AdaptiveTimeout {
+            estimated_height_here,
+            estimated_height_there,
+            estimated_epoch_there,
+            emergency_timeout_here,
+            there,
+            dlq: None,
+        }
+    }
+}
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum SFXAction<Account, Asset, Balance, Destination, Input, MaxCost> {
     // All sorts of calls: composable, wasm, evm, etc. are vacuumed into a single Call SFX in the protocol level.
@@ -440,8 +495,6 @@ pub struct OrderSFX<AccountId, Asset, Balance, Destination, Input, MaxCost> {
     pub max_reward: Balance,
     pub reward_asset: Asset,
     pub insurance: Balance,
-    // pub remote_reward_target: Option<Destination>,
-    // pub remote_origin_nonce: Option<u32>,
 }
 
 impl<AccountId, Asset, Balance, Destination, Input, MaxCost> TryInto<SideEffect<AccountId, Balance>>
