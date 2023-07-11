@@ -1,4 +1,4 @@
-use crate::{circuit::CircuitStatus, xtx::LocalState, SpeedMode, TargetId};
+use crate::{circuit::CircuitStatus, xtx::LocalState, GatewayVendor, SpeedMode, TargetId};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo},
@@ -75,6 +75,7 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
 
 pub trait CircuitDLQ<T: ConfigSystem> {
     fn process_dlq(n: T::BlockNumber) -> Weight;
+    fn process_adaptive_xtx_timeout_queue(n: T::BlockNumber, verifier: &GatewayVendor) -> Weight;
 }
 
 pub trait OnLocalTrigger<T: ConfigSystem, Balance> {

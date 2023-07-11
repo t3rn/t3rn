@@ -144,6 +144,25 @@ impl GatewayVendor {
         ];
         VENDORS.iter()
     }
+
+    pub fn eta_per_speed_mode_in_epochs<Epoch: From<u32>>(&self, speed_mode: &SpeedMode) -> Epoch {
+        match self {
+            GatewayVendor::Polkadot | GatewayVendor::Kusama | GatewayVendor::Rococo =>
+                match speed_mode {
+                    SpeedMode::Fast => 4u32.into(),
+                    SpeedMode::Rational => 6u32.into(),
+                    SpeedMode::Finalized => 8u32.into(),
+                },
+            GatewayVendor::Ethereum => match speed_mode {
+                SpeedMode::Fast => 1u32.into(),
+                SpeedMode::Rational => 2u32.into(),
+                SpeedMode::Finalized => 3u32.into(),
+            },
+        }
+
+        // let epochs_for_execution = epochs_for_confirmation;
+        // epochs_for_execution.saturating_add(&epochs_for_confirmation)
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
@@ -493,6 +512,7 @@ pub type AccountPublic = <MultiSignature as Verify>::Signer;
 /// Common types across all runtimes
 pub type BlockNumber = u32;
 
+use sp_runtime::traits::Saturating;
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
