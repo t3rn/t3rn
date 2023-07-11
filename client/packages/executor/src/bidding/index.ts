@@ -34,7 +34,7 @@ export class BiddingEngine {
   /** Which executors are bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
   whoBidsOnWhat = new Map<string, string[]>();
 
-  constructor(public logger: Logger) { }
+  constructor(public logger: Logger) {}
 
   /**
    * Computes the bidding amount for a given SFX for a certain scenario.

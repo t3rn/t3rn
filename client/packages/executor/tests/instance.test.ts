@@ -25,7 +25,7 @@ describe("Instance", () => {
       process.env.CIRCUIT_SIGNER_KEY = `0x${"acab".repeat(16)}`;
       process.env.ROCO_GATEWAY_SIGNER_KEY = `0x${"acab".repeat(16)}`;
       instance = new Instance(name, false /*logToDisk*/);
-      instance.logger = { warn() { }, info() { } };
+      instance.logger = { warn() {}, info() {} };
     });
 
     it("should throw if signer keys are missing", async () => {
@@ -98,7 +98,7 @@ describe("Instance", () => {
       expect(logFiles.length).to.equal(0);
 
       await instance.configureLogging();
-      instance.logger = { warn() { }, info() { } } as any;
+      instance.logger = { warn() {}, info() {} } as any;
       await instance.logger.info("hallo");
 
       logFiles = await readdir(logs);

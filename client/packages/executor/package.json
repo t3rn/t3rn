@@ -4,14 +4,16 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "preinstall": "npx only-allow yarn",
     "start": "EXECUTOR=example ts-node src/main.ts",
     "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts | npx pino-pretty -c -S",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
-    "export": "LOG_LEVEL=debug pnpm run start >> logger.log",
+    "export": "LOG_LEVEL=debug yarn start >> logger.log",
     "fmt": "prettier --write src config tests",
     "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
     "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "test:attestion": "mocha -r ts-node/register 'tests/**/attest*.ts'",
     "test-single": "mocha -r ts-node/register"
   },
   "exclude": [
@@ -19,6 +21,7 @@
   ],
   "dependencies": {
     "@polkadot/api": "^10.9.1",
+    "@polkadot/api-augment": "^10.9.1",
     "@polkadot/keyring": "^12.2.2",
     "@polkadot/types": "^10.9.1",
     "@polkadot/util": "^12.2.2",
@@ -31,16 +34,20 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.2.6",
     "axios": "^1.4.0",
-    "bn.js": "^5.2.1",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "debug": "4.3.4",
     "dotenv": "16.3.1",
+    "ethereum-cryptography": "^2.0.0",
+    "ethereumjs-abi": "^0.6.8",
+    "ethereumjs-util": "^7.1.5",
+    "ethers": "^6.6.1",
+    "hardhat": "^2.16.0",
     "mocha": "^10.2.0",
     "node-gyp": "^9.3.1",
     "pino": "^8.14.1",
     "pino-pretty": "^10.0.0",
-    "prettier": "^2.8.8",
+    "prettier": "^3.0.0",
     "prom-client": "^14.2.0",
     "rxjs": "^7.5.7",
     "sinon": "^15.2.0",
@@ -48,7 +55,8 @@
     "ts-mockito": "^2.6.1",
     "ts-node": "^10.9.1",
     "typedoc": "^0.24.7",
-    "types": "link:@polkadot/keyring/types"
+    "types": "link:@polkadot/keyring/types",
+    "web3": "^4.0.1"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.61.0",
