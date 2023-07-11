@@ -1,6 +1,6 @@
 use crate::{
     gateway::GatewayABIConfig, light_client::LightClientHeartbeat, ChainId, ExecutionVendor,
-    GatewayActivity, GatewayGenesisConfig, GatewayType, GatewayVendor, TokenInfo,
+    GatewayActivity, GatewayGenesisConfig, GatewayType, GatewayVendor, SpeedMode, TokenInfo,
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
@@ -14,7 +14,9 @@ use t3rn_types::{
     sfx::{SecurityLvl, Sfx4bId},
 };
 
+use crate::circuit::AdaptiveTimeout;
 use circuit_runtime_types::AssetId;
+use t3rn_types::fsx::TargetId;
 
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId = [u8; 4];
@@ -43,6 +45,18 @@ pub struct Parachain {
     pub relay_chain_id: ChainId,
     // parachain_id
     pub id: AssetId,
+}
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct EpochEstimate<BlockNumber> {
+    pub local: BlockNumber,
+
+    pub remote: BlockNumber,
+
+    pub moving_average_local: BlockNumber,
+
+    pub moving_average_remote: BlockNumber,
 }
 
 /// A preliminary representation of a xdns_record in the onchain registry.
@@ -211,6 +225,12 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 
 pub trait Xdns<T: frame_system::Config, Balance> {
     fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>>;
+
+    fn estimate_adaptive_timeout_on_slowest_target(
+        target_ids: Vec<ChainId>,
+        speed_mode: &SpeedMode,
+        emergency_offset: T::BlockNumber,
+    ) -> AdaptiveTimeout<T::BlockNumber, TargetId>;
 
     fn register_new_token(
         origin: &T::Origin,

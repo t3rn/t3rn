@@ -49,17 +49,20 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
+    use sp_runtime::{traits::CheckedDiv, SaturatedConversion};
 
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
         attesters::AttestersReadApi,
-        circuit::CircuitDLQ,
+        circuit::{AdaptiveTimeout, CircuitDLQ},
         light_client::{LightClientAsyncAPI, LightClientHeartbeat},
         portal::Portal,
-        xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
+        xdns::{
+            EpochEstimate, FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns,
+        },
         Bytes, ChainId, ExecutionVendor, FinalityVerifierActivity, GatewayActivity, GatewayType,
-        GatewayVendor, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
+        GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -217,15 +220,69 @@ pub mod pallet {
             latest_heartbeat: LightClientHeartbeat<T>,
         ) {
             let activity = {
-                let is_active = !latest_heartbeat.is_halted;
+                let (justified_height, finalized_height, updated_height, is_active) = (
+                    latest_heartbeat.last_rational_height,
+                    latest_heartbeat.last_finalized_height,
+                    latest_heartbeat.last_fast_height,
+                    !latest_heartbeat.is_halted,
+                );
+
+                let maybe_last_record = VerifierOverviewStoreHistory::<T>::get(&verifier)
+                    .last()
+                    .cloned();
+
+                let last_finalized_height = maybe_last_record
+                    .clone()
+                    .map(|x| x.finalized_height)
+                    .unwrap_or(Zero::zero());
+
+                let last_reported_height = maybe_last_record
+                    .clone()
+                    .map(|x| x.reported_at)
+                    .unwrap_or(Zero::zero());
+
+                let target_finalized_height_increase = if last_finalized_height.is_zero() {
+                    Zero::zero()
+                } else {
+                    finalized_height.saturating_sub(last_finalized_height)
+                };
+
+                let local_height_increase = if last_reported_height.is_zero() {
+                    Zero::zero()
+                } else {
+                    n.saturating_sub(last_reported_height)
+                };
+
+                let is_moving = if !target_finalized_height_increase.is_zero()
+                    && !local_height_increase.is_zero()
+                {
+                    Self::update_epoch_history(
+                        &verifier,
+                        target_finalized_height_increase,
+                        local_height_increase,
+                    );
+                    true
+                } else {
+                    // If the verifier is not moving, let's check if it was moving 1 activity report before.
+                    let (previous_finalized_height, previous_reported_height): (
+                        T::BlockNumber,
+                        T::BlockNumber,
+                    ) = VerifierOverviewStoreHistory::<T>::get(&verifier)
+                        .iter()
+                        .rev()
+                        .nth(1)
+                        .cloned()
+                        .map(|x| (x.finalized_height, x.reported_at))
+                        .unwrap_or((Zero::zero(), Zero::zero()));
+
+                    if !previous_finalized_height.is_zero() && !previous_reported_height.is_zero() {
+                        previous_finalized_height < finalized_height && previous_reported_height < n
+                    } else {
+                        false
+                    }
+                };
 
                 if is_active {
-                    let (justified_height, finalized_height, updated_height, is_active) = (
-                        latest_heartbeat.last_rational_height,
-                        latest_heartbeat.last_finalized_height,
-                        latest_heartbeat.last_fast_height,
-                        is_active,
-                    );
                     FinalityVerifierActivity {
                         verifier: verifier.clone(),
                         reported_at: n,
@@ -233,21 +290,18 @@ pub mod pallet {
                         finalized_height,
                         updated_height,
                         epoch: new_epoch,
-                        is_active,
+                        is_active: is_active && is_moving,
                     }
                 } else {
-                    let mut last = VerifierOverviewStoreHistory::<T>::get(&verifier)
-                        .last()
-                        .cloned()
-                        .unwrap_or_else(|| FinalityVerifierActivity {
-                            verifier: verifier.clone(),
-                            reported_at: Zero::zero(),
-                            justified_height: Zero::zero(),
-                            finalized_height: Zero::zero(),
-                            updated_height: Zero::zero(),
-                            epoch: Zero::zero(),
-                            is_active: false,
-                        });
+                    let mut last = maybe_last_record.unwrap_or_else(|| FinalityVerifierActivity {
+                        verifier: verifier.clone(),
+                        reported_at: Zero::zero(),
+                        justified_height: Zero::zero(),
+                        finalized_height: Zero::zero(),
+                        updated_height: Zero::zero(),
+                        epoch: Zero::zero(),
+                        is_active: false,
+                    });
                     last.reported_at = n;
                     last.is_active = false;
                     last
@@ -260,11 +314,6 @@ pub mod pallet {
                 let _ = historic_overview.remove(0);
             }
             let last_activity = historic_overview.last().cloned().unwrap_or_default();
-
-            if !last_activity.is_active && activity.is_active {
-                // Gateway is now active
-                let _ = T::CircuitDLQ::process_dlq(n);
-            }
 
             historic_overview.push(activity.clone());
             VerifierOverviewStoreHistory::<T>::insert(&verifier, historic_overview);
@@ -283,6 +332,13 @@ pub mod pallet {
                     all_overviews.push(activity.clone());
                 }
             });
+
+            if !last_activity.is_active && activity.is_active {
+                // Gateway is now active
+                let _ = T::CircuitDLQ::process_dlq(n);
+            }
+
+            let _ = T::CircuitDLQ::process_adaptive_xtx_timeout_queue(n, &verifier);
         }
 
         pub fn process_overview(n: BlockNumberFor<T>) {
@@ -350,83 +406,6 @@ pub mod pallet {
             // Update the general overview
             GatewaysOverviewStore::<T>::put(all_overviews);
         }
-
-        // pub fn process_overview(n: BlockNumberFor<T>) {
-        //     let mut all_overviews: Vec<GatewayActivity<T::BlockNumber>> = Vec::new();
-        //
-        //     for gateway in Self::fetch_full_gateway_records() {
-        //         let gateway_id = gateway.gateway_record.gateway_id;
-        //         // ToDo: Uncomment when eth2::turn_on implemented
-        //         if gateway.gateway_record.verification_vendor == GatewayVendor::Ethereum {
-        //             continue
-        //         }
-        //
-        //         let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(gateway_id)
-        //             .last()
-        //             .cloned()
-        //             .unwrap_or_else(|| GatewayActivity {
-        //                 gateway_id,
-        //                 reported_at: Zero::zero(),
-        //                 justified_height: Zero::zero(),
-        //                 finalized_height: Zero::zero(),
-        //                 updated_height: Zero::zero(),
-        //                 security_lvl: SecurityLvl::Optimistic,
-        //                 attestation_latency: None,
-        //                 is_active: false,
-        //             });
-        //
-        //         let attestation_latency = T::AttestersRead::read_attestation_latency(&gateway_id);
-        //
-        //         let (justified_height, finalized_height, updated_height, security_lvl, is_active) =
-        //             if let Ok(heartbeat) = T::Portal::get_latest_heartbeat(&gateway_id) {
-        //                 let security_lvl = match gateway.gateway_record.escrow_account {
-        //                     Some(_) => SecurityLvl::Escrow,
-        //                     None => SecurityLvl::Optimistic,
-        //                 };
-        //                 let is_active = !heartbeat.is_halted;
-        //                 (
-        //                     heartbeat.last_rational_height,
-        //                     heartbeat.last_finalized_height,
-        //                     heartbeat.last_fast_height,
-        //                     security_lvl,
-        //                     is_active,
-        //                 )
-        //             } else {
-        //                 (
-        //                     last_active_activity.justified_height,
-        //                     last_active_activity.finalized_height,
-        //                     last_active_activity.updated_height,
-        //                     last_active_activity.security_lvl,
-        //                     false,
-        //                 )
-        //             };
-        //
-        //         let activity = GatewayActivity {
-        //             gateway_id,
-        //             reported_at: n,
-        //             justified_height,
-        //             finalized_height,
-        //             updated_height,
-        //             attestation_latency,
-        //             security_lvl,
-        //             is_active,
-        //         };
-        //
-        //         // Add the new activity to the historic overview of the gateway
-        //         let mut historic_overview = GatewaysOverviewStoreHistory::<T>::get(gateway_id);
-        //         if historic_overview.len() == MAX_GATEWAY_OVERVIEW_RECORDS as usize {
-        //             let _ = historic_overview.remove(0);
-        //         }
-        //         historic_overview.push(activity.clone());
-        //         GatewaysOverviewStoreHistory::<T>::insert(gateway_id, historic_overview);
-        //
-        //         // Add the new activity to the general overview
-        //         all_overviews.push(activity);
-        //     }
-        //
-        //     // Update the general overview
-        //     GatewaysOverviewStore::<T>::put(all_overviews);
-        // }
     }
 
     #[pallet::call]
@@ -669,6 +648,12 @@ pub mod pallet {
         ValueQuery,
     >;
 
+    // Keep last 10 epoch estimates
+    #[pallet::storage]
+    #[pallet::getter(fn epoch_history)]
+    pub type EpochHistory<T: Config> =
+        StorageMap<_, Identity, GatewayVendor, Vec<EpochEstimate<T::BlockNumber>>>;
+
     // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
@@ -768,6 +753,51 @@ pub mod pallet {
                 None,
                 allowed_side_effects,
             )
+        }
+
+        pub fn update_epoch_history(
+            verifier: &GatewayVendor,
+            epoch_duration_in_remote_blocks: T::BlockNumber,
+            epoch_duration_in_local_blocks: T::BlockNumber,
+        ) {
+            const N: u32 = 10; // Number of epochs to consider for the moving average
+
+            let mut history = EpochHistory::<T>::get(verifier).unwrap_or_default();
+            let history_len = history.len() as u32;
+
+            if history_len >= N {
+                // Remove the oldest element
+                history.remove(0);
+            }
+
+            let moving_average_local = history
+                .clone()
+                .into_iter()
+                .map(|e| e.local.saturated_into::<u32>())
+                .sum::<u32>()
+                .checked_div(history_len)
+                .unwrap_or(Zero::zero())
+                .into();
+
+            let moving_average_remote = history
+                .clone()
+                .into_iter()
+                .map(|e| e.remote.saturated_into::<u32>())
+                .sum::<u32>()
+                .checked_div(history_len)
+                .unwrap_or(Zero::zero())
+                .into();
+
+            let epoch_duration_estimate_update = EpochEstimate::<T::BlockNumber> {
+                remote: epoch_duration_in_remote_blocks,
+                local: epoch_duration_in_local_blocks,
+                moving_average_local,
+                moving_average_remote,
+            };
+
+            history.push(epoch_duration_estimate_update);
+
+            EpochHistory::<T>::insert(verifier, history);
         }
     }
 
@@ -1129,6 +1159,81 @@ pub mod pallet {
             }
 
             Ok(heartbeat)
+        }
+
+        fn estimate_adaptive_timeout_on_slowest_target(
+            all_targets: Vec<TargetId>,
+            speed_mode: &SpeedMode,
+            emergency_offset: T::BlockNumber,
+        ) -> AdaptiveTimeout<T::BlockNumber, TargetId> {
+            let current_block = <frame_system::Pallet<T>>::block_number();
+            // Find the slowest target
+            let (slowest_verifier, target, submit_by_local_offset, submit_by_remote_offset) =
+                match all_targets
+                    .iter()
+                    .map(|target| {
+                        let vendor = Self::get_verification_vendor(target).unwrap_or_default();
+                        let eta_in_epochs = vendor.eta_per_speed_mode_in_epochs(speed_mode);
+                        let submit_by_local_offset = match <EpochHistory<T>>::get(vendor.clone()) {
+                            Some(history) => match history.last() {
+                                Some(record) =>
+                                    record.moving_average_local.saturating_mul(eta_in_epochs),
+                                None => emergency_offset,
+                            },
+                            None => emergency_offset,
+                        };
+
+                        let submit_by_remote_offset = match <EpochHistory<T>>::get(vendor.clone()) {
+                            Some(history) => match history.last() {
+                                Some(record) =>
+                                    record.moving_average_remote.saturating_mul(eta_in_epochs),
+                                None => emergency_offset,
+                            },
+                            None => emergency_offset,
+                        };
+
+                        (
+                            vendor,
+                            target,
+                            submit_by_local_offset,
+                            submit_by_remote_offset,
+                        )
+                    })
+                    .max_by_key(|(_, _, submit_by_local_offset, _)| *submit_by_local_offset)
+                {
+                    Some((verifier, target, submit_by_local_offset, submit_by_remote_offset)) => (
+                        verifier,
+                        target,
+                        submit_by_local_offset,
+                        submit_by_remote_offset,
+                    ),
+                    None => return AdaptiveTimeout::default_401(),
+                };
+
+            let latest_overview_of_verifier =
+                match <VerifierOverviewStoreHistory<T>>::get(slowest_verifier).last() {
+                    Some(overview) => overview.clone(),
+                    None => return AdaptiveTimeout::default_401(),
+                };
+            // Assume equal amount of time tied with SpeedMode for execution time.
+            let submit_by_height_here = current_block.saturating_add(submit_by_local_offset);
+            let submit_by_height_there = latest_overview_of_verifier
+                .finalized_height
+                .saturating_add(submit_by_remote_offset);
+            let estimated_height_here =
+                submit_by_height_here.saturating_add(submit_by_local_offset);
+            let estimated_height_there =
+                submit_by_height_there.saturating_add(submit_by_remote_offset);
+
+            AdaptiveTimeout {
+                estimated_height_here,
+                estimated_height_there,
+                submit_by_height_here,
+                submit_by_height_there,
+                there: *target,
+                emergency_timeout_here: emergency_offset.saturating_add(current_block),
+                dlq: None,
+            }
         }
 
         fn estimate_costs(_fsx: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>) {

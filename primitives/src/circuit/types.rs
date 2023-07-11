@@ -434,7 +434,8 @@ impl<
 pub struct AdaptiveTimeout<BlockNumber, TargetId> {
     pub estimated_height_here: BlockNumber,
     pub estimated_height_there: BlockNumber,
-    pub estimated_epoch_there: BlockNumber,
+    pub submit_by_height_here: BlockNumber,
+    pub submit_by_height_there: BlockNumber,
     pub emergency_timeout_here: BlockNumber,
     pub there: TargetId,
     pub dlq: Option<BlockNumber>,
@@ -445,7 +446,8 @@ impl<BlockNumber: Zero + From<u32>, TargetId: Default> AdaptiveTimeout<BlockNumb
         AdaptiveTimeout {
             estimated_height_here: Zero::zero(),
             estimated_height_there: Zero::zero(),
-            estimated_epoch_there: Zero::zero(),
+            submit_by_height_here: Zero::zero(),
+            submit_by_height_there: Zero::zero(),
             emergency_timeout_here: BlockNumber::from(401u32),
             there: TargetId::default(),
             dlq: None,
@@ -456,26 +458,10 @@ impl<BlockNumber: Zero + From<u32>, TargetId: Default> AdaptiveTimeout<BlockNumb
         AdaptiveTimeout {
             estimated_height_here: Zero::zero(),
             estimated_height_there: Zero::zero(),
-            estimated_epoch_there: Zero::zero(),
+            submit_by_height_here: Zero::zero(),
+            submit_by_height_there: Zero::zero(),
             emergency_timeout_here,
             there: TargetId::default(),
-            dlq: None,
-        }
-    }
-
-    pub fn new(
-        estimated_height_here: BlockNumber,
-        estimated_height_there: BlockNumber,
-        estimated_epoch_there: BlockNumber,
-        emergency_timeout_here: BlockNumber,
-        there: TargetId,
-    ) -> Self {
-        AdaptiveTimeout {
-            estimated_height_here,
-            estimated_height_there,
-            estimated_epoch_there,
-            emergency_timeout_here,
-            there,
             dlq: None,
         }
     }

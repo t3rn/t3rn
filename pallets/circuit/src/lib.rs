@@ -402,6 +402,13 @@ pub mod pallet {
         fn process_dlq(n: T::BlockNumber) -> Weight {
             Self::process_dlq(n)
         }
+
+        fn process_adaptive_xtx_timeout_queue(
+            n: T::BlockNumber,
+            verifier: &GatewayVendor,
+        ) -> Weight {
+            Self::process_adaptive_xtx_timeout_queue(n, verifier)
+        }
     }
 
     impl<T: Config> ReadSFX<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
@@ -691,8 +698,20 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
+
             // Setup: new xtx context with SFX validation
-            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester, None)?;
+            let mut fresh_xtx = Machine::<T>::setup(
+                &side_effects,
+                &requester,
+                Some(T::Xdns::estimate_adaptive_timeout_on_slowest_target(
+                    side_effects
+                        .iter()
+                        .map(|sfx| sfx.target.clone())
+                        .collect::<Vec<TargetId>>(),
+                    &speed_mode,
+                    T::XtxTimeoutDefault::get(),
+                )),
+            )?;
 
             fresh_xtx.xtx.set_speed_mode(speed_mode);
             // Compile: apply the new state post squaring up and emit
@@ -1377,6 +1396,27 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
+    pub fn process_adaptive_xtx_timeout_queue(
+        n: T::BlockNumber,
+        _verifier: &GatewayVendor,
+    ) -> Weight {
+        let mut current_weight: Weight = 0;
+
+        // Go over all unfinished Xtx to find those that timed out
+        let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
+            .filter(|(_xtx_id, adaptive_timeout)| {
+                // ToDo: consider filtering out by adaptive_timeout.verifier == verifier
+                adaptive_timeout.estimated_height_here < n
+            })
+            .map(|(xtx_id, _timeout_at)| {
+                // if current_weight <= max_allowed_weight {
+                current_weight = current_weight.saturating_add(Self::process_revert_one(xtx_id).0);
+                // }
+            })
+            .count();
+        current_weight
+    }
+
     pub fn process_emergency_revert_xtx_queue(
         n: T::BlockNumber,
         revert_interval: T::BlockNumber,
@@ -1408,11 +1448,11 @@ impl<T: Config> Pallet<T> {
         maybe_speed_mode: Option<SpeedMode>,
     ) -> AdaptiveTimeout<T::BlockNumber, TargetId> {
         let all_targets = Self::get_all_xtx_targets(xtx_id);
-        // T::Xdns::estimate_adaptive_timeout_on_slowest_target(
-        //     all_targets,
-        //     maybe_speed_mode.unwrap_or(SpeedMode::Finalized),
-        // );
-        AdaptiveTimeout::default_401()
+        T::Xdns::estimate_adaptive_timeout_on_slowest_target(
+            all_targets,
+            &maybe_speed_mode.unwrap_or(SpeedMode::Finalized),
+            T::XtxTimeoutDefault::get(),
+        )
     }
 
     /// Adds a cross-chain transaction (Xtx) to the Dead Letter Queue (DLQ).
