@@ -66,6 +66,7 @@ impl<T: Config> Machine<T> {
     pub fn setup(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
+        maybe_adaptive_timeout: Option<AdaptiveTimeout<T::BlockNumber, TargetId>>,
     ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         // ToDo: Introduce default delay
         let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
@@ -73,8 +74,10 @@ impl<T: Config> Machine<T> {
             None,
         );
 
-        let adaptive_timeout =
-            AdaptiveTimeout::<T::BlockNumber, TargetId>::new_emergency(timeouts_at);
+        let adaptive_timeout = match maybe_adaptive_timeout {
+            None => AdaptiveTimeout::<T::BlockNumber, TargetId>::new_emergency(timeouts_at),
+            Some(adaptive_timeout) => adaptive_timeout,
+        };
 
         let (xtx_id, xtx) = XExecSignal::<T::AccountId, T::BlockNumber>::setup_fresh::<T>(
             requester,

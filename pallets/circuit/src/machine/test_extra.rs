@@ -52,7 +52,7 @@ pub fn stage_single() {
 }
 
 pub fn setup_empty_xtx_and_force_set_status(maybe_status: Option<CircuitStatus>) -> H256 {
-    let mut local_ctx = Machine::<Runtime>::setup(&[], &ALICE).unwrap();
+    let mut local_ctx = Machine::<Runtime>::setup(&[], &ALICE, None).unwrap();
     assert_eq!(local_ctx.xtx.status, CircuitStatus::Requested);
 
     Machine::<Runtime>::compile(
@@ -74,7 +74,8 @@ pub fn setup_empty_xtx_and_force_set_status(maybe_status: Option<CircuitStatus>)
 }
 
 pub fn setup_single_sfx_xtx_and_force_set_status(maybe_status: Option<CircuitStatus>) -> H256 {
-    let mut local_ctx = Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE).unwrap();
+    let mut local_ctx =
+        Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE, None).unwrap();
     assert_eq!(local_ctx.xtx.status, CircuitStatus::Requested);
 
     Machine::<Runtime>::compile(
@@ -98,7 +99,8 @@ pub fn setup_single_sfx_xtx_and_force_set_status(maybe_status: Option<CircuitSta
 pub fn setup_single_sfx_xtx_and_post_bid_and_set_to_ready(
     maybe_status: Option<CircuitStatus>,
 ) -> H256 {
-    let mut local_ctx = Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE).unwrap();
+    let mut local_ctx =
+        Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE, None).unwrap();
     let sfx_id = get_mocked_transfer_sfx_id(local_ctx.xtx_id);
 
     assert_eq!(local_ctx.xtx.status, CircuitStatus::Requested);
@@ -155,7 +157,8 @@ pub fn setup_single_sfx_xtx_and_post_bid_and_set_to_ready(
 }
 
 pub fn setup_single_sfx_xtx_and_confirm() -> H256 {
-    let mut local_ctx = Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE).unwrap();
+    let mut local_ctx =
+        Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE, None).unwrap();
     let sfx_id = get_mocked_transfer_sfx_id(local_ctx.xtx_id);
 
     assert_eq!(local_ctx.xtx.status, CircuitStatus::Requested);
