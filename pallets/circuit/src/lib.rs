@@ -1443,7 +1443,6 @@ impl<T: Config> Pallet<T> {
                 speed_mode,
             ),
         );
-
         <XExecSignals<T>>::mutate(&xtx_id, |xtx| {
             if let Some(xtx) = xtx {
                 xtx.timeouts_at.dlq = Some(<frame_system::Module<T>>::block_number());
