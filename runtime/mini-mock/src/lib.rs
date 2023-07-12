@@ -262,7 +262,6 @@ parameter_types! {
 impl pallet_attesters::Config for MiniRuntime {
     type ActiveSetSize = ConstU32<32>;
     type BatchingWindow = ConstU32<6>;
-    type CommitmentRewardSource = CommitmentRewardSource;
     type CommitteeSize = ConstU32<32>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
@@ -278,6 +277,7 @@ impl pallet_attesters::Config for MiniRuntime {
     type Rewards = Rewards;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = SlashAccount;
+    type TreasuryAccounts = MiniRuntime;
     type Xdns = XDNS;
 }
 

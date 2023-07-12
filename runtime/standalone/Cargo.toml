@@ -95,6 +95,9 @@ circuit-runtime-types = { path = "../common-types", default-features = false }
 
 pallet-maintenance-mode = { git = 'https://github.com/t3rn/moonbeam-pallets', branch = 'polkadot-v0.9.27', default-features = false }
 
+[dev-dependencies]
+t3rn-mini-mock-runtime = { path = "../../runtime/mini-mock" }
+
 [features]
 default = [ "std", "contracts-unstable-interface" ]
 std = [
