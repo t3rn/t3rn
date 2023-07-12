@@ -596,6 +596,7 @@ describe("AttestationsCommittee", function() {
             0: generateWallets(committeeSize),
             1: generateWallets(committeeSize),
             2: generateWallets(committeeSize),
+            3: generateWallets(committeeSize),
         }
 
         let index = 0;
@@ -625,6 +626,17 @@ describe("AttestationsCommittee", function() {
 
         // second batch
         index = 2
+        await sendBatch(attestationsVerifier, index, committees[index-1], committees[index]);
+        
+        for (let i = 0; i < committeeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index][i].address)
+            expect(currentCommitteeMemberIndex).to.equal(index + 1);
+        }
+        expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(index + 1);
+        expect(await attestationsVerifier.totalAttesters()).to.equal((index + 1) * committeeSize);
+        
+        // third batch
+        index = 3
         await sendBatch(attestationsVerifier, index, committees[index-1], committees[index]);
         
         for (let i = 0; i < committeeSize; i++) {
