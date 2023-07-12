@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t0rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.38.1-rc.0"
+version     = "1.38.4-rc.0"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -22,7 +22,7 @@ impl-trait-for-tuples = "0.2.2"
 log                   = { version = "0.4.19", default-features = false }
 scale-info            = { version = "2.9.0", default-features = false, features = [ "derive" ] }
 serde                 = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
-smallvec              = { version = "1.6.1", default-features = false }
+smallvec              = { version = "1.11.0", default-features = false }
 
 # Substrate
 frame-benchmarking           = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.27" }
