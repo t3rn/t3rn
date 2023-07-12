@@ -45,7 +45,7 @@ pallet-session                  = { git = "https://github.com/paritytech/substra
 pallet-staking                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 pallet-staking-reward-curve     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 pallet-transaction-payment      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-serde_json                      = "1.0.100"
+serde_json                      = "1.0.101"
 sp-consensus-aura               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-consensus-babe               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-consensus-vrf                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
