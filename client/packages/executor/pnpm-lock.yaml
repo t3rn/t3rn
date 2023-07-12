@@ -56,8 +56,8 @@ dependencies:
     specifier: 16.3.1
     version: 16.3.1
   ethereum-cryptography:
-    specifier: ^2.0.0
-    version: 2.0.0
+    specifier: ^2.1.0
+    version: 2.1.1
   ethereumjs-abi:
     specifier: ^0.6.8
     version: 0.6.8
@@ -114,6 +114,9 @@ dependencies:
     version: 4.0.1
 
 devDependencies:
+  '@types/bn.js':
+    specifier: ^5.1.1
+    version: 5.1.1
   '@typescript-eslint/eslint-plugin':
     specifier: ^5.62.0
     version: 5.62.0(@typescript-eslint/parser@5.62.0)(eslint@8.43.0)(typescript@4.9.4)
@@ -1019,12 +1022,6 @@ packages:
       tweetnacl-util: 0.15.1
     dev: false
 
-  /@noble/curves@1.0.0:
-    resolution: {integrity: sha512-2upgEu0iLiDVDZkNLeFV2+ht0BAVgQnEmCk6JsOch9Rp8xfkMCbvbAZlA2pBHQc73dbl+vFOXfqkf4uemdn0bw==}
-    dependencies:
-      '@noble/hashes': 1.3.0
-    dev: false
-
   /@noble/curves@1.1.0:
     resolution: {integrity: sha512-091oBExgENk/kGj3AZmtBDMpxQPDtxQABR2B9lb1JbVTs6ytdzZNwvhxQ4MWasRNEzlbEH8jCWFCwhF/Obj5AA==}
     dependencies:
@@ -1037,10 +1034,6 @@ packages:
 
   /@noble/hashes@1.2.0:
     resolution: {integrity: sha512-FZfhjEDbT5GRswV3C6uvLPHMiVD6lQBmpoX5+eSiPaMTXte/IKqI5dykDxzZB/WBeK/CDuQRBWarPdi3FNY2zQ==}
-    dev: false
-
-  /@noble/hashes@1.3.0:
-    resolution: {integrity: sha512-ilHEACi9DwqJB0pw7kv+Apvh50jiiSyR/cQ3y4W7lOR5mhvn/50FLUfsnfJz0BDZtl/RR16kXvptiv6q1msYZg==}
     dev: false
 
   /@noble/hashes@1.3.1:
@@ -1926,10 +1919,10 @@ packages:
       '@scure/base': 1.1.1
     dev: false
 
-  /@scure/bip32@1.3.0:
-    resolution: {integrity: sha512-bcKpo1oj54hGholplGLpqPHRbIsnbixFtc06nwuNM5/dwSXOq/AAYoIBRsBmnZJSdfeNW5rnff7NTAz3ZCqR9Q==}
+  /@scure/bip32@1.3.1:
+    resolution: {integrity: sha512-osvveYtyzdEVbt3OfwwXFr4P2iVBL5u1Q3q4ONBfDY/UpOuXmOlbgwc1xECEboY8wIays8Yt6onaWMUdUbfl0A==}
     dependencies:
-      '@noble/curves': 1.0.0
+      '@noble/curves': 1.1.0
       '@noble/hashes': 1.3.1
       '@scure/base': 1.1.1
     dev: false
@@ -1941,8 +1934,8 @@ packages:
       '@scure/base': 1.1.1
     dev: false
 
-  /@scure/bip39@1.2.0:
-    resolution: {integrity: sha512-SX/uKq52cuxm4YFXWFaVByaSHJh2w3BnokVSeUJVCv6K7WulT9u2BuNRBhuFl8vAuYnzx9bEu9WgpcNYTrYieg==}
+  /@scure/bip39@1.2.1:
+    resolution: {integrity: sha512-Z3/Fsz1yr904dduJD0NpiyRHhRYHdcnyh73FZWiV+/qhWi83wNJ3NWolYqCEN+ZWsUz2TWwajJggcRE9r1zUYg==}
     dependencies:
       '@noble/hashes': 1.3.1
       '@scure/base': 1.1.1
@@ -2111,7 +2104,6 @@ packages:
     resolution: {integrity: sha512-qNrYbZqMx0uJAfKnKclPh+dTwK33KfLHYqtyODwd5HnXOjnkhc4qgn3BrK6RWyGZm5+sIFE7Q7Vz6QQtJB7w7g==}
     dependencies:
       '@types/node': 20.2.6
-    dev: false
 
   /@types/chai-as-promised@7.1.5:
     resolution: {integrity: sha512-jStwss93SITGBwt/niYrkf2C+/1KTeZCZl1LaeezTlqppAKeoQC7jxyqYuP72sxBGKCIbw7oHgbYssIRzT5FCQ==}
@@ -3612,13 +3604,13 @@ packages:
       '@scure/bip39': 1.1.1
     dev: false
 
-  /ethereum-cryptography@2.0.0:
-    resolution: {integrity: sha512-g25m4EtfQGjstWgVE1aIz7XYYjf3kH5kG17ULWVB5dH6uLahsoltOhACzSxyDV+fhn4gbR4xRrOXGe6r2uh4Bg==}
+  /ethereum-cryptography@2.1.1:
+    resolution: {integrity: sha512-XdvUog4BpUkEcJ0GAjr2KTjibd/i2yh5+5KSL/KFNz9MTYwiIjdeA8ZynENTZmaT8lebbnozsFwwsn33y+/TtA==}
     dependencies:
-      '@noble/curves': 1.0.0
-      '@noble/hashes': 1.3.0
-      '@scure/bip32': 1.3.0
-      '@scure/bip39': 1.2.0
+      '@noble/curves': 1.1.0
+      '@noble/hashes': 1.3.1
+      '@scure/bip32': 1.3.1
+      '@scure/bip39': 1.2.1
     dev: false
 
   /ethereumjs-abi@0.6.8:
@@ -6621,7 +6613,7 @@ packages:
     dependencies:
       '@ethereumjs/rlp': 4.0.1
       crc-32: 1.2.2
-      ethereum-cryptography: 2.0.0
+      ethereum-cryptography: 2.1.1
       web3-errors: 1.0.0
       web3-types: 1.0.0
       web3-utils: 4.0.1
@@ -6790,7 +6782,7 @@ packages:
     resolution: {integrity: sha512-q5Pys++MarxUtN/OWrtv7l2kpNBJdDbV13/doO7A2W8I+TqigakKEJQtKiyAIbfnifrIZqyT7+/zzCfPS/sLnw==}
     engines: {node: '>=14', npm: '>=6.12.0'}
     dependencies:
-      ethereum-cryptography: 2.0.0
+      ethereum-cryptography: 2.1.1
       web3-errors: 1.0.0
       web3-types: 1.0.0
       web3-validator: 1.0.0
@@ -6800,7 +6792,7 @@ packages:
     resolution: {integrity: sha512-AQjSDMUbetPzMAPQQO74Smt8LY2uDMUqJxywFUYUm6OJvUO+W8Ak/PTSeRhosIHOakS/Xc3fMZIsCQJmfJgNqw==}
     engines: {node: '>=14', npm: '>=6.12.0'}
     dependencies:
-      ethereum-cryptography: 2.0.0
+      ethereum-cryptography: 2.1.1
       web3-errors: 1.0.1
       web3-types: 1.0.1
       web3-validator: 1.0.1
@@ -6811,7 +6803,7 @@ packages:
     resolution: {integrity: sha512-WShojVeF7hcaPGzO9vgZukqxd6NWL5A9sIv5uhZzK0mGPvPvc0wqSdKeiwby0cFDH09AW2Q1Qz6knKhXDe7CzA==}
     engines: {node: '>=14', npm: '>=6.12.0'}
     dependencies:
-      ethereum-cryptography: 2.0.0
+      ethereum-cryptography: 2.1.1
       is-my-json-valid: 2.20.6
       util: 0.12.5
       web3-errors: 1.0.0
@@ -6822,7 +6814,7 @@ packages:
     resolution: {integrity: sha512-hsT8hFhYia5tlTIf08TDjBYjJ2sgUoh9WehpNrYB8UIaFA0QB7mv06fASXU3ukjiKF9V8MeDZnJPit6JRmQj6A==}
     engines: {node: '>=14', npm: '>=6.12.0'}
     dependencies:
-      ethereum-cryptography: 2.0.0
+      ethereum-cryptography: 2.1.1
       is-my-json-valid: 2.20.6
       util: 0.12.5
       web3-errors: 1.0.1
