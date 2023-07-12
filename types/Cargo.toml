@@ -31,7 +31,7 @@ t3rn-abi = { path = "../types/abi", default-features = false, features = [ "runt
 [dev-dependencies]
 hex         = "0.4"
 hex-literal = "0.4.1"
-serde_json  = "1.0.100"
+serde_json  = "1.0.101"
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-runtime  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
