@@ -1,5 +1,5 @@
 import http from "http";
-import { Registry, Counter, collectDefaultMetrics } from "prom-client";
+import { Registry, Counter, collectDefaultMetrics, Gauge } from "prom-client";
 
 export class Prometheus {
   server: ReturnType<typeof http.createServer>;
@@ -9,30 +9,19 @@ export class Prometheus {
   isActive: boolean;
 
   // Metrics
-  // Number of bids
   bids: Counter;
-
-  // Number of events
   events: Counter;
-
-  // Number of times circuit rpc server has disconnected
   circuitDisconnects: Counter;
-
-  // Number of times no bid and no competition
   noBidAndNoCompetition: Counter;
-
-  // Number of times no bid but competition
   noBidButCompetition: Counter;
-
-  // Number of times been out bid
   beenOutBid: Counter;
+  attestationsBatchesPending: Gauge;
 
   constructor() {
     this.register = new Registry();
     this.createMetrics();
   }
 
-  // Creates all the metrics for Prometheus
   createMetrics() {
     // Collects default metrics
     collectDefaultMetrics({ register: this.register });
@@ -70,6 +59,12 @@ export class Prometheus {
     this.beenOutBid = new Counter({
       name: "been_out_bid",
       help: "Number of times been out bid",
+      registers: [this.register],
+    });
+
+    this.attestationsBatchesPending = new Gauge({
+      name: "attestations_batches_pending_count",
+      help: "Number of attestations batches pending",
       registers: [this.register],
     });
 
