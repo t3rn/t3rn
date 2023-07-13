@@ -248,16 +248,8 @@ impl ExtBuilder {
     fn make_all_light_clients_move_2_times_by(move_by: u32) {
         use circuit_runtime_pallets::pallet_eth2_finality_verifier::LightClientAsyncAPI;
         use t3rn_primitives::{circuit::traits::CircuitDLQ, portal::Portal as PortalT};
-
         let starting_height = System::block_number();
-        println!("make_all_light_clients_move_2_times_by");
-
         for vendor in GatewayVendor::iterator() {
-            println!(
-                "make_all_light_clients_move_2_times_by vendor: {:?}",
-                vendor
-            );
-
             let mut latest_heartbeat = Portal::get_latest_heartbeat_by_vendor(vendor.clone());
             latest_heartbeat.last_finalized_height =
                 latest_heartbeat.last_finalized_height.clone() + move_by;
@@ -273,7 +265,6 @@ impl ExtBuilder {
                 latest_heartbeat.clone(),
             );
 
-            println!("make_all_light_clients_move_2_times_by cnt 2");
             latest_heartbeat.last_finalized_height =
                 latest_heartbeat.last_finalized_height.clone() + 2 * move_by;
             latest_heartbeat.last_rational_height =
@@ -289,8 +280,6 @@ impl ExtBuilder {
                 latest_heartbeat,
             );
         }
-
-        // XDNS::process_overview(System::block_number());
     }
 
     fn activate_all_light_clients() {
@@ -302,6 +291,7 @@ impl ExtBuilder {
         XDNS::process_overview(System::block_number());
 
         Self::make_all_light_clients_move_2_times_by(8);
+        XDNS::process_overview(System::block_number());
     }
 
     pub fn build(self) -> sp_io::TestExternalities {

@@ -98,7 +98,7 @@ impl<T: Config> Machine<T> {
         };
 
         pallet::Pallet::<T>::validate(side_effects, &mut local_xtx_ctx).map_err(|e| {
-            log::error!("Self::validate hit an error -- {e:?}");
+            println!("Self::validate hit an error -- {e:?}");
             Error::<T>::SideEffectsValidationFailed
         })?;
 
