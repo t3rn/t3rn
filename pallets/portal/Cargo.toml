@@ -34,7 +34,7 @@ pallet-balances    = { git = "https://github.com/paritytech/substrate", branch =
 pallet-sudo        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 pallet-timestamp   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 pallet-xdns        = { path = "../../pallets/xdns" }
-serde_json         = "1.0.101"
+serde_json         = "1.0.102"
 sp-core            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-io              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 sp-runtime         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
