@@ -31,7 +31,7 @@ ethabi      = "18.0.0"
 hex         = "0.4"
 hex-literal = "0.4.1"
 rlp-derive  = "0.1.0"
-serde_json  = "1.0.101"
+serde_json  = "1.0.102"
 
 # for mini-mock events
 pallet-assets    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
