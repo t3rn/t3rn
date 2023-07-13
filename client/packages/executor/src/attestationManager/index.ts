@@ -88,14 +88,11 @@ export class AttestationManager {
         committedSfx: batch.committedSfx || [],
         revertedSfx: batch.revertedSfx || [],
         index: batch.index,
-        expectedBatchHash: batch.expectedBatchHash,
         signatures: batch.signatures.map(([, signature]) => signature),
         created: batch.created,
       };
     });
     logger.info("We have " + fetchedData.length + " batches pending");
-    // logger.info(['Batch 0: ', data.toJSON()[0]])
-    // logger.info(['Batch 1: ', data.toJSON()[1]])
     return batches as unknown as ConfirmationBatch[];
   }
 
@@ -156,13 +153,16 @@ export class AttestationManager {
     this.batches = await this.fetchBatches();
 
     // config.attestations.processPendingBatches is set to process pending batches
-    for (const [index, batch] of this.batches
-      .slice(config.attestations.processPendingBatchesIndex)
-      .entries()) {
-
-      const blockHash = await this.getBlockHash(batch.created)
-
-      logger.info(`Batch ${batch.index} processing, created at block ${blockHash}`);
+    for (const batch of this.batches.slice(
+      config.attestations.processPendingBatchesIndex
+    )) {
+      logger.info(
+        `Batch ${
+          batch.index
+        } processing, created at block ${await this.getBlockHash(
+          batch.created
+        )}`
+      );
 
       const messageHash = this.getMessageHash(batch);
       logger.debug({ batch, messageHash }, `Batch data`);
@@ -175,16 +175,66 @@ export class AttestationManager {
     batch: ConfirmationBatch,
     messageHash: string
   ) {
-    const committeeSize = await this.receiveAttestationBatchContract.methods
-      .committeeSize()
-      .call();
+    const committeeSize: number =
+      await this.receiveAttestationBatchContract.methods.committeeSize().call();
     const currentBatchIndex = await this.receiveAttestationBatchContract.methods
       .currentBatchIndex()
       .call();
+    const currentCommitteeTransitionCount =
+      await this.receiveAttestationBatchContract.methods
+        .currentCommitteeTransitionCount()
+        .call();
+
     logger.debug(
-      { committeeSize: committeeSize, currentBatchIndex: currentBatchIndex },
+      { committeeSize, currentBatchIndex, currentCommitteeTransitionCount },
       "Etherum Contract State"
     );
+    const contractMethods = Object.keys(
+      this.receiveAttestationBatchContract.methods
+    );
+
+    // debug signatures recovery
+    let signatureErrors: number = 0;
+    for (const signature of batch.signatures) {
+      const address = await this.receiveAttestationBatchContract.methods
+        .recoverSigner(
+          // @ts-ignore - ethers.js types are not up to date
+          messageHash,
+          signature
+        )
+        .call();
+
+      const result = await this.receiveAttestationBatchContract.methods
+        .attestersIndices(
+          // @ts-ignore - ethers.js types are not up to date
+          ethers.getAddress(address)
+        )
+        .call();
+      if (result != currentCommitteeTransitionCount) {
+        logger.error(
+          `Signature ${signature} is invalid, address ${address} is not in the current committee`
+        );
+        signatureErrors++;
+      } else {
+        logger.info(
+          `Signature ${signature} is valid, address ${address} is in the current committee`
+        );
+      }
+    }
+
+    if (
+      BigInt(signatureErrors) >
+      (BigInt(2) / BigInt(3)) * BigInt(committeeSize)
+    ) {
+      logger.error(
+        `Batch ${batch.index} processing failed, ${
+          batch.signatures.length - signatureErrors
+        }/${batch.signatures.length} signatures are valid`
+      );
+      throw new Error();
+    } else {
+      logger.info(`Batch ${batch.index} processing, all signatures are valid`);
+    }
 
     const contractMethod =
       this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
