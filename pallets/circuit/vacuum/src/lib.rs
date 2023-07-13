@@ -89,7 +89,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let (status, timeouts_at) = T::ReadSFX::get_xtx_status(xtx_id)?;
             let sfx_of_xtx = T::ReadSFX::get_fsx_of_xtx(xtx_id)?;
-            let mut all_included_sfx = sfx_of_xtx
+            let all_included_sfx = sfx_of_xtx
                 .into_iter()
                 .map(|sfx| {
                     let fsx_status = T::ReadSFX::get_fsx_status(sfx)?;
@@ -114,7 +114,7 @@ mod tests {
     use codec::Encode;
     use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
-    use sp_runtime::{print, AccountId32};
+    use sp_runtime::AccountId32;
     use t3rn_primitives::light_client::LightClientAsyncAPI;
 
     use t3rn_mini_mock_runtime::{
@@ -133,7 +133,7 @@ mod tests {
     use t3rn_types::sfx::ConfirmedSideEffect;
 
     use frame_support::traits::Currency;
-    use t3rn_abi::Abi::H256;
+
     use t3rn_primitives::{
         circuit::{AdaptiveTimeout, CircuitStatus},
         monetary::EXISTENTIAL_DEPOSIT,
@@ -187,13 +187,10 @@ mod tests {
         let expect_xtx_received = events.last();
         assert!(expect_xtx_received.clone().is_some());
 
-        match expect_xtx_received.clone() {
-            Some(event) => {
-                let xtx_id = match event.event {
-                    Event::Circuit(CircuitEvent::XTransactionReceivedForExec(xtx_id)) => xtx_id,
-                    _ => panic!("expect_last_event_to_emit_xtx_id: unexpected event type"),
-                };
-                xtx_id
+        match expect_xtx_received {
+            Some(event) => match event.event {
+                Event::Circuit(CircuitEvent::XTransactionReceivedForExec(xtx_id)) => xtx_id,
+                _ => panic!("expect_last_event_to_emit_xtx_id: unexpected event type"),
             },
             None => panic!("expect_last_event_to_emit_xtx_id: no last event emitted"),
         }
@@ -205,13 +202,10 @@ mod tests {
         let expect_order_status_read = events.last();
         assert!(expect_order_status_read.clone().is_some());
 
-        match expect_order_status_read.clone() {
-            Some(event) => {
-                let status = match &event.event {
-                    Event::Vacuum(VacuumEvent::OrderStatusRead(status)) => status.clone(),
-                    _ => panic!("expect_last_event_to_read_order_status: unexpected event type"),
-                };
-                status
+        match expect_order_status_read {
+            Some(event) => match &event.event {
+                Event::Vacuum(VacuumEvent::OrderStatusRead(status)) => status.clone(),
+                _ => panic!("expect_last_event_to_read_order_status: unexpected event type"),
             },
             None => panic!("expect_last_event_to_read_order_status: no last event emitted"),
         }
@@ -226,7 +220,7 @@ mod tests {
         let mut scale_encoded_transfer_event = MockedAssetEvent::<MiniRuntime>::Transferred {
             asset_id,
             from: executor.clone(),
-            to: destination.clone(),
+            to: destination,
             amount,
         }
         .encode();
@@ -237,13 +231,13 @@ mod tests {
             err: None,
             output: None,
             inclusion_data: scale_encoded_transfer_event,
-            executioner: executor.clone(),
+            executioner: executor,
             received_at: System::block_number(),
             cost: None,
         }
     }
 
-    fn mock_signal_halt(target: TargetId, verifier: GatewayVendor) {
+    fn mock_signal_halt(_target: TargetId, verifier: GatewayVendor) {
         let mut current_heartbeat = Portal::get_latest_heartbeat(&POLKADOT_TARGET).unwrap();
         current_heartbeat.is_halted = true;
         let current_epoch_does_not_move = current_heartbeat.last_finalized_height;
@@ -252,9 +246,10 @@ mod tests {
         XDNS::on_new_epoch(verifier, current_epoch_does_not_move, current_heartbeat);
     }
 
-    fn mock_signal_unhalt(target: TargetId, verifier: GatewayVendor) {
+    fn mock_signal_unhalt(_target: TargetId, verifier: GatewayVendor) {
         let mut current_heartbeat = Portal::get_latest_heartbeat(&POLKADOT_TARGET).unwrap();
         current_heartbeat.is_halted = false;
+        current_heartbeat.last_finalized_height += 1;
         let current_epoch_moves = current_heartbeat.last_finalized_height + 1;
         // advance 1 epoch
         System::set_block_number(System::block_number() + 32);
@@ -372,7 +367,15 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
+                        estimated_height_here: 817,
+                        estimated_height_there: 824,
+                        submit_by_height_here: 417,
+                        submit_by_height_there: 424,
+                        emergency_timeout_here: 417,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
                 }
             );
 
@@ -397,7 +400,7 @@ mod tests {
             let mut scale_encoded_transfer_event = MockedAssetEvent::<MiniRuntime>::Transferred {
                 asset_id: ASSET_DOT,
                 from: executor.clone(),
-                to: requester_on_dest.clone(),
+                to: requester_on_dest,
                 amount: 100 as Balance,
             }
             .encode();
@@ -415,15 +418,12 @@ mod tests {
             };
 
             assert_ok!(Circuit::confirm_side_effect(
-                Origin::signed(executor.clone()),
+                Origin::signed(executor),
                 expected_sfx_hash,
                 confirmation_transfer_1
             ));
 
-            assert_ok!(Vacuum::read_order_status(
-                Origin::signed(requester.clone()),
-                xtx_id
-            ));
+            assert_ok!(Vacuum::read_order_status(Origin::signed(requester), xtx_id));
 
             let order_status = expect_last_event_to_read_order_status();
 
@@ -433,7 +433,15 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::FinishedAllSteps,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps),],
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
+                        estimated_height_here: 817,
+                        estimated_height_there: 824,
+                        submit_by_height_here: 417,
+                        submit_by_height_there: 424,
+                        emergency_timeout_here: 417,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
                 }
             );
         });
@@ -502,7 +510,15 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: AdaptiveTimeout {
+                        estimated_height_here: 817,
+                        estimated_height_there: 824,
+                        submit_by_height_here: 417,
+                        submit_by_height_there: 424,
+                        emergency_timeout_here: 417,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
                 }
             );
 
@@ -575,12 +591,13 @@ mod tests {
                     status: CircuitStatus::Ready,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::Ready),],
                     timeouts_at: AdaptiveTimeout {
-                        estimated_height_here: 0,
-                        estimated_height_there: 0,
-                        estimated_epoch_there: 0,
-                        emergency_timeout_here: 401,
-                        there: [0, 0, 0, 0],
-                        dlq: Some(System::block_number()),
+                        estimated_height_here: 817,
+                        estimated_height_there: 824,
+                        submit_by_height_here: 417,
+                        submit_by_height_there: 424,
+                        emergency_timeout_here: 417,
+                        there: [1, 1, 1, 1],
+                        dlq: Some(453)
                     },
                 }
             );
@@ -594,39 +611,17 @@ mod tests {
             let confirmation_transfer = prepare_transfer_asset_confirmation(
                 ASSET_DOT,
                 executor.clone(),
-                requester_on_dest.clone(),
+                requester_on_dest,
                 100u128,
             );
 
             assert_ok!(Circuit::confirm_side_effect(
-                Origin::signed(executor.clone()),
+                Origin::signed(executor),
                 expected_sfx_hash,
                 confirmation_transfer
             ),);
 
-            assert_ok!(Vacuum::read_order_status(
-                Origin::signed(requester.clone()),
-                xtx_id
-            ));
-
-            // let order_status = expect_last_event_to_read_order_status();
-            //
-            // assert_eq!(
-            //     order_status,
-            //     OrderStatusRead {
-            //         xtx_id,
-            //         status: CircuitStatus::FinishedAllSteps,
-            //         all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps),],
-            //         timeouts_at: AdaptiveTimeout {
-            //             estimated_height_here: 869,
-            //             estimated_height_there: 0,
-            //             estimated_epoch_there: 0,
-            //             emergency_timeout_here: 0,
-            //             there: POLKADOT_TARGET,
-            //             dlq: None,
-            //         },
-            //     }
-            // );
+            assert_ok!(Vacuum::read_order_status(Origin::signed(requester), xtx_id));
 
             assert_eq!(Circuit::get_dlq(xtx_id), None);
         });
