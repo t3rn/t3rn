@@ -1,15 +1,15 @@
 import { describe, expect, it } from "@jest/globals";
-import fetch from "node-fetch";
+import fetch from "node-fetch-commonjs";
 import {
-  EthSpeedModes,
-  calculateGasFee,
+  SpeedModes,
+  estimateGasFee,
   getGasPrice,
   getGasAmount,
-  EthActions,
+  Actions,
   ETH_TRANSFER_GAS_AMOUNT,
 } from "../eth";
 
-jest.mock("node-fetch", () => jest.fn());
+jest.mock("node-fetch-commonjs", () => jest.fn());
 
 const mockGetGasPriceSuccesfulResponse = () => {
   // @ts-ignore - mockImplementationOnce is not defined in type
@@ -47,7 +47,7 @@ describe("eth", () => {
     it("should return the current gas price of ETH", async () => {
       mockGetGasPriceSuccesfulResponse();
 
-      const result = await getGasPrice();
+      const result = await getGasPrice("eth");
 
       expect(result).not.toEqual(undefined);
       expect(result.rapid).toEqual(17796706627);
@@ -60,7 +60,7 @@ describe("eth", () => {
       mockGetGasPriceErrorResponse();
 
       try {
-        await getGasPrice();
+        await getGasPrice('eth');
       } catch (e) {
         expect(e).toEqual(
           new Error("Failed to fetch gas price. ERROR_STATUS: 500")
@@ -69,18 +69,18 @@ describe("eth", () => {
     });
   });
 
-  describe("calculateGasFee", () => {
-    it("should get the current gas fee for a ETH transfer", async () => {
+  describe("estimateGasFee", () => {
+    it("should get the estimate gas fee for a transfer", async () => {
       mockGetGasPriceSuccesfulResponse();
-      const gasFee = await calculateGasFee("tran", EthSpeedModes.Fast);
+      const gasFee = await estimateGasFee("eth", "transfer", SpeedModes.Fast);
       expect(gasFee).toEqual(0.000294017835132);
     });
 
-    it("should result to an error if unable to calculate ETH transfer gas fee", async () => {
+    it("should result to an error if unable to estimate transfer gas fee", async () => {
       mockGetGasPriceErrorResponse();
 
       try {
-        await calculateGasFee("tran", EthSpeedModes.Fast);
+        await estimateGasFee("eth", "transfer", SpeedModes.Fast);
       } catch (e) {
         expect(e).toEqual(
           new Error("Failed to fetch gas price. ERROR_STATUS: 500")
@@ -91,7 +91,7 @@ describe("eth", () => {
 
   describe("getGasAmount", () => {
     it("should return the gas amount for a ETH transfer", () => {
-      expect(getGasAmount(EthActions.Transfer)).toEqual(
+      expect(getGasAmount(Actions.Transfer)).toEqual(
         ETH_TRANSFER_GAS_AMOUNT
       );
     });
