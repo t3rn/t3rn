@@ -57,8 +57,8 @@ pub mod pallet {
         light_client::LightClientHeartbeat,
         portal::Portal,
         xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
-        Bytes, ChainId, ExecutionVendor, GatewayActivity, GatewayType, GatewayVendor,
-        GatewaysOverview, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
+        Bytes, ChainId, ExecutionVendor, GatewayActivity, GatewayType, GatewayVendor, TokenInfo,
+        TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -185,7 +185,7 @@ pub mod pallet {
                     continue
                 }
 
-                let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(&gateway_id)
+                let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(gateway_id)
                     .last()
                     .cloned()
                     .unwrap_or_else(|| GatewayActivity {
@@ -237,12 +237,12 @@ pub mod pallet {
                 };
 
                 // Add the new activity to the historic overview of the gateway
-                let mut historic_overview = GatewaysOverviewStoreHistory::<T>::get(&gateway_id);
+                let mut historic_overview = GatewaysOverviewStoreHistory::<T>::get(gateway_id);
                 if historic_overview.len() == MAX_GATEWAY_OVERVIEW_RECORDS as usize {
                     let _ = historic_overview.remove(0);
                 }
                 historic_overview.push(activity.clone());
-                GatewaysOverviewStoreHistory::<T>::insert(&gateway_id, historic_overview);
+                GatewaysOverviewStoreHistory::<T>::insert(gateway_id, historic_overview);
 
                 // Add the new activity to the general overview
                 all_overviews.push(activity);
@@ -368,6 +368,8 @@ pub mod pallet {
         GatewayRecordAlreadyExists,
         /// XDNS Record not found
         XdnsRecordNotFound,
+        /// Escrow account not found
+        EscrowAccountNotFound,
         /// Stored token has already been added before
         TokenRecordAlreadyExists,
         /// XDNS Token not found in assets overlay
@@ -500,31 +502,28 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for (sfx_4b_id, sfx_abi) in self.standard_sfx_abi.iter() {
-                let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
+                let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
                     .unwrap_or("invalid utf8 4b sfx id format");
-                log::info!("XDNS -- on-genesis: add standard SFX ABI: {:?}", sfx_4b_str);
                 <StandardSFXABIs<T>>::insert(sfx_4b_id, sfx_abi);
             }
 
             for gateway_record in self.known_gateway_records.clone() {
-                <Gateways<T>>::insert(gateway_record.gateway_id, gateway_record.clone());
-                // Populate standard side effect ABI registry
-                for (sfx_4b_id, memo_prefix) in gateway_record.allowed_side_effects.iter() {
-                    match <StandardSFXABIs<T>>::get(sfx_4b_id) {
-                        Some(mut abi) => {
-                            abi.maybe_prefix_memo = *memo_prefix;
-                            <SFXABIRegistry<T>>::insert(gateway_record.gateway_id, sfx_4b_id, abi)
-                        },
-                        None => {
-                            let sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
-                                .unwrap_or("invalid utf8 4b sfx id format");
-                            log::error!(
-                                "XDNS -- on-genesis: standard SFX ABI not found: {:?}",
-                                sfx_4b_str
-                            )
-                        },
-                    }
-                }
+                Pallet::<T>::override_gateway(
+                    gateway_record.gateway_id,
+                    gateway_record.verification_vendor,
+                    gateway_record.execution_vendor,
+                    gateway_record.codec,
+                    gateway_record.registrant,
+                    gateway_record.escrow_account,
+                    gateway_record.allowed_side_effects,
+                )
+                .map_err(|e| {
+                    log::error!(
+                        "XDNS -- on-genesis: failed to add gateway via override_gateway: {:?}",
+                        e
+                    );
+                })
+                .ok();
             }
         }
     }
@@ -596,6 +595,10 @@ pub mod pallet {
                 return Err(Error::<T>::TokenRecordAlreadyExists.into())
             }
 
+            if <AllTokenIds<T>>::get().contains(&token_id) {
+                return Err(Error::<T>::TokenRecordAlreadyExists.into())
+            }
+
             let admin: T::AccountId = ensure_signed_or_root(origin.clone())?.unwrap_or(
                 T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Escrow),
             );
@@ -611,6 +614,8 @@ pub mod pallet {
             let gateway_id = T::SelfGatewayId::get();
 
             Self::link_token_to_gateway(token_id, gateway_id, token_props)?;
+
+            <AllTokenIds<T>>::append(token_id);
 
             Self::deposit_event(Event::<T>::NewTokenAssetRegistered(token_id, gateway_id));
 
@@ -706,7 +711,15 @@ pub mod pallet {
                         abi.maybe_prefix_memo = *maybe_event_memo_prefix;
                         <SFXABIRegistry<T>>::insert(gateway_id, sfx_4b_id, abi)
                     },
-                    None => return Err(Error::<T>::SideEffectABINotFound.into()),
+                    None => {
+                        let _sfx_4b_str = sp_std::str::from_utf8(sfx_4b_id.as_slice())
+                            .unwrap_or("invalid utf8 4b sfx id format");
+                        log::error!(
+                            "ABI not found for {:?}; override_gateway failed.",
+                            sfx_4b_id
+                        );
+                        return Err(Error::<T>::SideEffectABINotFound.into())
+                    },
                 }
             }
             <Gateways<T>>::insert(
@@ -836,7 +849,10 @@ pub mod pallet {
 
         fn get_escrow_account(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
             match <Gateways<T>>::get(chain_id) {
-                Some(rec) => Ok(rec.escrow_account.encode()),
+                Some(rec) => match rec.escrow_account {
+                    Some(account) => Ok(account.encode()),
+                    None => Err(Error::<T>::EscrowAccountNotFound.into()),
+                },
                 None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
         }

@@ -38,7 +38,12 @@ impl<T: Config> SquareUp<T> {
                 fsx.input.reward_asset_id,
             )
         }) {
-            return Err(Error::<T>::RequesterNotEnoughBalance.into())
+            log::error!(
+                "AssetsFailedToWithdraw for asset id {:?} and max reward {:?} ",
+                fsx_array[0].input.reward_asset_id,
+                fsx_array[0].input.max_reward
+            );
+            return Err(Error::<T>::AssetsFailedToWithdraw.into())
         }
 
         let request_charges = fsx_array
