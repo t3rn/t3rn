@@ -226,6 +226,12 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 pub trait Xdns<T: frame_system::Config, Balance> {
     fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>>;
 
+    fn get_slowest_verifier_target(
+        all_targets: Vec<TargetId>,
+        speed_mode: &SpeedMode,
+        emergency_offset: T::BlockNumber,
+    ) -> Option<(GatewayVendor, TargetId, T::BlockNumber, T::BlockNumber)>;
+
     fn estimate_adaptive_timeout_on_slowest_target(
         target_ids: Vec<ChainId>,
         speed_mode: &SpeedMode,

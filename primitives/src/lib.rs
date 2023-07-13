@@ -122,7 +122,7 @@ pub trait TreasuryAccountProvider<Account> {
     fn get_treasury_account(treasury_account: TreasuryAccount) -> Account;
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, PartialOrd, Ord, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
 pub enum GatewayVendor {
@@ -132,7 +132,6 @@ pub enum GatewayVendor {
     Rococo,
     Ethereum,
 }
-
 use sp_std::slice::Iter;
 impl GatewayVendor {
     pub fn iterator() -> Iter<'static, GatewayVendor> {
@@ -159,9 +158,120 @@ impl GatewayVendor {
                 SpeedMode::Finalized => 3u32.into(),
             },
         }
+    }
 
-        // let epochs_for_execution = epochs_for_confirmation;
-        // epochs_for_execution.saturating_add(&epochs_for_confirmation)
+    pub fn calculate_offsets<BlockNumber: From<u32> + Clone + Saturating + Zero>(
+        &self,
+        speed_mode: &SpeedMode,
+        emergency_offset: BlockNumber,
+        epoch_history: Option<Vec<EpochEstimate<BlockNumber>>>,
+    ) -> (BlockNumber, BlockNumber) {
+        let eta_in_epochs = self.eta_per_speed_mode_in_epochs::<BlockNumber>(speed_mode);
+
+        let (submit_by_local_offset, submit_by_remote_offset) = epoch_history
+            .and_then(|history| history.last().cloned())
+            .map(|record| {
+                (
+                    record
+                        .moving_average_local
+                        .clone()
+                        .saturating_mul(eta_in_epochs.clone()),
+                    record.moving_average_remote.saturating_mul(eta_in_epochs),
+                )
+            })
+            .unwrap_or_else(|| (emergency_offset.clone(), emergency_offset.clone()));
+
+        if submit_by_local_offset.is_zero() || submit_by_remote_offset.is_zero() {
+            (emergency_offset.clone(), emergency_offset)
+        } else {
+            (submit_by_local_offset, submit_by_remote_offset)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_gateway_vendor {
+    use super::*;
+
+    #[test]
+    fn test_calculate_offsets_no_history() {
+        let vendor = GatewayVendor::Polkadot;
+        let speed_mode = SpeedMode::Fast;
+        let emergency_offset = 10;
+
+        let (local_offset, remote_offset) =
+            vendor.calculate_offsets::<u32>(&speed_mode, emergency_offset, None);
+
+        assert_eq!(local_offset, emergency_offset);
+        assert_eq!(remote_offset, emergency_offset);
+    }
+
+    #[test]
+    fn test_calculate_offsets_zero_average() {
+        let vendor = GatewayVendor::Polkadot;
+        let speed_mode = SpeedMode::Fast;
+        let emergency_offset = 10u32;
+
+        let epoch_history = Some(vec![EpochEstimate {
+            local: 20,
+            remote: 30,
+            moving_average_local: 0,
+            moving_average_remote: 0,
+        }]);
+
+        let (local_offset, remote_offset) =
+            vendor.calculate_offsets::<u32>(&speed_mode, emergency_offset, epoch_history);
+
+        assert_eq!(local_offset, emergency_offset);
+        assert_eq!(remote_offset, emergency_offset);
+    }
+
+    #[test]
+    fn test_calculate_offsets_non_zero_average() {
+        let vendor = GatewayVendor::Polkadot;
+        let speed_mode = SpeedMode::Fast;
+        let emergency_offset = 10u32;
+
+        let epoch_history = Some(vec![EpochEstimate {
+            local: 20,
+            remote: 30,
+            moving_average_local: 5,
+            moving_average_remote: 7,
+        }]);
+
+        let (local_offset, remote_offset) =
+            vendor.calculate_offsets::<u32>(&speed_mode, emergency_offset, epoch_history);
+
+        assert_eq!(local_offset, 5 * 4); // vendor is Polkadot and speed_mode is Fast, so eta_per_speed_mode_in_epochs should return 4
+        assert_eq!(remote_offset, 7 * 4); // same here
+    }
+
+    #[test]
+    fn test_calculate_offsets_with_speed_modes() {
+        let vendor = GatewayVendor::Polkadot;
+        let emergency_offset = 10u32;
+
+        let epoch_history = Some(vec![EpochEstimate {
+            local: 20,
+            remote: 30,
+            moving_average_local: 5,
+            moving_average_remote: 7,
+        }]);
+
+        for (expected_mul, speed_mode) in &[
+            (4, SpeedMode::Fast),
+            (6, SpeedMode::Rational),
+            (8, SpeedMode::Finalized),
+        ] {
+            let (local_offset, remote_offset) = vendor.calculate_offsets::<u32>(
+                speed_mode,
+                emergency_offset,
+                epoch_history.clone(),
+            );
+
+            assert_eq!(local_offset, 5 * expected_mul); // as eta_per_speed_mode_in_epochs should return the expected_mul for the given speed_mode
+            assert_eq!(remote_offset, 7 * expected_mul); // same here
+        }
     }
 }
 
@@ -433,6 +543,105 @@ pub struct FinalityVerifierActivity<BlockNumber> {
 
     pub is_active: bool,
 }
+impl<BlockNumber: Zero + Clone + Saturating + Default + Ord> FinalityVerifierActivity<BlockNumber> {
+    pub fn new_for_finalized_compare(
+        reported_at: BlockNumber,
+        finalized_height: BlockNumber,
+    ) -> Self {
+        FinalityVerifierActivity {
+            verifier: Default::default(),
+            reported_at,
+            justified_height: Zero::zero(),
+            finalized_height,
+            updated_height: Zero::zero(),
+            epoch: Zero::zero(),
+            is_active: false,
+        }
+    }
+
+    pub fn determine_finalized_reports_increase(
+        activities: &[FinalityVerifierActivity<BlockNumber>],
+    ) -> Option<(BlockNumber, BlockNumber)> {
+        if activities.len() < 2 {
+            return None
+        }
+        // Sort by reported_at to get the oldest and the latest reports
+        let mut sorted_activities: Vec<_> = activities.iter().collect();
+        sorted_activities.sort_by(|a, b| a.reported_at.cmp(&b.reported_at));
+        let oldest_report = sorted_activities.first()?;
+        let latest_report = sorted_activities.last()?;
+        // if any of the reports contains zero finalized height or reported, we can't compare them
+        if oldest_report.finalized_height.is_zero()
+            || oldest_report.reported_at.is_zero()
+            || latest_report.finalized_height.is_zero()
+            || latest_report.reported_at.is_zero()
+        {
+            return None
+        }
+        let finalized_height_increase = latest_report
+            .finalized_height
+            .clone()
+            .saturating_sub(oldest_report.finalized_height.clone());
+
+        let reported_at_increase = latest_report
+            .reported_at
+            .clone()
+            .saturating_sub(oldest_report.reported_at.clone());
+
+        Some((finalized_height_increase, reported_at_increase))
+    }
+}
+
+#[cfg(test)]
+mod tests_finality_verifier_activity {
+    use super::*;
+
+    #[test]
+    fn test_zero_cases_return_none() {
+        let activity1 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(0u32, 100u32);
+        let activity2 = FinalityVerifierActivity::new_for_finalized_compare(100u32, 0u32);
+        let activities = vec![activity1, activity2];
+
+        assert_eq!(
+            FinalityVerifierActivity::<u32>::determine_finalized_reports_increase(&activities),
+            None
+        );
+    }
+
+    #[test]
+    fn test_length_below_two_returns_none() {
+        let activity = FinalityVerifierActivity::<u32>::new_for_finalized_compare(50u32, 100u32);
+        let activities = vec![activity];
+
+        assert_eq!(
+            FinalityVerifierActivity::<u32>::determine_finalized_reports_increase(&activities),
+            None
+        );
+    }
+
+    #[test]
+    fn test_determines_increase_for_two_elements() {
+        let activity1 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(50u32, 100u32);
+        let activity2 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(100u32, 200u32);
+        let activities = vec![activity1, activity2];
+
+        let result =
+            FinalityVerifierActivity::<u32>::determine_finalized_reports_increase(&activities);
+        assert_eq!(result, Some((100u32, 50u32)));
+    }
+
+    #[test]
+    fn test_determines_increase_for_three_elements() {
+        let activity1 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(50u32, 100u32);
+        let activity2 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(75u32, 150u32);
+        let activity3 = FinalityVerifierActivity::<u32>::new_for_finalized_compare(100u32, 200u32);
+        let activities = vec![activity1, activity2, activity3];
+
+        let result =
+            FinalityVerifierActivity::<u32>::determine_finalized_reports_increase(&activities);
+        assert_eq!(result, Some((100u32, 50u32)));
+    }
+}
 
 impl<BlockNumber: Zero> Default for FinalityVerifierActivity<BlockNumber> {
     fn default() -> Self {
@@ -512,6 +721,7 @@ pub type AccountPublic = <MultiSignature as Verify>::Signer;
 /// Common types across all runtimes
 pub type BlockNumber = u32;
 
+use crate::xdns::EpochEstimate;
 use sp_runtime::traits::Saturating;
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 

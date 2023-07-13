@@ -4,7 +4,6 @@ use num_traits::Zero;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use t3rn_abi::types::Bytes;
-use t3rn_types::sfx::TargetId;
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
 pub enum HeightResult<BlockNumber> {
