@@ -6,7 +6,7 @@ import { handleRegisterCmd } from "./commands/register/register.ts"
 import { handleSubmitCmd } from "./commands/submit/submit.ts"
 import { handleBidCmd } from "./commands/bid.ts"
 import { handleDgfCmd } from "./commands/dgf.ts"
-import { handleEstimateFees } from "./commands/estimate.ts"
+import { handleEstimateMaxReward } from "./commands/estimate.ts"
 
 const withExportMode = (program: Command) =>
   program.option("-x, --export", "Export extrinsic data to a file")
@@ -30,7 +30,7 @@ withExportMode(
     .command("register")
     .option("-g, --gateway <id>", "ID of the gateway to register")
     .description("Register a gateway with the t3rn circuit")
-    .action(wrapCryptoWaitReady(handleRegisterCmd))
+    .action(wrapCryptoWaitReady(handleRegisterCmd)),
 )
 
 withExportMode(
@@ -39,10 +39,10 @@ withExportMode(
     .option("-s, --sfx <file-path>", "Path to the sfx JSON file")
     .option(
       "-h, --headers <gateway_id>",
-      "Submit the latest headers of a gateway to portal. All available finalized headers will be added."
+      "Submit the latest headers of a gateway to portal. All available finalized headers will be added.",
     )
     .description("Submit an extrinic to the t3rn circuit")
-    .action(wrapCryptoWaitReady(handleSubmitCmd))
+    .action(wrapCryptoWaitReady(handleSubmitCmd)),
 )
 
 withExportMode(
@@ -51,34 +51,39 @@ withExportMode(
     .description("Bid on an execution as an Executor")
     .argument("sfxId <string>", "sfxId of the side effect to bid on")
     .argument("amount <float>", "bid amount")
-    .action(wrapCryptoWaitReady(handleBidCmd))
+    .action(wrapCryptoWaitReady(handleBidCmd)),
 )
 
 withExportMode(
   program
     .command("dgf")
     .description(
-      "Generate side effects data with specific error modes for testing purposes on the chain."
+      "Generate side effects data with specific error modes for testing purposes on the chain.",
     )
     .option(
       "-s, --sfx <file-path>",
       "Path to the sfx JSON file",
-      "transfer.json"
+      "transfer.json",
     )
     .option(
       "-t, --timeout <timeout>",
       "Timeout in seconds for waiting for events from the chain",
-      "30"
+      "30",
     )
-    .action(wrapCryptoWaitReady(handleDgfCmd))
+    .action(wrapCryptoWaitReady(handleDgfCmd)),
 )
 
-withExportMode(
-  program
-    .command("estimate-fees")
-    .option("-s, --sfx <file-path>", "Path to the sfx JSON file")
-    .description("Estimate the fees for executing an Sfx.")
-    .action(wrapCryptoWaitReady(handleEstimateFees))
-)
-
-program.parse(process.argv)
+program
+  .command("estimate")
+  .requiredOption("--action <action>", "The execution action")
+  .requiredOption("--base-asset <symbol>", "The base asset")
+  .requiredOption("--target <name>", "The target name")
+  .requiredOption("--target-asset <symbol>", "The target asset")
+  .requiredOption("--target-amount <amount>", "The amount of the target asset")
+  .requiredOption(
+    "--over-spend <percent>",
+    "The percentage of the target amount to be used as a profit margin",
+  )
+  .description("Estimate the max reward for an execution")
+  .action(handleEstimateMaxReward),
+  program.parse(process.argv)

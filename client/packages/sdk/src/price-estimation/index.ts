@@ -47,7 +47,7 @@ export interface MaxRewardEstimation {
   gasFee: Array<Asset>,
   executorFeeEstimate: Asset,
   maxReward: Asset,
-  estimatedValue: number
+  estimatedValue: Asset
 }
 
 /*
@@ -151,7 +151,10 @@ export const estimateMaxReward = async ({
       value: maxRewardInBaseAsset,
       symbol: baseAsset
     },
-    estimatedValue: targetAmountInBaseAsset,
+    estimatedValue: {
+      value: targetAmountInBaseAsset,
+      symbol: baseAsset
+    },
   }
 }
 

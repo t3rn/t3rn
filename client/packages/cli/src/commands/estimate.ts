@@ -1,107 +1,55 @@
 import ora from "ora"
-import { EthTarget, calculateGasFee } from "@t3rn/sdk/price-estimation"
-import { ExtrinsicSchema, SpeedMode } from "@/schemas/extrinsic.ts"
-import { getConfig } from "@/utils/config.ts"
+import { estimateMaxReward, Action, Target } from "@t3rn/sdk/price-estimation"
+import { MaxRewardEstimateSchema } from "@/schemas/estimate.ts"
 import { validate } from "@/utils/fns.ts"
-import { colorLogMsg, log } from "@/utils/log.ts"
-import { readSfxFile } from "@/utils/sfx.ts"
+import { colorLogMsg } from "@/utils/log.ts"
 import { Args } from "@/types.ts"
-import { SideEffect } from "@/schemas/sfx.ts"
-import {
-  mapSfxActionToEthAction,
-  mapSfxSpeedModeToEthSpeedMode,
-} from "@/utils/eth.ts"
 
 export const spinner = ora()
 
-export const handleEstimateFees = async (args: Args<"sfx" | "export">) => {
-  const config = getConfig()
-  if (!config) {
-    process.exit(1)
+export const handleEstimateMaxReward = async (
+  _args: Args<
+    | "action"
+    | "baseAsset"
+    | "target"
+    | "targetAmount"
+    | "targetAsset"
+    | "overSpend"
+  >,
+) => {
+  const args = validate(
+    MaxRewardEstimateSchema,
+    {
+      ..._args,
+      targetAmount: parseFloat(_args?.targetAmount),
+      overSpend: parseFloat(_args?.overSpend),
+    },
+    {
+      configFileName: "estimation arguments",
+    },
+  )
+
+  if (!args) {
+    process.exit()
   }
 
-  if (!args.sfx) {
-    log("ERROR", "No sfx file provided, use --sfx <file-path>")
-    process.exit(1)
-  }
-
-  const unvalidatedExtrinsic = readSfxFile(args.sfx)
-
-  if (!unvalidatedExtrinsic) {
-    process.exit(1)
-  }
-
-  const extrinsic = validate(ExtrinsicSchema, unvalidatedExtrinsic, {
-    configFileName: args.sfx,
-  })
-
-  if (!extrinsic) {
-    process.exit(1)
-  }
-
-  spinner.text = "Estimating fees..."
+  spinner.text = "Estimating..."
   spinner.start()
 
-  await Promise.allSettled(
-    extrinsic.sideEffects.map((sfx, i) =>
-      estimateFees(`#${i}`, sfx, extrinsic.speed_mode)
-    )
-  )
+  try {
+    const estimate = await estimateMaxReward({
+      action: args.action as Action,
+      asset: args.baseAsset,
+      target: args.target as Target,
+      targetAmount: args.targetAmount,
+      targetAsset: args.targetAsset,
+      overSpendPercent: args.overSpend,
+    })
+    console.log("\n")
+    console.table(estimate)
+  } catch (e) {
+    spinner.fail(colorLogMsg("ERROR", e))
+  }
 
   spinner.stop()
-}
-
-const estimateFees = async (
-  tag: string,
-  sideEffect: SideEffect,
-  speedMode: SpeedMode
-) => {
-  const withArgs = (fn: (...args: unknown[]) => unknown) =>
-    fn(tag, sideEffect, speedMode)
-
-  switch (sideEffect.target) {
-    case "roco":
-    case "polk":
-    case "ksma":
-      return await withArgs(estimateSubstrateFees)
-    case "eth":
-    case "sepl":
-    default:
-      return await withArgs(estimateEthFees)
-  }
-}
-
-const estimateEthFees = async (
-  tag: string,
-  sideEffect: SideEffect,
-  speedMode: SpeedMode
-) => {
-  spinner.info(colorLogMsg("INFO", `Estimating fees for ${tag}...`))
-  console.table(sideEffect)
-
-  try {
-    const gasFeesInEth = await calculateGasFee(
-      sideEffect.target as EthTarget,
-      mapSfxActionToEthAction(sideEffect.action),
-      mapSfxSpeedModeToEthSpeedMode(speedMode)
-    )
-    spinner.succeed(
-      colorLogMsg("SUCCESS", `Estimated fees for ${tag}: ${gasFeesInEth} ETH`)
-    )
-  } catch (e) {
-    spinner.fail(
-      colorLogMsg("ERROR", `Failed to estimate fees for ${tag}: ${e}`)
-    )
-    process.exit(1)
-  }
-}
-
-const estimateSubstrateFees = async (tag: string, sideEffect: SideEffect) => {
-  spinner.warn(
-    colorLogMsg(
-      "WARN",
-      `Skip fees estimation for ${tag}. REASON: price estimation for ${sideEffect.target} target is not yet supported!`
-    )
-  )
-  process.exit(1)
 }
