@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.39.0-rc.0] - 2023-07-13
+### :sparkles: New Features
+- [`65030ad`](https://github.com/t3rn/t3rn/commit/65030ad8e60ff7c0682de9957e867258e3eb5a94) - add vacuum pallet to enhance transfer assets SFX path *(PR [#1132](https://github.com/t3rn/t3rn/pull/1132) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.38.2-rc.0] - 2023-07-11
 ### :wrench: Chores
 - [`fd40dba`](https://github.com/t3rn/t3rn/commit/fd40dba403e9a18f6e17084f347942de5b71b393) - empty PR template *(PR [#1148](https://github.com/t3rn/t3rn/pull/1148) by [@3h4x](https://github.com/3h4x))*
@@ -1335,3 +1340,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.38.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.37.1-rc.0...v1.38.0-rc.0
 [v1.38.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.0-rc.0...v1.38.1-rc.0
 [v1.38.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.1-rc.0...v1.38.2-rc.0
+[v1.39.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.5-rc.0...v1.39.0-rc.0
