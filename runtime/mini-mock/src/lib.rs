@@ -1,6 +1,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResultWithPostInfo,
+    log,
     traits::{fungibles::Destroy, FindAuthor},
     Blake2_128Concat, RuntimeDebug, StorageHasher,
 };
@@ -10,10 +11,18 @@ pub use pallet_attesters::{
     NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes, PreviousCommittee,
     SortedNominatedAttesters,
 };
-pub use pallet_circuit::{Config as ConfigCircuit, FullSideEffects, SFX2XTXLinksMap, XExecSignals};
+
+pub use pallet_circuit::{
+    Config as ConfigCircuit, Event as CircuitEvent, FullSideEffects, SFX2XTXLinksMap, XExecSignals,
+};
+
+pub use pallet_circuit_vacuum::{Config as ConfigVacuum, Event as VacuumEvent, OrderStatusRead};
+mod hooks;
 mod treasuries_config;
+pub use hooks::GlobalOnInitQueues;
 use sp_runtime::DispatchResult;
 
+use hex_literal::hex;
 pub use pallet_account_manager::{
     Config as ConfigAccountManager, Error as AccountManagerError, Event as AccountManagerEvent,
     SettlementsPerRound,
@@ -22,6 +31,7 @@ pub use pallet_account_manager::{
 use sp_runtime::ConsensusEngineId;
 
 use pallet_attesters::TargetId;
+use pallet_circuit::Xdns;
 use pallet_grandpa_finality_verifier::{
     bridges::runtime as bp_runtime,
     light_clients::{
@@ -33,18 +43,21 @@ pub use pallet_rewards::{
     Authors, AuthorsThisPeriod, Config as ConfigRewards, DistributionBlock, DistributionHistory,
     Error as RewardsError, PendingClaims,
 };
+
 use sp_core::H256;
+use sp_io::TestExternalities;
 use sp_runtime::{
     generic, parameter_types,
     traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup},
     Perbill, Percent,
 };
-use t3rn_primitives::{ExecutionVendor, GatewayVendor};
+use t3rn_primitives::{EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo};
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<MiniRuntime>;
 pub type Block = frame_system::mocking::MockBlock<MiniRuntime>;
 pub type BlockNumber = u32;
 pub type Balance = u128;
+pub type Hash = sp_core::H256;
 type Header = generic::Header<u32, BlakeTwo256>;
 
 use pallet_grandpa_finality_verifier::light_clients::LightClient;
@@ -73,6 +86,7 @@ frame_support::construct_runtime!(
         AccountManager: pallet_account_manager = 103,
         Clock: pallet_clock = 104,
         Circuit: pallet_circuit = 105,
+        Vacuum: pallet_circuit_vacuum = 106,
         // Portal
         Portal: pallet_portal = 128,
         RococoBridge: pallet_grandpa_finality_verifier = 129,
@@ -137,6 +151,9 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
         is_sufficient: bool,
         min_balance: Balance,
     ) -> DispatchResult {
+        println!("MiniMock::force_create_asset");
+        println!("asset_id: {asset_id:?}");
+        println!("admin: {admin:?}");
         Assets::force_create(origin, asset_id, admin, is_sufficient, min_balance)
     }
 
@@ -171,7 +188,7 @@ impl pallet_clock::Config for MiniRuntime {
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
-    type OnInitializeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
+    type OnInitializeQueues = GlobalOnInitQueues;
     type RoundDuration = ConstU32<400>;
 }
 use t3rn_primitives::monetary::TRN;
@@ -238,6 +255,7 @@ parameter_types! {
     pub const RewardMultiplier: Balance = 1;
     pub const MinAttesterBond: Balance = 1;
     pub const MinNominatorBond: Balance = 1;
+    pub const ExistentialDeposit: u128 = 1_u128;
 }
 
 impl pallet_attesters::Config for MiniRuntime {
@@ -271,7 +289,7 @@ impl pallet_balances::Config for MiniRuntime {
     type DustRemoval = ();
     /// The ubiquitous event type.
     type Event = Event;
-    type ExistentialDeposit = ();
+    type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
@@ -383,6 +401,13 @@ impl pallet_circuit::Config for MiniRuntime {
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10u32>;
     type XtxTimeoutDefault = ConstU32<400u32>;
+}
+
+impl pallet_circuit_vacuum::Config for MiniRuntime {
+    type CircuitSubmitAPI = Circuit;
+    type Currency = Balances;
+    type Event = Event;
+    type ReadSFX = Circuit;
 }
 
 impl pallet_portal::Config for MiniRuntime {
@@ -643,44 +668,255 @@ pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
 }
 
+pub const T3RN_TARGET_ROCO: TargetId = [3u8, 3u8, 3u8, 3u8];
+pub const T3RN_TARGET_POLKADOT: TargetId = [0u8, 3u8, 3u8, 3u8];
+pub const ETHEREUM_TARGET: TargetId = [9u8; 4];
+pub const SEPOLIA_TARGET: TargetId = [10u8; 4];
+pub const ASTAR_TARGET: TargetId = [8u8; 4];
+pub const POLKADOT_TARGET: TargetId = [1u8; 4];
+pub const KUSAMA_TARGET: TargetId = [2u8; 4];
+
+pub const ASSET_ETH: u32 = 1u32;
+pub fn get_asset_eth_with_info() -> (u32, TokenInfo) {
+    (
+        ASSET_ETH,
+        TokenInfo::Ethereum(EthereumToken {
+            symbol: b"ETH".to_vec(),
+            decimals: 18,
+            address: None,
+        }),
+    )
+}
+pub fn get_asset_eth_with_substrate_info() -> (u32, TokenInfo) {
+    (
+        ASSET_ETH,
+        TokenInfo::Substrate(SubstrateToken {
+            id: 100u32,
+            symbol: b"ETH".to_vec(),
+            decimals: 18,
+        }),
+    )
+}
+
+pub const ASSET_SEPOLIA: u32 = 11u32;
+pub fn get_asset_sepolia_with_info() -> (u32, TokenInfo) {
+    (
+        ASSET_SEPOLIA,
+        TokenInfo::Ethereum(EthereumToken {
+            symbol: b"SEPOLIA".to_vec(),
+            decimals: 18,
+            address: None,
+        }),
+    )
+}
+pub const ASSET_ASTAR: u32 = 2u32;
+pub fn get_asset_astar_with_info() -> (u32, TokenInfo) {
+    (
+        ASSET_ASTAR,
+        TokenInfo::Substrate(SubstrateToken {
+            id: ASSET_ASTAR,
+            symbol: b"ASTR".to_vec(),
+            decimals: 18,
+        }),
+    )
+}
+pub const ASSET_DOT: u32 = 3u32;
+pub fn get_asset_dot_with_info() -> (u32, TokenInfo) {
+    (
+        ASSET_DOT,
+        TokenInfo::Substrate(SubstrateToken {
+            id: ASSET_DOT,
+            symbol: b"DOT".to_vec(),
+            decimals: 10,
+        }),
+    )
+}
+pub const ASSET_KSM: u32 = 4u32;
+pub fn get_asset_ksm_with_info() -> (u32, TokenInfo) {
+    (
+        ASSET_KSM,
+        TokenInfo::Substrate(SubstrateToken {
+            id: ASSET_KSM,
+            symbol: b"KSM".to_vec(),
+            decimals: 12,
+        }),
+    )
+}
+pub const ASSET_TRN: u32 = 5u32;
+pub fn get_asset_trn_with_info() -> (u32, TokenInfo) {
+    (
+        ASSET_TRN,
+        TokenInfo::Substrate(SubstrateToken {
+            id: ASSET_TRN,
+            symbol: b"TRN".to_vec(),
+            decimals: 12,
+        }),
+    )
+}
+pub fn get_asset_trn_with_eth_info() -> (u32, TokenInfo) {
+    (
+        ASSET_TRN,
+        TokenInfo::Ethereum(EthereumToken {
+            symbol: b"TRN".to_vec(),
+            decimals: 12,
+            address: Some(hex!("670B24610DF99b1685aEAC0dfD5307B92e0cF4d7")),
+        }),
+    )
+}
+
+pub const ASSET_USDT: u32 = 1984u32; // 0xdAC17F958D2ee523a2206206994597C13D831ec7 on Ethereum 0x7169D38820dfd117C3FA1f22a697dBA58d90BA06 on Sepolia, AssetId = 100 on AssetHub (Polkadot/Kusama/Rococo)
+pub fn get_asset_usdt_with_eth_info() -> (u32, TokenInfo) {
+    (
+        ASSET_USDT,
+        TokenInfo::Ethereum(EthereumToken {
+            symbol: b"USDT".to_vec(),
+            decimals: 6,
+            address: Some(hex!("7169D38820dfd117C3FA1f22a697dBA58d90BA06")),
+        }),
+    )
+}
+pub fn get_asset_usdt_with_sepl_info() -> (u32, TokenInfo) {
+    (
+        ASSET_USDT,
+        TokenInfo::Ethereum(EthereumToken {
+            symbol: b"USDT".to_vec(),
+            decimals: 6,
+            address: Some(hex!("dAC17F958D2ee523a2206206994597C13D831ec7")),
+        }),
+    )
+}
+
+pub fn get_asset_usdt_with_substrate_info() -> (u32, TokenInfo) {
+    (
+        ASSET_USDT,
+        TokenInfo::Substrate(SubstrateToken {
+            id: ASSET_USDT,
+            symbol: b"USDT".to_vec(),
+            decimals: 6,
+        }),
+    )
+}
+
 impl ExtBuilder {
     pub fn with_gateway_records(mut self, gateway_records: Vec<GatewayRecord<AccountId>>) -> Self {
         self.known_gateway_records = gateway_records;
         self
     }
 
-    pub fn with_polkadot_gateway_record(mut self) -> Self {
-        let target: TargetId = [1u8; 4];
-        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+    pub fn with_astar_gateway_record(mut self) -> Self {
+        let mock_escrow_account: AccountId = AccountId::new([8u8; 32]);
         self.known_gateway_records.push(GatewayRecord {
-            gateway_id: target,
+            gateway_id: ASTAR_TARGET,
             verification_vendor: GatewayVendor::Polkadot,
             execution_vendor: ExecutionVendor::Substrate,
             codec: t3rn_abi::Codec::Rlp,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
-            allowed_side_effects: vec![],
+            allowed_side_effects: vec![
+                (*b"tran", Some(2)),
+                (*b"tass", Some(4)),
+                (*b"call", Some(10)),
+                (*b"cevm", Some(88)),
+                (*b"wasm", Some(99)),
+            ],
+        });
+        self
+    }
+
+    pub fn with_kusama_gateway_record(mut self) -> Self {
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: KUSAMA_TARGET,
+            verification_vendor: GatewayVendor::Polkadot,
+            execution_vendor: ExecutionVendor::Substrate,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
+        });
+        self
+    }
+
+    pub fn with_polkadot_gateway_record(mut self) -> Self {
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: POLKADOT_TARGET,
+            verification_vendor: GatewayVendor::Polkadot,
+            execution_vendor: ExecutionVendor::Substrate,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![(*b"tran", Some(2)), (*b"tass", Some(4))],
         });
         self
     }
 
     pub fn with_eth_gateway_record(mut self) -> Self {
-        let target: TargetId = [0u8; 4];
-        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        // 0x25641Ce424aDec01a8504e92E96523D4cBb84005 batch verify contract on Sepolia
+        let mock_escrow_account: AccountId = AccountId::new(hex!(
+            "00000000000000000000000025641Ce424aDec01a8504e92E96523D4cBb84005"
+        ));
         self.known_gateway_records.push(GatewayRecord {
-            gateway_id: target,
+            gateway_id: ETHEREUM_TARGET,
             verification_vendor: GatewayVendor::Ethereum,
             execution_vendor: ExecutionVendor::EVM,
             codec: t3rn_abi::Codec::Rlp,
             registrant: None,
             escrow_account: Some(mock_escrow_account),
-            allowed_side_effects: vec![],
+            allowed_side_effects: vec![
+                (*b"tran", Some(2)),
+                (*b"tass", Some(4)),
+                (*b"cevm", Some(88)),
+            ],
         });
         self
     }
 
-    pub fn with_standard_sfx_abi(mut self, standard_sfx_abi: Vec<(Sfx4bId, SFXAbi)>) -> Self {
-        self.standard_sfx_abi = standard_sfx_abi;
+    pub fn with_sepl_gateway_record(mut self) -> Self {
+        // 0x25641Ce424aDec01a8504e92E96523D4cBb84005 batch verify contract on Sepolia
+        let mock_escrow_account: AccountId = AccountId::new(hex!(
+            "00000000000000000000000025641Ce424aDec01a8504e92E96523D4cBb84005"
+        ));
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: SEPOLIA_TARGET,
+            verification_vendor: GatewayVendor::Ethereum,
+            execution_vendor: ExecutionVendor::EVM,
+            codec: t3rn_abi::Codec::Rlp,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![
+                (*b"tran", Some(2)),
+                (*b"tass", Some(4)),
+                (*b"cevm", Some(88)),
+            ],
+        });
+        self
+    }
+
+    pub fn with_t3rn_gateway_record_on_polkadot(mut self) -> Self {
+        let mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
+        self.known_gateway_records.push(GatewayRecord {
+            gateway_id: T3RN_TARGET_POLKADOT,
+            verification_vendor: GatewayVendor::Polkadot,
+            execution_vendor: ExecutionVendor::Substrate,
+            codec: t3rn_abi::Codec::Scale,
+            registrant: None,
+            escrow_account: Some(mock_escrow_account),
+            allowed_side_effects: vec![
+                (*b"tran", Some(2)),
+                (*b"tass", Some(4)),
+                (*b"call", Some(10)),
+                (*b"cevm", Some(88)),
+                (*b"wasm", Some(99)),
+            ],
+        });
+        self
+    }
+
+    pub fn with_standard_sfx_abi(mut self) -> ExtBuilder {
+        // map side_effects to id, keeping lib.rs clean
+        self.standard_sfx_abi = t3rn_abi::standard::standard_sfx_abi();
+
         self
     }
 
@@ -729,4 +965,98 @@ impl ExtBuilder {
         ext.execute_with(|| System::set_block_number(1));
         ext
     }
+}
+
+pub fn prepare_ext_builder_playground() -> TestExternalities {
+    let mut ext = ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_astar_gateway_record()
+        .with_kusama_gateway_record()
+        .with_polkadot_gateway_record()
+        .with_eth_gateway_record()
+        .with_sepl_gateway_record()
+        .with_t3rn_gateway_record_on_polkadot()
+        .build();
+
+    reboot_and_link_assets(&mut ext);
+
+    ext
+}
+
+pub fn reboot_and_link_assets(ext: &mut TestExternalities) {
+    reboot_gateway(ext);
+    link_assets(
+        ext,
+        vec![
+            (
+                SEPOLIA_TARGET,
+                vec![
+                    get_asset_sepolia_with_info(),
+                    get_asset_trn_with_eth_info(),
+                    get_asset_usdt_with_sepl_info(),
+                ],
+            ),
+            (
+                ETHEREUM_TARGET,
+                vec![
+                    get_asset_eth_with_info(),
+                    get_asset_trn_with_eth_info(),
+                    get_asset_usdt_with_eth_info(),
+                ],
+            ),
+            (
+                ASTAR_TARGET,
+                vec![
+                    get_asset_astar_with_info(),
+                    get_asset_usdt_with_substrate_info(),
+                ],
+            ),
+            (POLKADOT_TARGET, vec![get_asset_dot_with_info()]),
+            (KUSAMA_TARGET, vec![get_asset_ksm_with_info()]),
+        ],
+    );
+}
+
+pub fn reboot_gateway(ext: &mut TestExternalities) {
+    ext.execute_with(|| {
+        let _ = XDNS::reboot_self_gateway(Origin::root(), GatewayVendor::Rococo)
+            .expect("ExtBuilder::reboot_self_gateway should fail with root privileges");
+    });
+}
+
+pub fn link_assets(
+    ext: &mut TestExternalities,
+    linked_assets_map: Vec<(TargetId, Vec<(u32, TokenInfo)>)>,
+) {
+    ext.execute_with(|| {
+        // let records_now = XDNS::fetch_full_gateway_records();
+        let records_now = XDNS::all_gateway_ids();
+        let _tokens_now = XDNS::all_token_ids();
+
+        for (target_id, asset_ids) in linked_assets_map {
+            if !records_now.contains(&target_id) {
+                println!("ExtBuilder::link_assets expects target_id = {target_id:?} to be registered; please call XDNS::register_gateway prior");
+                log::error!("ExtBuilder::link_assets expects target_id  = {:?} to be registered; please call XDNS::register_gateway prior", target_id);
+                continue;
+            }
+            for (asset_id, token_info) in asset_ids {
+                if !XDNS::all_token_ids().contains(&asset_id) {
+                    println!("ExtBuilder::link_assets register_new_token = {asset_id:?}");
+
+                    XDNS::register_new_token(
+                        &Origin::root(),
+                        asset_id,
+                        token_info.clone(),
+                    ).expect("ExtBuilder::link_asset_to_gateway register_new_token = {:?} should not fail after ensuring target_id is registered");
+                }
+
+                XDNS::link_token_to_gateway(
+                    asset_id,
+                    target_id,
+                    token_info,
+                )
+                .expect("ExtBuilder::link_asset_to_gateway should not fail after ensuring target_id is registered");
+            }
+        }
+    });
 }
