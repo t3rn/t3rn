@@ -12581,7 +12581,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.38.5-rc.0"
+version = "1.39.0-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12657,7 +12657,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.38.5-rc.0"
+version = "1.39.0-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
