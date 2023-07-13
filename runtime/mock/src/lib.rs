@@ -9,7 +9,10 @@ use frame_support::{
 };
 use hex_literal::hex;
 use pallet_sudo::GenesisConfig as SudoGenesisConfig;
-use sp_core::{crypto::KeyTypeId, H256};
+use sp_core::{
+    crypto::{AccountId32, KeyTypeId},
+    H256,
+};
 use sp_runtime::impl_opaque_keys;
 use sp_std::convert::{TryFrom, TryInto};
 pub mod signed_extrinsics_config;
@@ -138,7 +141,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -155,7 +157,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -172,7 +173,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -216,7 +216,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
