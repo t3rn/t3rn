@@ -1,4 +1,4 @@
-import fetch from "node-fetch-commonjs";
+import fetch from "node-fetch";
 import { Action as SfxAction } from './index'
 
 // DECLARE GAS AMOUNT

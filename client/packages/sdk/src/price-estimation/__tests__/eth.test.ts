@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import fetch from "node-fetch-commonjs";
+import fetch from "node-fetch";
 import {
   SpeedModes,
   estimateGasFee,

@@ -1,4 +1,4 @@
-import fetch from "node-fetch-commonjs";
+import fetch from "node-fetch";
 
 export interface CoinInfo {
   id: string,
