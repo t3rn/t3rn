@@ -340,7 +340,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -535,7 +535,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -583,7 +583,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::InBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -647,7 +647,7 @@ fn circuit_handles_dropped_at_bidding() {
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
                     requester: ALICE,
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -773,7 +773,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
                     requester: REQUESTER,
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -887,7 +887,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
                     requester: REQUESTER,
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::InBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -905,7 +905,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                 Circuit::get_x_exec_signals(xtx_id),
                 Some(XExecSignal {
                     requester: REQUESTER,
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -960,7 +960,7 @@ fn circuit_handles_swap_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -994,7 +994,7 @@ fn circuit_handles_swap_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -1096,7 +1096,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -1130,7 +1130,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -1437,6 +1437,16 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         });
 }
 
+const ADAPTIVE_TIMEOUT_A: AdaptiveTimeout<u32, TargetId> = AdaptiveTimeout {
+    estimated_height_here: 801,
+    estimated_height_there: 824,
+    submit_by_height_here: 401,
+    submit_by_height_there: 424,
+    emergency_timeout_here: 401,
+    there: [0, 0, 0, 0],
+    dlq: None,
+};
+
 #[test]
 fn circuit_cancels_xtx_with_bids_after_timeout() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
@@ -1470,7 +1480,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
 
             // The tiemout links that will be checked at on_initialize are there
-            assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(AdaptiveTimeout::default_401())); // 100 offset + current block height 1 = 101
+            assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(ADAPTIVE_TIMEOUT_A)); // 100 offset + current block height 1 = 101
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -1478,22 +1488,13 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(), // 400 offset + current block height 1 = 101
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
                     steps_cnt: (0, 1), speed_mode: SpeedMode::Finalized,
                 })
             );
-
-            // let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
-            //
-            // let sfx_id_a = valid_transfer_side_effect
-            //     .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            //         &xtx_id.0,
-            //         FIRST_SFX_INDEX,
-            //     );
-            //
 
             let sfx_id = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
@@ -1513,7 +1514,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::Reverted(Cause::Timeout),
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -1581,7 +1582,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
 
             // The tiemout links that will be checked at on_initialize are there
-            assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(AdaptiveTimeout::default_401())); // 100 offset + current block height 1 = 101
+            assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(ADAPTIVE_TIMEOUT_A)); // 100 offset + current block height 1 = 101
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -1589,7 +1590,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(), // 100 offset + current block height 1 = 101
+                    timeouts_at: ADAPTIVE_TIMEOUT_A, // 100 offset + current block height 1 = 101
                     delay_steps_at: None,
                     status: CircuitStatus::PendingBidding,
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -1618,7 +1619,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: AdaptiveTimeout::default_401(),
+                    timeouts_at: ADAPTIVE_TIMEOUT_A,
                     delay_steps_at: None,
                     status: CircuitStatus::Reverted(Cause::Timeout),
                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -2077,7 +2078,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
 //                 XExecSignal {
 //                     requester: ALICE,
-//                     timeouts_at: AdaptiveTimeout::default_401(),
+//                     timeouts_at: ADAPTIVE_TIMEOUT_A,
 //                     delay_steps_at: None,
 //                     status: CircuitStatus::PendingBidding,
 //                     requester_nonce: FIRST_REQUESTER_NONCE,
@@ -2205,7 +2206,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
 //                 XExecSignal {
 //                     requester: ALICE,
-//                     timeouts_at: AdaptiveTimeout::default_401(),
+//                     timeouts_at: ADAPTIVE_TIMEOUT_A,
 //                     delay_steps_at: None,
 //                     status: CircuitStatus::PendingBidding,
 //                     requester_nonce: FIRST_REQUESTER_NONCE,
