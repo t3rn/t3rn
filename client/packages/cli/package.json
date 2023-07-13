@@ -40,7 +40,7 @@
     "@types/cli-progress": "^3.11.0",
     "@types/figlet": "^1.5.5",
     "@types/jest": "^29.5.0",
-    "@types/node": "^18.15.11",
+    "@types/node": "^20.4.2",
     "@types/node-fetch": "^2.6.4",
     "@typescript-eslint/eslint-plugin": "^5.60.1",
     "@typescript-eslint/parser": "^5.62.0",
