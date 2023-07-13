@@ -15,7 +15,8 @@ permissions:
 
 jobs:
   comment:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    if: ${{ !contains(github.event.pull_request.title, 'skip release') }}
     steps:
       - uses: actions/checkout@v3
         with:

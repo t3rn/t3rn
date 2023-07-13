@@ -20,8 +20,8 @@ env:
 jobs:
   release:
     runs-on: [self-hosted, rust]
-    # Dont trigger release when commit message starts with 'build(release):'
-    if: ${{ !(startswith(github.event.head_commit.message, 'build(release):')) }}
+    # Dont trigger release when commit message startswith 'build(release):' or contains '[skip release]'
+    if: ${{ !(startswith(github.event.head_commit.message, 'build(release):') || contains(github.event.head_commit.message, '[skip release]')) }}
     concurrency: release
     steps:
       - name: Checkout
