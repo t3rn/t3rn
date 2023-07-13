@@ -783,7 +783,7 @@ pub mod pallet {
                 &mut Machine::<T>::load_xtx(xtx_id)?,
                 |current_fsx, _local_state, _steps_cnt, __status, _requester| {
                     Self::confirm(xtx_id, current_fsx, &sfx_id, &confirmation).map_err(|e| {
-                        println!("Self::confirm hit an error -- {:?}", e);
+                        log::error!("Self::confirm hit an error -- {:?}", e);
                         Error::<T>::ConfirmationFailed
                     })?;
                     Ok(PrecompileResult::TryConfirm(sfx_id, confirmation))
