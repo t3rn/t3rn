@@ -12,14 +12,12 @@ pub use pallet_attesters::{
     Pallet as PalletAttesters, PendingUnnominations, PermanentSlashes, PreviousCommittee,
     SortedNominatedAttesters,
 };
-use std::marker::PhantomData;
 
 pub use pallet_circuit::{
-    Config as ConfigCircuit, Error as CircuitError, Event as CircuitEvent, FullSideEffects,
-    SFX2XTXLinksMap, XExecSignals,
+    Config as ConfigCircuit, Event as CircuitEvent, FullSideEffects, SFX2XTXLinksMap, XExecSignals,
 };
+
 pub use pallet_circuit_vacuum::{Config as ConfigVacuum, Event as VacuumEvent, OrderStatusRead};
-use pallet_eth2_finality_verifier::types::Root;
 mod hooks;
 mod treasuries_config;
 pub use hooks::GlobalOnInitQueues;
@@ -995,54 +993,6 @@ impl ExtBuilder {
         ext.execute_with(|| activate_all_light_clients());
         ext
     }
-}
-use pallet_eth2_finality_verifier::LightClientAsyncAPI;
-
-pub fn make_all_light_clients_move_2_times_by(move_by: u32) {
-    use t3rn_primitives::{circuit::traits::CircuitDLQ, portal::Portal as PortalT};
-    let starting_height = System::block_number();
-    for vendor in GatewayVendor::iterator() {
-        let mut latest_heartbeat = Portal::get_latest_heartbeat_by_vendor(vendor.clone());
-        latest_heartbeat.last_finalized_height =
-            latest_heartbeat.last_finalized_height.clone() + move_by;
-        latest_heartbeat.last_rational_height =
-            latest_heartbeat.last_rational_height.clone() + move_by;
-        latest_heartbeat.last_fast_height = latest_heartbeat.last_fast_height.clone() + move_by;
-
-        System::set_block_number(starting_height + move_by);
-
-        XDNS::on_new_epoch(
-            vendor.clone(),
-            latest_heartbeat.last_finalized_height + 1,
-            latest_heartbeat.clone(),
-        );
-
-        latest_heartbeat.last_finalized_height =
-            latest_heartbeat.last_finalized_height.clone() + 2 * move_by;
-        latest_heartbeat.last_rational_height =
-            latest_heartbeat.last_rational_height.clone() + 2 * move_by;
-        latest_heartbeat.last_fast_height = latest_heartbeat.last_fast_height.clone() + 2 * move_by;
-
-        System::set_block_number(starting_height + move_by * 2);
-
-        XDNS::on_new_epoch(
-            vendor.clone(),
-            latest_heartbeat.last_finalized_height + 2,
-            latest_heartbeat,
-        );
-    }
-}
-
-pub fn activate_all_light_clients() {
-    use t3rn_primitives::portal::Portal as PortalT;
-    for &gateway in XDNS::all_gateway_ids().iter() {
-        Portal::turn_on(Origin::root(), gateway).unwrap();
-    }
-    XDNS::process_all_verifier_overviews(System::block_number());
-    XDNS::process_overview(System::block_number());
-
-    make_all_light_clients_move_2_times_by(8);
-    XDNS::process_overview(System::block_number());
 }
 
 pub fn prepare_ext_builder_playground() -> TestExternalities {

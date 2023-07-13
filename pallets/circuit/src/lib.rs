@@ -121,8 +121,7 @@ pub mod pallet {
     use t3rn_primitives::{
         attesters::AttestersWriteApi,
         circuit::{
-            CircuitDLQ, CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger,
-            ReadSFX,
+            CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX,
         },
         portal::Portal,
         xdns::Xdns,
@@ -1125,6 +1124,15 @@ impl<T: Config> Pallet<T> {
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
             let security_lvl = determine_security_lvl(gateway_type);
+
+            // ToDo: Verify each requested asset is supported by the gateway
+
+            // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
+            // let _last_update = <T as Config>::Xdns::verify_active(
+            //     &sfx.target,
+            //     <T as Config>::XtxTimeoutDefault::get(),
+            //     &security_lvl,
+            // )?;
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,

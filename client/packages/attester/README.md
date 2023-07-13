@@ -4,7 +4,7 @@ Attester is a TypeScript application that performs attestation tasks.
 
 ## Prerequisites
 
-- Node.js and npm should be installed on your machine.
+- Node.js and pnpm should be installed on your machine.
 - pnpm should be installed globally. If not, you can install it by running the following command:
 
   ```bash

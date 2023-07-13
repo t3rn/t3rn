@@ -59,11 +59,9 @@ pub mod pallet {
         circuit::{AdaptiveTimeout, CircuitDLQ},
         light_client::{LightClientAsyncAPI, LightClientHeartbeat},
         portal::Portal,
-        xdns::{
-            EpochEstimate, FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns,
-        },
-        Bytes, ChainId, ExecutionVendor, FinalityVerifierActivity, GatewayActivity, GatewayType,
-        GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
+        xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
+        Bytes, ChainId, ExecutionVendor, GatewayActivity, GatewayType, GatewayVendor, TokenInfo,
+        TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -333,32 +331,19 @@ pub mod pallet {
                     continue
                 }
 
-                let last_finality_verifier_update = VerifierOverviewStoreHistory::<T>::get(
-                    &gateway.gateway_record.verification_vendor,
-                )
-                .last()
-                .cloned()
-                .unwrap_or_else(|| FinalityVerifierActivity {
-                    verifier: gateway.gateway_record.verification_vendor.clone(),
-                    reported_at: Zero::zero(),
-                    justified_height: Zero::zero(),
-                    finalized_height: Zero::zero(),
-                    updated_height: Zero::zero(),
-                    epoch: Zero::zero(),
-                    is_active: false,
-                });
-
-                let security_lvl = match gateway.gateway_record.escrow_account {
-                    Some(_) => SecurityLvl::Escrow,
-                    None => SecurityLvl::Optimistic,
-                };
-
-                let (justified_height, finalized_height, updated_height, is_active) = (
-                    last_finality_verifier_update.justified_height,
-                    last_finality_verifier_update.finalized_height,
-                    last_finality_verifier_update.updated_height,
-                    last_finality_verifier_update.is_active,
-                );
+                let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(gateway_id)
+                    .last()
+                    .cloned()
+                    .unwrap_or_else(|| GatewayActivity {
+                        gateway_id,
+                        reported_at: Zero::zero(),
+                        justified_height: Zero::zero(),
+                        finalized_height: Zero::zero(),
+                        updated_height: Zero::zero(),
+                        security_lvl: SecurityLvl::Optimistic,
+                        attestation_latency: None,
+                        is_active: false,
+                    });
 
                 let attestation_latency = T::AttestersRead::read_attestation_latency(&gateway_id);
 

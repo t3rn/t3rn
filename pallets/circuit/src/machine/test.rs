@@ -191,7 +191,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [58, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -261,7 +261,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [58, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -283,7 +283,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [58, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -351,7 +351,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [58, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -374,7 +374,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [58, 0, 0, 0],
+                        error: [57, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );

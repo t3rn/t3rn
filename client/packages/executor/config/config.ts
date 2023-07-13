@@ -155,6 +155,18 @@ export type Config = {
   };
   /** Parameters for tunning the behavior in the bidding stage */
   bidding: BiddingStrategy;
+
+  /** Configuration for ethereum */
+  attestations: {
+    ethereum: {
+      name: string;
+      rpc: string;
+      attestationVerifierAddress: string;
+      privateKey: string | undefined;
+    };
+    processPendingBatches: boolean;
+    processPendingBatchesIndex: number;
+  };
 };
 
 export const config: Config = {
@@ -243,5 +255,18 @@ export const config: Config = {
     bidMeek: false,
     overrideNoCompetition: true,
     equalMinProfitBid: false,
+  },
+  attestations: {
+    ethereum: {
+      name: "sepl",
+      rpc: "https://endpoints.omniatech.io/v1/eth/sepolia/public",
+      attestationVerifierAddress: "0x6a5CFb01EA152C4c142f0fA204B993Db6e083B90",
+      privateKey: process.env.ETHEREUM_PRIVATE_KEY,
+    },
+    processPendingBatches:
+      process.env.PROCESS_PENDING_BATCHES == "true" ? true : false,
+    processPendingBatchesIndex: process.env.PROCESS_PENDING_BATCHES_INDEX
+      ? parseInt(process.env.PROCESS_PENDING_BATCHES_INDEX)
+      : 0,
   },
 };
