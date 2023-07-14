@@ -342,6 +342,13 @@ impl pallet_circuit::Config for Runtime {
     type XtxTimeoutDefault = ConstU32<400u32>;
 }
 
+impl pallet_vacuum::Config for Runtime {
+    type CircuitSubmitAPI = Circuit;
+    type Currency = Balances;
+    type Event = Event;
+    type ReadSFX = Circuit;
+}
+
 parameter_types! {
     pub const HeadersToStore: u32 = 100;
     pub const RococoVendor: GatewayVendor = GatewayVendor::Rococo;
