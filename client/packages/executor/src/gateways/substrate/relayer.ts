@@ -216,7 +216,7 @@ export class SubstrateRelayer extends EventEmitter {
       )
       .then((parachainBlock) => {
         // @ts-ignore - property does not exist on type
-        let block = parachainBlock.block;
+        const block = parachainBlock.block;
         for (let i = 0; i < block.extrinsics.length; i++) {
           const extrinsic = block.extrinsics[i];
           if (
