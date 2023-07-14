@@ -1727,7 +1727,7 @@ pub mod attesters_test {
             CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
-            AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
+            CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
         },
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         TreasuryAccount, TreasuryAccountProvider,
