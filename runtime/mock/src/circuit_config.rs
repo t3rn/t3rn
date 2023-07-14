@@ -182,6 +182,13 @@ impl pallet_attesters::Config for Runtime {
     type Xdns = XDNS;
 }
 
+impl pallet_vacuum::Config for Runtime {
+    type CircuitSubmitAPI = Circuit;
+    type Currency = Balances;
+    type Event = Event;
+    type ReadSFX = Circuit;
+}
+
 use t3rn_primitives::{monetary::TRN, xdns::PalletAssetsOverlay};
 
 parameter_types! {

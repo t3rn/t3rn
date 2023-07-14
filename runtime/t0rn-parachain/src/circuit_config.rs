@@ -183,7 +183,7 @@ parameter_types! {
     pub const StartingRepatriationPercentage: Percent = Percent::from_parts(10); // 10%
     pub const OneYear: BlockNumber = 2_628_000; // (365.25 * 24 * 60 * 60) / 12; assuming 12s block time
     pub const InflationDistributionPeriod: BlockNumber = 100_800; // (14 * 24 * 60 * 60) / 12; assuming one distribution per two weeks
-    pub const HourlyInflationDistributionPeriod: BlockNumber = 60 * 60 / 12; // (60 * 60) / 12; assuming one distribution per two weeks
+    pub const HourlyInflationDistributionPeriod: BlockNumber = 60 * 60 / 12; // (60 * 60) / 12; assuming 12s block time
     pub const AvailableBootstrapSpenditure: Balance = 1_000_000 * (TRN as Balance); // 1 MLN UNIT
 }
 
@@ -216,6 +216,13 @@ impl pallet_clock::Config for Runtime {
     type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
     type RoundDuration = ConstU32<500u32>;
+}
+
+impl pallet_vacuum::Config for Runtime {
+    type CircuitSubmitAPI = Circuit;
+    type Currency = Balances;
+    type Event = Event;
+    type ReadSFX = Circuit;
 }
 
 impl pallet_xdns::Config for Runtime {
