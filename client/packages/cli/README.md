@@ -109,6 +109,25 @@ Options:
 - **-t, --timeout \<timeout\>**: Timeout in seconds for waiting for events from the chain. Default timeout is 30 seconds
 - **-x, --export**: Export extrinsic data to a file
 
+
+### estimate
+
+The `estimate` command is used to estimate the max reward with a given target amount
+
+Usage:
+
+```bash
+yarn cli estimate [options]
+```
+
+Options:
+
+- **--action \<action\>**: The execution action i.e tass, tran, swap
+- **--base-asset \<symbol\>**: The base asset symbol. i.e dot, t3rn
+- **--target \<name\>**: The target on which is execution will be executed. i.e 'eth', 'roco'
+- **--target-asset \<symbol\>**: The target asset symbol. i.e usdt, dot 
+- **--target-amount \<amount\>**: The target amount
+
 ### Export
 
 Each command that interacts with the node incorporates the `-x, --export` option. This feature facilitates the export of extrinsic data to a file. By default, this data is directed to the `/exports` directory in your current working environment. To alter this default path, you need to adjust the `EXPORT_PATH` variable. Here's an example:
