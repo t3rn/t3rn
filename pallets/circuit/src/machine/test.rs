@@ -2,7 +2,6 @@
 pub mod test {
     use circuit_mock_runtime::{
         AccountId, Attesters, Balance, Balances, BlockNumber, Circuit, ExtBuilder, Hash, Runtime,
-        System,
     };
     use circuit_runtime_pallets::pallet_circuit::machine::{Machine, PrecompileResult};
     use frame_support::{assert_err, assert_ok};

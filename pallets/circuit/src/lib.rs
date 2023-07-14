@@ -706,7 +706,7 @@ pub mod pallet {
                 Some(T::Xdns::estimate_adaptive_timeout_on_slowest_target(
                     side_effects
                         .iter()
-                        .map(|sfx| sfx.target.clone())
+                        .map(|sfx| sfx.target)
                         .collect::<Vec<TargetId>>(),
                     &speed_mode,
                     T::XtxTimeoutDefault::get(),
@@ -1114,7 +1114,7 @@ impl<T: Config> Pallet<T> {
         // Verify each requested asset is supported by the gateway
         let all_targets = side_effects
             .iter()
-            .map(|sfx| sfx.target.clone())
+            .map(|sfx| sfx.target)
             .collect::<Vec<TargetId>>();
 
         ensure!(
@@ -1202,7 +1202,7 @@ impl<T: Config> Pallet<T> {
         // Verify each requested asset is supported by the gateway
         let all_targets = step_side_effects
             .iter()
-            .map(|sfx| sfx.input.target.clone())
+            .map(|sfx| sfx.input.target)
             .collect::<Vec<TargetId>>();
 
         ensure!(
@@ -1226,6 +1226,7 @@ impl<T: Config> Pallet<T> {
                 )),
         };
         log::debug!("Order confirmed!");
+
         let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
@@ -1471,19 +1472,19 @@ impl<T: Config> Pallet<T> {
         targets: Vec<TargetId>,
         speed_mode: SpeedMode,
     ) -> (Weight, bool) {
-        if <DLQ<T>>::contains_key(&xtx_id) {
+        if <DLQ<T>>::contains_key(xtx_id) {
             return (T::DbWeight::get().reads(1), false)
         }
 
         <DLQ<T>>::insert(
-            &xtx_id,
+            xtx_id,
             (
                 <frame_system::Module<T>>::block_number(),
                 targets,
                 speed_mode,
             ),
         );
-        <XExecSignals<T>>::mutate(&xtx_id, |xtx| {
+        <XExecSignals<T>>::mutate(xtx_id, |xtx| {
             if let Some(xtx) = xtx {
                 xtx.timeouts_at.dlq = Some(<frame_system::Module<T>>::block_number());
             } else {
@@ -1495,8 +1496,8 @@ impl<T: Config> Pallet<T> {
         });
 
         // Remove the Xtx from the PendingXtxTimeoutsMap if exists
-        if <PendingXtxTimeoutsMap<T>>::contains_key(&xtx_id) {
-            <PendingXtxTimeoutsMap<T>>::remove(&xtx_id);
+        if <PendingXtxTimeoutsMap<T>>::contains_key(xtx_id) {
+            <PendingXtxTimeoutsMap<T>>::remove(xtx_id);
         }
 
         (
@@ -1515,15 +1516,15 @@ impl<T: Config> Pallet<T> {
     ///
     /// A tuple containing the weight of the operation and a boolean indicating whether the operation was successful.
     pub fn remove_xtx_from_dlq(xtx_id: T::Hash) -> (Weight, bool) {
-        let dlq_entry = match <DLQ<T>>::take(&xtx_id) {
+        let dlq_entry = match <DLQ<T>>::take(xtx_id) {
             Some(dlq_entry) => dlq_entry,
             None => return (T::DbWeight::get().reads(1), false),
         };
 
         let adaptive_timeout = Self::get_adaptive_timeout(xtx_id, Some(dlq_entry.2));
-        <PendingXtxTimeoutsMap<T>>::insert(&xtx_id, &adaptive_timeout);
+        <PendingXtxTimeoutsMap<T>>::insert(xtx_id, &adaptive_timeout);
 
-        <XExecSignals<T>>::mutate(&xtx_id, |xtx| {
+        <XExecSignals<T>>::mutate(xtx_id, |xtx| {
             if let Some(xtx) = xtx {
                 xtx.timeouts_at = adaptive_timeout;
             } else {

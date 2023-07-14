@@ -9,10 +9,7 @@ use frame_support::{
 };
 use hex_literal::hex;
 use pallet_sudo::GenesisConfig as SudoGenesisConfig;
-use sp_core::{
-    crypto::{AccountId32, KeyTypeId},
-    H256,
-};
+use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::impl_opaque_keys;
 use sp_std::convert::{TryFrom, TryInto};
 pub mod signed_extrinsics_config;
@@ -33,6 +30,8 @@ mod xbi_config;
 pub type RococoLightClient = ();
 pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
 pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
+
+pub use crate::circuit_config::GlobalOnInitQueues;
 
 frame_support::construct_runtime!(
     pub enum Runtime where
@@ -247,15 +246,13 @@ impl ExtBuilder {
 
     fn make_all_light_clients_move_2_times_by(move_by: u32) {
         use circuit_runtime_pallets::pallet_eth2_finality_verifier::LightClientAsyncAPI;
-        use t3rn_primitives::{circuit::traits::CircuitDLQ, portal::Portal as PortalT};
+        use t3rn_primitives::portal::Portal as PortalT;
         let starting_height = System::block_number();
         for vendor in GatewayVendor::iterator() {
             let mut latest_heartbeat = Portal::get_latest_heartbeat_by_vendor(vendor.clone());
-            latest_heartbeat.last_finalized_height =
-                latest_heartbeat.last_finalized_height.clone() + move_by;
-            latest_heartbeat.last_rational_height =
-                latest_heartbeat.last_rational_height.clone() + move_by;
-            latest_heartbeat.last_fast_height = latest_heartbeat.last_fast_height.clone() + move_by;
+            latest_heartbeat.last_finalized_height += move_by;
+            latest_heartbeat.last_rational_height += move_by;
+            latest_heartbeat.last_fast_height += move_by;
 
             System::set_block_number(starting_height + move_by);
 
@@ -265,12 +262,9 @@ impl ExtBuilder {
                 latest_heartbeat.clone(),
             );
 
-            latest_heartbeat.last_finalized_height =
-                latest_heartbeat.last_finalized_height.clone() + 2 * move_by;
-            latest_heartbeat.last_rational_height =
-                latest_heartbeat.last_rational_height.clone() + 2 * move_by;
-            latest_heartbeat.last_fast_height =
-                latest_heartbeat.last_fast_height.clone() + 2 * move_by;
+            latest_heartbeat.last_finalized_height += 2 * move_by;
+            latest_heartbeat.last_rational_height += 2 * move_by;
+            latest_heartbeat.last_fast_height += 2 * move_by;
 
             System::set_block_number(starting_height + move_by * 2);
 
@@ -325,7 +319,7 @@ impl ExtBuilder {
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
-        ext.execute_with(|| Self::activate_all_light_clients());
+        ext.execute_with(Self::activate_all_light_clients);
         ext
     }
 }

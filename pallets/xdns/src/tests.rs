@@ -27,6 +27,7 @@ use sp_core::crypto::AccountId32;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
     circuit::SecurityLvl::{Escrow, Optimistic},
+    clock::OnHookQueues,
     portal::Portal as PortalT,
     xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, Xdns},
     EthereumToken, ExecutionVendor,
@@ -651,7 +652,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                 .unwrap();
             }
 
-            assert_eq!(XDNS::process_all_verifier_overviews(10), ());
+            assert_eq!(XDNS::process_all_verifier_overviews(10), 25000000u64);
             assert_eq!(XDNS::process_overview(10), ());
             let overview = XDNS::gateways_overview();
 
@@ -938,15 +939,24 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
             let last_reported_block = expected_verifier_overview_all_on[0].reported_at;
 
             System::set_block_number(last_reported_block + 1);
-            XDNS::on_initialize(System::block_number());
+            <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
+                System::block_number(),
+                u64::MAX,
+            );
             assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
 
             System::set_block_number(last_reported_block + 5);
-            XDNS::on_initialize(System::block_number());
+            <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
+                System::block_number(),
+                u64::MAX,
+            );
             assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
 
             System::set_block_number(System::block_number() + 52);
-            XDNS::on_initialize(System::block_number());
+            <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
+                System::block_number(),
+                u64::MAX,
+            );
 
             assert_eq!(
                 XDNS::verifier_overview(),
@@ -1157,7 +1167,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                 )
                 .unwrap();
             }
-            assert_eq!(XDNS::process_all_verifier_overviews(100), ());
+            assert_eq!(XDNS::process_all_verifier_overviews(100), 1225000000u64);
             assert_eq!(XDNS::process_overview(100), ());
 
             let overview = XDNS::gateways_overview();
