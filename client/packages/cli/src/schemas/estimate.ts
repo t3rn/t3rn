@@ -12,7 +12,6 @@ export const MaxRewardEstimateSchema = z.object({
       required_error: "Target is required",
       invalid_type_error: "Target must be a string",
     })
-    .min(4)
     .max(4),
   targetAmount: z.number({
     invalid_type_error: "Target amount must be a number",

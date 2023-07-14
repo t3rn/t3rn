@@ -52,7 +52,6 @@ export const SideEffectSchema = z.object({
       required_error: "Target is required",
       invalid_type_error: "Target must be a string",
     })
-    .min(4)
     .max(4),
   maxReward: z
     .string({
