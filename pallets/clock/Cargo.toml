@@ -40,7 +40,6 @@ pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = '
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
 
 pallet-account-manager = { path = "../../pallets/account-manager" }
-pallet-executors       = { path = "../../pallets/executors" }
 
 [features]
 default = [ "std" ]

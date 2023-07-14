@@ -78,8 +78,6 @@ frame_support::construct_runtime!(
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
         Vacuum: pallet_vacuum = 111,
 
-        Executors: pallet_executors = 112,
-
         // XCM helpers.
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
         PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
@@ -324,10 +322,6 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");
-        // TODO: reenable
-        // pallet_executors::GenesisConfig::<Runtime>::default()
-        //     .assimilate_storage(&mut t)
-        //     .expect("mock pallet-executors genesis storage assimilation");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
