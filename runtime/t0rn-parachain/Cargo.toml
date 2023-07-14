@@ -1,12 +1,12 @@
 [package]
 authors = ["devs @ t3rn"]
 description = "t0rn - t3rn's Test Parachain Runtime to Rococo"
-edition = "2021"
-homepage = "https://t3rn.io"
-license = "Apache-2.0"
-name = "t0rn-parachain-runtime"
-repository = 'https://github.com/t3rn/t3rn'
-version = "1.39.3-rc.0"
+edition     = "2021"
+homepage    = "https://t3rn.io"
+license     = "Apache-2.0"
+name        = "t0rn-parachain-runtime"
+repository  = 'https://github.com/t3rn/t3rn'
+version     = "1.39.4-rc.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
