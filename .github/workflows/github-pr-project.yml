@@ -1,8 +1,10 @@
+# https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/automating-projects-using-actions
 name: Github
 on:
   pull_request:
     types:
       - opened
+      - closed
 
 jobs:
   add_to_project:
