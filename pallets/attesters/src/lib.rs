@@ -2392,7 +2392,6 @@ pub mod attesters_test {
                 register_attester_with_single_private_key([counter; 32]);
             }
 
-            println!("Registered attesters");
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let _committee_transition: CommitteeTransitionIndices = [
