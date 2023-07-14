@@ -122,7 +122,7 @@ jobs:
                   id
                 }
               }
-            }' -f project=$PROJECT_ID -f item=$ITEM_ID -f status_field=$STATUS_FIELD_ID -f status_value=${{ env.STATUS_OPTION_ID }} -f date_field=$DATE_FIELD_ID -f date_value=$DATE --silent
+            }' -f project=$PROJECT_ID -f item=$ITEM_ID -f status_field=$STATUS_FIELD_ID -f status_value=${{ env.STATUS_OPTION_ID }} --silent
 
 
     
