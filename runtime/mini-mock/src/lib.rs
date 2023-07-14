@@ -189,7 +189,7 @@ impl pallet_clock::Config for MiniRuntime {
     type AccountManager = AccountManager;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
+    type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
     type RoundDuration = ConstU32<400>;
 }
@@ -999,9 +999,53 @@ impl ExtBuilder {
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
-        ext.execute_with(|| activate_all_light_clients());
+        ext.execute_with(activate_all_light_clients);
         ext
     }
+}
+use pallet_eth2_finality_verifier::LightClientAsyncAPI;
+
+pub fn make_all_light_clients_move_2_times_by(move_by: u32) {
+    use t3rn_primitives::portal::Portal as PortalT;
+    let starting_height = System::block_number();
+    for vendor in GatewayVendor::iterator() {
+        let mut latest_heartbeat = Portal::get_latest_heartbeat_by_vendor(vendor.clone());
+        latest_heartbeat.last_finalized_height += move_by;
+        latest_heartbeat.last_rational_height += move_by;
+        latest_heartbeat.last_fast_height += move_by;
+
+        System::set_block_number(starting_height + move_by);
+
+        XDNS::on_new_epoch(
+            vendor.clone(),
+            latest_heartbeat.last_finalized_height + 1,
+            latest_heartbeat.clone(),
+        );
+
+        latest_heartbeat.last_finalized_height += 2 * move_by;
+        latest_heartbeat.last_rational_height += 2 * move_by;
+        latest_heartbeat.last_fast_height += 2 * move_by;
+
+        System::set_block_number(starting_height + move_by * 2);
+
+        XDNS::on_new_epoch(
+            vendor.clone(),
+            latest_heartbeat.last_finalized_height + 2,
+            latest_heartbeat,
+        );
+    }
+}
+
+pub fn activate_all_light_clients() {
+    use t3rn_primitives::portal::Portal as PortalT;
+    for &gateway in XDNS::all_gateway_ids().iter() {
+        Portal::turn_on(Origin::root(), gateway).unwrap();
+    }
+    XDNS::process_all_verifier_overviews(System::block_number());
+    XDNS::process_overview(System::block_number());
+
+    make_all_light_clients_move_2_times_by(8);
+    XDNS::process_overview(System::block_number());
 }
 
 pub fn prepare_ext_builder_playground() -> TestExternalities {

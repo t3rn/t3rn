@@ -27,18 +27,16 @@ mod benchmarking;
 
 mod weights;
 
-pub mod traits;
-
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
 #[frame_support::pallet]
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
-    use crate::traits::OnHookQueues;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::{prelude::*, vec};
+    use t3rn_primitives::clock::OnHookQueues;
 
     const FIVE: Weight = 5;
 

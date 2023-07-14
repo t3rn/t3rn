@@ -113,12 +113,10 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(n: T::BlockNumber) -> Weight {
+        fn on_initialize(_n: T::BlockNumber) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
 
-            // Check if there are any manual verifiers that need to be added to the overview
-            Self::check_for_manual_verifier_overview_process(n);
             0
         }
 
@@ -183,8 +181,11 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        pub fn check_for_manual_verifier_overview_process(n: BlockNumberFor<T>) {
+        pub fn check_for_manual_verifier_overview_process(n: BlockNumberFor<T>) -> Weight {
+            let mut total_weight: Weight = 0;
+
             let latest_overview = <VerifierOverviewStore<T>>::get();
+            total_weight = total_weight.saturating_add(T::DbWeight::get().reads(1));
 
             GatewayVendor::iterator().for_each(|verifier| {
                 let verifier = verifier.clone();
@@ -203,12 +204,20 @@ pub mod pallet {
                     let latest_heartbeat =
                         T::Portal::get_latest_heartbeat_by_vendor(verifier.clone());
                     let epoch = latest_heartbeat.last_finalized_height;
-                    Self::process_single_verifier_overview(n, verifier, epoch, latest_heartbeat);
+                    let weight = Self::process_single_verifier_overview(
+                        n,
+                        verifier,
+                        epoch,
+                        latest_heartbeat,
+                    );
+                    total_weight = total_weight.saturating_add(weight);
                 }
             });
+
+            total_weight
         }
 
-        pub fn process_all_verifier_overviews(n: BlockNumberFor<T>) {
+        pub fn process_all_verifier_overviews(n: BlockNumberFor<T>) -> Weight {
             Self::check_for_manual_verifier_overview_process(n)
         }
 
@@ -217,7 +226,9 @@ pub mod pallet {
             verifier: GatewayVendor,
             new_epoch: BlockNumberFor<T>,
             latest_heartbeat: LightClientHeartbeat<T>,
-        ) {
+        ) -> Weight {
+            let mut total_weight: Weight = 0;
+
             let (justified_height, finalized_height, updated_height, is_active) = (
                 latest_heartbeat.last_rational_height,
                 latest_heartbeat.last_finalized_height,
@@ -227,6 +238,7 @@ pub mod pallet {
 
             let historic_overview = VerifierOverviewStoreHistory::<T>::get(&verifier);
             let mut last_record = historic_overview.last().cloned().unwrap_or_default();
+            total_weight = total_weight.saturating_add(T::DbWeight::get().reads(1));
 
             let new_activity =
                 FinalityVerifierActivity::new_for_finalized_compare(n, finalized_height);
@@ -288,12 +300,17 @@ pub mod pallet {
 
             Self::update_historic_overview(verifier.clone(), activity.clone());
             Self::update_overview_store(verifier.clone(), activity.clone());
+            total_weight = total_weight.saturating_add(T::DbWeight::get().reads_writes(3, 2));
 
             if !was_active && activity.is_active {
-                let _ = T::CircuitDLQ::process_dlq(n);
+                let weight = T::CircuitDLQ::process_dlq(n);
+                total_weight = total_weight.saturating_add(weight);
             }
 
-            let _ = T::CircuitDLQ::process_adaptive_xtx_timeout_queue(n, &verifier);
+            let weight = T::CircuitDLQ::process_adaptive_xtx_timeout_queue(n, &verifier);
+            total_weight = total_weight.saturating_add(weight);
+
+            total_weight
         }
 
         pub fn update_historic_overview(

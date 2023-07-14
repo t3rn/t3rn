@@ -22,7 +22,7 @@ use sp_runtime::{
     generic,
     testing::H256,
     traits::{BlakeTwo256, ConstU32, IdentityLookup},
-    DispatchError, Perbill,
+    Perbill,
 };
 
 type Header = generic::Header<u32, BlakeTwo256>;
