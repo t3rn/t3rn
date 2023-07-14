@@ -171,6 +171,9 @@ mod threevm_mock {
 
     parameter_types! {
         pub const HeadersToStore: u32 = 100;
+        pub const RococoVendor: GatewayVendor = GatewayVendor::Rococo;
+        pub const KusamaVendor: GatewayVendor = GatewayVendor::Kusama;
+        pub const PolkadotVendor: GatewayVendor = GatewayVendor::Polkadot;
     }
 
     #[derive(Debug)]
@@ -194,6 +197,8 @@ mod threevm_mock {
         type FastConfirmationOffset = ConstU32<0u32>;
         type FinalizedConfirmationOffset = ConstU32<0u32>;
         type HeadersToStore = HeadersToStore;
+        type LightClientAsyncAPI = Xdns;
+        type MyVendor = RococoVendor;
         type RationalConfirmationOffset = ConstU32<0u32>;
         type WeightInfo = ();
     }
@@ -205,6 +210,8 @@ mod threevm_mock {
         type FastConfirmationOffset = ConstU32<0u32>;
         type FinalizedConfirmationOffset = ConstU32<0u32>;
         type HeadersToStore = HeadersToStore;
+        type LightClientAsyncAPI = Xdns;
+        type MyVendor = PolkadotVendor;
         type RationalConfirmationOffset = ConstU32<0u32>;
         type WeightInfo = ();
     }
@@ -216,6 +223,8 @@ mod threevm_mock {
         type FastConfirmationOffset = ConstU32<0u32>;
         type FinalizedConfirmationOffset = ConstU32<0u32>;
         type HeadersToStore = HeadersToStore;
+        type LightClientAsyncAPI = Xdns;
+        type MyVendor = KusamaVendor;
         type RationalConfirmationOffset = ConstU32<0u32>;
         type WeightInfo = ();
     }

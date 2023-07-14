@@ -3,6 +3,7 @@ use codec::{Decode, Encode};
 use num_traits::Zero;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
+use sp_std::marker::PhantomData;
 use t3rn_abi::types::Bytes;
 
 #[derive(Clone, Eq, Decode, Encode, PartialEq, Debug, TypeInfo)]
@@ -53,6 +54,19 @@ pub trait LightClientAsyncAPI<T: frame_system::Config> {
         new_epoch: T::BlockNumber,
         current_hearbeat: LightClientHeartbeat<T>,
     );
+}
+
+pub struct LightClientAsyncAPIEmptyMock<T> {
+    _phantom: PhantomData<T>,
+}
+
+impl<T: frame_system::Config> LightClientAsyncAPI<T> for LightClientAsyncAPIEmptyMock<T> {
+    fn on_new_epoch(
+        _verifier: GatewayVendor,
+        _new_epoch: T::BlockNumber,
+        _current_hearbeat: LightClientHeartbeat<T>,
+    ) {
+    }
 }
 
 pub trait LightClient<T: frame_system::Config> {

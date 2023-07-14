@@ -48,11 +48,11 @@ use sp_std::convert::TryInto;
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*, transactional, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
-
 use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
+use t3rn_primitives::light_client::LightClientAsyncAPI;
 
 pub mod types;
 
@@ -117,6 +117,9 @@ use t3rn_primitives::light_client::InclusionReceipt;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use num_traits::One;
+    use sp_runtime::traits::Saturating;
+    use t3rn_primitives::{light_client::LightClient, GatewayVendor};
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -144,6 +147,10 @@ pub mod pallet {
 
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type LightClientAsyncAPI: LightClientAsyncAPI<Self>;
+
+        type MyVendor: Get<GatewayVendor>;
     }
 
     #[pallet::pallet]
@@ -170,6 +177,12 @@ pub mod pallet {
     #[pallet::getter(fn get_imported_hashes)]
     pub(super) type ImportedHashes<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, u32, BridgedBlockHash<T, I>>;
+
+    /// Count successful submissions.
+    #[pallet::storage]
+    #[pallet::getter(fn get_submissions_counter)]
+    pub(super) type SubmissionsCounter<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, T::BlockNumber, ValueQuery>;
 
     /// Current ring buffer position.
     #[pallet::storage]
@@ -288,6 +301,8 @@ pub mod pallet {
         ///
         /// If successful in verification, it will write the target range to the underlying storage
         /// pallet.
+        ///
+        /// If the new range was accepted, pays no fee.
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn submit_headers(
             origin: OriginFor<T>,
@@ -299,8 +314,32 @@ pub mod pallet {
             justification: GrandpaJustification<BridgedHeader<T, I>>,
         ) -> DispatchResultWithPostInfo {
             let _ = ensure_signed(origin)?;
+
+            let pointer_prior = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
             Pallet::<T, I>::verify_and_store_headers(range, signed_header, justification)?;
-            Ok(().into())
+            let pointer_post = <ImportedHashesPointer<T, I>>::get().unwrap_or_default();
+            if pointer_prior != pointer_post {
+                let counter = <SubmissionsCounter<T, I>>::get();
+
+                match Pallet::<T, I>(PhantomData).get_latest_heartbeat() {
+                    Ok(heartbeat) => {
+                        let verifier = T::MyVendor::get();
+                        T::LightClientAsyncAPI::on_new_epoch(verifier, counter, heartbeat);
+                    },
+                    Err(e) => {
+                        log::error!(
+                            "Failed to get latest heartbeat after submit_headers: {:?}",
+                            e
+                        );
+                    },
+                }
+
+                <SubmissionsCounter<T, I>>::put(counter.saturating_add(T::BlockNumber::one()));
+
+                Ok(Pays::No.into())
+            } else {
+                Ok(Pays::Yes.into())
+            }
         }
 
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
