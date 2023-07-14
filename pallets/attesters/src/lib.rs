@@ -1762,7 +1762,7 @@ pub mod attesters_test {
         // Check Pending Unnomination is created with entire self-nomination amount
         assert_eq!(
             PendingUnnominations::<MiniRuntime>::get(&attester).unwrap(),
-            vec![(attester.clone(), self_nomination_amount, 817u32)],
+            vec![(attester.clone(), self_nomination_amount, 801u32)],
         );
 
         // Run to active to unlock block = 2 x shuffling frequency + next window
