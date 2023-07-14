@@ -115,7 +115,6 @@ pallet-3vm-contracts-rpc-runtime-api = { default-features = false, path = "../..
 pallet-3vm-evm                       = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives            = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
 pallet-evm-rpc-runtime-api           = { default-features = false, path = "../../pallets/evm/rpc/runtime-api" }
-pallet-executors                     = { default-features = false, path = "../../pallets/executors" }
 
 [features]
 default = [ "std" ]
@@ -144,7 +143,6 @@ std = [
   "pallet-asset-registry/std",
   "pallet-asset-tx-payment/std",
   "pallet-authorship/std",
-  "pallet-executors/std",
   "pallet-vacuum/std",
   "pallet-balances/std",
   "pallet-grandpa-finality-verifier/std",
@@ -231,7 +229,6 @@ runtime-benchmarks = [
   "pallet-clock/runtime-benchmarks",
   "pallet-3vm-contracts/runtime-benchmarks",
   "pallet-3vm-evm/runtime-benchmarks",
-  "pallet-executors/runtime-benchmarks",
   "pallet-vacuum/runtime-benchmarks",
   "pallet-grandpa/runtime-benchmarks",
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
@@ -267,7 +264,6 @@ try-runtime = [
   "polkadot-runtime-common/try-runtime",
   "pallet-3vm/try-runtime",
   "pallet-3vm-contracts/try-runtime",
-  "pallet-executors/try-runtime",
   "pallet-vacuum/try-runtime",
   "pallet-collator-selection/try-runtime",
   "pallet-identity/try-runtime",

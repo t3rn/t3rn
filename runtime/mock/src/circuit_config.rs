@@ -405,15 +405,6 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type WeightInfo = ();
 }
 
-impl pallet_executors::Config for Runtime {
-    type Currency = Balances;
-    type Event = Event;
-    type InstructionHandler = XbiPortal;
-    type Treasury = Clock;
-    type WeightInfo = ();
-    type Xbi = ();
-}
-
 parameter_types! {
     pub const HeadersToStoreEth: u32 = 64 + 1; // we want a multiple of slots_per_epoch + 1
     pub const SessionLength: u64 = 5;
