@@ -502,6 +502,11 @@ pub mod pallet {
                 }
             });
 
+            // Purge all attestations for the target
+            Batches::<T>::remove(target);
+            BatchesToSign::<T>::remove(target);
+            NextBatch::<T>::remove(target);
+
             Ok(())
         }
 
@@ -2206,7 +2211,9 @@ pub mod attesters_test {
             ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
             BatchingFactor, CommitteeRecoverable, CommitteeTransitionIndices,
         },
-        circuit::{CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal},
+        circuit::{
+            AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
+        },
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         TreasuryAccount, TreasuryAccountProvider,
     };
@@ -2242,7 +2249,7 @@ pub mod attesters_test {
         // Check Pending Unnomination is created with entire self-nomination amount
         assert_eq!(
             PendingUnnominations::<MiniRuntime>::get(&attester).unwrap(),
-            vec![(attester.clone(), self_nomination_amount, 801u32)],
+            vec![(attester.clone(), self_nomination_amount, 817u32)],
         );
 
         // Run to active to unlock block = 2 x shuffling frequency + next window
@@ -2684,7 +2691,7 @@ pub mod attesters_test {
             let mock_xtx = XExecSignal {
                 requester: repatriated_requester.clone(),
                 requester_nonce: 1,
-                timeouts_at: 1,
+                timeouts_at: AdaptiveTimeout::default_401(),
                 speed_mode: Default::default(),
                 delay_steps_at: None,
                 status: CircuitStatus::Committed,
