@@ -1,0 +1,24 @@
+name: Add PR to Project Board
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  add_to_project:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add PR to Project Board
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          PROJECT_ID: 18
+        run: |
+          pr_number=$(echo "${{ github.event.pull_request.url }}" | awk -F'/' '{print $NF}')
+
+          echo "Adding PR $pr_number to the project board"
+          curl --header "Authorization: Bearer $GITHUB_TOKEN" \
+            --header "Accept: application/vnd.github.inertia-preview+json" \
+            --request POST \
+            --data "{\"content_id\": $pr_number,\"content_type\": \"PullRequest\"}" \
+            "https://api.github.com/projects/$PROJECT_ID/cards"
