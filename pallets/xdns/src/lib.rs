@@ -727,31 +727,29 @@ pub mod pallet {
             epoch_duration_in_remote_blocks: T::BlockNumber,
             epoch_duration_in_local_blocks: T::BlockNumber,
         ) {
-            const N: u32 = 10; // Number of epochs to consider for the moving average
+            const N: usize = 10; // Number of epochs to consider for the moving average
 
             let mut history = EpochHistory::<T>::get(verifier).unwrap_or_default();
-            let history_len = history.len() as u32;
 
-            if history_len >= N {
-                // Remove the oldest element
+            // Remove the oldest elements until length is no longer than N
+            while history.len() > N {
                 history.remove(0);
             }
 
+            // Calculate moving averages
             let moving_average_local = history
-                .clone()
-                .into_iter()
+                .iter()
                 .map(|e| e.local.saturated_into::<u32>())
                 .sum::<u32>()
-                .checked_div(history_len)
+                .checked_div(history.len() as u32)
                 .unwrap_or(Zero::zero())
                 .into();
 
             let moving_average_remote = history
-                .clone()
-                .into_iter()
+                .iter()
                 .map(|e| e.remote.saturated_into::<u32>())
                 .sum::<u32>()
-                .checked_div(history_len)
+                .checked_div(history.len() as u32)
                 .unwrap_or(Zero::zero())
                 .into();
 
