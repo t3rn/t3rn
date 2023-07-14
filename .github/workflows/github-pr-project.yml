@@ -1,11 +1,27 @@
 # https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/automating-projects-using-actions
 name: Github
 on:
-  push:
-  # pull_request:
+  pull_request:
+    types:
+      - opened
+      - closed
+      - reopened
+      - synchronize
+      - ready_for_review
+      - labeled
+      - unlabeled
+      - edited
+      - assigned
+      - unassigned
+      - review_requested
+      - review_request_removed
+      - converted_to_draft
+      - locked
+      - unlocked
+      - auto_merge_enabled
+      - auto_merge_disabled
   #   types:
   #     - opened
-  #     - closed
 
 jobs:
   add_to_project:
