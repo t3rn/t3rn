@@ -227,6 +227,9 @@ pub mod pallet {
     pub type Attesters<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AttesterInfo>;
 
     #[pallet::storage]
+    pub type NextCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+    #[pallet::storage]
     pub type CurrentCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
@@ -501,6 +504,11 @@ pub mod pallet {
                     pending.remove(index);
                 }
             });
+
+            // Purge all attestations for the target
+            Batches::<T>::remove(target);
+            BatchesToSign::<T>::remove(target);
+            NextBatch::<T>::remove(target);
 
             Ok(())
         }
@@ -1760,10 +1768,10 @@ pub mod pallet {
         }
 
         fn get_current_committee_transition_for_target(target: &TargetId) -> CommitteeTransition {
-            let current_committee = CurrentCommittee::<T>::get();
+            let next_committee = NextCommittee::<T>::get();
             let mut committee_transition = Vec::new();
 
-            for attester in &current_committee {
+            for attester in &next_committee {
                 if let Some(attester_info) = Attesters::<T>::get(attester) {
                     if let Some(checked_recoverable) =
                         AttestersAgreements::<T>::get(attester, target)
@@ -1796,6 +1804,7 @@ pub mod pallet {
         fn shuffle_committee() -> bool {
             let active_set = ActiveSet::<T>::get();
             let active_set_size = active_set.len();
+
             let mut committee_size = T::CommitteeSize::get() as usize;
 
             let full_shuffle = if committee_size > active_set_size {
@@ -1806,30 +1815,46 @@ pub mod pallet {
             };
 
             let current_committee = CurrentCommittee::<T>::get();
-            PreviousCommittee::<T>::put(current_committee);
+            let mut next_committee = NextCommittee::<T>::get();
 
-            let _seed = T::RandomnessSource::random_seed();
+            let shuffle_active_set = |shuffled_active_set: &mut Vec<T::AccountId>| {
+                for i in (1..shuffled_active_set.len()).rev() {
+                    let random_value = T::RandomnessSource::random(&i.to_be_bytes());
+                    let random_index = random_value
+                        .0
+                        .as_ref()
+                        .iter()
+                        .fold(0usize, |acc, &val| (acc + val as usize) % (i + 1));
 
-            let mut shuffled_active_set = active_set;
-            for i in (1..shuffled_active_set.len()).rev() {
-                let random_value = T::RandomnessSource::random(&i.to_be_bytes());
-                let random_index = random_value
-                    .0
-                    .as_ref()
-                    .iter()
-                    .fold(0usize, |acc, &val| (acc + val as usize) % (i + 1));
-
-                if i != random_index {
-                    shuffled_active_set.swap(i, random_index);
+                    if i != random_index {
+                        shuffled_active_set.swap(i, random_index);
+                    }
                 }
-            }
+            };
+
+            let mut shuffled_active_set = active_set.clone();
+
+            shuffle_active_set(&mut shuffled_active_set);
 
             let new_committee = shuffled_active_set
+                .clone()
                 .into_iter()
                 .take(committee_size)
                 .collect::<Vec<T::AccountId>>();
 
-            CurrentCommittee::<T>::put(new_committee);
+            // Bootstrap case - if there is no current committee, we need to set it
+            if next_committee.is_empty() {
+                shuffled_active_set = active_set;
+                shuffle_active_set(&mut shuffled_active_set);
+                next_committee = shuffled_active_set
+                    .into_iter()
+                    .take(committee_size)
+                    .collect::<Vec<T::AccountId>>();
+            }
+
+            CurrentCommittee::<T>::put(next_committee);
+            PreviousCommittee::<T>::put(current_committee);
+            NextCommittee::<T>::put(new_committee);
 
             full_shuffle
         }
