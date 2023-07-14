@@ -86,7 +86,7 @@ jobs:
 
       - name: Set fields
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
         run: |
           gh api graphql -f query='
