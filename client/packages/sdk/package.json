@@ -86,9 +86,15 @@
   },
   "typesVersions": {
     "*": {
-      ".": ["dist/index.d.ts"],
-      "price-estimation": ["dist/price-estimation/index.d.ts"],
-      "side-effects/types": ["dist/side-effects/types.d.ts"]
+      ".": [
+        "dist/index.d.ts"
+      ],
+      "price-estimation": [
+        "dist/price-estimation/index.d.ts"
+      ],
+      "side-effects/types": [
+        "dist/side-effects/types.d.ts"
+      ]
     }
   },
   "devDependencies": {
@@ -103,7 +109,6 @@
     "eslint": "^8.43.0",
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0",
-    "ts-node": "^10.9.1",
     "tsup": "^6.7.0",
     "typedoc": "^0.23.21",
     "typescript": "^5.1.3"

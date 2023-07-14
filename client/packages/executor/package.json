@@ -6,16 +6,16 @@
   "scripts": {
     "preinstall": "npx only-allow yarn",
     "build": "tsup",
-    "start": "yarn build && EXECUTOR=example node dist/src/main.js",
-    "dev": "yarn build && LOG_LEVEL=debug EXECUTOR=example node dist/src/main.js | npx pino-pretty -c -S",
+    "start": "yarn build && EXECUTOR=example node dist/main.js",
+    "dev": "yarn build && LOG_LEVEL=debug EXECUTOR=example node dist/main.js | npx pino-pretty -c -S",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
     "export": "LOG_LEVEL=debug yarn start >> logger.log",
     "fmt": "prettier --write src config tests",
     "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
-    "test": "yarn build && mocha 'dist/tests/**/*.js'",
-    "test:attestion": "yarn build && mocha 'dist/tests/**/attest*.js'",
-    "test-single": "yarn build && mocha"
+    "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "test:attestion": "mocha -r ts-node/register 'tests/**/attest*.ts'",
+    "test-single": "yarn build && mocha -r ts-node/register"
   },
   "exclude": [
     "./tests/"
@@ -63,6 +63,7 @@
     "@typescript-eslint/parser": "^5.61.0",
     "eslint": "^8.43.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
+    "ts-node": "^10.9.1",
     "tsup": "^7.1.0",
     "typedoc": "^0.24.7",
     "typescript": "4.9.4"
