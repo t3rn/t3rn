@@ -1726,9 +1726,7 @@ pub mod attesters_test {
             ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
             CommitteeRecoverable, CommitteeTransitionIndices,
         },
-        circuit::{
-            CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
-        },
+        circuit::{CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         TreasuryAccount, TreasuryAccountProvider,
     };
