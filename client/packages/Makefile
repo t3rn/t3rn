@@ -6,7 +6,7 @@ all:
 	cd attester; pnpm add ../types; pnpm add ../sdk; pnpm install;
 
 executor:
-	cd executor; yarn add ../sdk; yarn add ../types; yarn;
+	cd executor; yarn add ../types; yarn;
 
 attester:
 	cd attester; pnpm add ../types; pnpm add ../sdk; pnpm install;
