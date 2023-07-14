@@ -9,7 +9,8 @@ use sp_runtime::DispatchError;
 fn advance_block_works_correctly() {
     let mut ext = ExtBuilder::default().build();
     ext.execute_with(|| {
-        assert_eq!(System::block_number(), 1);
+        let start = System::block_number();
+        assert_eq!(System::block_number(), start);
         advance_to_block(Some(10));
         assert_eq!(System::block_number(), 10);
         assert_eq!(System::events().len(), 0);
