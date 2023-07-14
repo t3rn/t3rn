@@ -9,11 +9,11 @@ import {
   ETH_TRANSFER_GAS_AMOUNT,
 } from "../eth";
 
-jest.mock("node-fetch-commonjs", () => jest.fn());
+jest.mock("node-fetch", () => jest.fn());
 
 const mockGetGasPriceSuccesfulResponse = () => {
   // @ts-ignore - mockImplementationOnce is not defined in type
-  fetch.mockImplementationOnce(() =>
+  fetch.mockImplementation(() =>
     Promise.resolve({
       status: 200,
       async json() {
@@ -72,8 +72,13 @@ describe("eth", () => {
   describe("estimateGasFee", () => {
     it("should get the estimate gas fee for a transfer", async () => {
       mockGetGasPriceSuccesfulResponse();
-      const gasFee = await estimateGasFee("eth", "transfer", SpeedModes.Fast);
-      expect(gasFee).toEqual(0.000294017835132);
+      const gasFeeFast = await estimateGasFee("eth", "transfer", SpeedModes.Fast);
+      const gasFeeStandard = await estimateGasFee("eth", "transfer", SpeedModes.Standard);
+      const gasFeeSlow = await estimateGasFee("eth", "transfer", SpeedModes.Slow);
+
+      expect(gasFeeFast).toEqual(0.000294017835132);
+      expect(gasFeeStandard).toEqual(0.000293360630052);
+      expect(gasFeeSlow).toEqual(0.000293360630052);
     });
 
     it("should result to an error if unable to estimate transfer gas fee", async () => {
