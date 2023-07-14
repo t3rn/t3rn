@@ -9,7 +9,7 @@ on:
 jobs:
   add_to_project:
     name: Add PR to Project Board
-    runs-on: unbutu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Get project data
