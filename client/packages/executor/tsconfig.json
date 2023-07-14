@@ -10,6 +10,9 @@
     "lib": [
       "esnext", "es5", "es6"
     ],
+    "paths": {
+      "@t3rn/sdk/*": ["../sdk/dist/*"]
+    },
     "esModuleInterop": true,
     "alwaysStrict": true,
     "strictNullChecks": true,

@@ -43,7 +43,54 @@
     "node-fetch": "2"
   },
   "types": "./dist/index.d.ts",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.cjs",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    },
+    "./price-estimation": {
+      "types": "./dist/price-estimation/index.d.ts",
+      "default": "./dist/price-estimation/index.cjs",
+      "require": "./dist/price-estimation/index.cjs",
+      "import": "./dist/price-estimation/index.js"
+    },
+    "./side-effects/types": {
+      "types": "./dist/side-effects/types.d.ts",
+      "default": "./dist/side-effects/types.cjs",
+      "require": "./dist/side-effects/types.cjs",
+      "import": "./dist/side-effects/types.js"
+    },
+    "./circuit": {
+      "types": "./dist/circuit/index.d.ts",
+      "default": "./dist/circuit/index.cjs",
+      "require": "./dist/circuit/index.cjs",
+      "import": "./dist/circuit/index.js"
+    },
+    "./converters/amounts": {
+      "types": "./dist/converters/amounts.d.ts",
+      "default": "./dist/converters/amounts.cjs",
+      "require": "./dist/converters/amounts.cjs",
+      "import": "./dist/converters/amounts.js"
+    },
+    "./gateways": {
+      "types": "./dist/gateways/index.d.ts",
+      "default": "./dist/gateways/index.cjs",
+      "require": "./dist/gateways/index.cjs",
+      "import": "./dist/gateways/index.js"
+    },
+    "./": "./"
+  },
+  "typesVersions": {
+    "*": {
+      ".": ["dist/index.d.ts"],
+      "price-estimation": ["dist/price-estimation/index.d.ts"],
+      "side-effects/types": ["dist/side-effects/types.d.ts"]
+    }
+  },
   "devDependencies": {
     "@babel/preset-env": "^7.22.5",
     "@babel/preset-typescript": "^7.22.5",

@@ -26,7 +26,6 @@
     "@polkadot/types": "^10.9.1",
     "@polkadot/util": "^12.2.2",
     "@polkadot/util-crypto": "^12.2.2",
-    "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
