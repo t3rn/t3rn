@@ -11,7 +11,7 @@
       "esnext", "es5", "es6"
     ],
     "paths": {
-      "@t3rn/sdk/*": ["../sdk/dist/*"]
+      "@t3rn/sdk/*": ["./node_modules/@t3rn/sdk/dist/*"]
     },
     "esModuleInterop": true,
     "alwaysStrict": true,
@@ -22,5 +22,5 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
   },
-  "exclude": ["node_modules", "dist", "*.d.ts"],
+  "exclude": ["node_modules", "dist", "*.d.ts"]
 }

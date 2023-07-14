@@ -5,16 +5,17 @@
   "license": "MIT",
   "scripts": {
     "preinstall": "npx only-allow yarn",
-    "start": "EXECUTOR=example ts-node src/main.ts",
-    "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts | npx pino-pretty -c -S",
+    "build": "tsup",
+    "start": "yarn build && EXECUTOR=example node dist/src/main.js",
+    "dev": "yarn build && LOG_LEVEL=debug EXECUTOR=example node dist/src/main.js | npx pino-pretty -c -S",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
     "export": "LOG_LEVEL=debug yarn start >> logger.log",
     "fmt": "prettier --write src config tests",
     "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
-    "test": "mocha -r ts-node/register 'tests/**/*.ts'",
-    "test:attestion": "mocha -r ts-node/register 'tests/**/attest*.ts'",
-    "test-single": "mocha -r ts-node/register"
+    "test": "yarn build && mocha 'dist/tests/**/*.js'",
+    "test:attestion": "yarn build && mocha 'dist/tests/**/attest*.js'",
+    "test-single": "yarn build && mocha"
   },
   "exclude": [
     "./tests/"
@@ -26,6 +27,7 @@
     "@polkadot/types": "^10.9.1",
     "@polkadot/util": "^12.2.2",
     "@polkadot/util-crypto": "^12.2.2",
+    "@t3rn/sdk": "../sdk",
     "@t3rn/types": "../types",
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
@@ -52,16 +54,17 @@
     "sinon": "^15.2.0",
     "standard": "^17.0.0",
     "ts-mockito": "^2.6.1",
-    "ts-node": "^10.9.1",
-    "typedoc": "^0.24.7",
     "types": "link:@polkadot/keyring/types",
     "web3": "^4.0.1"
   },
   "devDependencies": {
+    "@babel/preset-typescript": "^7.22.5",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.61.0",
     "eslint": "^8.43.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
+    "tsup": "^7.1.0",
+    "typedoc": "^0.24.7",
     "typescript": "4.9.4"
   }
 }
