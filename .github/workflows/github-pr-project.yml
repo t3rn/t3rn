@@ -9,7 +9,7 @@ on:
 jobs:
   add_to_project:
     name: Add PR to Project Board
-    runs-on: self-hosted
+    runs-on: unbutu-latest
 
     steps:
       - name: Get project data
