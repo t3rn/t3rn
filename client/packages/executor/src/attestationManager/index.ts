@@ -195,6 +195,7 @@ export class AttestationManager {
 
     // debug signatures recovery
     let signatureErrors: number = 0;
+    let addressesRecovered: string[] = [];
     for (const signature of batch.signatures) {
       const address = await this.receiveAttestationBatchContract.methods
         .recoverSigner(
@@ -204,13 +205,15 @@ export class AttestationManager {
         )
         .call();
 
+      addressesRecovered.push(String(address));
+
       const result = await this.receiveAttestationBatchContract.methods
         .attestersIndices(
           // @ts-ignore - ethers.js types are not up to date
           ethers.getAddress(address)
         )
         .call();
-      if (result != currentCommitteeTransitionCount) {
+        if (result != currentCommitteeTransitionCount) {
         logger.error(
           `Signature ${signature} is invalid, address ${address} is not in the current committee`
         );
@@ -221,6 +224,9 @@ export class AttestationManager {
         );
       }
     }
+
+    logger.info({addressesRecovered: addressesRecovered.map(item => item.toLowerCase()).sort()}, "Addresses recovered from signatures")
+    logger.info({nextCommittee: batch.nextCommittee.map(item => item.toLowerCase()).sort()}, "Next committee")
 
     if (
       BigInt(signatureErrors) >
