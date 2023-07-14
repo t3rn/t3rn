@@ -112,7 +112,7 @@ Options:
 
 ### estimate
 
-The `estimate` command is used to estimate the max reward with a given target amount
+The `estimate` command is used to estimate the max reward with a given target amount.
 
 Usage:
 
@@ -127,6 +127,27 @@ Options:
 - **--target \<name\>**: The target on which is execution will be executed. i.e 'eth', 'roco'
 - **--target-asset \<symbol\>**: The target asset symbol. i.e usdt, dot 
 - **--target-amount \<amount\>**: The target amount
+
+A sample estimate will look like this:
+| Index               | 0                                       | 1                                        | Value                  | Symbol |
+|---------------------|-----------------------------------------|------------------------------------------|------------------------|--------|
+| gasFee              | { value: 0.000634745609043, symbol: 'eth' } | { value: 0.2247957921881875, symbol: 'dot' } |                        |        |
+| executorFeeEstimate |                                         |                                          | 0.00017758193000000003 | 'dot'  |
+| maxReward           |                                         |                                          | 0.5801372341181875     | 'dot'  |
+| estimatedValue      |                                         |                                          | 0.35516386             | 'dot'  |
+
+
+Below is a detailed explanation of the estimation results for a blockchain transaction. Each field provides crucial information about the costs, rewards, and values associated with the transaction:
+
+- **gasFee**: This field represents the cost of computational resources required to execute a transaction on the target blockchain network. It is calculated in the native asset of the target network. For debugging purposes, we also provide the gas fee converted into the base asset.
+
+- **executorFeeEstimate**: This field provides an estimated fee that will be paid to the executor of a transaction. It is calculated as an overspent percentage over the target amount and then converted into the base asset. The executor is the entity that processes and validates the transaction on the blockchain.
+
+- **maxReward**: This field represents the maximum reward for executing the transaction. It is calculated as the sum of the gas fee estimate, the executor fee estimate, and the target amount involved in the transaction. The max reward provides an upper limit on the total cost of the transaction, including all fees and the transaction amount itself. It is estimated in the base asset.
+
+- **estimatedValue**: This field represents the estimated value of the target amount in the base asset. It is included primarily for debugging purposes and provides a way to understand the value of the transaction in terms of the base asset.
+
+Please note that these estimations are subject to change based on the state of the blockchain network at the time of the transaction, and they serve as a guide to understanding the potential costs and rewards associated with a transaction.
 
 ### Export
 
