@@ -1,6 +1,5 @@
 import { AttestationManager } from "./attestationManager";
 import { Instance } from "./index";
-import { config } from "../config/config";
 import { logger } from "./logging";
 
 async function main() {
@@ -9,11 +8,8 @@ async function main() {
   await instance.setup();
 
   const attestationManager = new AttestationManager(instance.circuitClient);
-  if (config.attestations.processPendingBatches) {
-    logger.info("Processing Pending Attestation Batches");
-    await attestationManager.processPendingAttestationBatches();
-  }
-  // await attestationManager.listener()
+  logger.info("Processing Attestation Batches");
+  await attestationManager.processAttestationBatches();
 }
 
 main();

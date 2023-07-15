@@ -164,8 +164,7 @@ export type Config = {
       attestationVerifierAddress: string;
       privateKey: string | undefined;
     };
-    processPendingBatches: boolean;
-    processPendingBatchesIndex: number;
+    processBatches: boolean;
   };
 };
 
@@ -263,10 +262,7 @@ export const config: Config = {
       attestationVerifierAddress: "0x1eD79B479d06737004b82AccAD40E20A01d5d0C2",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
-    processPendingBatches:
-      process.env.PROCESS_PENDING_BATCHES == "true" ? true : false,
-    processPendingBatchesIndex: process.env.PROCESS_PENDING_BATCHES_INDEX
-      ? parseInt(process.env.PROCESS_PENDING_BATCHES_INDEX)
-      : 0,
+    processBatches:
+      process.env.PROCESS_BATCHES == "true" ? true : false,
   },
 };

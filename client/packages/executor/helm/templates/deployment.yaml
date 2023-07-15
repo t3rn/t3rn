@@ -31,6 +31,8 @@ spec:
           env:
             - name: WS_CIRCUIT_ENDPOINT
               value: "{{ .Values.websocketEndpoint }}"
+            - name: PROCESS_BATCHES
+              value: "true"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- if hasKey .Values "storage" }}

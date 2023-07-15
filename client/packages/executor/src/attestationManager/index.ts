@@ -27,6 +27,9 @@ export class AttestationManager {
   receiveAttestationBatchContract: Contract<never>;
   web3: Web3;
   wallet: ReturnType<typeof this.web3.eth.accounts.privateKeyToAccount>;
+  currentCommitteeSize = 0;
+  currentBatchIndex: 0;
+  currentCommitteeTransitionCount: 0;
 
   constructor(public client: Sdk["client"]) {
     if (config.attestations.ethereum.privateKey === undefined) {
@@ -149,16 +152,25 @@ export class AttestationManager {
     return messageHash;
   }
 
-  async processPendingAttestationBatches() {
+  async processAttestationBatches() {
+    this.fetchAttesterContractData();
     this.batches = await this.fetchBatches();
 
-    if (config.attestations.processPendingBatchesIndex >= this.batches.length) {
-      throw new Error("processPendingBatchesIndex out of range");
+    if (BigInt(this.batches.length) > BigInt(this.currentBatchIndex)) {
+      logger.info(
+        `We have ${
+          BigInt(this.batches.length) - BigInt(this.currentBatchIndex)
+        } pending batches to process`
+      );
+      this.processPendingAttestationBatches();
     }
 
-    // config.attestations.processPendingBatches is set to process pending batches
+    await this.listener();
+  }
+
+  async processPendingAttestationBatches() {
     for (const batch of this.batches.slice(
-      config.attestations.processPendingBatchesIndex
+      Number(this.currentBatchIndex) + 1
     )) {
       logger.info(
         `Batch ${
@@ -179,21 +191,6 @@ export class AttestationManager {
     batch: ConfirmationBatch,
     messageHash: string
   ) {
-    const committeeSize: number =
-      await this.receiveAttestationBatchContract.methods.committeeSize().call();
-    const currentBatchIndex = await this.receiveAttestationBatchContract.methods
-      .currentBatchIndex()
-      .call();
-    const currentCommitteeTransitionCount =
-      await this.receiveAttestationBatchContract.methods
-        .currentCommitteeTransitionCount()
-        .call();
-
-    logger.debug(
-      { committeeSize, currentBatchIndex, currentCommitteeTransitionCount },
-      "Etherum Contract State"
-    );
-
     const contractMethod =
       this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
         // @ts-ignore - ethers.js types are not up to date
@@ -238,6 +235,27 @@ export class AttestationManager {
       logger.warn({ error: error }, "Error sending transaction: ");
       // throw new Error("Error sending transaction: " + error);
     }
+  }
+
+  private async fetchAttesterContractData() {
+    this.currentCommitteeSize =
+      await this.receiveAttestationBatchContract.methods.committeeSize().call();
+    this.currentBatchIndex = await this.receiveAttestationBatchContract.methods
+      .currentBatchIndex()
+      .call();
+    this.currentCommitteeTransitionCount =
+      await this.receiveAttestationBatchContract.methods
+        .currentCommitteeTransitionCount()
+        .call();
+
+    logger.debug(
+      {
+        currentCommitteeSize: this.currentCommitteeSize,
+        currentBatchIndex: this.currentBatchIndex,
+        currentCommitteeTransitionCount: this.currentCommitteeTransitionCount,
+      },
+      "Etherum Contract State"
+    );
   }
 
   async listenForConfirmedAttestationBatch() {
