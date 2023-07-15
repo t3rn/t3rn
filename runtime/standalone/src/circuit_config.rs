@@ -22,7 +22,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, Convert, One, Zero},
     Perbill, Percent,
 };
-use sp_std::{boxed::Box, marker::PhantomData, vec};
+use sp_std::{boxed::Box, marker::PhantomData};
 use t3rn_primitives::{xdns::PalletAssetsOverlay, GatewayVendor};
 
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
@@ -31,18 +31,16 @@ impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
 }
 
 pub struct GlobalOnInitQueues;
-
 impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
     fn process(n: BlockNumber, on_init_weight_limit: Weight) -> Weight {
-        let mut weights_consumed = vec![];
-        const PROCESS_SIGNAL_SHARE: u32 = 5;
-        const XTX_TICK_SHARE: u32 = 30;
-        const REVERT_XTX_SHARE: u32 = 5;
-        const BUMP_ROUND_SHARE: u32 = 5;
-        const CALC_CLAIMABLE_SHARE: u32 = 5;
-        const WEEKLY_SHARE: u32 = 20;
-        const DAILY_SHARE: u32 = 10;
-        const HOURLY_SHARE: u32 = 20;
+        const PROCESS_SIGNAL_SHARE: u8 = 5;
+        const XTX_TICK_SHARE: u8 = 30;
+        const REVERT_XTX_SHARE: u8 = 5;
+        const BUMP_ROUND_SHARE: u8 = 5;
+        const CALC_CLAIMABLE_SHARE: u8 = 5;
+        const WEEKLY_SHARE: u8 = 20;
+        const DAILY_SHARE: u8 = 10;
+        const HOURLY_SHARE: u8 = 20;
 
         if PROCESS_SIGNAL_SHARE
             + XTX_TICK_SHARE
@@ -60,89 +58,78 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
             return 0
         }
 
-        const BLOCKS_PER_WEEK: BlockNumber = 7 * 24 * 60 * 60;
-        const BLOCKS_PER_DAY: BlockNumber = 24 * 60 * 60;
         const BLOCKS_PER_HOUR: BlockNumber = 60 * 60;
+        const BLOCKS_PER_DAY: BlockNumber = 24 * BLOCKS_PER_HOUR;
+        const BLOCKS_PER_WEEK: BlockNumber = 7 * BLOCKS_PER_DAY;
+
+        let mut total_consumed: Weight = 0;
 
         if (n % BLOCKS_PER_HOUR).is_zero() {
             let hourly_weight_limit: Weight =
-                Perbill::from_percent(HOURLY_SHARE).mul_ceil(on_init_weight_limit);
-            weights_consumed.push(Self::process_hourly(n, hourly_weight_limit))
+                Percent::from_percent(HOURLY_SHARE).mul_ceil(on_init_weight_limit);
+            total_consumed =
+                total_consumed.saturating_add(Self::process_hourly(n, hourly_weight_limit));
         }
 
         if (n % BLOCKS_PER_DAY).is_zero() {
             let daily_weight_limit: Weight =
-                Perbill::from_percent(DAILY_SHARE).mul_ceil(on_init_weight_limit);
-            weights_consumed.push(Self::process_daily(n, daily_weight_limit))
+                Percent::from_percent(DAILY_SHARE).mul_ceil(on_init_weight_limit);
+            total_consumed =
+                total_consumed.saturating_add(Self::process_daily(n, daily_weight_limit));
         }
 
         if (n % BLOCKS_PER_WEEK).is_zero() {
             let weekly_weight_limit: Weight =
-                Perbill::from_percent(WEEKLY_SHARE).mul_ceil(on_init_weight_limit);
-            weights_consumed.push(Self::process_weekly(n, weekly_weight_limit))
+                Percent::from_percent(WEEKLY_SHARE).mul_ceil(on_init_weight_limit);
+            total_consumed =
+                total_consumed.saturating_add(Self::process_weekly(n, weekly_weight_limit));
         }
 
-        // Iterate over all pre-init hooks implemented by pallets and return aggregated weight
-        weights_consumed.push(Circuit::process_signal_queue(
+        let weight = Circuit::process_signal_queue(
             n,
             BlockNumber::one(),
-            Perbill::from_percent(PROCESS_SIGNAL_SHARE) * on_init_weight_limit,
-        ));
-        log::debug!(
-            "Circuit::process_signal_queue consumed: {:?}",
-            weights_consumed
-                .last()
-                .expect("Circuit::process_signal_queue consumed weight")
+            Percent::from_percent(PROCESS_SIGNAL_SHARE).mul_ceil(on_init_weight_limit),
         );
-        weights_consumed.push(Circuit::process_xtx_tick_queue(
+        log::debug!("Circuit::process_signal_queue consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Circuit::process_xtx_tick_queue(
             n,
             BlockNumber::one(),
-            Perbill::from_percent(XTX_TICK_SHARE) * on_init_weight_limit,
-        ));
-        log::debug!(
-            "Circuit::process_xtx_tick_queue consumed: {:?}",
-            weights_consumed
-                .last()
-                .expect("Circuit::process_xtx_tick_queue consumed weight")
+            Percent::from_percent(XTX_TICK_SHARE).mul_ceil(on_init_weight_limit),
         );
-        weights_consumed.push(Circuit::process_emergency_revert_xtx_queue(
+        log::debug!("Circuit::process_xtx_tick_queue consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Circuit::process_emergency_revert_xtx_queue(
             n,
             10u32,
-            Perbill::from_percent(REVERT_XTX_SHARE) * on_init_weight_limit,
-        ));
+            Percent::from_percent(REVERT_XTX_SHARE).mul_ceil(on_init_weight_limit),
+        );
         log::debug!(
             "Circuit::process_emergency_revert_xtx_queue consumed: {:?}",
-            weights_consumed
-                .last()
-                .expect("Circuit::process_emergency_revert_xtx_queue consumed weight")
+            weight
         );
-        weights_consumed.push(Clock::check_bump_round(
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Clock::check_bump_round(
             n,
             BlockNumber::one(),
-            Perbill::from_percent(BUMP_ROUND_SHARE) * on_init_weight_limit,
-        ));
-        log::debug!(
-            "Clock::check_bump_round consumed: {:?}",
-            weights_consumed
-                .last()
-                .expect("Clock::check_bump_round consumed weight")
+            Percent::from_percent(BUMP_ROUND_SHARE).mul_ceil(on_init_weight_limit),
         );
-        weights_consumed.push(Clock::calculate_claimable_for_round(
+        log::debug!("Clock::check_bump_round consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Clock::calculate_claimable_for_round(
             n,
             BlockNumber::one(),
-            Perbill::from_percent(CALC_CLAIMABLE_SHARE) * on_init_weight_limit,
-        ));
+            Percent::from_percent(CALC_CLAIMABLE_SHARE).mul_ceil(on_init_weight_limit),
+        );
         log::debug!(
             "Clock::calculate_claimable_for_round consumed: {:?}",
-            weights_consumed
-                .last()
-                .expect("Clock::calculate_claimable_for_round consumed weight")
+            weight
         );
-        let total_consumed: Weight = weights_consumed
-            .iter()
-            .fold(0, |acc: Weight, weight: &Weight| {
-                acc.saturating_add(*weight)
-            });
+        total_consumed = total_consumed.saturating_add(weight);
 
         log::debug!(
             "Total weight consumed by on init hook: {:?}",
@@ -161,23 +148,15 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
     }
 
     fn process_hourly(n: BlockNumber, hook_weight_limit: Weight) -> Weight {
-        let mut weights_consumed: Vec<Weight> = Vec::new();
-        weights_consumed.push(XDNS::check_for_manual_verifier_overview_process(n));
-
-        let total = weights_consumed
-            .iter()
-            .fold(0, |acc: Weight, weight: &Weight| {
-                acc.saturating_add(*weight)
-            });
-
-        if total > hook_weight_limit {
+        let weight = XDNS::check_for_manual_verifier_overview_process(n);
+        if weight > hook_weight_limit {
             log::error!(
                 "GlobalOnInitQueues::process_hourly consumed more than the limit: {:?}",
-                total
+                weight
             );
         }
 
-        total
+        weight
     }
 }
 
