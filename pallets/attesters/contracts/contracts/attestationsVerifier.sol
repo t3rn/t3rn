@@ -67,9 +67,9 @@ contract AttestationsVerifier {
         bytes32 batchMessageHash = keccak256(batchEncodePacked(batch));
         require(batchMessageHash == expectedBatchHash, "Batch hash mismatch");
 
-        require(verifySignedByActiveCommittee(expectedBatchHash, signatures), "Signatures verification failed");
-
         require(batch.index == currentBatchIndex + 1, "Batch index mismatch");
+
+        require(verifySignedByActiveCommittee(expectedBatchHash, signatures), "Signatures verification failed");
 
         if (batch.nextCommittee.length > 0) {
             currentCommitteeTransitionCount += 1;

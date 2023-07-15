@@ -260,7 +260,7 @@ export const config: Config = {
     ethereum: {
       name: "sepl",
       rpc: "https://endpoints.omniatech.io/v1/eth/sepolia/public",
-      attestationVerifierAddress: "0x39EDE447F82c6BF3180D904608D14b900f5F58a2",
+      attestationVerifierAddress: "0x1eD79B479d06737004b82AccAD40E20A01d5d0C2",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
     processPendingBatches:

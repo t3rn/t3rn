@@ -20,10 +20,10 @@ dependencies:
     specifier: ^12.2.2
     version: 12.2.2(@polkadot/util@12.2.2)
   '@t3rn/sdk':
-    specifier: ../sdk
+    specifier: link:../sdk
     version: link:../sdk
   '@t3rn/types':
-    specifier: ../types
+    specifier: link:../types
     version: link:../types
   '@types/chai':
     specifier: ^4.3.4

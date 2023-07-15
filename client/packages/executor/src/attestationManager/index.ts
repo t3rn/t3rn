@@ -152,6 +152,10 @@ export class AttestationManager {
   async processPendingAttestationBatches() {
     this.batches = await this.fetchBatches();
 
+    if (config.attestations.processPendingBatchesIndex >= this.batches.length) {
+      throw new Error("processPendingBatchesIndex out of range");
+    }
+
     // config.attestations.processPendingBatches is set to process pending batches
     for (const batch of this.batches.slice(
       config.attestations.processPendingBatchesIndex
@@ -189,58 +193,6 @@ export class AttestationManager {
       { committeeSize, currentBatchIndex, currentCommitteeTransitionCount },
       "Etherum Contract State"
     );
-    const contractMethods = Object.keys(
-      this.receiveAttestationBatchContract.methods
-    );
-
-    // debug signatures recovery
-    let signatureErrors: number = 0;
-    let addressesRecovered: string[] = [];
-    for (const signature of batch.signatures) {
-      const address = await this.receiveAttestationBatchContract.methods
-        .recoverSigner(
-          // @ts-ignore - ethers.js types are not up to date
-          messageHash,
-          signature
-        )
-        .call();
-
-      addressesRecovered.push(String(address));
-
-      const result = await this.receiveAttestationBatchContract.methods
-        .attestersIndices(
-          // @ts-ignore - ethers.js types are not up to date
-          ethers.getAddress(address)
-        )
-        .call();
-        if (result != currentCommitteeTransitionCount) {
-        logger.error(
-          `Signature ${signature} is invalid, address ${address} is not in the current committee`
-        );
-        signatureErrors++;
-      } else {
-        logger.info(
-          `Signature ${signature} is valid, address ${address} is in the current committee`
-        );
-      }
-    }
-
-    logger.info({addressesRecovered: addressesRecovered.map(item => item.toLowerCase()).sort()}, "Addresses recovered from signatures")
-    logger.info({nextCommittee: batch.nextCommittee.map(item => item.toLowerCase()).sort()}, "Next committee")
-
-    if (
-      BigInt(signatureErrors) >
-      (BigInt(2) / BigInt(3)) * BigInt(committeeSize)
-    ) {
-      logger.error(
-        `Batch ${batch.index} processing failed, ${
-          batch.signatures.length - signatureErrors
-        }/${batch.signatures.length} signatures are valid`
-      );
-      throw new Error();
-    } else {
-      logger.info(`Batch ${batch.index} processing, all signatures are valid`);
-    }
 
     const contractMethod =
       this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
