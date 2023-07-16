@@ -84,7 +84,7 @@ export class AttestationManager {
       config.attestations.ethereum.name
     );
     const fetchedData = rawBatches.toJSON() as unknown as Array<IBatch>;
-    const batches = fetchedData.map((batch) => {
+    this.batches = fetchedData.map((batch) => {
       return {
         nextCommittee: batch.nextCommittee || [],
         bannedCommittee: batch.bannedCommittee || [],
@@ -93,10 +93,9 @@ export class AttestationManager {
         index: batch.index,
         signatures: batch.signatures.map(([, signature]) => signature),
         created: batch.created,
-      };
+      } as ConfirmationBatch;
     });
     logger.info("We have " + fetchedData.length + " batches pending");
-    return batches as unknown as ConfirmationBatch[];
   }
 
   async listener() {
@@ -153,8 +152,8 @@ export class AttestationManager {
   }
 
   async processAttestationBatches() {
-    this.fetchAttesterContractData();
-    this.batches = await this.fetchBatches();
+    await this.fetchAttesterContractData();
+    await this.fetchBatches();
 
     if (BigInt(this.batches.length) > BigInt(this.currentBatchIndex)) {
       logger.info(
