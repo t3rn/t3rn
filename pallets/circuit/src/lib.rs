@@ -1227,6 +1227,7 @@ impl<T: Config> Pallet<T> {
         };
         log::debug!("Order confirmed!");
 
+        #[cfg(not(feature = "test-skip-verification"))]
         let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
