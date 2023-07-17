@@ -115,18 +115,19 @@ mod tests {
     use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
     use sp_runtime::AccountId32;
-    use t3rn_primitives::light_client::LightClientAsyncAPI;
+    use t3rn_primitives::{clock::OnHookQueues, light_client::LightClientAsyncAPI};
 
     use t3rn_mini_mock_runtime::{
         prepare_ext_builder_playground, AccountId, Assets, Balance, Balances, BlockNumber, Circuit,
-        CircuitError, CircuitEvent, Clock, Event, Hash, MiniRuntime, MockedAssetEvent,
-        OrderStatusRead, Origin, Portal, System, Vacuum, VacuumEvent, ASSET_DOT, POLKADOT_TARGET,
-        XDNS,
+        CircuitError, CircuitEvent, Clock, Event, GlobalOnInitQueues, Hash, MiniRuntime,
+        MockedAssetEvent, OrderStatusRead, Origin, Portal, Rewards, System, Vacuum, VacuumEvent,
+        ASSET_DOT, POLKADOT_TARGET, XDNS,
     };
     use t3rn_primitives::portal::Portal as PortalT;
 
     use t3rn_primitives::{
         circuit::types::{OrderSFX, SFXAction},
+        claimable::CircuitRole,
         monetary::TRN,
         GatewayVendor, SpeedMode, TreasuryAccount, TreasuryAccountProvider,
     };
@@ -385,6 +386,12 @@ mod tests {
                 198 as Balance,
             ));
 
+            // Assert executor has insurance amount locked
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &executor),
+                EXISTENTIAL_DEPOSIT as Balance
+            );
+
             // Complete bidding
             System::set_block_number(System::block_number() + 3);
             Clock::on_initialize(System::block_number());
@@ -418,7 +425,7 @@ mod tests {
             };
 
             assert_ok!(Circuit::confirm_side_effect(
-                Origin::signed(executor),
+                Origin::signed(executor.clone()),
                 expected_sfx_hash,
                 confirmation_transfer_1
             ));
@@ -443,6 +450,25 @@ mod tests {
                         dlq: None
                     },
                 }
+            );
+
+            // Check executor's balance before claim - insurance amount should be returned
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &executor),
+                EXISTENTIAL_DEPOSIT as Balance + 50 as Balance
+            );
+
+            GlobalOnInitQueues::process_hourly(300, u64::MAX);
+
+            // Claim via Rewards
+            let claim_res = Rewards::claim(
+                Origin::signed(executor.clone()),
+                Some(CircuitRole::Executor),
+            );
+
+            assert_eq!(
+                Assets::balance(ASSET_DOT, &executor),
+                EXISTENTIAL_DEPOSIT as Balance + 50 as Balance + 200 as Balance
             );
         });
     }
