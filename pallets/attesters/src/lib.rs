@@ -2214,7 +2214,7 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::traits::{Keccak256};
+    use sp_runtime::traits::Keccak256;
 
     use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
