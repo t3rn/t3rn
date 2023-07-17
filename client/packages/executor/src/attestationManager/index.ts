@@ -198,7 +198,7 @@ export class AttestationManager {
         batch.committedSfx,
         batch.revertedSfx,
         batch.index,
-        ethers.toQuantity(messageHash),
+        messageHash,
         batch.signatures
       );
 
