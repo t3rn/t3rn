@@ -8,6 +8,12 @@ const SpeedModeEnum = z.enum(["Fast", "Rational", "Finalized"], {
 
 export type SpeedMode = z.infer<typeof SpeedModeEnum>
 
+export const SpeedModes = {
+  Fast: "Fast",
+  Rational: "Rational",
+  Finalized: "Finalized",
+} as const
+
 export const ExtrinsicSchema = z.object({
   sideEffects: z.array(SideEffectSchema),
   speed_mode: SpeedModeEnum,
