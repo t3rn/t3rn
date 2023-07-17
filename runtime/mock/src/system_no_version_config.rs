@@ -39,7 +39,7 @@ impl frame_system::Config for Runtime {
     /// The type for hashing blocks and tries.
     type Hash = HashPrimitive;
     /// The hashing algorithm used.
-    type Hashing = Keccak256;
+    type Hashing = BlakeTwo256;
     /// The header type.
     type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// The index type for storing how many extrinsics an account has signed.

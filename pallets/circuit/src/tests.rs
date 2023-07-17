@@ -808,7 +808,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     },
                     EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
                         circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
-                            charge_id: H256::from_str("0x5276088f60b17e7a72a549d2db806497808a9da52753b1cd0b613f2886710251").unwrap(),
+                            charge_id: H256::from_str("0x77b1278e47852c8787044159b32806a437ea9196772e8639ff677067a97b32bc").unwrap(),
                             payee: BID_WINNER,
                             recipient: Some(REQUESTER),
                             amount: 3
