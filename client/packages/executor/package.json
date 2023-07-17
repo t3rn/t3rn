@@ -4,16 +4,10 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-<<<<<<< HEAD
     "preinstall": "npx only-allow pnpm",
-    "start": "EXECUTOR=example ts-node src/main.ts",
-    "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts | npx pino-pretty -c -S",
-=======
-    "preinstall": "npx only-allow yarn",
-    "build": "tsup",
     "start": "yarn build && EXECUTOR=example node dist/main.js",
-    "dev": "yarn build && LOG_LEVEL=debug EXECUTOR=example node dist/main.js | npx pino-pretty -c -S",
->>>>>>> origin/development
+    "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts",
+    "build": "tsup",
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
     "export": "LOG_LEVEL=debug pnpm run start >> logger.log",
