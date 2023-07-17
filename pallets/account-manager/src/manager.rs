@@ -12,13 +12,12 @@ use sp_runtime::{
     traits::{CheckedAdd, CheckedDiv, CheckedMul, Convert, Zero},
     ArithmeticError, DispatchError,
 };
-use sp_std::{prelude::*, vec};
+use sp_std::prelude::*;
 
 use t3rn_primitives::{
     account_manager::{RequestCharge, Settlement},
-    claimable::{CircuitRole, ClaimableArtifacts},
+    claimable::CircuitRole,
     clock::Clock,
-    common::RoundInfo,
 };
 
 use crate::monetary::Monetary;
@@ -64,13 +63,19 @@ impl<T: Config>
         }
     }
 
-    fn get_settlement(settlement_id: T::Hash) -> Option<Settlement<T::AccountId, BalanceOf<T>>> {
+    fn get_settlement(
+        settlement_id: T::Hash,
+    ) -> Option<Settlement<T::AccountId, BalanceOf<T>, <T::Assets as Inspect<T::AccountId>>::AssetId>>
+    {
         SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
     }
 
     fn get_settlements_by_role(
         role: CircuitRole,
-    ) -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)> {
+    ) -> Vec<(
+        T::AccountId,
+        Settlement<T::AccountId, BalanceOf<T>, <T::Assets as Inspect<T::AccountId>>::AssetId>,
+    )> {
         let settlements = SettlementsPerRound::<T>::iter_prefix_values(T::Clock::current_round());
         settlements
             .filter(|settlement| settlement.role == role)
@@ -203,13 +208,18 @@ impl<T: Config>
                         SettlementsPerRound::<T>::insert(
                             T::Clock::current_round(),
                             charge_id,
-                            Settlement::<T::AccountId, BalanceOf<T>> {
+                            Settlement::<
+                                T::AccountId,
+                                BalanceOf<T>,
+                                <T::Assets as Inspect<T::AccountId>>::AssetId,
+                            > {
                                 requester: charge.payee,
                                 recipient,
                                 settlement_amount: charge.offered_reward,
                                 outcome,
                                 source: charge.source,
                                 role: charge.role,
+                                maybe_asset_id: charge.maybe_asset_id,
                             },
                         );
                     },
@@ -323,14 +333,6 @@ impl<T: Config>
             },
             None => Err(Error::<T>::TransferDepositFailedOldChargeNotFound.into()),
         }
-    }
-
-    /// Collect claimable (only SFX execution rewards) for Executors and Stakers submitted by Circuit at the duration of the current Round
-    fn on_collect_claimable(
-        _n: T::BlockNumber,
-        _r: RoundInfo<T::BlockNumber>,
-    ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, DispatchError> {
-        Ok(vec![])
     }
 
     fn can_withdraw(

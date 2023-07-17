@@ -191,7 +191,7 @@ impl pallet_clock::Config for MiniRuntime {
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
-    type RoundDuration = ConstU32<400>;
+    type RoundDuration = ConstU32<300>;
 }
 use t3rn_primitives::monetary::TRN;
 

@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::pallet::*;
-use frame_support::traits::Len;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -12,7 +11,7 @@ pub mod pallet {
     use frame_support::{
         dispatch::DispatchResult,
         pallet_prelude::*,
-        traits::{Currency, ExistenceRequirement, FindAuthor, WithdrawReasons},
+        traits::{Currency, ExistenceRequirement, FindAuthor, Len, WithdrawReasons},
     };
     use frame_system::pallet_prelude::*;
     use sp_core::H256;
@@ -157,11 +156,6 @@ pub mod pallet {
 
     #[pallet::storage]
     pub type Collators<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u32>;
-
-    // #[pallet::storage]
-    // #[pallet::getter(fn get_accumulated_settlements)]
-    // pub type AccumulatedSettlements<T: Config> =
-    //     StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
 
     /// Accumulated settlements per executor per asset id.
     #[pallet::storage]
@@ -936,20 +930,7 @@ pub mod pallet {
         }
 
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            let weight: Weight = 0;
-            // if n % T::Clock::round_duration() == Zero::zero() {
-            //     weight += Self::process_accumulated_settlements();
-            // }
-            // if n % T::InflationDistributionPeriod::get() == Zero::zero() {
-            //     weight += Self::distribute_inflation();
-            //     weight += Self::process_authors_this_period();
-            // }
-
-            // // Every block, check if we have a new author
-            // if Self::process_author() {
-            //     weight += T::DbWeight::get().reads_writes(2, 2);
-            // }
-            weight
+            0
         }
     }
 

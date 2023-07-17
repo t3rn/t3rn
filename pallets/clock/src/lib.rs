@@ -35,7 +35,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use sp_std::{prelude::*, vec};
+    use sp_std::prelude::*;
     use t3rn_primitives::clock::OnHookQueues;
 
     const FIVE: Weight = 5;
@@ -91,38 +91,7 @@ pub mod pallet {
     pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
 
     impl<T: Config> Pallet<T> {
-        pub fn calculate_claimable_for_round(
-            n: T::BlockNumber,
-            _interval: T::BlockNumber,
-            _max_allowed_weight: Weight,
-        ) -> Weight {
-            const KILL_WRITES: Weight = 1;
-            const KILL_READS: Weight = 2;
-            // fixme: move current_round from treasury to circuit-clock
-            let r = Self::current_round();
-            let mut claimable_artifacts = vec![];
-
-            match T::AccountManager::on_collect_claimable(n, r) {
-                Ok(claimable) => claimable_artifacts.extend(claimable),
-                Err(e) => {
-                    log::error!("Clock init_hook error while collecting claimable: {:?}", e);
-                    return T::DbWeight::get().reads_writes(KILL_READS, 0 as Weight)
-                },
-            }
-
-            ClaimableArtifactsPerRound::<T>::insert(r, claimable_artifacts.clone());
-
-            // todo: aggregated claimable_artifacts to TotalClaimablePerRound
-            T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
-        }
-
-        pub fn check_bump_round(
-            n: T::BlockNumber,
-            _interval: T::BlockNumber,
-            _max_allowed_weight: Weight,
-        ) -> Weight {
-            const KILL_WRITES: Weight = 1;
-            const KILL_READS: Weight = 2;
+        pub fn check_bump_round(n: T::BlockNumber) -> Weight {
             let past_round = <CurrentRound<T>>::get();
             let term = T::RoundDuration::get();
             let new_round = RoundInfo {
@@ -136,16 +105,15 @@ pub mod pallet {
                 new_round
             );
             if past_round.should_update(n) {
-                log::debug!("check_bump_round: updating round");
                 <CurrentRound<T>>::put(new_round);
                 Self::deposit_event(Event::NewRound {
                     index: new_round.index,
                     head: new_round.head,
                     term: new_round.term,
                 });
-                T::DbWeight::get().reads_writes(KILL_READS, KILL_WRITES)
+                T::DbWeight::get().reads_writes(2, 1)
             } else {
-                T::DbWeight::get().reads(KILL_READS)
+                T::DbWeight::get().reads(2)
             }
         }
     }

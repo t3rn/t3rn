@@ -387,7 +387,7 @@ mod tests {
             GlobalOnInitQueues::process_hourly(300, u64::MAX);
 
             // Claim via Rewards
-            let claim_res = Rewards::claim(
+            let _claim_res = Rewards::claim(
                 Origin::signed(executor.clone()),
                 Some(CircuitRole::Executor),
             );

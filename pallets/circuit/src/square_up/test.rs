@@ -104,7 +104,7 @@ pub mod test {
                 charge_fee: 0,
                 recipient: None,
                 source: BenefitSource::TrafficFees,
-                role: CircuitRole::Requester
+                role: CircuitRole::Executor
             })
         );
         assert_eq!(
@@ -314,7 +314,8 @@ pub mod test {
                         settlement_amount: bid.amount,
                         outcome: Outcome::Commit,
                         source: BenefitSource::TrafficFees,
-                        role: CircuitRole::Requester
+                        role: CircuitRole::Executor,
+                        maybe_asset_id: None,
                     })
                 );
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);
