@@ -99,27 +99,53 @@ export class AttestationManager {
   }
 
   async listener() {
+    logger.info('Listening for NewConfirmationBatch events...')
     // Subscribe to all events and filter based on the specified event method
-    this.client.query.system.events((events: Array<never>) => {
-      events.forEach(
-        (record: {
-          event: { section: string; method: string; data: string[] };
-        }) => {
-          const { event } = record;
+    this.client.query.system.events(async (events: any) => {
+      if (events === undefined || events === null) {
+        return
+      }
 
-          // Check if the event type matches the specified event
-          if (
-            event.section === "attesters" &&
-            event.method === "NewConfirmationBatch"
-          ) {
-            logger.debug(
-              { data: event.data },
-              `Event ${event.section}.${event.method} received`
-            );
-          }
-        }
-      );
-    });
+      logger.debug({ events_count: events.length }, `Received events`)
+
+      const attesterEvents = events
+          .toHuman()
+          .filter((event) => event.event.section == 'attesters')
+
+      await this.processConfirmedBatches(attesterEvents)
+    })
+  }
+  private async processConfirmedBatches(events: any) {
+        // Loop through the Vec<EventRecord>
+        await Promise.all(
+            events.map(async (record) => {
+                // Extract the phase, event and the event types
+                const { event } = record
+
+                logger.debug(
+                    {
+                        event: event.method,
+                        data: event.data,
+                    },
+                    'Received attesters event'
+                )
+                if (record.event.method != 'NewConfirmationBatch') {
+                    return
+                }
+
+                logger.debug(
+                    {
+                        event: event.method,
+                        data: event.data,
+                    },
+                    'Received attesters event'
+                )
+
+                const batch = event.data as ConfirmationBatch
+                const messageHash = this.getMessageHash(batch)
+
+                await this.receiveAttestationBatchCall(batch, messageHash)
+                }))
   }
 
   getMessageHash(batch: Batch) {
@@ -131,12 +157,6 @@ export class AttestationManager {
   async getBlockHash(blockNumber: number): Promise<string> {
     const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber);
     return blockHash.toHex();
-  }
-
-  // TODO: not used
-  getMessageHashFromString(data: string) {
-    const messageHash = ethers.keccak256(data);
-    return messageHash;
   }
 
   // TODO: not used
