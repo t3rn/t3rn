@@ -1,10 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::pallet::*;
+use frame_support::traits::Len;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+
     t3rn_primitives::reexport_currency_types!();
     use codec::Encode;
     use frame_support::{
@@ -26,11 +28,19 @@ pub mod pallet {
         circuit::{CircuitStatus, FullSideEffect},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         clock::Clock as ClockTrait,
+        common::RoundInfo,
         rewards::RewardsWriteApi,
         TreasuryAccount, TreasuryAccountProvider,
     };
 
     pub const MAX_AUTHORS: u32 = 512;
+
+    #[derive(Clone, Encode, Decode, PartialEq, Eq, Debug, TypeInfo, Default)]
+    pub enum AssetType<AssetId> {
+        #[default]
+        Native,
+        NonNative(AssetId),
+    }
 
     #[derive(Clone, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
     pub struct DistributionRecord<BlockNumber, Balance> {
@@ -148,10 +158,22 @@ pub mod pallet {
     #[pallet::storage]
     pub type Collators<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u32>;
 
+    // #[pallet::storage]
+    // #[pallet::getter(fn get_accumulated_settlements)]
+    // pub type AccumulatedSettlements<T: Config> =
+    //     StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
+
+    /// Accumulated settlements per executor per asset id.
     #[pallet::storage]
-    #[pallet::getter(fn get_accumulated_settlements)]
-    pub type AccumulatedSettlements<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
+    #[pallet::getter(fn accumulated_settlements2)]
+    pub type AccumulatedSettlements<T: Config> = StorageDoubleMap<
+        _,
+        Identity,
+        T::AccountId, // Executor Account Id
+        Identity,
+        AssetType<u32>, // AssetId
+        BalanceOf<T>,
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn estimated_treasury_balance)]
@@ -176,6 +198,10 @@ pub mod pallet {
     pub type IsSettlementAccumulationHalted<T: Config> = StorageValue<_, bool, ValueQuery>;
 
     #[pallet::storage]
+    pub type LastProcessedRound<T: Config> =
+        StorageValue<_, RoundInfo<T::BlockNumber>, OptionQuery>;
+
+    #[pallet::storage]
     pub type MaxRewardExecutorsKickback<T: Config> = StorageValue<_, Percent, ValueQuery>;
 
     #[pallet::storage]
@@ -198,7 +224,7 @@ pub mod pallet {
         ExecutorRewarded(T::AccountId, BalanceOf<T>),
         // old, new kickbacks to executors (in percent of max_reward)
         NewMaxRewardExecutorsKickbackSet(Percent, Percent),
-        Claimed(T::AccountId, BalanceOf<T>),
+        Claimed(T::AccountId, Vec<(BalanceOf<T>, Option<u32>)>),
         PendingClaim(T::AccountId, BalanceOf<T>),
     }
 
@@ -260,7 +286,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000)]
+        #[pallet::weight(100_000)]
         pub fn claim(
             origin: OriginFor<T>,
             role_to_claim: Option<CircuitRole>, // Add this parameter
@@ -270,53 +296,69 @@ pub mod pallet {
 
             let who = ensure_signed(origin)?;
 
+            // Ensure there are pending claims
+            ensure!(
+                PendingClaims::<T>::get(&who)
+                    .as_ref()
+                    .map_or(false, |claims| !claims.is_empty()),
+                Error::<T>::NoPendingClaims
+            );
+
             PendingClaims::<T>::try_mutate(who.clone(), |maybe_pending_claims| {
-                let pending_claims = maybe_pending_claims
+                let mut pending_claims = maybe_pending_claims
                     .take()
                     .ok_or(Error::<T>::NoPendingClaims)?;
 
                 // Filter by the specified role if provided
                 let claims_to_process = match role_to_claim {
                     Some(role) => pending_claims
-                        .clone()
-                        .into_iter()
+                        .iter()
                         .filter(|claim| claim.role == role)
+                        .cloned()
                         .collect::<Vec<_>>(),
                     None => pending_claims.clone(),
                 };
 
-                let mut total_claim = BalanceOf::<T>::zero();
-                for claim in &claims_to_process {
-                    total_claim = total_claim
-                        .checked_add(&claim.total_round_claim)
-                        .ok_or(Error::<T>::ArithmeticOverflow)?;
+                let mut total_claimed_assets: Vec<(BalanceOf<T>, Option<u32>)> = vec![];
+
+                for claim in claims_to_process.iter() {
+                    ensure!(
+                        claim.total_round_claim > BalanceOf::<T>::zero(),
+                        Error::<T>::NoPendingClaims
+                    );
+
+                    // accumulate the total round claim per asset
+                    if let Some(position) = total_claimed_assets
+                        .iter()
+                        .position(|&(_, asset_id)| asset_id == claim.non_native_asset_id)
+                    {
+                        let (balance, _) = &mut total_claimed_assets[position];
+                        *balance = balance.saturating_add(claim.total_round_claim);
+                    } else {
+                        total_claimed_assets
+                            .push((claim.total_round_claim, claim.non_native_asset_id));
+                    }
                 }
 
-                ensure!(
-                    total_claim > BalanceOf::<T>::zero(),
-                    Error::<T>::NoPendingClaims
-                );
+                for (balance, asset_id) in total_claimed_assets.iter() {
+                    T::AccountManager::deposit_immediately(&who, *balance, *asset_id);
+                }
+                // remove processed claims
+                pending_claims.retain(|claim| !claims_to_process.contains(claim));
+                *maybe_pending_claims = Some(pending_claims);
 
-                T::Currency::deposit_into_existing(&who, total_claim)?;
+                Self::deposit_event(Event::Claimed(who, total_claimed_assets));
 
-                *maybe_pending_claims = Some(
-                    pending_claims
-                        .into_iter()
-                        .filter(|claim| !claims_to_process.contains(claim))
-                        .collect(),
-                );
-
-                Self::deposit_event(Event::Claimed(who, total_claim));
                 Ok(().into())
             })
         }
     }
 
     impl<T: Config> Pallet<T> {
-        fn distribute_inflation() {
+        pub fn distribute_inflation() -> Weight {
             // Ensure distribution is not halted
             if IsDistributionHalted::<T>::get() {
-                return
+                return T::DbWeight::get().reads(1)
             }
             // Calculate the available balance for distribution in the current period
             let total_issuance = T::Currency::total_issuance();
@@ -383,6 +425,8 @@ pub mod pallet {
             let mut history = DistributionHistory::<T>::get();
             history.push(distribution_record);
             DistributionHistory::<T>::put(history);
+
+            T::DbWeight::get().reads_writes(8, 8)
         }
 
         pub fn distribute_attester_rewards(current_distribution: BalanceOf<T>) -> BalanceOf<T> {
@@ -417,6 +461,7 @@ pub mod pallet {
                     CircuitRole::Attester,
                     commission_reward,
                     BenefitSource::Inflation,
+                    None,
                 );
                 let remaining_reward = reward_per_attester.saturating_sub(commission_reward);
 
@@ -440,6 +485,7 @@ pub mod pallet {
                                 CircuitRole::Staker,
                                 nominator_reward,
                                 BenefitSource::Inflation,
+                                None,
                             );
                         },
                         None => {
@@ -479,6 +525,7 @@ pub mod pallet {
                     CircuitRole::Collator,
                     this_author_reward,
                     BenefitSource::Inflation,
+                    None,
                 );
                 total_distributed = total_distributed.saturating_add(this_author_reward);
             }
@@ -492,11 +539,16 @@ pub mod pallet {
                 return Zero::zero()
             }
 
-            let accumulated_settlements = AccumulatedSettlements::<T>::iter().collect::<Vec<_>>();
+            let accumulated_native_settlements = AccumulatedSettlements::<T>::iter()
+                .filter(|(_account, asset_type, _)| asset_type == &AssetType::<u32>::Native)
+                .map(|(account, _, accumulated_settlement)| (account, accumulated_settlement))
+                .collect::<Vec<(T::AccountId, BalanceOf<T>)>>();
 
             // Get the total settled executions this round
             let total_settled_executions_this_round =
-                match Self::total_settled_executions_this_round(accumulated_settlements.clone()) {
+                match Self::total_settled_executions_this_round(
+                    accumulated_native_settlements.clone(),
+                ) {
                     Ok(total_settled_executions_this_round) => total_settled_executions_this_round,
                     Err(e) => {
                         log::error!(
@@ -510,7 +562,7 @@ pub mod pallet {
             // Calculate the proportions of the total settled executions for each executor
             let executions_proportionally_of_total_this_round =
                 Self::executions_proportionally_of_total_this_round(
-                    accumulated_settlements,
+                    accumulated_native_settlements,
                     total_settled_executions_this_round,
                 );
 
@@ -532,10 +584,11 @@ pub mod pallet {
                     CircuitRole::Executor,
                     capped_reward,
                     BenefitSource::Inflation,
+                    None,
                 );
 
                 // Remove the accumulated settlement from the storage
-                AccumulatedSettlements::<T>::remove(&executor);
+                AccumulatedSettlements::<T>::remove_prefix(&executor, None);
 
                 distibuted_rewards += capped_reward;
             }
@@ -544,52 +597,98 @@ pub mod pallet {
         }
 
         pub fn process_accumulated_settlements() -> Weight {
+            let mut weight: Weight = 0;
+
             // Ensure settlements accumulation is not halted
             if IsSettlementAccumulationHalted::<T>::get() {
-                return Zero::zero()
+                return T::DbWeight::get().reads_writes(1, 0)
             }
+
+            // Get current round info
+            let current_round = T::Clock::current_round();
+            if <LastProcessedRound<T>>::get() == Some(current_round) {
+                return T::DbWeight::get().reads_writes(2, 0)
+            }
+
             // Get the total accumulated settlements
             let executions_this_round = Self::executions_this_round();
-            let mut weight: Weight = 0;
-            let mut temp_accumulated_settlements: BTreeMap<T::AccountId, BalanceOf<T>> =
-                BTreeMap::new();
 
-            for (executor, settlement) in executions_this_round {
+            let mut appended_assets_this_round = Vec::new();
+
+            for (executor, settlement) in &executions_this_round {
+                let asset_type = match settlement.maybe_asset_id {
+                    Some(asset_id) => AssetType::<u32>::NonNative(asset_id),
+                    None => AssetType::<u32>::Native,
+                };
+
+                // Get the existing accumulated settlement for the executor and asset id
+                let accumulated_settlement =
+                    AccumulatedSettlements::<T>::get(executor, &asset_type).unwrap_or_else(|| {
+                        // If there is no existing accumulated settlement, then add the executor and
+                        appended_assets_this_round.push((executor.clone(), asset_type.clone()));
+                        Zero::zero()
+                    });
+
                 // Add the settlement amount to the existing accumulated settlement
-                let accumulated_settlement = AccumulatedSettlements::<T>::get(&executor)
-                    .unwrap_or_else(Zero::zero)
-                    .saturating_add(settlement.settlement_amount);
+                let new_accumulated_settlement =
+                    accumulated_settlement.saturating_add(settlement.settlement_amount);
 
                 // Update the AccumulatedSettlements storage
-                AccumulatedSettlements::<T>::insert(&executor, accumulated_settlement);
-
-                // Accumulate settlements per executor in the temporary map
-                let temp_accumulated_settlement = temp_accumulated_settlements
-                    .entry(executor.clone())
-                    .or_insert(Zero::zero());
-                *temp_accumulated_settlement =
-                    temp_accumulated_settlement.saturating_add(settlement.settlement_amount);
-
-                weight += T::DbWeight::get().reads_writes(1, 1);
-            }
-
-            for (executor, total_accumulated_settlement) in temp_accumulated_settlements {
-                // Update the pending claims for the executor
-                Self::update_pending_claims(
-                    &executor,
-                    CircuitRole::Executor,
-                    total_accumulated_settlement,
-                    BenefitSource::TrafficRewards,
+                AccumulatedSettlements::<T>::insert(
+                    executor,
+                    &asset_type,
+                    new_accumulated_settlement,
                 );
 
+                // Update the weight accounting for the reads and writes
                 weight += T::DbWeight::get().reads_writes(1, 1);
             }
+
+            // Now process the claims
+            for (executor, asset_type, accumulated_settlement) in
+                AccumulatedSettlements::<T>::iter()
+            {
+                let maybe_asset_id = match asset_type {
+                    AssetType::<u32>::Native => None,
+                    AssetType::<u32>::NonNative(asset_id) => Some(asset_id),
+                };
+
+                // Append to existing records for the time being of distribution period to avoid assigning rewards for past rounds.
+                // Assume AccumulatedSettlements are cleaned up after each distribution period within rewards::distribute_executor_rewards
+                if appended_assets_this_round
+                    .iter()
+                    .any(|(acc_executor, acc_asset_type)| {
+                        acc_executor == &executor && acc_asset_type == &asset_type
+                    })
+                {
+                    // Update the pending claims for the executor
+                    Self::update_pending_claims(
+                        &executor,
+                        CircuitRole::Executor,
+                        accumulated_settlement,
+                        BenefitSource::TrafficRewards,
+                        maybe_asset_id,
+                    );
+                } else {
+                    Self::mutate_pending_claims(
+                        &executor,
+                        CircuitRole::Executor,
+                        accumulated_settlement,
+                        BenefitSource::TrafficRewards,
+                        maybe_asset_id,
+                    );
+                }
+
+                weight += T::DbWeight::get().reads_writes(1, 1);
+            }
+
+            <LastProcessedRound<T>>::put(current_round);
 
             weight
         }
 
-        pub fn executions_this_round() -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)>
-        {
+        pub fn executions_this_round(
+        ) -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>, u32>)> {
             T::AccountManager::get_settlements_by_role(CircuitRole::Executor)
         }
 
@@ -599,7 +698,7 @@ pub mod pallet {
             T::FindAuthor::find_author(pre_runtime_digests)
         }
 
-        pub fn process_author() -> bool {
+        pub fn process_author() -> (bool, Weight) {
             if let Some(author) = Self::author() {
                 AuthorsThisPeriod::<T>::mutate(|authors| {
                     *authors.entry(author).or_insert(0) += 1;
@@ -616,10 +715,10 @@ pub mod pallet {
 
                         authors.remove(&min_author);
                     }
-                    true
+                    (true, T::DbWeight::get().reads_writes(2, 2))
                 })
             } else {
-                false
+                (false, T::DbWeight::get().reads_writes(1, 0))
             }
         }
 
@@ -644,13 +743,14 @@ pub mod pallet {
             EstimatedTreasuryBalance::<T>::put(treasury_balance);
         }
 
-        pub fn process_authors_this_period() {
+        pub fn process_authors_this_period() -> Weight {
             Authors::<T>::mutate(|authors| {
                 for (author, count) in AuthorsThisPeriod::<T>::get().iter() {
                     *authors.entry(author.clone()).or_insert(0) += count;
                 }
                 AuthorsThisPeriod::<T>::kill();
             });
+            T::DbWeight::get().reads_writes(2, 2)
         }
 
         pub fn executions_proportionally_of_total_this_round(
@@ -682,17 +782,53 @@ pub mod pallet {
                 )
         }
 
+        fn mutate_pending_claims(
+            account: &T::AccountId,
+            role: CircuitRole,
+            reward: BalanceOf<T>,
+            benefit_source: BenefitSource,
+            non_native_asset_id: Option<u32>,
+        ) {
+            PendingClaims::<T>::mutate(account, |maybe_pending_claims| {
+                let mut pending_claims = maybe_pending_claims.take().unwrap_or_default();
+
+                // Find the claim for this role, benefit source and asset id
+                if let Some(claim) = pending_claims.iter_mut().find(|c| {
+                    c.role == role
+                        && c.benefit_source == benefit_source
+                        && c.non_native_asset_id == non_native_asset_id
+                }) {
+                    claim.total_round_claim = reward;
+                } else {
+                    // If there is no claim for this role, benefit source and asset id, add a new claim
+                    pending_claims.push(ClaimableArtifacts {
+                        beneficiary: account.clone(),
+                        role,
+                        total_round_claim: reward,
+                        benefit_source,
+                        non_native_asset_id,
+                    });
+                }
+
+                *maybe_pending_claims = Some(pending_claims);
+            });
+
+            Self::deposit_event(Event::PendingClaim(account.clone(), reward));
+        }
+
         fn update_pending_claims(
             account: &T::AccountId,
             role: CircuitRole,
             reward: BalanceOf<T>,
             benefit_source: BenefitSource,
+            non_native_asset_id: Option<u32>,
         ) {
             let claim = ClaimableArtifacts {
                 beneficiary: account.clone(),
                 role,
                 total_round_claim: reward,
                 benefit_source,
+                non_native_asset_id,
             };
 
             let mut pending_claims = PendingClaims::<T>::get(account).unwrap_or_default();
@@ -773,6 +909,7 @@ pub mod pallet {
                             role,
                             amount_to_be_repatriated,
                             BenefitSource::SlashTreasury,
+                            None,
                         );
 
                         let fee_treasury_account =
@@ -798,22 +935,20 @@ pub mod pallet {
             Self::process_update_estimated_treasury_balance()
         }
 
-        fn on_initialize(n: T::BlockNumber) -> Weight {
-            let mut weight: Weight = 0;
-            if n % T::Clock::round_duration() == Zero::zero() {
-                weight += Self::process_accumulated_settlements();
-            }
-            if n % T::InflationDistributionPeriod::get() == Zero::zero() {
-                Self::distribute_inflation();
-                weight += T::DbWeight::get().reads_writes(8, 8);
-                Self::process_authors_this_period();
-                weight += T::DbWeight::get().reads_writes(2, 2);
-            }
+        fn on_initialize(_n: T::BlockNumber) -> Weight {
+            let weight: Weight = 0;
+            // if n % T::Clock::round_duration() == Zero::zero() {
+            //     weight += Self::process_accumulated_settlements();
+            // }
+            // if n % T::InflationDistributionPeriod::get() == Zero::zero() {
+            //     weight += Self::distribute_inflation();
+            //     weight += Self::process_authors_this_period();
+            // }
 
-            // Every block, check if we have a new author
-            if Self::process_author() {
-                weight += T::DbWeight::get().reads_writes(2, 2);
-            }
+            // // Every block, check if we have a new author
+            // if Self::process_author() {
+            //     weight += T::DbWeight::get().reads_writes(2, 2);
+            // }
             weight
         }
     }
@@ -861,10 +996,12 @@ pub mod test {
         DistributionHistory, ExtBuilder, MiniRuntime, Origin, PendingClaims, Rewards, RewardsError,
         SettlementsPerRound, System,
     };
+
     use t3rn_primitives::{
         account_manager::{Outcome, Settlement},
         circuit::{Cause, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect},
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+        clock::Clock as ClockApi,
         rewards::RewardsWriteApi,
         TreasuryAccount, TreasuryAccountProvider,
     };
@@ -893,7 +1030,7 @@ pub mod test {
                 System::set_block_number(distribution_period * cnt);
 
                 // Call the distribute_inflation function
-                Rewards::on_initialize(distribution_period * cnt);
+                Clock::on_initialize(distribution_period * cnt);
 
                 // Retrieve the last distribution record
                 let history = DistributionHistory::<MiniRuntime>::get();
@@ -924,7 +1061,7 @@ pub mod test {
             System::set_block_number(distribution_period);
 
             // Call the distribute_inflation function
-            Rewards::on_initialize(distribution_period);
+            Clock::on_initialize(distribution_period);
 
             // Retrieve the last distribution record
             let history = DistributionHistory::<MiniRuntime>::get();
@@ -962,6 +1099,7 @@ pub mod test {
                         outcome: Outcome::Commit,
                         source: BenefitSource::TrafficRewards,
                         role: CircuitRole::Executor,
+                        maybe_asset_id: None,
                     },
                 );
             }
@@ -986,6 +1124,7 @@ pub mod test {
                         role: CircuitRole::Executor,
                         total_round_claim: 100 as Balance, // Settlement amount
                         benefit_source: BenefitSource::TrafficRewards,
+                        non_native_asset_id: None,
                     },])
                 );
             }
@@ -1012,6 +1151,7 @@ pub mod test {
                         outcome: Outcome::Commit,
                         source: BenefitSource::TrafficRewards,
                         role: CircuitRole::Executor,
+                        maybe_asset_id: None,
                     },
                 );
             }
@@ -1040,12 +1180,14 @@ pub mod test {
                             role: CircuitRole::Executor,
                             total_round_claim: 100 as Balance, // Settlement amount
                             benefit_source: BenefitSource::TrafficRewards,
+                            non_native_asset_id: None,
                         },
                         ClaimableArtifacts {
                             beneficiary: executor,
                             role: CircuitRole::Executor,
                             total_round_claim: 10 as Balance, // 10% of 100 as Settlement amount
                             benefit_source: BenefitSource::Inflation,
+                            non_native_asset_id: None,
                         },
                     ])
                 );
@@ -1060,7 +1202,7 @@ pub mod test {
             let mut expected_blocks_produced_round_robin: u32 = 1;
             for counter in 1..512 + 1 {
                 System::set_block_number(counter);
-                Rewards::on_initialize(counter);
+                Clock::on_initialize(counter);
                 // verify that the block author is noted
                 let author: AccountId = Rewards::author().unwrap();
                 let authors_this_period = AuthorsThisPeriod::<MiniRuntime>::get();
@@ -1081,7 +1223,7 @@ pub mod test {
     }
 
     #[test]
-    fn test_block_authors_distribution() {
+    fn test_block_authors_for_2_weeks_of_distribution_period() {
         let mut ext = ExtBuilder::default().build();
         ext.execute_with(|| {
             let distribution_period =
@@ -1090,7 +1232,7 @@ pub mod test {
             let mut keep_counter: u32 = 0;
             for counter in 1..distribution_period {
                 System::set_block_number(counter);
-                Rewards::on_initialize(counter);
+                Clock::on_initialize(counter);
                 // verify that the block author is noted
                 let author: AccountId = Rewards::author().unwrap();
                 let authors_this_period = AuthorsThisPeriod::<MiniRuntime>::get();
@@ -1113,7 +1255,7 @@ pub mod test {
 
             // Next block should distribute the rewards
             System::set_block_number(keep_counter + 1);
-            Rewards::on_initialize(keep_counter + 1);
+            Clock::on_initialize(keep_counter + 1);
 
             let authors_this_period = AuthorsThisPeriod::<MiniRuntime>::get();
             assert_eq!(authors_this_period.len(), 1);
@@ -1182,6 +1324,7 @@ pub mod test {
                         outcome: Outcome::Commit,
                         source: BenefitSource::TrafficRewards,
                         role: CircuitRole::Executor,
+                        maybe_asset_id: None,
                     },
                 );
             }
@@ -1208,12 +1351,14 @@ pub mod test {
                             role: CircuitRole::Executor,
                             total_round_claim: 100 as Balance, // Settlement amount
                             benefit_source: BenefitSource::TrafficRewards,
+                            non_native_asset_id: None,
                         },
                         ClaimableArtifacts {
                             beneficiary: executor,
                             role: CircuitRole::Executor,
                             total_round_claim: 90 as Balance, // 90% of 100 as Settlement amount
                             benefit_source: BenefitSource::Inflation,
+                            non_native_asset_id: None,
                         },
                     ])
                 );
@@ -1235,6 +1380,7 @@ pub mod test {
                     role: CircuitRole::Executor,
                     total_round_claim: 100 as Balance,
                     benefit_source: BenefitSource::Inflation,
+                    non_native_asset_id: None,
                 }],
             );
 
@@ -1291,6 +1437,7 @@ pub mod test {
                         outcome: Outcome::Commit,
                         source: BenefitSource::TrafficRewards,
                         role: CircuitRole::Executor,
+                        maybe_asset_id: None,
                     },
                 );
             }
@@ -1312,6 +1459,62 @@ pub mod test {
                         role: CircuitRole::Executor,
                         total_round_claim: settlement_amount_without_rewards,
                         benefit_source: BenefitSource::TrafficRewards,
+                        non_native_asset_id: None,
+                    }])
+                );
+            }
+        });
+    }
+
+    #[test]
+    fn test_executor_rewards_after_entire_distribution_period_of_2_weeks_accumulated_one_time() {
+        let mut ext = ExtBuilder::default().build();
+        ext.execute_with(|| {
+            // Assume 1h round duration and 2 weeks distribution period
+            const ROUNDS_IN_2_WEEKS: u32 = 24 * 14;
+
+            let requester = AccountId::from([2u8 + 100u8; 32]);
+            let executor = AccountId::from([3u8; 32]);
+
+            // create 1 Settlements to same executors each 1h round in 2 weeks
+            for counter in 1..ROUNDS_IN_2_WEEKS + 1 {
+                System::set_block_number(counter * Clock::round_duration());
+                Clock::check_bump_round(System::block_number());
+
+                let sfx_id = H256::from([(counter % 255) as u8; 32]);
+                let settlement_amount = 100 as Balance;
+                SettlementsPerRound::<MiniRuntime>::insert(
+                    Clock::current_round(),
+                    sfx_id,
+                    Settlement {
+                        requester: requester.clone(),
+                        recipient: executor.clone(),
+                        settlement_amount,
+                        outcome: Outcome::Commit,
+                        source: BenefitSource::TrafficRewards,
+                        role: CircuitRole::Executor,
+                        maybe_asset_id: None,
+                    },
+                );
+
+                // Calling multiple times hould have no effect on the claimable artifacts
+                Rewards::process_accumulated_settlements();
+                Rewards::process_accumulated_settlements();
+                Rewards::process_accumulated_settlements();
+
+                let settlement_amount_without_rewards = 100 as Balance * counter as Balance;
+                let pending_claim = Rewards::get_pending_claims(executor.clone());
+
+                // Always just one accumulated claim for entire 2 weeks of distribution period
+                assert_eq!(pending_claim.len(), 1);
+                assert_eq!(
+                    pending_claim,
+                    Some(vec![ClaimableArtifacts {
+                        beneficiary: executor.clone(),
+                        role: CircuitRole::Executor,
+                        total_round_claim: settlement_amount_without_rewards,
+                        benefit_source: BenefitSource::TrafficRewards,
+                        non_native_asset_id: None,
                     }])
                 );
             }
@@ -1327,7 +1530,7 @@ pub mod test {
             const INITIAL_BALANCE: Balance = 1;
             Balances::deposit_creating(&single_executor, INITIAL_BALANCE);
 
-            // create 10 Settlements to 10 different executors in AccountManager
+            // create 10 Settlements to the same executor in AccountManager
             for counter in 1..11u8 {
                 let requester = AccountId::from([counter + 100u8; 32]);
                 let sfx_id = H256::from([counter; 32]);
@@ -1342,9 +1545,11 @@ pub mod test {
                         outcome: Outcome::Commit,
                         source: BenefitSource::TrafficRewards,
                         role: CircuitRole::Executor,
+                        maybe_asset_id: None,
                     },
                 );
             }
+
             Rewards::process_accumulated_settlements();
 
             let available_rewards_more_than_total_settlements = 100 as Balance * 100 as Balance;
@@ -1367,12 +1572,14 @@ pub mod test {
                         beneficiary: single_executor.clone(),
                         role: CircuitRole::Executor,
                         total_round_claim: 10 * 100 as Balance, // 10 settlements times 100 TRN
+                        non_native_asset_id: None,
                         benefit_source: BenefitSource::TrafficRewards,
                     },
                     ClaimableArtifacts {
                         beneficiary: single_executor.clone(),
                         role: CircuitRole::Executor,
                         total_round_claim: 10 * 90 as Balance, // 10 settlements times 90% of 100 TRN
+                        non_native_asset_id: None,
                         benefit_source: BenefitSource::Inflation,
                     }
                 ]
@@ -1444,6 +1651,7 @@ pub mod test {
                     role: CircuitRole::Executor,
                     total_round_claim: 5,
                     benefit_source: BenefitSource::SlashTreasury,
+                    non_native_asset_id: None,
                 }])
             );
 
