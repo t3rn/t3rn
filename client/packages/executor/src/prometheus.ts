@@ -1,5 +1,7 @@
 import http from "http";
+import client from 'prom-client'
 import { Registry, Counter, collectDefaultMetrics, Gauge } from "prom-client";
+import { logger } from "./logging";
 
 export class Prometheus {
   server: ReturnType<typeof http.createServer>;
@@ -18,6 +20,7 @@ export class Prometheus {
   attestationsBatchesPending: Gauge;
 
   constructor() {
+    const Registry = client.Registry
     this.register = new Registry();
     this.createMetrics();
   }
@@ -69,10 +72,11 @@ export class Prometheus {
     });
 
     this.startServer();
+    logger.info("Prometheus metrics server started")
   }
 
   startServer() {
-    const port = process.env.PROMETHEUS_PORT || 4002;
+    const port = process.env.PROMETHEUS_PORT || 8080;
     this.server = http.createServer(async (req, res) => {
       try {
         if (req.url === "/metrics") {
