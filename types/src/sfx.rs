@@ -15,6 +15,7 @@ use scale_info::{
 };
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::{hexdisplay::AsBytesRef, Hasher, H256};
 use sp_runtime::DispatchError;
 
 use t3rn_abi::{Codec, SFXAbi};
@@ -110,6 +111,10 @@ where
         sfx_id.extend_from_slice(&sfx_index_as_32b_word);
 
         Hasher::hash(sfx_id.as_slice())
+
+        // let mut system_hash: T::Hash = T::Hash::default();
+        //
+        // Hasher::hash(sfx_id.as_slice())
     }
 
     pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {

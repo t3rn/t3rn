@@ -185,7 +185,7 @@ pub mod test {
                 stage_single();
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx(
-                        hex!("21eaf9e427bbdc414c6f75e8f3a1410f9b506c66e9ee7a4601217ac431ca8240")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into(),
                     ),
                     DispatchError::Module(ModuleError {
@@ -213,7 +213,7 @@ pub mod test {
                         xtx_id
                     ),
                     Ok(vec![hex!(
-                        "21eaf9e427bbdc414c6f75e8f3a1410f9b506c66e9ee7a4601217ac431ca8240"
+                        "0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe"
                     )
                     .into()])
                 );
@@ -255,7 +255,7 @@ pub mod test {
                 stage_single();
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_status(
-                        hex!("21eaf9e427bbdc414c6f75e8f3a1410f9b506c66e9ee7a4601217ac431ca8240")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into()
                     ),
                     DispatchError::Module(ModuleError {
@@ -277,7 +277,7 @@ pub mod test {
                 stage_single();
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
-                        hex!("21eaf9e427bbdc414c6f75e8f3a1410f9b506c66e9ee7a4601217ac431ca8240")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into()
                     ),
                     DispatchError::Module(ModuleError {
@@ -345,7 +345,7 @@ pub mod test {
 
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_requester(
-                        hex!("21eaf9e427bbdc414c6f75e8f3a1410f9b506c66e9ee7a4601217ac431ca8240")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into()
                     ),
                     DispatchError::Module(ModuleError {
@@ -368,7 +368,7 @@ pub mod test {
 
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_xtx_status(
-                        hex!("21eaf9e427bbdc414c6f75e8f3a1410f9b506c66e9ee7a4601217ac431ca8240")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into()
                     ),
                     DispatchError::Module(ModuleError {
