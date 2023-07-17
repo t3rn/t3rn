@@ -9,7 +9,7 @@ export const spinner = ora()
 
 export const handleSubmitSfxCmd = async (
   sfxFile: string,
-  exportMode: boolean
+  exportMode: boolean,
 ) => {
   const unvalidatedExtrinsic = readSfxFile(sfxFile)
 
@@ -34,7 +34,7 @@ export const handleSubmitSfxCmd = async (
       symbol: "🚀",
       text: colorLogMsg(
         "SUCCESS",
-        `Extrinsic submitted at block #${submissionHeight}`
+        `Extrinsic submitted at block #${submissionHeight}`,
       ),
     })
     process.exit(0)
