@@ -278,6 +278,7 @@ mod tests {
                 max_reward: 200u128,
                 insurance: 50u128,
                 reward_asset: ASSET_DOT,
+                remote_origin_nonce: None,
             };
 
             activate_all_light_clients();
@@ -332,6 +333,7 @@ mod tests {
                 max_reward: 200u128,
                 insurance: 50u128,
                 reward_asset: ASSET_DOT,
+                remote_origin_nonce: None,
             };
 
             activate_all_light_clients();
@@ -500,6 +502,7 @@ mod tests {
                 max_reward: 200u128,
                 insurance: 50u128,
                 reward_asset: ASSET_DOT,
+                remote_origin_nonce: None,
             };
 
             activate_all_light_clients();
