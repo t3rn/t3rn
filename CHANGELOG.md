@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.40.0-rc.0] - 2023-07-17
+### :sparkles: New Features
+- [`a54d856`](https://github.com/t3rn/t3rn/commit/a54d856e3ea915fe7f623c0dd9b8e796cbdefd9f) - add ETH gas fees price estimation utility methods to @t3rn/sdk *(PR [#1091](https://github.com/t3rn/t3rn/pull/1091) by [@ahkohd](https://github.com/ahkohd))*
+  - :arrow_lower_right: *addresses issue [#1163](undefined) opened by [@3h4x](https://github.com/3h4x)*
+
+
 ## [v1.39.4-rc.0] - 2023-07-14
 ### :bug: Bug Fixes
 - [`2fa3304`](https://github.com/t3rn/t3rn/commit/2fa33046c256c43b62cab43d3877e721a1579aeb) - current committee transitions to next committee correctly *(PR [#1165](https://github.com/t3rn/t3rn/pull/1165) by [@3h4x](https://github.com/3h4x))*
@@ -1353,3 +1359,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.39.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.5-rc.0...v1.39.0-rc.0
 [v1.39.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.2-rc.0...v1.39.3-rc.0
 [v1.39.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.3-rc.0...v1.39.4-rc.0
+[v1.40.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.4-rc.0...v1.40.0-rc.0
