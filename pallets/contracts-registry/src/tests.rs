@@ -139,7 +139,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
         let actual = ContractsRegistry::fetch_contracts(None, Some(b"contract".to_vec()));
         assert_ok!(
             actual,
-            vec![test_contract_name.clone(), test_contract_desc.clone()]
+            vec![test_contract_desc.clone(), test_contract_name.clone()]
         );
     })
 }
@@ -223,7 +223,7 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         let actual = ContractsRegistry::fetch_contracts(Some(ALICE), None);
         assert_ok!(
             actual,
-            vec![test_contract_author1.clone(), test_contract_author2.clone()]
+            vec![test_contract_author2.clone(), test_contract_author1.clone()]
         );
     })
 }
@@ -306,7 +306,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
         let actual = ContractsRegistry::fetch_contracts(Some(ALICE), Some(b"contract".to_vec()));
         assert_ok!(
             actual,
-            vec![test_contract_author1.clone(), test_contract_author2.clone()]
+            vec![test_contract_author2.clone(), test_contract_author1.clone()]
         );
     })
 }

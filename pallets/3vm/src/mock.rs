@@ -18,7 +18,7 @@ use t3rn_primitives::{GatewayVendor, TreasuryAccount, TreasuryAccountProvider};
 use sp_core::H256;
 use sp_runtime::{
     generic,
-    traits::{BlakeTwo256, ConvertInto, IdentityLookup},
+    traits::{BlakeTwo256, ConvertInto, IdentityLookup, Keccak256},
     AccountId32, DispatchError,
 };
 use t3rn_primitives::xdns::PalletAssetsOverlay;
@@ -72,7 +72,7 @@ impl system::Config for Test {
     type DbWeight = ();
     type Event = Event;
     type Hash = H256;
-    type Hashing = BlakeTwo256;
+    type Hashing = Keccak256;
     type Header = Header;
     type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;

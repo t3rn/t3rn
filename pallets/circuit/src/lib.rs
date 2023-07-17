@@ -42,7 +42,7 @@ use frame_system::{
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BadOrigin, CheckedAdd, Zero},
+    traits::{CheckedAdd, Zero},
     DispatchError, KeyTypeId,
 };
 use sp_std::{convert::TryInto, vec, vec::Vec};
@@ -98,6 +98,8 @@ pub mod weights;
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
+
+//
 
 reexport_currency_types!();
 

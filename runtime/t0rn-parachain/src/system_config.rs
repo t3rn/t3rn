@@ -10,7 +10,7 @@ use frame_support::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, Zero};
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, Keccak256, Zero};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -37,7 +37,7 @@ impl frame_system::Config for Runtime {
     /// The type for hashing blocks and tries.
     type Hash = HashPrimitive;
     /// The hashing algorithm used.
-    type Hashing = BlakeTwo256;
+    type Hashing = Keccak256;
     /// The header type.
     type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// The index type for storing how many extrinsics an account has signed.
