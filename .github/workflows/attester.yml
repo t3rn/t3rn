@@ -125,7 +125,7 @@ jobs:
     needs: test-attester
     concurrency: attester
 
-    # if: github.ref == 'refs/heads/development'
+    if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
