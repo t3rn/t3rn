@@ -24,7 +24,7 @@ pub mod test {
     use sp_core::H256;
 
     use crate::tests::ESCROW_ACCOUNT;
-    use sp_runtime::DispatchResult;
+    use sp_runtime::{traits::Keccak256, DispatchResult};
     use t3rn_types::sfx::ConfirmedSideEffect;
 
     const REQUESTER: AccountId = ALICE;
@@ -55,11 +55,8 @@ pub mod test {
         };
         let sfx_id = local_ctx.full_side_effects[0][0]
             .input
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            &local_ctx.xtx_id.0,
-            0,
-        );
-        let bid_id = bid.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>, Runtime>(sfx_id);
+            .generate_id::<Keccak256>(&local_ctx.xtx_id.0, 0);
+        let bid_id = bid.generate_id::<Keccak256, Runtime>(sfx_id);
         (local_ctx, sfx_id, bid, bid_id)
     }
 
@@ -70,14 +67,9 @@ pub mod test {
         assert_ok!(SquareUp::<Runtime>::try_request(local_ctx));
         let requester = local_ctx.xtx.requester.clone();
         let fsx = local_ctx.full_side_effects[0][0].clone();
-        let sfx_id = fsx
-            .input
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-                &local_ctx.xtx_id.0,
-                0,
-            );
+        let sfx_id = fsx.input.generate_id::<Keccak256>(&local_ctx.xtx_id.0, 0);
 
-        let bid_id = bid.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>, Runtime>(sfx_id);
+        let bid_id = bid.generate_id::<Keccak256, Runtime>(sfx_id);
 
         assert_ok!(SquareUp::<Runtime>::try_bid(
             sfx_id,

@@ -53,6 +53,7 @@ use sp_runtime::{
 };
 type Header = generic::Header<u32, BlakeTwo256>;
 
+use sp_runtime::traits::Keccak256;
 use std::{cell::RefCell, sync::Arc};
 
 mod threevm;
@@ -222,7 +223,7 @@ impl frame_system::Config for Test {
     type DbWeight = ();
     type Event = Event;
     type Hash = H256;
-    type Hashing = BlakeTwo256;
+    type Hashing = Keccak256;
     type Header = Header;
     type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;

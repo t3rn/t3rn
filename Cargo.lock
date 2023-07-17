@@ -12903,6 +12903,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-abi",
+ "t3rn-mini-mock-runtime",
  "t3rn-sdk-primitives",
  "t3rn-types 1.5.0-rc.0",
  "tiny-keccak",

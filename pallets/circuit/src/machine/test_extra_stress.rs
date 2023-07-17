@@ -8,7 +8,7 @@ use circuit_runtime_pallets::pallet_circuit::{
 };
 use codec::Encode;
 use frame_support::{assert_ok, traits::Currency};
-use sp_runtime::AccountId32;
+use sp_runtime::{traits::Keccak256, AccountId32};
 use t3rn_primitives::xtx::LocalState;
 
 use t3rn_types::{fsx::FullSideEffect, sfx::ConfirmedSideEffect};
@@ -124,10 +124,7 @@ pub fn setup_xtx_with_10_sfx(
     for sfx_index in 0u32..10u32 {
         sfx_id_arr_of_10.push(
             sfx_arr_of_10[sfx_index as usize]
-                .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-                    &local_ctx.xtx_id[..],
-                    sfx_index,
-                ),
+                .generate_id::<Keccak256>(&local_ctx.xtx_id[..], sfx_index),
         );
     }
 
@@ -174,10 +171,7 @@ pub fn bid_for_n_out_of_10_sfx_in_xtx(
 
         let sfx_id = fsx_step[sfx_index as usize]
             .input
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            &local_ctx.xtx_id.0,
-            sfx_index,
-        );
+            .generate_id::<Keccak256>(&local_ctx.xtx_id.0, sfx_index);
 
         assert_ok!(Machine::<Runtime>::compile(
             local_ctx,

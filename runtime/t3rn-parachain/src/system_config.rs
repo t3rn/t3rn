@@ -1,7 +1,7 @@
 use crate::{Hash as HashPrimitive, *};
 use frame_support::{parameter_types, weights::IdentityFee};
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
-use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::traits::{BlakeTwo256, Keccak256};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {

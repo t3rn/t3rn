@@ -18,8 +18,8 @@ use t3rn_primitives::{circuit::AdaptiveTimeout, SpeedMode};
 
 use t3rn_types::sfx::{ConfirmedSideEffect, FullSideEffect};
 
+use sp_runtime::traits::Keccak256;
 use t3rn_primitives::xtx::LocalState;
-
 pub fn no_post_updates<T: Config>(
     _status_change: (CircuitStatus, CircuitStatus),
     _local_ctx: &LocalXtxCtx<T, Balance>,
@@ -331,5 +331,5 @@ pub fn get_mocked_transfer_sfx_with_executor_enforced() -> SideEffect<AccountId,
 
 pub fn get_mocked_transfer_sfx_id(xtx_id: H256) -> H256 {
     let sfx = get_mocked_transfer_sfx();
-    sfx.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(&xtx_id.0, 0)
+    sfx.generate_id::<Keccak256>(&xtx_id.0, 0)
 }

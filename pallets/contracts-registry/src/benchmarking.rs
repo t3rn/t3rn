@@ -88,7 +88,7 @@ benchmarks! {
                     None,
                 ),
             };
-        let contract_id = test_contract.generate_id::<T>();
+        let contract_id = test_contract.generate_id::<T, Keccak256>();
         let requester: T::AccountId = account("TEST", 1_u32, USER_SEED);
     }: _(RawOrigin::Root, requester.clone(), test_contract.clone())
     verify {
@@ -144,15 +144,15 @@ benchmarks! {
                 ),
             };
 
-        let contract_id_1 = test_contract_1.generate_id::<T>();
+        let contract_id_1 = test_contract_1.generate_id::<T, Keccak256>();
         crate::ContractsRegistry::<T>::insert(
-            test_contract_1.generate_id::<T>(),
+            test_contract_1.generate_id::<T, Keccak256>(),
             test_contract_1.clone(),
         );
 
-        let contract_id_2 = test_contract_2.generate_id::<T>();
+        let contract_id_2 = test_contract_2.generate_id::<T, Keccak256>();
         crate::ContractsRegistry::<T>::insert(
-            test_contract_2.generate_id::<T>(),
+            test_contract_2.generate_id::<T, Keccak256>(),
             test_contract_2.clone(),
         );
     }: _(RawOrigin::Root, requester_1.clone(), contract_id_1.clone())
@@ -242,15 +242,15 @@ benchmarks! {
         };
 
         crate::ContractsRegistry::<T>::insert(
-            test_contract_author_1.generate_id::<T>(),
+            test_contract_author_1.generate_id::<T, Keccak256>(),
             test_contract_author_1.clone(),
         );
         crate::ContractsRegistry::<T>::insert(
-            test_contract_author_2.generate_id::<T>(),
+            test_contract_author_2.generate_id::<T, Keccak256>(),
             test_contract_author_2.clone(),
         );
         crate::ContractsRegistry::<T>::insert(
-            test_contract_author_3.generate_id::<T>(),
+            test_contract_author_3.generate_id::<T, Keccak256>(),
             test_contract_author_3.clone(),
         );
 

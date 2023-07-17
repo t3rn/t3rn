@@ -34,7 +34,7 @@ pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::AccountId32;
+use sp_runtime::{traits::Keccak256, AccountId32};
 use sp_std::{
     convert::{TryFrom, TryInto},
     prelude::*,
@@ -82,12 +82,9 @@ fn set_ids(
     requester_nonce: u32,
     sfx_index: u32,
 ) -> (sp_core::H256, sp_core::H256) {
-    let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(requester, requester_nonce);
+    let xtx_id: sp_core::H256 = generate_xtx_id::<Keccak256>(requester, requester_nonce);
 
-    let sfx_id = sfx
-        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            &xtx_id.0, sfx_index,
-        );
+    let sfx_id = sfx.generate_id::<Keccak256>(&xtx_id.0, sfx_index);
 
     (xtx_id, sfx_id)
 }
@@ -109,9 +106,7 @@ pub fn confirm_sfx(
 
     let _ = Circuit::confirm_side_effect(
         Origin::signed(executor),
-        sfx.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-            &xtx_id.0, 0,
-        ),
+        sfx.generate_id::<Keccak256>(&xtx_id.0, 0),
         sfx_confirmation,
     );
 }
@@ -281,7 +276,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "f70ef7dbe839c0f242ed54eb45933dd8cbb852e3e67c373dd8d4204d86c15f29"
                             )
                             .into(),
                             vec![SideEffect {
@@ -301,7 +296,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                 insurance: 1,
                             }],
                             vec![hex!(
-                                "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
+                                "21eaf9e427bbdc414c6f75e8f3a1410f9b506c66e9ee7a4601217ac431ca8240"
                             )
                             .into(),],
                         )),
@@ -313,7 +308,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                             Runtime,
                         >::XTransactionReceivedForExec(
                             hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "f70ef7dbe839c0f242ed54eb45933dd8cbb852e3e67c373dd8d4204d86c15f29"
                             )
                             .into()
                         )),
@@ -322,12 +317,9 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                 ]
             );
             let xtx_id: sp_core::H256 =
-                hex!("2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c").into();
-            let side_effect_a_id = valid_transfer_side_effect
-                .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-                &xtx_id.0,
-                FIRST_SFX_INDEX,
-            );
+                hex!("f70ef7dbe839c0f242ed54eb45933dd8cbb852e3e67c373dd8d4204d86c15f29").into();
+            let side_effect_a_id =
+                valid_transfer_side_effect.generate_id::<Keccak256>(&xtx_id.0, FIRST_SFX_INDEX);
 
             assert_eq!(
                 Circuit::get_pending_sfx_bids(xtx_id, side_effect_a_id).unwrap(),
@@ -442,7 +434,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "f70ef7dbe839c0f242ed54eb45933dd8cbb852e3e67c373dd8d4204d86c15f29"
                             )
                             .into(),
                             vec![SideEffect {
@@ -462,7 +454,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                 reward_asset_id: None,
                             }],
                             vec![hex!(
-                                "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
+                                "21eaf9e427bbdc414c6f75e8f3a1410f9b506c66e9ee7a4601217ac431ca8240"
                             )
                             .into(),],
                         )),
@@ -474,7 +466,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                             Runtime,
                         >::XTransactionReceivedForExec(
                             hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "f70ef7dbe839c0f242ed54eb45933dd8cbb852e3e67c373dd8d4204d86c15f29"
                             )
                             .into()
                         )),
@@ -808,7 +800,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     },
                     EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
                         circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
-                            charge_id: H256::from_str("0xd2170a1bae127064ba4c6cfc7b00108038de5429babc320498493567b5e2cd45").unwrap(),
+                            charge_id: H256::from_str("0x1c8fb9a762379150505eda288c226da9bc22d42e13fed24ae73fc73fb0fa1162").unwrap(),
                             payee: BID_WINNER,
                             recipient: Some(REQUESTER),
                             amount: 3
@@ -1267,7 +1259,7 @@ fn successfully_confirm_optimistic_transfer() {
 //
 //     assert_ok!(Circuit::bid_sfx(
 //         Origin::signed(relayer.clone()),
-//         side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+//         side_effect.generate_id::<Keccak256>(
 //             &xtx_id.0, sfx_index
 //         ),
 //         2 as Balance,
@@ -1277,7 +1269,7 @@ fn successfully_confirm_optimistic_transfer() {
 //
 //     let created_sfx_bid = Circuit::get_pending_sfx_bids(
 //         xtx_id,
-//         side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+//         side_effect.generate_id::<Keccak256>(
 //             &xtx_id.0, sfx_index,
 //         ),
 //     )
@@ -1472,7 +1464,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                 SpeedMode::Finalized,
             ));
 
-            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Keccak256>(ALICE, FIRST_REQUESTER_NONCE);
 
             // The tiemout links that will be checked at on_initialize are there
             assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(ADAPTIVE_TIMEOUT_A)); // 100 offset + current block height 1 = 101
@@ -1492,7 +1484,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
             );
 
             let sfx_id = valid_transfer_side_effect
-                .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                .generate_id::<Keccak256>(
                     &xtx_id.0,
                     FIRST_SFX_INDEX,
                 );
@@ -1574,7 +1566,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
             let _events = System::events();
             // assert_eq!(events.len(), 8);
 
-            let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+            let xtx_id: sp_core::H256 = generate_xtx_id::<Keccak256>(ALICE, FIRST_REQUESTER_NONCE);
 
             // The tiemout links that will be checked at on_initialize are there
             assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(ADAPTIVE_TIMEOUT_A)); // 100 offset + current block height 1 = 101
@@ -1597,7 +1589,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
                 ALICE,
                 xtx_id,
                 valid_transfer_side_effect
-                    .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+                    .generate_id::<Keccak256>(
                         &xtx_id.0,
                         FIRST_SFX_INDEX,
                     ),
@@ -1631,7 +1623,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
                 events.iter().any(|record| {
                     if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxRevertedAfterTimeOut(xtx_id_emit)) = record.event {
                         assert_eq!(xtx_id_emit, hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "f70ef7dbe839c0f242ed54eb45933dd8cbb852e3e67c373dd8d4204d86c15f29"
                             ).into());
                         true
                     } else {
@@ -1653,7 +1645,7 @@ fn load_local_state_can_generate_and_read_state() {
         let res = Circuit::load_local_state(&origin, None).unwrap();
 
         let xtx_id_new: sp_core::H256 =
-            hex!("2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c").into();
+            hex!("f70ef7dbe839c0f242ed54eb45933dd8cbb852e3e67c373dd8d4204d86c15f29").into();
 
         assert_eq!(res.xtx_id, xtx_id_new);
         assert_eq!(res.local_state, LocalState::new());
@@ -2055,10 +2047,10 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //             advance_to_block(1);
 //             brute_seed_block_1([3, 3, 3, 3]);
 //
-//             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+//             let xtx_id: sp_core::H256 = generate_xtx_id::<Keccak256>(ALICE, FIRST_REQUESTER_NONCE);
 //
 //             let sfx_id_a = valid_transfer_side_effect
-//                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+//                 .generate_id::<Keccak256>(
 //                 &xtx_id.0,
 //                 FIRST_SFX_INDEX,
 //             );
@@ -2189,7 +2181,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //             brute_seed_block_1([3, 3, 3, 3]);
 //             brute_seed_block_1([1, 1, 1, 1]);
 //
-//             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
+//             let xtx_id: sp_core::H256 = generate_xtx_id::<Keccak256>(ALICE, FIRST_REQUESTER_NONCE);
 //
 //             assert_ok!(Circuit::on_extrinsic_trigger(
 //                 origin.clone(),
@@ -2225,7 +2217,7 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balanc
 //                 ALICE,
 //                 xtx_id,
 //                 valid_evm_sfx
-//                     .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
+//                     .generate_id::<Keccak256>(
 //                         &xtx_id.0, 0,
 //                     ),
 //                 BID_AMOUNT,
@@ -2263,20 +2255,14 @@ fn no_duplicate_xtx_and_sfx_ids() {
         ArgVariant::A,
     );
 
-    let expected_xtx_id_1 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
-    let expected_xtx_id_2 = generate_xtx_id::<Hashing>(ALICE, SECOND_REQUESTER_NONCE);
+    let expected_xtx_id_1 = generate_xtx_id::<Keccak256>(ALICE, FIRST_REQUESTER_NONCE);
+    let expected_xtx_id_2 = generate_xtx_id::<Keccak256>(ALICE, SECOND_REQUESTER_NONCE);
 
-    let expected_sfx_id_1 = valid_transfer_side_effect
-        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-        &expected_xtx_id_1.0,
-        0,
-    );
+    let expected_sfx_id_1 =
+        valid_transfer_side_effect.generate_id::<Keccak256>(&expected_xtx_id_1.0, 0);
 
-    let expected_sfx_id_2 = valid_transfer_side_effect
-        .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
-        &expected_xtx_id_2.0,
-        0,
-    );
+    let expected_sfx_id_2 =
+        valid_transfer_side_effect.generate_id::<Keccak256>(&expected_xtx_id_2.0, 0);
 
     let side_effects = vec![valid_transfer_side_effect];
 
