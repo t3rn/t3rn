@@ -9,7 +9,7 @@ import {
   SecurityLevel,
   SfxStatus,
   XtxStatus,
-} from "@t3rn/sdk/dist/side-effects/types";
+} from "@t3rn/sdk/side-effects/types";
 import { Sdk } from "@t3rn/sdk";
 import { StrategyEngine } from "../strategy";
 import { BiddingEngine } from "../bidding";
@@ -55,7 +55,7 @@ export class Execution extends EventEmitter {
     eventData: EventData,
     sdk: Sdk,
     strategyEngine: StrategyEngine,
-    biddingEngine: BiddingEngine
+    biddingEngine: BiddingEngine,
   ) {
     super();
     this.owner = eventData[0];
@@ -67,7 +67,7 @@ export class Execution extends EventEmitter {
       eventData[3],
       sdk,
       strategyEngine,
-      biddingEngine
+      biddingEngine,
     );
     this.currentPhase = 0;
   }
@@ -86,7 +86,7 @@ export class Execution extends EventEmitter {
     ids: H256[],
     sdk: Sdk,
     strategyEngine: StrategyEngine,
-    biddingEngine: BiddingEngine
+    biddingEngine: BiddingEngine,
   ) {
     for (let i = 0; i < sideEffects.length; i++) {
       const sideEffect = new SideEffect(
@@ -97,7 +97,7 @@ export class Execution extends EventEmitter {
         strategyEngine,
         biddingEngine,
         this.circuitSignerAddress,
-        this.logger
+        this.logger,
       );
       this.sideEffects.set(sideEffect.id, sideEffect);
 
@@ -191,7 +191,7 @@ export class Execution extends EventEmitter {
       id?: string;
       xtxId?: string;
     },
-    debug = true
+    debug = true,
   ) {
     msg.component = "XTX";
     msg.id = this.id;

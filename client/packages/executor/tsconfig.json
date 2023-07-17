@@ -10,6 +10,9 @@
     "lib": [
       "esnext", "es5", "es6"
     ],
+    "paths": {
+      "@t3rn/sdk/*": ["./node_modules/@t3rn/sdk/dist/*"]
+    },
     "esModuleInterop": true,
     "alwaysStrict": true,
     "strictNullChecks": true,
@@ -19,5 +22,5 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
   },
-  "exclude": ["node_modules", "dist", "*.d.ts"],
+  "exclude": ["node_modules", "dist", "*.d.ts"]
 }
