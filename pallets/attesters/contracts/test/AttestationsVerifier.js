@@ -251,7 +251,6 @@ describe("AttestationsVerifier", function() {
         // Hashing the encoded Batch struct
         const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
 
-        console.log(batchMessageHash);
         let expectedMessage = "0x0000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e0000000000000000000000003cfbc429d7435fd5707390362c210bd272bae8ea00000000000000000000000066ed579d14cbad8dfc352a3ceaeee9711ea65e41000000000000000000000000786402fa462909785a55ced48aa5682d99902c57000000000000000000000000401b7cb06493efdb82818f14f9cd345c01463a81000000000000000000000000a2e7607a23b5a744a10a096c936ab033866d3bee000000000000000000000000ac9c643b32916ea52e0fa0c3a3bbdbe120e5ca9e000000000000000000000000d53d6af58a2bd8c0f86b25b1309c91f61700144f0000000000000000000000002fef1f5268d9732cac331785987d45fad487fcd6000000000000000000000000debc7a55486dbacb06985ba2415b784e05a35bae000000000000000000000000d7b33a07ee05b604138f94335405b55e2b6bbfdd0000000000000000000000001831c8f78c8b59c1300b79e308bfbf9e4fdd13b0000000000000000000000000361134e27af99a288714e428c290d48f82a4895c0000000000000000000000005897b47e1357ed81b2d85d8f287759502e33f588000000000000000000000000a880bf7e031ed87d422d31bebcc9d0339c7b95b4000000000000000000000000edab03983d839e6a3a887c3ee711a724391f8ee100000000000000000000000080d80649e13268382cea3b0a56a57078c2076fe1000000000000000000000000b0de4907432a9a4ac92f4988daa6024cd57d1b270000000000000000000000005449d051328da4cfe8d1efe7481ff3b690cf86960000000000000000000000004705522d19458a90f06a15d9836a64e45c182c9f000000000000000000000000b6de743a22a7a43edda8b5e21e2f0aeb70354f5b000000000000000000000000970c0720316bc03cd055c5ec74208fe0ba3d3c440000000000000000000000007905754a5b6a28d1edf338d9be06a49ad60d74b600000000000000000000000093054a6f5eb0e1978d1e3e27ae758f17480e5988000000000000000000000000a185b4f947a09286fc028b034f01babe53d9830100000000000000000000000014c74ce14e833d76dc0190651c0eba64f3e67c79000000000000000000000000861fa47e5229c9079d087d6354c1ede95d233f430000000000000000000000006f9925aceffbe67742257abff393b123010c4a10000000000000000000000000a1ea906c54379032c9857139c6f796acf88ddb790000000000000000000000006219f12779268f8a7ddf0f1e44fd75253219d6390000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfae23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c6ff17743a6b48933b94f38f423b15b2fc9ebcd34aab19bd81c2a69d3d052f467f21e5cd2c2f3e32ac4a52543a386821b079711432c2fefd4be3836ed36d129b1100000001";
 
         expect(encodedBatchMessage).to.equal(expectedMessage);
@@ -260,8 +259,6 @@ describe("AttestationsVerifier", function() {
         const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
         const attestationsVerifier = await AttestationsVerifier.deploy([], 0);
         await attestationsVerifier.deployed();
-
-        console.log("batch", batch);
 
         let txEncodedBatchOutput = await attestationsVerifier.batchEncodePacked(batch);
         expect(txEncodedBatchOutput).to.equal(encodedBatchMessage);
@@ -470,26 +467,12 @@ describe("AttestationsVerifier", function() {
         const encodedBatchMessage = batchEncodePacked(batch);
 
         // Hashing the encoded Batch struct
-        const batchMessageHash = ethers.utils.keccak256(encodedBatchMessage);
+        const messageHash = ethers.utils.keccak256(encodedBatchMessage);
 
-        const signatures = [];
-
-        // Pre-check for the validity of signature before sending the batch message
-        for (let i = 0; i < wallets.length; i++) {
-            const wallet = wallets[i];
-            const signerAddress = wallet.address;
-            const flatSig = await wallet.signMessage(ethers.utils.arrayify(batchMessageHash));
-            const signatureBytes = ethers.utils.arrayify(flatSig);
-            // Recover the signer's address
-            const recovered = await attestationsVerifier.recoverSigner(batchMessageHash, signatureBytes);
-
-            expect(recovered).to.equal(signerAddress);
-            // console.log("Signature is valid for signer: ", signerAddress);
-            signatures.push(signatureBytes);
-        }
+        const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
 
         // Send the batch message
-        let tx = await attestationsVerifier.receiveAttestationBatch(batch.nextCommittee, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, batchMessageHash, signatures);
+        let tx = await attestationsVerifier.receiveAttestationBatch(batch.nextCommittee, batch.bannedCommittee, batch.committedSfx, batch.revertedSfx, batch.index, messageHash, signatures);
 
         // Wait for the transaction to be mined and get the logs
         const receipt = await tx.wait();
@@ -503,339 +486,170 @@ describe("AttestationsVerifier", function() {
 });
 
 describe("AttestationsCommittee", function() {
-    it("should correctly calculate committeeSize", async function() {
-        const wallets = Array.from({
-            length: 32
-        }, () => ethers.Wallet.createRandom());
-        const wallets_next_committee = Array.from({
-            length: 32
-        }, () => ethers.Wallet.createRandom());
+    beforeEach(async () => {
+        // generate wallets for committees
+        committeeSize = 32
+        committees = { 
+            0: generateWallets(committeeSize),
+            1: generateWallets(committeeSize),
+            2: generateWallets(committeeSize),
+            3: generateWallets(committeeSize),
+        }
 
-        const initialCommittee = wallets.map(wallet => wallet.address);
+        index = 0;
 
+        // initialize contract
         const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
-        const attestationsVerifier = await AttestationsVerifier.deploy(initialCommittee, 0);
+        attestationsVerifier = await AttestationsVerifier.deploy(committees[index].map(wallet => wallet.address), index);
         await attestationsVerifier.deployed();
 
+        // default asserts
         const initialCommitteeSize = await attestationsVerifier.committeeSize()
         expect(initialCommitteeSize).to.equal(32);
 
-        let batch = {
-            nextCommittee: wallets_next_committee.map(wallet => wallet.address),
-            bannedCommittee: [],
-            committedSfx: [],
-            revertedSfx: [],
-            index: 1
-        };
+        for (let i = 0; i < initialCommitteeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index].map(wallet => wallet.address)[i])
+            expect(currentCommitteeMemberIndex).to.equal(1);
+        }
 
-        const messageHash = getMessageHash(batch)
-        console.log("messageHash: ", messageHash);
+        expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(1);
+    });
 
-        // Generate signatures
-        const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
-        console.log('signatures: ', signatures)
-
-        await attestationsVerifier.receiveAttestationBatch(
-          batch.nextCommittee,
-          batch.bannedCommittee,
-          batch.committedSfx,
-          batch.revertedSfx,
-          batch.index,
-          ethers.utils.arrayify(messageHash),
-          signatures,
-        );
+    it("should correctly calculate committeeSize", async function() {
+        index++ 
+        await sendBatch(attestationsVerifier, index, committees[index-1], committees[index]);
 
         let nextCommitteeSize = await attestationsVerifier.committeeSize()
         expect(nextCommitteeSize.toNumber()).to.equal(32);
     });
 
     it("should only keep the current committee without old members", async function() {
-        const wallets = Array.from({
-            length: 32
-        }, () => ethers.Wallet.createRandom());
-        const wallets_next_committee = Array.from({
-            length: 32
-        }, () => ethers.Wallet.createRandom());
+        index++ 
+        await sendBatch(attestationsVerifier, index, committees[index-1], committees[index]);
 
-        const expectedInitialCommittee = wallets.map(wallet => wallet.address);
-        const expectedNextCommittee = wallets_next_committee.map(wallet => wallet.address);
-
-        const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
-        const attestationsVerifier = await AttestationsVerifier.deploy(expectedInitialCommittee, 0);
-        await attestationsVerifier.deployed();
-
-        const initialCommitteeSize = await attestationsVerifier.committeeSize()
-        expect(initialCommitteeSize).to.equal(32);
-
-        for (let i = 0; i < initialCommitteeSize; i++) {
-            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedInitialCommittee[i])
-            expect(currentCommitteeMemberIndex).to.equal(1);
-        }
-
-        let batch = {
-            nextCommittee: expectedNextCommittee,
-            bannedCommittee: [],
-            committedSfx: [],
-            revertedSfx: [],
-            index: 1
-        };
-
-        const messageHash = getMessageHash(batch)
-
-        // Generate signatures
-        const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
-        expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(1);
-
-        let attestationRes = await attestationsVerifier.receiveAttestationBatch(
-          batch.nextCommittee,
-          batch.bannedCommittee,
-          batch.committedSfx,
-          batch.revertedSfx,
-          batch.index,
-          ethers.utils.arrayify(messageHash),
-          signatures,
-        );
-        const receipt = await attestationRes.wait()
-        console.log("receiveAttestationBatch gasUsed: ", receipt.cumulativeGasUsed.toString());
         let nextCommitteeSize = await attestationsVerifier.committeeSize()
         expect(nextCommitteeSize.toNumber()).to.equal(32);
         expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(2);
 
-        for (let i = 0; i < initialCommitteeSize; i++) {
-            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedNextCommittee[i])
+        for (let i = 0; i < nextCommitteeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index][i].address)
             expect(currentCommitteeMemberIndex).to.equal(2);
         }
         expect(await attestationsVerifier.totalAttesters()).to.equal(64);
     });
 
 
-    it("should increment current committee transition counter for the same set of members", async function() {
-        const wallets = Array.from({
-            length: 32
-        }, () => ethers.Wallet.createRandom());
+    it("should correctly process consecutive batches", async function() {
+        // first batch
+        index = 1
+        await sendBatch(attestationsVerifier, index, committees[index-1], committees[index]);
 
-        const expectedInitialCommittee = wallets.map(wallet => wallet.address);
-
-        const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
-        const attestationsVerifier = await AttestationsVerifier.deploy(expectedInitialCommittee, 0);
-        await attestationsVerifier.deployed();
-
-        const initialCommitteeSize = await attestationsVerifier.committeeSize()
-        expect(initialCommitteeSize).to.equal(32);
-
-        for (let i = 0; i < initialCommitteeSize; i++) {
-            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedInitialCommittee[i])
-            expect(currentCommitteeMemberIndex).to.equal(1);
+        for (let i = 0; i < committeeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index][i].address)
+            expect(currentCommitteeMemberIndex).to.equal(index + 1);
         }
+        expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(index + 1);
+        expect(await attestationsVerifier.totalAttesters()).to.equal((index +1) * committeeSize);
 
-        let batch = {
-            nextCommittee: expectedInitialCommittee,
-            bannedCommittee: [],
-            committedSfx: [],
-            revertedSfx: [],
-            index: 1
-        };
+        // second batch
+        index = 2
+        await sendBatch(attestationsVerifier, index, committees[index-1], committees[index]);
+        
+        for (let i = 0; i < committeeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index][i].address)
+            expect(currentCommitteeMemberIndex).to.equal(index + 1);
+        }
+        expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(index + 1);
+        expect(await attestationsVerifier.totalAttesters()).to.equal((index + 1) * committeeSize);
+        
+        // third batch
+        index = 3
+        await sendBatch(attestationsVerifier, index, committees[index-1], committees[index]);
+        
+        for (let i = 0; i < committeeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index][i].address)
+            expect(currentCommitteeMemberIndex).to.equal(index + 1);
+        }
+        expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(index + 1);
+        expect(await attestationsVerifier.totalAttesters()).to.equal((index + 1) * committeeSize);
+    });
 
-        const messageHash = getMessageHash(batch)
+    it("should increment current committee transition counter for the same set of members", async function() {
+        // Generate and send batch
+        await sendBatch(attestationsVerifier, index+1, committees[index], committees[index]);
 
-        // Generate signatures
-        const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
-        expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(1);
-
-        let attestationRes = await attestationsVerifier.receiveAttestationBatch(
-          batch.nextCommittee,
-          batch.bannedCommittee,
-          batch.committedSfx,
-          batch.revertedSfx,
-          batch.index,
-          ethers.utils.arrayify(messageHash),
-          signatures,
-        );
-        const receipt = await attestationRes.wait()
-        console.log("receiveAttestationBatch gasUsed: ", receipt.cumulativeGasUsed.toString());
+        // Asserts
         let nextCommitteeSize = await attestationsVerifier.committeeSize()
         expect(nextCommitteeSize.toNumber()).to.equal(32);
-
         expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(2);
+        expect(await attestationsVerifier.totalAttesters()).to.equal(32);
 
-        for (let i = 0; i < initialCommitteeSize; i++) {
-            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedInitialCommittee[i])
+        for (let i = 0; i < nextCommitteeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index].map(wallet => wallet.address)[i])
             expect(currentCommitteeMemberIndex).to.equal(2);
         }
-        expect(await attestationsVerifier.totalAttesters()).to.equal(32);
     });
 
     it("should mark banned members among the known attester set", async function() {
-        const wallets = Array.from({
-            length: 32
-        }, () => ethers.Wallet.createRandom());
+        await sendBatch(attestationsVerifier, index+1, committees[index], [], committees[index]);
 
-        const expectedInitialCommittee = wallets.map(wallet => wallet.address);
-
-        const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
-        const attestationsVerifier = await AttestationsVerifier.deploy(expectedInitialCommittee, 0);
-        await attestationsVerifier.deployed();
-
-        const initialCommitteeSize = await attestationsVerifier.committeeSize()
-        expect(initialCommitteeSize).to.equal(32);
-
-        for (let i = 0; i < initialCommitteeSize; i++) {
-            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedInitialCommittee[i])
-            expect(currentCommitteeMemberIndex).to.equal(1);
-        }
-
-        let batch = {
-            nextCommittee: [],
-            bannedCommittee: expectedInitialCommittee,
-            committedSfx: [],
-            revertedSfx: [],
-            index: 1
-        };
-
-        const messageHash = getMessageHash(batch)
-
-        // Generate signatures
-        const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
-        expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(1);
-
-        let attestationRes = await attestationsVerifier.receiveAttestationBatch(
-          batch.nextCommittee,
-          batch.bannedCommittee,
-          batch.committedSfx,
-          batch.revertedSfx,
-          batch.index,
-          ethers.utils.arrayify(messageHash),
-          signatures,
-        );
-        const receipt = await attestationRes.wait()
-        console.log("receiveAttestationBatch gasUsed: ", receipt.cumulativeGasUsed.toString());
         let nextCommitteeSize = await attestationsVerifier.committeeSize()
         expect(nextCommitteeSize.toNumber()).to.equal(32);
         expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(1);
 
         const MAX_UINT256 = ethers.constants.MaxUint256;
-        for (let i = 0; i < initialCommitteeSize; i++) {
-            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedInitialCommittee[i])
+        for (let i = 0; i < nextCommitteeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index].map(wallet => wallet.address)[i])
             expect(currentCommitteeMemberIndex).to.equal(MAX_UINT256);
         }
         expect(await attestationsVerifier.totalAttesters()).to.equal(32);
     });
 
     it("should discard attestations from banned committee set", async function() {
-        const wallets = Array.from({
-            length: 32
-        }, () => ethers.Wallet.createRandom());
+        await sendBatch(attestationsVerifier, index+1, committees[index], [], committees[index]);
 
-        const expectedInitialCommittee = wallets.map(wallet => wallet.address);
-
-        const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
-        const attestationsVerifier = await AttestationsVerifier.deploy(expectedInitialCommittee, 0);
-        await attestationsVerifier.deployed();
-
-        const initialCommitteeSize = await attestationsVerifier.committeeSize()
-        expect(initialCommitteeSize).to.equal(32);
-
-        for (let i = 0; i < initialCommitteeSize; i++) {
-            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedInitialCommittee[i])
-            expect(currentCommitteeMemberIndex).to.equal(1);
-        }
-
-        let batch = {
-            nextCommittee: [],
-            bannedCommittee: expectedInitialCommittee,
-            committedSfx: [],
-            revertedSfx: [],
-            index: 1
-        };
-
-        const messageHash = getMessageHash(batch)
-
-        // Generate signatures
-        const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
+        let nextCommitteeSize = await attestationsVerifier.committeeSize()
+        expect(nextCommitteeSize.toNumber()).to.equal(32);
         expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(1);
 
-        let attestationRes = await attestationsVerifier.receiveAttestationBatch(
-          batch.nextCommittee,
-          batch.bannedCommittee,
-          batch.committedSfx,
-          batch.revertedSfx,
-          batch.index,
-          ethers.utils.arrayify(messageHash),
-          signatures,
-        );
-
         const MAX_UINT256 = ethers.constants.MaxUint256;
-        for (let i = 0; i < initialCommitteeSize; i++) {
-            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedInitialCommittee[i])
+        for (let i = 0; i < nextCommitteeSize; i++) {
+            let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(committees[index].map(wallet => wallet.address)[i])
             expect(currentCommitteeMemberIndex).to.equal(MAX_UINT256);
         }
 
-        let batch_2 = {
-            nextCommittee: expectedInitialCommittee,
-            bannedCommittee: [],
-            committedSfx: [],
-            revertedSfx: [],
-            index: 2
-        };
-
-
-        await expect(attestationsVerifier.receiveAttestationBatch(
-          batch.nextCommittee,
-          batch.bannedCommittee,
-          batch.committedSfx,
-          batch.revertedSfx,
-          batch.index,
-          ethers.utils.arrayify(messageHash),
-          signatures,
-        )).to.be.revertedWith("Signatures verification failed")
-    });
-
-    describe("AttestationsBatch", function() {
-        it("should increment batch index after receiveAttestationBatch", async function() {
-            const wallets = Array.from({
-                length: 32
-            }, () => ethers.Wallet.createRandom());
-
-            const expectedInitialCommittee = wallets.map(wallet => wallet.address);
-
-            const STARTING_BATCH_INDEX = 88;
-            const AttestationsVerifier = await ethers.getContractFactory("AttestationsVerifier");
-            const attestationsVerifier = await AttestationsVerifier.deploy(expectedInitialCommittee, STARTING_BATCH_INDEX);
-            await attestationsVerifier.deployed();
-
-            const initialCommitteeSize = await attestationsVerifier.committeeSize()
-            expect(initialCommitteeSize).to.equal(32);
-
-            for (let i = 0; i < initialCommitteeSize; i++) {
-                let currentCommitteeMemberIndex = await attestationsVerifier.attestersIndices(expectedInitialCommittee[i])
-                expect(currentCommitteeMemberIndex).to.equal(1);
-            }
-
-            let batch = {
-                nextCommittee: expectedInitialCommittee,
-                bannedCommittee: [],
-                committedSfx: [],
-                revertedSfx: [],
-                index: STARTING_BATCH_INDEX + 1
-            };
-
-            const messageHash = getMessageHash(batch)
-
-            // Generate signatures
-            const signatures = await generateSignatures(wallets, messageHash, attestationsVerifier);
-            expect(await attestationsVerifier.currentCommitteeTransitionCount()).to.equal(1);
-            expect(await attestationsVerifier.currentBatchIndex()).to.equal(STARTING_BATCH_INDEX);
-
-            let _attestationRes = await attestationsVerifier.receiveAttestationBatch(
-              batch.nextCommittee,
-              batch.bannedCommittee,
-              batch.committedSfx,
-              batch.revertedSfx,
-              batch.index,
-              ethers.utils.arrayify(messageHash),
-              signatures,
-            );
-            expect(await attestationsVerifier.currentBatchIndex()).to.equal(STARTING_BATCH_INDEX + 1);
-        });
+        await expect(sendBatch(attestationsVerifier, index+2, committees[index], committees[index], [])).to.be.revertedWith("Signatures verification failed");
     });
 });
+
+async function sendBatch(attestationsVerifier, index, prevCommittee = [], nextCommittee = [], bannedCommittee = [], committedSfx = [], revertedSfx = []) {
+    let batch = {
+        nextCommittee: nextCommittee.map(wallet => wallet.address),
+        bannedCommittee: bannedCommittee.map(wallet => wallet.address),
+        committedSfx: committedSfx,
+        revertedSfx: revertedSfx,
+        index: index
+    };
+    const messageHash = getMessageHash(batch);
+    const signatures = await generateSignatures(prevCommittee, messageHash, attestationsVerifier);
+
+    let result = await attestationsVerifier.receiveAttestationBatch(
+        ...Object.values(batch),
+        ethers.utils.arrayify(messageHash),
+        signatures
+    );
+
+    const receipt = await result.wait()
+    console.log("receiveAttestationBatch gasUsed: ", receipt.cumulativeGasUsed.toString());
+
+    return result
+}
+
+function generateWallets(size = 32) {
+    const wallets = Array.from({
+        length: size
+    }, () => ethers.Wallet.createRandom());
+
+    return wallets
+}
+
