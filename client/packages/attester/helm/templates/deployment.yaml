@@ -1,6 +1,6 @@
 {{ $outer := . -}}
 
-{{- range $index, $keys := .Values.attestersKeys }}
+{{- range $index := until 32 }}
 {{- with $outer -}}
 {{- $attesterName := printf "attester-%d" $index }}
 
@@ -39,7 +39,7 @@ spec:
             - name: KEYS
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "attester.name" . }}
+                  name: {{ $attesterName }}
                   key: KEYS
             {{- if eq $index 0 }}
             - name: LOG_LEVEL
