@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.40.0-rc.0] - 2023-07-17
+### :sparkles: New Features
+- [`a54d856`](https://github.com/t3rn/t3rn/commit/a54d856e3ea915fe7f623c0dd9b8e796cbdefd9f) - add ETH gas fees price estimation utility methods to @t3rn/sdk *(PR [#1091](https://github.com/t3rn/t3rn/pull/1091) by [@ahkohd](https://github.com/ahkohd))*
+  - :arrow_lower_right: *addresses issue [#1163](undefined) opened by [@3h4x](https://github.com/3h4x)*
+
+
+## [v1.39.4-rc.0] - 2023-07-14
+### :bug: Bug Fixes
+- [`2fa3304`](https://github.com/t3rn/t3rn/commit/2fa33046c256c43b62cab43d3877e721a1579aeb) - current committee transitions to next committee correctly *(PR [#1165](https://github.com/t3rn/t3rn/pull/1165) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.39.3-rc.0] - 2023-07-14
+### :wrench: Chores
+- [`2a4fd88`](https://github.com/t3rn/t3rn/commit/2a4fd881d61245a7dc10f3441b3eb168919c7f43) - skip t0rn-release only when commit starts with  build(release) *(PR [#1134](https://github.com/t3rn/t3rn/pull/1134) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.39.0-rc.0] - 2023-07-13
+### :sparkles: New Features
+- [`65030ad`](https://github.com/t3rn/t3rn/commit/65030ad8e60ff7c0682de9957e867258e3eb5a94) - add vacuum pallet to enhance transfer assets SFX path *(PR [#1132](https://github.com/t3rn/t3rn/pull/1132) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.38.2-rc.0] - 2023-07-11
 ### :wrench: Chores
 - [`fd40dba`](https://github.com/t3rn/t3rn/commit/fd40dba403e9a18f6e17084f347942de5b71b393) - empty PR template *(PR [#1148](https://github.com/t3rn/t3rn/pull/1148) by [@3h4x](https://github.com/3h4x))*
@@ -1335,3 +1356,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.38.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.37.1-rc.0...v1.38.0-rc.0
 [v1.38.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.0-rc.0...v1.38.1-rc.0
 [v1.38.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.1-rc.0...v1.38.2-rc.0
+[v1.39.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.5-rc.0...v1.39.0-rc.0
+[v1.39.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.2-rc.0...v1.39.3-rc.0
+[v1.39.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.3-rc.0...v1.39.4-rc.0
+[v1.40.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.4-rc.0...v1.40.0-rc.0

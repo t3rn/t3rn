@@ -48,7 +48,7 @@ t3rn-types            = { path = "../types", default-features = false, features 
 [dev-dependencies]
 hex         = "0.4"
 hex-literal = { version = '0.3.1' }
-serde_json  = "1.0.101"
+serde_json  = "1.0.103"
 
 [features]
 default = [ "std" ]

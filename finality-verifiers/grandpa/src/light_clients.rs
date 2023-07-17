@@ -447,6 +447,7 @@ impl<T: Config<I>, I: 'static> LightClient<T> for Pallet<T, I> {
 }
 
 #[cfg(all(feature = "testing"))]
+#[cfg(test)]
 pub mod grandpa_light_clients_test {
     use super::*;
     use codec::Encode;

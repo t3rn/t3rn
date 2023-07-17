@@ -213,6 +213,9 @@ pub mod pallet {
     pub type Attesters<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AttesterInfo>;
 
     #[pallet::storage]
+    pub type NextCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+    #[pallet::storage]
     pub type CurrentCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
@@ -462,6 +465,11 @@ pub mod pallet {
                 }
             });
 
+            // Purge all attestations for the target
+            Batches::<T>::remove(target);
+            BatchesToSign::<T>::remove(target);
+            NextBatch::<T>::remove(target);
+
             Ok(())
         }
 
@@ -682,10 +690,8 @@ pub mod pallet {
             // ToDo: Check the source address of the batch ensuring matches Escrow contract address.
             let _target_escrow_address = T::Xdns::get_escrow_account(&target)?;
 
-            let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Struct(\
-                Signatures:Vec(Tuple(Value32,Bytes)),\
+            let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
                 MessageHash:H256,\
-                Message:Bytes\
             )"
             .to_vec();
 
@@ -1260,10 +1266,10 @@ pub mod pallet {
         }
 
         fn get_current_committee_transition_for_target(target: &TargetId) -> CommitteeTransition {
-            let current_committee = CurrentCommittee::<T>::get();
+            let next_committee = NextCommittee::<T>::get();
             let mut committee_transition = Vec::new();
 
-            for attester in &current_committee {
+            for attester in &next_committee {
                 if let Some(attester_info) = Attesters::<T>::get(attester) {
                     if let Some(checked_recoverable) =
                         AttestersAgreements::<T>::get(attester, target)
@@ -1296,6 +1302,7 @@ pub mod pallet {
         fn shuffle_committee() -> bool {
             let active_set = ActiveSet::<T>::get();
             let active_set_size = active_set.len();
+
             let mut committee_size = T::CommitteeSize::get() as usize;
 
             let full_shuffle = if committee_size > active_set_size {
@@ -1306,30 +1313,46 @@ pub mod pallet {
             };
 
             let current_committee = CurrentCommittee::<T>::get();
-            PreviousCommittee::<T>::put(current_committee);
+            let mut next_committee = NextCommittee::<T>::get();
 
-            let _seed = T::RandomnessSource::random_seed();
+            let shuffle_active_set = |shuffled_active_set: &mut Vec<T::AccountId>| {
+                for i in (1..shuffled_active_set.len()).rev() {
+                    let random_value = T::RandomnessSource::random(&i.to_be_bytes());
+                    let random_index = random_value
+                        .0
+                        .as_ref()
+                        .iter()
+                        .fold(0usize, |acc, &val| (acc + val as usize) % (i + 1));
 
-            let mut shuffled_active_set = active_set;
-            for i in (1..shuffled_active_set.len()).rev() {
-                let random_value = T::RandomnessSource::random(&i.to_be_bytes());
-                let random_index = random_value
-                    .0
-                    .as_ref()
-                    .iter()
-                    .fold(0usize, |acc, &val| (acc + val as usize) % (i + 1));
-
-                if i != random_index {
-                    shuffled_active_set.swap(i, random_index);
+                    if i != random_index {
+                        shuffled_active_set.swap(i, random_index);
+                    }
                 }
-            }
+            };
+
+            let mut shuffled_active_set = active_set.clone();
+
+            shuffle_active_set(&mut shuffled_active_set);
 
             let new_committee = shuffled_active_set
+                .clone()
                 .into_iter()
                 .take(committee_size)
                 .collect::<Vec<T::AccountId>>();
 
-            CurrentCommittee::<T>::put(new_committee);
+            // Bootstrap case - if there is no current committee, we need to set it
+            if next_committee.is_empty() {
+                shuffled_active_set = active_set;
+                shuffle_active_set(&mut shuffled_active_set);
+                next_committee = shuffled_active_set
+                    .into_iter()
+                    .take(committee_size)
+                    .collect::<Vec<T::AccountId>>();
+            }
+
+            CurrentCommittee::<T>::put(next_committee);
+            PreviousCommittee::<T>::put(current_committee);
+            NextCommittee::<T>::put(new_committee);
 
             full_shuffle
         }
@@ -1696,7 +1719,7 @@ pub mod attesters_test {
         CurrentCommittee, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
         NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations, PermanentSlashes,
         PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters, System,
-        XExecSignals,
+        XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
@@ -1939,9 +1962,10 @@ pub mod attesters_test {
     #[test]
     fn submitting_attestation_reads_as_on_time_latency_status() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
+
         ext.execute_with(|| {
             // Register an attester
             let attester = AccountId::from([1; 32]);
@@ -1952,11 +1976,11 @@ pub mod attesters_test {
                 attester,
                 sfx_id_to_sign_on,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
-                [0u8; 4],
+                ETHEREUM_TARGET,
                 [1u8; 32],
             );
 
-            let batch_latency = Attesters::read_attestation_latency(&[0u8; 4]);
+            let batch_latency = Attesters::read_attestation_latency(&ETHEREUM_TARGET);
             assert!(batch_latency.is_some());
             assert_eq!(batch_latency, Some(LatencyStatus::OnTime));
         });
@@ -1965,7 +1989,7 @@ pub mod attesters_test {
     #[test]
     fn register_and_submit_attestation_in_ecdsa() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
@@ -1978,11 +2002,11 @@ pub mod attesters_test {
                 attester,
                 sfx_id_to_sign_on,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
-                [0u8; 4],
+                ETHEREUM_TARGET,
                 [1u8; 32],
             );
 
-            let latest_batch = Attesters::get_latest_batch_to_sign([0u8; 4]);
+            let latest_batch = Attesters::get_latest_batch_to_sign(ETHEREUM_TARGET);
             assert!(latest_batch.is_some());
 
             let latest_batch_some = latest_batch.unwrap();
@@ -1996,11 +2020,11 @@ pub mod attesters_test {
 
     #[test]
     fn double_attestation_is_not_allowed() {
-        let target = [0u8; 4];
+        let target = ETHEREUM_TARGET;
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2037,11 +2061,11 @@ pub mod attesters_test {
     #[test]
     fn test_adding_sfx_moves_next_batch_to_pending_attestation() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -2069,11 +2093,11 @@ pub mod attesters_test {
     #[test]
     fn test_successfull_process_repatriation_for_pending_attestation_with_one_fsx_reverted() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let repatriated_executor = AccountId::from([1u8; 32]);
@@ -2146,11 +2170,11 @@ pub mod attesters_test {
     #[test]
     fn test_successfull_process_repatriation_for_pending_attestation_with_one_fsx() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let repatriated_requester = AccountId::from([4u8; 32]);
@@ -2235,11 +2259,11 @@ pub mod attesters_test {
     fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_fsx_not_found(
     ) {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id = H256([3u8; 32]);
@@ -2276,11 +2300,11 @@ pub mod attesters_test {
     fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_no_batch_fsx_required(
     ) {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
 
             for counter in 1..33u8 {
                 // Register an attester
@@ -2322,11 +2346,11 @@ pub mod attesters_test {
     #[test]
     fn test_pending_attestation_batch_with_single_sfx_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -2357,11 +2381,11 @@ pub mod attesters_test {
     #[test]
     fn test_pending_attestation_batch_with_committee_transition_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             for counter in 1..33u8 {
                 // Register an attester
                 let _attester = AccountId::from([counter; 32]);
@@ -2611,11 +2635,11 @@ pub mod attesters_test {
     #[test]
     fn test_pending_attestation_batch_with_all_attestations_ordered_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
 
             for counter in 1..33u8 {
                 // Register an attester
@@ -2707,11 +2731,11 @@ pub mod attesters_test {
     #[test]
     fn test_adding_2_same_sfx_to_next_batch_is_impossible() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             NextBatch::<MiniRuntime>::insert(target, BatchMessage::default());
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -2727,11 +2751,11 @@ pub mod attesters_test {
     #[test]
     fn test_adding_2_sfx_to_next_batch_and_transition_to_pending_attestation() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
 
             AttestationTargets::<MiniRuntime>::put(vec![target]);
             assert_eq!(NextBatch::<MiniRuntime>::get(target), None);
@@ -2806,7 +2830,7 @@ pub mod attesters_test {
     #[test]
     fn committee_transition_generates_next_3_batches_pending_attestations_when_late() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2814,8 +2838,6 @@ pub mod attesters_test {
             // On initialization, the current committee should be empty and the previous committee should be None
             assert!(CurrentCommittee::<MiniRuntime>::get().is_empty());
             assert_eq!(PreviousCommittee::<MiniRuntime>::get(), vec![]);
-
-            const TARGET_0: TargetId = [0u8; 4];
 
             // Register multiple attesters
             let attester_count = 100;
@@ -2825,7 +2847,7 @@ pub mod attesters_test {
             }
             // Trigger the committee first setup
             select_new_committee();
-            add_target_and_transition_to_next_batch(TARGET_0, 0);
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 0);
 
             // Check if the committee is set up and has the correct size
             let committee = CurrentCommittee::<MiniRuntime>::get();
@@ -2838,7 +2860,7 @@ pub mod attesters_test {
             }
 
             // Expect NextBatch message to have committee transition awaiting attestation on registered target
-            let next_batch = NextBatch::<MiniRuntime>::get(TARGET_0).unwrap();
+            let next_batch = NextBatch::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
             assert_eq!(next_batch.status, BatchStatus::PendingMessage);
             assert_eq!(next_batch.latency, LatencyStatus::OnTime);
             assert_eq!(next_batch.index, 0);
@@ -2851,41 +2873,46 @@ pub mod attesters_test {
 
             let batch_0_hash = next_batch.message_hash();
             // If no attestations are received, the next batch should be empty, and the current batch should be pending attestation with indication of late submission
-            add_target_and_transition_to_next_batch(TARGET_0, 1);
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 1);
 
-            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            let batch_0 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_0_hash).unwrap();
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::OnTime);
 
             // Next batch should mark the initial batch as late, but don't modify the batch_1 since there's no new messages to attest for
-            add_target_and_transition_to_next_batch(TARGET_0, 1);
-            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 1);
+            let batch_0 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_0_hash).unwrap();
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::Late(1, 0));
 
             let _committee_0_on_target =
-                NextCommitteeOnTarget::<MiniRuntime>::get(TARGET_0).unwrap();
+                NextCommitteeOnTarget::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
 
-            add_target_and_transition_to_next_batch(TARGET_0, 1);
-            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 1);
+            let batch_0 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_0_hash).unwrap();
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::Late(2, 0));
             // Trigger the next committee transition
             select_new_committee();
             // Retreive next batch
-            let batch_1 = NextBatch::<MiniRuntime>::get(TARGET_0).unwrap();
+            let batch_1 = NextBatch::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
             assert!(batch_1.next_committee.is_some());
             assert_eq!(batch_1.index, 1);
             let _committee_1_on_target =
-                NextCommitteeOnTarget::<MiniRuntime>::get(TARGET_0).unwrap();
+                NextCommitteeOnTarget::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
             let batch_1_hash = batch_1.message_hash();
             // todo: fix the randomness source on mini-mock (yields 0)
             // assert!(committee_0_on_target != committee_1_on_target);
-            add_target_and_transition_to_next_batch(TARGET_0, 2);
-            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 2);
+            let batch_0 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_0_hash).unwrap();
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::Late(3, 0));
-            let batch_1 = Attesters::get_batch_by_message_hash(TARGET_0, batch_1_hash).unwrap();
+            let batch_1 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_1_hash).unwrap();
             assert_eq!(batch_1.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_1.latency, LatencyStatus::OnTime);
         });
@@ -2894,7 +2921,7 @@ pub mod attesters_test {
     #[test]
     fn committee_setup_and_transition() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2946,11 +2973,8 @@ pub mod attesters_test {
 
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_changes_status_to_approved() {
-        let _target = [0u8; 4];
-        let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
-
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2972,13 +2996,16 @@ pub mod attesters_test {
                     attester,
                     sfx_id_to_sign_on,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
-                    [0u8; 4],
+                    ETHEREUM_TARGET,
                     [counter; 32],
                 );
             }
             assert_eq!(
-                Attesters::get_batches([0u8; 4], BatchStatus::ReadyForSubmissionFullyApproved)
-                    .len(),
+                Attesters::get_batches(
+                    ETHEREUM_TARGET,
+                    BatchStatus::ReadyForSubmissionFullyApproved
+                )
+                .len(),
                 1
             );
         });
@@ -2988,7 +3015,7 @@ pub mod attesters_test {
     fn register_and_submit_21x_attestations_in_ecdsa_changes_status_to_approved_in_next_batching_window(
     ) {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -3012,19 +3039,19 @@ pub mod attesters_test {
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
-                    [0u8; 4],
+                    ETHEREUM_TARGET,
                     [counter; 32],
                 );
             }
 
-            let batch = Attesters::get_latest_batch_to_sign([0u8; 4])
+            let batch = Attesters::get_latest_batch_to_sign(ETHEREUM_TARGET)
                 .expect("get_latest_batch_to_sign should return a batch");
 
             assert_eq!(batch.status, BatchStatus::PendingAttestation);
 
             // Trigger batching transition
-            add_target_and_transition_to_next_batch([0u8; 4], 1);
-            let batch = Attesters::get_batch_by_message([0u8; 4], batch.message())
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 1);
+            let batch = Attesters::get_batch_by_message(ETHEREUM_TARGET, batch.message())
                 .expect("get_batch_by_message should return a batch");
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionByMajority);
         });
@@ -3045,12 +3072,12 @@ pub mod attesters_test {
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
     ) {
-        let target: TargetId = [1u8; 4];
+        let target: TargetId = POLKADOT_TARGET;
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
             .with_polkadot_gateway_record()
-            .with_eth_gateway_record()
             .build();
 
         ext.execute_with(|| {
@@ -3116,11 +3143,11 @@ pub mod attesters_test {
 
     #[test]
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
-        let target: TargetId = [1u8; 4];
+        let target: TargetId = ETHEREUM_TARGET;
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {

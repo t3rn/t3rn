@@ -20,7 +20,9 @@ wasmtime-cranelift.opt-level = 3
 wasmtime.opt-level           = 3
 
 [workspace]
-exclude = [  ]
+exclude = [
+  "vendor"
+]
 # Substrate don't use glob in their workspace, so we don't either.
 # https://github.com/paritytech/substrate/blob/master/Cargo.toml
 # It breaks dependabot.
@@ -34,6 +36,7 @@ members = [
   "pallets/3vm",
   "pallets/account-manager",
   "pallets/circuit",
+  "pallets/circuit/vacuum",
   "pallets/clock",
   "pallets/contracts",
   "pallets/contracts-registry",

@@ -4,9 +4,16 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+<<<<<<< HEAD
     "preinstall": "npx only-allow pnpm",
     "start": "EXECUTOR=example ts-node src/main.ts",
     "dev": "LOG_LEVEL=debug EXECUTOR=example ts-node src/main.ts | npx pino-pretty -c -S",
+=======
+    "preinstall": "npx only-allow yarn",
+    "build": "tsup",
+    "start": "yarn build && EXECUTOR=example node dist/main.js",
+    "dev": "yarn build && LOG_LEVEL=debug EXECUTOR=example node dist/main.js | npx pino-pretty -c -S",
+>>>>>>> origin/development
     "lint": "eslint --ext .ts src",
     "lint:report": "eslint src --ext .ts --output-file eslint_report.json --format json",
     "export": "LOG_LEVEL=debug pnpm run start >> logger.log",
@@ -14,7 +21,7 @@
     "build-docs": "npx typedoc && cp -R docs ../../../docs/executor",
     "test": "mocha -r ts-node/register 'tests/**/*.ts'",
     "test:attestion": "mocha -r ts-node/register 'tests/**/attest*.ts'",
-    "test-single": "mocha -r ts-node/register"
+    "test-single": "yarn build && mocha -r ts-node/register"
   },
   "exclude": [
     "./tests/"
@@ -52,17 +59,19 @@
     "sinon": "^15.2.0",
     "standard": "^17.0.0",
     "ts-mockito": "^2.6.1",
-    "ts-node": "^10.9.1",
-    "typedoc": "^0.24.7",
     "types": "link:@polkadot/keyring/types",
     "web3": "^4.0.3"
   },
   "devDependencies": {
+    "@babel/preset-typescript": "^7.22.5",
     "@types/bn.js": "^5.1.1",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "eslint": "^8.43.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
+    "ts-node": "^10.9.1",
+    "tsup": "^7.1.0",
+    "typedoc": "^0.24.7",
     "typescript": "4.9.4"
   }
 }
