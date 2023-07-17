@@ -25,6 +25,7 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot.git", 
 pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
 pallet-attesters                          = { path = "../../pallets/attesters", default-features = false }
 pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
+pallet-vacuum                             = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
 pallet-clock                              = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
@@ -118,6 +119,7 @@ std = [
   "pallet-xdns-rpc-runtime-api/std",
   "pallet-contracts-registry-rpc-runtime-api/std",
   "pallet-circuit/std",
+  "pallet-vacuum/std",
   "pallet-portal/std",
   "pallet-portal-rpc-runtime-api/std",
   "pallet-grandpa-finality-verifier/std",
@@ -185,6 +187,7 @@ runtime-benchmarks = [
   "pallet-treasury/runtime-benchmarks",
   "pallet-3vm/runtime-benchmarks",
   "pallet-circuit/runtime-benchmarks",
+  "pallet-vacuum/runtime-benchmarks",
   "pallet-clock/runtime-benchmarks",
   "pallet-3vm-contracts/runtime-benchmarks",
   "pallet-3vm-evm/runtime-benchmarks",

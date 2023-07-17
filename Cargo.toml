@@ -49,7 +49,6 @@ members = [
   "pallets/evm/precompile/util",
   "pallets/evm/rpc",
   "pallets/evm/rpc/runtime-api",
-  "pallets/executors",
   "pallets/portal",
   "pallets/portal/rpc",
   "pallets/portal/rpc/runtime-api",

@@ -32,6 +32,8 @@ pub trait Portal<T: frame_system::Config> {
     fn get_latest_heartbeat(gateway_id: &ChainId)
         -> Result<LightClientHeartbeat<T>, DispatchError>;
 
+    fn get_latest_heartbeat_by_vendor(vendor: GatewayVendor) -> LightClientHeartbeat<T>;
+
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError>;
 
     fn get_finalized_height(

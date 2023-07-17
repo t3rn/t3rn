@@ -2231,7 +2231,9 @@ pub mod attesters_test {
             ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
             BatchingFactor, CommitteeRecoverable, CommitteeTransitionIndices,
         },
-        circuit::{CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal},
+        circuit::{
+            AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
+        },
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         TreasuryAccount, TreasuryAccountProvider,
     };
@@ -2267,7 +2269,7 @@ pub mod attesters_test {
         // Check Pending Unnomination is created with entire self-nomination amount
         assert_eq!(
             PendingUnnominations::<MiniRuntime>::get(&attester).unwrap(),
-            vec![(attester.clone(), self_nomination_amount, 801u32)],
+            vec![(attester.clone(), self_nomination_amount, 817u32)],
         );
 
         // Run to active to unlock block = 2 x shuffling frequency + next window
@@ -2670,6 +2672,7 @@ pub mod attesters_test {
                     role: CircuitRole::Executor,
                     total_round_claim: mock_fsx.input.max_reward / 2,
                     benefit_source: BenefitSource::SlashTreasury,
+                    non_native_asset_id: None,
                 }])
             );
         });
@@ -2709,7 +2712,7 @@ pub mod attesters_test {
             let mock_xtx = XExecSignal {
                 requester: repatriated_requester.clone(),
                 requester_nonce: 1,
-                timeouts_at: 1,
+                timeouts_at: AdaptiveTimeout::default_401(),
                 speed_mode: Default::default(),
                 delay_steps_at: None,
                 status: CircuitStatus::Committed,
@@ -2758,6 +2761,7 @@ pub mod attesters_test {
                     role: CircuitRole::Requester,
                     total_round_claim: mock_fsx.input.max_reward / 2,
                     benefit_source: BenefitSource::SlashTreasury,
+                    non_native_asset_id: None,
                 }])
             );
         });
@@ -2900,6 +2904,7 @@ pub mod attesters_test {
                 register_attester_with_single_private_key([counter; 32]);
             }
 
+            println!("Registered attesters");
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let _committee_transition: CommitteeTransitionIndices = [
@@ -4382,13 +4387,15 @@ pub mod attesters_test {
                             beneficiary: attester.clone(),
                             role: CircuitRole::Attester,
                             total_round_claim: 100, // that's reward as an attester with 10% commission of 1000
-                            benefit_source: BenefitSource::Inflation
+                            benefit_source: BenefitSource::Inflation,
+                            non_native_asset_id: None,
                         },
                         ClaimableArtifacts {
                             beneficiary: attester,
                             role: CircuitRole::Staker,
                             total_round_claim: 8, // that's reward as a self-bonded staker
-                            benefit_source: BenefitSource::Inflation
+                            benefit_source: BenefitSource::Inflation,
+                            non_native_asset_id: None,
                         },
                     ])
                 );
@@ -4413,6 +4420,7 @@ pub mod attesters_test {
                         role: CircuitRole::Staker,
                         total_round_claim: one_period_claimable_reward,
                         benefit_source: BenefitSource::Inflation,
+                        non_native_asset_id: None,
                     }])
                 );
             }

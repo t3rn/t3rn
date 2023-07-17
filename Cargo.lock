@@ -712,17 +712,6 @@ checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 
 [[package]]
 name = "bstr"
-version = "0.2.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba3569f383e8f1598449f1a423e72e99569137b47740b1da11ef19af3d5c3223"
-dependencies = [
- "lazy_static",
- "memchr",
- "regex-automata",
-]
-
-[[package]]
-name = "bstr"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7f0778972c64420fdedc63f09919c8a88bda7b25135357fd25a5d9f3257e832"
@@ -991,6 +980,7 @@ dependencies = [
  "pallet-babe",
  "pallet-balances",
  "pallet-circuit",
+ "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
  "pallet-contracts 1.0.0-alpha.0",
@@ -1000,7 +990,6 @@ dependencies = [
  "pallet-eth2-finality-verifier",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
- "pallet-executors",
  "pallet-grandpa",
  "pallet-grandpa-finality-verifier",
  "pallet-identity",
@@ -1133,6 +1122,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-circuit",
+ "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-contracts 1.0.0-alpha.0",
  "pallet-contracts-primitives 5.0.0",
@@ -1320,18 +1310,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c278839b831783b70278b14df4d45e1beb1aad306c07bb796637de9a0e323e8e"
 dependencies = [
  "crossbeam-utils",
-]
-
-[[package]]
-name = "console"
-version = "0.15.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3d79fbe8970a77e3e34151cc13d3b3e248aa0faaecb9f6091fa07ebefe5ad60"
-dependencies = [
- "encode_unicode",
- "lazy_static",
- "libc",
- "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -2421,12 +2399,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "encode_unicode"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
-
-[[package]]
 name = "enum-as-inner"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3471,7 +3443,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "029d74589adefde59de1a0c4f4732695c32805624aec7b68d91503d4dba79afc"
 dependencies = [
  "aho-corasick",
- "bstr 1.2.0",
+ "bstr",
  "fnv",
  "log",
  "regex",
@@ -6305,7 +6277,6 @@ dependencies = [
  "log",
  "pallet-account-manager",
  "pallet-balances",
- "pallet-executors",
  "pallet-sudo",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -6845,37 +6816,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
-]
-
-[[package]]
-name = "pallet-executors"
-version = "1.0.0-rc.0"
-dependencies = [
- "circuit-mock-runtime",
- "circuit-runtime-pallets",
- "circuit-runtime-types",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex-literal 0.3.4",
- "log",
- "pallet-circuit",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "similar-asserts",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
- "substrate-abi",
- "t3rn-abi",
- "t3rn-primitives",
- "t3rn-sdk-primitives",
- "t3rn-types 1.5.0-rc.0",
- "xp-channel",
- "xp-format",
- "xs-channel",
 ]
 
 [[package]]
@@ -11449,26 +11389,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "similar"
-version = "2.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "420acb44afdae038210c99e69aae24109f32f15500aa708e81d46c9f29d55fcf"
-dependencies = [
- "bstr 0.2.17",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "similar-asserts"
-version = "1.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbf644ad016b75129f01a34a355dcb8d66a5bc803e417c7a77cc5d5ee9fa0f18"
-dependencies = [
- "console",
- "similar",
-]
-
-[[package]]
 name = "slab"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12707,6 +12627,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-circuit",
+ "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-collator-selection",
  "pallet-contracts 1.0.0-alpha.0",
@@ -12819,6 +12740,7 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-contracts 4.0.0-dev",
+ "pallet-eth2-finality-verifier",
  "pallet-grandpa-finality-verifier",
  "pallet-portal",
  "pallet-randomness-collective-flip",
@@ -13610,12 +13532,6 @@ checksum = "5c5713f0fc4b5db668a2ac63cdb7bb4469d8c9fed047b1d0292cc7b0ce2ba921"
 dependencies = [
  "tinyvec",
 ]
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dd624098567895118886609431a7c3b8f516e41d30e0643f03d94592a147e36"
 
 [[package]]
 name = "unicode-width"

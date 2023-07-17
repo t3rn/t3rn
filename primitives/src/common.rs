@@ -81,7 +81,7 @@ impl<
     > Default for RoundInfo<B>
 {
     fn default() -> RoundInfo<B> {
-        RoundInfo::new(1u32, 1u32.into(), 400u32.into())
+        RoundInfo::new(1u32, 1u32.into(), 299u32.into())
     }
 }
 

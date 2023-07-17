@@ -120,6 +120,7 @@ construct_runtime!(
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
+        Vacuum: pallet_vacuum = 111,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,

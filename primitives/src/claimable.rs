@@ -32,5 +32,6 @@ pub struct ClaimableArtifacts<Account, Balance> {
     pub beneficiary: Account,
     pub role: CircuitRole,
     pub total_round_claim: Balance,
+    pub non_native_asset_id: Option<u32>,
     pub benefit_source: BenefitSource,
 }
