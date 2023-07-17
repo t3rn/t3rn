@@ -6,7 +6,7 @@ use sp_std::{convert::TryInto, vec, vec::Vec};
 use t3rn_types::{sfx::SideEffect, types::Bytes};
 
 pub type Arguments = Vec<Bytes>;
-pub type Hashing = sp_runtime::traits::BlakeTwo256;
+pub type Hashing = sp_runtime::traits::Keccak256;
 
 pub const FIRST_REQUESTER_NONCE: u32 = 0;
 

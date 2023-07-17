@@ -11,7 +11,7 @@ use frame_support::{
 
 use sp_runtime::{
     generic,
-    traits::{AccountIdLookup, BlakeTwo256, ConvertInto},
+    traits::{AccountIdLookup, BlakeTwo256, ConvertInto, Keccak256},
 };
 
 // Configure FRAME pallets to include in runtime.
@@ -39,7 +39,7 @@ impl frame_system::Config for Runtime {
     /// The type for hashing blocks and tries.
     type Hash = HashPrimitive;
     /// The hashing algorithm used.
-    type Hashing = BlakeTwo256;
+    type Hashing = Keccak256;
     /// The header type.
     type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// The index type for storing how many extrinsics an account has signed.

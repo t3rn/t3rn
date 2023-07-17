@@ -1709,7 +1709,7 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::traits::BlakeTwo256;
+    use sp_runtime::traits::{Keccak256};
 
     use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
@@ -2124,7 +2124,7 @@ pub mod attesters_test {
 
             let sfx_id = mock_fsx
                 .input
-                .generate_id::<BlakeTwo256>(mock_xtx_id.as_bytes(), 0u32);
+                .generate_id::<Keccak256>(mock_xtx_id.as_bytes(), 0u32);
 
             assert_ok!(Attesters::request_sfx_attestation_revert(target, sfx_id));
 
@@ -2213,7 +2213,7 @@ pub mod attesters_test {
 
             let sfx_id = mock_fsx
                 .input
-                .generate_id::<BlakeTwo256>(mock_xtx_id.as_bytes(), 0u32);
+                .generate_id::<Keccak256>(mock_xtx_id.as_bytes(), 0u32);
 
             assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id));
 
