@@ -56,7 +56,8 @@ impl<T: Config> SquareUp<T> {
                         offered_reward: fsx.input.max_reward,
                         charge_fee: Zero::zero(),
                         source: BenefitSource::TrafficFees,
-                        role: CircuitRole::Requester,
+                        // Assign the role as offset reward to executor.
+                        role: CircuitRole::Executor,
                         recipient: None,
                         maybe_asset_id: fsx.input.reward_asset_id,
                     },

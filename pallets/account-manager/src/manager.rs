@@ -12,17 +12,17 @@ use sp_runtime::{
     traits::{CheckedAdd, CheckedDiv, CheckedMul, Convert, Zero},
     ArithmeticError, DispatchError,
 };
-use sp_std::{prelude::*, vec};
+use sp_std::prelude::*;
 
 use t3rn_primitives::{
     account_manager::{RequestCharge, Settlement},
-    claimable::{CircuitRole, ClaimableArtifacts},
+    claimable::CircuitRole,
     clock::Clock,
-    common::RoundInfo,
 };
 
 use crate::monetary::Monetary;
 use substrate_abi::{SubstrateAbiConverter as Sabi, Value256};
+use t3rn_primitives::circuit::OrderOrigin;
 
 pub fn percent_ratio<BalanceOf: Zero + CheckedDiv + CheckedMul + From<u8>>(
     amt: BalanceOf,
@@ -64,13 +64,19 @@ impl<T: Config>
         }
     }
 
-    fn get_settlement(settlement_id: T::Hash) -> Option<Settlement<T::AccountId, BalanceOf<T>>> {
+    fn get_settlement(
+        settlement_id: T::Hash,
+    ) -> Option<Settlement<T::AccountId, BalanceOf<T>, <T::Assets as Inspect<T::AccountId>>::AssetId>>
+    {
         SettlementsPerRound::<T>::get(T::Clock::current_round(), settlement_id)
     }
 
     fn get_settlements_by_role(
         role: CircuitRole,
-    ) -> Vec<(T::AccountId, Settlement<T::AccountId, BalanceOf<T>>)> {
+    ) -> Vec<(
+        T::AccountId,
+        Settlement<T::AccountId, BalanceOf<T>, <T::Assets as Inspect<T::AccountId>>::AssetId>,
+    )> {
         let settlements = SettlementsPerRound::<T>::iter_prefix_values(T::Clock::current_round());
         settlements
             .filter(|settlement| settlement.role == role)
@@ -197,19 +203,31 @@ impl<T: Config>
                 Some(recipient) => recipient,
                 None => T::EscrowAccount::get(),
             };
+
             if charge.offered_reward > Zero::zero() {
                 match outcome {
                     Outcome::Commit => {
+                        // Skip remote origin settlements - they are handled by the remote origin
+                        if OrderOrigin::<T::AccountId>::new(&charge.payee).is_remote() {
+                            PendingCharges::<T>::remove(charge_id);
+                            return false
+                        }
+
                         SettlementsPerRound::<T>::insert(
                             T::Clock::current_round(),
                             charge_id,
-                            Settlement::<T::AccountId, BalanceOf<T>> {
+                            Settlement::<
+                                T::AccountId,
+                                BalanceOf<T>,
+                                <T::Assets as Inspect<T::AccountId>>::AssetId,
+                            > {
                                 requester: charge.payee,
                                 recipient,
                                 settlement_amount: charge.offered_reward,
                                 outcome,
                                 source: charge.source,
                                 role: charge.role,
+                                maybe_asset_id: charge.maybe_asset_id,
                             },
                         );
                     },
@@ -325,19 +343,15 @@ impl<T: Config>
         }
     }
 
-    /// Collect claimable (only SFX execution rewards) for Executors and Stakers submitted by Circuit at the duration of the current Round
-    fn on_collect_claimable(
-        _n: T::BlockNumber,
-        _r: RoundInfo<T::BlockNumber>,
-    ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, DispatchError> {
-        Ok(vec![])
-    }
-
     fn can_withdraw(
         payee: &T::AccountId,
         amount: BalanceOf<T>,
         asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
     ) -> bool {
+        // Skip remote origin withdrawals - they are already handled by the remote origin
+        if OrderOrigin::<T::AccountId>::new(payee).is_remote() {
+            return true
+        }
         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::can_withdraw(
             payee, asset_id, amount,
         )
@@ -360,6 +374,11 @@ impl<T: Config>
         amount: BalanceOf<T>,
         asset_id: Option<<T::Assets as Inspect<T::AccountId>>::AssetId>,
     ) -> DispatchResult {
+        // Skip remote origin withdrawals - they are already handled by the remote origin
+        if OrderOrigin::<T::AccountId>::new(payee).is_remote() {
+            return Ok(())
+        }
+
         Monetary::<T::AccountId, T::Assets, T::Currency, T::AssetBalanceOf>::withdraw(
             payee, amount, asset_id,
         )
@@ -420,6 +439,164 @@ mod tests {
             assert_eq!(charge_item.payee, ALICE);
             assert_eq!(charge_item.recipient, Some(BOB));
             assert_eq!(charge_item.charge_fee, DEPOSIT_AMOUNT);
+        });
+    }
+
+    #[test]
+    fn test_deposit_for_remote_order_origin_leaves_deposit_request_charge_for_remote_origin_without_funds(
+    ) {
+        ExtBuilder::default().build().execute_with(|| {
+            let execution_id: H256 = H256::repeat_byte(0);
+
+            let remote_order_origin = OrderOrigin::<AccountId>::from_remote_nonce(1);
+            let remote_origin_account_here = remote_order_origin.to_account_id();
+
+            Balances::deposit_creating(&remote_origin_account_here, 0);
+
+            const DEPOSIT_AMOUNT: Balance = DEFAULT_BALANCE / 10;
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                Balance,
+                Hash,
+                BlockNumber,
+                AssetId,
+            >>::deposit(
+                execution_id,
+                RequestCharge {
+                    payee: remote_order_origin.to_account_id(),
+                    offered_reward: 10,
+                    charge_fee: DEPOSIT_AMOUNT,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
+            ));
+
+            assert_eq!(Balances::free_balance(&remote_origin_account_here), 0);
+
+            let charge_item =
+                AccountManager::pending_charges_per_round::<H256>(execution_id).unwrap();
+            assert_eq!(charge_item.payee, remote_origin_account_here);
+            assert_eq!(charge_item.recipient, Some(BOB));
+            assert_eq!(charge_item.charge_fee, DEPOSIT_AMOUNT);
+        });
+    }
+
+    #[test]
+    fn test_deposit_for_remote_order_origin_leaves_deposit_request_charge_but_does_not_subtract_from_origin_balance(
+    ) {
+        ExtBuilder::default().build().execute_with(|| {
+            let execution_id: H256 = H256::repeat_byte(0);
+
+            let remote_order_origin = OrderOrigin::<AccountId>::from_remote_nonce(1);
+            let remote_origin_account_here = remote_order_origin.to_account_id();
+
+            Balances::deposit_creating(&remote_origin_account_here, DEFAULT_BALANCE);
+
+            const DEPOSIT_AMOUNT: Balance = DEFAULT_BALANCE / 10;
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                Balance,
+                Hash,
+                BlockNumber,
+                AssetId,
+            >>::deposit(
+                execution_id,
+                RequestCharge {
+                    payee: remote_order_origin.to_account_id(),
+                    offered_reward: 10,
+                    charge_fee: DEPOSIT_AMOUNT,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
+            ));
+
+            assert_eq!(
+                Balances::free_balance(&remote_origin_account_here),
+                DEFAULT_BALANCE
+            );
+
+            let charge_item =
+                AccountManager::pending_charges_per_round::<H256>(execution_id).unwrap();
+            assert_eq!(charge_item.payee, remote_origin_account_here);
+            assert_eq!(charge_item.recipient, Some(BOB));
+            assert_eq!(charge_item.charge_fee, DEPOSIT_AMOUNT);
+        });
+    }
+
+    #[test]
+    fn test_deposit_for_remote_order_origin_leaves_deposit_request_but_does_not_leave_settlement_since_assumed_on_remote(
+    ) {
+        ExtBuilder::default().build().execute_with(|| {
+            let execution_id: H256 = H256::repeat_byte(0);
+
+            let remote_order_origin = OrderOrigin::<AccountId>::from_remote_nonce(1);
+            let remote_origin_account_here = remote_order_origin.to_account_id();
+
+            Balances::deposit_creating(&remote_origin_account_here, DEFAULT_BALANCE);
+
+            const DEPOSIT_AMOUNT: Balance = DEFAULT_BALANCE / 10;
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                Balance,
+                Hash,
+                BlockNumber,
+                AssetId,
+            >>::deposit(
+                execution_id,
+                RequestCharge {
+                    payee: remote_order_origin.to_account_id(),
+                    offered_reward: 10,
+                    charge_fee: DEPOSIT_AMOUNT,
+                    source: BenefitSource::TrafficRewards,
+                    role: CircuitRole::ContractAuthor,
+                    recipient: Some(BOB),
+                    maybe_asset_id: None
+                }
+            ));
+
+            assert_eq!(
+                Balances::free_balance(&remote_origin_account_here),
+                DEFAULT_BALANCE
+            );
+
+            let charge_item =
+                AccountManager::pending_charges_per_round::<H256>(execution_id).unwrap();
+
+            assert_eq!(charge_item.payee, remote_origin_account_here);
+            assert_eq!(charge_item.recipient, Some(BOB));
+            assert_eq!(charge_item.charge_fee, DEPOSIT_AMOUNT);
+
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                Balance,
+                Hash,
+                BlockNumber,
+                AssetId,
+            >>::finalize(
+                execution_id, Outcome::Commit, None, None,
+            ));
+
+            assert_eq!(
+                Balances::free_balance(&remote_origin_account_here),
+                DEFAULT_BALANCE
+            );
+
+            assert_eq!(
+                AccountManager::pending_charges_per_round::<H256>(execution_id,),
+                None
+            );
+
+            assert_eq!(
+                AccountManager::settlements_per_round::<RoundInfo<BlockNumber>, H256>(
+                    Default::default(),
+                    execution_id,
+                ),
+                None
+            );
         });
     }
 

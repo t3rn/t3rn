@@ -66,6 +66,7 @@ impl<T: Config> Machine<T> {
     pub fn setup(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
+        maybe_adaptive_timeout: Option<AdaptiveTimeout<T::BlockNumber, TargetId>>,
     ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         // ToDo: Introduce default delay
         let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
@@ -73,9 +74,14 @@ impl<T: Config> Machine<T> {
             None,
         );
 
+        let adaptive_timeout = match maybe_adaptive_timeout {
+            None => AdaptiveTimeout::<T::BlockNumber, TargetId>::new_emergency(timeouts_at),
+            Some(adaptive_timeout) => adaptive_timeout,
+        };
+
         let (xtx_id, xtx) = XExecSignal::<T::AccountId, T::BlockNumber>::setup_fresh::<T>(
             requester,
-            timeouts_at,
+            adaptive_timeout,
             SpeedMode::Finalized,
             delay_steps_at,
         );
@@ -472,10 +478,10 @@ impl<T: Config> Machine<T> {
                     local_ctx.xtx_id,
                     local_ctx.local_state.clone(),
                 );
-                <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::insert::<
-                    XExecSignalId<T>,
-                    T::BlockNumber,
-                >(local_ctx.xtx_id, local_ctx.xtx.timeouts_at);
+                <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::insert(
+                    local_ctx.xtx_id,
+                    &local_ctx.xtx.timeouts_at,
+                );
                 <pallet::Pallet<T> as Store>::PendingXtxBidsTimeoutsMap::insert::<
                     XExecSignalId<T>,
                     T::BlockNumber,
@@ -553,6 +559,7 @@ impl<T: Config> Machine<T> {
                 });
 
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::DLQ::remove(local_ctx.xtx_id);
 
                 SquareUp::<T>::finalize(local_ctx);
 
@@ -576,6 +583,7 @@ impl<T: Config> Machine<T> {
                 });
 
                 <pallet::Pallet<T> as Store>::PendingXtxTimeoutsMap::remove(local_ctx.xtx_id);
+                <pallet::Pallet<T> as Store>::DLQ::remove(local_ctx.xtx_id);
 
                 // Update set of full side effects - only makes sense for Xtx with single SFX.
                 //  for the rest FSX are updated in sequence

@@ -9,7 +9,8 @@
 use codec::Encode;
 
 use sp_runtime::traits::Zero;
-use sp_std::prelude::*;
+use sp_std::{collections::btree_set::BTreeSet, prelude::*};
+
 pub use t3rn_types::{
     gateway::GatewayABIConfig,
     sfx::{EventSignature, SideEffectId, SideEffectName},
@@ -49,16 +50,20 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
+    use sp_runtime::{traits::CheckedDiv, SaturatedConversion};
 
     use sp_std::convert::TryInto;
     use t3rn_abi::{sfx_abi::SFXAbi, Codec};
     use t3rn_primitives::{
         attesters::AttestersReadApi,
-        light_client::LightClientHeartbeat,
+        circuit::{AdaptiveTimeout, CircuitDLQ},
+        light_client::{LightClientAsyncAPI, LightClientHeartbeat},
         portal::Portal,
-        xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns},
-        Bytes, ChainId, ExecutionVendor, GatewayActivity, GatewayType, GatewayVendor, TokenInfo,
-        TreasuryAccount, TreasuryAccountProvider,
+        xdns::{
+            EpochEstimate, FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, TokenRecord, Xdns,
+        },
+        Bytes, ChainId, ExecutionVendor, FinalityVerifierActivity, GatewayActivity, GatewayType,
+        GatewayVendor, SpeedMode, TokenInfo, TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::{fsx::TargetId, sfx::Sfx4bId};
 
@@ -82,6 +87,8 @@ pub mod pallet {
         type AssetsOverlay: PalletAssetsOverlay<Self, BalanceOf<Self>>;
 
         type Portal: Portal<Self>;
+
+        type CircuitDLQ: CircuitDLQ<Self>;
 
         type AttestersRead: AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
 
@@ -111,6 +118,7 @@ pub mod pallet {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
+
             0
         }
 
@@ -175,6 +183,163 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        pub fn check_for_manual_verifier_overview_process(n: BlockNumberFor<T>) -> Weight {
+            let mut total_weight: Weight = 0;
+
+            let latest_overview = <VerifierOverviewStore<T>>::get();
+            total_weight = total_weight.saturating_add(T::DbWeight::get().reads(1));
+
+            GatewayVendor::iterator().for_each(|verifier| {
+                let verifier = verifier.clone();
+                let latest_vendor_overview = latest_overview
+                    .iter()
+                    .find(|x| x.verifier == verifier)
+                    .cloned()
+                    .unwrap_or_default();
+
+                let estimated_epoch_length = EpochHistory::<T>::get(&verifier)
+                    .and_then(|epochs| epochs.last().cloned())
+                    .map(|epoch| epoch.local)
+                    .unwrap_or_else(|| T::BlockNumber::from(50u8));
+
+                if latest_vendor_overview.reported_at + estimated_epoch_length < n {
+                    let latest_heartbeat =
+                        T::Portal::get_latest_heartbeat_by_vendor(verifier.clone());
+                    let epoch = latest_heartbeat.last_finalized_height;
+                    let weight = Self::process_single_verifier_overview(
+                        n,
+                        verifier,
+                        epoch,
+                        latest_heartbeat,
+                    );
+                    total_weight = total_weight.saturating_add(weight);
+                }
+            });
+
+            total_weight
+        }
+
+        pub fn process_all_verifier_overviews(n: BlockNumberFor<T>) -> Weight {
+            Self::check_for_manual_verifier_overview_process(n)
+        }
+
+        pub fn process_single_verifier_overview(
+            n: BlockNumberFor<T>,
+            verifier: GatewayVendor,
+            new_epoch: BlockNumberFor<T>,
+            latest_heartbeat: LightClientHeartbeat<T>,
+        ) -> Weight {
+            let mut total_weight: Weight = 0;
+
+            let (justified_height, finalized_height, updated_height, is_active) = (
+                latest_heartbeat.last_rational_height,
+                latest_heartbeat.last_finalized_height,
+                latest_heartbeat.last_fast_height,
+                !latest_heartbeat.is_halted,
+            );
+
+            let historic_overview = VerifierOverviewStoreHistory::<T>::get(&verifier);
+            let mut last_record = historic_overview.last().cloned().unwrap_or_default();
+            total_weight = total_weight.saturating_add(T::DbWeight::get().reads(1));
+
+            let new_activity =
+                FinalityVerifierActivity::new_for_finalized_compare(n, finalized_height);
+
+            let mut is_moving = false;
+            let (mut local_height_increase, mut target_finalized_height_increase) =
+                (Zero::zero(), Zero::zero());
+
+            if let Some(last_record) = historic_overview.last() {
+                if let Some((local, target)) =
+                    FinalityVerifierActivity::determine_finalized_reports_increase(&[
+                        last_record.clone(),
+                        new_activity.clone(),
+                    ])
+                {
+                    is_moving = true;
+                    local_height_increase = local;
+                    target_finalized_height_increase = target;
+                }
+            }
+
+            if is_moving {
+                Self::update_epoch_history(
+                    &verifier,
+                    target_finalized_height_increase,
+                    local_height_increase,
+                );
+            }
+
+            if !is_moving {
+                if let Some(previous) = historic_overview.iter().rev().nth(1).cloned() {
+                    if let Some((_, _)) =
+                        FinalityVerifierActivity::determine_finalized_reports_increase(&[
+                            previous,
+                            last_record.clone(),
+                            new_activity,
+                        ])
+                    {
+                        is_moving = true;
+                    }
+                }
+            }
+            let was_active = last_record.is_active;
+            let activity = if is_active {
+                FinalityVerifierActivity {
+                    verifier: verifier.clone(),
+                    reported_at: n,
+                    justified_height,
+                    finalized_height,
+                    updated_height,
+                    epoch: new_epoch,
+                    is_active: is_active && is_moving,
+                }
+            } else {
+                last_record.reported_at = n;
+                last_record.is_active = false;
+                last_record
+            };
+
+            Self::update_historic_overview(verifier.clone(), activity.clone());
+            Self::update_overview_store(verifier.clone(), activity.clone());
+            total_weight = total_weight.saturating_add(T::DbWeight::get().reads_writes(3, 2));
+
+            if !was_active && activity.is_active {
+                let weight = T::CircuitDLQ::process_dlq(n);
+                total_weight = total_weight.saturating_add(weight);
+            }
+
+            let weight = T::CircuitDLQ::process_adaptive_xtx_timeout_queue(n, &verifier);
+            total_weight = total_weight.saturating_add(weight);
+
+            total_weight
+        }
+
+        pub fn update_historic_overview(
+            verifier: GatewayVendor,
+            activity: FinalityVerifierActivity<T::BlockNumber>,
+        ) {
+            let mut historic_overview = VerifierOverviewStoreHistory::<T>::get(&verifier);
+            if historic_overview.len() == MAX_GATEWAY_OVERVIEW_RECORDS as usize {
+                let _ = historic_overview.remove(0);
+            }
+            historic_overview.push(activity);
+            VerifierOverviewStoreHistory::<T>::insert(&verifier, historic_overview);
+        }
+
+        pub fn update_overview_store(
+            verifier: GatewayVendor,
+            activity: FinalityVerifierActivity<T::BlockNumber>,
+        ) {
+            VerifierOverviewStore::<T>::mutate(|all_overviews| {
+                if let Some(overview) = all_overviews.iter_mut().find(|o| o.verifier == verifier) {
+                    *overview = activity.clone();
+                } else {
+                    all_overviews.push(activity.clone());
+                }
+            });
+        }
+
         pub fn process_overview(n: BlockNumberFor<T>) {
             let mut all_overviews: Vec<GatewayActivity<T::BlockNumber>> = Vec::new();
 
@@ -185,45 +350,34 @@ pub mod pallet {
                     continue
                 }
 
-                let last_active_activity = GatewaysOverviewStoreHistory::<T>::get(gateway_id)
-                    .last()
-                    .cloned()
-                    .unwrap_or_else(|| GatewayActivity {
-                        gateway_id,
-                        reported_at: Zero::zero(),
-                        justified_height: Zero::zero(),
-                        finalized_height: Zero::zero(),
-                        updated_height: Zero::zero(),
-                        security_lvl: SecurityLvl::Optimistic,
-                        attestation_latency: None,
-                        is_active: false,
-                    });
+                let last_finality_verifier_update = VerifierOverviewStoreHistory::<T>::get(
+                    &gateway.gateway_record.verification_vendor,
+                )
+                .last()
+                .cloned()
+                .unwrap_or_else(|| FinalityVerifierActivity {
+                    verifier: gateway.gateway_record.verification_vendor.clone(),
+                    reported_at: Zero::zero(),
+                    justified_height: Zero::zero(),
+                    finalized_height: Zero::zero(),
+                    updated_height: Zero::zero(),
+                    epoch: Zero::zero(),
+                    is_active: false,
+                });
+
+                let security_lvl = match gateway.gateway_record.escrow_account {
+                    Some(_) => SecurityLvl::Escrow,
+                    None => SecurityLvl::Optimistic,
+                };
+
+                let (justified_height, finalized_height, updated_height, is_active) = (
+                    last_finality_verifier_update.justified_height,
+                    last_finality_verifier_update.finalized_height,
+                    last_finality_verifier_update.updated_height,
+                    last_finality_verifier_update.is_active,
+                );
 
                 let attestation_latency = T::AttestersRead::read_attestation_latency(&gateway_id);
-
-                let (justified_height, finalized_height, updated_height, security_lvl, is_active) =
-                    if let Ok(heartbeat) = T::Portal::get_latest_heartbeat(&gateway_id) {
-                        let security_lvl = match gateway.gateway_record.escrow_account {
-                            Some(_) => SecurityLvl::Escrow,
-                            None => SecurityLvl::Optimistic,
-                        };
-                        let is_active = !heartbeat.is_halted;
-                        (
-                            heartbeat.last_rational_height,
-                            heartbeat.last_finalized_height,
-                            heartbeat.last_fast_height,
-                            security_lvl,
-                            is_active,
-                        )
-                    } else {
-                        (
-                            last_active_activity.justified_height,
-                            last_active_activity.finalized_height,
-                            last_active_activity.updated_height,
-                            last_active_activity.security_lvl,
-                            false,
-                        )
-                    };
 
                 let activity = GatewayActivity {
                     gateway_id,
@@ -469,6 +623,11 @@ pub mod pallet {
         StorageValue<_, Vec<GatewayActivity<T::BlockNumber>>, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn verifier_overview)]
+    pub type VerifierOverviewStore<T: Config> =
+        StorageValue<_, Vec<FinalityVerifierActivity<T::BlockNumber>>, ValueQuery>;
+
+    #[pallet::storage]
     #[pallet::getter(fn gateways_overview_history)]
     pub type GatewaysOverviewStoreHistory<T: Config> = StorageMap<
         _,
@@ -477,6 +636,22 @@ pub mod pallet {
         Vec<GatewayActivity<T::BlockNumber>>, // Activity
         ValueQuery,
     >;
+
+    #[pallet::storage]
+    #[pallet::getter(fn verifier_overview_history)]
+    pub type VerifierOverviewStoreHistory<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        GatewayVendor,                                 // Gateway Id
+        Vec<FinalityVerifierActivity<T::BlockNumber>>, // Activity
+        ValueQuery,
+    >;
+
+    // Keep last 10 epoch estimates
+    #[pallet::storage]
+    #[pallet::getter(fn epoch_history)]
+    pub type EpochHistory<T: Config> =
+        StorageMap<_, Identity, GatewayVendor, Vec<EpochEstimate<T::BlockNumber>>>;
 
     // The genesis config type.
     #[pallet::genesis_config]
@@ -578,7 +753,66 @@ pub mod pallet {
                 allowed_side_effects,
             )
         }
+
+        pub fn update_epoch_history(
+            verifier: &GatewayVendor,
+            epoch_duration_in_remote_blocks: T::BlockNumber,
+            epoch_duration_in_local_blocks: T::BlockNumber,
+        ) {
+            const N: usize = 10; // Number of epochs to consider for the moving average
+
+            let mut history = EpochHistory::<T>::get(verifier).unwrap_or_default();
+
+            // Remove the oldest elements until length is no longer than N
+            while history.len() > N {
+                history.remove(0);
+            }
+
+            // Calculate moving averages
+            let moving_average_local = history
+                .iter()
+                .map(|e| e.local.saturated_into::<u32>())
+                .sum::<u32>()
+                .checked_div(history.len() as u32)
+                .unwrap_or(Zero::zero())
+                .into();
+
+            let moving_average_remote = history
+                .iter()
+                .map(|e| e.remote.saturated_into::<u32>())
+                .sum::<u32>()
+                .checked_div(history.len() as u32)
+                .unwrap_or(Zero::zero())
+                .into();
+
+            let epoch_duration_estimate_update = EpochEstimate::<T::BlockNumber> {
+                remote: epoch_duration_in_remote_blocks,
+                local: epoch_duration_in_local_blocks,
+                moving_average_local,
+                moving_average_remote,
+            };
+
+            history.push(epoch_duration_estimate_update);
+
+            EpochHistory::<T>::insert(verifier, history);
+        }
     }
+
+    impl<T: Config> LightClientAsyncAPI<T> for Pallet<T> {
+        fn on_new_epoch(
+            verifier: GatewayVendor,
+            new_epoch: T::BlockNumber,
+            current_hearbeat: LightClientHeartbeat<T>,
+        ) {
+            Self::process_single_verifier_overview(
+                <frame_system::Pallet<T>>::block_number(),
+                verifier,
+                new_epoch,
+                current_hearbeat,
+            );
+        }
+    }
+
     impl<T: Config> Xdns<T, BalanceOf<T>> for Pallet<T> {
         /// Fetches all known Gateway records
         fn fetch_gateways() -> Vec<GatewayRecord<T::AccountId>> {
@@ -872,14 +1106,29 @@ pub mod pallet {
         }
 
         fn read_last_activity(gateway_id: ChainId) -> Option<GatewayActivity<T::BlockNumber>> {
-            <GatewaysOverviewStore<T>>::get()
-                .iter()
+            Self::read_last_activity_overview()
+                .into_iter()
                 .find(|activity| activity.gateway_id == gateway_id)
-                .cloned()
         }
 
         fn read_last_activity_overview() -> Vec<GatewayActivity<T::BlockNumber>> {
-            <GatewaysOverviewStore<T>>::get()
+            // Self::process_overview(<frame_system::Pallet<T>>::block_number());
+            // <GatewaysOverviewStore<T>>::get()
+
+            let mut overview = <GatewaysOverviewStore<T>>::get();
+            // get the latest update
+            let latest_update = overview
+                .iter()
+                .max_by_key(|activity| activity.reported_at)
+                .map(|activity| activity.reported_at)
+                .unwrap_or_default();
+
+            if latest_update != <frame_system::Pallet<T>>::block_number() {
+                Self::process_overview(<frame_system::Pallet<T>>::block_number());
+                overview = <GatewaysOverviewStore<T>>::get();
+            }
+
+            overview
         }
 
         fn verify_active(
@@ -907,6 +1156,70 @@ pub mod pallet {
             }
 
             Ok(heartbeat)
+        }
+
+        fn get_slowest_verifier_target(
+            all_targets: Vec<TargetId>,
+            speed_mode: &SpeedMode,
+            emergency_offset: T::BlockNumber,
+        ) -> Option<(GatewayVendor, TargetId, T::BlockNumber, T::BlockNumber)> {
+            // map all targets to their respective vendors, and collect them into a BTreeSet to eliminate duplicates
+            let all_distinct_verifiers: BTreeSet<_> = all_targets
+                .iter()
+                .filter_map(|target| {
+                    let vendor = Self::get_verification_vendor(target);
+                    vendor.ok().map(|vendor| (vendor, *target))
+                })
+                .collect();
+
+            all_distinct_verifiers
+                .iter()
+                .map(|(vendor, target)| {
+                    let epoch_history = <EpochHistory<T>>::get(vendor);
+                    let (local_offset, remote_offset) =
+                        vendor.calculate_offsets(speed_mode, emergency_offset, epoch_history);
+                    (vendor.clone(), *target, local_offset, remote_offset)
+                })
+                .max_by_key(|(_, _, submit_by_local_offset, _)| *submit_by_local_offset)
+        }
+
+        fn estimate_adaptive_timeout_on_slowest_target(
+            all_targets: Vec<TargetId>,
+            speed_mode: &SpeedMode,
+            emergency_offset: T::BlockNumber,
+        ) -> AdaptiveTimeout<T::BlockNumber, TargetId> {
+            let current_block = <frame_system::Pallet<T>>::block_number();
+
+            let (slowest_verifier, target, submit_by_local_offset, submit_by_remote_offset) =
+                match Self::get_slowest_verifier_target(all_targets, speed_mode, emergency_offset) {
+                    Some(values) => values,
+                    None => return AdaptiveTimeout::default_401(),
+                };
+
+            let latest_overview_of_verifier =
+                match <VerifierOverviewStoreHistory<T>>::get(slowest_verifier).last() {
+                    Some(overview) => overview.clone(),
+                    None => return AdaptiveTimeout::default_401(),
+                };
+
+            let submit_by_height_here = current_block.saturating_add(submit_by_local_offset);
+            let submit_by_height_there = latest_overview_of_verifier
+                .finalized_height
+                .saturating_add(submit_by_remote_offset);
+            let estimated_height_here =
+                submit_by_height_here.saturating_add(submit_by_local_offset);
+            let estimated_height_there =
+                submit_by_height_there.saturating_add(submit_by_remote_offset);
+
+            AdaptiveTimeout {
+                estimated_height_here,
+                estimated_height_there,
+                submit_by_height_here,
+                submit_by_height_there,
+                there: target,
+                emergency_timeout_here: emergency_offset.saturating_add(current_block),
+                dlq: None,
+            }
         }
 
         fn estimate_costs(_fsx: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>) {

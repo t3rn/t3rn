@@ -43,7 +43,7 @@ pub mod test {
         let _ = Balances::deposit_creating(&EXECUTOR, INITIAL_BALANCE);
 
         let local_ctx =
-            Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &REQUESTER).unwrap();
+            Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &REQUESTER, None).unwrap();
 
         let bid = SFXBid {
             amount: 2,
@@ -104,7 +104,7 @@ pub mod test {
                 charge_fee: 0,
                 recipient: None,
                 source: BenefitSource::TrafficFees,
-                role: CircuitRole::Requester
+                role: CircuitRole::Executor
             })
         );
         assert_eq!(
@@ -160,7 +160,7 @@ pub mod test {
                 let _ = Balances::deposit_creating(&REQUESTER, 3);
 
                 let local_ctx =
-                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE).unwrap();
+                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE, None).unwrap();
 
                 assert_ok!(SquareUp::<Runtime>::try_request(&local_ctx));
                 assert_eq!(Balances::free_balance(&REQUESTER), 1);
@@ -178,7 +178,7 @@ pub mod test {
 
                 let _ = Balances::deposit_creating(&REQUESTER, 1);
                 let local_ctx =
-                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE).unwrap();
+                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE, None).unwrap();
 
                 assert_err!(
                     SquareUp::<Runtime>::try_request(&local_ctx),
@@ -206,7 +206,8 @@ pub mod test {
                 let _ = Balances::deposit_creating(&REQUESTER, 10);
                 let _ = Balances::deposit_creating(&EXECUTOR, 10);
                 let local_ctx =
-                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &REQUESTER).unwrap();
+                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &REQUESTER, None)
+                        .unwrap();
                 assert_ok!(SquareUp::<Runtime>::try_request(&local_ctx));
 
                 assert_ok!(SquareUp::<Runtime>::try_bid(
@@ -313,7 +314,8 @@ pub mod test {
                         settlement_amount: bid.amount,
                         outcome: Outcome::Commit,
                         source: BenefitSource::TrafficFees,
-                        role: CircuitRole::Requester
+                        role: CircuitRole::Executor,
+                        maybe_asset_id: None,
                     })
                 );
                 assert_pending_charges_no_longer_exist(vec![sfx_id, bid_id]);

@@ -17,7 +17,7 @@ pub mod test {
         tests::ESCROW_ACCOUNT,
     };
     use hex_literal::hex;
-    use t3rn_primitives::circuit::{Cause, CircuitStatus};
+    use t3rn_primitives::circuit::{AdaptiveTimeout, Cause, CircuitStatus};
     use t3rn_types::fsx::SecurityLvl;
 
     #[test]
@@ -190,7 +190,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [57, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -260,7 +260,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [57, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -282,7 +282,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [57, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -304,7 +304,7 @@ pub mod test {
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_xtx_status(
                         xtx_id
                     ),
-                    Ok(CircuitStatus::Ready)
+                    Ok((CircuitStatus::Ready, AdaptiveTimeout::default_401()))
                 );
             });
     }
@@ -350,7 +350,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [57, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -373,7 +373,7 @@ pub mod test {
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [57, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );

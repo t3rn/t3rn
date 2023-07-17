@@ -113,7 +113,11 @@ pub mod pallet {
         RoundInfo<T::BlockNumber>,
         Identity,
         T::Hash, // sfx_id
-        Settlement<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
+        Settlement<
+            T::AccountId,
+            <T::Currency as Currency<T::AccountId>>::Balance,
+            <T::Assets as Inspect<T::AccountId>>::AssetId,
+        >,
     >;
 
     #[pallet::call]

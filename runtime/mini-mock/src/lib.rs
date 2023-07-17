@@ -11,12 +11,14 @@ pub use pallet_attesters::{
     NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes, PreviousCommittee,
     SortedNominatedAttesters,
 };
+use std::marker::PhantomData;
 
 pub use pallet_circuit::{
-    Config as ConfigCircuit, Event as CircuitEvent, FullSideEffects, SFX2XTXLinksMap, XExecSignals,
+    Config as ConfigCircuit, Error as CircuitError, Event as CircuitEvent, FullSideEffects,
+    SFX2XTXLinksMap, XExecSignals,
 };
-
 pub use pallet_circuit_vacuum::{Config as ConfigVacuum, Event as VacuumEvent, OrderStatusRead};
+use pallet_eth2_finality_verifier::types::Root;
 mod hooks;
 mod treasuries_config;
 pub use hooks::GlobalOnInitQueues;
@@ -92,6 +94,7 @@ frame_support::construct_runtime!(
         RococoBridge: pallet_grandpa_finality_verifier = 129,
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
+        EthereumBridge: pallet_eth2_finality_verifier = 132,
 
     }
 );
@@ -187,9 +190,9 @@ impl pallet_clock::Config for MiniRuntime {
     type AccountManager = AccountManager;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    type OnFinalizeQueues = pallet_clock::traits::EmptyOnHookQueues<Self>;
+    type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
-    type RoundDuration = ConstU32<400>;
+    type RoundDuration = ConstU32<300>;
 }
 use t3rn_primitives::monetary::TRN;
 
@@ -344,6 +347,9 @@ impl pallet_portal::SelectLightClient<MiniRuntime> for SelectLightClientRegistry
                 select_grandpa_light_client_instance::<MiniRuntime, PolkadotInstance>(vendor)
                     .ok_or(PortalError::<MiniRuntime>::LightClientNotFoundByVendor)
                     .map(|lc| Box::new(lc) as Box<dyn LightClient<MiniRuntime>>),
+            GatewayVendor::Ethereum => Ok(Box::new(pallet_eth2_finality_verifier::Pallet::<
+                MiniRuntime,
+            >(PhantomData))),
             _ => Err(PortalError::<MiniRuntime>::UnimplementedGatewayVendor),
         }
     }
@@ -352,6 +358,27 @@ const SLOT_DURATION: u64 = 12000;
 
 parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+}
+
+parameter_types! {
+    pub const HeadersToStoreEth: u32 = 64 + 1; // we want a multiple of slots_per_epoch + 1
+    pub const SessionLength: u64 = 5;
+    pub const SyncCommitteeSize: u32 = 26;
+    pub const GenesisValidatorsRoot: Root = [216,234,23,31,60,148,174,162,30,188,66,161,237,97,5,42,207,63,146,9,192,14,78,251,170,221,172,9,237,155,128,120];
+    pub const SlotsPerEpoch: u32 = 32;
+    pub const EpochsPerSyncCommitteePeriod: u32 = 6;
+    pub const CommitteeMajorityThreshold: u32 = 80;
+}
+
+impl pallet_eth2_finality_verifier::Config for MiniRuntime {
+    type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
+    type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
+    type Event = Event;
+    type GenesisValidatorRoot = GenesisValidatorsRoot;
+    type HeadersToStore = HeadersToStoreEth;
+    type SlotsPerEpoch = SlotsPerEpoch;
+    type SyncCommitteeSize = SyncCommitteeSize;
+    type WeightInfo = ();
 }
 
 impl pallet_timestamp::Config for MiniRuntime {
@@ -366,6 +393,7 @@ impl pallet_xdns::Config for MiniRuntime {
     type AssetsOverlay = MiniRuntime;
     type AttestersRead = Attesters;
     type Balances = Balances;
+    type CircuitDLQ = Circuit;
     type Currency = Balances;
     type Event = Event;
     type Portal = Portal;
@@ -420,6 +448,9 @@ impl pallet_portal::Config for MiniRuntime {
 
 parameter_types! {
     pub const HeadersToStore: u32 = 100;
+    pub const RococoVendor: GatewayVendor = GatewayVendor::Rococo;
+    pub const KusamaVendor: GatewayVendor = GatewayVendor::Kusama;
+    pub const PolkadotVendor: GatewayVendor = GatewayVendor::Polkadot;
 }
 
 #[derive(Debug)]
@@ -438,6 +469,8 @@ impl pallet_grandpa_finality_verifier::Config<RococoInstance> for MiniRuntime {
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = XDNS;
+    type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
@@ -449,6 +482,8 @@ impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for MiniRuntime 
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = XDNS;
+    type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
@@ -460,6 +495,8 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for MiniRuntime {
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = XDNS;
+    type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<10u32>;
     type WeightInfo = ();
 }
@@ -963,8 +1000,53 @@ impl ExtBuilder {
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(activate_all_light_clients);
         ext
     }
+}
+use pallet_eth2_finality_verifier::LightClientAsyncAPI;
+
+pub fn make_all_light_clients_move_2_times_by(move_by: u32) {
+    use t3rn_primitives::portal::Portal as PortalT;
+    let starting_height = System::block_number();
+    for vendor in GatewayVendor::iterator() {
+        let mut latest_heartbeat = Portal::get_latest_heartbeat_by_vendor(vendor.clone());
+        latest_heartbeat.last_finalized_height += move_by;
+        latest_heartbeat.last_rational_height += move_by;
+        latest_heartbeat.last_fast_height += move_by;
+
+        System::set_block_number(starting_height + move_by);
+
+        XDNS::on_new_epoch(
+            vendor.clone(),
+            latest_heartbeat.last_finalized_height + 1,
+            latest_heartbeat.clone(),
+        );
+
+        latest_heartbeat.last_finalized_height += 2 * move_by;
+        latest_heartbeat.last_rational_height += 2 * move_by;
+        latest_heartbeat.last_fast_height += 2 * move_by;
+
+        System::set_block_number(starting_height + move_by * 2);
+
+        XDNS::on_new_epoch(
+            vendor.clone(),
+            latest_heartbeat.last_finalized_height + 2,
+            latest_heartbeat,
+        );
+    }
+}
+
+pub fn activate_all_light_clients() {
+    use t3rn_primitives::portal::Portal as PortalT;
+    for &gateway in XDNS::all_gateway_ids().iter() {
+        Portal::turn_on(Origin::root(), gateway).unwrap();
+    }
+    XDNS::process_all_verifier_overviews(System::block_number());
+    XDNS::process_overview(System::block_number());
+
+    make_all_light_clients_move_2_times_by(8);
+    XDNS::process_overview(System::block_number());
 }
 
 pub fn prepare_ext_builder_playground() -> TestExternalities {
