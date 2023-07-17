@@ -389,7 +389,7 @@ impl<
         nonce_as_32b_word[28..32].copy_from_slice(&nonce_as_4b_word);
         requester_on_32b_as_vec.extend_from_slice(&nonce_as_32b_word);
 
-        let hash = Hasher::hash(requester_on_32b_as_vec.as_slice());
+        let hash = sp_runtime::traits::Keccak256::hash(requester_on_32b_as_vec.as_slice());
 
         let mut system_hash: T::Hash = T::Hash::default();
 
