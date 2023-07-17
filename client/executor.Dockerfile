@@ -1,6 +1,6 @@
 FROM node:20.2
 
-RUN yarn global add typescript
+RUN npm i -g typescript pnpm
 
 ADD packages/sdk /app/sdk
 RUN cd /app/sdk && yarn install && yarn build
@@ -9,7 +9,7 @@ ADD packages/types /app/types
 RUN cd /app/types && yarn install && yarn build
 
 ADD packages/executor /app/executor
-RUN cd /app/executor && yarn
+RUN cd /app/executor && pnpm i 
 
 WORKDIR /app/executor
 
@@ -20,4 +20,4 @@ USER node
 RUN mkdir -p /home/node/.t3rn-executor-example/.t3rn-executor-example
 COPY --chown=node:node packages/executor/config.json /home/node/.t3rn-executor-example/config.json
 
-CMD ["yarn", "run", "start"]
+CMD ["pnpm", "run", "start"]

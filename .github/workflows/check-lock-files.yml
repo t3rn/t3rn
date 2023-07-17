@@ -3,11 +3,11 @@ name: Check for lock files
 on: [push, pull_request]
 
 env:
-  EXCLUDE_DIRS: "path/to/exclude/dir1,client/packages/attester,pallets/attesters/contracts"
+  EXCLUDE_DIRS: "client/packages/executor,client/packages/attester,pallets/attesters/contracts"
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
     - uses: actions/checkout@v3

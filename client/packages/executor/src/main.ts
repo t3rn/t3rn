@@ -1,6 +1,6 @@
+import { config } from "../config/config";
 import { AttestationManager } from "./attestationManager";
 import { Instance } from "./index";
-import { config } from "../config/config";
 import { logger } from "./logging";
 
 async function main() {
@@ -8,12 +8,15 @@ async function main() {
   const instance = new Instance(process.env.EXECUTOR);
   await instance.setup();
 
-  const attestationManager = new AttestationManager(instance.circuitClient);
-  if (config.attestations.processPendingBatches) {
-    logger.info("Processing Pending Attestation Batches");
-    await attestationManager.processPendingAttestationBatches();
+  if (config.attestations.ethereum.privateKey === undefined) {
+    logger.error("Ethereum private key is not defined.");
+  } else {
+    const attestationManager = new AttestationManager(instance.circuitClient);
+    if (config.attestations.processBatches) {
+      logger.info("Processing Attestation Batches");
+      await attestationManager.processAttestationBatches();
+    }
   }
-  // await attestationManager.listener()
 }
 
 main();
