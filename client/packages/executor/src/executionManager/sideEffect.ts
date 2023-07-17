@@ -6,15 +6,15 @@ import {
   SecurityLevel,
   SfxStatus,
   SfxType,
-} from "@t3rn/sdk/dist/side-effects/types";
+} from "@t3rn/sdk/side-effects/types";
 import { Sdk } from "@t3rn/sdk";
 import { BehaviorSubject } from "rxjs";
-import { Gateway } from "@t3rn/sdk/dist/gateways";
+import { Gateway } from "@t3rn/sdk/gateways";
 import { StrategyEngine } from "../strategy";
 import { BiddingEngine } from "../bidding";
 import { EventEmitter } from "events";
-import { floatToBn, toFloat } from "@t3rn/sdk/dist/circuit";
-import { bnToFloat } from "@t3rn/sdk/dist/converters/amounts";
+import { floatToBn, toFloat } from "@t3rn/sdk/circuit";
+import { bnToFloat } from "@t3rn/sdk/converters/amounts";
 import { InclusionProof } from "../gateways/types";
 import { Instance } from "../index";
 import { Logger } from "pino";
@@ -170,7 +170,7 @@ export class SideEffect extends EventEmitter {
     public strategyEngine: StrategyEngine,
     public biddingEngine: BiddingEngine,
     public circuitSignerAddress: string,
-    public logger: Logger
+    public logger: Logger,
   ) {
     super();
     if (this.decodeAction(sideEffect.action)) {
@@ -179,12 +179,12 @@ export class SideEffect extends EventEmitter {
       this.humanId = id.substring(0, 8);
       this.xtxId = xtxId;
       this.arguments = sideEffect.encodedArgs.map((entry: SideEffect) =>
-        entry.toString()
+        entry.toString(),
       );
       this.target = new TextDecoder().decode(sideEffect.target.toU8a());
       this.gateway = sdk.gateways[this.target];
       this.reward = new BehaviorSubject(
-        sdk.circuit.toFloat(sideEffect.maxReward)
+        sdk.circuit.toFloat(sideEffect.maxReward),
       ); // this is always in TRN (native asset)
       this.insurance = sdk.circuit.toFloat(sideEffect.insurance); // this is always in TRN (native asset)
       this.strategyEngine = strategyEngine;
@@ -216,7 +216,7 @@ export class SideEffect extends EventEmitter {
     txCostNative: BehaviorSubject<number>,
     nativeAssetPrice: BehaviorSubject<number>,
     txOutputAssetPrice: BehaviorSubject<number>,
-    rewardAssetPrice: BehaviorSubject<number>
+    rewardAssetPrice: BehaviorSubject<number>,
   ) {
     this.txCostNative = txCostNative;
     this.nativeAssetPrice = nativeAssetPrice;
@@ -246,7 +246,7 @@ export class SideEffect extends EventEmitter {
     const txOutputAssetPriceSubscription = this.txOutputAssetPrice.subscribe(
       () => {
         this.recomputeMaxProfit();
-      }
+      },
     );
 
     this.subscriptions.push(txOutputAssetPriceSubscription);
@@ -300,8 +300,8 @@ export class SideEffect extends EventEmitter {
       this.logger.info(
         `Bidding on SFX ${this.humanId}: ${bnToFloat(
           result.bidAmount as BN,
-          12
-        )} TRN 🎰`
+          12,
+        )} TRN 🎰`,
       );
 
       this.emit("Notification", {
@@ -436,8 +436,8 @@ export class SideEffect extends EventEmitter {
     if (signer !== this.circuitSignerAddress) {
       this.logger.info(
         `Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(
-          bidAmount
-        )} TRN 🎰`
+          bidAmount,
+        )} TRN 🎰`,
       );
       this.addLog({ msg: "Competing bid received", signer, bidAmount });
       this.isBidder = false;
@@ -462,7 +462,7 @@ export class SideEffect extends EventEmitter {
   executedOnTarget(
     inclusionProof: InclusionProof,
     executor: string,
-    targetInclusionHeight: number
+    targetInclusionHeight: number,
   ) {
     this.inclusionProof = inclusionProof;
     this.executor = executor;
@@ -527,7 +527,7 @@ export class SideEffect extends EventEmitter {
     msg: {
       [x: string]: string | number | undefined;
     },
-    debug = true
+    debug = true,
   ) {
     msg.component = "SFX";
     msg.sfxId = this.id;
