@@ -283,7 +283,7 @@ mod tests {
         assert_eq!(
             empty_side_effect.generate_id::<Hashing>(&xtx_id, 0),
             H256::from_slice(&hex!(
-                "9f0e444c69f77a49bd0be89db92c38fe713e0963165cca12faf5712d7657120f"
+                "0eb923b0cbd24df54401d998531feead35a47a99f4deed205de4af81120f9761"
             ))
         );
     }

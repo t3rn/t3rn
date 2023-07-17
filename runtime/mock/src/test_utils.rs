@@ -159,7 +159,13 @@ pub fn generate_xtx_id<Hasher: sp_core::Hasher>(
     requester: AccountId,
     requester_nonce: u32,
 ) -> <Hasher as sp_core::Hasher>::Out {
-    let mut requester_and_nonce = requester.encode();
-    requester_and_nonce.extend_from_slice(&requester_nonce.to_be_bytes());
-    Hasher::hash(&requester_and_nonce)
+    let mut requester_on_32b_as_vec = requester.encode();
+
+    let nonce_as_4b_word: [u8; 4] = requester_nonce.to_be_bytes();
+    let mut nonce_as_32b_word: [u8; 32];
+    nonce_as_32b_word = [0; 32];
+    nonce_as_32b_word[28..32].copy_from_slice(&nonce_as_4b_word);
+    requester_on_32b_as_vec.extend_from_slice(&nonce_as_32b_word);
+
+    Hasher::hash(requester_on_32b_as_vec.as_slice())
 }
