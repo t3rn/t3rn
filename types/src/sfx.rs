@@ -110,11 +110,13 @@ where
         sfx_index_as_32b_word[28..32].copy_from_slice(&sfx_index_as_4b_word);
         sfx_id.extend_from_slice(&sfx_index_as_32b_word);
 
-        Hasher::hash(sfx_id.as_slice())
+        let hash = sp_runtime::traits::Keccak256::hash(sfx_id.as_slice());
 
-        // let mut system_hash: T::Hash = T::Hash::default();
-        //
-        // Hasher::hash(sfx_id.as_slice())
+        let mut system_hash: <Hasher as sp_core::Hasher>::Out = Default::default();
+
+        system_hash.as_mut().copy_from_slice(&hash.as_ref()[..32]);
+
+        system_hash
     }
 
     pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
