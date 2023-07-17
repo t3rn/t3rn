@@ -27,6 +27,8 @@ pub trait OnHookQueues<T: frame_system::Config> {
     fn process(n: T::BlockNumber, hook_weight_limit: Weight) -> Weight;
     // Process the queues once per week.
     fn process_weekly(n: T::BlockNumber, hook_weight_limit: Weight) -> Weight;
+    // Process the queues once per 2 weeks.
+    fn process_bi_weekly(n: T::BlockNumber, hook_weight_limit: Weight) -> Weight;
     // Process the queues once per day.
     fn process_daily(n: T::BlockNumber, hook_weight_limit: Weight) -> Weight;
     // Process the queues once per hour.
@@ -43,6 +45,10 @@ impl<T: frame_system::Config> OnHookQueues<T> for EmptyOnHookQueues<T> {
     }
 
     fn process_weekly(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
+        0
+    }
+
+    fn process_bi_weekly(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
         0
     }
 

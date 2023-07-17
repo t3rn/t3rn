@@ -2164,6 +2164,7 @@ pub mod attesters_test {
                     role: CircuitRole::Executor,
                     total_round_claim: mock_fsx.input.max_reward / 2,
                     benefit_source: BenefitSource::SlashTreasury,
+                    non_native_asset_id: None,
                 }])
             );
         });
@@ -2252,6 +2253,7 @@ pub mod attesters_test {
                     role: CircuitRole::Requester,
                     total_round_claim: mock_fsx.input.max_reward / 2,
                     benefit_source: BenefitSource::SlashTreasury,
+                    non_native_asset_id: None,
                 }])
             );
         });
@@ -3353,13 +3355,15 @@ pub mod attesters_test {
                             beneficiary: attester.clone(),
                             role: CircuitRole::Attester,
                             total_round_claim: 100, // that's reward as an attester with 10% commission of 1000
-                            benefit_source: BenefitSource::Inflation
+                            benefit_source: BenefitSource::Inflation,
+                            non_native_asset_id: None,
                         },
                         ClaimableArtifacts {
                             beneficiary: attester,
                             role: CircuitRole::Staker,
                             total_round_claim: 8, // that's reward as a self-bonded staker
-                            benefit_source: BenefitSource::Inflation
+                            benefit_source: BenefitSource::Inflation,
+                            non_native_asset_id: None,
                         },
                     ])
                 );
@@ -3384,6 +3388,7 @@ pub mod attesters_test {
                         role: CircuitRole::Staker,
                         total_round_claim: one_period_claimable_reward,
                         benefit_source: BenefitSource::Inflation,
+                        non_native_asset_id: None,
                     }])
                 );
             }

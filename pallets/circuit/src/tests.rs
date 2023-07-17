@@ -675,9 +675,7 @@ fn circuit_handles_dropped_at_bidding() {
         })
 }
 
-const SINGLE_XTX_DEL_WEIGHT: u64 = 325000000;
-const CLOCK_BUMP_ROUND_WEIGHT: u64 = 150000000;
-const CLOCK_CALC_CLAIMABLE_WEIGHT: u64 = 150000000;
+const SINGLE_XTX_DEL_WEIGHT: u64 = 450000000;
 
 #[test]
 fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
@@ -705,10 +703,7 @@ fn circuit_updates_weight_after_killing_xtx_in_on_initialize_hook() {
             let weight =
                 <Clock as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(1 + 4);
 
-            assert_eq!(
-                weight - CLOCK_BUMP_ROUND_WEIGHT - CLOCK_CALC_CLAIMABLE_WEIGHT,
-                SINGLE_XTX_DEL_WEIGHT
-            );
+            assert_eq!(weight, SINGLE_XTX_DEL_WEIGHT);
 
             assert_eq!(Circuit::get_x_exec_signals(xtx_id), None);
         });

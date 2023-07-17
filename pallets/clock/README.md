@@ -28,10 +28,7 @@ pub struct ClaimableArtifacts<T> {
     role: CircuitRole,
     total_round_claim: T::Balance,
     benefit_source: BenefitSource,
-}
-
-pub trait CircuitClock {
-    fn on_collect_claimable(n: BlockNumber<T>, r: RoundInfo<T>) -> ClaimableArtifacts<T>;
+    non_native_asset_id: Option<u32>,
 }
 ```
 

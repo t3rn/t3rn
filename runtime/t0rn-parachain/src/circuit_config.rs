@@ -44,23 +44,22 @@ impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
 }
 
 pub struct GlobalOnInitQueues;
+
 impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
     fn process(n: BlockNumber, on_init_weight_limit: Weight) -> Weight {
         const PROCESS_SIGNAL_SHARE: u8 = 5;
         const XTX_TICK_SHARE: u8 = 30;
         const REVERT_XTX_SHARE: u8 = 5;
-        const BUMP_ROUND_SHARE: u8 = 5;
-        const CALC_CLAIMABLE_SHARE: u8 = 5;
         const WEEKLY_SHARE: u8 = 20;
+        const BI_WEEKLY_SHARE: u8 = 10;
         const DAILY_SHARE: u8 = 10;
         const HOURLY_SHARE: u8 = 20;
 
         if PROCESS_SIGNAL_SHARE
             + XTX_TICK_SHARE
             + REVERT_XTX_SHARE
-            + BUMP_ROUND_SHARE
-            + CALC_CLAIMABLE_SHARE
             + WEEKLY_SHARE
+            + BI_WEEKLY_SHARE
             + DAILY_SHARE
             + HOURLY_SHARE
             > 100
@@ -71,9 +70,10 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
             return 0
         }
 
-        const BLOCKS_PER_HOUR: BlockNumber = 60 * 60;
+        const BLOCKS_PER_HOUR: BlockNumber = 60 * 5; // Assuming 12 second block time
         const BLOCKS_PER_DAY: BlockNumber = 24 * BLOCKS_PER_HOUR;
         const BLOCKS_PER_WEEK: BlockNumber = 7 * BLOCKS_PER_DAY;
+        const BLOCKS_PER_2_WEEKS: BlockNumber = 2 * BLOCKS_PER_WEEK;
 
         let mut total_consumed: Weight = 0;
 
@@ -96,6 +96,13 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
                 Percent::from_percent(WEEKLY_SHARE).mul_ceil(on_init_weight_limit);
             total_consumed =
                 total_consumed.saturating_add(Self::process_weekly(n, weekly_weight_limit));
+        }
+
+        if (n % BLOCKS_PER_2_WEEKS).is_zero() {
+            let bi_weekly_weight_limit: Weight =
+                Percent::from_percent(BI_WEEKLY_SHARE).mul_ceil(on_init_weight_limit);
+            total_consumed =
+                total_consumed.saturating_add(Self::process_bi_weekly(n, bi_weekly_weight_limit));
         }
 
         let weight = Circuit::process_signal_queue(
@@ -125,23 +132,9 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
         );
         total_consumed = total_consumed.saturating_add(weight);
 
-        let weight = Clock::check_bump_round(
-            n,
-            BlockNumber::one(),
-            Percent::from_percent(BUMP_ROUND_SHARE).mul_ceil(on_init_weight_limit),
-        );
-        log::debug!("Clock::check_bump_round consumed: {:?}", weight);
-        total_consumed = total_consumed.saturating_add(weight);
+        let (_success, weight) = Rewards::process_author();
 
-        let weight = Clock::calculate_claimable_for_round(
-            n,
-            BlockNumber::one(),
-            Percent::from_percent(CALC_CLAIMABLE_SHARE).mul_ceil(on_init_weight_limit),
-        );
-        log::debug!(
-            "Clock::calculate_claimable_for_round consumed: {:?}",
-            weight
-        );
+        log::debug!("Rewards::process_author consumed: {:?}", weight);
         total_consumed = total_consumed.saturating_add(weight);
 
         log::debug!(
@@ -150,6 +143,10 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
         );
 
         total_consumed
+    }
+
+    fn process_bi_weekly(_n: BlockNumber, _hook_weight_limit: Weight) -> Weight {
+        0
     }
 
     fn process_weekly(_n: BlockNumber, _hook_weight_limit: Weight) -> Weight {
@@ -161,15 +158,51 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
     }
 
     fn process_hourly(n: BlockNumber, hook_weight_limit: Weight) -> Weight {
+        let mut total_consumed: Weight = 0;
+
         let weight = XDNS::check_for_manual_verifier_overview_process(n);
-        if weight > hook_weight_limit {
+        log::debug!(
+            "XDNS::check_for_manual_verifier_overview_process consumed: {:?}",
+            weight
+        );
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Rewards::process_accumulated_settlements();
+        log::debug!(
+            "Rewards::process_accumulated_settlements consumed: {:?}",
+            weight
+        );
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Clock::check_bump_round(n);
+        log::debug!("Clock::check_bump_round consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        // ACHTUNG: for testing purposes only we move the Inflation Rewards: Rewards::distribute_inflation() + Rewards::process_authors_this_period() intervals to 1 hour for t0rn
+        let weight = Rewards::distribute_inflation();
+        log::debug!("Rewards::distribute_inflation consumed: {:?}", weight);
+        total_consumed = total_consumed.saturating_add(weight);
+
+        let weight = Rewards::process_authors_this_period();
+        log::debug!(
+            "Rewards::process_authors_this_period consumed: {:?}",
+            weight
+        );
+        total_consumed = total_consumed.saturating_add(weight);
+
+        if total_consumed > hook_weight_limit {
             log::error!(
                 "GlobalOnInitQueues::process_hourly consumed more than the limit: {:?}",
                 weight
             );
         }
 
-        weight
+        log::debug!(
+            "GlobalOnInitQueues::process_hourly total_consumed: {:?}",
+            total_consumed
+        );
+
+        total_consumed
     }
 }
 
@@ -251,7 +284,7 @@ impl pallet_clock::Config for Runtime {
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
-    type RoundDuration = ConstU32<500u32>;
+    type RoundDuration = ConstU32<300u32>;
 }
 
 impl pallet_vacuum::Config for Runtime {
