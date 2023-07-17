@@ -16,7 +16,7 @@ import {
 } from "../circuit/listener";
 import { CircuitRelayer } from "../circuit/relayer";
 import { RelayerEventData, RelayerEvents } from "../gateways/types";
-import { XtxStatus } from "@t3rn/sdk/dist/side-effects/types";
+import { XtxStatus } from "@t3rn/sdk/side-effects/types";
 import { Config, Gateway } from "../../config/config";
 import { Instance } from "../index";
 import { Logger } from "pino";
@@ -99,7 +99,7 @@ export class ExecutionManager {
     public circuitClient: Sdk["client"],
     public sdk: Sdk,
     public logger: Logger,
-    public config: Config
+    public config: Config,
   ) {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
@@ -139,7 +139,7 @@ export class ExecutionManager {
 
     const recheckQueue = (
       manager: ExecutionManager,
-      resolve: (...args: unknown[]) => void
+      resolve: (...args: unknown[]) => void,
     ) => {
       const done = Object.entries(manager.sdk.gateways)
         .map(([, gtwy]) => gtwy.id)
@@ -147,14 +147,14 @@ export class ExecutionManager {
           (gtwyId) =>
             manager.queue[gtwyId].isBidding.length === 0 &&
             manager.queue[gtwyId].isExecuting.length === 0 &&
-            manager.queue[gtwyId].isConfirming.length === 0
+            manager.queue[gtwyId].isConfirming.length === 0,
         );
 
       if (done) {
         resolve(undefined);
       } else {
         manager.circuitListener.once("Event", () =>
-          recheckQueue(manager, resolve)
+          recheckQueue(manager, resolve),
         );
       }
     };
@@ -222,7 +222,7 @@ export class ExecutionManager {
 
                 // adds to queue
                 this.queue[vendor].isConfirming[eventData.blockNumber].push(
-                  eventData.sfxId
+                  eventData.sfxId,
                 );
 
                 this.addLog({
@@ -237,7 +237,7 @@ export class ExecutionManager {
                 const proof = await this.relayers[eventData.target]
                   .generateHeaderInclusionProof(
                     eventData.blockNumber,
-                    parseInt(eventData.data)
+                    parseInt(eventData.data),
                   )
                   .then((event) => {
                     return event.toJSON().proof;
@@ -247,7 +247,7 @@ export class ExecutionManager {
                   .getBlockHash(eventData.blockNumber)
                   .then(
                     // @ts-ignore - cannot find property in type never
-                    (hash) => hash.toString()
+                    (hash) => hash.toString(),
                   );
 
                 // @ts-ignore - cannot find property in type never
@@ -339,7 +339,7 @@ export class ExecutionManager {
       xtxData,
       sdk,
       this.strategyEngine,
-      this.biddingEngine
+      this.biddingEngine,
     );
 
     // Run the XTX strategy checks
@@ -401,8 +401,8 @@ export class ExecutionManager {
       if (ready.length > 0) {
         this.logger.info(
           `Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map(
-            (sfx) => sfx.humanId
-          )} 🏆`
+            (sfx) => sfx.humanId,
+          )} 🏆`,
         );
       }
       for (const sfx of ready) {
@@ -456,7 +456,7 @@ export class ExecutionManager {
       if (parseInt(queuedBlocks[i]) <= this.queue[vendor].blockHeight) {
         batchBlocks.push(queuedBlocks[i]);
         readyByHeight = readyByHeight.concat(
-          this.queue[vendor].isConfirming[queuedBlocks[i]]
+          this.queue[vendor].isConfirming[queuedBlocks[i]],
         );
       }
     }
@@ -488,7 +488,7 @@ export class ExecutionManager {
         .then(() => {
           // remove from queue and update status
           this.logger.info(
-            `Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`
+            `Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`,
           );
           this.processConfirmationBatch(readyByStep, batchBlocks, vendor);
           this.addLog({
@@ -504,7 +504,7 @@ export class ExecutionManager {
               sfxIds: readyByStep.map((sfx) => sfx.id),
               error: err,
             },
-            false
+            false,
           );
         });
     }
@@ -521,7 +521,7 @@ export class ExecutionManager {
   processConfirmationBatch(
     sfxs: SideEffect[],
     batchBlocks: string[],
-    gatewayId: string
+    gatewayId: string,
   ) {
     // remove from queue
     batchBlocks.forEach((block) => {
@@ -547,7 +547,7 @@ export class ExecutionManager {
           this.circuitRelayer
             .bidSfx(
               notification.payload.sfxId,
-              notification.payload.bidAmount as BN
+              notification.payload.bidAmount as BN,
             )
             .then(() => {
               sfx.bidAccepted(notification.payload.bidAmount as number);
@@ -573,7 +573,7 @@ export class ExecutionManager {
     ].getNativeTxCostSubject(sfx);
     // get price of native token on target
     const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(
-      sfx.gateway.ticker
+      sfx.gateway.ticker,
     );
 
     const txOutput = sfx.getTxOutputs();
@@ -586,7 +586,7 @@ export class ExecutionManager {
       txCostSubject,
       nativeAssetPriceSubject,
       txOutputPriceSubject,
-      rewardAssetPriceSubject
+      rewardAssetPriceSubject,
     );
   }
 

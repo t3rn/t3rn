@@ -7,7 +7,7 @@ export type CircuitContext = {
 }
 
 export const createCircuitContext = async (
-  exportMode = false
+  exportMode = false,
 ): Promise<CircuitContext> => {
   const keyring = new Keyring({ type: "sr25519" })
   const signer =
@@ -17,7 +17,7 @@ export const createCircuitContext = async (
   const sdk = new Sdk(
     process.env.WS_CIRCUIT_ENDPOINT || "ws://127.0.0.1:9944",
     signer,
-    exportMode
+    exportMode,
   )
   const circuit = await sdk.init()
 
