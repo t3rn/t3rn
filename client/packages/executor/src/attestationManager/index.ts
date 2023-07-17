@@ -133,14 +133,6 @@ export class AttestationManager {
                     return
                 }
 
-                logger.debug(
-                    {
-                        event: event.method,
-                        data: event.data,
-                    },
-                    'Received attesters event'
-                )
-
                 const batch = event.data as ConfirmationBatch
                 const messageHash = this.getMessageHash(batch)
 
