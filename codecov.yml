@@ -7,11 +7,10 @@ coverage:
   status:
     project:
       default:
-        target: 62%
+        target: 71%
     patch:
       default:
-        target: 70%
-
+        target: 79%
 
 ignore:
   - "relayers/**/*"
