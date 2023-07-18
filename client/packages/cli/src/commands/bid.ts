@@ -48,8 +48,10 @@ const bid = (
   sfxId: string,
   amount: number
 ) => {
+   
   return {
     sfxId: circuit.createType("SideEffectId", sfxId),
+    // @ts-ignore
     bidAmount: createType("u128", sdk.circuit.floatToBn(amount)),
   }
 }
