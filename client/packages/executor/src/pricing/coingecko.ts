@@ -60,7 +60,7 @@ export class CoingeckoPricing {
         .get(
           config.pricing.coingecko.endpoint +
             this.assets[ids[i]] +
-            config.pricing.coingecko.endpointDefaults
+            config.pricing.coingecko.endpointDefaults,
         )
         .then((res) => {
           const price = parseFloat(res.data.market_data.current_price["usd"]);

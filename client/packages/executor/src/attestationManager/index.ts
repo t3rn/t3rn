@@ -5,6 +5,7 @@ import Web3, { Contract } from "web3";
 import { logger } from "../../src/logging";
 import { Batch, ConfirmationBatch } from "./batch";
 import { ethers } from "ethers";
+import { Prometheus } from "../prometheus";
 
 interface IBatch {
   nextCommittee: string[];
@@ -28,10 +29,11 @@ export class AttestationManager {
   web3: Web3;
   wallet: ReturnType<typeof this.web3.eth.accounts.privateKeyToAccount>;
   currentCommitteeSize = 0;
-  currentBatchIndex: 0;
-  currentCommitteeTransitionCount: 0;
+  currentBatchIndex = 0;
+  currentCommitteeTransitionCount = 0;
+  prometheus: Prometheus;
 
-  constructor(public client: Sdk["client"]) {
+  constructor(public client: Sdk["client"], prometheus: Prometheus) {
     if (config.attestations.ethereum.privateKey === undefined) {
       throw new Error("Ethereum private key is not defined");
     }
@@ -62,6 +64,7 @@ export class AttestationManager {
       receiveAttestationBatchAbi.abi,
       receiveAttestationBatchAddress
     );
+    this.prometheus = prometheus;
   }
 
   batchEncodePacked(batch: Batch) {
@@ -96,48 +99,51 @@ export class AttestationManager {
       } as ConfirmationBatch;
     });
     logger.info("We have " + fetchedData.length + " batches pending");
+    this.prometheus.attestationsBatchesPending.set(fetchedData.length);
   }
 
   async listener() {
-    logger.info('Listening for NewConfirmationBatch events...')
+    logger.info("Listening for NewConfirmationBatch events...");
     // Subscribe to all events and filter based on the specified event method
     this.client.query.system.events(async (events: any) => {
       if (events === undefined || events === null) {
-        return
+        return;
       }
 
-      logger.debug({ events_count: events.length }, `Received events`)
+      logger.debug({ events_count: events.length }, `Received events`);
 
       const attesterEvents = events
-          .toHuman()
-          .filter((event) => event.event.section == 'attesters')
+        .toHuman()
+        .filter((event) => event.event.section == "attesters");
 
-      await this.processConfirmedBatches(attesterEvents)
-    })
+      await this.processConfirmedBatches(attesterEvents);
+    });
   }
   private async processConfirmedBatches(events: any) {
-        // Loop through the Vec<EventRecord>
-        await Promise.all(
-            events.map(async (record) => {
-                // Extract the phase, event and the event types
-                const { event } = record
+    // Loop through the Vec<EventRecord>
+    await Promise.all(
+      events.map(async (record) => {
+        // Extract the phase, event and the event types
+        const { event } = record;
 
-                logger.debug(
-                    {
-                        event: event.method,
-                        data: event.data,
-                    },
-                    'Received attesters event'
-                )
-                if (record.event.method != 'NewConfirmationBatch') {
-                    return
-                }
+        logger.debug(
+          {
+            event: event.method,
+            data: event.data,
+          },
+          "Received attesters event"
+        );
+        this.prometheus.attestationsEvents.inc({ method: event.method });
+        if (record.event.method != "NewConfirmationBatch") {
+          return;
+        }
 
-                const batch = event.data as ConfirmationBatch
-                const messageHash = this.getMessageHash(batch)
+        const batch = event.data as ConfirmationBatch;
+        const messageHash = this.getMessageHash(batch);
 
-                await this.receiveAttestationBatchCall(batch, messageHash)
-                }))
+        await this.receiveAttestationBatchCall(batch, messageHash);
+      })
+    );
   }
 
   getMessageHash(batch: Batch) {
@@ -167,10 +173,10 @@ export class AttestationManager {
     await this.fetchAttesterContractData();
     await this.fetchBatches();
 
-    if (BigInt(this.batches.length) > BigInt(this.currentBatchIndex)) {
+    if (this.batches.length > this.currentBatchIndex) {
       logger.info(
         `We have ${
-          BigInt(this.batches.length) - BigInt(this.currentBatchIndex)
+          this.batches.length - this.currentBatchIndex
         } pending batches to process`
       );
       this.processPendingAttestationBatches();
@@ -242,22 +248,39 @@ export class AttestationManager {
         { receipt: transactionReceipt },
         `Batch ${batch.index} procesed!`
       );
+      this.prometheus.attestatonsBatchesProcessed.inc();
     } catch (error) {
       logger.warn({ error: error }, "Error sending transaction: ");
+      this.prometheus.attestatonsBatchesFailed.inc();
       // throw new Error("Error sending transaction: " + error);
     }
   }
 
   private async fetchAttesterContractData() {
-    this.currentCommitteeSize =
-      await this.receiveAttestationBatchContract.methods.committeeSize().call();
-    this.currentBatchIndex = await this.receiveAttestationBatchContract.methods
-      .currentBatchIndex()
-      .call();
-    this.currentCommitteeTransitionCount =
+    this.currentCommitteeSize = Number(
+      await this.receiveAttestationBatchContract.methods.committeeSize().call()
+    );
+    this.prometheus.attestationVerifierCurrentCommitteeSize.set(
+      this.currentCommitteeSize
+    );
+
+    this.currentBatchIndex = Number(
+      await this.receiveAttestationBatchContract.methods
+        .currentBatchIndex()
+        .call()
+    );
+    this.prometheus.attestationVerifierCurrentBatchIndex.set(
+      this.currentBatchIndex
+    );
+
+    this.currentCommitteeTransitionCount = Number(
       await this.receiveAttestationBatchContract.methods
         .currentCommitteeTransitionCount()
-        .call();
+        .call()
+    );
+    this.prometheus.attestationVerifierCurrentCommitteeTransitionCount.set(
+      this.currentCommitteeTransitionCount
+    );
 
     logger.debug(
       {
@@ -267,9 +290,5 @@ export class AttestationManager {
       },
       "Etherum Contract State"
     );
-  }
-
-  async listenForConfirmedAttestationBatch() {
-    throw new Error("Not implemented");
   }
 }

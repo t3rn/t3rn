@@ -21,6 +21,7 @@ import { Logger } from "pino";
 import { Subscription } from "rxjs";
 import { Codec } from "@polkadot/types/types";
 import { BN } from "@polkadot/util";
+import { Prometheus } from "src/prometheus";
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];
@@ -150,6 +151,8 @@ export class SideEffect extends EventEmitter {
   /** Tx receipt of the execution on target */
   txReceipt: unknown; // store tx receipt
 
+  prometheus: Prometheus;
+
   /**
    * @param sideEffect Scale encoded side effect
    * @param id Id of the SFX
@@ -171,6 +174,7 @@ export class SideEffect extends EventEmitter {
     public biddingEngine: BiddingEngine,
     public circuitSignerAddress: string,
     public logger: Logger,
+    prometheus: Prometheus,
   ) {
     super();
     if (this.decodeAction(sideEffect.action)) {
@@ -191,6 +195,7 @@ export class SideEffect extends EventEmitter {
       this.biddingEngine = biddingEngine;
       this.circuitSignerAddress = circuitSignerAddress;
       this.vendor = this.gateway.vendor;
+      this.prometheus = prometheus;
     }
   }
 
@@ -344,7 +349,7 @@ export class SideEffect extends EventEmitter {
 
     const bidUsd = this.biddingEngine.computeBid(this);
     const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue();
-    Instance.prom.bids.inc();
+    this.prometheus.bids.inc();
 
     return { trigger: true, bidAmount: floatToBn(bidRewardAsset) };
   }

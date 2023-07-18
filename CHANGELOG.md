@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.42.0-rc.0] - 2023-07-18
+### :sparkles: New Features
+- [`d2d3436`](https://github.com/t3rn/t3rn/commit/d2d3436ea14fdc78c274d7280c33b24a68145365) - change XTX & SFX hashing to Keccak256 *(PR [#1173](https://github.com/t3rn/t3rn/pull/1173) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :recycle: Refactors
+- [`fc398d7`](https://github.com/t3rn/t3rn/commit/fc398d7a4e6e7a275df131a70ee92f62b9b0fc43) - **executor**: prometheus as a global class *(PR [#1182](https://github.com/t3rn/t3rn/pull/1182) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.41.0-rc.0] - 2023-07-17
 ### :sparkles: New Features
 - [`0aa9ba6`](https://github.com/t3rn/t3rn/commit/0aa9ba655d04e9dda4757a4c6501f80a27ab8a71) - executor send batch to sepl with new hash *(PR [#1145](https://github.com/t3rn/t3rn/pull/1145) by [@3h4x](https://github.com/3h4x))*
@@ -1367,3 +1375,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.39.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.3-rc.0...v1.39.4-rc.0
 [v1.40.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.4-rc.0...v1.40.0-rc.0
 [v1.41.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.40.0-rc.0...v1.41.0-rc.0
+[v1.42.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.41.1-rc.0...v1.42.0-rc.0

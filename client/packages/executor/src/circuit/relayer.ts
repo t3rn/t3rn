@@ -38,7 +38,7 @@ export class CircuitRelayer extends EventEmitter {
     const encodedAmount = createType("u128", amount);
     const tx = this.api.tx.circuit.bidSfx(
       encodedSfxId as never,
-      encodedAmount as never
+      encodedAmount as never,
     );
     return this.sdk.circuit.tx.signAndSendSafe(tx);
   }
@@ -92,12 +92,12 @@ export class CircuitRelayer extends EventEmitter {
         executioner: sfx.executor,
         receivedAt: 0,
         cost: null,
-      }
+      },
     ) as T3rnTypesSfxConfirmedSideEffect;
 
     return this.api.tx.circuit.confirmSideEffect(
       sfx.id,
-      confirmedSideEffect.toJSON()
+      confirmedSideEffect.toJSON(),
     );
   }
 }
@@ -111,7 +111,7 @@ let counter = 0;
 export const exportData = (
   data: Array<unknown> | Record<string, unknown>,
   fileName: string,
-  transactionType: string
+  transactionType: string,
 ) => {
   let deepCopy: Record<string, unknown> | unknown[];
 
@@ -130,7 +130,7 @@ export const exportData = (
       if (err) {
         console.log("Err", err);
       }
-    }
+    },
   );
 
   counter += 1;
@@ -141,10 +141,10 @@ export const exportData = (
 // Human: Debugging those tests and viewing data
 export const encodeExport = (
   data: Array<unknown> | Record<string, unknown> | Codec,
-  transactionType: string
+  transactionType: string,
 ) => {
   if (Array.isArray(data)) {
-    return data.map((entry) => iterateEncode(entry, transactionType));
+    return data.map((entry) => iterateEncode(entry as Codec, transactionType));
   } else {
     return iterateEncode(data as Codec, transactionType);
   }
@@ -177,7 +177,7 @@ const toSnakeCase = (str: string) =>
   str &&
   (
     str.match(
-      /[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g
+      /[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g,
     ) ?? []
   )
     .map((x: string) => x.toLowerCase())
