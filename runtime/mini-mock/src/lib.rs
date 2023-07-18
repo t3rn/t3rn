@@ -51,7 +51,7 @@ use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
     generic, parameter_types,
-    traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup, Keccak256},
+    traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup},
     Perbill, Percent,
 };
 use t3rn_primitives::{EthereumToken, ExecutionVendor, GatewayVendor, SubstrateToken, TokenInfo};
