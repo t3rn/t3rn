@@ -4,7 +4,7 @@ use frame_support::RuntimeDebug;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    traits::{ConstU32, IdentityLookup, Keccak256},
 };
 
 pub type AccountId = sp_runtime::AccountId32;
@@ -49,7 +49,7 @@ impl frame_system::Config for MiniRuntime {
     type DbWeight = ();
     type Event = ();
     type Hash = H256;
-    type Hashing = BlakeTwo256;
+    type Hashing = Keccak256;
     type Header = Header;
     type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;

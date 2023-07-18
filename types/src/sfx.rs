@@ -15,6 +15,7 @@ use scale_info::{
 };
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::Hasher;
 use sp_runtime::DispatchError;
 
 use t3rn_abi::{Codec, SFXAbi};
@@ -103,9 +104,19 @@ where
         sfx_index: u32,
     ) -> <Hasher as sp_core::Hasher>::Out {
         let mut sfx_id = xtx_id.to_vec();
-        sfx_id.extend_from_slice(&sfx_index.to_be_bytes());
+        let sfx_index_as_4b_word: [u8; 4] = sfx_index.to_be_bytes();
+        let mut sfx_index_as_32b_word: [u8; 32];
+        sfx_index_as_32b_word = [0; 32];
+        sfx_index_as_32b_word[28..32].copy_from_slice(&sfx_index_as_4b_word);
+        sfx_id.extend_from_slice(&sfx_index_as_32b_word);
 
-        Hasher::hash(sfx_id.as_slice())
+        let hash = sp_runtime::traits::Keccak256::hash(sfx_id.as_slice());
+
+        let mut system_hash: <Hasher as sp_core::Hasher>::Out = Default::default();
+
+        system_hash.as_mut().copy_from_slice(&hash.as_ref()[..32]);
+
+        system_hash
     }
 
     pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {

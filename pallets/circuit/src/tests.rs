@@ -281,7 +281,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "c9c2b9c48fb9c3ca9e71817fb01e907be3e0eda4d950bbdcb6dcc4c1a73a6537"
                             )
                             .into(),
                             vec![SideEffect {
@@ -301,7 +301,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                                 insurance: 1,
                             }],
                             vec![hex!(
-                                "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
+                                "0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe"
                             )
                             .into(),],
                         )),
@@ -313,7 +313,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                             Runtime,
                         >::XTransactionReceivedForExec(
                             hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "c9c2b9c48fb9c3ca9e71817fb01e907be3e0eda4d950bbdcb6dcc4c1a73a6537"
                             )
                             .into()
                         )),
@@ -322,7 +322,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                 ]
             );
             let xtx_id: sp_core::H256 =
-                hex!("2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c").into();
+                hex!("c9c2b9c48fb9c3ca9e71817fb01e907be3e0eda4d950bbdcb6dcc4c1a73a6537").into();
             let side_effect_a_id = valid_transfer_side_effect
                 .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(
                 &xtx_id.0,
@@ -442,7 +442,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "c9c2b9c48fb9c3ca9e71817fb01e907be3e0eda4d950bbdcb6dcc4c1a73a6537"
                             )
                             .into(),
                             vec![SideEffect {
@@ -462,7 +462,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                                 reward_asset_id: None,
                             }],
                             vec![hex!(
-                                "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
+                                "0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe"
                             )
                             .into(),],
                         )),
@@ -474,7 +474,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                             Runtime,
                         >::XTransactionReceivedForExec(
                             hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "c9c2b9c48fb9c3ca9e71817fb01e907be3e0eda4d950bbdcb6dcc4c1a73a6537"
                             )
                             .into()
                         )),
@@ -808,7 +808,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
                     },
                     EventRecord { phase: Phase::Initialization, event: Event::AccountManager(
                         circuit_runtime_pallets::pallet_account_manager::Event::<Runtime>::DepositReceived {
-                            charge_id: H256::from_str("0xd2170a1bae127064ba4c6cfc7b00108038de5429babc320498493567b5e2cd45").unwrap(),
+                            charge_id: H256::from_str("0x77b1278e47852c8787044159b32806a437ea9196772e8639ff677067a97b32bc").unwrap(),
                             payee: BID_WINNER,
                             recipient: Some(REQUESTER),
                             amount: 3
@@ -1631,7 +1631,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
                 events.iter().any(|record| {
                     if let Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxRevertedAfterTimeOut(xtx_id_emit)) = record.event {
                         assert_eq!(xtx_id_emit, hex!(
-                                "2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c"
+                                "c9c2b9c48fb9c3ca9e71817fb01e907be3e0eda4d950bbdcb6dcc4c1a73a6537"
                             ).into());
                         true
                     } else {
@@ -1653,7 +1653,7 @@ fn load_local_state_can_generate_and_read_state() {
         let res = Circuit::load_local_state(&origin, None).unwrap();
 
         let xtx_id_new: sp_core::H256 =
-            hex!("2dd1ccea5b1d02d46b19803b55f7de8ee5dabc951faf617c28c7933dae30719c").into();
+            hex!("c9c2b9c48fb9c3ca9e71817fb01e907be3e0eda4d950bbdcb6dcc4c1a73a6537").into();
 
         assert_eq!(res.xtx_id, xtx_id_new);
         assert_eq!(res.local_state, LocalState::new());

@@ -78,9 +78,15 @@ impl<
         &self,
         requester_nonce: u32,
     ) -> <Hasher as sp_core::Hasher>::Out {
-        let mut requester_and_nonce: Vec<u8> = self.requester.encode();
-        requester_and_nonce.extend_from_slice(&requester_nonce.to_be_bytes());
-        Hasher::hash(&requester_and_nonce)
+        let mut requester_on_32b_as_vec = self.requester.encode();
+
+        let nonce_as_4b_word: [u8; 4] = requester_nonce.to_be_bytes();
+        let mut nonce_as_32b_word: [u8; 32];
+        nonce_as_32b_word = [0; 32];
+        nonce_as_32b_word[28..32].copy_from_slice(&nonce_as_4b_word);
+        requester_on_32b_as_vec.extend_from_slice(&nonce_as_32b_word);
+
+        Hasher::hash(requester_on_32b_as_vec.as_slice())
     }
 
     pub fn is_completed(&self) -> bool {
