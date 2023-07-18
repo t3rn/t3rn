@@ -51,7 +51,7 @@ const bid = (
    
   return {
     sfxId: circuit.createType("SideEffectId", sfxId),
-    // @ts-ignore
+    // @ts-ignore - augmeneted type from @polkadot/types
     bidAmount: createType("u128", sdk.circuit.floatToBn(amount)),
   }
 }
