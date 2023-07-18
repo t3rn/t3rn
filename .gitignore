@@ -1,38 +1,25 @@
-comms
-
-# Added by cargo
-/gateway/target
+# build
 **/target
+bin
 */Cargo.lock
-.idea
-/beefy/target/
-/build/local_beefy_spec.json
-*.iml
-client/**/node_modules
 **/.nyc_output
 results.sarif
-
-# accound id info
-/.devkey
-client/types/dist/*
-client/relayer/.env
-client/cli/yarn-error.log
+client/**/dist/*
+**/yarn-error.log
 
 # mac
 **/.DS_Store
 
-bin
 
 # docs
-
 docs/executor
 docs/ts-sdk
 docs/attester
 
-
+# local
 .direnv
 .envrc
-
-# ignore dev folders
 **/node_modules
 **/parachains-integration-tests
+.idea
+*.iml
