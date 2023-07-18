@@ -27,6 +27,7 @@ bin
 
 docs/executor
 docs/ts-sdk
+docs/attester
 
 
 .direnv
