@@ -13,10 +13,10 @@ chai.use(jestSnapshotPlugin());
 chai.should();
 
 describe("Instance", () => {
-  let name = "alina";
+  const name = "alina";
 
   describe("Configuration", () => {
-    let conf = join(homedir(), `.t3rn-executor-${name}`, "config.json");
+    const conf = join(homedir(), `.t3rn-executor-${name}`, "config.json");
     let instance;
 
     beforeEach(async () => {
@@ -61,7 +61,7 @@ describe("Instance", () => {
     it("should load custom config", async () => {
       expect(instance.config).to.be.undefined;
 
-      let config = await instance.loadConfig();
+      const config = await instance.loadConfig();
 
       expect(instance.config).to.not.be.undefined;
       expect(config).to.deep.equal(instance.config);
@@ -71,17 +71,17 @@ describe("Instance", () => {
     it("should persist custom config", async () => {
       expect(existsSync(conf)).to.be.false;
 
-      let config = await instance.loadConfig();
+      const config = await instance.loadConfig();
 
       expect(existsSync(conf)).to.be.true;
-      let stored = await readFile(conf, "utf8").then(JSON.parse);
+      const stored = await readFile(conf, "utf8").then(JSON.parse);
       expect(stored).to.deep.equal(config);
       expect(stored).toMatchSnapshot();
     });
   });
 
   describe("Logs", () => {
-    let logs = join(homedir(), `.t3rn-executor-${name}`, "logs");
+    const logs = join(homedir(), `.t3rn-executor-${name}`, "logs");
     let instance;
 
     beforeEach(async () => {
@@ -116,7 +116,7 @@ describe("Instance", () => {
 
       logFiles = await readdir(logs);
       expect(logFiles.length).to.equal(1);
-      let logged = await readFile(join(logs, logFiles[0]), "utf8");
+      const logged = await readFile(join(logs, logFiles[0]), "utf8");
       expect(logged).to.match(/hallo/);
     });
   });
