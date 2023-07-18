@@ -1,6 +1,9 @@
 lockfileVersion: '6.0'
 
 dependencies:
+  '@chainsafe/ssz':
+    specifier: ^0.11.1
+    version: 0.11.1
   '@lodestar/config':
     specifier: ^1.9.1
     version: 1.9.1
@@ -450,10 +453,21 @@ packages:
     resolution: {integrity: sha512-hldFFYuf49ed7DAakWVXSJODuq3pzJEguD8tQ7h+sGkM18vja+OFoJI9krnGmgzyuZC2ETX0NOIcCTy31v2Mtg==}
     dev: false
 
+  /@chainsafe/as-sha256@0.4.1:
+    resolution: {integrity: sha512-IqeeGwQihK6Y2EYLFofqs2eY2ep1I2MvQXHzOAI+5iQN51OZlUkrLgyAugu2x86xZewDk5xas7lNczkzFzF62w==}
+    dev: false
+
   /@chainsafe/persistent-merkle-tree@0.5.0:
     resolution: {integrity: sha512-l0V1b5clxA3iwQLXP40zYjyZYospQLZXzBVIhhr9kDg/1qHZfzzHw0jj4VPBijfYCArZDlPkRi1wZaV2POKeuw==}
     dependencies:
       '@chainsafe/as-sha256': 0.3.1
+    dev: false
+
+  /@chainsafe/persistent-merkle-tree@0.6.1:
+    resolution: {integrity: sha512-gcENLemRR13+1MED2NeZBMA7FRS0xQPM7L2vhMqvKkjqtFT4YfjSVADq5U0iLuQLhFUJEMVuA8fbv5v+TN6O9A==}
+    dependencies:
+      '@chainsafe/as-sha256': 0.4.1
+      '@noble/hashes': 1.3.1
     dev: false
 
   /@chainsafe/ssz@0.10.2:
@@ -461,6 +475,13 @@ packages:
     dependencies:
       '@chainsafe/as-sha256': 0.3.1
       '@chainsafe/persistent-merkle-tree': 0.5.0
+    dev: false
+
+  /@chainsafe/ssz@0.11.1:
+    resolution: {integrity: sha512-cB8dBkgGN6ZoeOKuk+rIRHKN0L5i9JLGeC0Lui71QX0TuLcQKwgbfkUexpyJxnGFatWf8yeJxlOjozMn/OTP0g==}
+    dependencies:
+      '@chainsafe/as-sha256': 0.4.1
+      '@chainsafe/persistent-merkle-tree': 0.6.1
     dev: false
 
   /@cspotcode/source-map-support@0.8.1:
@@ -1017,6 +1038,11 @@ packages:
     dependencies:
       '@chainsafe/ssz': 0.10.2
       '@lodestar/params': 1.9.1
+    dev: false
+
+  /@noble/hashes@1.3.1:
+    resolution: {integrity: sha512-EbqwksQwz9xDRGfDST86whPBgM65E0OH/pCgqW0GBVzO22bNE+NuIbeTb714+IfSjU3aRk47EUvXIb5bTsenKA==}
+    engines: {node: '>= 16'}
     dev: false
 
   /@nodelib/fs.scandir@2.1.5:
