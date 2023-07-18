@@ -19,15 +19,17 @@ pub type Destination = [u8; 4];
 pub type Input = Vec<u8>;
 use scale_info::TypeInfo;
 
-use t3rn_primitives::circuit::{CircuitStatus, ReadSFX, SideEffect};
+use t3rn_primitives::circuit::{AdaptiveTimeout, CircuitStatus, ReadSFX, SideEffect};
+use t3rn_types::sfx::TargetId;
 
 t3rn_primitives::reexport_currency_types!();
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
-pub struct OrderStatusRead<Hash> {
+pub struct OrderStatusRead<Hash, BlockNumber> {
     pub xtx_id: Hash,
     pub status: CircuitStatus,
     pub all_included_sfx: Vec<(Hash, CircuitStatus)>,
+    pub timeouts_at: AdaptiveTimeout<BlockNumber, TargetId>,
 }
 
 #[frame_support::pallet]
@@ -49,7 +51,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        OrderStatusRead(OrderStatusRead<T::Hash>),
+        OrderStatusRead(OrderStatusRead<T::Hash, T::BlockNumber>),
     }
 
     #[pallet::error]
@@ -85,9 +87,9 @@ pub mod pallet {
             _origin: OriginFor<T>,
             xtx_id: T::Hash,
         ) -> DispatchResultWithPostInfo {
-            let status = T::ReadSFX::get_xtx_status(xtx_id)?;
+            let (status, timeouts_at) = T::ReadSFX::get_xtx_status(xtx_id)?;
             let sfx_of_xtx = T::ReadSFX::get_fsx_of_xtx(xtx_id)?;
-            let mut all_included_sfx = sfx_of_xtx
+            let all_included_sfx = sfx_of_xtx
                 .into_iter()
                 .map(|sfx| {
                     let fsx_status = T::ReadSFX::get_fsx_status(sfx)?;
@@ -99,6 +101,7 @@ pub mod pallet {
                 xtx_id,
                 status,
                 all_included_sfx,
+                timeouts_at,
             }));
 
             Ok(().into())
@@ -109,7 +112,7 @@ pub mod pallet {
 #[cfg(test)]
 mod tests {
     use codec::Encode;
-    use frame_support::{assert_ok, traits::Hooks};
+    use frame_support::{assert_err, assert_ok, traits::Hooks};
     use hex_literal::hex;
     use sp_runtime::AccountId32;
     use t3rn_primitives::{clock::OnHookQueues, light_client::LightClientAsyncAPI};
@@ -120,18 +123,31 @@ mod tests {
         MockedAssetEvent, OrderStatusRead, Origin, Portal, Rewards, System, Vacuum, VacuumEvent,
         ASSET_DOT, POLKADOT_TARGET, XDNS,
     };
+    use t3rn_primitives::portal::Portal as PortalT;
 
     use t3rn_primitives::{
         circuit::types::{OrderSFX, SFXAction},
         claimable::CircuitRole,
         monetary::TRN,
-        SpeedMode, TreasuryAccount, TreasuryAccountProvider,
+        GatewayVendor, SpeedMode, TreasuryAccount, TreasuryAccountProvider,
     };
     use t3rn_types::sfx::ConfirmedSideEffect;
 
     use frame_support::traits::Currency;
-    use t3rn_abi::Abi::H256;
-    use t3rn_primitives::{circuit::CircuitStatus, monetary::EXISTENTIAL_DEPOSIT};
+
+    use t3rn_primitives::{
+        circuit::{AdaptiveTimeout, CircuitStatus},
+        monetary::EXISTENTIAL_DEPOSIT,
+    };
+    use t3rn_types::fsx::TargetId;
+
+    fn activate_all_light_clients() {
+        for &gateway in XDNS::all_gateway_ids().iter() {
+            Portal::turn_on(Origin::root(), gateway).unwrap();
+        }
+        XDNS::process_all_verifier_overviews(System::block_number());
+        XDNS::process_overview(System::block_number());
+    }
 
     fn mint_required_assets_for_optimistic_actors(
         requester: AccountId,
@@ -172,34 +188,73 @@ mod tests {
         let expect_xtx_received = events.last();
         assert!(expect_xtx_received.clone().is_some());
 
-        match expect_xtx_received.clone() {
-            Some(event) => {
-                let xtx_id = match event.event {
-                    Event::Circuit(CircuitEvent::XTransactionReceivedForExec(xtx_id)) => xtx_id,
-                    _ => panic!("expect_last_event_to_emit_xtx_id: unexpected event type"),
-                };
-                xtx_id
+        match expect_xtx_received {
+            Some(event) => match event.event {
+                Event::Circuit(CircuitEvent::XTransactionReceivedForExec(xtx_id)) => xtx_id,
+                _ => panic!("expect_last_event_to_emit_xtx_id: unexpected event type"),
             },
             None => panic!("expect_last_event_to_emit_xtx_id: no last event emitted"),
         }
     }
 
-    fn expect_last_event_to_read_order_status() -> OrderStatusRead<Hash> {
+    fn expect_last_event_to_read_order_status() -> OrderStatusRead<Hash, BlockNumber> {
         // Recover system event
         let events = System::events();
         let expect_order_status_read = events.last();
         assert!(expect_order_status_read.clone().is_some());
 
-        match expect_order_status_read.clone() {
-            Some(event) => {
-                let status = match &event.event {
-                    Event::Vacuum(VacuumEvent::OrderStatusRead(status)) => status.clone(),
-                    _ => panic!("expect_last_event_to_read_order_status: unexpected event type"),
-                };
-                status
+        match expect_order_status_read {
+            Some(event) => match &event.event {
+                Event::Vacuum(VacuumEvent::OrderStatusRead(status)) => status.clone(),
+                _ => panic!("expect_last_event_to_read_order_status: unexpected event type"),
             },
             None => panic!("expect_last_event_to_read_order_status: no last event emitted"),
         }
+    }
+
+    fn prepare_transfer_asset_confirmation(
+        asset_id: u32,
+        executor: AccountId,
+        destination: AccountId,
+        amount: Balance,
+    ) -> ConfirmedSideEffect<AccountId32, BlockNumber, Balance> {
+        let mut scale_encoded_transfer_event = MockedAssetEvent::<MiniRuntime>::Transferred {
+            asset_id,
+            from: executor.clone(),
+            to: destination,
+            amount,
+        }
+        .encode();
+        // append an extra pallet event index byte as the second byte
+        scale_encoded_transfer_event.insert(0, 4u8);
+
+        ConfirmedSideEffect::<AccountId32, BlockNumber, Balance> {
+            err: None,
+            output: None,
+            inclusion_data: scale_encoded_transfer_event,
+            executioner: executor,
+            received_at: System::block_number(),
+            cost: None,
+        }
+    }
+
+    fn mock_signal_halt(_target: TargetId, verifier: GatewayVendor) {
+        let mut current_heartbeat = Portal::get_latest_heartbeat(&POLKADOT_TARGET).unwrap();
+        current_heartbeat.is_halted = true;
+        let current_epoch_does_not_move = current_heartbeat.last_finalized_height;
+        // advance 1 epoch
+        System::set_block_number(System::block_number() + 32);
+        XDNS::on_new_epoch(verifier, current_epoch_does_not_move, current_heartbeat);
+    }
+
+    fn mock_signal_unhalt(_target: TargetId, verifier: GatewayVendor) {
+        let mut current_heartbeat = Portal::get_latest_heartbeat(&POLKADOT_TARGET).unwrap();
+        current_heartbeat.is_halted = false;
+        current_heartbeat.last_finalized_height += 1;
+        let current_epoch_moves = current_heartbeat.last_finalized_height + 1;
+        // advance 1 epoch
+        System::set_block_number(System::block_number() + 32);
+        XDNS::on_new_epoch(verifier, current_epoch_moves, current_heartbeat);
     }
 
     #[test]
@@ -225,6 +280,8 @@ mod tests {
                 reward_asset: ASSET_DOT,
                 remote_origin_nonce: None,
             };
+
+            activate_all_light_clients();
 
             assert_ok!(Vacuum::order(
                 Origin::signed(requester.clone()),
@@ -279,6 +336,8 @@ mod tests {
                 remote_origin_nonce: None,
             };
 
+            activate_all_light_clients();
+
             assert_ok!(Vacuum::order(
                 Origin::signed(requester.clone()),
                 vec![sfx_order],
@@ -311,6 +370,15 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::PendingBidding,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::PendingBidding)],
+                    timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
+                        estimated_height_here: 817,
+                        estimated_height_there: 824,
+                        submit_by_height_here: 417,
+                        submit_by_height_there: 424,
+                        emergency_timeout_here: 417,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
                 }
             );
 
@@ -341,7 +409,7 @@ mod tests {
             let mut scale_encoded_transfer_event = MockedAssetEvent::<MiniRuntime>::Transferred {
                 asset_id: ASSET_DOT,
                 from: executor.clone(),
-                to: requester_on_dest.clone(),
+                to: requester_on_dest,
                 amount: 100 as Balance,
             }
             .encode();
@@ -364,10 +432,7 @@ mod tests {
                 confirmation_transfer_1
             ));
 
-            assert_ok!(Vacuum::read_order_status(
-                Origin::signed(requester.clone()),
-                xtx_id
-            ));
+            assert_ok!(Vacuum::read_order_status(Origin::signed(requester), xtx_id));
 
             let order_status = expect_last_event_to_read_order_status();
 
@@ -377,6 +442,15 @@ mod tests {
                     xtx_id,
                     status: CircuitStatus::FinishedAllSteps,
                     all_included_sfx: vec![(expected_sfx_hash, CircuitStatus::FinishedAllSteps),],
+                    timeouts_at: AdaptiveTimeout::<BlockNumber, TargetId> {
+                        estimated_height_here: 817,
+                        estimated_height_there: 824,
+                        submit_by_height_here: 417,
+                        submit_by_height_there: 424,
+                        emergency_timeout_here: 417,
+                        there: [1, 1, 1, 1],
+                        dlq: None
+                    },
                 }
             );
 
@@ -444,7 +518,7 @@ mod tests {
             assert_eq!(
                 xtx_id,
                 Hash::from(hex!(
-                    "0162cabd6f37c15015e94be4174f7ad95fa0d6f094da6aea5525ce11731308a1"
+                    "a602173a905f72f4f93410c69db65f52480f67b7e947309b254fe718f611a0a7"
                 ))
             );
 
@@ -456,7 +530,7 @@ mod tests {
             let order_status = expect_last_event_to_read_order_status();
 
             let expected_sfx_hash = Hash::from(hex!(
-                "6fd0ce38a35bcc001dc78cbe7b258dd71cca7dff301891e13b73598572908744"
+                "484c277dfcfb25b51c8e12fc2e7eb286bb9315775db60635872d51a40d5bb253"
             ));
 
             assert_eq!(

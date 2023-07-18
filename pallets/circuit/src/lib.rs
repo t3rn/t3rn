@@ -42,7 +42,7 @@ use frame_system::{
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{CheckedAdd, Zero},
+    traits::{BadOrigin, CheckedAdd, Zero},
     DispatchError, KeyTypeId,
 };
 use sp_std::{convert::TryInto, vec, vec::Vec};
@@ -123,7 +123,8 @@ pub mod pallet {
     use t3rn_primitives::{
         attesters::AttestersWriteApi,
         circuit::{
-            CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX,
+            CircuitDLQ, CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger,
+            ReadSFX,
         },
         portal::Portal,
         xdns::Xdns,
@@ -1157,15 +1158,6 @@ impl<T: Config> Pallet<T> {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
             let security_lvl = determine_security_lvl(gateway_type);
 
-            // ToDo: Verify each requested asset is supported by the gateway
-
-            // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
-            // let _last_update = <T as Config>::Xdns::verify_active(
-            //     &sfx.target,
-            //     <T as Config>::XtxTimeoutDefault::get(),
-            //     &security_lvl,
-            // )?;
-
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
                 None => return Err("SFX not allowed/registered on requested target gateway"),
@@ -1267,6 +1259,7 @@ impl<T: Config> Pallet<T> {
         };
         log::debug!("Order confirmed!");
 
+        #[cfg(not(feature = "test-skip-verification"))]
         let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.

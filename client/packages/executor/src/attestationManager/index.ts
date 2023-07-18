@@ -27,6 +27,9 @@ export class AttestationManager {
   receiveAttestationBatchContract: Contract<never>;
   web3: Web3;
   wallet: ReturnType<typeof this.web3.eth.accounts.privateKeyToAccount>;
+  currentCommitteeSize = 0;
+  currentBatchIndex: 0;
+  currentCommitteeTransitionCount: 0;
 
   constructor(public client: Sdk["client"]) {
     if (config.attestations.ethereum.privateKey === undefined) {
@@ -81,46 +84,60 @@ export class AttestationManager {
       config.attestations.ethereum.name
     );
     const fetchedData = rawBatches.toJSON() as unknown as Array<IBatch>;
-    const batches = fetchedData.map((batch) => {
+    this.batches = fetchedData.map((batch) => {
       return {
         nextCommittee: batch.nextCommittee || [],
         bannedCommittee: batch.bannedCommittee || [],
         committedSfx: batch.committedSfx || [],
         revertedSfx: batch.revertedSfx || [],
         index: batch.index,
-        expectedBatchHash: batch.expectedBatchHash,
         signatures: batch.signatures.map(([, signature]) => signature),
         created: batch.created,
-      };
+      } as ConfirmationBatch;
     });
     logger.info("We have " + fetchedData.length + " batches pending");
-    // logger.info(['Batch 0: ', data.toJSON()[0]])
-    // logger.info(['Batch 1: ', data.toJSON()[1]])
-    return batches as unknown as ConfirmationBatch[];
   }
 
   async listener() {
+    logger.info('Listening for NewConfirmationBatch events...')
     // Subscribe to all events and filter based on the specified event method
-    this.client.query.system.events((events: Array<never>) => {
-      events.forEach(
-        (record: {
-          event: { section: string; method: string; data: string[] };
-        }) => {
-          const { event } = record;
+    this.client.query.system.events(async (events: any) => {
+      if (events === undefined || events === null) {
+        return
+      }
 
-          // Check if the event type matches the specified event
-          if (
-            event.section === "attesters" &&
-            event.method === "NewConfirmationBatch"
-          ) {
-            logger.debug(
-              { data: event.data },
-              `Event ${event.section}.${event.method} received`
-            );
-          }
-        }
-      );
-    });
+      logger.debug({ events_count: events.length }, `Received events`)
+
+      const attesterEvents = events
+          .toHuman()
+          .filter((event) => event.event.section == 'attesters')
+
+      await this.processConfirmedBatches(attesterEvents)
+    })
+  }
+  private async processConfirmedBatches(events: any) {
+        // Loop through the Vec<EventRecord>
+        await Promise.all(
+            events.map(async (record) => {
+                // Extract the phase, event and the event types
+                const { event } = record
+
+                logger.debug(
+                    {
+                        event: event.method,
+                        data: event.data,
+                    },
+                    'Received attesters event'
+                )
+                if (record.event.method != 'NewConfirmationBatch') {
+                    return
+                }
+
+                const batch = event.data as ConfirmationBatch
+                const messageHash = this.getMessageHash(batch)
+
+                await this.receiveAttestationBatchCall(batch, messageHash)
+                }))
   }
 
   getMessageHash(batch: Batch) {
@@ -129,10 +146,9 @@ export class AttestationManager {
     return messageHash;
   }
 
-  // TODO: not used
-  getMessageHashFromString(data: string) {
-    const messageHash = ethers.keccak256(data);
-    return messageHash;
+  async getBlockHash(blockNumber: number): Promise<string> {
+    const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber);
+    return blockHash.toHex();
   }
 
   // TODO: not used
@@ -147,74 +163,36 @@ export class AttestationManager {
     return messageHash;
   }
 
-  // this is not reliable, because the messageHash is not always in the event
-  async getMessageHashFromCircuit(blockNumber: number): Promise<string> {
-    const blockHash = await this.client.rpc.chain.getBlockHash(blockNumber);
-    logger.debug(`Looking for messageHash in ${blockHash.toHex()}`);
-    const events = await this.client.query.system.events.at(blockHash.toHex());
-    // logger.debug(`Found ${events.length} events in block ${blockHash.toHex()}`);
+  async processAttestationBatches() {
+    await this.fetchAttesterContractData();
+    await this.fetchBatches();
 
-    const filteredEvents = (
-      events.toHuman() as [
-        {
-          event: {
-            method: string;
-            data: [string, string];
-          };
-        }
-      ]
-    ).filter((event) => event.event.method == "NewAttestationMessageHash");
-
-    // logger.debug(
-    //   `Found ${filteredEvents.length} NewAttestationMessageHash events`
-    // );
-    // logger.debug(filteredEvents)
-
-    for (const event of filteredEvents) {
-      // allow only events from configured chain
-      if (event.event.data[0] != config.attestations.ethereum.name) {
-        continue;
-      }
-      const messageHash = event.event.data[1];
-      logger.info(`Found messageHash: ${messageHash}`);
-      return messageHash;
+    if (BigInt(this.batches.length) > BigInt(this.currentBatchIndex)) {
+      logger.info(
+        `We have ${
+          BigInt(this.batches.length) - BigInt(this.currentBatchIndex)
+        } pending batches to process`
+      );
+      this.processPendingAttestationBatches();
     }
 
-    throw new Error(`No messageHash found in block ${blockNumber}`);
+    await this.listener();
   }
 
   async processPendingAttestationBatches() {
-    this.batches = await this.fetchBatches();
+    for (const batch of this.batches.slice(
+      Number(this.currentBatchIndex) + 1
+    )) {
+      logger.info(
+        `Batch ${
+          batch.index
+        } processing, created at block ${await this.getBlockHash(
+          batch.created
+        )}`
+      );
 
-    // config.attestations.processPendingBatches is set to process pending batches
-    for (const [index, batch] of this.batches
-      .slice(config.attestations.processPendingBatchesIndex)
-      .entries()) {
-      if (index + 2 == this.batches.length) {
-        // last batch is not yet confirmed
-        break;
-      }
-
-      logger.info(`Batch ${batch.index} processing`);
-      logger.debug({ batch: batch }, `Batch data`);
-
-      // fetching messageHash is hack to get around the fact that the messageHash is not always in the event
-      // for 0 batch its in this.batches[index+1].created
-      // for other batches its in this.batches[index+3].created
-      let messageHash: string;
-      if (index + config.attestations.processPendingBatchesIndex == 0) {
-        messageHash = await this.getMessageHashFromCircuit(
-          this.batches[1].created
-        );
-      } else if (index + config.attestations.processPendingBatchesIndex == 1) {
-        messageHash = await this.getMessageHashFromCircuit(
-          this.batches[index + 2].created
-        );
-      } else {
-        messageHash = await this.getMessageHashFromCircuit(
-          this.batches[index + 3].created
-        );
-      }
+      const messageHash = this.getMessageHash(batch);
+      logger.debug({ batch, messageHash }, `Batch data`);
 
       await this.receiveAttestationBatchCall(batch, messageHash);
     }
@@ -224,17 +202,6 @@ export class AttestationManager {
     batch: ConfirmationBatch,
     messageHash: string
   ) {
-    const committeeSize = await this.receiveAttestationBatchContract.methods
-      .committeeSize()
-      .call();
-    const currentBatchIndex = await this.receiveAttestationBatchContract.methods
-      .currentBatchIndex()
-      .call();
-    logger.debug(
-      { committeeSize: committeeSize, currentBatchIndex: currentBatchIndex },
-      "Etherum Contract State"
-    );
-
     const contractMethod =
       this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
         // @ts-ignore - ethers.js types are not up to date
@@ -243,7 +210,7 @@ export class AttestationManager {
         batch.committedSfx,
         batch.revertedSfx,
         batch.index,
-        ethers.toQuantity(messageHash),
+        messageHash,
         batch.signatures
       );
 
@@ -279,6 +246,27 @@ export class AttestationManager {
       logger.warn({ error: error }, "Error sending transaction: ");
       // throw new Error("Error sending transaction: " + error);
     }
+  }
+
+  private async fetchAttesterContractData() {
+    this.currentCommitteeSize =
+      await this.receiveAttestationBatchContract.methods.committeeSize().call();
+    this.currentBatchIndex = await this.receiveAttestationBatchContract.methods
+      .currentBatchIndex()
+      .call();
+    this.currentCommitteeTransitionCount =
+      await this.receiveAttestationBatchContract.methods
+        .currentCommitteeTransitionCount()
+        .call();
+
+    logger.debug(
+      {
+        currentCommitteeSize: this.currentCommitteeSize,
+        currentBatchIndex: this.currentBatchIndex,
+        currentCommitteeTransitionCount: this.currentCommitteeTransitionCount,
+      },
+      "Etherum Contract State"
+    );
   }
 
   async listenForConfirmedAttestationBatch() {

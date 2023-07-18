@@ -12,12 +12,14 @@ pub use pallet_attesters::{
     Pallet as PalletAttesters, PendingUnnominations, PermanentSlashes, PreviousCommittee,
     SortedNominatedAttesters,
 };
+use std::marker::PhantomData;
 
 pub use pallet_circuit::{
-    Config as ConfigCircuit, Event as CircuitEvent, FullSideEffects, SFX2XTXLinksMap, XExecSignals,
+    Config as ConfigCircuit, Error as CircuitError, Event as CircuitEvent, FullSideEffects,
+    SFX2XTXLinksMap, XExecSignals,
 };
-
 pub use pallet_circuit_vacuum::{Config as ConfigVacuum, Event as VacuumEvent, OrderStatusRead};
+use pallet_eth2_finality_verifier::types::Root;
 mod hooks;
 mod treasuries_config;
 pub use hooks::GlobalOnInitQueues;

@@ -753,12 +753,6 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                 AccountId32::new([1; 32])
             ));
 
-            assert_ok!(XDNS::add_escrow_account(
-                circuit_mock_runtime::Origin::root(),
-                [1, 1, 1, 1],
-                AccountId32::new([1; 32])
-            ));
-
             Attesters::force_activate_target(circuit_mock_runtime::Origin::root(), [1, 1, 1, 1])
                 .unwrap();
             Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1));
@@ -782,11 +776,11 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     },
                     GatewayActivity {
                         gateway_id: [1, 1, 1, 1],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
-                        attestation_latency: Some(LatencyStatus::OnTime),
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
                         security_lvl: Escrow,
                         is_active: true
                     },
