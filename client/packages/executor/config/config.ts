@@ -146,7 +146,7 @@ export type Config = {
         priceSource: string;
         /** The internal id used by the price source. */
         id: string;
-      }
+      },
     ];
   };
   /** The strategies that are being used for each gateway */
@@ -262,7 +262,6 @@ export const config: Config = {
       attestationVerifierAddress: "0x1eD79B479d06737004b82AccAD40E20A01d5d0C2",
       privateKey: process.env.ETHEREUM_PRIVATE_KEY,
     },
-    processBatches:
-      process.env.PROCESS_BATCHES == "true" ? true : false,
+    processBatches: process.env.PROCESS_BATCHES == "true" ? true : false,
   },
 };

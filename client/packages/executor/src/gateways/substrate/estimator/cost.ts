@@ -46,7 +46,7 @@ export class CostEstimator {
    */
   async getTxCostSubject(
     sfxId: string,
-    tx: SubmittableExtrinsic
+    tx: SubmittableExtrinsic,
   ): Promise<BehaviorSubject<number>> {
     const txCost = await this.currentTransactionCost(tx); // get cost of tx
     const costSubject = new BehaviorSubject<number>(txCost); // create a new subject
