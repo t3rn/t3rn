@@ -39,7 +39,7 @@ export class Execution extends EventEmitter {
   phases: string[][] = [[], []];
   /** The current phase of the XTX */
   currentPhase: number;
-  prometheus: Prometheus
+  prometheus: Prometheus;
 
   /**
    * Creates a new Execution instance.
@@ -73,7 +73,7 @@ export class Execution extends EventEmitter {
       biddingEngine,
     );
     this.currentPhase = 0;
-    this.prometheus = prometheus
+    this.prometheus = prometheus;
   }
 
   /**

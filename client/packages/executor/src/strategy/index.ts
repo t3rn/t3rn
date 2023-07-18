@@ -241,7 +241,7 @@ export class StrategyEngine {
    */
   minInsuranceAmountRejected(
     sfx: SideEffect,
-    strategy: XtxStrategy
+    strategy: XtxStrategy,
   ): void | Error {
     if (strategy.minInsuranceAmountUsd) {
       if (sfx.insurance < strategy.minInsuranceAmountUsd) {
@@ -259,7 +259,7 @@ export class StrategyEngine {
    */
   minInsuranceShareRejected(
     sfx: SideEffect,
-    strategy: XtxStrategy
+    strategy: XtxStrategy,
   ): void | Error {
     if (strategy.minInsuranceShare) {
       // reward and insurance are in the same asset, so no USD conversion is needed

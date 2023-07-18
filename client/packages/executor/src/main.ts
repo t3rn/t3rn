@@ -5,7 +5,7 @@ import { logger } from "./logging";
 import { Prometheus } from "./prometheus";
 
 async function main() {
-  logger.info('Starting prometheus');
+  logger.info("Starting prometheus");
   const prom = new Prometheus();
 
   logger.info("Starting executor");

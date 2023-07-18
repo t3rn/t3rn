@@ -1,5 +1,5 @@
 import http from "http";
-import client from 'prom-client'
+import client from "prom-client";
 import { Registry, Counter, collectDefaultMetrics, Gauge } from "prom-client";
 import { logger } from "./logging";
 
@@ -20,7 +20,7 @@ export class Prometheus {
   attestationsBatchesPending: Gauge;
 
   constructor() {
-    const Registry = client.Registry
+    const Registry = client.Registry;
     this.register = new Registry();
     this.createMetrics();
   }
@@ -72,7 +72,7 @@ export class Prometheus {
     });
 
     this.startServer();
-    logger.info("Prometheus metrics server started")
+    logger.info("Prometheus metrics server started");
   }
 
   startServer() {

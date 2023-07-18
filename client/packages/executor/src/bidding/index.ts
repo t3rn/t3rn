@@ -33,9 +33,12 @@ export class BiddingEngine {
   closerPercentageBid: number = config.bidding.closerPercentageBid;
   /** Which executors are bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
   whoBidsOnWhat = new Map<string, string[]>();
-  prometheus: Prometheus
+  prometheus: Prometheus;
 
-  constructor(public logger: Logger, prometheus: Prometheus) {
+  constructor(
+    public logger: Logger,
+    prometheus: Prometheus,
+  ) {
     this.prometheus = prometheus;
   }
 
@@ -173,7 +176,7 @@ export class BiddingEngine {
   addBidToSfx(sfx: SideEffect) {
     this.numberOfBidsOnSfx.set(
       sfx.id,
-      (this.numberOfBidsOnSfx.get(sfx.id) || 0) + 1
+      (this.numberOfBidsOnSfx.get(sfx.id) || 0) + 1,
     );
   }
 
@@ -188,7 +191,7 @@ export class BiddingEngine {
     if (changedBidLeader) {
       this.timesBeenOutbid.set(
         sfx.id,
-        this.timesBeenOutbid.get(sfx.id) || 0 + 1
+        this.timesBeenOutbid.get(sfx.id) || 0 + 1,
       );
     }
     return changedBidLeader;
@@ -220,7 +223,7 @@ export class BiddingEngine {
     // Shorter way of doing the same as above, without arrays
     this.numberOfBidsByExecutor.set(
       bidderId,
-      (this.numberOfBidsByExecutor.get(bidderId) || 0) + 1
+      (this.numberOfBidsByExecutor.get(bidderId) || 0) + 1,
     );
   }
 
@@ -248,7 +251,7 @@ export class BiddingEngine {
       bidders.forEach((bidderId) => {
         this.numberOfBidsByExecutor.set(
           bidderId,
-          (this.numberOfBidsByExecutor.get(bidderId) || 1) - 1
+          (this.numberOfBidsByExecutor.get(bidderId) || 1) - 1,
         );
       });
     }

@@ -151,7 +151,7 @@ export class SideEffect extends EventEmitter {
   /** Tx receipt of the execution on target */
   txReceipt: unknown; // store tx receipt
 
-  prometheus: Prometheus
+  prometheus: Prometheus;
 
   /**
    * @param sideEffect Scale encoded side effect
@@ -195,7 +195,7 @@ export class SideEffect extends EventEmitter {
       this.biddingEngine = biddingEngine;
       this.circuitSignerAddress = circuitSignerAddress;
       this.vendor = this.gateway.vendor;
-      this.prometheus = prometheus
+      this.prometheus = prometheus;
     }
   }
 

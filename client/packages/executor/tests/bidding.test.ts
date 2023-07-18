@@ -14,11 +14,11 @@ describe("Bidding: Configuration loading", () => {
     expect(be.bidPercentile).to.be.equal(config.bidding.bidPercentile);
     expect(be.bidMeek).to.be.equal(config.bidding.bidMeek);
     expect(be.overrideNoCompetition).to.be.equal(
-      config.bidding.overrideNoCompetition
+      config.bidding.overrideNoCompetition,
     );
     expect(be.equalMinProfitBid).to.be.equal(config.bidding.equalMinProfitBid);
     expect(be.closerPercentageBid).to.be.equal(
-      config.bidding.closerPercentageBid
+      config.bidding.closerPercentageBid,
     );
   });
 });

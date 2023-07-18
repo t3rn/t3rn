@@ -37,7 +37,7 @@ describe("Instance", () => {
         .loadConfig()
         .should.be.rejectedWith(
           Error,
-          "Instance::loadConfig: missing circuit signer key"
+          "Instance::loadConfig: missing circuit signer key",
         );
     });
 
@@ -49,7 +49,7 @@ describe("Instance", () => {
         .loadConfig()
         .should.be.rejectedWith(
           Error,
-          "Instance::loadConfig: missing circuit signer key"
+          "Instance::loadConfig: missing circuit signer key",
         );
 
       // reset to bogus substrate private key for the remainder
@@ -87,7 +87,7 @@ describe("Instance", () => {
     beforeEach(async () => {
       await mkdir(logs, { recursive: true });
       await readdir(logs).then((logFiles) =>
-        Promise.all(logFiles.map((logFile) => unlink(join(logs, logFile))))
+        Promise.all(logFiles.map((logFile) => unlink(join(logs, logFile)))),
       );
       process.env.CIRCUIT_SIGNER_KEY = `0x${"acab".repeat(16)}`;
       process.env.ROCO_GATEWAY_SIGNER_KEY = `0x${"acab".repeat(16)}`;

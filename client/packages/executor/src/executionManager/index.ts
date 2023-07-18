@@ -94,14 +94,14 @@ export class ExecutionManager {
   biddingEngine: BiddingEngine;
   circuitListener: CircuitListener;
   circuitRelayer: CircuitRelayer;
-  prometheus: Prometheus
+  prometheus: Prometheus;
 
   constructor(
     public circuitClient: Sdk["client"],
     public sdk: Sdk,
     public logger: Logger,
     public config: Config,
-    prometheus: Prometheus
+    prometheus: Prometheus,
   ) {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
@@ -622,7 +622,7 @@ export class ExecutionManager {
         this.removeFromQueue("isExecuting", sfx.id, sfx.vendor);
         let confirmBatch =
           this.queue[sfx.vendor].isConfirming[
-          sfx.targetInclusionHeight.toString()
+            sfx.targetInclusionHeight.toString()
           ];
         if (!confirmBatch) confirmBatch = [];
         if (confirmBatch.includes(sfx.id)) {
