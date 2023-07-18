@@ -173,10 +173,10 @@ export class AttestationManager {
     await this.fetchAttesterContractData();
     await this.fetchBatches();
 
-    if (BigInt(this.batches.length) > BigInt(this.currentBatchIndex)) {
+    if (this.batches.length > this.currentBatchIndex) {
       logger.info(
         `We have ${
-          BigInt(this.batches.length) - BigInt(this.currentBatchIndex)
+          this.batches.length - this.currentBatchIndex
         } pending batches to process`
       );
       this.processPendingAttestationBatches();
