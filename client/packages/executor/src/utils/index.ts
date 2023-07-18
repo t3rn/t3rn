@@ -7,7 +7,7 @@ import { default as pino, Logger } from "pino";
 
 export async function getStorage(
   api: ApiPromise,
-  parameters: Record<string, unknown>
+  parameters: Record<string, unknown>,
 ) {
   const res = (await api.rpc.state.getStorage(parameters.key)) as unknown as {
     toHex: () => string;
@@ -44,7 +44,7 @@ export const getEventProofs = async (api: ApiPromise, blockHash: string) => {
  */
 export async function fetchNonce(
   api: ApiPromise,
-  address: string
+  address: string,
 ): Promise<BN> {
   return api.rpc.system.accountNextIndex(address);
 }
@@ -73,7 +73,7 @@ export function createLogger(name: string, logsDir?: string): Logger {
           },
         },
       },
-      pino.destination(join(logsDir.toString(), `${Date.now()}.log`))
+      pino.destination(join(logsDir.toString(), `${Date.now()}.log`)),
     );
   } else {
     logger = pino({

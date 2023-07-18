@@ -10,6 +10,8 @@ jobs:
     name: Add PR to Project Board
     runs-on: ubuntu-latest
 
+    if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
+
     steps:
       - name: Get project data
         env:

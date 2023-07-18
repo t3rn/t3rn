@@ -55,9 +55,7 @@ class Instance {
   logsDir: undefined | PathLike;
   configFile: PathLike;
   stateFile: PathLike;
-
-  // A Prometheus instance shared across all instances
-  static prom: Prometheus;
+  prometheus: Prometheus;
 
   /**
    * Initializes an executor instance.
@@ -65,7 +63,7 @@ class Instance {
    * @param name Display name and config identifier for an instance
    * @param logToDisk Write logs to disk within ~/.t3rn-executor-${name}/logs
    */
-  constructor(name = "example", logToDisk = false) {
+  constructor(name = "example", logToDisk = false, prometheus: Prometheus) {
     this.name = name;
     this.baseDir = join(homedir(), `.t3rn-executor-${name}`);
     this.logsDir = logToDisk
@@ -73,8 +71,7 @@ class Instance {
       : undefined;
     this.stateFile = join(this.baseDir.toString(), "state.json");
     this.configFile = join(this.baseDir.toString(), "config.json");
-
-    Instance.prom = new Prometheus();
+    this.prometheus = prometheus;
   }
 
   /**
@@ -91,13 +88,13 @@ class Instance {
 
     this.signer = new Keyring({ type: "sr25519" }).addFromSeed(
       Uint8Array.from(
-        Buffer.from(this.config.circuit.signerKey.slice(2), "hex")
-      )
+        Buffer.from(this.config.circuit.signerKey.slice(2), "hex"),
+      ),
     );
     this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
     this.circuitClient = await this.sdk.init();
     this.circuitClient.on("disconnected", () => {
-      Instance.prom.circuitDisconnects.inc({
+      this.prometheus.circuitDisconnects.inc({
         endpoint: this.config.circuit.rpc,
       });
     });
@@ -105,12 +102,13 @@ class Instance {
       this.circuitClient,
       this.sdk,
       this.logger,
-      this.config
+      this.config,
+      this.prometheus,
     );
     this.injectState();
     await this.executionManager.setup(
       this.config.gateways,
-      this.config.vendors
+      this.config.vendors,
     );
     // TODO: on nodejs it just freeze execution
     // this.registerExitListener();
@@ -161,7 +159,7 @@ class Instance {
     }
     if (
       !config.gateways.some((gateway: Gateway) =>
-        problySubstrateSeed(gateway.signerKey as string)
+        problySubstrateSeed(gateway.signerKey as string),
       )
     ) {
       throw Error("Instance::loadConfig: missing gateway signer key");
@@ -174,7 +172,7 @@ class Instance {
   async injectState(): Promise<Instance> {
     if (existsSync(this.stateFile)) {
       const state: PersistedState = await readFile(this.stateFile, "utf8").then(
-        JSON.parse
+        JSON.parse,
       );
       this.executionManager.inject(state);
     }
