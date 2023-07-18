@@ -55,9 +55,7 @@ class Instance {
   logsDir: undefined | PathLike;
   configFile: PathLike;
   stateFile: PathLike;
-
-  // A Prometheus instance shared across all instances
-  static prom: Prometheus;
+  prometheus: Prometheus;
 
   /**
    * Initializes an executor instance.
@@ -65,7 +63,7 @@ class Instance {
    * @param name Display name and config identifier for an instance
    * @param logToDisk Write logs to disk within ~/.t3rn-executor-${name}/logs
    */
-  constructor(name = "example", logToDisk = false) {
+  constructor( name = "example", logToDisk = false, prometheus: Prometheus) {
     this.name = name;
     this.baseDir = join(homedir(), `.t3rn-executor-${name}`);
     this.logsDir = logToDisk
@@ -73,8 +71,7 @@ class Instance {
       : undefined;
     this.stateFile = join(this.baseDir.toString(), "state.json");
     this.configFile = join(this.baseDir.toString(), "config.json");
-
-    Instance.prom = new Prometheus();
+    this.prometheus = prometheus
   }
 
   /**
@@ -97,7 +94,7 @@ class Instance {
     this.sdk = new Sdk(this.config.circuit.rpc, this.signer);
     this.circuitClient = await this.sdk.init();
     this.circuitClient.on("disconnected", () => {
-      Instance.prom.circuitDisconnects.inc({
+      this.prometheus.circuitDisconnects.inc({
         endpoint: this.config.circuit.rpc,
       });
     });
@@ -105,7 +102,8 @@ class Instance {
       this.circuitClient,
       this.sdk,
       this.logger,
-      this.config
+      this.config,
+      this.prometheus,
     );
     this.injectState();
     await this.executionManager.setup(

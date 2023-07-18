@@ -1,7 +1,7 @@
 import { SideEffect } from "../executionManager/sideEffect";
 import { config } from "../../config/config";
-import { Instance } from "../index";
 import { Logger } from "pino";
+import { Prometheus } from "../prometheus";
 
 /**
  * The bidding engine is used for determining the bidding amount for a given
@@ -33,8 +33,11 @@ export class BiddingEngine {
   closerPercentageBid: number = config.bidding.closerPercentageBid;
   /** Which executors are bidding on which side effect. KEYs: sfx id; VALUEs: executor ids array */
   whoBidsOnWhat = new Map<string, string[]>();
+  prometheus: Prometheus
 
-  constructor(public logger: Logger) {}
+  constructor(public logger: Logger, prometheus: Prometheus) {
+    this.prometheus = prometheus;
+  }
 
   /**
    * Computes the bidding amount for a given SFX for a certain scenario.
@@ -48,15 +51,15 @@ export class BiddingEngine {
     switch (scenario) {
       case Scenario.noBidAndNoCompetition:
         bid = this.computeNoBidAndNoCompetition(sfx);
-        Instance.prom.noBidAndNoCompetition.inc();
+        this.prometheus.noBidAndNoCompetition.inc();
         break;
       case Scenario.noBidButCompetition:
         bid = this.computeNoBidButCompetition(sfx);
-        Instance.prom.noBidButCompetition.inc();
+        this.prometheus.noBidButCompetition.inc();
         break;
       case Scenario.beenOutbid:
         bid = this.computeBeenOutbid(sfx);
-        Instance.prom.beenOutBid.inc();
+        this.prometheus.beenOutBid.inc();
         break;
     }
     return bid;

@@ -18,9 +18,9 @@ import { CircuitRelayer } from "../circuit/relayer";
 import { RelayerEventData, RelayerEvents } from "../gateways/types";
 import { XtxStatus } from "@t3rn/sdk/side-effects/types";
 import { Config, Gateway } from "../../config/config";
-import { Instance } from "../index";
 import { Logger } from "pino";
 import BN from "bn.js";
+import { Prometheus } from "../prometheus";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -94,16 +94,18 @@ export class ExecutionManager {
   biddingEngine: BiddingEngine;
   circuitListener: CircuitListener;
   circuitRelayer: CircuitRelayer;
+  prometheus: Prometheus
 
   constructor(
     public circuitClient: Sdk["client"],
     public sdk: Sdk,
     public logger: Logger,
     public config: Config,
+    prometheus: Prometheus
   ) {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
-    this.biddingEngine = new BiddingEngine(logger);
+    this.biddingEngine = new BiddingEngine(logger, prometheus);
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
   }
@@ -270,7 +272,7 @@ export class ExecutionManager {
   /** Initialize the circuit listeners */
   async initializeEventListeners() {
     this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
-      Instance.prom.events.inc();
+      this.prometheus.events.inc();
 
       switch (eventData.type) {
         case ListenerEvents.NewSideEffectsAvailable:
@@ -340,6 +342,7 @@ export class ExecutionManager {
       sdk,
       this.strategyEngine,
       this.biddingEngine,
+      this.prometheus,
     );
 
     // Run the XTX strategy checks

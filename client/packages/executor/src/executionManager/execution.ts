@@ -15,6 +15,7 @@ import { StrategyEngine } from "../strategy";
 import { BiddingEngine } from "../bidding";
 import { Logger } from "pino";
 import { EventData } from "src/circuit/listener";
+import { Prometheus } from "../prometheus";
 
 /**
  * Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.
@@ -38,6 +39,7 @@ export class Execution extends EventEmitter {
   phases: string[][] = [[], []];
   /** The current phase of the XTX */
   currentPhase: number;
+  prometheus: Prometheus
 
   /**
    * Creates a new Execution instance.
@@ -56,6 +58,7 @@ export class Execution extends EventEmitter {
     sdk: Sdk,
     strategyEngine: StrategyEngine,
     biddingEngine: BiddingEngine,
+    prometheus: Prometheus,
   ) {
     super();
     this.owner = eventData[0];
@@ -70,6 +73,7 @@ export class Execution extends EventEmitter {
       biddingEngine,
     );
     this.currentPhase = 0;
+    this.prometheus = prometheus
   }
 
   /**
@@ -98,6 +102,7 @@ export class Execution extends EventEmitter {
         biddingEngine,
         this.circuitSignerAddress,
         this.logger,
+        this.prometheus,
       );
       this.sideEffects.set(sideEffect.id, sideEffect);
 

@@ -6,6 +6,7 @@ import { homedir } from "os";
 import { existsSync } from "fs";
 import { readFile, readdir, mkdir, unlink } from "fs/promises";
 import { Instance } from "../src";
+import { mock } from "ts-mockito";
 
 chai.use(chaiAsPromised);
 chai.use(jestSnapshotPlugin());
@@ -24,7 +25,7 @@ describe("Instance", () => {
       }
       process.env.CIRCUIT_SIGNER_KEY = `0x${"acab".repeat(16)}`;
       process.env.ROCO_GATEWAY_SIGNER_KEY = `0x${"acab".repeat(16)}`;
-      instance = new Instance(name, false /*logToDisk*/);
+      instance = new Instance(name, false, mock());
       instance.logger = { warn() {}, info() {} };
     });
 
@@ -90,7 +91,7 @@ describe("Instance", () => {
       );
       process.env.CIRCUIT_SIGNER_KEY = `0x${"acab".repeat(16)}`;
       process.env.ROCO_GATEWAY_SIGNER_KEY = `0x${"acab".repeat(16)}`;
-      instance = new Instance(name);
+      instance = new Instance(name, false, mock());
     });
 
     it("should not log to disk", async () => {
@@ -106,7 +107,7 @@ describe("Instance", () => {
     });
 
     it("should log to disk", async () => {
-      let instance = new Instance(name, true /**logToDisk*/);
+      const instance = new Instance(name, true, mock());
       let logFiles = await readdir(logs);
       expect(logFiles.length).to.equal(0);
 
