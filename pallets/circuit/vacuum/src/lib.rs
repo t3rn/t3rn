@@ -294,7 +294,7 @@ mod tests {
             assert_eq!(
                 xtx_id,
                 Hash::from(hex!(
-                    "a602173a905f72f4f93410c69db65f52480f67b7e947309b254fe718f611a0a7"
+                    "0162cabd6f37c15015e94be4174f7ad95fa0d6f094da6aea5525ce11731308a1"
                 ))
             );
 
@@ -349,7 +349,7 @@ mod tests {
             assert_eq!(
                 xtx_id,
                 Hash::from(hex!(
-                    "a602173a905f72f4f93410c69db65f52480f67b7e947309b254fe718f611a0a7"
+                    "0162cabd6f37c15015e94be4174f7ad95fa0d6f094da6aea5525ce11731308a1"
                 ))
             );
 
@@ -361,7 +361,7 @@ mod tests {
             let order_status = expect_last_event_to_read_order_status();
 
             let expected_sfx_hash = Hash::from(hex!(
-                "484c277dfcfb25b51c8e12fc2e7eb286bb9315775db60635872d51a40d5bb253"
+                "6fd0ce38a35bcc001dc78cbe7b258dd71cca7dff301891e13b73598572908744"
             ));
 
             assert_eq!(
@@ -518,7 +518,7 @@ mod tests {
             assert_eq!(
                 xtx_id,
                 Hash::from(hex!(
-                    "a602173a905f72f4f93410c69db65f52480f67b7e947309b254fe718f611a0a7"
+                    "0162cabd6f37c15015e94be4174f7ad95fa0d6f094da6aea5525ce11731308a1"
                 ))
             );
 
@@ -530,7 +530,7 @@ mod tests {
             let order_status = expect_last_event_to_read_order_status();
 
             let expected_sfx_hash = Hash::from(hex!(
-                "484c277dfcfb25b51c8e12fc2e7eb286bb9315775db60635872d51a40d5bb253"
+                "6fd0ce38a35bcc001dc78cbe7b258dd71cca7dff301891e13b73598572908744"
             ));
 
             assert_eq!(

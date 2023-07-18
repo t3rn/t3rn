@@ -26,7 +26,7 @@ use frame_support::{
 use sp_core::{crypto::AccountId32, H160, H256, U256};
 use sp_runtime::{
     generic,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup, Keccak256},
 };
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
@@ -77,7 +77,7 @@ impl frame_system::Config for Test {
     type DbWeight = ();
     type Event = Event;
     type Hash = H256;
-    type Hashing = BlakeTwo256;
+    type Hashing = Keccak256;
     type Header = generic::Header<u32, BlakeTwo256>;
     type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
