@@ -1,6 +1,6 @@
 {{ $outer := . -}}
 
-{{- range $index, $keys := .Values.attestersKeys }}
+{{- range $index := until 32 }}
 {{- with $outer -}}
 {{- $attesterName := printf "attester-%d" $index }}
 
@@ -37,7 +37,10 @@ spec:
             - name: PROFILE
               value: "{{ .Values.profile }}"
             - name: KEYS
-              value: {{ $keys | toJson | b64enc }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $attesterName }}
+                  key: KEYS
             {{- if eq $index 0 }}
             - name: LOG_LEVEL
               value: debug
