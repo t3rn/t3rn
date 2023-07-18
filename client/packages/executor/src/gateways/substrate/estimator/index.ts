@@ -28,7 +28,7 @@ export default class Estimator {
    * @returns the cost of the SFX in USD as a subject
    */
   async getNativeTxCostSubject(
-    sideEffect: SideEffect
+    sideEffect: SideEffect,
   ): Promise<BehaviorSubject<number>> {
     const sfxTx = this.relayer.buildTx(sideEffect) as NonNullable<
       ReturnType<typeof this.relayer.buildTx>

@@ -5,6 +5,7 @@ import Web3, { Contract } from "web3";
 import { logger } from "../../src/logging";
 import { Batch, ConfirmationBatch } from "./batch";
 import { ethers } from "ethers";
+import { Prometheus } from "../prometheus";
 
 interface IBatch {
   nextCommittee: string[];
@@ -30,8 +31,9 @@ export class AttestationManager {
   currentCommitteeSize = 0;
   currentBatchIndex: 0;
   currentCommitteeTransitionCount: 0;
+  prometheus: Prometheus
 
-  constructor(public client: Sdk["client"]) {
+  constructor(public client: Sdk["client"], prometheus: Prometheus) {
     if (config.attestations.ethereum.privateKey === undefined) {
       throw new Error("Ethereum private key is not defined");
     }
@@ -41,7 +43,7 @@ export class AttestationManager {
     this.web3 = new Web3(this.rpc);
 
     this.wallet = this.web3.eth.accounts.privateKeyToAccount(
-      config.attestations.ethereum.privateKey
+      config.attestations.ethereum.privateKey,
     );
 
     if (this.wallet.address === undefined) {
@@ -53,15 +55,16 @@ export class AttestationManager {
     const receiveAttestationBatchAbi = JSON.parse(
       fs.readFileSync(
         "./src/attestationManager/contracts/AttestationsVerifier.abi.json",
-        "utf8"
-      )
+        "utf8",
+      ),
     );
     const receiveAttestationBatchAddress =
       config.attestations.ethereum.attestationVerifierAddress;
     this.receiveAttestationBatchContract = new this.web3.eth.Contract(
       receiveAttestationBatchAbi.abi,
-      receiveAttestationBatchAddress
+      receiveAttestationBatchAddress,
     );
+    this.prometheus = prometheus
   }
 
   batchEncodePacked(batch: Batch) {
@@ -73,7 +76,7 @@ export class AttestationManager {
         batch.committedSfx,
         batch.revertedSfx,
         batch.index,
-      ]
+      ],
     );
   }
 
@@ -81,7 +84,7 @@ export class AttestationManager {
     logger.info("Fetching batches from chain...");
     const attesters = this.client.query.attesters;
     const rawBatches = await attesters.batches(
-      config.attestations.ethereum.name
+      config.attestations.ethereum.name,
     );
     const fetchedData = rawBatches.toJSON() as unknown as Array<IBatch>;
     this.batches = fetchedData.map((batch) => {
@@ -96,48 +99,51 @@ export class AttestationManager {
       } as ConfirmationBatch;
     });
     logger.info("We have " + fetchedData.length + " batches pending");
+    this.prometheus.attestationsBatchesPending.set(fetchedData.length)
   }
 
   async listener() {
-    logger.info('Listening for NewConfirmationBatch events...')
+    logger.info("Listening for NewConfirmationBatch events...");
     // Subscribe to all events and filter based on the specified event method
     this.client.query.system.events(async (events: any) => {
       if (events === undefined || events === null) {
-        return
+        return;
       }
 
-      logger.debug({ events_count: events.length }, `Received events`)
+      logger.debug({ events_count: events.length }, `Received events`);
 
       const attesterEvents = events
-          .toHuman()
-          .filter((event) => event.event.section == 'attesters')
+        .toHuman()
+        .filter((event) => event.event.section == "attesters");
 
-      await this.processConfirmedBatches(attesterEvents)
-    })
+      await this.processConfirmedBatches(attesterEvents);
+    });
   }
   private async processConfirmedBatches(events: any) {
-        // Loop through the Vec<EventRecord>
-        await Promise.all(
-            events.map(async (record) => {
-                // Extract the phase, event and the event types
-                const { event } = record
+    // Loop through the Vec<EventRecord>
+    await Promise.all(
+      events.map(async (record) => {
+        // Extract the phase, event and the event types
+        const { event } = record;
 
-                logger.debug(
-                    {
-                        event: event.method,
-                        data: event.data,
-                    },
-                    'Received attesters event'
-                )
-                if (record.event.method != 'NewConfirmationBatch') {
-                    return
-                }
+        logger.debug(
+          {
+            event: event.method,
+            data: event.data,
+          },
+          "Received attesters event",
+        );
+        this.prometheus.attestationsEvents.inc({ method: event.method })
+        if (record.event.method != "NewConfirmationBatch") {
+          return;
+        }
 
-                const batch = event.data as ConfirmationBatch
-                const messageHash = this.getMessageHash(batch)
+        const batch = event.data as ConfirmationBatch;
+        const messageHash = this.getMessageHash(batch);
 
-                await this.receiveAttestationBatchCall(batch, messageHash)
-                }))
+        await this.receiveAttestationBatchCall(batch, messageHash);
+      }),
+    );
   }
 
   getMessageHash(batch: Batch) {
@@ -154,7 +160,7 @@ export class AttestationManager {
   // TODO: not used
   getMessageHashWithPrefix(batch: Batch) {
     const prefix = ethers.hexlify(
-      ethers.toUtf8Bytes("\x19Ethereum Signed Message:\n32")
+      ethers.toUtf8Bytes("\x19Ethereum Signed Message:\n32"),
     );
     const encodedBatch = ethers.keccak256(this.batchEncodePacked(batch));
     const messageHash = ethers.keccak256(ethers.concat([prefix, encodedBatch]));
@@ -171,7 +177,7 @@ export class AttestationManager {
       logger.info(
         `We have ${
           BigInt(this.batches.length) - BigInt(this.currentBatchIndex)
-        } pending batches to process`
+        } pending batches to process`,
       );
       this.processPendingAttestationBatches();
     }
@@ -181,14 +187,14 @@ export class AttestationManager {
 
   async processPendingAttestationBatches() {
     for (const batch of this.batches.slice(
-      Number(this.currentBatchIndex) + 1
+      Number(this.currentBatchIndex) + 1,
     )) {
       logger.info(
         `Batch ${
           batch.index
         } processing, created at block ${await this.getBlockHash(
-          batch.created
-        )}`
+          batch.created,
+        )}`,
       );
 
       const messageHash = this.getMessageHash(batch);
@@ -200,7 +206,7 @@ export class AttestationManager {
 
   async receiveAttestationBatchCall(
     batch: ConfirmationBatch,
-    messageHash: string
+    messageHash: string,
   ) {
     const contractMethod =
       this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
@@ -211,7 +217,7 @@ export class AttestationManager {
         batch.revertedSfx,
         batch.index,
         messageHash,
-        batch.signatures
+        batch.signatures,
       );
 
     const encodedABI = contractMethod.encodeABI();
@@ -231,19 +237,21 @@ export class AttestationManager {
     };
 
     const signedTransaction = await this.wallet.signTransaction(
-      transactionObject
+      transactionObject,
     );
 
     try {
       const transactionReceipt = await this.web3.eth.sendSignedTransaction(
-        signedTransaction.rawTransaction
+        signedTransaction.rawTransaction,
       );
       logger.info(
         { receipt: transactionReceipt },
-        `Batch ${batch.index} procesed!`
+        `Batch ${batch.index} procesed!`,
       );
+      this.prometheus.attestatonsBatchesProcessed.inc()
     } catch (error) {
       logger.warn({ error: error }, "Error sending transaction: ");
+      this.prometheus.attestatonsBatchesFailed.inc()
       // throw new Error("Error sending transaction: " + error);
     }
   }
@@ -251,13 +259,18 @@ export class AttestationManager {
   private async fetchAttesterContractData() {
     this.currentCommitteeSize =
       await this.receiveAttestationBatchContract.methods.committeeSize().call();
+    this.prometheus.attestationVerifierCurrentCommitteeSize.set(this.currentCommitteeSize)
+
     this.currentBatchIndex = await this.receiveAttestationBatchContract.methods
       .currentBatchIndex()
       .call();
+    this.prometheus.attestationVerifierCurrentBatchIndex.set(this.currentBatchIndex)
+
     this.currentCommitteeTransitionCount =
       await this.receiveAttestationBatchContract.methods
         .currentCommitteeTransitionCount()
         .call();
+    this.prometheus.attestationVerifierCurrentCommitteeTransitionCount.set(this.currentCommitteeTransitionCount)
 
     logger.debug(
       {
@@ -265,11 +278,7 @@ export class AttestationManager {
         currentBatchIndex: this.currentBatchIndex,
         currentCommitteeTransitionCount: this.currentCommitteeTransitionCount,
       },
-      "Etherum Contract State"
+      "Etherum Contract State",
     );
-  }
-
-  async listenForConfirmedAttestationBatch() {
-    throw new Error("Not implemented");
   }
 }

@@ -1,5 +1,5 @@
 import http from "http";
-import client from 'prom-client'
+import client from "prom-client";
 import { Registry, Counter, collectDefaultMetrics, Gauge } from "prom-client";
 import { logger } from "./logging";
 
@@ -18,9 +18,15 @@ export class Prometheus {
   noBidButCompetition: Counter;
   beenOutBid: Counter;
   attestationsBatchesPending: Gauge;
+  attestationsEvents: Counter
+  attestationVerifierCurrentCommitteeSize: Gauge;
+  attestationVerifierCurrentBatchIndex: Gauge;
+  attestationVerifierCurrentCommitteeTransitionCount: Gauge;
+  attestatonsBatchesProcessed: Counter;
+  attestatonsBatchesFailed: Counter;
 
   constructor() {
-    const Registry = client.Registry
+    const Registry = client.Registry;
     this.register = new Registry();
     this.createMetrics();
   }
@@ -71,8 +77,45 @@ export class Prometheus {
       registers: [this.register],
     });
 
+    this.attestationsEvents = new client.Counter({
+        name: 'attestation_events_total',
+        help: 'Number of attestations received',
+        registers: [this.register],
+        labelNames: ['method'],
+    })
+
+    this.attestationVerifierCurrentCommitteeSize = new Gauge({
+      name: "attestation_verifier_current_committee_size",
+      help: "Current committee size",
+      registers: [this.register],
+    });
+
+    this.attestationVerifierCurrentBatchIndex = new Gauge({
+      name: "attestation_verifier_current_batch_index",
+      help: "Current batch index",
+      registers: [this.register],
+    });
+
+    this.attestationVerifierCurrentCommitteeTransitionCount = new Gauge({
+      name: "attestation_verifier_current_committee_transition_count",
+      help: "Current committee transition count",
+      registers: [this.register],
+    });
+
+    this.attestatonsBatchesProcessed = new Counter({
+      name: "attestations_batches_processed_total",
+      help: "Number of attestations batches processed",
+      registers: [this.register],
+    });
+
+    this.attestatonsBatchesFailed = new Counter({
+      name: "attestations_batches_failed_total",
+      help: "Number of attestations batches failed",
+      registers: [this.register],
+    });
+
     this.startServer();
-    logger.info("Prometheus metrics server started")
+    logger.info("Prometheus metrics server started");
   }
 
   startServer() {
