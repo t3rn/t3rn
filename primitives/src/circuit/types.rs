@@ -9,7 +9,7 @@ use frame_system::Config;
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{hexdisplay::AsBytesRef, Hasher, H256};
+use sp_core::{hexdisplay::AsBytesRef, Hasher};
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 use sp_runtime::{traits::Zero, RuntimeDebug};

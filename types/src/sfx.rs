@@ -15,7 +15,7 @@ use scale_info::{
 };
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{hexdisplay::AsBytesRef, Hasher, H256};
+use sp_core::Hasher;
 use sp_runtime::DispatchError;
 
 use t3rn_abi::{Codec, SFXAbi};

@@ -11,7 +11,7 @@ use frame_support::{
 
 use sp_runtime::{
     generic,
-    traits::{AccountIdLookup, BlakeTwo256, ConvertInto, Keccak256},
+    traits::{AccountIdLookup, BlakeTwo256, ConvertInto},
 };
 
 // Configure FRAME pallets to include in runtime.
