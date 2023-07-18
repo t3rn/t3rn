@@ -108,6 +108,7 @@ export class ExecutionManager {
     this.biddingEngine = new BiddingEngine(logger, prometheus);
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
+    this.prometheus = prometheus;
   }
 
   /** Injects persisted execution state.

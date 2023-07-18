@@ -10,7 +10,7 @@ chai.should();
 
 describe("AttestationManager", () => {
   it("should return correct message hash for empty batch", () => {
-    const attestationManager = new AttestationManager(mock(Sdk).client);
+    const attestationManager = new AttestationManager(mock(Sdk).client, mock());
     const batch: Batch = {
       nextCommittee: [],
       bannedCommittee: [],
@@ -32,7 +32,7 @@ describe("AttestationManager", () => {
   });
 
   it("should return same message hash as circuit for first batch", () => {
-    const attestationManager = new AttestationManager(mock(Sdk).client);
+    const attestationManager = new AttestationManager(mock(Sdk).client, mock());
     const batch: Batch = {
       nextCommittee: [
         "0x54e6c56c82a971b6727ae8ebc5d4baab49aa468c",
