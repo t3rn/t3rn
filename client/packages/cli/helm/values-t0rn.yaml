@@ -1,5 +1,5 @@
 jobs:
-  - name: send-sfx
+  - name: send-sfx-transfer
     env:
       - name: WS_CIRCUIT_ENDPOINT
         value: wss://ws.t0rn.io
