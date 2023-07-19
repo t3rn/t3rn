@@ -1,6 +1,5 @@
 jobs:
-  # This is replaced by grandpa ranger but left here as an example to show how to run a cli as cronjob
-  - name: ranger
+  - name: send-sfx-transfer
     env:
       - name: WS_CIRCUIT_ENDPOINT
         value: wss://ws.t0rn.io
@@ -11,6 +10,6 @@ jobs:
     schedule: "*/5 * * * *"
     args:
     - submit
-    - -h
-    - roco
+    - -s
+    - transfer.json
     activeDeadlineSeconds: 300

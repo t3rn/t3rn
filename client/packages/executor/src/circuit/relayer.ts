@@ -144,7 +144,7 @@ export const encodeExport = (
   transactionType: string,
 ) => {
   if (Array.isArray(data)) {
-    return data.map((entry) => iterateEncode(entry, transactionType));
+    return data.map((entry) => iterateEncode(entry as Codec, transactionType));
   } else {
     return iterateEncode(data as Codec, transactionType);
   }
