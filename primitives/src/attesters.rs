@@ -252,6 +252,12 @@ pub trait AttestersReadApi<Account, Balance> {
     fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)>;
     fn get_activated_targets() -> Vec<TargetId>;
     fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus>;
+    // Estimate finality fee for user including set overcharge factor (32%)
+    fn estimate_finality_fee(target: &TargetId) -> Balance;
+    // Estimate finality reward for executor based on the current estimated batching factor
+    fn estimate_finality_reward(target: &TargetId) -> Balance;
+    // Estimate batching factor
+    fn estimate_batching_factor(target: &TargetId) -> Balance;
 }
 
 pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {

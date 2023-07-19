@@ -67,6 +67,7 @@ impl<T: Config> Machine<T> {
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         requester: &T::AccountId,
         maybe_adaptive_timeout: Option<AdaptiveTimeout<T::BlockNumber, TargetId>>,
+        preferred_security_lvl: &SecurityLvl,
     ) -> Result<LocalXtxCtx<T, BalanceOf<T>>, Error<T>> {
         // ToDo: Introduce default delay
         let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
@@ -97,10 +98,11 @@ impl<T: Config> Machine<T> {
             full_side_effects: vec![],
         };
 
-        pallet::Pallet::<T>::validate(side_effects, &mut local_xtx_ctx).map_err(|e| {
-            log::error!("Self::validate hit an error -- {e:?}");
-            Error::<T>::SideEffectsValidationFailed
-        })?;
+        pallet::Pallet::<T>::validate(side_effects, &mut local_xtx_ctx, preferred_security_lvl)
+            .map_err(|e| {
+                log::error!("Self::validate hit an error -- {e:?}");
+                Error::<T>::SideEffectsValidationFailed
+            })?;
 
         Ok(local_xtx_ctx)
     }

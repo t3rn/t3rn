@@ -190,8 +190,7 @@ pub mod pallet {
         type ShufflingFrequency: Get<Self::BlockNumber>;
         type MaxBatchSize: Get<u32>;
         type RewardMultiplier: Get<BalanceOf<Self>>;
-        type CommitmentRewardSource: Get<Self::AccountId>;
-        type SlashAccount: Get<Self::AccountId>;
+        type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
         type Currency: ReservableCurrency<Self::AccountId>;
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         type DefaultCommission: Get<Percent>;
@@ -1072,7 +1071,74 @@ pub mod pallet {
                 FastConfirmationCost::<T>::get(target).unwrap_or(Zero::zero());
             let total_reward = fast_confirmation_cost.saturating_mul(T::RewardMultiplier::get());
 
-            if total_reward > Zero::zero() {
+            // Calculate the delay between the batch block number and the current block number
+            let delay = <frame_system::Pallet<T>>::block_number()
+                .saturating_sub(batch_message.available_to_commit_at)
+                .saturating_sub(T::BlockNumber::from(TWO_EPOCHS_IN_LOCAL_BLOCKS_U8));
+
+            let capped_delay_in_blocks = delay.min(THREE_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
+
+            // Define a base percentage and maximum increase
+            let base_percent: Percent = Percent::from_percent(0);
+            // AutoRegressionParam::<T>::get(target).unwrap_or(Percent::from_percent(0));
+            let max_increase: Percent = Percent::from_percent(100); // Adjust as needed
+
+            // Calculate the adjustment based on delay (linear increase)
+            let adjustment = Percent::from_rational(
+                capped_delay_in_blocks,
+                THREE_EPOCHS_IN_LOCAL_BLOCKS_U8.into(),
+            );
+
+            println!(
+                "calculate_confirmation_reward_for_pending_confirmation base_percent: {base_percent:?}"
+            );
+            // Adjust AutoRegression parameters based on the change in delay
+            // let new_auto_regression_param = adjustment;
+            let new_auto_regression_param = if adjustment > base_percent {
+                base_percent.saturating_add(max_increase.saturating_mul(adjustment))
+            // if delay increased
+            } else {
+                base_percent.saturating_sub(max_increase.saturating_mul(adjustment))
+                // if delay decreased or stayed the same
+            };
+
+            println!(
+                "calculate_confirmation_reward_for_pending_confirmation new_auto_regression_param: {new_auto_regression_param:?}"
+            );
+            println!("calculate_confirmation_reward_for_pending_confirmation delay: {delay:?}");
+            println!(
+                "calculate_confirmation_reward_for_pending_confirmation capped_delay_in_blocks: {capped_delay_in_blocks:?}"
+            );
+            println!(
+                "calculate_confirmation_reward_for_pending_confirmation adjustment: {adjustment:?}"
+            );
+
+            AutoRegressionParam::<T>::mutate(target, |param| {
+                *param = Some(new_auto_regression_param)
+            });
+
+            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(target).unwrap_or_default();
+
+            println!(
+                "calculate_confirmation_reward_for_pending_confirmation batching_factor: {batching_factor:?}"
+            );
+            <Pallet<T> as AttestersReadApi<
+                T::AccountId,
+                BalanceOf<T>,
+            >>::estimate_future_finality_fee(
+                target, 0, batching_factor
+            )
+        }
+
+        pub fn reward_submitter(
+            submitter: &T::AccountId,
+            target: &TargetId,
+            batch: &BatchMessage<T::BlockNumber>,
+        ) -> Result<BalanceOf<T>, DispatchError> {
+            let calculated_finality_fee =
+                Self::calculate_confirmation_reward_for_pending_confirmation(target, batch);
+
+            if calculated_finality_fee > Zero::zero() {
                 T::Currency::transfer(
                     &T::CommitmentRewardSource::get(),
                     &submitter,
@@ -3074,20 +3140,181 @@ pub mod attesters_test {
         (res, message_bytes)
     }
 
+    fn expect_latest_confirmed_batching_factor(target: TargetId, latest_confirmed_factor: u16) {
+        // Recover system event
+        let events = System::events();
+        let expect_batching_factor_read_event = events.last();
+        assert!(expect_batching_factor_read_event.clone().is_some());
+        assert_eq!(
+            expect_batching_factor_read_event.unwrap().event,
+            Event::Attesters(AttestersEvent::BatchingFactorRead(
+                target,
+                Some(BatchingFactor {
+                    latest_confirmed: latest_confirmed_factor,
+                    latest_signed: 0,
+                    current_next: 0,
+                    up_to_last_10_confirmed: vec![latest_confirmed_factor],
+                })
+            ))
+        );
+    }
+
+    fn expect_latest_user_finality_fees_estimated(
+        target: TargetId,
+        n_from_now: u16,
+        per_user_fees: u128,
+    ) {
+        // Recover system event
+        let events = System::events();
+        let expect_batching_factor_read_event = events.last();
+        assert!(expect_batching_factor_read_event.clone().is_some());
+        assert_eq!(
+            expect_batching_factor_read_event.unwrap().event,
+            Event::Attesters(AttestersEvent::UserFinalityFeeEstimated(
+                target,
+                per_user_fees,
+                n_from_now
+            ))
+        );
+    }
+
+    fn expect_latest_future_total_finality_fees_estimated(
+        target: TargetId,
+        n_from_now: u16,
+        total_fees: u128,
+    ) {
+        // Recover system event
+        let events = System::events();
+        let expect_batching_factor_read_event = events.last();
+        assert!(expect_batching_factor_read_event.clone().is_some());
+        assert_eq!(
+            expect_batching_factor_read_event.unwrap().event,
+            Event::Attesters(AttestersEvent::FutureTotalFinalityFeeEstimated(
+                target, total_fees, n_from_now
+            ))
+        );
+    }
+
+    fn expect_finality_fees_recalculated_event_and_regression_readjusted(
+        _target: TargetId,
+    ) -> (TargetId, u32, Balance, Percent, Percent) {
+        // Recover system event
+        let events = System::events();
+        let expect_batching_factor_read_event = events.last();
+        assert!(expect_batching_factor_read_event.clone().is_some());
+
+        match expect_batching_factor_read_event.unwrap().event {
+            Event::Attesters(AttestersEvent::ConfirmationRewardCalculated(
+                target,
+                n_from_now,
+                total_fees,
+                user_fees,
+                regression,
+            )) => {
+                assert!(true);
+                (target, n_from_now, total_fees, user_fees, regression)
+            },
+            _ => panic!("Unexpected event - expect_finality_fees_recalculated_event_and_regression_readjusted"),
+        }
+    }
+
+    fn expect_user_finality_fees_estimated_event(_target: TargetId) -> (TargetId, Balance, u16) {
+        // Recover system event
+        let events = System::events();
+        let expect_batching_factor_read_event = events.last();
+        assert!(expect_batching_factor_read_event.clone().is_some());
+
+        match expect_batching_factor_read_event.unwrap().event {
+            Event::Attesters(AttestersEvent::UserFinalityFeeEstimated(
+                target,
+                user_fee_chunk_estimated,
+                epoch,
+            )) => {
+                assert!(true);
+                (target, user_fee_chunk_estimated, epoch)
+            },
+            _ => panic!("Unexpected event - expect_user_finality_fees_estimated_event"),
+        }
+    }
+
+    fn request_n_sfx_32_attestations_and_commit(
+        messages: Vec<[u8; 32]>,
+        target: TargetId,
+        delay_before_commit: BlockNumber,
+    ) -> Vec<u8> {
+        for counter in 1..33u8 {
+            // Register an attester
+            let attester = AccountId::from([counter; 32]);
+            // Submit an attestation signed with the Ed25519 key
+            sign_and_submit_sfx_to_latest_attestation(
+                attester,
+                messages.clone(),
+                ECDSA_ATTESTER_KEY_TYPE_ID,
+                target,
+                [counter; 32],
+            );
+        }
+
+        let attested_batches =
+            Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
+
+        assert_eq!(attested_batches.len(), 1);
+        let first_batch = attested_batches[0].clone();
+
+        // Check if the attestations have been added to the batch
+        let first_batch_hash = first_batch.message_hash();
+        let first_batch_message = first_batch.message();
+
+        assert_eq!(first_batch.signatures.len(), 32);
+        assert_eq!(
+            first_batch.status,
+            BatchStatus::ReadyForSubmissionFullyApproved
+        );
+
+        let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
+            signatures: first_batch.signatures,
+            hash: first_batch_hash,
+            message: first_batch_message.clone(),
+        };
+
+        // Commit the batch
+        assert_ok!(Attesters::commit_batch(
+            Origin::signed(AccountId::from([1; 32])),
+            target,
+            mock_valid_batch_confirmation.encode(),
+        ));
+
+        first_batch_message
+    }
+
+    fn full_route_register_32_attesters_submit_n_sfx_attest_all_and_commit(
+        messages: Vec<[u8; 32]>,
+        target: TargetId,
+    ) -> Vec<u8> {
+        for counter in 1..33u8 {
+            // Register an attester
+            let _attester = AccountId::from([counter; 32]);
+            register_attester_with_single_private_key([counter; 32]);
+        }
+
+        select_new_committee();
+
+        request_n_sfx_32_attestations_and_commit(messages, target, 0)
+    }
+
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
     ) {
-        let target: TargetId = POLKADOT_TARGET;
+        let target: TargetId = [1u8; 4];
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
-            .with_standard_sfx_abi()
             .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
             .build();
 
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            let (_message_hash, _message_bytes) = calculate_hash_for_sfx_message(message, 0);
 
             for counter in 1..33u8 {
                 // Register an attester
