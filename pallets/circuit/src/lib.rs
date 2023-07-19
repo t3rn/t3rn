@@ -496,8 +496,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             speed_mode: SpeedMode,
+            preferred_security_level: SecurityLvl,
         ) -> DispatchResultWithPostInfo {
-            Self::on_extrinsic_trigger(origin, side_effects, speed_mode)
+            Self::on_extrinsic_trigger(origin, side_effects, speed_mode, preferred_security_level)
         }
 
         fn on_remote_origin_trigger(
@@ -718,7 +719,12 @@ pub mod pallet {
                 OrderOrigin::Remote(_) => order_origin.clone(),
             };
 
-            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
+            Self::do_on_extrinsic_trigger(
+                requester,
+                side_effects,
+                speed_mode,
+                &SecurityLvl::Optimistic,
+            )
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
@@ -726,11 +732,17 @@ pub mod pallet {
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             speed_mode: SpeedMode,
+            preferred_security_level: SecurityLevel,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
 
-            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
+            Self::do_on_extrinsic_trigger(
+                requester,
+                side_effects,
+                speed_mode,
+                &preferred_security_level,
+            )
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
@@ -1076,6 +1088,7 @@ impl<T: Config> Pallet<T> {
         requester: T::AccountId,
         side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
         speed_mode: SpeedMode,
+        preferred_security_level: &SecurityLevel,
     ) -> DispatchResultWithPostInfo {
         // Setup: new xtx context with SFX validation
         let mut fresh_xtx = Machine::<T>::setup(
@@ -1089,6 +1102,7 @@ impl<T: Config> Pallet<T> {
                 &speed_mode,
                 T::XtxTimeoutDefault::get(),
             )),
+            preferred_security_level,
         )?;
 
         fresh_xtx.xtx.set_speed_mode(speed_mode);

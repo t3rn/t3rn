@@ -186,6 +186,7 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
             origin,
             side_effects,
             SpeedMode::Finalized,
+            SecurityLvl::Optimistic,
         ));
     });
 }
@@ -231,6 +232,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
         });
 }
@@ -262,6 +264,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_sets_storage_entries() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             // Assert Circuit::emit generates 5 correct events: 3 from charging and 2 Circuit-specific
@@ -391,6 +394,7 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
         });
 }
@@ -423,6 +427,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_emits_expect_events() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             // Assert Circuit::emit generates 5 correct events: 3 for charging and 2 Circuit-specific
@@ -520,6 +525,7 @@ fn circuit_handles_single_bid_for_transfer_sfx() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             let (xtx_id, side_effect_a_id) = set_ids(
@@ -632,6 +638,7 @@ fn circuit_handles_dropped_at_bidding() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             assert_eq!(Balances::free_balance(ALICE), INITIAL_BALANCE - MAX_REWARD);
@@ -750,7 +757,7 @@ fn circuit_selects_best_bid_out_of_3_for_transfer_sfx() {
             advance_to_block(BIDDING_BLOCK_NO);
             brute_seed_block_1([0, 0, 0, 0]);
 
-            assert_ok!(Circuit::on_extrinsic_trigger(origin, side_effects, SpeedMode::Finalized,));
+            assert_ok!(Circuit::on_extrinsic_trigger(origin, side_effects, SpeedMode::Finalized, SecurityLvl::Optimistic));
             // Requester should have offered SFX::max_reward reserved
             assert_eq!(
                 Balances::free_balance(&REQUESTER),
@@ -940,6 +947,7 @@ fn circuit_handles_swap_with_insurance() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             let (xtx_id, side_effect_a_id) = set_ids(
@@ -2298,6 +2306,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
                 origin.clone(),
                 side_effects.clone(),
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             // manually increment nonce to simulate production environment
@@ -2307,6 +2316,7 @@ fn no_duplicate_xtx_and_sfx_ids() {
                 origin,
                 side_effects.clone(),
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
 

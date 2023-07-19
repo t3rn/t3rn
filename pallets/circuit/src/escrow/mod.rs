@@ -204,6 +204,7 @@ pub mod test {
                     origin,
                     side_effects,
                     speed_mode,
+                    SecurityLvl::Optimistic,
                 ));
 
                 let _xtx_id: sp_core::H256 =
@@ -279,6 +280,7 @@ pub mod test {
                     origin,
                     side_effects,
                     speed_mode,
+                    SecurityLvl::Optimistic,
                 ));
 
                 assert_ok!(Escrow::<Runtime>::exec(
