@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@polkadot/api':
     specifier: ^10.9.1
@@ -9,7 +13,7 @@ dependencies:
     version: 10.9.1
   '@polkadot/keyring':
     specifier: ^12.2.2
-    version: 12.2.2(@polkadot/util-crypto@12.2.2)(@polkadot/util@12.2.2)
+    version: 12.2.2(@polkadot/util-crypto@12.3.2)(@polkadot/util@12.2.2)
   '@polkadot/types':
     specifier: ^10.9.1
     version: 10.9.1
@@ -17,8 +21,8 @@ dependencies:
     specifier: ^12.2.2
     version: 12.2.2
   '@polkadot/util-crypto':
-    specifier: ^12.2.2
-    version: 12.2.2(@polkadot/util@12.2.2)
+    specifier: ^12.3.2
+    version: 12.3.2(@polkadot/util@12.2.2)
   '@t3rn/sdk':
     specifier: link:../sdk
     version: link:../sdk
@@ -1268,7 +1272,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@polkadot/keyring@12.2.2(@polkadot/util-crypto@12.2.2)(@polkadot/util@12.2.2):
+  /@polkadot/keyring@12.2.2(@polkadot/util-crypto@12.3.2)(@polkadot/util@12.2.2):
     resolution: {integrity: sha512-z8MVdgrhzg/bFiR2i5/W06Ma+IPeisH7EtGuIQ+ZwXiCJlXMAGUy5spfk3fUbXYubCCqNycqFgKTYDM/rDhXSg==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -1276,7 +1280,7 @@ packages:
       '@polkadot/util-crypto': 12.2.2
     dependencies:
       '@polkadot/util': 12.2.2
-      '@polkadot/util-crypto': 12.2.2(@polkadot/util@12.2.2)
+      '@polkadot/util-crypto': 12.3.2(@polkadot/util@12.2.2)
       tslib: 2.6.0
     dev: false
 
@@ -1289,15 +1293,6 @@ packages:
     dependencies:
       '@polkadot/util': 12.3.2
       '@polkadot/util-crypto': 12.3.2(@polkadot/util@12.3.2)
-      tslib: 2.6.0
-    dev: false
-
-  /@polkadot/networks@12.2.2:
-    resolution: {integrity: sha512-SsZognHwXyD2saJkB35G+28noAZBcNpJAXsTI7QTTDHGiQSDp0mPmrk3Rt7BRAeFn4qdXQuRqQYKYUwBM2i9mQ==}
-    engines: {node: '>=16'}
-    dependencies:
-      '@polkadot/util': 12.2.2
-      '@substrate/ss58-registry': 1.41.0
       tslib: 2.6.0
     dev: false
 
@@ -1427,20 +1422,20 @@ packages:
       tslib: 2.6.0
     dev: false
 
-  /@polkadot/util-crypto@12.2.2(@polkadot/util@12.2.2):
-    resolution: {integrity: sha512-4JfEd/TJaDArp5Jpr3N/aYHp+QR71XzZRKqU4u7WkGKmnGt28Qfh2IWGB/E2MvIFxa6CjIiQMxN2hnkNr49JAQ==}
+  /@polkadot/util-crypto@12.3.2(@polkadot/util@12.2.2):
+    resolution: {integrity: sha512-pTpx+YxolY0BDT4RcGmgeKbHHD/dI6Ll9xRsqmVdIjpcVVY20uDNTyXs81ZNtfKgyod1y9JQkfNv2Dz9iEpTkQ==}
     engines: {node: '>=16'}
     peerDependencies:
-      '@polkadot/util': 12.2.2
+      '@polkadot/util': 12.3.2
     dependencies:
       '@noble/curves': 1.1.0
       '@noble/hashes': 1.3.1
-      '@polkadot/networks': 12.2.2
+      '@polkadot/networks': 12.3.2
       '@polkadot/util': 12.2.2
-      '@polkadot/wasm-crypto': 7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.2.2)
+      '@polkadot/wasm-crypto': 7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.3.2)
       '@polkadot/wasm-util': 7.2.1(@polkadot/util@12.2.2)
-      '@polkadot/x-bigint': 12.2.2
-      '@polkadot/x-randomvalues': 12.2.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1)
+      '@polkadot/x-bigint': 12.3.2
+      '@polkadot/x-randomvalues': 12.3.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1)
       '@scure/base': 1.1.1
       tslib: 2.6.0
     dev: false
@@ -1489,7 +1484,7 @@ packages:
       tslib: 2.6.0
     dev: false
 
-  /@polkadot/wasm-bridge@7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.2.2):
+  /@polkadot/wasm-bridge@7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.3.2):
     resolution: {integrity: sha512-uV/LHREDBGBbHrrv7HTki+Klw0PYZzFomagFWII4lp6Toj/VCvRh5WMzooVC+g/XsBGosAwrvBhoModabyHx+A==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -1498,7 +1493,7 @@ packages:
     dependencies:
       '@polkadot/util': 12.2.2
       '@polkadot/wasm-util': 7.2.1(@polkadot/util@12.2.2)
-      '@polkadot/x-randomvalues': 12.2.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1)
+      '@polkadot/x-randomvalues': 12.3.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1)
       tslib: 2.6.0
     dev: false
 
@@ -1535,7 +1530,7 @@ packages:
       tslib: 2.6.0
     dev: false
 
-  /@polkadot/wasm-crypto-init@7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.2.2):
+  /@polkadot/wasm-crypto-init@7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.3.2):
     resolution: {integrity: sha512-GcEXtwN9LcSf32V9zSaYjHImFw16hCyo2Xzg4GLLDPPeaAAfbFr2oQMgwyDbvBrBjLKHVHjsPZyGhXae831amw==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -1543,11 +1538,11 @@ packages:
       '@polkadot/x-randomvalues': '*'
     dependencies:
       '@polkadot/util': 12.2.2
-      '@polkadot/wasm-bridge': 7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.2.2)
+      '@polkadot/wasm-bridge': 7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.3.2)
       '@polkadot/wasm-crypto-asmjs': 7.2.1(@polkadot/util@12.2.2)
       '@polkadot/wasm-crypto-wasm': 7.2.1(@polkadot/util@12.2.2)
       '@polkadot/wasm-util': 7.2.1(@polkadot/util@12.2.2)
-      '@polkadot/x-randomvalues': 12.2.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1)
+      '@polkadot/x-randomvalues': 12.3.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1)
       tslib: 2.6.0
     dev: false
 
@@ -1589,7 +1584,7 @@ packages:
       tslib: 2.6.0
     dev: false
 
-  /@polkadot/wasm-crypto@7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.2.2):
+  /@polkadot/wasm-crypto@7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.3.2):
     resolution: {integrity: sha512-SA2+33S9TAwGhniKgztVN6pxUKpGfN4Tre/eUZGUfpgRkT92wIUT2GpGWQE+fCCqGQgADrNiBcwt6XwdPqMQ4Q==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -1597,12 +1592,12 @@ packages:
       '@polkadot/x-randomvalues': '*'
     dependencies:
       '@polkadot/util': 12.2.2
-      '@polkadot/wasm-bridge': 7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.2.2)
+      '@polkadot/wasm-bridge': 7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.3.2)
       '@polkadot/wasm-crypto-asmjs': 7.2.1(@polkadot/util@12.2.2)
-      '@polkadot/wasm-crypto-init': 7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.2.2)
+      '@polkadot/wasm-crypto-init': 7.2.1(@polkadot/util@12.2.2)(@polkadot/x-randomvalues@12.3.2)
       '@polkadot/wasm-crypto-wasm': 7.2.1(@polkadot/util@12.2.2)
       '@polkadot/wasm-util': 7.2.1(@polkadot/util@12.2.2)
-      '@polkadot/x-randomvalues': 12.2.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1)
+      '@polkadot/x-randomvalues': 12.3.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1)
       tslib: 2.6.0
     dev: false
 
@@ -1682,16 +1677,16 @@ packages:
       tslib: 2.6.0
     dev: false
 
-  /@polkadot/x-randomvalues@12.2.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1):
-    resolution: {integrity: sha512-eExiOT/up5ZzwHJkFpGhQ6sCdPSJnn6PJsQnyJMEdgPaUES70u/wWMLGFNiy3U8rRRVSsZi6rc9Unsr02LczzA==}
+  /@polkadot/x-randomvalues@12.3.2(@polkadot/util@12.2.2)(@polkadot/wasm-util@7.2.1):
+    resolution: {integrity: sha512-ywjIs8CWpvOGmq+3cGCNPOHxAjPHdBUiXyDccftx5BRVdmtbt36gK/V84bKr6Xs73FGu0jprUAOSRRsLZX/3dg==}
     engines: {node: '>=16'}
     peerDependencies:
-      '@polkadot/util': 12.2.2
+      '@polkadot/util': 12.3.2
       '@polkadot/wasm-util': '*'
     dependencies:
       '@polkadot/util': 12.2.2
       '@polkadot/wasm-util': 7.2.1(@polkadot/util@12.2.2)
-      '@polkadot/x-global': 12.2.2
+      '@polkadot/x-global': 12.3.2
       tslib: 2.6.0
     dev: false
 
