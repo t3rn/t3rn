@@ -11,5 +11,5 @@ jobs:
     args:
     - submit
     - -s
-    - transfer
+    - transfer.json
     activeDeadlineSeconds: 300
