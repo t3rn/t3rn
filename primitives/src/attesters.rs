@@ -263,19 +263,12 @@ pub trait AttestersReadApi<Account, Balance> {
     fn read_nominations(for_attester: &Account) -> Vec<(Account, Balance)>;
     fn get_activated_targets() -> Vec<TargetId>;
     fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus>;
-    fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor>;
-    fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16;
-    fn estimate_future_finality_fee(
-        target: &TargetId,
-        n_windows_from_now: u16,
-        batching_factor: BatchingFactor,
-    ) -> Balance;
-
-    fn estimate_user_finality_fee(
-        target: &TargetId,
-        n_epochs_from_now: u16,
-        batching_factor: BatchingFactor,
-    ) -> Result<Balance, DispatchError>;
+    // Estimate finality fee for user including set overcharge factor (32%)
+    fn estimate_finality_fee(target: &TargetId) -> Balance;
+    // Estimate finality reward for executor based on the current estimated batching factor
+    fn estimate_finality_reward(target: &TargetId) -> Balance;
+    // Estimate batching factor
+    fn estimate_batching_factor(target: &TargetId) -> Balance;
 }
 
 pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {

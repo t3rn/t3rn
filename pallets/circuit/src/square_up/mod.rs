@@ -80,6 +80,26 @@ impl<T: Config> SquareUp<T> {
             Error::<T>::SanityAfterCreatingSFXDepositsFailed
         );
 
+        // Sum all finality fee estimates to all escrow targets, that would require attestations.
+        let all_escrow_targets = fsx_array
+            .iter()
+            .filter(|fsx| fsx.security_lvl == SecurityLvl::Escrow)
+            .map(|fsx| fsx.input.target)
+            .collect::<Vec<TargetId>>();
+
+        let finality_fees_sum = all_escrow_targets
+            .iter()
+            .map(|target| T::Attesters::estimate_finality_fee(target))
+            .collect::<Vec<BalanceOf<T>>>();
+
+        T::Currency::transfer(
+            requester,
+            &T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Fees),
+            finality_fees_sum,
+            ExistenceRequirement::KeepAlive,
+        )
+        .map_err(|_| Error::<T>::RequesterNotEnoughBalance.into())?;
+
         Ok(())
     }
 

@@ -205,7 +205,6 @@ pub mod pallet {
         type MaxBatchSize: Get<u32>;
         type RewardMultiplier: Get<BalanceOf<Self>>;
         type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
-        type SlashAccount: Get<Self::AccountId>;
         type Currency: ReservableCurrency<Self::AccountId>;
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         type DefaultCommission: Get<Percent>;
@@ -1531,9 +1530,7 @@ pub mod pallet {
             println!(
                 "calculate_confirmation_reward_for_pending_confirmation new_auto_regression_param: {new_auto_regression_param:?}"
             );
-            println!(
-                "calculate_confirmation_reward_for_pending_confirmation delay: {delay:?}"
-            );
+            println!("calculate_confirmation_reward_for_pending_confirmation delay: {delay:?}");
             println!(
                 "calculate_confirmation_reward_for_pending_confirmation capped_delay_in_blocks: {capped_delay_in_blocks:?}"
             );
@@ -3716,8 +3713,6 @@ pub mod attesters_test {
             BatchStatus::ReadyForSubmissionFullyApproved
         );
 
-        System::set_block_number(delay_before_commit + System::block_number());
-
         let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
             signatures: first_batch.signatures,
             hash: first_batch_hash,
@@ -3752,17 +3747,16 @@ pub mod attesters_test {
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
     ) {
-        let target: TargetId = POLKADOT_TARGET;
+        let target: TargetId = [1u8; 4];
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
-            .with_standard_sfx_abi()
             .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
             .build();
 
         ext.execute_with(|| {
             let message: [u8; 32] = *b"message_that_needs_attestation32";
-            let (_message_hash, _message_bytes) = calculate_hash_for_sfx_message(message, 0);
 
             let confirmed_batch_message =
                 full_route_register_32_attesters_submit_n_sfx_attest_all_and_commit(

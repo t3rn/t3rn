@@ -307,7 +307,8 @@ pub mod pallet {
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self, BalanceOf<Self>>;
 
-        type Attesters: AttestersWriteApi<Self::AccountId, DispatchError>;
+        type Attesters: AttestersWriteApi<Self::AccountId, DispatchError>
+            + AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
 
         type Executors: Executors<Self, BalanceOf<Self>>;
 
@@ -1123,11 +1124,19 @@ impl<T: Config> Pallet<T> {
     fn validate(
         side_effects: &[SideEffect<T::AccountId, BalanceOf<T>>],
         local_ctx: &mut LocalXtxCtx<T, BalanceOf<T>>,
+        preferred_security_lvl: &SecurityLvl,
     ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
             vec![];
 
-        pub fn determine_security_lvl(gateway_type: GatewayType) -> SecurityLvl {
+        pub fn determine_security_lvl(
+            gateway_type: GatewayType,
+            sfx_len: usize,
+            preferred_security_lvl: &SecurityLvl,
+        ) -> SecurityLvl {
+            if sfx_len < 2 || preferred_security_lvl == SecurityLvl::Optimistic {
+                return SecurityLvl::Optimistic
+            }
             if gateway_type == GatewayType::ProgrammableInternal(0)
                 || gateway_type == GatewayType::OnCircuit(0)
             {
@@ -1156,7 +1165,8 @@ impl<T: Config> Pallet<T> {
 
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
-            let security_lvl = determine_security_lvl(gateway_type);
+            let security_lvl =
+                determine_security_lvl(gateway_type, side_effects.len(), preffered_security_lvl);
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
