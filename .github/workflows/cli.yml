@@ -91,9 +91,9 @@ jobs:
 
   deploy:
     runs-on: self-hosted
+    needs: [test-cli]
 
-    # if: github.ref == 'refs/heads/development'
-
+    if: github.ref == 'refs/heads/development'
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -109,7 +109,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build ranger
+      - name: Build CLI
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: test-t0rn-cli
