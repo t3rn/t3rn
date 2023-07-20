@@ -2,8 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract RemoteOrder {
+contract RemoteOrder is ReentrancyGuard  {
+
+    using SafeERC20 for IERC20;
 
     event OrderCreated(bytes32 indexed id, bytes4 indexed destination, bytes4 asset, address targetAccount, uint256 amount, address rewardAsset, uint256 insurance, uint256 maxReward, uint32 nonce);
     event OrderCommitted(bytes32 indexed id);
@@ -107,19 +111,19 @@ contract RemoteOrder {
     /*
      * Refunds the maxReward to the user if the order is in the Accepted state and changes the state to Reverted.
      */
-    function revertOrder(bytes32 id) public {
+    function revertOrder(bytes32 id) public nonReentrant {
         Order memory order = orders[id];
         require(order.status == OrderStatus.Accepted, "Order must be in Accepted state");
+        orders[id].status = OrderStatus.Reverted;
 
         if (order.reward.asset == address(0)) {
-            payable(order.sender).transfer(order.reward.maxReward);
+            Address.sendValue(payable(order.sender), order.reward.maxReward);
         } else {
             IERC20 token = IERC20(order.reward.asset);
-            token.transfer(order.sender, order.reward.maxReward);
+            token.safeTransfer(order.sender, order.reward.maxReward);
             emit OrderRefundedInERC20(id, order.sender, order.reward.maxReward);
         }
 
-        orders[id].status = OrderStatus.Reverted;
         emit OrderReverted(id);
     }
 
