@@ -222,7 +222,7 @@ pub const COMMITTEE_SIZE: usize = 32;
 pub enum LatencyStatus {
     #[default]
     OnTime,
-    // Late: (n amount of missed latency windows, total amount of successful repatriations)
+    /// Late: (n amount of missed latency windows, total amount of successful repatriations)
     Late(u32, u32),
 }
 
@@ -254,6 +254,14 @@ pub trait AttestersWriteApi<Account, Error> {
     fn request_next_committee_attestation();
 }
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, Default)]
+pub struct BatchingFactor {
+    pub latest_confirmed: u16,
+    pub latest_signed: u16,
+    pub current_next: u16,
+    pub up_to_last_10_confirmed: Vec<u16>,
+}
+
 pub trait AttestersReadApi<Account, Balance> {
     fn previous_committee() -> Vec<Account>;
     fn current_committee() -> Vec<Account>;
@@ -267,8 +275,8 @@ pub trait AttestersReadApi<Account, Balance> {
     fn estimate_finality_fee(target: &TargetId) -> Balance;
     // Estimate finality reward for executor based on the current estimated batching factor
     fn estimate_finality_reward(target: &TargetId) -> Balance;
-    // Estimate batching factor
-    fn estimate_batching_factor(target: &TargetId) -> Balance;
+    fn estimate_batching_factor(target: &TargetId) -> Option<BatchingFactor>;
+    // fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16;
 }
 
 pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {
@@ -309,30 +317,30 @@ impl<Account, Balance: num_traits::Zero, Error> AttestersReadApi<Account, Balanc
     fn read_attestation_latency(_target: &TargetId) -> Option<LatencyStatus> {
         None
     }
-
-    fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
-        None
-    }
-
-    fn estimate_future_finality_fee(
-        target: &TargetId,
-        n_windows_from_now: u16,
-        batching_factor: BatchingFactor,
-    ) -> Balance {
+    
+    fn estimate_finality_fee(_target: &TargetId) -> Balance {
+        // Balance::from(0)
         Zero::zero()
     }
 
-    fn estimate_user_finality_fee(
-        target: &TargetId,
-        n_epochs_from_now: u16,
-        batching_factor: BatchingFactor,
-    ) -> Result<Balance, DispatchError> {
-        Ok(Zero::zero())
+    fn estimate_finality_reward(_target: &TargetId) -> Balance {
+        // Balance::from(0)
+        Zero::zero()
     }
 
-    fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16 {
-        0
+    fn estimate_batching_factor(_target: &TargetId) -> Option<BatchingFactor> {
+        Some(BatchingFactor { 
+            latest_confirmed: 0,
+            latest_signed: 0,
+            current_next: 0,
+            up_to_last_10_confirmed: vec![], 
+        })
     }
+
+    // fn estimate_future_user_base(batching_factor: &BatchingFactor, n_epochs_ahead: u16) -> u16 {
+    //     // 0
+    //     Zero::zero()
+    // }
 }
 
 impl<Account, Balance, Error> AttestersWriteApi<Account, Error>

@@ -55,6 +55,7 @@ pub use t3rn_types::{
 
 pub use t3rn_primitives::{
     account_manager::{AccountManager, Outcome},
+    attesters::AttestersReadApi,
     circuit::{XExecSignalId, XExecStepSideEffectId},
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
@@ -732,7 +733,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
             speed_mode: SpeedMode,
-            preferred_security_level: SecurityLevel,
+            preferred_security_level: SecurityLvl,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
@@ -1088,7 +1089,7 @@ impl<T: Config> Pallet<T> {
         requester: T::AccountId,
         side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
         speed_mode: SpeedMode,
-        preferred_security_level: &SecurityLevel,
+        preferred_security_level: &SecurityLvl,
     ) -> DispatchResultWithPostInfo {
         // Setup: new xtx context with SFX validation
         let mut fresh_xtx = Machine::<T>::setup(
@@ -1148,7 +1149,7 @@ impl<T: Config> Pallet<T> {
             sfx_len: usize,
             preferred_security_lvl: &SecurityLvl,
         ) -> SecurityLvl {
-            if sfx_len < 2 || preferred_security_lvl == SecurityLvl::Optimistic {
+            if sfx_len < 2 || *preferred_security_lvl == SecurityLvl::Optimistic {
                 return SecurityLvl::Optimistic
             }
             if gateway_type == GatewayType::ProgrammableInternal(0)
@@ -1180,7 +1181,7 @@ impl<T: Config> Pallet<T> {
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
             let security_lvl =
-                determine_security_lvl(gateway_type, side_effects.len(), preffered_security_lvl);
+                determine_security_lvl(gateway_type, side_effects.len(), preferred_security_lvl);
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,

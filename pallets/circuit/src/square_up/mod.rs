@@ -1,5 +1,5 @@
 use crate::*;
-use frame_support::ensure;
+use frame_support::{ensure, traits::ExistenceRequirement};
 use sp_runtime::DispatchResult;
 
 #[cfg(test)]
