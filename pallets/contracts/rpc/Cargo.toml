@@ -17,7 +17,7 @@ codec               = { package = "parity-scale-codec", version = "3" }
 jsonrpc-core        = "18.0.0"
 jsonrpc-core-client = "18.0.0"
 jsonrpc-derive      = "18.0.0"
-jsonrpsee           = { version = "0.14.0", features = [ "server", "macros" ] }
+jsonrpsee           = { version = "0.18.1", features = [ "server", "macros" ] }
 serde               = { version = "1", features = [ "derive" ] }
 
 # Substrate Dependencies
