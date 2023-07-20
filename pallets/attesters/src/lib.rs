@@ -9,6 +9,11 @@ pub type TargetId = [u8; 4];
 
 #[frame_support::pallet]
 pub mod pallet {
+
+    // Overcharge factor as a constant.
+    const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
+
+
     use super::*;
     t3rn_primitives::reexport_currency_types!();
     use tiny_keccak::{Hasher, Keccak};
@@ -25,7 +30,7 @@ pub mod pallet {
     pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
-        traits::{CheckedAdd, CheckedMul, Saturating, Zero},
+        traits::{CheckedAdd, CheckedMul, CheckedDiv, Saturating, Zero},
         Percent,
     };
     use sp_std::{convert::TryInto, prelude::*};
@@ -42,6 +47,7 @@ pub mod pallet {
         rewards::RewardsWriteApi,
         xdns::Xdns,
         ExecutionVendor, GatewayVendor, SpeedMode,
+        TreasuryAccountProvider
     };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
@@ -757,7 +763,89 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            FastConfirmationCost::<T>::insert(target, cost);
+            AutoRegressionParam::<T>::insert(target, new_param);
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn read_latest_batching_factor_overview(origin: OriginFor<T>) -> DispatchResult {
+            ensure_signed(origin)?;
+
+            for target in AttestationTargets::<T>::get() {
+                let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
+                log::debug!(
+                    "Batching factor for target {:?} is {:?}",
+                    target,
+                    batching_factor
+                );
+                Self::deposit_event(Event::BatchingFactorRead(target, batching_factor));
+            }
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn estimate_future_finality_fee(
+            origin: OriginFor<T>,
+            target: TargetId,
+            n_windows_from_now: u16,
+        ) -> DispatchResult {
+            ensure_signed(origin)?;
+            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
+            match batching_factor {
+                Some(batching_factor) => {
+                    let future_finality_fee = <Pallet<T> as AttestersReadApi<
+                        T::AccountId,
+                        BalanceOf<T>,
+                    >>::estimate_finality_fee(
+                        &target, n_windows_from_now, batching_factor
+                    );
+                    log::debug!(
+                        "Future finality fee for target {:?} is {:?}",
+                        target,
+                        future_finality_fee
+                    );
+                    Self::deposit_event(Event::FutureTotalFinalityFeeEstimated(
+                        target,
+                        future_finality_fee,
+                        n_windows_from_now,
+                    ));
+                    Ok(())
+                },
+                None => Err(Error::<T>::TargetNotActive.into()),
+            }
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn estimate_user_finality_fee(
+            origin: OriginFor<T>,
+            target: TargetId,
+            n_windows_from_now: u16,
+        ) -> DispatchResult {
+            ensure_signed(origin)?;
+
+            // Ensure target is active
+            ensure!(
+                AttestationTargets::<T>::get().contains(&target),
+                Error::<T>::TargetNotActive
+            );
+
+            // Retrieve the latest batching factor for the target
+            let batching_factor = Self::read_latest_batching_factor(&target).unwrap_or_default();
+
+            let finality_fee = <Pallet<T> as AttestersReadApi<
+                T::AccountId,
+                BalanceOf<T>,
+            >>::estimate_finality_fee(
+                &target, n_windows_from_now, batching_factor
+            )?;
+
+            Self::deposit_event(Event::UserFinalityFeeEstimated(
+                target,
+                finality_fee,
+                n_windows_from_now,
+            ));
 
             Ok(())
         }
@@ -920,27 +1008,67 @@ pub mod pallet {
         }
     }
 
+    /// Finality Fee Estimation and User Base Projection
+    ///
+    /// This module provides functionalities for estimating future finality fees and user base in a decentralized system, drawing inspiration from the concept of a pension scheme.
+    ///
+    /// ## Overview
+    ///
+    /// The aim of this module is to estimate future fees and user base in a way that balances the interests of all participants. This is achieved by employing methods similar to those used in pension systems, where fees paid by current participants are used to support earlier generations.
+    ///
+    /// Three primary functions provided by this module are:
+    ///
+    /// 1. `estimate_future_finality_fee`
+    /// 2. `estimate_user_finality_fee`
+    /// 3. `estimate_future_user_base`
+    ///
+    /// ## Functionality
+    ///
+    /// ### estimate_future_finality_fee
+    ///
+    /// This function is responsible for estimating the finality fee a certain number of epochs into the future.
+    /// The estimate is based on past fees and the projected change in the batching factor (i.e., the rate of transaction bundling).
+    /// The approach involves an autoregressive model, where the influence of past fees decreases over time (decay factor).
+    /// The final prediction is adjusted based on the expected change in the batching factor.
+    /// This function parallels how pension systems estimate the contributions required from future participants.
+    ///
+    /// ### estimate_user_finality_fee
+    ///
+    /// This function estimates the finality fee for an individual user.
+    /// The function considers the total fee paid in the most recent epoch and divides it by the number of users in that epoch to calculate a base user fee.
+    /// An overcharge factor is then added to this base fee to account for fluctuations and provide a buffer.
+    /// This calculation mirrors the process in pension systems where individual contributions are calculated based on total liabilities and the number of current contributors.
+    ///
+    /// ### estimate_future_user_base
+    ///
+    /// The estimate_future_user_base function forecasts the user base size for a future epoch.
+    /// The function calculates the average growth rate of the user base over the past few epochs and applies this rate iteratively to project future growth.
+    /// This function is similar to population projections in pension systems, which are critical in determining future contribution rates.
+    ///
+    /// ## Concluding Remarks
+    ///
+    /// The functions in this module draw inspiration from pension systems, projecting future conditions based on past data and current trends.
+    /// While the context is different – a decentralized system instead of a pension scheme – the fundamental concepts are the same.
+    /// The ability to estimate future fees and user base size contributes to system sustainability and fairness, much like in a well-managed pension scheme.
     impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>> for Pallet<T> {
+
+        /// Getter for the current committee. Returns a Vec of AccountIds.
         fn previous_committee() -> Vec<T::AccountId> {
             PreviousCommittee::<T>::get()
         }
 
+        /// Getter for the current committee. Returns a Vec of AccountIds.
         fn current_committee() -> Vec<T::AccountId> {
             CurrentCommittee::<T>::get()
         }
 
-        // Select the oldest batch with PendingAttestation and return the LatencyStatus
-        fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
-            let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
-            batches.sort_by(|a, b| a.created.cmp(&b.created));
-            let oldest_batch = batches.first();
-            oldest_batch.map(|batch| batch.latency.clone())
-        }
-
+        /// Getter for the active set. Returns a Vec of AccountIds.
         fn active_set() -> Vec<T::AccountId> {
             ActiveSet::<T>::get()
         }
 
+        /// Getter for the active set of ONLY those who haven't been permanently slashed.
+        /// Returns a Vec of AccountIds.
         fn honest_active_set() -> Vec<T::AccountId> {
             let active_set = ActiveSet::<T>::get();
             active_set
@@ -949,22 +1077,287 @@ pub mod pallet {
                 .collect()
         }
 
+        /// Getter for the info of the attester provided.
         fn read_attester_info(attester: &T::AccountId) -> Option<AttesterInfo> {
             Attesters::<T>::get(attester)
         }
 
+        /// Getter for the nominations of the given attester.
+        /// Returns the nominator and the balance of the nomination as a tuple (account id, balance).
         fn read_nominations(for_attester: &T::AccountId) -> Vec<(T::AccountId, BalanceOf<T>)> {
             Nominations::<T>::iter_prefix(for_attester)
                 .map(|(nominator, balance)| (nominator, balance))
                 .collect()
         }
 
+        /// Getter for the attestation targets.
         fn get_activated_targets() -> Vec<TargetId> {
             AttestationTargets::<T>::get()
         }
+
+        /// Getter for the latency status of the given target. 
+        /// Selects the oldest batch with PendingAttestation and return its LatencyStatus.
+        fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
+            let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
+            batches.sort_by(|a, b| a.created.cmp(&b.created));
+            let oldest_batch = batches.first();
+            oldest_batch.map(|batch| batch.latency.clone())
+        }
+
+
+        /// Estimation of the finality fee for the given target.
+        ///
+        /// For this first version, we don't take into account the number of users, i.e., there's
+        /// no batching factor.
+        fn estimate_finality_fee(target: &TargetId) -> BalanceOf<T> {
+            
+            let base_user_fee_for_single_user: BalanceOf<T> =
+                10_000_000_000_000u128.try_into().unwrap_or_default();
+
+            // FIXME: this has to be computed in another way
+            let number_of_users = 1;
+
+            // Retrieve the (finality) fees that were paid to the target
+            let paid_finality_fees =
+                PaidFinalityFees::<T>::get(target).unwrap_or(vec![base_user_fee_for_single_user]);
+
+            // Get the LATEST paid finality fee
+            let latest_fee = *paid_finality_fees
+                .last()
+                .unwrap_or(&base_user_fee_for_single_user);
+
+            // Compute the base-user fee.
+            // It is the latest fee, divided by the number of users.
+            let base_user_fee = latest_fee
+                .checked_div(&BalanceOf::<T>::from(number_of_users as u32))
+                .unwrap_or(base_user_fee_for_single_user);
+
+            // The user fee is the (1 + overcharge-factor) * base-user-fee
+            let user_fee = OVERCHARGE_FACTOR
+                .mul_ceil(base_user_fee)
+                .saturating_add(base_user_fee);
+
+            user_fee
+        }
+
+        fn estimate_finality_reward(target: &TargetId) -> BalanceOf<T> {
+            todo!()
+        }
+
+        /// Estimate the batching factor for a given target.
+        fn estimate_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
+            // if target isn't active yet, return None early
+            if !AttestationTargets::<T>::get().contains(target) {
+                return None
+            }
+
+            let latest_signed = match Self::get_latest_batch_to_sign(*target) {
+                Some(batch) => batch.read_batching_factor(),
+                None => 0,
+            };
+
+            let current_next = match NextBatch::<T>::get(target) {
+                Some(batch) => batch.read_batching_factor(),
+                None => 0,
+            };
+
+            // Read amount of confirmed and reverted sfx out of last 10 confirmed batches, or fill with 0 if there aren't enough
+            let up_to_last_10_confirmed: Vec<u16> =
+                Self::get_batches(*target, BatchStatus::Committed)
+                    .iter()
+                    .rev()
+                    .take(10)
+                    .map(|batch| batch.read_batching_factor())
+                    .collect::<Vec<u16>>()
+                    .try_into()
+                    .unwrap_or(vec![]);
+
+            let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
+
+            Some(BatchingFactor {
+                latest_confirmed,
+                latest_signed,
+                current_next,
+                up_to_last_10_confirmed,
+            })
+        }
+
+        // FIXME: not a member of the trait
+        // fn estimate_user_finality_fee(
+        //     target: &TargetId,
+        //     n_epochs_from_now: u16,
+        //     batching_factor: BatchingFactor,
+        // ) -> Result<BalanceOf<T>, DispatchError> {
+        //     let base_user_fee_for_single_user: BalanceOf<T> =
+        //         10_000_000_000_000u128.try_into().unwrap_or_default();
+        //
+        //     let mut number_of_users: u16 = match n_epochs_from_now {
+        //         0 => batching_factor.latest_confirmed,
+        //         1 => batching_factor.latest_signed,
+        //         _ => {
+        //             // Estimate future user base size
+        //             Self::estimate_future_user_base(&batching_factor, n_epochs_from_now)
+        //         },
+        //     };
+        //
+        //     if number_of_users.is_zero() {
+        //         number_of_users = 1;
+        //     }
+        //
+        //     println!("number_of_users: {number_of_users:?}");
+        //
+        //     // Retrieve the latest paid finality fee for the target
+        //     let paid_finality_fees =
+        //         PaidFinalityFees::<T>::get(target).unwrap_or(vec![base_user_fee_for_single_user]);
+        //     let total_fee = *paid_finality_fees
+        //         .last()
+        //         .unwrap_or(&base_user_fee_for_single_user);
+        //
+        //     // Calculate the base user fee
+        //     let base_user_fee = total_fee
+        //         .checked_div(&BalanceOf::<T>::from(number_of_users as u32))
+        //         .unwrap_or(base_user_fee_for_single_user);
+        //
+        //     // Define an overcharge factor as a constant (here we use 32% for example)
+        //     const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
+        //
+        //     // Calculate the total user fee with the overcharge
+        //     let user_fee = OVERCHARGE_FACTOR
+        //         .mul_ceil(base_user_fee)
+        //         .saturating_add(base_user_fee);
+        //
+        //     println!("user_fee: {user_fee:?}");
+        //
+        //     Ok(user_fee)
+        // }
+
+        
+
+        // FIXME: not a member of the trait
+        // fn estimate_future_finality_fee(
+        //     target: &TargetId,
+        //     n_windows_from_now: u16,
+        //     batching_factor: BatchingFactor,
+        // ) -> BalanceOf<T> {
+        //     // ToDo: Set as Config parameter
+        //     let batch_0_finality_fee_base: BalanceOf<T> =
+        //         10_000_000_000_000u128.try_into().unwrap_or_default();
+        //
+        //     const AUTO_REGRESSION_PARAM_BOOST_MULTIPLIER: u8 = 2u8;
+        //
+        //     let paid_finality_fees =
+        //         PaidFinalityFees::<T>::get(target).unwrap_or(vec![batch_0_finality_fee_base]);
+        //
+        //     println!("paid_finality_fees: {paid_finality_fees:?}");
+        //     let last_paid_finality_fee = *paid_finality_fees
+        //         .last()
+        //         .unwrap_or(&batch_0_finality_fee_base);
+        //
+        //     let mut last_batching_factor = batching_factor.latest_confirmed;
+        //     let mut next_batching_factor = batching_factor.latest_signed;
+        //
+        //     if last_batching_factor.is_zero() {
+        //         last_batching_factor = 1;
+        //     }
+        //
+        //     if next_batching_factor.is_zero() {
+        //         next_batching_factor = 1;
+        //     }
+        //
+        //     // Convert batching_factor ratio to Percent once before loop
+        //     let batching_factor_ratio =
+        //         Percent::from_rational(next_batching_factor, last_batching_factor);
+        //
+        //     // Get the autoregressive parameter from storage
+        //     let auto_regression_param: Percent =
+        //         AutoRegressionParam::<T>::get(target).unwrap_or(Percent::from_percent(0));
+        //
+        //     println!("auto_regression_param: {auto_regression_param:?}");
+        //     let mut prediction = last_paid_finality_fee.saturating_add(
+        //         auto_regression_param.mul_ceil(
+        //             last_paid_finality_fee
+        //                 .saturating_mul(AUTO_REGRESSION_PARAM_BOOST_MULTIPLIER.into()),
+        //         ),
+        //     );
+        //     println!("prediction before: {prediction:?}");
+        //
+        //     // Define decay factor for the influence of past fees
+        //     const DECAY_FACTOR: Percent = Percent::from_percent(90);
+        //     let mut decayed_param = auto_regression_param;
+        //
+        //     // Loop n_windows_from_now times to predict future finality fee
+        //     for i in 0..n_windows_from_now {
+        //         prediction = prediction.saturating_add(
+        //             decayed_param.mul_ceil(
+        //                 paid_finality_fees
+        //                     .get(i as usize)
+        //                     .unwrap_or(&batch_0_finality_fee_base)
+        //                     .saturating_mul(AUTO_REGRESSION_PARAM_BOOST_MULTIPLIER.into()),
+        //             ),
+        //         );
+        //
+        //         // Decay the influence of past fees
+        //         decayed_param = decayed_param.saturating_mul(DECAY_FACTOR);
+        //     }
+        //
+        //     println!("batching_factor_ratio: {batching_factor_ratio:?}");
+        //
+        //     // Adjust for expected change in batching factor
+        //     prediction = batching_factor_ratio.mul_ceil(prediction);
+        //
+        //     println!("prediction: {prediction:?}");
+        //     prediction
+        // }
+
+
+        // FIXME: not a member of the trait
+        // fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
+        // }
+
+
     }
 
     impl<T: Config> Pallet<T> {
+        fn read_latest_batching_factor(
+            origin: OriginFor<T>, target: &TargetId
+        ) -> Option<BatchingFactor> {
+            // If target isn't active yet, return None
+            if !AttestationTargets::<T>::get().contains(target) {
+                return None
+            }
+
+            // Read amount of confirmed and reverted sfx out of last 10 confirmed batches, or fill with 0 if there aren't enough
+            let up_to_last_10_confirmed: Vec<u16> =
+            Self::get_batches(*target, BatchStatus::Committed)
+                .iter()
+                .rev()
+                .take(10)
+                .map(|batch| batch.read_batching_factor())
+                .collect::<Vec<u16>>()
+                .try_into()
+                .unwrap_or(vec![]);
+
+            let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
+
+            let latest_signed = match Self::get_latest_batch_to_sign(*target) {
+                Some(batch) => batch.read_batching_factor(),
+                None => 0,
+            };
+
+            let current_next = match NextBatch::<T>::get(target) {
+                Some(batch) => batch.read_batching_factor(),
+                None => 0,
+            };
+
+            Some(BatchingFactor {
+                latest_confirmed,
+                latest_signed,
+                current_next,
+                up_to_last_10_confirmed,
+            })
+        }
+
+
         pub fn committee_size() -> usize {
             T::CommitteeSize::get() as usize
         }
