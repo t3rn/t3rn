@@ -6,7 +6,7 @@ use sp_runtime::DispatchResult;
 pub mod test;
 
 use sp_std::marker::PhantomData;
-use t3rn_primitives::account_manager::RequestCharge;
+use t3rn_primitives::{account_manager::RequestCharge, TreasuryAccount, TreasuryAccountProvider};
 
 pub struct SquareUp<T: Config> {
     _phantom: PhantomData<T>,
@@ -87,22 +87,21 @@ impl<T: Config> SquareUp<T> {
             .map(|fsx| fsx.input.target)
             .collect::<Vec<TargetId>>();
 
-        // FIXME: cannot sum
         let finality_fees_sum = all_escrow_targets
             .iter()
-            .map(|target| T::Attesters::estimate_finality_fee(target))
+            .map(T::Attesters::estimate_finality_fee)
             .collect::<Vec<BalanceOf<T>>>()
             .iter()
-            .sum();
+            .fold(Zero::zero(), |acc: BalanceOf<T>, fee| acc.checked_add(fee).unwrap_or_else(Zero::zero));
 
-        // FIXME: cannot find the treasury account
         T::Currency::transfer(
             &requester,
             &T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Fee),
             finality_fees_sum,
             ExistenceRequirement::KeepAlive,
         )
-        .map_err(|_| Error::<T>::RequesterNotEnoughBalance.into())?;
+        .map_err(|_| Error::<T>::RequesterNotEnoughBalance)?;
+        // .map_err(|_| Error::<T>::RequesterNotEnoughBalance.into())?;
 
         Ok(())
     }

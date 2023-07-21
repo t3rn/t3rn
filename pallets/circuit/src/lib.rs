@@ -340,6 +340,9 @@ pub mod pallet {
         ///		limit the amount of items that can be deleted per block.
         #[pallet::constant]
         type SignalQueueDepth: Get<u32>;
+
+        // Needed in square_up mod
+        type TreasuryAccounts: TreasuryAccountProvider<Self::AccountId>;
     }
 
     #[pallet::pallet]
