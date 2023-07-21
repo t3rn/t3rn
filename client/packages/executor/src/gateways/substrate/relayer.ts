@@ -10,6 +10,7 @@ import { CostEstimator, Estimate } from "./estimator/cost";
 import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
 import { Logger } from "pino";
+import { logger } from "../../logging";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -75,7 +76,7 @@ export class SubstrateRelayer extends EventEmitter {
    * @param sfx Object to execute
    */
   async executeTx(sfx: SideEffect) {
-    this.logger.info(
+    logger.info(
       `Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`,
     );
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
@@ -91,7 +92,7 @@ export class SubstrateRelayer extends EventEmitter {
             const err = this.client.registry.findMetaError(
               dispatchError.asModule,
             );
-            this.logger.info(`Execution failed SFX: ${sfx.humanId}`);
+            logger.info(`Execution failed SFX: ${sfx.humanId}`);
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutionError,
               data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
@@ -122,7 +123,7 @@ export class SubstrateRelayer extends EventEmitter {
               status.asFinalized as never,
               events,
             );
-            this.logger.info(
+            logger.info(
               `Execution complete SFX:  ${sfx.humanId} - #${blockNumber} 🏁`,
             );
             this.emit("Event", <RelayerEventData>{
@@ -169,7 +170,7 @@ export class SubstrateRelayer extends EventEmitter {
         blockHash,
       ).catch((err) => {
         // this should never happen
-        console.log(err);
+        logger.error({err}, "Failed to fetch corresponding relaychain header number");
       });
 
       this.emit("Event", <RelayerEventData>{
@@ -291,7 +292,7 @@ export class SubstrateRelayer extends EventEmitter {
     });
 
     if (!event) {
-      console.log("Event not found");
+      logger.warn("Event not found");
       return;
     }
 

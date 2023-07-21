@@ -16,6 +16,7 @@ import { BiddingEngine } from "../bidding";
 import { Logger } from "pino";
 import { EventData } from "src/circuit/listener";
 import { Prometheus } from "../prometheus";
+import { logger } from "../logging";
 
 /**
  * Class used for tracking the life-cycle of an XTX. Contains all required parameters and methods for executing the XTX.
@@ -138,15 +139,13 @@ export class Execution extends EventEmitter {
       sfx.readyToExecute();
     }
 
-    this.logger.info(`Ready XTX: ${this.humanId}`);
-    this.addLog({ msg: "Ready XTX" });
+    logger.info(`Ready XTX: ${this.humanId}`);
   }
 
   /** Update XTX status to complete */
   completed() {
     this.status = XtxStatus.FinishedAllSteps;
-    this.logger.info(`Completed XTX: ✨${this.humanId}✨`);
-    this.addLog({ msg: "Completed XTX" });
+    logger.info(`Completed XTX: ✨${this.humanId}✨`);
   }
 
   /** Update XTX and all its SFX status to ready. */
@@ -155,8 +154,7 @@ export class Execution extends EventEmitter {
     for (const [, sfx] of this.sideEffects) {
       sfx.droppedAtBidding();
     }
-    this.logger.info(`Dropped XTX: ${this.humanId}`);
-    this.addLog({ msg: "Dropped XTX", xtxId: this.id });
+    logger.info({ xtxId: this.id }, "Dropped XTX");
   }
 
   /** Update XTX and all its SFX status to reverted. */
@@ -166,8 +164,7 @@ export class Execution extends EventEmitter {
       sfx.reverted();
     }
 
-    this.logger.info(`Revert XTX: ${this.humanId}`);
-    this.addLog({ msg: "Revert XTX", xtxId: this.id });
+    logger.info({  xtxId: this.id }, "Revert XTX");
   }
 
   /**
@@ -187,24 +184,5 @@ export class Execution extends EventEmitter {
       }
     }
     return result;
-  }
-
-  private addLog(
-    msg: {
-      msg: string;
-      component?: string;
-      id?: string;
-      xtxId?: string;
-    },
-    debug = true,
-  ) {
-    msg.component = "XTX";
-    msg.id = this.id;
-
-    if (debug) {
-      this.logger.debug(msg);
-    } else {
-      this.logger.error(msg);
-    }
   }
 }

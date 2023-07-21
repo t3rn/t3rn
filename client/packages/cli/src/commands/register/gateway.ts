@@ -2,9 +2,13 @@ import "@t3rn/types"
 import ora from "ora"
 import { ApiPromise } from "@t3rn/sdk"
 import { createType } from "@t3rn/types"
+//@ts-ignore - TS doesn't know about the type
 import {
+  //@ts-ignore - TS doesn't know about the type
   T3rnPrimitivesGatewayVendor,
+  //@ts-ignore - TS doesn't know about the type
   T3rnPrimitivesExecutionVendor,
+  //@ts-ignore - TS doesn't know about the type
   T3rnAbiRecodeCodec,
 } from "@polkadot/types/lookup"
 import { Gateway } from "@/schemas/setup.ts"
@@ -100,6 +104,7 @@ const registerGateway = async (
       codec.toJSON(),
       registrant,
       escrowAccounts,
+      //@ts-ignore - TS doesn't know about the type
       allowedSideEffects,
       tokenInfo,
       registrationData

@@ -8,6 +8,7 @@ import { Sdk, ApiPromise } from "@t3rn/sdk";
 import { Codec } from "@polkadot/types/types";
 // @ts-ignore - Typescript does not know about this type
 import { T3rnTypesSfxConfirmedSideEffect } from "@polkadot/types/lookup";
+import { logger } from "../logging";
 
 /**
  * Class responsible for submitting any type of transaction to the circuit. All communication with the circuit is done through the circuit relayer.
@@ -128,7 +129,7 @@ export const exportData = (
     JSON.stringify(encoded, null, 4),
     (err) => {
       if (err) {
-        console.log("Err", err);
+        logger.error({err}, "Export data failed");
       }
     },
   );

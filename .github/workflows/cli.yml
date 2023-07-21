@@ -73,7 +73,7 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: client/packages/cli/eslint_report.json
 
-      - run: yarn test
+      - run: pnpm test
 
   build-docker:
     name: Build Docker CLI

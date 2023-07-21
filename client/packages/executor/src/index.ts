@@ -39,6 +39,7 @@ import * as defaultConfig from "../config.json";
 import { problySubstrateSeed, createLogger } from "./utils";
 import { Logger } from "pino";
 import { Prometheus } from "./prometheus";
+import { logger } from "./logging";
 
 dotenv.config();
 
@@ -113,7 +114,7 @@ class Instance {
     // TODO: on nodejs it just freeze execution
     // this.registerExitListener();
     this.registerStateListener();
-    this.logger.info("setup complete");
+    logger.info("Executor setup complete");
     return this;
   }
 

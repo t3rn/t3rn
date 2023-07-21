@@ -1,6 +1,7 @@
 import { config } from "../../config/config";
 import { BehaviorSubject } from "rxjs";
 import axios from "axios";
+import { logger } from "../logging";
 
 /**
  * MVP implementation of sourcing prices from coingecko
@@ -70,7 +71,7 @@ export class CoingeckoPricing {
           return new Promise((resolve) => setTimeout(resolve, 2000));
         })
         .catch((err) => {
-          console.log("Failed fetching prices due to ->", err.toString());
+          logger.error({err}, "Failed fetching prices");
         });
     }
     setTimeout(this.updateAssetPrices.bind(this), this.updateFrequency);
