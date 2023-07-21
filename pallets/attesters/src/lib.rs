@@ -13,7 +13,6 @@ pub mod pallet {
     // Overcharge factor as a constant.
     const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
 
-
     use super::*;
     t3rn_primitives::reexport_currency_types!();
     use tiny_keccak::{Hasher, Keccak};
@@ -30,7 +29,7 @@ pub mod pallet {
     pub use t3rn_primitives::portal::InclusionReceipt;
 
     use sp_runtime::{
-        traits::{CheckedAdd, CheckedMul, CheckedDiv, Saturating, Zero},
+        traits::{CheckedAdd, CheckedDiv, CheckedMul, Saturating, Zero},
         Percent,
     };
     use sp_std::{convert::TryInto, prelude::*};
@@ -46,8 +45,7 @@ pub mod pallet {
         portal::Portal,
         rewards::RewardsWriteApi,
         xdns::Xdns,
-        ExecutionVendor, GatewayVendor, SpeedMode,
-        TreasuryAccountProvider
+        ExecutionVendor, GatewayVendor, SpeedMode, TreasuryAccountProvider,
     };
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo, PartialOrd)]
@@ -773,8 +771,9 @@ pub mod pallet {
             let message = on_target_batch_event.message.clone();
 
             let batches = Self::find_batches(target, &message);
-            batches.iter().map(|batch|
-                match Self::reward_submitter(&submitter, &target, &batch) { 
+            for batch in batches {
+                // batches.iter().map(|batch|
+                let _ = match Self::reward_submitter(&submitter, &target, &batch) {
                     Err(e) => {
                         println!(
                         "Error while rewarding submitter {submitter:?} for target {target:?} with batch {batch:?}: {e:?}"
@@ -795,8 +794,8 @@ pub mod pallet {
                         ));
                         Ok(())
                     },
-                },
-            );
+                };
+            }
             Ok(())
         }
 
@@ -915,10 +914,10 @@ pub mod pallet {
             // Retrieve the latest batching factor for the target
             // let batching_factor = Self::read_latest_batching_factor(&target);
 
-            let finality_fee = <Pallet<T> as AttestersReadApi<
-                T::AccountId,
-                BalanceOf<T>,
-            >>::estimate_finality_fee(&target);
+            let finality_fee =
+                <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_finality_fee(
+                    &target,
+                );
 
             Self::deposit_event(Event::UserFinalityFeeEstimated(
                 target,
@@ -1130,7 +1129,6 @@ pub mod pallet {
     /// While the context is different – a decentralized system instead of a pension scheme – the fundamental concepts are the same.
     /// The ability to estimate future fees and user base size contributes to system sustainability and fairness, much like in a well-managed pension scheme.
     impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>> for Pallet<T> {
-
         /// Getter for the current committee. Returns a Vec of AccountIds.
         fn previous_committee() -> Vec<T::AccountId> {
             PreviousCommittee::<T>::get()
@@ -1174,7 +1172,7 @@ pub mod pallet {
             AttestationTargets::<T>::get()
         }
 
-        /// Getter for the latency status of the given target. 
+        /// Getter for the latency status of the given target.
         /// Selects the oldest batch with PendingAttestation and return its LatencyStatus.
         fn read_attestation_latency(target: &TargetId) -> Option<LatencyStatus> {
             let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
@@ -1183,13 +1181,11 @@ pub mod pallet {
             oldest_batch.map(|batch| batch.latency.clone())
         }
 
-
         /// Estimation of the finality fee for the given target.
         ///
         /// For this first version, we don't take into account the number of users, i.e., there's
         /// no batching factor.
         fn estimate_finality_fee(target: &TargetId) -> BalanceOf<T> {
-            
             let base_user_fee_for_single_user: BalanceOf<T> =
                 10_000_000_000_000u128.try_into().unwrap_or_default();
 
@@ -1310,8 +1306,6 @@ pub mod pallet {
         //     Ok(user_fee)
         // }
 
-        
-
         // FIXME: not a member of the trait
         // fn estimate_future_finality_fee(
         //     target: &TargetId,
@@ -1388,12 +1382,9 @@ pub mod pallet {
         //     prediction
         // }
 
-
         // FIXME: not a member of the trait
         // fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
         // }
-
-
     }
 
     impl<T: Config> Pallet<T> {
@@ -1405,9 +1396,7 @@ pub mod pallet {
                 .clone()
         }
 
-        fn read_latest_batching_factor(
-            target: &TargetId
-        ) -> Option<BatchingFactor> {
+        fn read_latest_batching_factor(target: &TargetId) -> Option<BatchingFactor> {
             // If target isn't active yet, return None
             if !AttestationTargets::<T>::get().contains(target) {
                 return None
@@ -1415,14 +1404,14 @@ pub mod pallet {
 
             // Read amount of confirmed and reverted sfx out of last 10 confirmed batches, or fill with 0 if there aren't enough
             let up_to_last_10_confirmed: Vec<u16> =
-            Self::get_batches(*target, BatchStatus::Committed)
-                .iter()
-                .rev()
-                .take(10)
-                .map(|batch| batch.read_batching_factor())
-                .collect::<Vec<u16>>();
-                // .try_into()
-                // .unwrap_or(vec![]);
+                Self::get_batches(*target, BatchStatus::Committed)
+                    .iter()
+                    .rev()
+                    .take(10)
+                    .map(|batch| batch.read_batching_factor())
+                    .collect::<Vec<u16>>();
+            // .try_into()
+            // .unwrap_or(vec![]);
 
             let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
 
@@ -1443,7 +1432,6 @@ pub mod pallet {
                 up_to_last_10_confirmed,
             })
         }
-
 
         pub fn committee_size() -> usize {
             T::CommitteeSize::get() as usize
@@ -1608,11 +1596,8 @@ pub mod pallet {
             println!(
                 "calculate_confirmation_reward_for_pending_confirmation batching_factor: {batching_factor:?}"
             );
-            <Pallet<T> as AttestersReadApi<
-                T::AccountId,
-                BalanceOf<T>,
-            >>::estimate_finality_fee(
-                target //, 0, batching_factor
+            <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_finality_fee(
+                target, //, 0, batching_factor
             )
         }
 
@@ -1627,7 +1612,9 @@ pub mod pallet {
             if calculated_finality_fee > Zero::zero() {
                 T::Currency::transfer(
                     // todo: source should be the fees treasury
-                    &T::TreasuryAccounts::get_treasury_account(t3rn_primitives::TreasuryAccount::Fee),
+                    &T::TreasuryAccounts::get_treasury_account(
+                        t3rn_primitives::TreasuryAccount::Fee,
+                    ),
                     submitter,
                     calculated_finality_fee,
                     ExistenceRequirement::KeepAlive,
