@@ -11,7 +11,7 @@ use crate::circuit::AdaptiveTimeout;
 use t3rn_sdk_primitives::signal::ExecutionSignal;
 use t3rn_types::{
     fsx::FullSideEffect,
-    sfx::{HardenedSideEffect, SideEffect},
+    sfx::{HardenedSideEffect, SideEffect, SecurityLvl},
 };
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
@@ -70,6 +70,7 @@ pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
         origin: OriginFor<T>,
         side_effects: Vec<SideEffect<T::AccountId, Balance>>,
         speed_mode: SpeedMode,
+        preferred_security_level: SecurityLvl,
     ) -> DispatchResultWithPostInfo;
 
     fn on_remote_origin_trigger(
