@@ -14,16 +14,17 @@ export class Prometheus {
   bids: Counter;
   events: Counter;
   circuitDisconnects: Counter;
-  noBidAndNoCompetition: Counter;
-  noBidButCompetition: Counter;
-  beenOutBid: Counter;
+  executorXtxStrategyRejects: Counter;
+  executorNoBidAndNoCompetition: Counter;
+  executorNoBidButCompetition: Counter;
+  executorBeenOutBid: Counter;
   attestationsBatchesPending: Gauge;
-  attestationsEvents: Counter
+  attestationEvents: Counter
   attestationVerifierCurrentCommitteeSize: Gauge;
   attestationVerifierCurrentBatchIndex: Gauge;
   attestationVerifierCurrentCommitteeTransitionCount: Gauge;
-  attestatonsBatchesProcessed: Counter;
-  attestatonsBatchesFailed: Counter;
+  attestationBatchesProcessed: Counter;
+  attestatonBatchesFailed: Counter;
 
   constructor() {
     const Registry = client.Registry;
@@ -53,19 +54,25 @@ export class Prometheus {
       registers: [this.register],
     });
 
-    this.noBidAndNoCompetition = new Counter({
+    this.executorXtxStrategyRejects = new Counter({
+      name: "executor_xtx_strategy_rejects_total",
+      help: "Number of times executor xtx strategy rejects",
+      registers: [this.register],
+    });
+
+    this.executorNoBidAndNoCompetition = new Counter({
       name: "no_bid_and_no_competition",
       help: "Number of times no bid and no competition",
       registers: [this.register],
     });
 
-    this.noBidButCompetition = new Counter({
+    this.executorNoBidButCompetition = new Counter({
       name: "no_bid_but_competition",
       help: "Number of times no bid but competition",
       registers: [this.register],
     });
 
-    this.beenOutBid = new Counter({
+    this.executorBeenOutBid = new Counter({
       name: "been_out_bid",
       help: "Number of times been out bid",
       registers: [this.register],
@@ -77,7 +84,7 @@ export class Prometheus {
       registers: [this.register],
     });
 
-    this.attestationsEvents = new client.Counter({
+    this.attestationEvents = new client.Counter({
         name: 'attestation_events_total',
         help: 'Number of attestations received',
         registers: [this.register],
@@ -102,13 +109,13 @@ export class Prometheus {
       registers: [this.register],
     });
 
-    this.attestatonsBatchesProcessed = new Counter({
+    this.attestationBatchesProcessed = new Counter({
       name: "attestations_batches_processed_total",
       help: "Number of attestations batches processed",
       registers: [this.register],
     });
 
-    this.attestatonsBatchesFailed = new Counter({
+    this.attestatonBatchesFailed = new Counter({
       name: "attestations_batches_failed_total",
       help: "Number of attestations batches failed",
       registers: [this.register],

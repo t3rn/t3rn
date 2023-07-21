@@ -353,9 +353,11 @@ export class ExecutionManager {
       logger.info({  xtxId: xtx.id }, "XTX strategy passed!");
     } catch (e) {
       // XTX does not meet strategy requirements
+      this.prometheus.executorXtxStrategyRejects.inc();
       logger.warn({
+        e: e.toString(),
         xtxId: xtx.id,
-      }, "XTX strategy reject! " + e.toString(),);
+      }, "XTX strategy reject!");
       return;
     }
     logger.info(`Received XTX ${xtx.humanId} 🌱`); // XTX is valid for execution

@@ -126,19 +126,26 @@ export class AttestationManager {
         // Extract the phase, event and the event types
         const { event } = record;
 
+        this.prometheus.attestationEvents.inc({ method: event.method });
+        if (record.event.method != "NewConfirmationBatch") {
+          return;
+        }
+
         logger.debug(
           {
             event: event.method,
             data: event.data,
           },
-          "Received attesters event"
+          "Received attesters NewConfirmationBatch event"
         );
-        this.prometheus.attestationsEvents.inc({ method: event.method });
-        if (record.event.method != "NewConfirmationBatch") {
-          return;
-        }
 
         const batch = event.data as ConfirmationBatch;
+        logger.debug(
+          {
+            batch
+          },
+          "Batch debug"
+        );
         const messageHash = this.getMessageHash(batch);
 
         await this.receiveAttestationBatchCall(batch, messageHash);
@@ -248,10 +255,10 @@ export class AttestationManager {
         { receipt: transactionReceipt },
         `Batch ${batch.index} procesed!`
       );
-      this.prometheus.attestatonsBatchesProcessed.inc();
+      this.prometheus.attestationBatchesProcessed.inc();
     } catch (error) {
       logger.warn({ error: error }, "Error sending transaction: ");
-      this.prometheus.attestatonsBatchesFailed.inc();
+      this.prometheus.attestatonBatchesFailed.inc();
       // throw new Error("Error sending transaction: " + error);
     }
   }
