@@ -523,7 +523,8 @@ pub mod pallet {
             let local_ctx = match maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None, &SecurityLvl::Optimistic)?;
+                    let mut local_ctx =
+                        Machine::<T>::setup(&[], &requester, None, &SecurityLvl::Optimistic)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -593,7 +594,8 @@ pub mod pallet {
             let mut local_ctx = match trigger.maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None, &SecurityLvl::Optimistic)?;
+                    let mut local_ctx =
+                        Machine::<T>::setup(&[], &requester, None, &SecurityLvl::Optimistic)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },

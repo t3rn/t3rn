@@ -306,7 +306,7 @@ impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
     fn read_attestation_latency(_target: &TargetId) -> Option<LatencyStatus> {
         None
     }
-    
+
     fn estimate_finality_fee(_target: &TargetId) -> Balance {
         // Balance::from(0)
         Zero::zero()
@@ -318,11 +318,11 @@ impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
     }
 
     fn estimate_batching_factor(_target: &TargetId) -> Option<BatchingFactor> {
-        Some(BatchingFactor { 
+        Some(BatchingFactor {
             latest_confirmed: 0,
             latest_signed: 0,
             current_next: 0,
-            up_to_last_10_confirmed: vec![], 
+            up_to_last_10_confirmed: vec![],
         })
     }
 

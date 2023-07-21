@@ -11,7 +11,7 @@ use crate::circuit::AdaptiveTimeout;
 use t3rn_sdk_primitives::signal::ExecutionSignal;
 use t3rn_types::{
     fsx::FullSideEffect,
-    sfx::{HardenedSideEffect, SideEffect, SecurityLvl},
+    sfx::{HardenedSideEffect, SecurityLvl, SideEffect},
 };
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]

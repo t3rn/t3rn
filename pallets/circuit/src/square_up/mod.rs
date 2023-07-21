@@ -87,12 +87,15 @@ impl<T: Config> SquareUp<T> {
             .map(|fsx| fsx.input.target)
             .collect::<Vec<TargetId>>();
 
+        // FIXME: cannot sum
         let finality_fees_sum = all_escrow_targets
             .iter()
             .map(|target| T::Attesters::estimate_finality_fee(target))
             .collect::<Vec<BalanceOf<T>>>()
-            .iter().sum();
+            .iter()
+            .sum();
 
+        // FIXME: cannot find the treasury account
         T::Currency::transfer(
             &requester,
             &T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Fee),
