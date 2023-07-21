@@ -559,7 +559,7 @@ export class ExecutionManager {
               sfx.bidAccepted(notification.payload.bidAmount as number);
             })
             .catch((e) => {
-              logger.info(`Bid rejected for SFX ${sfx.humanId} ❌`);
+              logger.warn(`Bid rejected for SFX ${sfx.humanId} ❌`);
               sfx.bidRejected(e);
             });
         }

@@ -105,6 +105,7 @@ export class AttestationManager {
   async listener() {
     logger.info("Listening for NewConfirmationBatch events...");
     // Subscribe to all events and filter based on the specified event method
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.client.query.system.events(async (events: any) => {
       if (events === undefined || events === null) {
         return;
@@ -119,6 +120,8 @@ export class AttestationManager {
       await this.processConfirmedBatches(attesterEvents);
     });
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async processConfirmedBatches(events: any) {
     // Loop through the Vec<EventRecord>
     await Promise.all(
