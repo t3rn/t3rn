@@ -2631,6 +2631,7 @@ pub mod attesters_test {
             assert_eq!(
                 Attesters::get_batches(target, BatchStatus::PendingAttestation),
                 vec![BatchMessage {
+                    available_to_commit_at: 0,
                     committed_sfx: Some(vec![sfx_id_a]),
                     reverted_sfx: None,
                     next_committee: None,
@@ -3103,6 +3104,7 @@ pub mod attesters_test {
             assert_eq!(
                 Attesters::get_latest_batch_to_sign(target),
                 Some(BatchMessage {
+                    available_to_commit_at: 0,
                     committed_sfx: Some(vec![sfx_id_a]),
                     reverted_sfx: None,
                     next_committee: expected_transition,
@@ -3335,6 +3337,7 @@ pub mod attesters_test {
             assert_eq!(next_batch.committed_sfx, Some(vec![sfx_id_a, sfx_id_b]));
 
             let mut empty_batch = BatchMessage {
+                available_to_commit_at: 0,
                 committed_sfx: None,
                 reverted_sfx: None,
                 next_committee: None,
@@ -3363,6 +3366,7 @@ pub mod attesters_test {
             assert_eq!(
                 Attesters::get_batches(target, BatchStatus::PendingAttestation),
                 vec![BatchMessage {
+                    available_to_commit_at: 0,
                     committed_sfx: Some(vec![sfx_id_a, sfx_id_b]),
                     reverted_sfx: None,
                     next_committee: None,
