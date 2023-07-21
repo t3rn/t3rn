@@ -335,6 +335,7 @@ pub mod pallet {
         AttesterDeregistrationScheduled(T::AccountId, T::BlockNumber),
         AttesterDeregistered(T::AccountId),
         AttestationSubmitted(T::AccountId),
+        // Attesters(T::AccountId),
         BatchingFactorRead(TargetId, Option<BatchingFactor>),
         BatchCommitted(
             TargetId,
@@ -768,23 +769,21 @@ pub mod pallet {
                 TargetBatchDispatchEvent::decode(&mut &recoded_batch_event_bytes[..])
                     .map_err(|_| Error::<T>::InvalidTargetInclusionProof)?;
 
-            let message = on_target_batch_event.message.clone();
+            let message = on_target_batch_event.message;
 
             let batches = Self::find_batches(target, &message);
             for batch in batches {
                 // batches.iter().map(|batch|
                 let _ = match Self::reward_submitter(&submitter, &target, &batch) {
                     Err(e) => {
-                        println!(
-                        "Error while rewarding submitter {submitter:?} for target {target:?} with batch {batch:?}: {e:?}"
-                    );
+                        // println!( "Error while rewarding submitter {submitter:?} for target {target:?} with batch {batch:?}: {e:?}");
                         Err(e)
                     },
                     Ok(paid) => {
                         // Append the fee to the PaidFinalityFees
                         PaidFinalityFees::<T>::append(target, paid);
                         // Emit the event
-                        println!("append PaidFinalityFees {target:?} {paid:?}");
+                        // println!("append PaidFinalityFees {target:?} {paid:?}");
                         Self::deposit_event(Event::BatchCommitted(
                             target,
                             batch.clone(),
@@ -876,7 +875,7 @@ pub mod pallet {
             // let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
             let batching_factor = Self::read_latest_batching_factor(&target);
             match batching_factor {
-                Some(batching_factor) => {
+                Some(_batching_factor) => {
                     let future_finality_fee = <Pallet<T> as AttestersReadApi<
                         T::AccountId,
                         BalanceOf<T>,
@@ -1208,14 +1207,13 @@ pub mod pallet {
                 .unwrap_or(base_user_fee_for_single_user);
 
             // The user fee is the (1 + overcharge-factor) * base-user-fee
-            let user_fee = OVERCHARGE_FACTOR
-                .mul_ceil(base_user_fee)
-                .saturating_add(base_user_fee);
 
-            user_fee
+            OVERCHARGE_FACTOR
+                .mul_ceil(base_user_fee)
+                .saturating_add(base_user_fee)
         }
 
-        fn estimate_finality_reward(target: &TargetId) -> BalanceOf<T> {
+        fn estimate_finality_reward(_target: &TargetId) -> BalanceOf<T> {
             todo!()
         }
 
@@ -1243,9 +1241,9 @@ pub mod pallet {
                     .rev()
                     .take(10)
                     .map(|batch| batch.read_batching_factor())
-                    .collect::<Vec<u16>>()
-                    .try_into()
-                    .unwrap_or(vec![]);
+                    .collect::<Vec<u16>>();
+                    // .try_into()
+                    // .unwrap_or(vec![]);
 
             let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
 
@@ -1563,9 +1561,7 @@ pub mod pallet {
                 THREE_EPOCHS_IN_LOCAL_BLOCKS_U8.into(),
             );
 
-            println!(
-                "calculate_confirmation_reward_for_pending_confirmation base_percent: {base_percent:?}"
-            );
+            // println!( "calculate_confirmation_reward_for_pending_confirmation base_percent: {base_percent:?}");
             // Adjust AutoRegression parameters based on the change in delay
             // let new_auto_regression_param = adjustment;
             let new_auto_regression_param = if adjustment > base_percent {
@@ -1576,13 +1572,9 @@ pub mod pallet {
                 // if delay decreased or stayed the same
             };
 
-            println!(
-                "calculate_confirmation_reward_for_pending_confirmation new_auto_regression_param: {new_auto_regression_param:?}"
-            );
+            println!( "calculate_confirmation_reward_for_pending_confirmation new_auto_regression_param: {new_auto_regression_param:?}");
             println!("calculate_confirmation_reward_for_pending_confirmation delay: {delay:?}");
-            println!(
-                "calculate_confirmation_reward_for_pending_confirmation capped_delay_in_blocks: {capped_delay_in_blocks:?}"
-            );
+            println!( "calculate_confirmation_reward_for_pending_confirmation capped_delay_in_blocks: {capped_delay_in_blocks:?}");
             println!(
                 "calculate_confirmation_reward_for_pending_confirmation adjustment: {adjustment:?}"
             );
@@ -1593,9 +1585,7 @@ pub mod pallet {
 
             let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_batching_factor(target).unwrap_or_default();
 
-            println!(
-                "calculate_confirmation_reward_for_pending_confirmation batching_factor: {batching_factor:?}"
-            );
+            println!( "calculate_confirmation_reward_for_pending_confirmation batching_factor: {batching_factor:?}");
             <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_finality_fee(
                 target, //, 0, batching_factor
             )
@@ -2259,9 +2249,9 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::{Percent, traits::Keccak256};
+    use sp_runtime::{traits::Keccak256, Percent};
 
-    use crate::TargetBatchDispatchEvent;
+    use crate::{Event, PaidFinalityFees, TargetBatchDispatchEvent};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
@@ -2273,8 +2263,8 @@ pub mod attesters_test {
     };
     use t3rn_primitives::{
         attesters::{
-            BatchingFactor, ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
-            CommitteeRecoverable, CommitteeTransitionIndices,
+            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
+            BatchingFactor, CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
             AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
@@ -2283,7 +2273,6 @@ pub mod attesters_test {
         TreasuryAccount, TreasuryAccountProvider,
     };
     use tiny_keccak::{Hasher, Keccak};
-    use crate::{PaidFinalityFees, Event};
 
     pub fn deregister_attester(attester: AccountId) {
         // Assert that attester is register prior to deregistration
@@ -2951,7 +2940,7 @@ pub mod attesters_test {
                 register_attester_with_single_private_key([counter; 32]);
             }
 
-            println!("Registered attesters");
+            // println!("Registered attesters");
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let _committee_transition: CommitteeTransitionIndices = [
@@ -4020,14 +4009,12 @@ pub mod attesters_test {
             let (_, user_finality_fee, _) = expect_user_finality_fees_estimated_event(target);
             // Expect next user charge to increase since the last confirmation arrived too late
             // assert_eq!(user_finality_fee, 25080000000000);
-            println!("user_finality_fee 25080000000000: {user_finality_fee:?}");
+            // println!("user_finality_fee 25080000000000: {user_finality_fee:?}");
             // Simulate another confirmation to arrive only 8 blocks delayed (64 + 8 = 72)
             let _ = request_n_sfx_32_attestations_and_commit(vec![one_message], target, 8);
             let balance_of_submitter = Balances::free_balance(&submitter);
 
-            println!(
-                "balance_of_submitter: 10000000000000 + 16600000000000 {balance_of_submitter:?}"
-            );
+            // println!( "balance_of_submitter: 10000000000000 + 16600000000000 {balance_of_submitter:?}");
 
             // assert_eq!(
             //     balance_of_submitter,
@@ -4038,10 +4025,7 @@ pub mod attesters_test {
             //     Some(vec![10000000000000, 16600000000000])
             // );
 
-            println!(
-                "PaidFinalityFees::<MiniRuntime>::get(&target): {:?}",
-                PaidFinalityFees::<MiniRuntime>::get(target)
-            );
+            // println!( "PaidFinalityFees::<MiniRuntime>::get(&target): {:?}", PaidFinalityFees::<MiniRuntime>::get(target));
             Attesters::estimate_user_finality_fee(
                 Origin::signed(AccountId::from([1; 32])),
                 target,
@@ -4133,98 +4117,98 @@ pub mod attesters_test {
         });
     }
 
-    #[test]
-    #[ignore]
-    fn estimates_finality_fee_and_user_fee_based_on_batching_factor_in_the_range_of_100() {
-        let target: TargetId = [1u8; 4];
-
-        let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
-            .with_eth_gateway_record()
-            .build();
-
-        ext.execute_with(|| {
-            // Force activate target
-            Attesters::force_activate_target(Origin::root(), target);
-            // Create an instance of BatchingFactor
-            let batching_factor = BatchingFactor {
-                latest_confirmed: 100,
-                latest_signed: 90,
-                current_next: 80,
-                up_to_last_10_confirmed: vec![50, 55, 60, 65, 70, 75, 80, 85, 90, 100],
-            };
-
-            const TWELVE_DECIMALS: Balance = 1_000_000_000_000;
-            const ELEVEN_DECIMALS: Balance = 100_000_000_000;
-            const TEN_DECIMALS: Balance = 10_000_000_000;
-
-            // 10 * 10^12 for batching factor = 100
-            PaidFinalityFees::<MiniRuntime>::insert(target, vec![10 * TWELVE_DECIMALS]);
-
-            let future_finality_fee =
-                <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-                    &target,
-                    0,
-                    batching_factor.clone(),
-                );
-
-            assert_eq!(future_finality_fee, 9 * TWELVE_DECIMALS);
-
-            let user_chunk_finality_fee =
-                <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_user_finality_fee(
-                    &target,
-                    0,
-                    batching_factor.clone(),
-                );
-
-            // Assuming 32% Overcharge factor for the user
-            assert_eq!(user_chunk_finality_fee, Ok(132000000000));
-
-            let future_finality_fee =
-                <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-                    &target,
-                    1,
-                    batching_factor.clone(),
-                );
-
-            assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
-
-            let user_chunk_finality_fee =
-                <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_user_finality_fee(
-                    &target,
-                    1,
-                    batching_factor.clone(),
-                );
-
-            assert_eq!(user_chunk_finality_fee, Ok(146666666667));
-
-            let future_finality_fee =
-                <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-                    &target,
-                    2,
-                    batching_factor.clone(),
-                );
-
-            assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
-
-            let future_finality_fee =
-                <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-                    &target,
-                    3,
-                    batching_factor.clone(),
-                );
-
-            assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
-
-            let future_finality_fee =
-                <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
-                    &target,
-                    10,
-                    batching_factor,
-                );
-            assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
-        });
-    }
+    // #[test]
+    // #[ignore]
+    // fn estimates_finality_fee_and_user_fee_based_on_batching_factor_in_the_range_of_100() {
+    //     let target: TargetId = [1u8; 4];
+    //
+    //     let mut ext = ExtBuilder::default()
+    //         .with_polkadot_gateway_record()
+    //         .with_eth_gateway_record()
+    //         .build();
+    //
+    //     ext.execute_with(|| {
+    //         // Force activate target
+    //         Attesters::force_activate_target(Origin::root(), target);
+    //         // Create an instance of BatchingFactor
+    //         let batching_factor = BatchingFactor {
+    //             latest_confirmed: 100,
+    //             latest_signed: 90,
+    //             current_next: 80,
+    //             up_to_last_10_confirmed: vec![50, 55, 60, 65, 70, 75, 80, 85, 90, 100],
+    //         };
+    //
+    //         const TWELVE_DECIMALS: Balance = 1_000_000_000_000;
+    //         const ELEVEN_DECIMALS: Balance = 100_000_000_000;
+    //         const TEN_DECIMALS: Balance = 10_000_000_000;
+    //
+    //         // 10 * 10^12 for batching factor = 100
+    //         PaidFinalityFees::<MiniRuntime>::insert(target, vec![10 * TWELVE_DECIMALS]);
+    //
+    //         let future_finality_fee =
+    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
+    //                 &target,
+    //                 0,
+    //                 batching_factor.clone(),
+    //             );
+    //
+    //         assert_eq!(future_finality_fee, 9 * TWELVE_DECIMALS);
+    //
+    //         let user_chunk_finality_fee =
+    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_user_finality_fee(
+    //                 &target,
+    //                 0,
+    //                 batching_factor.clone(),
+    //             );
+    //
+    //         // Assuming 32% Overcharge factor for the user
+    //         assert_eq!(user_chunk_finality_fee, Ok(132000000000));
+    //
+    //         let future_finality_fee =
+    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
+    //                 &target,
+    //                 1,
+    //                 batching_factor.clone(),
+    //             );
+    //
+    //         assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
+    //
+    //         let user_chunk_finality_fee =
+    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_user_finality_fee(
+    //                 &target,
+    //                 1,
+    //                 batching_factor.clone(),
+    //             );
+    //
+    //         assert_eq!(user_chunk_finality_fee, Ok(146666666667));
+    //
+    //         let future_finality_fee =
+    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
+    //                 &target,
+    //                 2,
+    //                 batching_factor.clone(),
+    //             );
+    //
+    //         assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
+    //
+    //         let future_finality_fee =
+    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
+    //                 &target,
+    //                 3,
+    //                 batching_factor.clone(),
+    //             );
+    //
+    //         assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
+    //
+    //         let future_finality_fee =
+    //             <Attesters as AttestersReadApi<AccountId, Balance>>::estimate_future_finality_fee(
+    //                 &target,
+    //                 10,
+    //                 batching_factor,
+    //             );
+    //         assert_eq!(future_finality_fee, 90 * ELEVEN_DECIMALS);
+    //     });
+    // }
 
     #[test]
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {

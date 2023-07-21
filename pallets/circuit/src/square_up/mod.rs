@@ -92,7 +92,9 @@ impl<T: Config> SquareUp<T> {
             .map(T::Attesters::estimate_finality_fee)
             .collect::<Vec<BalanceOf<T>>>()
             .iter()
-            .fold(Zero::zero(), |acc: BalanceOf<T>, fee| acc.checked_add(fee).unwrap_or_else(Zero::zero));
+            .fold(Zero::zero(), |acc: BalanceOf<T>, fee| {
+                acc.checked_add(fee).unwrap_or_else(Zero::zero)
+            });
 
         T::Currency::transfer(
             &requester,
