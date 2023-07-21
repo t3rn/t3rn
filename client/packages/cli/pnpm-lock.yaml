@@ -5,11 +5,11 @@ dependencies:
     specifier: ^0.11.1
     version: 0.11.1
   '@lodestar/config':
-    specifier: ^1.9.1
-    version: 1.9.1
+    specifier: ^1.9.2
+    version: 1.9.2
   '@lodestar/types':
-    specifier: ^1.9.1
-    version: 1.9.1
+    specifier: ^1.9.2
+    version: 1.9.2
   '@t3rn/sdk':
     specifier: link:../sdk
     version: link:../sdk
@@ -1021,23 +1021,23 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@lodestar/config@1.9.1:
-    resolution: {integrity: sha512-iRJ6QNX2Vk6UitTRGNhdTgaAUO6mRqARrd122ePEf2htfGWfZj3Wq11H+//s36gdaBci/Li1YMQCJ50+BPLWIw==}
+  /@lodestar/config@1.9.2:
+    resolution: {integrity: sha512-zqRbeHMsHXlE94lPUNtJ8DfCfE2FC+3MifTjOykPVlh5QTFWq1OwlGOFwlL3YeGXiET+n0cYrzGgRKjg3Bsn1Q==}
     dependencies:
       '@chainsafe/ssz': 0.10.2
-      '@lodestar/params': 1.9.1
-      '@lodestar/types': 1.9.1
+      '@lodestar/params': 1.9.2
+      '@lodestar/types': 1.9.2
     dev: false
 
-  /@lodestar/params@1.9.1:
-    resolution: {integrity: sha512-O7PV8muPHmI/P53dwblYHXlqsz8+xssMvQwuBZQb7UulvdSjpmJZAQTr84Idjq3IGn3TzOX305WbnfTeTzsPvg==}
+  /@lodestar/params@1.9.2:
+    resolution: {integrity: sha512-Uj0OE4zYG4/DA7wd85aSN/F/DiyuwQxy9mA0yk/UmSaZO74moa+AxXeGMWbD4CB1t/7zbCxjczBxQ8PEEWL4Fw==}
     dev: false
 
-  /@lodestar/types@1.9.1:
-    resolution: {integrity: sha512-dLb0CwX395v9Vn1VvZvPT5cie0roe5Wfe7xrMCRCqRyvcJuPHYLVVQiCbYAsRLamOQaailF8FjZqv3M2BmEyLA==}
+  /@lodestar/types@1.9.2:
+    resolution: {integrity: sha512-a9pAURm3qXyqJA5y1Pzu8QGtukgq4Gni3zRd+KqTzNQgigtoZv5GZ2Pjfs2aJvXqhjpUTjc2bb/7VGSYycZe4w==}
     dependencies:
       '@chainsafe/ssz': 0.10.2
-      '@lodestar/params': 1.9.1
+      '@lodestar/params': 1.9.2
     dev: false
 
   /@noble/hashes@1.3.1:
@@ -1561,8 +1561,8 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001516
-      electron-to-chromium: 1.4.463
+      caniuse-lite: 1.0.30001517
+      electron-to-chromium: 1.4.466
       node-releases: 2.0.13
       update-browserslist-db: 1.0.11(browserslist@4.21.9)
     dev: true
@@ -1628,8 +1628,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /caniuse-lite@1.0.30001516:
-    resolution: {integrity: sha512-Wmec9pCBY8CWbmI4HsjBeQLqDTqV91nFVR83DnZpYyRnPI1wePDsTg0bGLPC5VU/3OIZV1fmxEea1b+tFKe86g==}
+  /caniuse-lite@1.0.30001517:
+    resolution: {integrity: sha512-Vdhm5S11DaFVLlyiKu4hiUTkpZu+y1KA/rZZqVQfOD5YdDT/eQKlkt7NaE0WGOFgX32diqt9MiP9CAiFeRklaA==}
     dev: true
 
   /chalk@2.4.2:
@@ -1880,8 +1880,8 @@ packages:
       esutils: 2.0.3
     dev: true
 
-  /electron-to-chromium@1.4.463:
-    resolution: {integrity: sha512-fT3hvdUWLjDbaTGzyOjng/CQhQJSQP8ThO3XZAoaxHvHo2kUXiRQVMj9M235l8uDFiNPsPa6KHT1p3RaR6ugRw==}
+  /electron-to-chromium@1.4.466:
+    resolution: {integrity: sha512-TSkRvbXRXD8BwhcGlZXDsbI2lRoP8dvqR7LQnqQNk9KxXBc4tG8O+rTuXgTyIpEdiqSGKEBSqrxdqEntnjNncA==}
     dev: true
 
   /emittery@0.13.1:
@@ -3670,8 +3670,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /sucrase@3.33.0:
-    resolution: {integrity: sha512-ARGC7vbufOHfpvyGcZZXFaXCMZ9A4fffOGC5ucOW7+WHDGlAe8LJdf3Jts1sWhDeiI1RSWrKy5Hodl+JWGdW2A==}
+  /sucrase@3.34.0:
+    resolution: {integrity: sha512-70/LQEZ07TEcxiU2dz51FKaE6hCTWC6vr7FOk3Gr0U60C3shtAN+H+BFr9XlYe5xqf3RA8nrc+VIwzCfnxuXJw==}
     engines: {node: '>=8'}
     hasBin: true
     dependencies:
@@ -3880,7 +3880,7 @@ packages:
       resolve-from: 5.0.0
       rollup: 3.26.3
       source-map: 0.8.0-beta.0
-      sucrase: 3.33.0
+      sucrase: 3.34.0
       tree-kill: 1.2.2
       typescript: 5.1.6
     transitivePeerDependencies:
