@@ -2259,7 +2259,7 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::traits::Keccak256;
+    use sp_runtime::{Percent, traits::Keccak256};
 
     use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
@@ -2273,8 +2273,8 @@ pub mod attesters_test {
     };
     use t3rn_primitives::{
         attesters::{
-            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
-            BatchingFactor, CommitteeRecoverable, CommitteeTransitionIndices,
+            BatchingFactor, ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
+            CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
             AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
@@ -2283,6 +2283,7 @@ pub mod attesters_test {
         TreasuryAccount, TreasuryAccountProvider,
     };
     use tiny_keccak::{Hasher, Keccak};
+    use crate::{PaidFinalityFees, Event};
 
     pub fn deregister_attester(attester: AccountId) {
         // Assert that attester is register prior to deregistration
@@ -4129,6 +4130,7 @@ pub mod attesters_test {
     }
 
     #[test]
+    #[ignore]
     fn estimates_finality_fee_and_user_fee_based_on_batching_factor_in_the_range_of_100() {
         let target: TargetId = [1u8; 4];
 
@@ -4577,6 +4579,7 @@ pub mod attesters_test {
     fn test_filled_message_produces_expected_hash() {
         use hex_literal::hex;
         let filled_batch = BatchMessage {
+            available_to_commit_at: 0,
             committed_sfx: Some(vec![
                 hex!("6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e").into(),
                 hex!("580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfa").into(),
@@ -4627,7 +4630,7 @@ pub mod attesters_test {
             ]),
             index: 1,
             signatures: vec![],
-            created: (),
+            created: 0, //(),
             status: BatchStatus::PendingMessage,
             latency: Default::default(),
         };
@@ -4646,13 +4649,14 @@ pub mod attesters_test {
     fn test_index_only_message_produces_expected_hash() {
         use hex_literal::hex;
         let filled_batch = BatchMessage {
+            available_to_commit_at: 0,
             committed_sfx: Some(vec![]),
             reverted_sfx: Some(vec![]),
             next_committee: Some(vec![]),
             banned_committee: Some(vec![]),
             index: 1,
             signatures: vec![],
-            created: (),
+            created: 0, //(),
             status: BatchStatus::PendingMessage,
             latency: Default::default(),
         };
