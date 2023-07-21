@@ -731,28 +731,32 @@ pub mod pallet {
 
             let message = on_target_batch_event.message.clone();
 
-            match Self::find_and_update_batch(target, &message) {
-                Err(_e) => {
-                    // At this point we know the valid message has been recorded on target Escrow Smart Contract
-                    // If we can't find the corresponding batch by the message - we have a problem - attesters are colluding.
-                    log::error!(
-                        "Collusion detected on target: {:?} for message: {:?} with hash {:?}",
-                        target,
-                        &message,
-                        on_target_batch_event.hash
+            let batches = Self::find_batches(target, &message);
+            batches.iter().map(|batch|
+                match Self::reward_submitter(&submitter, &target, &batch) { 
+                    Err(e) => {
+                        println!(
+                        "Error while rewarding submitter {submitter:?} for target {target:?} with batch {batch:?}: {e:?}"
                     );
-                    Self::apply_permanent_attesters_slash(
-                        on_target_batch_event
-                            .signatures
-                            .iter()
-                            .map(|(attester_index, _)| *attester_index)
-                            .collect(),
-                    );
-
-                    Err(Error::<T>::CollusionWithPermanentSlashDetected.into())
+                        Err(e)
+                    },
+                    Ok(paid) => {
+                        // Append the fee to the PaidFinalityFees
+                        PaidFinalityFees::<T>::append(target, paid);
+                        // Emit the event
+                        println!("append PaidFinalityFees {target:?} {paid:?}");
+                        Self::deposit_event(Event::BatchCommitted(
+                            target,
+                            batch.clone(),
+                            batch.message(),
+                            batch.message_hash(),
+                            paid,
+                        ));
+                        Ok(())
+                    },
                 },
-                Ok(()) => Self::reward_submitter(submitter, target),
-            }
+            );
+            Ok(())
         }
 
         #[pallet::weight(10_000)]
@@ -773,7 +777,7 @@ pub mod pallet {
             ensure_signed(origin)?;
 
             for target in AttestationTargets::<T>::get() {
-                let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
+                let batching_factor = Self::read_latest_batching_factor(&target); //<Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
                 log::debug!(
                     "Batching factor for target {:?} is {:?}",
                     target,
@@ -792,15 +796,14 @@ pub mod pallet {
             n_windows_from_now: u16,
         ) -> DispatchResult {
             ensure_signed(origin)?;
-            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
+            // let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
+            let batching_factor = Self::read_latest_batching_factor(&target);
             match batching_factor {
                 Some(batching_factor) => {
                     let future_finality_fee = <Pallet<T> as AttestersReadApi<
                         T::AccountId,
                         BalanceOf<T>,
-                    >>::estimate_finality_fee(
-                        &target, n_windows_from_now, batching_factor
-                    );
+                    >>::estimate_finality_fee(&target);
                     log::debug!(
                         "Future finality fee for target {:?} is {:?}",
                         target,
@@ -832,14 +835,12 @@ pub mod pallet {
             );
 
             // Retrieve the latest batching factor for the target
-            let batching_factor = Self::read_latest_batching_factor(&target).unwrap_or_default();
+            // let batching_factor = Self::read_latest_batching_factor(&target);
 
             let finality_fee = <Pallet<T> as AttestersReadApi<
                 T::AccountId,
                 BalanceOf<T>,
-            >>::estimate_finality_fee(
-                &target, n_windows_from_now, batching_factor
-            )?;
+            >>::estimate_finality_fee(&target);
 
             Self::deposit_event(Event::UserFinalityFeeEstimated(
                 target,
@@ -1318,8 +1319,16 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        fn find_batches(target: TargetId, message: &Vec<u8>) -> Vec<BatchMessage<T::BlockNumber>> {
+            Batches::<T>::get(target)
+                .iter()
+                .find(|batches| batches.iter().any(|batch| &batch.message() == message))
+                .unwrap()
+                .clone()
+        }
+
         fn read_latest_batching_factor(
-            origin: OriginFor<T>, target: &TargetId
+            target: &TargetId
         ) -> Option<BatchingFactor> {
             // If target isn't active yet, return None
             if !AttestationTargets::<T>::get().contains(target) {
@@ -1333,9 +1342,9 @@ pub mod pallet {
                 .rev()
                 .take(10)
                 .map(|batch| batch.read_batching_factor())
-                .collect::<Vec<u16>>()
-                .try_into()
-                .unwrap_or(vec![]);
+                .collect::<Vec<u16>>();
+                // .try_into()
+                // .unwrap_or(vec![]);
 
             let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
 
@@ -1510,7 +1519,7 @@ pub mod pallet {
                 *param = Some(new_auto_regression_param)
             });
 
-            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(target).unwrap_or_default();
+            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_batching_factor(target).unwrap_or_default();
 
             println!(
                 "calculate_confirmation_reward_for_pending_confirmation batching_factor: {batching_factor:?}"
@@ -1518,8 +1527,8 @@ pub mod pallet {
             <Pallet<T> as AttestersReadApi<
                 T::AccountId,
                 BalanceOf<T>,
-            >>::estimate_future_finality_fee(
-                target, 0, batching_factor
+            >>::estimate_finality_fee(
+                target //, 0, batching_factor
             )
         }
 
@@ -1533,9 +1542,10 @@ pub mod pallet {
 
             if calculated_finality_fee > Zero::zero() {
                 T::Currency::transfer(
-                    &T::CommitmentRewardSource::get(),
-                    &submitter,
-                    total_reward,
+                    // todo: source should be the fees treasury
+                    &T::TreasuryAccounts::get_treasury_account(t3rn_primitives::TreasuryAccount::Fee),
+                    submitter,
+                    calculated_finality_fee,
                     ExistenceRequirement::KeepAlive,
                 )?;
             }
