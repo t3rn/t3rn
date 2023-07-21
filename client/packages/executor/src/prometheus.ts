@@ -11,9 +11,9 @@ export class Prometheus {
   isActive: boolean;
 
   // Metrics
-  bids: Counter;
   events: Counter;
   circuitDisconnects: Counter;
+  executorBids: Counter;
   executorXtxStrategyRejects: Counter;
   executorNoBidAndNoCompetition: Counter;
   executorNoBidButCompetition: Counter;
@@ -35,8 +35,8 @@ export class Prometheus {
   createMetrics() {
     // Collects default metrics
     collectDefaultMetrics({ register: this.register });
-    this.bids = new Counter({
-      name: "bids",
+    this.executorBids = new Counter({
+      name: "executor_bids",
       help: "Number of bids",
       registers: [this.register],
     });
@@ -61,19 +61,19 @@ export class Prometheus {
     });
 
     this.executorNoBidAndNoCompetition = new Counter({
-      name: "no_bid_and_no_competition",
+      name: "executor_no_bid_and_no_competition",
       help: "Number of times no bid and no competition",
       registers: [this.register],
     });
 
     this.executorNoBidButCompetition = new Counter({
-      name: "no_bid_but_competition",
+      name: "executor_no_bid_but_competition",
       help: "Number of times no bid but competition",
       registers: [this.register],
     });
 
     this.executorBeenOutBid = new Counter({
-      name: "been_out_bid",
+      name: "executor_been_out_bid",
       help: "Number of times been out bid",
       registers: [this.register],
     });

@@ -134,7 +134,7 @@ export class ExecutionManager {
     await this.initializeGateways(gatewayConfig);
     await this.circuitListener.start();
     await this.initializeEventListeners();
-    logger.info("Setup Successful");
+    logger.info("ExecutionManager setup successful");
   }
 
   /** Initiates a shutdown, the promise resolves once all executions are done. */

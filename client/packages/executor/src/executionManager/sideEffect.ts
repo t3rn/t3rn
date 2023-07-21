@@ -332,9 +332,14 @@ export class SideEffect extends EventEmitter {
    */
   // ToDo fix return type
   private generateBid() {
-    if (this.isBidder) return { trigger: false, reason: "Already a bidder" };
-    if (this.txStatus !== TxStatus.Ready)
+    if (this.isBidder) {
+
+      return { trigger: false, reason: "Already a bidder" };
+    }
+    if (this.txStatus !== TxStatus.Ready) {
+
       return { trigger: false, reason: "Tx not ready" };
+    }
     if (this.status !== SfxStatus.InBidding)
       return { trigger: false, reason: "Not in bidding phase" };
 
@@ -351,7 +356,7 @@ export class SideEffect extends EventEmitter {
 
     const bidUsd = this.biddingEngine.computeBid(this);
     const bidRewardAsset = bidUsd / this.rewardAssetPrice.getValue();
-    this.prometheus.bids.inc();
+    this.prometheus.executorBids.inc();
 
     return { trigger: true, bidAmount: floatToBn(bidRewardAsset) };
   }
