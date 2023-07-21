@@ -90,11 +90,12 @@ impl<T: Config> SquareUp<T> {
         let finality_fees_sum = all_escrow_targets
             .iter()
             .map(|target| T::Attesters::estimate_finality_fee(target))
-            .collect::<Vec<BalanceOf<T>>>();
+            .collect::<Vec<BalanceOf<T>>>()
+            .iter().sum();
 
         T::Currency::transfer(
-            requester,
-            &T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Fees),
+            &requester,
+            &T::TreasuryAccounts::get_treasury_account(TreasuryAccount::Fee),
             finality_fees_sum,
             ExistenceRequirement::KeepAlive,
         )

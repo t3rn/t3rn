@@ -19,7 +19,7 @@ pub type Destination = [u8; 4];
 pub type Input = Vec<u8>;
 use scale_info::TypeInfo;
 
-use t3rn_primitives::circuit::{AdaptiveTimeout, CircuitStatus, ReadSFX, SideEffect};
+use t3rn_primitives::circuit::{AdaptiveTimeout, CircuitStatus, ReadSFX, SideEffect, SecurityLvl};
 use t3rn_types::sfx::TargetId;
 
 t3rn_primitives::reexport_currency_types!();
@@ -77,7 +77,7 @@ pub mod pallet {
                 .map(|sfx_action| sfx_action.try_into())
                 .collect::<Result<Vec<SideEffect<T::AccountId, BalanceOf<T>>>, DispatchError>>()?;
 
-            T::CircuitSubmitAPI::on_extrinsic_trigger(origin, side_effects, speed_mode)?;
+            T::CircuitSubmitAPI::on_extrinsic_trigger(origin, side_effects, speed_mode, SecurityLvl::Optimistic)?;
 
             Ok(().into())
         }
