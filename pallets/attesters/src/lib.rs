@@ -2165,7 +2165,7 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::traits::Keccak256;
+    use sp_runtime::{Percent, traits::Keccak256};
 
     use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
@@ -2179,7 +2179,7 @@ pub mod attesters_test {
     };
     use t3rn_primitives::{
         attesters::{
-            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
+            BatchingFactor, ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
             CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
@@ -2189,6 +2189,7 @@ pub mod attesters_test {
         TreasuryAccount, TreasuryAccountProvider,
     };
     use tiny_keccak::{Hasher, Keccak};
+    use crate::{PaidFinalityFees, Event};
 
     pub fn deregister_attester(attester: AccountId) {
         // Assert that attester is register prior to deregistration
@@ -3743,10 +3744,173 @@ pub mod attesters_test {
                 BatchStatus::ReadyForSubmissionFullyApproved
             );
 
-            let mock_valid_batch_confirmation = TargetBatchDispatchEvent {
-                signatures: first_batch.signatures,
-                hash: first_batch_hash,
-                message: first_batch_message.clone(),
+            assert_eq!(regression_after, Percent::from_percent(0));
+            assert_eq!(regression_before, Percent::from_percent(0));
+
+            let _balance_of_submitter = Balances::free_balance(&submitter);
+
+            // assert_eq!(
+            //     balance_of_submitter,
+            //     current_finality_fee + initial_submitter_balance
+            // );
+            Attesters::estimate_user_finality_fee(Origin::signed(submitter.clone()), target, 0);
+            let (_, user_finality_fee, _) = expect_user_finality_fees_estimated_event(target);
+            // Overcharging factor of 32% - base fee is 10_000_000_000_000,
+            // The next numbers won't change because batching factor doesn't exist yet for that target (take 1 as the user base)
+            assert_eq!(user_finality_fee, 13_200_000_000_000);
+
+            let _ = request_n_sfx_32_attestations_and_commit(vec![one_message], target, 96);
+            let balance_of_submitter = Balances::free_balance(&submitter);
+
+            assert_eq!(
+                balance_of_submitter,
+                10000000000000 + 16600000000000 + initial_submitter_balance
+            );
+            assert_eq!(
+                PaidFinalityFees::<MiniRuntime>::get(target),
+                Some(vec![10000000000000, 16600000000000])
+            );
+
+            Attesters::estimate_user_finality_fee(
+                Origin::signed(AccountId::from([1; 32])),
+                target,
+                0,
+            );
+            let (_, user_finality_fee, _) = expect_user_finality_fees_estimated_event(target);
+            // Expect next user charge to increase since the last confirmation arrived too late
+            // assert_eq!(user_finality_fee, 25080000000000);
+            println!("user_finality_fee 25080000000000: {user_finality_fee:?}");
+            // Simulate another confirmation to arrive only 8 blocks delayed (64 + 8 = 72)
+            let _ = request_n_sfx_32_attestations_and_commit(vec![one_message], target, 8);
+            let balance_of_submitter = Balances::free_balance(&submitter);
+
+            println!(
+                "balance_of_submitter: 10000000000000 + 16600000000000 {balance_of_submitter:?}"
+            );
+
+            // assert_eq!(
+            //     balance_of_submitter,
+            //     10000000000000 + 16600000000000 + initial_submitter_balance
+            // );
+            // assert_eq!(
+            //     PaidFinalityFees::<MiniRuntime>::get(&target),
+            //     Some(vec![10000000000000, 16600000000000])
+            // );
+
+            println!(
+                "PaidFinalityFees::<MiniRuntime>::get(&target): {:?}",
+                PaidFinalityFees::<MiniRuntime>::get(target)
+            );
+            Attesters::estimate_user_finality_fee(
+                Origin::signed(AccountId::from([1; 32])),
+                target,
+                0,
+            );
+            let (_, user_finality_fee, _) = expect_user_finality_fees_estimated_event(target);
+            // Expect next user charge to increase since the last confirmation arrived too late
+            assert_eq!(user_finality_fee, 25080000000000);
+
+            //
+            //
+            // assert_eq!(balance_of_submitter, current_finality_fee);
+            //
+            // assert_eq!(target, [1u8; 4]);
+            // assert_eq!(batch_index, 0);
+            // assert_eq!(current_finality_fee, 10_000_000_000_000);
+            // assert_eq!(regression_before, Percent::from_percent(0));
+            // assert_eq!(regression_after, Percent::from_percent(0));
+            //
+            // let current_block = System::block_number();
+            // assert_eq!(current_block, 1);
+            //
+            // // Should not increase the paid finality fee for the next 2 epochs (64 blocks)
+            // for _ in 0..63 {
+            //     System::set_block_number(System::block_number() + 1);
+            //     Attesters::calculate_current_finality_fee(
+            //         Origin::signed(AccountId::from([1; 32])),
+            //         target,
+            //     );
+            //     let (_, _, current_finality_fee, _, _) =
+            //         expect_finality_fees_recalculated_event_and_regression_readjusted(target);
+            //     assert_eq!(current_finality_fee, 10_000_000_000_000);
+            // }
+            // // Should gradually increase the finality fee for the next 3 epochs (96 blocks)
+            // let mut last_expected_finality_fee: Balance = 10_000_000_000_000;
+            // for _ in 0..95 {
+            //     System::set_block_number(System::block_number() + 1);
+            //     Attesters::calculate_current_finality_fee(
+            //         Origin::signed(AccountId::from([1; 32])),
+            //         target,
+            //     );
+            //     let (_, _, current_finality_fee, regression_before, regression_after) =
+            //         expect_finality_fees_recalculated_event_and_regression_readjusted(target);
+            //     assert!(current_finality_fee > last_expected_finality_fee,);
+            //     assert!(regression_before < regression_after);
+            //     last_expected_finality_fee = current_finality_fee;
+            // }
+            // System::set_block_number(System::block_number() + 1);
+            // Attesters::calculate_current_finality_fee(
+            //     Origin::signed(AccountId::from([1; 32])),
+            //     target,
+            // );
+            // let (_, _, current_finality_fee, regression_before, regression_after) =
+            //     expect_finality_fees_recalculated_event_and_regression_readjusted(target);
+            //
+            // // Increase by x3 if not submitted at the end of the following 3rd epoch
+            // assert_eq!(current_finality_fee, 30_000_000_000_000);
+            // assert_eq!(regression_before, Percent::from_percent(98));
+            // assert_eq!(regression_after, Percent::from_percent(100));
+            //
+            // // Should not increase the paid finality fee for the next blocks after 3 epochs (96 blocks) (check next 16 blocks)
+            // for _ in 0..16 {
+            //     System::set_block_number(System::block_number() + 1);
+            //     Attesters::calculate_current_finality_fee(
+            //         Origin::signed(AccountId::from([1; 32])),
+            //         target,
+            //     );
+            //     let (_, _, current_finality_fee, regression_before, regression_after) =
+            //         expect_finality_fees_recalculated_event_and_regression_readjusted(target);
+            //     assert_eq!(current_finality_fee, 30_000_000_000_000);
+            //     assert_eq!(regression_before, Percent::from_percent(100));
+            //     assert_eq!(regression_after, Percent::from_percent(100));
+            // }
+            //
+            // // At the end check the user's prediction for the next 10 epochs (320 blocks)
+            // for epoch_index in 0..10 {
+            //     System::set_block_number(System::block_number() + 1);
+            //     Attesters::estimate_user_finality_fee(
+            //         Origin::signed(AccountId::from([1; 32])),
+            //         target,
+            //         epoch_index,
+            //     );
+            //     let (_, user_finality_fee, _) =
+            //         expect_user_finality_fees_estimated_event(target);
+            //     // Overcharging factor of 32% - base fee is 10_000_000_000_000, and LastPaidFinalityFee isn't set.
+            //     // The next numbers won't change because batching factor doesn't exist yet for that target (take 1 as the user base)
+            //     assert_eq!(user_finality_fee, 13_200_000_000_000);
+            // }
+        });
+    }
+
+    #[test]
+    #[ignore]
+    fn estimates_finality_fee_and_user_fee_based_on_batching_factor_in_the_range_of_100() {
+        let target: TargetId = [1u8; 4];
+
+        let mut ext = ExtBuilder::default()
+            .with_polkadot_gateway_record()
+            .with_eth_gateway_record()
+            .build();
+
+        ext.execute_with(|| {
+            // Force activate target
+            Attesters::force_activate_target(Origin::root(), target);
+            // Create an instance of BatchingFactor
+            let batching_factor = BatchingFactor {
+                latest_confirmed: 100,
+                latest_signed: 90,
+                current_next: 80,
+                up_to_last_10_confirmed: vec![50, 55, 60, 65, 70, 75, 80, 85, 90, 100],
             };
 
             // Commit the batch
@@ -4120,6 +4284,7 @@ pub mod attesters_test {
     fn test_filled_message_produces_expected_hash() {
         use hex_literal::hex;
         let filled_batch = BatchMessage {
+            available_to_commit_at: 0,
             committed_sfx: Some(vec![
                 hex!("6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e").into(),
                 hex!("580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfa").into(),
@@ -4170,7 +4335,7 @@ pub mod attesters_test {
             ]),
             index: 1,
             signatures: vec![],
-            created: (),
+            created: 0, //(),
             status: BatchStatus::PendingMessage,
             latency: Default::default(),
         };
@@ -4189,13 +4354,14 @@ pub mod attesters_test {
     fn test_index_only_message_produces_expected_hash() {
         use hex_literal::hex;
         let filled_batch = BatchMessage {
+            available_to_commit_at: 0,
             committed_sfx: Some(vec![]),
             reverted_sfx: Some(vec![]),
             next_committee: Some(vec![]),
             banned_committee: Some(vec![]),
             index: 1,
             signatures: vec![],
-            created: (),
+            created: 0, //(),
             status: BatchStatus::PendingMessage,
             latency: Default::default(),
         };
