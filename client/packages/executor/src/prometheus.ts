@@ -141,7 +141,7 @@ export class Prometheus {
     });
 
     this.server.listen(port, () => {
-      console.log(`Metrics server listening on port ${port}`);
+      logger.info(`Metrics server listening on port ${port}`);
     });
   }
 

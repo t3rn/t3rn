@@ -16,12 +16,12 @@ import { EventEmitter } from "events";
 import { floatToBn, toFloat } from "@t3rn/sdk/circuit";
 import { bnToFloat } from "@t3rn/sdk/converters/amounts";
 import { InclusionProof } from "../gateways/types";
-import { Instance } from "../index";
 import { Logger } from "pino";
 import { Subscription } from "rxjs";
 import { Codec } from "@polkadot/types/types";
 import { BN } from "@polkadot/util";
-import { Prometheus } from "src/prometheus";
+import { Prometheus } from "../prometheus";
+import { logger } from "../logging";
 
 /** Map event names to SfxType enum */
 export const EventMapper = ["Transfer", "MultiTransfer"];
@@ -228,13 +228,14 @@ export class SideEffect extends EventEmitter {
     this.txOutputAssetPrice = txOutputAssetPrice;
     this.rewardAssetPrice = rewardAssetPrice;
 
-    this.addLog({
-      msg: "Set risk parameters and subscriptions",
+    logger.info({
       txCostNative: txCostNative.getValue(),
       nativeAssetPrice: nativeAssetPrice.getValue(),
       txOutputAssetPrice: txOutputAssetPrice.getValue(),
       rewardAssetPrice: rewardAssetPrice.getValue(),
-    });
+      },
+      "Set risk parameters and subscriptions",
+    );
 
     const txCostNativeSubscription = this.txCostNative.subscribe(() => {
       this.recomputeMaxProfit();
@@ -298,11 +299,12 @@ export class SideEffect extends EventEmitter {
   triggerBid() {
     const result = this.generateBid();
     if (result?.trigger) {
-      this.addLog({
-        msg: "Bid generated",
+      logger.info({
         bid: result?.bidAmount?.toString(),
-      });
-      this.logger.info(
+        },
+        "Bid generated",
+      );
+      logger.info(
         `Bidding on SFX ${this.humanId}: ${bnToFloat(
           result.bidAmount as BN,
           12,
@@ -317,7 +319,7 @@ export class SideEffect extends EventEmitter {
         },
       });
     } else {
-      this.addLog({ msg: "Not bidding", reason: result.reason });
+      logger.info({reason: result.reason}, "Not bidding");
     }
   }
 
@@ -339,7 +341,7 @@ export class SideEffect extends EventEmitter {
     try {
       this.strategyEngine.evaluateSfx(this);
     } catch (e) {
-      this.logger.info(`Not bidding SFX ${this.humanId}`);
+      logger.info(`Not bidding SFX ${this.humanId}`);
       return { trigger: false, reason: e.toString() };
     }
 
@@ -399,15 +401,14 @@ export class SideEffect extends EventEmitter {
     if (this.reward.getValue() >= this.gateway.toFloat(bidAmount)) {
       this.isBidder = true;
       this.reward.next(this.gateway.toFloat(bidAmount)); // not sure if we want to do this tbh. Reacting to other bids should be sufficient
-      this.logger.info(`Bid accepted for SFX ${this.humanId} ✅`);
-      this.addLog({ msg: "Bid accepted", bidAmount: bidAmount.toString() });
+      logger.info(`Bid accepted for SFX ${this.humanId} ✅`);
+      logger.info({  bidAmount: bidAmount.toString() }, "Bid accepted");
     } else {
       this.triggerBid(); // trigger another bid, as we have been outbid. The risk parameters are updated automatically by events.
-      this.logger.info(`Bid undercut in block for SFX ${this.humanId} ❌`);
-      this.addLog({
-        msg: "Bid accepted, but undercut in same block",
+      logger.info(`Bid undercut in block for SFX ${this.humanId} ❌`);
+      logger.info({
         bidAmount: bidAmount.toString(),
-      });
+      }, "Bid accepted, but undercut in same block");
     }
   }
 
@@ -420,7 +421,7 @@ export class SideEffect extends EventEmitter {
     // a better bid was submitted before this one was accepted. A new eval will be triggered with the incoming bid event
     this.txStatus = TxStatus.Ready; // open mutex lock
     this.isBidder = false;
-    this.addLog({ msg: "Bid rejected", err: error.toString() });
+    logger.info({  err: error.toString() }, "Bid rejected",);
     this.triggerBid();
   }
 
@@ -439,16 +440,16 @@ export class SideEffect extends EventEmitter {
 
     // if this is not own bid, update reward and isBidder
     if (signer !== this.circuitSignerAddress) {
-      this.logger.info(
+      logger.info(
         `Competing bid on SFX ${this.humanId}: Exec: ${signer} ${toFloat(
           bidAmount,
         )} TRN 🎰`,
       );
-      this.addLog({ msg: "Competing bid received", signer, bidAmount });
+      logger.info({  signer, bidAmount }, "Competing bid received");
       this.isBidder = false;
       this.reward.next(this.gateway.toFloat(bidAmount)); // this will trigger the re-eval of submitting a new bid
     } else {
-      this.addLog({ msg: "Own bid detected", signer, bidAmount });
+      logger.warn({  signer, bidAmount }, "Own bid detected");
     }
   }
 
@@ -526,22 +527,5 @@ export class SideEffect extends EventEmitter {
     this.subscriptions.forEach((subscription) => {
       subscription.unsubscribe();
     });
-  }
-
-  private addLog(
-    msg: {
-      [x: string]: string | number | undefined;
-    },
-    debug = true,
-  ) {
-    msg.component = "SFX";
-    msg.sfxId = this.id;
-    msg.xtxId = this.xtxId;
-
-    if (debug) {
-      this.logger.debug(msg);
-    } else {
-      this.logger.error(msg);
-    }
   }
 }
