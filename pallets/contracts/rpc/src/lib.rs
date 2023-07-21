@@ -25,7 +25,7 @@ use codec::Codec;
 use jsonrpsee::{
     core::{async_trait, Error as JsonRpseeError, RpcResult},
     proc_macros::rpc,
-    types::error::{CallError, ErrorCode, ErrorObject},
+    types::error::{ErrorCode, ErrorObject},
 };
 use pallet_contracts_primitives::{
     Code, CodeUploadResult, ContractExecResult, ContractInstantiateResult,
@@ -123,7 +123,7 @@ pub struct CodeUploadRequest<AccountId> {
 }
 
 /// Contracts RPC methods.
-#[rpc(client, server)]
+#[rpc(server)]
 pub trait ContractsApi<BlockHash, BlockNumber, AccountId, Balance, Hash>
 where
     Balance: Copy + TryFrom<NumberOrHex> + Into<NumberOrHex>,
