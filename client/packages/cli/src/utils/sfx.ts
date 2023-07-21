@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "fs"
 import { Sdk } from "@t3rn/sdk"
 import { createType } from "@t3rn/types"
+//@ts-ignore - TS doesn't know about the type
 import { T3rnTypesSfxSideEffect } from "@polkadot/types/lookup"
 import { Extrinsic, SpeedMode } from "@/schemas/extrinsic.ts"
 import {
