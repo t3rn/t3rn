@@ -717,15 +717,15 @@ mod tests {
         let sfx_id_nonce_2 = sfx.generate_id::<Keccak256>(xtx_id_nonce_2.0.as_slice(), 0);
 
         let expected_hash_nonce_0 =
-            hex!("e32ce14dee3ba819729a101716939bdbf423e1007cbfc211c4f87b75d6b3a997");
+            hex!("4fd5cefb43ccd33cfe1f4f9a0405af51205e021449892cb08809d97610cfe722");
         let expected_hash_nonce_1 =
-            hex!("a0187301909f08eb83e19648ad34219d60c56f92568d7e349491f013e36172ca");
+            hex!("733fc9182521d4ac5f3465c0b0382a5b4bad7af476f8c7517e2739536a42bb94");
         let expected_hash_nonce_2 =
-            hex!("7b595012210633df93cec76844b03d8074ee7f7946ba1b35a9fb4b7fead4afe9");
+            hex!("8066494f08af53d6edb5c6df49048a3b4ae59e20df6d59c86bf8c8650304747e");
 
-        assert_eq!(sfx_id_nonce_0, expected_hash_nonce_1.into());
-        assert_eq!(sfx_id_nonce_1, expected_hash_nonce_2.into());
-        assert_eq!(sfx_id_nonce_2, expected_hash_nonce_0.into());
+        assert_eq!(sfx_id_nonce_0, expected_hash_nonce_0.into());
+        assert_eq!(sfx_id_nonce_1, expected_hash_nonce_1.into());
+        assert_eq!(sfx_id_nonce_2, expected_hash_nonce_2.into());
     }
 
     #[test]
