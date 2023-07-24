@@ -46,7 +46,7 @@ contract RemoteOrder is ReentrancyGuard  {
     }
 
     function generateId(address requester, uint32 nonce) public pure returns (bytes32) {
-        return keccak256(abi.encode(requester, nonce));
+        return keccak256(abi.encode(requester, nonce, bytes32(0)));
     }
 
     /*

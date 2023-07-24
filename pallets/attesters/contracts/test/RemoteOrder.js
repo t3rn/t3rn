@@ -2,6 +2,14 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
+
+function generateId(addr, nonce) {
+    return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
+      ["address", "uint32", "bytes32"],
+      [addr, nonce, "0x0000000000000000000000000000000000000000000000000000000000000000"]
+    ));
+}
+
 describe("RemoteOrder::ID", function() {
     let RemoteOrder;
     let contract;
@@ -18,15 +26,17 @@ describe("RemoteOrder::ID", function() {
 
     it("Should generate ID correctly from nonce 0", async function() {
         const id = await contract.generateId(owner.address, 0);
-        console.log("ethers.utils.defaultAbiCoder.encode([\"address\", \"uint32\"], [owner.address, 0])", ethers.utils.defaultAbiCoder.encode(["address", "uint32"], [owner.address, 0]))
-        expect(id).to.equal(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address", "uint32"], [owner.address, 0])));
+        let expected_id_0 = generateId(owner.address, 0);
+        console.log("ethers.utils.defaultAbiCoder.encode([\"address\", \"uint32\"], [owner.address, 0])", expected_id_0)
+        expect(id).to.equal(expected_id_0);
     });
 
     it("Should generate ID correctly from nonce 0, 1 and 2", async function() {
         for (let i = 0; i < 3; i++) {
             const id = await contract.generateId(owner.address, i);
-            console.log("ethers.utils.defaultAbiCoder.encode([\"address\", \"uint32\"], [owner.address, 0])", ethers.utils.defaultAbiCoder.encode(["address", "uint32"], [owner.address, i]))
-            expect(id).to.equal(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address", "uint32"], [owner.address, i])));
+            let expected_id_i = generateId(owner.address, i);
+            console.log("ethers.utils.defaultAbiCoder.encode([\"address\", \"uint32\"], [owner.address, 0])", expected_id_i)
+            expect(id).to.equal(expected_id_i);
         }
     });
 });
@@ -117,13 +127,13 @@ describe("RemoteOrder::Rewards", function() {
         await expect(contract.connect(addr1).order(params.destination, params.asset, params.targetAccount, params.amount, params.rewardAssetETH, params.insurance, params.maxRewardETH, { value: params.maxRewardETH }))
             .to.emit(contract, 'OrderCreated')
             // event OrderCreated(bytes32 indexed id, bytes4 indexed destination, bytes4 asset, address targetAccount, uint256 amount, address rewardAsset, uint256 insurance, uint256 maxReward);
-            .withArgs(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address", "uint32"], [sender, 2])), params.destination, params.asset, params.targetAccount, params.amount, params.rewardAssetETH, params.insurance, params.maxRewardETH, 2);
+            .withArgs(generateId(sender, 2), params.destination, params.asset, params.targetAccount, params.amount, params.rewardAssetETH, params.insurance, params.maxRewardETH, 2);
     });
 
     it("Should set order status to Committed after commit", async function() {
         // send order with ETH as rewardAsset
         let params = await getParams();
-        let id = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address', 'uint32'], [addr1.address, 1]));
+        let id = generateId(addr1.address, 1);
         await contract.connect(addr1).order(params.destination, params.asset, params.targetAccount, params.amount, params.rewardAssetETH, params.insurance, params.maxRewardETH, { value: params.maxRewardETH });
         await contract.connect(addr1).commit(id);
 
@@ -133,7 +143,7 @@ describe("RemoteOrder::Rewards", function() {
 
     it("Should revert order and refund user in ETH", async function() {
         let params = await getParams();
-        let id = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address', 'uint32'], [addr1.address, 2]));
+        let id = generateId(addr1.address, 2);
         await contract.connect(addr1).order(params.destination, params.asset, params.targetAccount, params.amount, params.rewardAssetETH, params.insurance, params.maxRewardETH, { value: params.maxRewardETH });
         await contract.connect(addr1).revertOrder(id);
 
@@ -146,10 +156,10 @@ describe("RemoteOrder::Rewards", function() {
         let params = await getParams();
         await USDCContract.connect(addr1).approve(contract.address, params.maxRewardUSDC);
         let balancePriorOrder = await USDCContract.balanceOf(addr1.address);
-        let id = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address', 'uint32'], [addr1.address, 5]));
+        let id = generateId(addr1.address, 5);
         await contract.connect(addr1).order(params.destination, params.asset, params.targetAccount, params.amount, params.rewardAssetUSDC, params.insurance, params.maxRewardUSDC);
         await expect(contract.connect(addr1).revertOrder(id)).to.emit(contract, 'OrderRefundedInERC20')
-            .withArgs(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address", "uint32"], [addr1.address, 5])), addr1.address, params.maxRewardUSDC);
+            .withArgs(id, addr1.address, params.maxRewardUSDC);
 
         let status = await contract.orders(id);
         expect(status.toString()).to.equal("true,0x03030303,0x05050505,0x70997970C51812dc3A010C7d01b50e0d17dc79C8,0x70997970C51812dc3A010C7d01b50e0d17dc79C8,10000000000000000000,0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512,2000000000000000000,100000000,2"); // 2 corresponds to "Reverted"
@@ -166,7 +176,7 @@ describe("RemoteOrder::Rewards", function() {
 
     it("Should return true when ID exists", async function() {
         let params = await getParams();
-        let id = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['address', 'uint32'], [addr1.address, 2]));
+        let id = generateId(addr1.address, 2);
         await contract.connect(addr1).order(params.destination, params.asset, params.targetAccount, params.amount, params.rewardAssetETH, params.insurance, params.maxRewardETH, { value: params.maxRewardETH });
         let exists = await contract.isKnownId(id);
         expect(exists).to.equal(true);
