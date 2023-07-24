@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.43.0-rc.0] - 2023-07-24
+### :sparkles: New Features
+- [`e7715f9`](https://github.com/t3rn/t3rn/commit/e7715f9009e27ef3a3447d82887dbf6910323e9a) - **cli**: send continuously SFX to circuit *(PR [#1185](https://github.com/t3rn/t3rn/pull/1185) by [@3h4x](https://github.com/3h4x))*
+- [`6641262`](https://github.com/t3rn/t3rn/commit/664126223dde67ad275fb5c2dcdab70612896107) - **cli**: parametrize CLI with env variables *(PR [#1196](https://github.com/t3rn/t3rn/pull/1196) by [@3h4x](https://github.com/3h4x))*
+- [`ecbb98a`](https://github.com/t3rn/t3rn/commit/ecbb98a9e3a49e929135163c618cc6bb25cfc1df) - **executor**: bid monitoring and logging *(PR [#1200](https://github.com/t3rn/t3rn/pull/1200) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`e24ba6a`](https://github.com/t3rn/t3rn/commit/e24ba6a179c7644f10dfd27c522981b3bdb2e0d4) - **executor**: contract data types *(PR [#1183](https://github.com/t3rn/t3rn/pull/1183) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`c3c8f13`](https://github.com/t3rn/t3rn/commit/c3c8f1352452bcbd22c8082693871c697cc628f6) - **docs**: update packages and add dependabot *(PR [#1184](https://github.com/t3rn/t3rn/pull/1184) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.42.0-rc.0] - 2023-07-18
 ### :sparkles: New Features
 - [`d2d3436`](https://github.com/t3rn/t3rn/commit/d2d3436ea14fdc78c274d7280c33b24a68145365) - change XTX & SFX hashing to Keccak256 *(PR [#1173](https://github.com/t3rn/t3rn/pull/1173) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1376,3 +1389,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.40.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.4-rc.0...v1.40.0-rc.0
 [v1.41.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.40.0-rc.0...v1.41.0-rc.0
 [v1.42.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.41.1-rc.0...v1.42.0-rc.0
+[v1.43.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.42.1-rc.0...v1.43.0-rc.0
