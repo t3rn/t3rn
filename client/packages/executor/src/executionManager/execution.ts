@@ -164,7 +164,7 @@ export class Execution extends EventEmitter {
       sfx.reverted();
     }
 
-    logger.info({  xtxId: this.id }, "Revert XTX");
+    logger.info({ xtxId: this.id }, "Revert XTX");
   }
 
   /**

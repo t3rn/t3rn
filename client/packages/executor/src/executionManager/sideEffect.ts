@@ -228,11 +228,12 @@ export class SideEffect extends EventEmitter {
     this.txOutputAssetPrice = txOutputAssetPrice;
     this.rewardAssetPrice = rewardAssetPrice;
 
-    logger.info({
-      txCostNative: txCostNative.getValue(),
-      nativeAssetPrice: nativeAssetPrice.getValue(),
-      txOutputAssetPrice: txOutputAssetPrice.getValue(),
-      rewardAssetPrice: rewardAssetPrice.getValue(),
+    logger.info(
+      {
+        txCostNative: txCostNative.getValue(),
+        nativeAssetPrice: nativeAssetPrice.getValue(),
+        txOutputAssetPrice: txOutputAssetPrice.getValue(),
+        rewardAssetPrice: rewardAssetPrice.getValue(),
       },
       "Set risk parameters and subscriptions",
     );
@@ -299,8 +300,9 @@ export class SideEffect extends EventEmitter {
   triggerBid() {
     const result = this.generateBid();
     if (result?.trigger) {
-      logger.info({
-        bid: result?.bidAmount?.toString(),
+      logger.info(
+        {
+          bid: result?.bidAmount?.toString(),
         },
         "Bid generated",
       );
@@ -319,7 +321,7 @@ export class SideEffect extends EventEmitter {
         },
       });
     } else {
-      logger.info({reason: result.reason}, "Not bidding");
+      logger.info({ reason: result.reason }, "Not bidding");
     }
   }
 
@@ -333,11 +335,9 @@ export class SideEffect extends EventEmitter {
   // ToDo fix return type
   private generateBid() {
     if (this.isBidder) {
-
       return { trigger: false, reason: "Already a bidder" };
     }
     if (this.txStatus !== TxStatus.Ready) {
-
       return { trigger: false, reason: "Tx not ready" };
     }
     if (this.status !== SfxStatus.InBidding)
@@ -407,13 +407,16 @@ export class SideEffect extends EventEmitter {
       this.isBidder = true;
       this.reward.next(this.gateway.toFloat(bidAmount)); // not sure if we want to do this tbh. Reacting to other bids should be sufficient
       logger.info(`Bid accepted for SFX ${this.humanId} ✅`);
-      logger.info({  bidAmount: bidAmount.toString() }, "Bid accepted");
+      logger.info({ bidAmount: bidAmount.toString() }, "Bid accepted");
     } else {
       this.triggerBid(); // trigger another bid, as we have been outbid. The risk parameters are updated automatically by events.
       logger.info(`Bid undercut in block for SFX ${this.humanId} ❌`);
-      logger.info({
-        bidAmount: bidAmount.toString(),
-      }, "Bid accepted, but undercut in same block");
+      logger.info(
+        {
+          bidAmount: bidAmount.toString(),
+        },
+        "Bid accepted, but undercut in same block",
+      );
     }
   }
 
@@ -426,7 +429,7 @@ export class SideEffect extends EventEmitter {
     // a better bid was submitted before this one was accepted. A new eval will be triggered with the incoming bid event
     this.txStatus = TxStatus.Ready; // open mutex lock
     this.isBidder = false;
-    logger.info({  err: error.toString() }, "Bid rejected",);
+    logger.info({ err: error.toString() }, "Bid rejected");
     this.triggerBid();
   }
 
@@ -450,11 +453,11 @@ export class SideEffect extends EventEmitter {
           bidAmount,
         )} TRN 🎰`,
       );
-      logger.info({  signer, bidAmount }, "Competing bid received");
+      logger.info({ signer, bidAmount }, "Competing bid received");
       this.isBidder = false;
       this.reward.next(this.gateway.toFloat(bidAmount)); // this will trigger the re-eval of submitting a new bid
     } else {
-      logger.warn({  signer, bidAmount }, "Own bid detected");
+      logger.warn({ signer, bidAmount }, "Own bid detected");
     }
   }
 

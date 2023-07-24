@@ -71,7 +71,7 @@ export class CoingeckoPricing {
           return new Promise((resolve) => setTimeout(resolve, 2000));
         })
         .catch((err) => {
-          logger.error({err}, "Failed fetching prices");
+          logger.error({ err }, "Failed fetching prices");
         });
     }
     setTimeout(this.updateAssetPrices.bind(this), this.updateFrequency);
