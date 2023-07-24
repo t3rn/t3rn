@@ -4,9 +4,14 @@ const { expect } = require('chai');
 
 
 function generateId(addr, nonce) {
+    let xtx_id = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
+      ["address", "uint32"],
+      [addr, nonce]
+    ));
+
     return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
-      ["address", "uint32", "bytes32"],
-      [addr, nonce, "0x0000000000000000000000000000000000000000000000000000000000000000"]
+      ["bytes32", "bytes32"],
+      [xtx_id, "0x0000000000000000000000000000000000000000000000000000000000000000"]
     ));
 }
 
