@@ -6304,7 +6304,7 @@ dependencies = [
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "t3rn-primitives",
  "t3rn-sdk-primitives",
- "wasm-instrument",
+ "wasm-instrument 0.4.0",
  "wasmi-validation",
  "wat",
 ]
@@ -6332,7 +6332,7 @@ dependencies = [
  "sp-runtime",
  "sp-sandbox",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
- "wasm-instrument",
+ "wasm-instrument 0.1.1",
  "wasmi-validation",
 ]
 
@@ -7680,6 +7680,12 @@ name = "parity-wasm"
 version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be5e13c266502aadf83426d87d81a0f5d1ef45b8027f5a471c360abfe4bfae92"
+
+[[package]]
+name = "parity-wasm"
+version = "0.45.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1ad0aff30c1da14b1254fcb2af73e1fa9a28670e584a626f53a369d0e157304"
 
 [[package]]
 name = "parking"
@@ -10422,7 +10428,7 @@ dependencies = [
  "sp-serializer",
  "sp-wasm-interface",
  "thiserror",
- "wasm-instrument",
+ "wasm-instrument 0.1.1",
  "wasmi",
 ]
 
@@ -13722,6 +13728,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "962e5b0401bbb6c887f54e69b8c496ea36f704df65db73e81fd5ff8dc3e63a9f"
 dependencies = [
  "parity-wasm 0.42.2",
+]
+
+[[package]]
+name = "wasm-instrument"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a47ecb37b9734d1085eaa5ae1a81e60801fd8c28d4cabdd8aedb982021918bc"
+dependencies = [
+ "parity-wasm 0.45.0",
 ]
 
 [[package]]
