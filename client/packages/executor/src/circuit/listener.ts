@@ -80,7 +80,10 @@ export class CircuitListener extends EventEmitter {
             data: notifications[i].event.data,
           });
         } else if (notifications[i].event.method === "HeadersAdded") {
-          logger.debug({event: notifications[i].toHuman()}, "Received new headers with HeadersAdded event");
+          logger.debug(
+            { event: notifications[i].toHuman() },
+            "Received new headers with HeadersAdded event",
+          );
           let vendor = "";
           if (notifications[i].event.section === "rococoBridge") {
             vendor = "Rococo";

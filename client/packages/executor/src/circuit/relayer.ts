@@ -129,7 +129,7 @@ export const exportData = (
     JSON.stringify(encoded, null, 4),
     (err) => {
       if (err) {
-        logger.error({err}, "Export data failed");
+        logger.error({ err }, "Export data failed");
       }
     },
   );
