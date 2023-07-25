@@ -12,8 +12,8 @@ pub mod pallet {
 
     // Overcharge factor as a constant.
     const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
-    const THREE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 3 * 6 * 24;
-    const TWO_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 2 * 6 * 24;
+    const THREE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 3 * 32;
+    const TWO_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 2 * 32;
 
     use super::*;
     t3rn_primitives::reexport_currency_types!();
@@ -805,10 +805,11 @@ pub mod pallet {
             origin: OriginFor<T>,
             target: TargetId,
             cost: BalanceOf<T>,
+            auto_regression_param: Percent,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            AutoRegressionParam::<T>::insert(target, new_param);
+            AutoRegressionParam::<T>::insert(target, auto_regression_param);
 
             Ok(())
         }
@@ -1499,8 +1500,8 @@ pub mod pallet {
         }
 
         pub fn reward_submitter(
-            submitter: T::AccountId,
-            target: TargetId,
+            submitter: &T::AccountId,
+            target: &TargetId,
             batch_message: &BatchMessage<T::BlockNumber>,
         ) -> Result<BalanceOf<T>, DispatchError> {
             let fast_confirmation_cost =
