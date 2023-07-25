@@ -3498,7 +3498,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    sfx_id_to_sign_on,
+                    vec![sfx_id_to_sign_on],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     ETHEREUM_TARGET,
                     [counter; 32],
@@ -3541,7 +3541,7 @@ pub mod attesters_test {
                 let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    message,
+                    vec![message],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     ETHEREUM_TARGET,
                     [counter; 32],
@@ -3763,7 +3763,7 @@ pub mod attesters_test {
                 // Submit an attestation signed with the Ed25519 key
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    message,
+                    vec![message],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     target,
                     [counter; 32],
@@ -4052,7 +4052,7 @@ pub mod attesters_test {
                 // Submit an attestation signed with the Ed25519 key
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
-                    message,
+                    vec![message],
                     ECDSA_ATTESTER_KEY_TYPE_ID,
                     target,
                     [counter; 32],
