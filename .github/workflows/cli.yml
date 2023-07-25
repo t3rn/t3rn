@@ -32,8 +32,10 @@ jobs:
             - "client/packages/**/*.ts"
             - "client/packages/**/*.json"
             - "client/packages/cli/**/*.ts"
+            - "client/packages/helm/**"
             - "client/packages/cli/**/*.json"
             - ".github/workflows/cli.yml"
+
 
       - name: Detected changes
         run: |
