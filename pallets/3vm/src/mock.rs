@@ -210,6 +210,7 @@ impl pallet_circuit::Config for Test {
     type SelfGatewayId = CircuitTargetId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<4>;
+    type TreasuryAccounts = Test;
     type WeightInfo = ();
     type Xdns = Xdns;
     type XtxTimeoutCheckInterval = ConstU32<1024>;
