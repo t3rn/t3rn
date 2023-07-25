@@ -65,7 +65,7 @@ jobs:
 
       - run: cd .. && make all
       - run: pnpm install
-      - run: pnpm run fmt
+      - run: pnpm run fmt:check
       - run: pnpm run build-docs
 
       - name: Save Code Linting Report JSON

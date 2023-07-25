@@ -377,6 +377,7 @@ impl pallet_eth2_finality_verifier::Config for MiniRuntime {
     type Event = Event;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
+    type LightClientAsyncAPI = XDNS;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();
