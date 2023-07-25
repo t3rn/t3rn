@@ -168,9 +168,12 @@ export class SubstrateRelayer extends EventEmitter {
     if (sfx.target !== "roco") {
       const blockNumber = await this.fetchCorrespondingRelaychainHeaderNumber(
         blockHash,
-      ).catch((err) => {
+      ).catch((error) => {
         // this should never happen
-        logger.error({err}, "Failed to fetch corresponding relaychain header number");
+        logger.error(
+          { error: error.toString() },
+          "Failed to fetch corresponding relaychain header number",
+        );
       });
 
       this.emit("Event", <RelayerEventData>{

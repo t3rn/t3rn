@@ -10,6 +10,7 @@ import {
   T3rnPrimitivesExecutionVendor,
   //@ts-ignore - TS doesn't know about the type
   T3rnAbiRecodeCodec,
+  //@ts-ignore - TS doesn't know about the type
 } from "@polkadot/types/lookup"
 import { Gateway } from "@/schemas/setup.ts"
 import { colorLogMsg, log } from "@/utils/log.ts"

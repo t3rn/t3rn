@@ -33,7 +33,10 @@ export class AttestationManager {
   currentCommitteeTransitionCount = 0;
   prometheus: Prometheus;
 
-  constructor(public client: Sdk["client"], prometheus: Prometheus) {
+  constructor(
+    public client: Sdk["client"],
+    prometheus: Prometheus,
+  ) {
     if (config.attestations.ethereum.privateKey === undefined) {
       throw new Error("Ethereum private key is not defined");
     }
@@ -43,7 +46,7 @@ export class AttestationManager {
     this.web3 = new Web3(this.rpc);
 
     this.wallet = this.web3.eth.accounts.privateKeyToAccount(
-      config.attestations.ethereum.privateKey
+      config.attestations.ethereum.privateKey,
     );
 
     if (this.wallet.address === undefined) {
@@ -55,14 +58,14 @@ export class AttestationManager {
     const receiveAttestationBatchAbi = JSON.parse(
       fs.readFileSync(
         "./src/attestationManager/contracts/AttestationsVerifier.abi.json",
-        "utf8"
-      )
+        "utf8",
+      ),
     );
     const receiveAttestationBatchAddress =
       config.attestations.ethereum.attestationVerifierAddress;
     this.receiveAttestationBatchContract = new this.web3.eth.Contract(
       receiveAttestationBatchAbi.abi,
-      receiveAttestationBatchAddress
+      receiveAttestationBatchAddress,
     );
     this.prometheus = prometheus;
   }
@@ -76,7 +79,7 @@ export class AttestationManager {
         batch.committedSfx,
         batch.revertedSfx,
         batch.index,
-      ]
+      ],
     );
   }
 
@@ -84,7 +87,7 @@ export class AttestationManager {
     logger.info("Fetching batches from chain...");
     const attesters = this.client.query.attesters;
     const rawBatches = await attesters.batches(
-      config.attestations.ethereum.name
+      config.attestations.ethereum.name,
     );
     const fetchedData = rawBatches.toJSON() as unknown as Array<IBatch>;
     this.batches = fetchedData.map((batch) => {
@@ -139,20 +142,20 @@ export class AttestationManager {
             event: event.method,
             data: event.data,
           },
-          "Received attesters NewConfirmationBatch event"
+          "Received attesters NewConfirmationBatch event",
         );
 
         const batch = event.data as ConfirmationBatch;
         logger.debug(
           {
-            batch
+            batch,
           },
-          "Batch debug"
+          "Batch debug",
         );
         const messageHash = this.getMessageHash(batch);
 
         await this.receiveAttestationBatchCall(batch, messageHash);
-      })
+      }),
     );
   }
 
@@ -170,7 +173,7 @@ export class AttestationManager {
   // TODO: not used
   getMessageHashWithPrefix(batch: Batch) {
     const prefix = ethers.hexlify(
-      ethers.toUtf8Bytes("\x19Ethereum Signed Message:\n32")
+      ethers.toUtf8Bytes("\x19Ethereum Signed Message:\n32"),
     );
     const encodedBatch = ethers.keccak256(this.batchEncodePacked(batch));
     const messageHash = ethers.keccak256(ethers.concat([prefix, encodedBatch]));
@@ -187,7 +190,7 @@ export class AttestationManager {
       logger.info(
         `We have ${
           this.batches.length - this.currentBatchIndex
-        } pending batches to process`
+        } pending batches to process`,
       );
       this.processPendingAttestationBatches();
     }
@@ -197,14 +200,14 @@ export class AttestationManager {
 
   async processPendingAttestationBatches() {
     for (const batch of this.batches.slice(
-      Number(this.currentBatchIndex) + 1
+      Number(this.currentBatchIndex) + 1,
     )) {
       logger.info(
         `Batch ${
           batch.index
         } processing, created at block ${await this.getBlockHash(
-          batch.created
-        )}`
+          batch.created,
+        )}`,
       );
 
       const messageHash = this.getMessageHash(batch);
@@ -216,7 +219,7 @@ export class AttestationManager {
 
   async receiveAttestationBatchCall(
     batch: ConfirmationBatch,
-    messageHash: string
+    messageHash: string,
   ) {
     const contractMethod =
       this.receiveAttestationBatchContract.methods.receiveAttestationBatch(
@@ -227,7 +230,7 @@ export class AttestationManager {
         batch.revertedSfx,
         batch.index,
         messageHash,
-        batch.signatures
+        batch.signatures,
       );
 
     const encodedABI = contractMethod.encodeABI();
@@ -247,16 +250,16 @@ export class AttestationManager {
     };
 
     const signedTransaction = await this.wallet.signTransaction(
-      transactionObject
+      transactionObject,
     );
 
     try {
       const transactionReceipt = await this.web3.eth.sendSignedTransaction(
-        signedTransaction.rawTransaction
+        signedTransaction.rawTransaction,
       );
       logger.info(
         { receipt: transactionReceipt },
-        `Batch ${batch.index} procesed!`
+        `Batch ${batch.index} procesed!`,
       );
       this.prometheus.attestationBatchesProcessed.inc();
     } catch (error) {
@@ -268,28 +271,28 @@ export class AttestationManager {
 
   private async fetchAttesterContractData() {
     this.currentCommitteeSize = Number(
-      await this.receiveAttestationBatchContract.methods.committeeSize().call()
+      await this.receiveAttestationBatchContract.methods.committeeSize().call(),
     );
     this.prometheus.attestationVerifierCurrentCommitteeSize.set(
-      this.currentCommitteeSize
+      this.currentCommitteeSize,
     );
 
     this.currentBatchIndex = Number(
       await this.receiveAttestationBatchContract.methods
         .currentBatchIndex()
-        .call()
+        .call(),
     );
     this.prometheus.attestationVerifierCurrentBatchIndex.set(
-      this.currentBatchIndex
+      this.currentBatchIndex,
     );
 
     this.currentCommitteeTransitionCount = Number(
       await this.receiveAttestationBatchContract.methods
         .currentCommitteeTransitionCount()
-        .call()
+        .call(),
     );
     this.prometheus.attestationVerifierCurrentCommitteeTransitionCount.set(
-      this.currentCommitteeTransitionCount
+      this.currentCommitteeTransitionCount,
     );
 
     logger.debug(
@@ -298,7 +301,7 @@ export class AttestationManager {
         currentBatchIndex: this.currentBatchIndex,
         currentCommitteeTransitionCount: this.currentCommitteeTransitionCount,
       },
-      "Etherum Contract State"
+      "Etherum Contract State",
     );
   }
 }

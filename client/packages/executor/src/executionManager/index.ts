@@ -199,7 +199,7 @@ export class ExecutionManager {
         // initialize gateway relayer
         const relayer = new SubstrateRelayer();
 
-        await relayer.setup(config, logger);
+        await relayer.setup(config, this.logger);
 
         this.relayers[entry.id] = relayer;
 
@@ -229,10 +229,11 @@ export class ExecutionManager {
                   eventData.sfxId,
                 );
 
-                logger.info({
-                  sfxId: eventData.sfxId,
-                  xtxId: this.sfxToXtx[eventData.sfxId],
-                },
+                logger.info(
+                  {
+                    sfxId: eventData.sfxId,
+                    xtxId: this.sfxToXtx[eventData.sfxId],
+                  },
                   "SFX transition from isExecuting to isConfirming",
                 );
               }
@@ -311,10 +312,13 @@ export class ExecutionManager {
             if (!sfx) break;
 
             sfx.confirmedOnCircuit();
-            logger.info({
-              sfxId: sfxId,
-              xtxId: this.sfxToXtx[sfxId],
-            }, "Sfx confirmed");
+            logger.info(
+              {
+                sfxId: sfxId,
+                xtxId: this.sfxToXtx[sfxId],
+              },
+              "Sfx confirmed",
+            );
           }
           break;
         case ListenerEvents.XtxCompleted:
@@ -350,14 +354,17 @@ export class ExecutionManager {
     // Run the XTX strategy checks
     try {
       this.strategyEngine.evaluateXtx(xtx);
-      logger.info({  xtxId: xtx.id }, "XTX strategy passed!");
+      logger.info({ xtxId: xtx.id }, "XTX strategy passed!");
     } catch (e) {
       // XTX does not meet strategy requirements
       this.prometheus.executorXtxStrategyRejects.inc();
-      logger.warn({
-        e: e.toString(),
-        xtxId: xtx.id,
-      }, "XTX strategy reject!");
+      logger.warn(
+        {
+          e: e.toString(),
+          xtxId: xtx.id,
+        },
+        "XTX strategy reject!",
+      );
       return;
     }
     logger.info(`Received XTX ${xtx.humanId} 🌱`); // XTX is valid for execution
@@ -431,11 +438,14 @@ export class ExecutionManager {
    * @param blockHeight The latest block height
    */
   updateGatewayHeight(vendor: string, blockHeight: number) {
-    logger.info({
-      vendor: vendor,
-      blockHeight: blockHeight,
-    }, "Update Gateway Height");
-      
+    logger.info(
+      {
+        vendor: vendor,
+        blockHeight: blockHeight,
+      },
+      "Update Gateway Height",
+    );
+
     if (this.queue[vendor]) {
       this.queue[vendor].blockHeight = blockHeight;
       this.executeConfirmationQueue(vendor);
@@ -483,10 +493,11 @@ export class ExecutionManager {
 
     // if we found SFXs, we confirm them
     if (readyByStep.length > 0) {
-      logger.info({
-        gatewayId: vendor,
-        sfxIds: readyByStep.map((sfx) => sfx.id),
-      },
+      logger.info(
+        {
+          gatewayId: vendor,
+          sfxIds: readyByStep.map((sfx) => sfx.id),
+        },
         "Execute confirmation queue",
       );
       this.circuitRelayer
@@ -497,20 +508,21 @@ export class ExecutionManager {
             `Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`,
           );
           this.processConfirmationBatch(readyByStep, batchBlocks, vendor);
-          logger.info({
-            vendor: vendor,
-          },
-         "Confirmation batch successful");
+          logger.info(
+            {
+              vendor: vendor,
+            },
+            "Confirmation batch successful",
+          );
         })
         .catch((err) => {
           logger.info(
             {
-              
               vendor: vendor,
               sfxIds: readyByStep.map((sfx) => sfx.id),
               error: err,
             },
- "Error confirming side effects"
+            "Error confirming side effects",
           );
         });
     }

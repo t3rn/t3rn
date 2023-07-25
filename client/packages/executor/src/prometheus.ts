@@ -19,7 +19,7 @@ export class Prometheus {
   executorNoBidButCompetition: Counter;
   executorBeenOutBid: Counter;
   attestationsBatchesPending: Gauge;
-  attestationEvents: Counter
+  attestationEvents: Counter;
   attestationVerifierCurrentCommitteeSize: Gauge;
   attestationVerifierCurrentBatchIndex: Gauge;
   attestationVerifierCurrentCommitteeTransitionCount: Gauge;
@@ -85,11 +85,11 @@ export class Prometheus {
     });
 
     this.attestationEvents = new client.Counter({
-        name: 'attestation_events_total',
-        help: 'Number of attestations received',
-        registers: [this.register],
-        labelNames: ['method'],
-    })
+      name: "attestation_events_total",
+      help: "Number of attestations received",
+      registers: [this.register],
+      labelNames: ["method"],
+    });
 
     this.attestationVerifierCurrentCommitteeSize = new Gauge({
       name: "attestation_verifier_current_committee_size",
