@@ -1038,6 +1038,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             let (xtx_id, side_effect_a_id) = set_ids(
@@ -1084,6 +1085,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             let (xtx_id, side_effect_a_id) = set_ids(
@@ -1338,6 +1340,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             let events = System::events();
@@ -1381,6 +1384,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
         });
 }
@@ -1436,6 +1440,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
         });
 }
@@ -1478,6 +1483,7 @@ fn circuit_cancels_xtx_with_bids_after_timeout() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             let xtx_id: sp_core::H256 = generate_xtx_id::<Hashing>(ALICE, FIRST_REQUESTER_NONCE);
@@ -1577,6 +1583,7 @@ fn circuit_cancels_xtx_with_incomplete_bid_after_timeout() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             let _events = System::events();

@@ -162,11 +162,11 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 #[cfg(test)]
 pub mod test {
 
+    use circuit_mock_runtime::test_utils::*;
     use frame_support::{assert_ok, traits::Currency};
     use frame_system::{EventRecord, Phase};
     use t3rn_primitives::SpeedMode;
-
-    use circuit_mock_runtime::test_utils::*;
+    use t3rn_types::sfx::SecurityLvl;
 
     use crate::tests::brute_seed_block_1;
     use circuit_mock_runtime::*;

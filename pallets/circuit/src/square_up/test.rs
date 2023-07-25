@@ -5,14 +5,6 @@ pub mod test {
         tests::{ALICE, BOB},
         SFXBid,
     };
-    use sp_runtime::{DispatchError, ModuleError};
-    use t3rn_primitives::{
-        account_manager::{
-            AccountManager as AccountManagerInterface, Outcome, RequestCharge, Settlement,
-        },
-        claimable::{BenefitSource, CircuitRole},
-    };
-
     use circuit_mock_runtime::{
         AccountId, AccountManager, AssetId, Balance, Balances, BlockNumber, ExtBuilder, Hash,
         Runtime, System,
@@ -22,6 +14,14 @@ pub mod test {
     };
     use frame_support::{assert_err, assert_ok, traits::Currency};
     use sp_core::H256;
+    use sp_runtime::{DispatchError, ModuleError};
+    use t3rn_primitives::{
+        account_manager::{
+            AccountManager as AccountManagerInterface, Outcome, RequestCharge, Settlement,
+        },
+        claimable::{BenefitSource, CircuitRole},
+    };
+    use t3rn_types::sfx::SecurityLvl;
 
     use crate::tests::ESCROW_ACCOUNT;
     use sp_runtime::DispatchResult;
@@ -42,8 +42,13 @@ pub mod test {
         let _ = Balances::deposit_creating(&REQUESTER, INITIAL_BALANCE);
         let _ = Balances::deposit_creating(&EXECUTOR, INITIAL_BALANCE);
 
-        let local_ctx =
-            Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &REQUESTER, None).unwrap();
+        let local_ctx = Machine::<Runtime>::setup(
+            &[get_mocked_transfer_sfx()],
+            &REQUESTER,
+            None,
+            &SecurityLvl::Optimistic,
+        )
+        .unwrap();
 
         let bid = SFXBid {
             amount: 2,
@@ -159,8 +164,13 @@ pub mod test {
 
                 let _ = Balances::deposit_creating(&REQUESTER, 3);
 
-                let local_ctx =
-                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE, None).unwrap();
+                let local_ctx = Machine::<Runtime>::setup(
+                    &[get_mocked_transfer_sfx()],
+                    &ALICE,
+                    None,
+                    &SecurityLvl::Optimistic,
+                )
+                .unwrap();
 
                 assert_ok!(SquareUp::<Runtime>::try_request(&local_ctx));
                 assert_eq!(Balances::free_balance(&REQUESTER), 1);
@@ -177,8 +187,13 @@ pub mod test {
                 System::set_block_number(1);
 
                 let _ = Balances::deposit_creating(&REQUESTER, 1);
-                let local_ctx =
-                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &ALICE, None).unwrap();
+                let local_ctx = Machine::<Runtime>::setup(
+                    &[get_mocked_transfer_sfx()],
+                    &ALICE,
+                    None,
+                    &SecurityLvl::Optimistic,
+                )
+                .unwrap();
 
                 assert_err!(
                     SquareUp::<Runtime>::try_request(&local_ctx),
@@ -205,9 +220,13 @@ pub mod test {
 
                 let _ = Balances::deposit_creating(&REQUESTER, 10);
                 let _ = Balances::deposit_creating(&EXECUTOR, 10);
-                let local_ctx =
-                    Machine::<Runtime>::setup(&[get_mocked_transfer_sfx()], &REQUESTER, None)
-                        .unwrap();
+                let local_ctx = Machine::<Runtime>::setup(
+                    &[get_mocked_transfer_sfx()],
+                    &REQUESTER,
+                    None,
+                    &SecurityLvl::Optimistic,
+                )
+                .unwrap();
                 assert_ok!(SquareUp::<Runtime>::try_request(&local_ctx));
 
                 assert_ok!(SquareUp::<Runtime>::try_bid(
