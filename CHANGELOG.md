@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.43.1-rc.0] - 2023-07-25
+### :bug: Bug Fixes
+- [`0fadd75`](https://github.com/t3rn/t3rn/commit/0fadd750e4937e3ab1f9266bdd5560cac05193ac) - executor sending Confirmed Batches *(PR [#1207](https://github.com/t3rn/t3rn/pull/1207) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.43.0-rc.0] - 2023-07-24
 ### :sparkles: New Features
 - [`e7715f9`](https://github.com/t3rn/t3rn/commit/e7715f9009e27ef3a3447d82887dbf6910323e9a) - **cli**: send continuously SFX to circuit *(PR [#1185](https://github.com/t3rn/t3rn/pull/1185) by [@3h4x](https://github.com/3h4x))*
@@ -1390,3 +1395,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.41.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.40.0-rc.0...v1.41.0-rc.0
 [v1.42.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.41.1-rc.0...v1.42.0-rc.0
 [v1.43.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.42.1-rc.0...v1.43.0-rc.0
+[v1.43.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.0-rc.0...v1.43.1-rc.0
