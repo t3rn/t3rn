@@ -34,7 +34,7 @@ pallet-3vm-evm-rpc       = { path = "../../pallets/evm/rpc", package = "pallet-e
 
 # Extras
 futures   = "0.3.21"
-jsonrpsee = { version = "0.14.0", features = [ "server" ] }
+jsonrpsee = { version = "0.19.0", features = [ "server" ] }
 
 # Substrate
 frame-benchmarking             = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
