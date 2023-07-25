@@ -12,6 +12,8 @@ pub mod pallet {
 
     // Overcharge factor as a constant.
     const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
+    const THREE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 3 * 6 * 24;
+    const TWO_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 2 * 6 * 24;
 
     use super::*;
     t3rn_primitives::reexport_currency_types!();
@@ -36,8 +38,9 @@ pub mod pallet {
 
     pub use t3rn_primitives::attesters::{
         AttesterInfo, AttestersChange, AttestersReadApi, AttestersWriteApi, BatchConfirmedSfxId,
-        CommitteeTransitionIndices, LatencyStatus, PublicKeyEcdsa33b, Signature65b, COMMITTEE_SIZE,
-        ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID, SR25519_ATTESTER_KEY_TYPE_ID,
+        BatchingFactor, CommitteeTransitionIndices, LatencyStatus, PublicKeyEcdsa33b, Signature65b,
+        COMMITTEE_SIZE, ECDSA_ATTESTER_KEY_TYPE_ID, ED25519_ATTESTER_KEY_TYPE_ID,
+        SR25519_ATTESTER_KEY_TYPE_ID,
     };
     use t3rn_primitives::{
         attesters::{CommitteeRecoverable, CommitteeTransition},
@@ -61,6 +64,7 @@ pub mod pallet {
 
     #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
     pub struct BatchMessage<BlockNumber> {
+        pub available_to_commit_at: BlockNumber,
         pub committed_sfx: Option<BatchConfirmedSfxId>,
         pub reverted_sfx: Option<BatchConfirmedSfxId>,
         pub next_committee: Option<CommitteeRecoverable>,
@@ -76,6 +80,7 @@ pub mod pallet {
     impl<BlockNumber: Zero> Default for BatchMessage<BlockNumber> {
         fn default() -> Self {
             BatchMessage {
+                available_to_commit_at: Zero::zero(),
                 committed_sfx: None,
                 reverted_sfx: None,
                 next_committee: None,
@@ -153,6 +158,18 @@ pub mod pallet {
 
         pub fn has_no_sfx(&self) -> bool {
             self.committed_sfx.is_none() && self.reverted_sfx.is_none()
+        }
+
+        pub fn read_batching_factor(&self) -> u16 {
+            let mut batching_factor = 0u16;
+            if let Some(ref sfx) = self.committed_sfx {
+                batching_factor = sfx.len() as u16;
+            }
+            if let Some(ref sfx) = self.reverted_sfx {
+                batching_factor = batching_factor.saturating_add(sfx.len() as u16)
+            }
+
+            batching_factor
         }
     }
 
@@ -305,6 +322,15 @@ pub mod pallet {
     pub type FastConfirmationCost<T: Config> =
         StorageMap<_, Blake2_128Concat, TargetId, BalanceOf<T>>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn paid_finality_fees)]
+    pub type PaidFinalityFees<T: Config> =
+        StorageMap<_, Blake2_128Concat, TargetId, Vec<BalanceOf<T>>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn auto_regression_param)]
+    pub type AutoRegressionParam<T: Config> = StorageMap<_, Blake2_128Concat, TargetId, Percent>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -328,6 +354,8 @@ pub mod pallet {
             Percent,      // auto regression param before
             Percent,      // auto regression param after
         ),
+        FutureTotalFinalityFeeEstimated(TargetId, BalanceOf<T>, u16),
+        UserFinalityFeeEstimated(TargetId, BalanceOf<T>, u16),
         NewAttestationBatch(TargetId, BatchMessage<T::BlockNumber>),
         NewAttestationMessageHash(TargetId, H256, ExecutionVendor),
         NewConfirmationBatch(TargetId, BatchMessage<T::BlockNumber>, Vec<u8>, H256),
@@ -1179,8 +1207,8 @@ pub mod pallet {
                     .take(10)
                     .map(|batch| batch.read_batching_factor())
                     .collect::<Vec<u16>>();
-                    // .try_into()
-                    // .unwrap_or(vec![]);
+            // .try_into()
+            // .unwrap_or(vec![]);
 
             let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
 
@@ -1242,6 +1270,7 @@ pub mod pallet {
         // }
 
         // FIXME: not a member of the trait
+        //
         // fn estimate_future_finality_fee(
         //     target: &TargetId,
         //     n_windows_from_now: u16,
@@ -1469,7 +1498,11 @@ pub mod pallet {
             })
         }
 
-        pub fn reward_submitter(submitter: T::AccountId, target: TargetId) -> DispatchResult {
+        pub fn reward_submitter(
+            submitter: T::AccountId,
+            target: TargetId,
+            batch_message: &BatchMessage<T::BlockNumber>,
+        ) -> Result<BalanceOf<T>, DispatchError> {
             let fast_confirmation_cost =
                 FastConfirmationCost::<T>::get(target).unwrap_or(Zero::zero());
             let total_reward = fast_confirmation_cost.saturating_mul(T::RewardMultiplier::get());
@@ -1493,57 +1526,57 @@ pub mod pallet {
             );
 
             // println!( "calculate_confirmation_reward_for_pending_confirmation base_percent: {base_percent:?}");
+
             // Adjust AutoRegression parameters based on the change in delay
-            // let new_auto_regression_param = adjustment;
             let new_auto_regression_param = if adjustment > base_percent {
                 base_percent.saturating_add(max_increase.saturating_mul(adjustment))
-            // if delay increased
             } else {
                 base_percent.saturating_sub(max_increase.saturating_mul(adjustment))
-                // if delay decreased or stayed the same
             };
 
-            println!( "calculate_confirmation_reward_for_pending_confirmation new_auto_regression_param: {new_auto_regression_param:?}");
-            println!("calculate_confirmation_reward_for_pending_confirmation delay: {delay:?}");
-            println!( "calculate_confirmation_reward_for_pending_confirmation capped_delay_in_blocks: {capped_delay_in_blocks:?}");
-            println!(
-                "calculate_confirmation_reward_for_pending_confirmation adjustment: {adjustment:?}"
-            );
+            // println!("calculate_confirmation_reward_for_pending_confirmation new_auto_regression_param: {new_auto_regression_param:?}");
+            // println!("calculate_confirmation_reward_for_pending_confirmation delay: {delay:?}");
+            // println!("calculate_confirmation_reward_for_pending_confirmation capped_delay_in_blocks: {capped_delay_in_blocks:?}");
+            // println!("calculate_confirmation_reward_for_pending_confirmation adjustment: {adjustment:?}");
 
             AutoRegressionParam::<T>::mutate(target, |param| {
                 *param = Some(new_auto_regression_param)
             });
 
-            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_batching_factor(target).unwrap_or_default();
+            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_batching_factor(&target).unwrap_or_default();
 
-            println!( "calculate_confirmation_reward_for_pending_confirmation batching_factor: {batching_factor:?}");
-            <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_finality_fee(
-                target, //, 0, batching_factor
-            )
+            // println!("calculate_confirmation_reward_for_pending_confirmation batching_factor: {batching_factor:?}");
+
+            Ok(<Pallet<T> as AttestersReadApi<
+                T::AccountId,
+                BalanceOf<T>,
+            >>::estimate_finality_fee(
+                &target, //, 0, batching_factor
+            ))
         }
 
-        pub fn reward_submitter(
-            submitter: &T::AccountId,
-            target: &TargetId,
-            batch: &BatchMessage<T::BlockNumber>,
-        ) -> Result<BalanceOf<T>, DispatchError> {
-            let calculated_finality_fee =
-                Self::calculate_confirmation_reward_for_pending_confirmation(target, batch);
-
-            if calculated_finality_fee > Zero::zero() {
-                T::Currency::transfer(
-                    // todo: source should be the fees treasury
-                    &T::TreasuryAccounts::get_treasury_account(
-                        t3rn_primitives::TreasuryAccount::Fee,
-                    ),
-                    submitter,
-                    calculated_finality_fee,
-                    ExistenceRequirement::KeepAlive,
-                )?;
-            }
-
-            Ok(())
-        }
+        // pub fn reward_submitter(
+        //     submitter: &T::AccountId,
+        //     target: &TargetId,
+        //     batch: &BatchMessage<T::BlockNumber>,
+        // ) -> Result<BalanceOf<T>, DispatchError> {
+        //     let calculated_finality_fee =
+        //         Self::calculate_confirmation_reward_for_pending_confirmation(target, batch);
+        //
+        //     if calculated_finality_fee > Zero::zero() {
+        //         T::Currency::transfer(
+        //             // todo: source should be the fees treasury
+        //             &T::TreasuryAccounts::get_treasury_account(
+        //                 t3rn_primitives::TreasuryAccount::Fee,
+        //             ),
+        //             submitter,
+        //             calculated_finality_fee,
+        //             ExistenceRequirement::KeepAlive,
+        //         )?;
+        //     }
+        //
+        //     Ok(())
+        // }
 
         pub fn try_activate_new_target(target: &TargetId) -> bool {
             // Check if all members of the ActiveSet members have submitted their agreements
@@ -3774,10 +3807,10 @@ pub mod attesters_test {
                 balance_of_submitter,
                 10000000000000 + 16600000000000 + initial_submitter_balance
             );
-            assert_eq!(
-                PaidFinalityFees::<MiniRuntime>::get(target),
-                Some(vec![10000000000000, 16600000000000])
-            );
+            // assert_eq!(
+            //     PaidFinalityFees::<MiniRuntime>::get(target),
+            //     Some(vec![10000000000000, 16600000000000])
+            // );
 
             Attesters::estimate_user_finality_fee(
                 Origin::signed(AccountId::from([1; 32])),

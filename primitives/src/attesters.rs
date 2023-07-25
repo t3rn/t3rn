@@ -5,7 +5,7 @@ use frame_support::pallet_prelude::*;
 use serde::{Deserialize, Serialize};
 use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, RuntimePublic};
 use sp_core::{H160, H256};
-use sp_runtime::Percent;
+use sp_runtime::{traits::Zero, Percent};
 use sp_std::prelude::*;
 use t3rn_types::sfx::TargetId;
 // Key types for attester crypto
@@ -272,7 +272,7 @@ pub struct AttestersReadApiEmptyMock<Account, Balance, Error> {
     _phantom: PhantomData<(Account, Balance, Error)>,
 }
 
-impl<Account, Balance, Error> AttestersReadApi<Account, Balance>
+impl<Account, Balance: Zero, Error> AttestersReadApi<Account, Balance>
     for AttestersReadApiEmptyMock<Account, Balance, Error>
 {
     fn previous_committee() -> Vec<Account> {
