@@ -12,8 +12,10 @@ pub mod pallet {
 
     // Overcharge factor as a constant.
     const OVERCHARGE_FACTOR: Percent = Percent::from_percent(32);
+    const SIX_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 6 * 32;
     const THREE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 3 * 32;
     const TWO_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 2 * 32;
+    const ONE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 32;
 
     use super::*;
     t3rn_primitives::reexport_currency_types!();
@@ -383,6 +385,7 @@ pub mod pallet {
         InvalidSignature,
         InvalidMessage,
         InvalidTargetInclusionProof,
+        UnexpectedBatchHashRecoveredFromCommitment,
         AlreadyRegistered,
         PublicKeyMissing,
         AttestationSignatureInvalid,
@@ -781,42 +784,56 @@ pub mod pallet {
                 TargetBatchDispatchEvent::decode(&mut &recoded_batch_event_bytes[..])
                     .map_err(|_| Error::<T>::InvalidTargetInclusionProof)?;
 
-            let message = on_target_batch_event.message;
+            // Assume that the event is emitted by the escrow contract is H256
+            let recovered_enacted_batch_hash: H256 =
+                H256::decode(&mut &on_target_batch_event.message[..])
+                    .map_err(|_| Error::<T>::UnexpectedBatchHashRecoveredFromCommitment)?;
 
-            let batches = Self::find_batches(target, &message);
-            for batch in batches {
-                // batches.iter().map(|batch|
-                let _ = match Self::reward_submitter(&submitter, &target, &batch) {
-                    Err(e) => {
-                        // println!( "Error while rewarding submitter {submitter:?} for target {target:?} with batch {batch:?}: {e:?}");
-                        Err(e)
-                    },
-                    Ok(to_pay) => {
-                        if to_pay > Zero::zero() {
-                            T::Currency::transfer(
-                                // todo: source should be the fees treasury
-                                &T::TreasuryAccounts::get_treasury_account(
-                                    t3rn_primitives::TreasuryAccount::Fee,
-                                ),
-                                &submitter,
-                                to_pay,
-                                ExistenceRequirement::KeepAlive,
-                            )?;
-                        }
-                        // Append the fee to the PaidFinalityFees
-                        PaidFinalityFees::<T>::append(target, to_pay);
-                        // Emit the event
-                        Self::deposit_event(Event::BatchCommitted(
-                            target,
-                            batch.clone(),
-                            batch.message(),
-                            batch.message_hash(),
-                            to_pay,
-                        ));
-                        Ok(())
-                    },
-                };
+            let batches = Self::get_batches_to_commit(target);
+            let batch = batches
+                .iter()
+                .find(|batch| batch.message_hash() == recovered_enacted_batch_hash)
+                .ok_or(Error::<T>::BatchNotFound)?;
+
+            ensure!(
+                batch.status == BatchStatus::ReadyForSubmissionFullyApproved
+                    || batch.status == BatchStatus::ReadyForSubmissionByMajority,
+                Error::<T>::BatchNotFound
+            );
+
+            // Update the status of the batch to Committed
+            Self::find_and_set_batch_as_committed(target, &recovered_enacted_batch_hash)?;
+
+            // Follow with infallible reward payment
+            let delay = <frame_system::Pallet<T>>::block_number()
+                .saturating_sub(batch.available_to_commit_at)
+                .saturating_sub(T::BlockNumber::from(TWO_EPOCHS_IN_LOCAL_BLOCKS_U8));
+
+            let to_pay = Self::estimate_finality_reward(&target, delay);
+
+            if to_pay > Zero::zero() {
+                // ToDo: move to reward_submitter
+                T::Currency::transfer(
+                    // todo: source should be the fees treasury
+                    &T::TreasuryAccounts::get_treasury_account(
+                        t3rn_primitives::TreasuryAccount::Fee,
+                    ),
+                    &submitter,
+                    to_pay,
+                    ExistenceRequirement::KeepAlive,
+                )?;
             }
+            // Append the fee to the PaidFinalityFees
+            PaidFinalityFees::<T>::append(target, to_pay);
+            // Emit the event
+            Self::deposit_event(Event::BatchCommitted(
+                target,
+                batch.clone(),
+                batch.message(),
+                batch.message_hash(),
+                to_pay,
+            ));
+
             Ok(())
         }
 
@@ -858,13 +875,13 @@ pub mod pallet {
             n_windows_from_now: u16,
         ) -> DispatchResult {
             ensure_signed(origin)?;
-            // let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::read_latest_batching_factor(&target);
             let batching_factor = Self::read_latest_batching_factor(&target);
             match batching_factor {
                 Some(_batching_factor) => {
                     let future_finality_fee = <Pallet<T> as AttestersReadApi<
                         T::AccountId,
                         BalanceOf<T>,
+                        T::BlockNumber,
                     >>::estimate_finality_fee(&target);
                     log::debug!(
                         "Future finality fee for target {:?} is {:?}",
@@ -899,10 +916,11 @@ pub mod pallet {
             // Retrieve the latest batching factor for the target
             // let batching_factor = Self::read_latest_batching_factor(&target);
 
-            let finality_fee =
-                <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_finality_fee(
-                    &target,
-                );
+            let finality_fee = <Pallet<T> as AttestersReadApi<
+                T::AccountId,
+                BalanceOf<T>,
+                T::BlockNumber,
+            >>::estimate_finality_fee(&target);
 
             Self::deposit_event(Event::UserFinalityFeeEstimated(
                 target,
@@ -1113,7 +1131,7 @@ pub mod pallet {
     /// The functions in this module draw inspiration from pension systems, projecting future conditions based on past data and current trends.
     /// While the context is different – a decentralized system instead of a pension scheme – the fundamental concepts are the same.
     /// The ability to estimate future fees and user base size contributes to system sustainability and fairness, much like in a well-managed pension scheme.
-    impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>> for Pallet<T> {
+    impl<T: Config> AttestersReadApi<T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
         /// Getter for the current committee. Returns a Vec of AccountIds.
         fn previous_committee() -> Vec<T::AccountId> {
             PreviousCommittee::<T>::get()
@@ -1174,8 +1192,14 @@ pub mod pallet {
             let base_user_fee_for_single_user: BalanceOf<T> =
                 10_000_000_000_000u128.try_into().unwrap_or_default();
 
-            // FIXME: this has to be computed in another way
-            let number_of_users = 1;
+            let number_of_users = Self::estimate_batching_factor(target)
+                .unwrap_or(BatchingFactor {
+                    latest_confirmed: 0,
+                    latest_signed: 1,
+                    current_next: 0,
+                    up_to_last_10_confirmed: vec![],
+                })
+                .latest_signed as u32;
 
             // Retrieve the (finality) fees that were paid to the target
             let paid_finality_fees =
@@ -1189,7 +1213,7 @@ pub mod pallet {
             // Compute the base-user fee.
             // It is the latest fee, divided by the number of users.
             let base_user_fee = latest_fee
-                .checked_div(&BalanceOf::<T>::from(number_of_users as u32))
+                .checked_div(&BalanceOf::<T>::from(number_of_users))
                 .unwrap_or(base_user_fee_for_single_user);
 
             // The user fee is the (1 + overcharge-factor) * base-user-fee
@@ -1199,8 +1223,69 @@ pub mod pallet {
                 .saturating_add(base_user_fee)
         }
 
-        fn estimate_finality_reward(_target: &TargetId) -> BalanceOf<T> {
-            todo!()
+        fn estimate_finality_reward(
+            target: &TargetId,
+            blocks_delay: T::BlockNumber,
+        ) -> BalanceOf<T> {
+            // ToDo: Move this to storage and make available to sudo only updates
+            let base_user_fee_for_single_user: BalanceOf<T> =
+                10_000_000_000_000u128.try_into().unwrap_or_default();
+
+            // Retrieve the (finality) fees that were paid to the target
+            let finality_fee_opt = PaidFinalityFees::<T>::get(target);
+
+            let finality_reward = finality_fee_opt
+                .as_ref()
+                .and_then(|fees| fees.last())
+                .unwrap_or(&base_user_fee_for_single_user);
+
+            // Create a mutable copy of finality_reward to work with
+            let mut finality_reward = finality_reward.clone();
+
+            // ToDo: could be tangled with AutoRegression param
+            const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
+
+            let capped_delay_in_blocks = blocks_delay.min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
+
+            let epochs_delayed =
+                capped_delay_in_blocks / T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8); // Ignore checked_div, ONE_EPOCHS_IN_LOCAL_BLOCKS_U8 is assumed to be > 0
+            let epochs_delayed = TryInto::<usize>::try_into(epochs_delayed).unwrap_or(0); // convert to usize for range
+
+            for _ in 0..epochs_delayed {
+                let reward_increase = REWARD_ADJUSTMENT.mul_ceil(finality_reward);
+                finality_reward = reward_increase.saturating_add(finality_reward);
+            }
+
+            if capped_delay_in_blocks < T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8) {
+                // Finality fee was received within the first epoch - decrease the reward by 25%
+                finality_reward =
+                    finality_reward.saturating_sub(REWARD_ADJUSTMENT.mul_ceil(finality_reward));
+            }
+
+            // ToDo: Consider removing AutoRegressionParam entirely
+            // Define a base percentage and maximum increase
+            let base_percent: Percent =
+                AutoRegressionParam::<T>::get(target).unwrap_or(Percent::from_percent(25));
+            let max_increase: Percent = Percent::from_percent(100); // Adjust as needed
+
+            // Calculate the adjustment based on delay (linear increase)
+            let adjustment = Percent::from_rational(
+                capped_delay_in_blocks,
+                THREE_EPOCHS_IN_LOCAL_BLOCKS_U8.into(),
+            );
+
+            // Adjust AutoRegression parameters based on the change in delay
+            let new_auto_regression_param = if adjustment > base_percent {
+                base_percent.saturating_add(max_increase.saturating_mul(adjustment))
+            } else {
+                base_percent.saturating_sub(max_increase.saturating_mul(adjustment))
+            };
+
+            AutoRegressionParam::<T>::mutate(target, |param| {
+                *param = Some(new_auto_regression_param)
+            });
+
+            finality_reward
         }
 
         /// Estimate the batching factor for a given target.
@@ -1504,12 +1589,15 @@ pub mod pallet {
             }
         }
 
-        pub fn find_and_update_batch(target: TargetId, message: &Vec<u8>) -> DispatchResult {
+        pub fn find_and_set_batch_as_committed(
+            target: TargetId,
+            message_hash: &H256,
+        ) -> DispatchResult {
             Batches::<T>::try_mutate(target, |batches_option| {
                 let batches = batches_option.as_mut().ok_or(Error::<T>::BatchNotFound)?;
                 let batch_by_message = batches
                     .iter_mut()
-                    .find(|batch| &batch.message() == message)
+                    .find(|batch| &batch.message_hash() == message_hash)
                     .ok_or(Error::<T>::BatchNotFound)?;
 
                 batch_by_message.status = BatchStatus::Committed;
@@ -1522,56 +1610,7 @@ pub mod pallet {
             target: &TargetId,
             batch_message: &BatchMessage<T::BlockNumber>,
         ) -> Result<BalanceOf<T>, DispatchError> {
-            let fast_confirmation_cost =
-                FastConfirmationCost::<T>::get(target).unwrap_or(Zero::zero());
-            let total_reward = fast_confirmation_cost.saturating_mul(T::RewardMultiplier::get());
-
-            // Calculate the delay between the batch block number and the current block number
-            let delay = <frame_system::Pallet<T>>::block_number()
-                .saturating_sub(batch_message.available_to_commit_at)
-                .saturating_sub(T::BlockNumber::from(TWO_EPOCHS_IN_LOCAL_BLOCKS_U8));
-
-            let capped_delay_in_blocks = delay.min(THREE_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
-
-            // Define a base percentage and maximum increase
-            let base_percent: Percent = Percent::from_percent(0);
-            // AutoRegressionParam::<T>::get(target).unwrap_or(Percent::from_percent(0));
-            let max_increase: Percent = Percent::from_percent(100); // Adjust as needed
-
-            // Calculate the adjustment based on delay (linear increase)
-            let adjustment = Percent::from_rational(
-                capped_delay_in_blocks,
-                THREE_EPOCHS_IN_LOCAL_BLOCKS_U8.into(),
-            );
-
-            // println!( "calculate_confirmation_reward_for_pending_confirmation base_percent: {base_percent:?}");
-
-            // Adjust AutoRegression parameters based on the change in delay
-            let new_auto_regression_param = if adjustment > base_percent {
-                base_percent.saturating_add(max_increase.saturating_mul(adjustment))
-            } else {
-                base_percent.saturating_sub(max_increase.saturating_mul(adjustment))
-            };
-
-            // println!("calculate_confirmation_reward_for_pending_confirmation new_auto_regression_param: {new_auto_regression_param:?}");
-            // println!("calculate_confirmation_reward_for_pending_confirmation delay: {delay:?}");
-            // println!("calculate_confirmation_reward_for_pending_confirmation capped_delay_in_blocks: {capped_delay_in_blocks:?}");
-            // println!("calculate_confirmation_reward_for_pending_confirmation adjustment: {adjustment:?}");
-
-            AutoRegressionParam::<T>::mutate(target, |param| {
-                *param = Some(new_auto_regression_param)
-            });
-
-            let batching_factor = <Pallet<T> as AttestersReadApi<T::AccountId, BalanceOf<T>>>::estimate_batching_factor(&target).unwrap_or_default();
-
-            // println!("calculate_confirmation_reward_for_pending_confirmation batching_factor: {batching_factor:?}");
-
-            Ok(<Pallet<T> as AttestersReadApi<
-                T::AccountId,
-                BalanceOf<T>,
-            >>::estimate_finality_fee(
-                &target, //, 0, batching_factor
-            ))
+            todo!("reward_submitter")
         }
 
         // pub fn reward_submitter(

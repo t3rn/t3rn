@@ -309,7 +309,7 @@ pub mod pallet {
         type Xdns: Xdns<Self, BalanceOf<Self>>;
 
         type Attesters: AttestersWriteApi<Self::AccountId, DispatchError>
-            + AttestersReadApi<Self::AccountId, BalanceOf<Self>>;
+            + AttestersReadApi<Self::AccountId, BalanceOf<Self>, Self::BlockNumber>;
 
         type Executors: Executors<Self, BalanceOf<Self>>;
 
