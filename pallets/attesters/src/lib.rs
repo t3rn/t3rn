@@ -2418,6 +2418,7 @@ pub mod attesters_test {
             if !ActiveSet::<MiniRuntime>::get().is_empty() {
                 select_new_committee();
             }
+            // FIXME: this fails [] != [[1,1,1,1]]
             assert_eq!(Attesters::pending_attestation_targets(), vec![target]);
             make_all_agree_to_new_target_or_force_if_no_active_set(&target);
         }
@@ -4133,6 +4134,7 @@ pub mod attesters_test {
                 message: colluded_message.encode(),
             };
 
+            // FIXME: this fails BatchNotFound CollusionWithPermanentSlashDetected
             assert_err!(
                 Attesters::commit_batch(
                     Origin::signed(AccountId::from([1; 32])),
