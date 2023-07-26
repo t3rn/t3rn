@@ -791,17 +791,27 @@ pub mod pallet {
                         // println!( "Error while rewarding submitter {submitter:?} for target {target:?} with batch {batch:?}: {e:?}");
                         Err(e)
                     },
-                    Ok(paid) => {
+                    Ok(to_pay) => {
+                        if to_pay > Zero::zero() {
+                            T::Currency::transfer(
+                                // todo: source should be the fees treasury
+                                &T::TreasuryAccounts::get_treasury_account(
+                                    t3rn_primitives::TreasuryAccount::Fee,
+                                ),
+                                &submitter,
+                                to_pay,
+                                ExistenceRequirement::KeepAlive,
+                            )?;
+                        }
                         // Append the fee to the PaidFinalityFees
-                        PaidFinalityFees::<T>::append(target, paid);
+                        PaidFinalityFees::<T>::append(target, to_pay);
                         // Emit the event
-                        // println!("append PaidFinalityFees {target:?} {paid:?}");
                         Self::deposit_event(Event::BatchCommitted(
                             target,
                             batch.clone(),
                             batch.message(),
                             batch.message_hash(),
-                            paid,
+                            to_pay,
                         ));
                         Ok(())
                     },
@@ -1218,8 +1228,6 @@ pub mod pallet {
                     .take(10)
                     .map(|batch| batch.read_batching_factor())
                     .collect::<Vec<u16>>();
-            // .try_into()
-            // .unwrap_or(vec![]);
 
             let latest_confirmed = *up_to_last_10_confirmed.first().unwrap_or(&0);
 
