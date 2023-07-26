@@ -968,8 +968,11 @@ pub mod pallet {
                     allowed_side_effects,
                 },
             );
-            <AllGatewayIds<T>>::mutate(|ids| ids.push(gateway_id));
-
+            <AllGatewayIds<T>>::mutate(|ids| {
+                if !ids.contains(&gateway_id) {
+                    ids.push(gateway_id);
+                }
+            });
             Self::deposit_event(Event::<T>::GatewayRecordStored(gateway_id));
 
             Ok(())
