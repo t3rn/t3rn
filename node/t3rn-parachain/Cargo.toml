@@ -18,7 +18,7 @@ derive_more  = "0.99.2"
 futures      = "0.3.21"
 hex-literal  = "0.3.4"
 jsonrpc-core = "18.0.0"
-jsonrpsee    = { version = "0.14.0", features = [ "server" ] }
+jsonrpsee    = { version = "0.17.1", features = [ "server" ] }
 log          = "0.4.19"
 serde        = { version = "1.0", features = [ "derive" ] }
 
