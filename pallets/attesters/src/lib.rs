@@ -89,31 +89,46 @@ pub mod pallet {
         pub fn message(&self) -> Vec<u8> {
             let mut encoded_message = Vec::new();
 
+            let mut encode_eth_committee_addresses_into_message =
+                |committee: &CommitteeRecoverable| {
+                    for recoverable in committee.iter() {
+                        // Ensure recoverable address is 20 bytes long
+                        if recoverable.as_bytes_ref().len() != 20 {
+                            log::warn!(
+                                "Recoverable address in BatchMessage::message() is not 20 bytes long: {:?}", recoverable.as_bytes_ref()
+                            );
+                            continue
+                        }
+                        // Encoding of Ethereum address will extend the length of the encoded message by 12 bytes to fill entire 32b word
+                        // Extend the encoded message with 12 bytes of zeros to keep the length of the encoded message constant
+                        const ETH_ADDRESS_LEN: usize = 20;
+                        const ETH_ADDRESS_PADDING: usize = 12;
+                        let mut eth_address_as_32b_word =
+                            [0u8; ETH_ADDRESS_LEN + ETH_ADDRESS_PADDING];
+                        eth_address_as_32b_word
+                            [ETH_ADDRESS_PADDING..ETH_ADDRESS_LEN + ETH_ADDRESS_PADDING]
+                            .copy_from_slice(recoverable.as_bytes_ref());
+                        encoded_message.extend_from_slice(eth_address_as_32b_word.as_slice());
+                    }
+                };
+
             if let Some(ref committee) = self.next_committee {
-                for recoverable in committee.iter() {
-                    encoded_message.extend_from_slice(recoverable.as_bytes_ref());
-                }
+                encode_eth_committee_addresses_into_message(committee);
             }
             if let Some(ref committee) = self.banned_committee {
-                for recoverable in committee.iter() {
-                    encoded_message.extend_from_slice(recoverable.as_bytes_ref());
+                encode_eth_committee_addresses_into_message(committee);
+            }
+            if let Some(ref sfx_vec) = self.committed_sfx {
+                for sfx in sfx_vec.iter() {
+                    encoded_message.extend_from_slice(sfx.as_bytes());
                 }
             }
-            if let Some(ref sfx) = self.committed_sfx {
-                sfx.encode_to(&mut encoded_message);
-                // Remove first 1 byte if the message is not empty to strip the SCALE-vector length prefix
-                if !encoded_message.is_empty() {
-                    encoded_message.remove(0);
+            if let Some(ref sfx_vec) = self.reverted_sfx {
+                for sfx in sfx_vec.iter() {
+                    encoded_message.extend_from_slice(sfx.as_bytes());
                 }
             }
-            if let Some(ref sfx) = self.reverted_sfx {
-                sfx.encode_to(&mut encoded_message);
-                // Remove first 1 byte if the message is not empty to strip the SCALE-vector length prefix
-                if !encoded_message.is_empty() {
-                    encoded_message.remove(0);
-                }
-            }
-            encoded_message.extend_from_slice(self.index.to_le_bytes().as_slice());
+            encoded_message.extend_from_slice(self.index.to_be_bytes().as_slice());
             encoded_message
         }
 
@@ -196,6 +211,9 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn attesters)]
     pub type Attesters<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AttesterInfo>;
+
+    #[pallet::storage]
+    pub type NextCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
     pub type CurrentCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
@@ -447,6 +465,11 @@ pub mod pallet {
                 }
             });
 
+            // Purge all attestations for the target
+            Batches::<T>::remove(target);
+            BatchesToSign::<T>::remove(target);
+            NextBatch::<T>::remove(target);
+
             Ok(())
         }
 
@@ -667,10 +690,8 @@ pub mod pallet {
             // ToDo: Check the source address of the batch ensuring matches Escrow contract address.
             let _target_escrow_address = T::Xdns::get_escrow_account(&target)?;
 
-            let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Struct(\
-                Signatures:Vec(Tuple(Value32,Bytes)),\
+            let escrow_batch_success_descriptor = b"EscrowBatchSuccess:Event(\
                 MessageHash:H256,\
-                Message:Bytes\
             )"
             .to_vec();
 
@@ -914,10 +935,7 @@ pub mod pallet {
             let mut batches = Self::get_batches(*target, BatchStatus::PendingAttestation);
             batches.sort_by(|a, b| a.created.cmp(&b.created));
             let oldest_batch = batches.first();
-            match oldest_batch {
-                Some(batch) => Some(batch.latency.clone()),
-                None => None,
-            }
+            oldest_batch.map(|batch| batch.latency.clone())
         }
 
         fn active_set() -> Vec<T::AccountId> {
@@ -1248,10 +1266,10 @@ pub mod pallet {
         }
 
         fn get_current_committee_transition_for_target(target: &TargetId) -> CommitteeTransition {
-            let current_committee = CurrentCommittee::<T>::get();
+            let next_committee = NextCommittee::<T>::get();
             let mut committee_transition = Vec::new();
 
-            for attester in &current_committee {
+            for attester in &next_committee {
                 if let Some(attester_info) = Attesters::<T>::get(attester) {
                     if let Some(checked_recoverable) =
                         AttestersAgreements::<T>::get(attester, target)
@@ -1284,6 +1302,7 @@ pub mod pallet {
         fn shuffle_committee() -> bool {
             let active_set = ActiveSet::<T>::get();
             let active_set_size = active_set.len();
+
             let mut committee_size = T::CommitteeSize::get() as usize;
 
             let full_shuffle = if committee_size > active_set_size {
@@ -1294,30 +1313,46 @@ pub mod pallet {
             };
 
             let current_committee = CurrentCommittee::<T>::get();
-            PreviousCommittee::<T>::put(current_committee);
+            let mut next_committee = NextCommittee::<T>::get();
 
-            let _seed = T::RandomnessSource::random_seed();
+            let shuffle_active_set = |shuffled_active_set: &mut Vec<T::AccountId>| {
+                for i in (1..shuffled_active_set.len()).rev() {
+                    let random_value = T::RandomnessSource::random(&i.to_be_bytes());
+                    let random_index = random_value
+                        .0
+                        .as_ref()
+                        .iter()
+                        .fold(0usize, |acc, &val| (acc + val as usize) % (i + 1));
 
-            let mut shuffled_active_set = active_set;
-            for i in (1..shuffled_active_set.len()).rev() {
-                let random_value = T::RandomnessSource::random(&i.to_be_bytes());
-                let random_index = random_value
-                    .0
-                    .as_ref()
-                    .iter()
-                    .fold(0usize, |acc, &val| (acc + val as usize) % (i + 1));
-
-                if i != random_index {
-                    shuffled_active_set.swap(i, random_index);
+                    if i != random_index {
+                        shuffled_active_set.swap(i, random_index);
+                    }
                 }
-            }
+            };
+
+            let mut shuffled_active_set = active_set.clone();
+
+            shuffle_active_set(&mut shuffled_active_set);
 
             let new_committee = shuffled_active_set
+                .clone()
                 .into_iter()
                 .take(committee_size)
                 .collect::<Vec<T::AccountId>>();
 
-            CurrentCommittee::<T>::put(new_committee);
+            // Bootstrap case - if there is no current committee, we need to set it
+            if next_committee.is_empty() {
+                shuffled_active_set = active_set;
+                shuffle_active_set(&mut shuffled_active_set);
+                next_committee = shuffled_active_set
+                    .into_iter()
+                    .take(committee_size)
+                    .collect::<Vec<T::AccountId>>();
+            }
+
+            CurrentCommittee::<T>::put(next_committee);
+            PreviousCommittee::<T>::put(current_committee);
+            NextCommittee::<T>::put(new_committee);
 
             full_shuffle
         }
@@ -1593,7 +1628,7 @@ pub mod pallet {
                 ActiveSet::<T>::put(
                     SortedNominatedAttesters::<T>::get()
                         .iter()
-                        .filter(|(account_id, _)| !Self::is_permanently_slashed(&account_id))
+                        .filter(|(account_id, _)| !Self::is_permanently_slashed(account_id))
                         .take(32)
                         .cloned()
                         .map(|(account_id, _balance)| account_id)
@@ -1674,7 +1709,7 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::traits::BlakeTwo256;
+    use sp_runtime::traits::Keccak256;
 
     use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
@@ -1684,14 +1719,16 @@ pub mod attesters_test {
         CurrentCommittee, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
         NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations, PermanentSlashes,
         PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters, System,
-        XExecSignals,
+        XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
             ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
             CommitteeRecoverable, CommitteeTransitionIndices,
         },
-        circuit::{CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal},
+        circuit::{
+            AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
+        },
         claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
         TreasuryAccount, TreasuryAccountProvider,
     };
@@ -1727,7 +1764,7 @@ pub mod attesters_test {
         // Check Pending Unnomination is created with entire self-nomination amount
         assert_eq!(
             PendingUnnominations::<MiniRuntime>::get(&attester).unwrap(),
-            vec![(attester.clone(), self_nomination_amount, 801u32)],
+            vec![(attester.clone(), self_nomination_amount, 817u32)],
         );
 
         // Run to active to unlock block = 2 x shuffling frequency + next window
@@ -1927,24 +1964,25 @@ pub mod attesters_test {
     #[test]
     fn submitting_attestation_reads_as_on_time_latency_status() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
+
         ext.execute_with(|| {
             // Register an attester
             let attester = AccountId::from([1; 32]);
-            let attester_info = register_attester_with_single_private_key([1u8; 32]);
+            let _attester_info = register_attester_with_single_private_key([1u8; 32]);
             // Submit an attestation signed with the Ed25519 key
             let sfx_id_to_sign_on: [u8; 32] = *b"message_that_needs_attestation32";
-            let (_hash, signature) = sign_and_submit_sfx_to_latest_attestation(
+            let (_hash, _signature) = sign_and_submit_sfx_to_latest_attestation(
                 attester,
                 sfx_id_to_sign_on,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
-                [0u8; 4],
+                ETHEREUM_TARGET,
                 [1u8; 32],
             );
 
-            let batch_latency = Attesters::read_attestation_latency(&[0u8; 4]);
+            let batch_latency = Attesters::read_attestation_latency(&ETHEREUM_TARGET);
             assert!(batch_latency.is_some());
             assert_eq!(batch_latency, Some(LatencyStatus::OnTime));
         });
@@ -1953,7 +1991,7 @@ pub mod attesters_test {
     #[test]
     fn register_and_submit_attestation_in_ecdsa() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
@@ -1966,11 +2004,11 @@ pub mod attesters_test {
                 attester,
                 sfx_id_to_sign_on,
                 ECDSA_ATTESTER_KEY_TYPE_ID,
-                [0u8; 4],
+                ETHEREUM_TARGET,
                 [1u8; 32],
             );
 
-            let latest_batch = Attesters::get_latest_batch_to_sign([0u8; 4]);
+            let latest_batch = Attesters::get_latest_batch_to_sign(ETHEREUM_TARGET);
             assert!(latest_batch.is_some());
 
             let latest_batch_some = latest_batch.unwrap();
@@ -1984,11 +2022,11 @@ pub mod attesters_test {
 
     #[test]
     fn double_attestation_is_not_allowed() {
-        let target = [0u8; 4];
+        let target = ETHEREUM_TARGET;
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2025,11 +2063,11 @@ pub mod attesters_test {
     #[test]
     fn test_adding_sfx_moves_next_batch_to_pending_attestation() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -2057,11 +2095,11 @@ pub mod attesters_test {
     #[test]
     fn test_successfull_process_repatriation_for_pending_attestation_with_one_fsx_reverted() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let repatriated_executor = AccountId::from([1u8; 32]);
@@ -2086,7 +2124,7 @@ pub mod attesters_test {
 
             let sfx_id = mock_fsx
                 .input
-                .generate_id::<BlakeTwo256>(mock_xtx_id.as_bytes(), 0u32);
+                .generate_id::<Keccak256>(mock_xtx_id.as_bytes(), 0u32);
 
             assert_ok!(Attesters::request_sfx_attestation_revert(target, sfx_id));
 
@@ -2126,6 +2164,7 @@ pub mod attesters_test {
                     role: CircuitRole::Executor,
                     total_round_claim: mock_fsx.input.max_reward / 2,
                     benefit_source: BenefitSource::SlashTreasury,
+                    non_native_asset_id: None,
                 }])
             );
         });
@@ -2134,11 +2173,11 @@ pub mod attesters_test {
     #[test]
     fn test_successfull_process_repatriation_for_pending_attestation_with_one_fsx() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let repatriated_requester = AccountId::from([4u8; 32]);
@@ -2165,7 +2204,7 @@ pub mod attesters_test {
             let mock_xtx = XExecSignal {
                 requester: repatriated_requester.clone(),
                 requester_nonce: 1,
-                timeouts_at: 1,
+                timeouts_at: AdaptiveTimeout::default_401(),
                 speed_mode: Default::default(),
                 delay_steps_at: None,
                 status: CircuitStatus::Committed,
@@ -2174,7 +2213,7 @@ pub mod attesters_test {
 
             let sfx_id = mock_fsx
                 .input
-                .generate_id::<BlakeTwo256>(mock_xtx_id.as_bytes(), 0u32);
+                .generate_id::<Keccak256>(mock_xtx_id.as_bytes(), 0u32);
 
             assert_ok!(Attesters::request_sfx_attestation_commit(target, sfx_id));
 
@@ -2214,6 +2253,7 @@ pub mod attesters_test {
                     role: CircuitRole::Requester,
                     total_round_claim: mock_fsx.input.max_reward / 2,
                     benefit_source: BenefitSource::SlashTreasury,
+                    non_native_asset_id: None,
                 }])
             );
         });
@@ -2223,11 +2263,11 @@ pub mod attesters_test {
     fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_fsx_not_found(
     ) {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id = H256([3u8; 32]);
@@ -2264,11 +2304,11 @@ pub mod attesters_test {
     fn test_process_repatriation_changes_status_to_expired_after_repatriation_period_when_no_batch_fsx_required(
     ) {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
 
             for counter in 1..33u8 {
                 // Register an attester
@@ -2310,11 +2350,11 @@ pub mod attesters_test {
     #[test]
     fn test_pending_attestation_batch_with_single_sfx_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             let _current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -2345,17 +2385,18 @@ pub mod attesters_test {
     #[test]
     fn test_pending_attestation_batch_with_committee_transition_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             for counter in 1..33u8 {
                 // Register an attester
                 let _attester = AccountId::from([counter; 32]);
                 register_attester_with_single_private_key([counter; 32]);
             }
 
+            println!("Registered attesters");
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let _committee_transition: CommitteeTransitionIndices = [
@@ -2526,46 +2567,61 @@ pub mod attesters_test {
             assert_eq!(
                 Attesters::get_latest_batch_to_sign_message(target),
                 Some(vec![
-                    100, 47, 14, 60, 58, 245, 69, 231, 172, 189, 56, 176, 114, 81, 179, 153, 9, 20,
-                    241, 80, 80, 164, 244, 179, 249, 51, 140, 52, 114, 220, 192, 26, 135, 199, 106,
-                    20, 75, 60, 156, 51, 37, 167, 132, 37, 241, 122, 126, 72, 126, 181, 102, 107,
-                    43, 253, 147, 171, 176, 108, 112, 196, 139, 129, 43, 180, 52, 1, 57, 44, 3,
-                    115, 129, 172, 169, 52, 244, 6, 156, 5, 23, 208, 154, 209, 64, 128, 212, 178,
-                    87, 168, 25, 164, 245, 121, 184, 72, 91, 232, 143, 8, 108, 12, 176, 48, 209,
-                    26, 139, 228, 139, 96, 65, 136, 87, 135, 77, 238, 230, 29, 16, 113, 224, 74,
-                    98, 49, 102, 35, 173, 69, 127, 2, 205, 197, 217, 151, 222, 214, 122, 56, 62,
-                    197, 105, 153, 200, 81, 234, 163, 195, 151, 105, 20, 214, 59, 130, 44, 103,
-                    226, 1, 236, 11, 251, 184, 88, 218, 153, 10, 143, 74, 58, 108, 167, 203, 99,
-                    21, 214, 138, 20, 1, 5, 145, 115, 82, 193, 113, 3, 61, 92, 191, 247, 23, 95,
-                    41, 223, 211, 166, 61, 218, 61, 111, 143, 56, 94, 242, 136, 236, 175, 21, 121,
-                    14, 252, 172, 82, 137, 70, 150, 58, 109, 184, 195, 248, 33, 29, 99, 70, 123, 2,
-                    167, 56, 36, 8, 168, 69, 165, 235, 133, 181, 35, 139, 138, 77, 208, 237, 34,
-                    156, 120, 75, 147, 204, 180, 64, 249, 29, 197, 19, 44, 116, 169, 83, 25, 73,
-                    125, 244, 129, 161, 247, 202, 26, 64, 224, 4, 216, 227, 205, 205, 183, 38, 58,
-                    173, 217, 206, 26, 243, 105, 26, 141, 5, 103, 143, 201, 98, 255, 15, 33, 116,
-                    19, 67, 121, 192, 5, 28, 182, 134, 239, 4, 90, 85, 76, 187, 0, 22, 39, 94, 144,
-                    227, 0, 47, 77, 33, 198, 242, 99, 225, 25, 231, 227, 118, 231, 194, 19, 183,
-                    231, 231, 228, 108, 199, 10, 93, 208, 134, 218, 255, 42, 28, 90, 119, 217, 250,
-                    126, 244, 102, 149, 27, 47, 1, 247, 36, 188, 163, 165, 130, 11, 99, 3, 161,
-                    187, 166, 11, 90, 163, 112, 148, 207, 22, 18, 58, 221, 103, 76, 1, 88, 148,
-                    136, 30, 50, 171, 207, 230, 219, 21, 193, 87, 7, 9, 227, 252, 2, 114, 83, 53,
-                    245, 10, 71, 51, 224, 245, 57, 227, 27, 53, 23, 15, 170, 160, 98, 175, 112, 59,
-                    118, 168, 40, 43, 247, 161, 67, 201, 108, 74, 81, 135, 115, 67, 196, 221, 119,
-                    253, 98, 88, 79, 215, 242, 93, 180, 126, 159, 180, 15, 102, 196, 225, 50, 250,
-                    94, 100, 228, 159, 48, 126, 2, 183, 101, 64, 248, 215, 231, 83, 158, 167, 75,
-                    228, 250, 203, 88, 197, 12, 206, 191, 6, 96, 127, 241, 148, 205, 4, 146, 155,
-                    184, 96, 118, 224, 159, 36, 139, 37, 73, 49, 73, 30, 54, 29, 59, 78, 84, 239,
-                    75, 112, 1, 58, 93, 39, 218, 97, 215, 26, 215, 22, 254, 18, 148, 247, 72, 209,
-                    82, 177, 167, 217, 66, 140, 229, 200, 14, 37, 78, 101, 251, 225, 188, 248, 47,
-                    100, 123, 93, 238, 25, 80, 41, 10, 165, 39, 129, 221, 108, 66, 85, 70, 123,
-                    187, 235, 159, 119, 60, 25, 54, 116, 10, 58, 110, 64, 197, 45, 43, 126, 50,
-                    236, 207, 254, 100, 60, 77, 157, 170, 187, 91, 235, 230, 196, 217, 170, 160,
-                    118, 159, 4, 105, 143, 152, 109, 26, 198, 229, 234, 199, 108, 28, 168, 139,
-                    113, 15, 175, 255, 104, 227, 215, 187, 75, 61, 215, 44, 53, 139, 91, 219, 154,
-                    24, 182, 230, 16, 146, 27, 10, 15, 111, 96, 140, 14, 31, 41, 168, 69, 85, 43,
-                    198, 219, 44, 51, 37, 167, 132, 37, 241, 122, 126, 72, 126, 181, 102, 107, 43,
-                    253, 147, 171, 176, 108, 112, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 100, 47, 14, 60, 58, 245, 69, 231, 172,
+                    189, 56, 176, 114, 81, 179, 153, 9, 20, 241, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 80, 80, 164, 244, 179, 249, 51, 140, 52, 114, 220, 192, 26, 135, 199, 106,
+                    20, 75, 60, 156, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 37, 167, 132, 37, 241,
+                    122, 126, 72, 126, 181, 102, 107, 43, 253, 147, 171, 176, 108, 112, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 196, 139, 129, 43, 180, 52, 1, 57, 44, 3, 115, 129,
+                    172, 169, 52, 244, 6, 156, 5, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 208, 154,
+                    209, 64, 128, 212, 178, 87, 168, 25, 164, 245, 121, 184, 72, 91, 232, 143, 8,
+                    108, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 176, 48, 209, 26, 139, 228, 139,
+                    96, 65, 136, 87, 135, 77, 238, 230, 29, 16, 113, 224, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 74, 98, 49, 102, 35, 173, 69, 127, 2, 205, 197, 217, 151, 222, 214,
+                    122, 56, 62, 197, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 153, 200, 81, 234,
+                    163, 195, 151, 105, 20, 214, 59, 130, 44, 103, 226, 1, 236, 11, 251, 184, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88, 218, 153, 10, 143, 74, 58, 108, 167, 203, 99,
+                    21, 214, 138, 20, 1, 5, 145, 115, 82, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 193,
+                    113, 3, 61, 92, 191, 247, 23, 95, 41, 223, 211, 166, 61, 218, 61, 111, 143, 56,
+                    94, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 242, 136, 236, 175, 21, 121, 14, 252,
+                    172, 82, 137, 70, 150, 58, 109, 184, 195, 248, 33, 29, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 99, 70, 123, 2, 167, 56, 36, 8, 168, 69, 165, 235, 133, 181, 35,
+                    139, 138, 77, 208, 237, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 34, 156, 120, 75,
+                    147, 204, 180, 64, 249, 29, 197, 19, 44, 116, 169, 83, 25, 73, 125, 244, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 129, 161, 247, 202, 26, 64, 224, 4, 216, 227,
+                    205, 205, 183, 38, 58, 173, 217, 206, 26, 243, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 105, 26, 141, 5, 103, 143, 201, 98, 255, 15, 33, 116, 19, 67, 121, 192, 5,
+                    28, 182, 134, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 239, 4, 90, 85, 76, 187, 0,
+                    22, 39, 94, 144, 227, 0, 47, 77, 33, 198, 242, 99, 225, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 25, 231, 227, 118, 231, 194, 19, 183, 231, 231, 228, 108, 199, 10,
+                    93, 208, 134, 218, 255, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 90, 119,
+                    217, 250, 126, 244, 102, 149, 27, 47, 1, 247, 36, 188, 163, 165, 130, 11, 99,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 161, 187, 166, 11, 90, 163, 112, 148,
+                    207, 22, 18, 58, 221, 103, 76, 1, 88, 148, 136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 30, 50, 171, 207, 230, 219, 21, 193, 87, 7, 9, 227, 252, 2, 114, 83, 53,
+                    245, 10, 71, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 224, 245, 57, 227, 27, 53,
+                    23, 15, 170, 160, 98, 175, 112, 59, 118, 168, 40, 43, 247, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 161, 67, 201, 108, 74, 81, 135, 115, 67, 196, 221, 119, 253, 98,
+                    88, 79, 215, 242, 93, 180, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 126, 159, 180,
+                    15, 102, 196, 225, 50, 250, 94, 100, 228, 159, 48, 126, 2, 183, 101, 64, 248,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 215, 231, 83, 158, 167, 75, 228, 250, 203,
+                    88, 197, 12, 206, 191, 6, 96, 127, 241, 148, 205, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 4, 146, 155, 184, 96, 118, 224, 159, 36, 139, 37, 73, 49, 73, 30, 54, 29,
+                    59, 78, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 239, 75, 112, 1, 58, 93, 39,
+                    218, 97, 215, 26, 215, 22, 254, 18, 148, 247, 72, 209, 82, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 177, 167, 217, 66, 140, 229, 200, 14, 37, 78, 101, 251, 225,
+                    188, 248, 47, 100, 123, 93, 238, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 80,
+                    41, 10, 165, 39, 129, 221, 108, 66, 85, 70, 123, 187, 235, 159, 119, 60, 25,
+                    54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 116, 10, 58, 110, 64, 197, 45, 43, 126,
+                    50, 236, 207, 254, 100, 60, 77, 157, 170, 187, 91, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 235, 230, 196, 217, 170, 160, 118, 159, 4, 105, 143, 152, 109, 26,
+                    198, 229, 234, 199, 108, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 168, 139, 113,
+                    15, 175, 255, 104, 227, 215, 187, 75, 61, 215, 44, 53, 139, 91, 219, 154, 24,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 182, 230, 16, 146, 27, 10, 15, 111, 96,
+                    140, 14, 31, 41, 168, 69, 85, 43, 198, 219, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 51, 37, 167, 132, 37, 241, 122, 126, 72, 126, 181, 102, 107, 43, 253,
+                    147, 171, 176, 108, 112, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0
                 ])
             );
 
@@ -2573,7 +2629,7 @@ pub mod attesters_test {
                 Attesters::get_latest_batch_to_sign_hash(target),
                 Some(
                     hex_literal::hex!(
-                        "58cd0ea9f78f115b381b29bc7edaab46f214968c05ff24b6b14474e4e47cfcdd"
+                        "3e293db1e3431e80a5180fe1be16c54bf898f879ab888e3cf89de89f91a8ca6a"
                     )
                     .into()
                 )
@@ -2584,11 +2640,11 @@ pub mod attesters_test {
     #[test]
     fn test_pending_attestation_batch_with_all_attestations_ordered_yields_correct_message_hash() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
 
             for counter in 1..33u8 {
                 // Register an attester
@@ -2608,41 +2664,55 @@ pub mod attesters_test {
             let _current_block_2 = add_target_and_transition_to_next_batch(target, 1);
 
             let expected_message_for_next_committe_transition_to_eth: Vec<u8> = vec![
-                26, 100, 47, 14, 60, 58, 245, 69, 231, 172, 189, 56, 176, 114, 81, 179, 153, 9, 20,
-                241, 80, 80, 164, 244, 179, 249, 51, 140, 52, 114, 220, 192, 26, 135, 199, 106, 20,
-                75, 60, 156, 51, 37, 167, 132, 37, 241, 122, 126, 72, 126, 181, 102, 107, 43, 253,
-                147, 171, 176, 108, 112, 196, 139, 129, 43, 180, 52, 1, 57, 44, 3, 115, 129, 172,
-                169, 52, 244, 6, 156, 5, 23, 208, 154, 209, 64, 128, 212, 178, 87, 168, 25, 164,
-                245, 121, 184, 72, 91, 232, 143, 8, 108, 12, 176, 48, 209, 26, 139, 228, 139, 96,
-                65, 136, 87, 135, 77, 238, 230, 29, 16, 113, 224, 74, 98, 49, 102, 35, 173, 69,
-                127, 2, 205, 197, 217, 151, 222, 214, 122, 56, 62, 197, 105, 153, 200, 81, 234,
-                163, 195, 151, 105, 20, 214, 59, 130, 44, 103, 226, 1, 236, 11, 251, 184, 88, 218,
-                153, 10, 143, 74, 58, 108, 167, 203, 99, 21, 214, 138, 20, 1, 5, 145, 115, 82, 193,
-                113, 3, 61, 92, 191, 247, 23, 95, 41, 223, 211, 166, 61, 218, 61, 111, 143, 56, 94,
-                242, 136, 236, 175, 21, 121, 14, 252, 172, 82, 137, 70, 150, 58, 109, 184, 195,
-                248, 33, 29, 99, 70, 123, 2, 167, 56, 36, 8, 168, 69, 165, 235, 133, 181, 35, 139,
-                138, 77, 208, 237, 34, 156, 120, 75, 147, 204, 180, 64, 249, 29, 197, 19, 44, 116,
-                169, 83, 25, 73, 125, 244, 129, 161, 247, 202, 26, 64, 224, 4, 216, 227, 205, 205,
-                183, 38, 58, 173, 217, 206, 26, 243, 105, 26, 141, 5, 103, 143, 201, 98, 255, 15,
-                33, 116, 19, 67, 121, 192, 5, 28, 182, 134, 239, 4, 90, 85, 76, 187, 0, 22, 39, 94,
-                144, 227, 0, 47, 77, 33, 198, 242, 99, 225, 25, 231, 227, 118, 231, 194, 19, 183,
-                231, 231, 228, 108, 199, 10, 93, 208, 134, 218, 255, 42, 28, 90, 119, 217, 250,
-                126, 244, 102, 149, 27, 47, 1, 247, 36, 188, 163, 165, 130, 11, 99, 3, 161, 187,
-                166, 11, 90, 163, 112, 148, 207, 22, 18, 58, 221, 103, 76, 1, 88, 148, 136, 30, 50,
-                171, 207, 230, 219, 21, 193, 87, 7, 9, 227, 252, 2, 114, 83, 53, 245, 10, 71, 51,
-                224, 245, 57, 227, 27, 53, 23, 15, 170, 160, 98, 175, 112, 59, 118, 168, 40, 43,
-                247, 161, 67, 201, 108, 74, 81, 135, 115, 67, 196, 221, 119, 253, 98, 88, 79, 215,
-                242, 93, 180, 126, 159, 180, 15, 102, 196, 225, 50, 250, 94, 100, 228, 159, 48,
-                126, 2, 183, 101, 64, 248, 215, 231, 83, 158, 167, 75, 228, 250, 203, 88, 197, 12,
-                206, 191, 6, 96, 127, 241, 148, 205, 4, 146, 155, 184, 96, 118, 224, 159, 36, 139,
-                37, 73, 49, 73, 30, 54, 29, 59, 78, 84, 239, 75, 112, 1, 58, 93, 39, 218, 97, 215,
-                26, 215, 22, 254, 18, 148, 247, 72, 209, 82, 177, 167, 217, 66, 140, 229, 200, 14,
-                37, 78, 101, 251, 225, 188, 248, 47, 100, 123, 93, 238, 25, 80, 41, 10, 165, 39,
-                129, 221, 108, 66, 85, 70, 123, 187, 235, 159, 119, 60, 25, 54, 116, 10, 58, 110,
-                64, 197, 45, 43, 126, 50, 236, 207, 254, 100, 60, 77, 157, 170, 187, 91, 235, 230,
-                196, 217, 170, 160, 118, 159, 4, 105, 143, 152, 109, 26, 198, 229, 234, 199, 108,
-                28, 168, 139, 113, 15, 175, 255, 104, 227, 215, 187, 75, 61, 215, 44, 53, 139, 91,
-                219, 154, 24, 182, 230, 16, 146, 27, 10, 15, 111, 96, 140, 14, 31, 41, 168, 69, 85,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 100, 47, 14, 60, 58, 245, 69, 231, 172,
+                189, 56, 176, 114, 81, 179, 153, 9, 20, 241, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                80, 80, 164, 244, 179, 249, 51, 140, 52, 114, 220, 192, 26, 135, 199, 106, 20, 75,
+                60, 156, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 37, 167, 132, 37, 241, 122, 126,
+                72, 126, 181, 102, 107, 43, 253, 147, 171, 176, 108, 112, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 196, 139, 129, 43, 180, 52, 1, 57, 44, 3, 115, 129, 172, 169, 52, 244,
+                6, 156, 5, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 208, 154, 209, 64, 128, 212,
+                178, 87, 168, 25, 164, 245, 121, 184, 72, 91, 232, 143, 8, 108, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 12, 176, 48, 209, 26, 139, 228, 139, 96, 65, 136, 87, 135, 77,
+                238, 230, 29, 16, 113, 224, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 74, 98, 49, 102,
+                35, 173, 69, 127, 2, 205, 197, 217, 151, 222, 214, 122, 56, 62, 197, 105, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 153, 200, 81, 234, 163, 195, 151, 105, 20, 214, 59, 130,
+                44, 103, 226, 1, 236, 11, 251, 184, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 88, 218,
+                153, 10, 143, 74, 58, 108, 167, 203, 99, 21, 214, 138, 20, 1, 5, 145, 115, 82, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 193, 113, 3, 61, 92, 191, 247, 23, 95, 41, 223,
+                211, 166, 61, 218, 61, 111, 143, 56, 94, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 242,
+                136, 236, 175, 21, 121, 14, 252, 172, 82, 137, 70, 150, 58, 109, 184, 195, 248, 33,
+                29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 70, 123, 2, 167, 56, 36, 8, 168, 69,
+                165, 235, 133, 181, 35, 139, 138, 77, 208, 237, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                34, 156, 120, 75, 147, 204, 180, 64, 249, 29, 197, 19, 44, 116, 169, 83, 25, 73,
+                125, 244, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 129, 161, 247, 202, 26, 64, 224, 4,
+                216, 227, 205, 205, 183, 38, 58, 173, 217, 206, 26, 243, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 105, 26, 141, 5, 103, 143, 201, 98, 255, 15, 33, 116, 19, 67, 121, 192, 5,
+                28, 182, 134, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 239, 4, 90, 85, 76, 187, 0, 22,
+                39, 94, 144, 227, 0, 47, 77, 33, 198, 242, 99, 225, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 25, 231, 227, 118, 231, 194, 19, 183, 231, 231, 228, 108, 199, 10, 93, 208,
+                134, 218, 255, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 90, 119, 217, 250, 126,
+                244, 102, 149, 27, 47, 1, 247, 36, 188, 163, 165, 130, 11, 99, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 3, 161, 187, 166, 11, 90, 163, 112, 148, 207, 22, 18, 58, 221, 103,
+                76, 1, 88, 148, 136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 50, 171, 207, 230,
+                219, 21, 193, 87, 7, 9, 227, 252, 2, 114, 83, 53, 245, 10, 71, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 51, 224, 245, 57, 227, 27, 53, 23, 15, 170, 160, 98, 175, 112, 59,
+                118, 168, 40, 43, 247, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 161, 67, 201, 108, 74,
+                81, 135, 115, 67, 196, 221, 119, 253, 98, 88, 79, 215, 242, 93, 180, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 126, 159, 180, 15, 102, 196, 225, 50, 250, 94, 100, 228, 159,
+                48, 126, 2, 183, 101, 64, 248, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 215, 231, 83,
+                158, 167, 75, 228, 250, 203, 88, 197, 12, 206, 191, 6, 96, 127, 241, 148, 205, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 146, 155, 184, 96, 118, 224, 159, 36, 139, 37,
+                73, 49, 73, 30, 54, 29, 59, 78, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 239, 75,
+                112, 1, 58, 93, 39, 218, 97, 215, 26, 215, 22, 254, 18, 148, 247, 72, 209, 82, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 177, 167, 217, 66, 140, 229, 200, 14, 37, 78, 101,
+                251, 225, 188, 248, 47, 100, 123, 93, 238, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25,
+                80, 41, 10, 165, 39, 129, 221, 108, 66, 85, 70, 123, 187, 235, 159, 119, 60, 25,
+                54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 116, 10, 58, 110, 64, 197, 45, 43, 126, 50,
+                236, 207, 254, 100, 60, 77, 157, 170, 187, 91, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                235, 230, 196, 217, 170, 160, 118, 159, 4, 105, 143, 152, 109, 26, 198, 229, 234,
+                199, 108, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 168, 139, 113, 15, 175, 255, 104,
+                227, 215, 187, 75, 61, 215, 44, 53, 139, 91, 219, 154, 24, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 182, 230, 16, 146, 27, 10, 15, 111, 96, 140, 14, 31, 41, 168, 69, 85,
                 43, 198, 219, 44, 0, 0, 0, 0,
             ];
 
@@ -2666,11 +2736,11 @@ pub mod attesters_test {
     #[test]
     fn test_adding_2_same_sfx_to_next_batch_is_impossible() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
             NextBatch::<MiniRuntime>::insert(target, BatchMessage::default());
 
             let sfx_id_a = H256::repeat_byte(1);
@@ -2686,11 +2756,11 @@ pub mod attesters_test {
     #[test]
     fn test_adding_2_sfx_to_next_batch_and_transition_to_pending_attestation() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
-            let target: TargetId = [0, 0, 0, 0];
+            let target: TargetId = ETHEREUM_TARGET;
 
             AttestationTargets::<MiniRuntime>::put(vec![target]);
             assert_eq!(NextBatch::<MiniRuntime>::get(target), None);
@@ -2765,7 +2835,7 @@ pub mod attesters_test {
     #[test]
     fn committee_transition_generates_next_3_batches_pending_attestations_when_late() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2773,8 +2843,6 @@ pub mod attesters_test {
             // On initialization, the current committee should be empty and the previous committee should be None
             assert!(CurrentCommittee::<MiniRuntime>::get().is_empty());
             assert_eq!(PreviousCommittee::<MiniRuntime>::get(), vec![]);
-
-            const TARGET_0: TargetId = [0u8; 4];
 
             // Register multiple attesters
             let attester_count = 100;
@@ -2784,7 +2852,7 @@ pub mod attesters_test {
             }
             // Trigger the committee first setup
             select_new_committee();
-            add_target_and_transition_to_next_batch(TARGET_0, 0);
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 0);
 
             // Check if the committee is set up and has the correct size
             let committee = CurrentCommittee::<MiniRuntime>::get();
@@ -2797,7 +2865,7 @@ pub mod attesters_test {
             }
 
             // Expect NextBatch message to have committee transition awaiting attestation on registered target
-            let next_batch = NextBatch::<MiniRuntime>::get(TARGET_0).unwrap();
+            let next_batch = NextBatch::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
             assert_eq!(next_batch.status, BatchStatus::PendingMessage);
             assert_eq!(next_batch.latency, LatencyStatus::OnTime);
             assert_eq!(next_batch.index, 0);
@@ -2810,41 +2878,46 @@ pub mod attesters_test {
 
             let batch_0_hash = next_batch.message_hash();
             // If no attestations are received, the next batch should be empty, and the current batch should be pending attestation with indication of late submission
-            add_target_and_transition_to_next_batch(TARGET_0, 1);
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 1);
 
-            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            let batch_0 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_0_hash).unwrap();
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::OnTime);
 
             // Next batch should mark the initial batch as late, but don't modify the batch_1 since there's no new messages to attest for
-            add_target_and_transition_to_next_batch(TARGET_0, 1);
-            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 1);
+            let batch_0 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_0_hash).unwrap();
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::Late(1, 0));
 
             let _committee_0_on_target =
-                NextCommitteeOnTarget::<MiniRuntime>::get(TARGET_0).unwrap();
+                NextCommitteeOnTarget::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
 
-            add_target_and_transition_to_next_batch(TARGET_0, 1);
-            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 1);
+            let batch_0 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_0_hash).unwrap();
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::Late(2, 0));
             // Trigger the next committee transition
             select_new_committee();
             // Retreive next batch
-            let batch_1 = NextBatch::<MiniRuntime>::get(TARGET_0).unwrap();
+            let batch_1 = NextBatch::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
             assert!(batch_1.next_committee.is_some());
             assert_eq!(batch_1.index, 1);
             let _committee_1_on_target =
-                NextCommitteeOnTarget::<MiniRuntime>::get(TARGET_0).unwrap();
+                NextCommitteeOnTarget::<MiniRuntime>::get(ETHEREUM_TARGET).unwrap();
             let batch_1_hash = batch_1.message_hash();
             // todo: fix the randomness source on mini-mock (yields 0)
             // assert!(committee_0_on_target != committee_1_on_target);
-            add_target_and_transition_to_next_batch(TARGET_0, 2);
-            let batch_0 = Attesters::get_batch_by_message_hash(TARGET_0, batch_0_hash).unwrap();
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 2);
+            let batch_0 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_0_hash).unwrap();
             assert_eq!(batch_0.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_0.latency, LatencyStatus::Late(3, 0));
-            let batch_1 = Attesters::get_batch_by_message_hash(TARGET_0, batch_1_hash).unwrap();
+            let batch_1 =
+                Attesters::get_batch_by_message_hash(ETHEREUM_TARGET, batch_1_hash).unwrap();
             assert_eq!(batch_1.status, BatchStatus::PendingAttestation);
             assert_eq!(batch_1.latency, LatencyStatus::OnTime);
         });
@@ -2853,7 +2926,7 @@ pub mod attesters_test {
     #[test]
     fn committee_setup_and_transition() {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2890,7 +2963,7 @@ pub mod attesters_test {
             assert_eq!(previous_committee, committee);
 
             let new_committee = CurrentCommittee::<MiniRuntime>::get();
-            // todo: RandomnessCollectiveFlip always returns 0x0000...0000 as random value
+            // todo: RandomnessCollectiveFlip always returns 0000...0000 as random value
             // assert_ne!(new_committee, committee);
 
             // Check if the new committee is set up and has the correct size
@@ -2905,11 +2978,8 @@ pub mod attesters_test {
 
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_changes_status_to_approved() {
-        let _target = [0u8; 4];
-        let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
-
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2931,13 +3001,16 @@ pub mod attesters_test {
                     attester,
                     sfx_id_to_sign_on,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
-                    [0u8; 4],
+                    ETHEREUM_TARGET,
                     [counter; 32],
                 );
             }
             assert_eq!(
-                Attesters::get_batches([0u8; 4], BatchStatus::ReadyForSubmissionFullyApproved)
-                    .len(),
+                Attesters::get_batches(
+                    ETHEREUM_TARGET,
+                    BatchStatus::ReadyForSubmissionFullyApproved
+                )
+                .len(),
                 1
             );
         });
@@ -2947,7 +3020,7 @@ pub mod attesters_test {
     fn register_and_submit_21x_attestations_in_ecdsa_changes_status_to_approved_in_next_batching_window(
     ) {
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
 
@@ -2971,19 +3044,19 @@ pub mod attesters_test {
                     attester,
                     message,
                     ECDSA_ATTESTER_KEY_TYPE_ID,
-                    [0u8; 4],
+                    ETHEREUM_TARGET,
                     [counter; 32],
                 );
             }
 
-            let batch = Attesters::get_latest_batch_to_sign([0u8; 4])
+            let batch = Attesters::get_latest_batch_to_sign(ETHEREUM_TARGET)
                 .expect("get_latest_batch_to_sign should return a batch");
 
             assert_eq!(batch.status, BatchStatus::PendingAttestation);
 
             // Trigger batching transition
-            add_target_and_transition_to_next_batch([0u8; 4], 1);
-            let batch = Attesters::get_batch_by_message([0u8; 4], batch.message())
+            add_target_and_transition_to_next_batch(ETHEREUM_TARGET, 1);
+            let batch = Attesters::get_batch_by_message(ETHEREUM_TARGET, batch.message())
                 .expect("get_batch_by_message should return a batch");
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionByMajority);
         });
@@ -3004,12 +3077,12 @@ pub mod attesters_test {
     #[test]
     fn register_and_submit_32x_attestations_in_ecdsa_with_batching_plus_confirmation_to_polka_target(
     ) {
-        let target: TargetId = [1u8; 4];
+        let target: TargetId = POLKADOT_TARGET;
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
             .with_polkadot_gateway_record()
-            .with_eth_gateway_record()
             .build();
 
         ext.execute_with(|| {
@@ -3075,11 +3148,11 @@ pub mod attesters_test {
 
     #[test]
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
-        let target: TargetId = [1u8; 4];
+        let target: TargetId = ETHEREUM_TARGET;
         let _mock_escrow_account: AccountId = AccountId::new([2u8; 32]);
 
         let mut ext = ExtBuilder::default()
-            .with_polkadot_gateway_record()
+            .with_standard_sfx_abi()
             .with_eth_gateway_record()
             .build();
         ext.execute_with(|| {
@@ -3282,13 +3355,15 @@ pub mod attesters_test {
                             beneficiary: attester.clone(),
                             role: CircuitRole::Attester,
                             total_round_claim: 100, // that's reward as an attester with 10% commission of 1000
-                            benefit_source: BenefitSource::Inflation
+                            benefit_source: BenefitSource::Inflation,
+                            non_native_asset_id: None,
                         },
                         ClaimableArtifacts {
                             beneficiary: attester,
                             role: CircuitRole::Staker,
                             total_round_claim: 8, // that's reward as a self-bonded staker
-                            benefit_source: BenefitSource::Inflation
+                            benefit_source: BenefitSource::Inflation,
+                            non_native_asset_id: None,
                         },
                     ])
                 );
@@ -3313,6 +3388,7 @@ pub mod attesters_test {
                         role: CircuitRole::Staker,
                         total_round_claim: one_period_claimable_reward,
                         benefit_source: BenefitSource::Inflation,
+                        non_native_asset_id: None,
                     }])
                 );
             }
@@ -3421,5 +3497,99 @@ pub mod attesters_test {
             // Check if the attester_to_unnominate is removed from the active set
             assert!(!active_set.contains(&attester_to_unnominate));
         });
+    }
+
+    #[test]
+    fn test_filled_message_produces_expected_hash() {
+        use hex_literal::hex;
+        let filled_batch = BatchMessage {
+            committed_sfx: Some(vec![
+                hex!("6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e").into(),
+                hex!("580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfa").into(),
+                hex!("e23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c6").into(),
+            ]),
+            reverted_sfx: Some(vec![
+                hex!("ff17743a6b48933b94f38f423b15b2fc9ebcd34aab19bd81c2a69d3d052f467f").into(),
+                hex!("21e5cd2c2f3e32ac4a52543a386821b079711432c2fefd4be3836ed36d129b11").into(),
+            ]),
+            next_committee: Some(vec![
+                hex!("2b7A372d58541c3053793f022Cf28ef971F94EFA").into(),
+                hex!("60eA580734420A9C23E51C7FdF455b5e0237E07C").into(),
+                hex!("98DF91EF04A5C0695f8050B7Da4facC0E7d9444e").into(),
+                hex!("3Cfbc429d7435fD5707390362c210bD272baE8eA").into(),
+                hex!("66ed579D14Cbad8dFC352a3cEaeeE9711ea65e41").into(),
+                hex!("786402fa462909785A55Ced48aa5682D99902C57").into(),
+                hex!("401b7Cb06493eFDB82818F14f9Cd345C01463a81").into(),
+                hex!("A2E7607A23B5A744A10a096c936AB033866D3bEe").into(),
+                hex!("ac9c643B32916EA52e0fA0c3a3bBdbE120E5CA9e").into(),
+                hex!("D53d6Af58A2bD8c0f86b25B1309c91f61700144F").into(),
+                hex!("2feF1f5268d9732CAc331785987d45Fad487fcd6").into(),
+                hex!("debc7A55486DbaCB06985ba2415b784e05a35baE").into(),
+                hex!("d7b33a07Ee05B604138f94335405b55e2b6bbFdD").into(),
+                hex!("1831c8F78C8b59c1300B79E308BfBf9e4fDd13B0").into(),
+                hex!("361134E27Af99A288714E428C290d48F82a4895C").into(),
+                hex!("5897B47E1357eD81B2D85d8f287759502E33f588").into(),
+                hex!("a880bf7e031ed87d422D31BEBcC9D0339c7b95b4").into(),
+                hex!("edaB03983D839E6A3a887c3Ee711a724391F8eE1").into(),
+                hex!("80D80649e13268382ceA3b0a56a57078c2076fE1").into(),
+                hex!("b0DE4907432a9A4aC92F4988dAa6024CD57D1b27").into(),
+                hex!("5449D051328dA4cfE8d1eFe7481Ff3B690cF8696").into(),
+                hex!("4705522d19458a90F06a15d9836A64e45c182c9f").into(),
+                hex!("B6dE743a22A7A43Edda8b5E21E2f0Aeb70354f5B").into(),
+                hex!("970c0720316BC03Cd055C5Ec74208Fe0BA3d3c44").into(),
+                hex!("7905754a5B6A28D1EDf338d9Be06a49aD60D74b6").into(),
+                hex!("93054A6f5eb0E1978D1e3e27AE758F17480E5988").into(),
+                hex!("a185b4f947A09286FC028B034f01bAbe53d98301").into(),
+                hex!("14C74Ce14e833d76dC0190651C0EbA64f3E67c79").into(),
+                hex!("861fa47e5229C9079d087D6354C1Ede95D233F43").into(),
+                hex!("6f9925AceFfbe67742257abFf393B123010c4A10").into(),
+                hex!("A1Ea906c54379032c9857139C6f796Acf88dDb79").into(),
+                hex!("6219f12779268F8A7ddf0f1E44Fd75253219d639").into(),
+            ]),
+            banned_committee: Some(vec![
+                hex!("2b7A372d58541c3053793f022Cf28ef971F94EFA").into(),
+                hex!("60eA580734420A9C23E51C7FdF455b5e0237E07C").into(),
+                hex!("98DF91EF04A5C0695f8050B7Da4facC0E7d9444e").into(),
+            ]),
+            index: 1,
+            signatures: vec![],
+            created: (),
+            status: BatchStatus::PendingMessage,
+            latency: Default::default(),
+        };
+
+        let msg = filled_batch.message();
+        let msg_as_hex = hex::encode(msg);
+        assert_eq!(msg_as_hex, "0000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e0000000000000000000000003cfbc429d7435fd5707390362c210bd272bae8ea00000000000000000000000066ed579d14cbad8dfc352a3ceaeee9711ea65e41000000000000000000000000786402fa462909785a55ced48aa5682d99902c57000000000000000000000000401b7cb06493efdb82818f14f9cd345c01463a81000000000000000000000000a2e7607a23b5a744a10a096c936ab033866d3bee000000000000000000000000ac9c643b32916ea52e0fa0c3a3bbdbe120e5ca9e000000000000000000000000d53d6af58a2bd8c0f86b25b1309c91f61700144f0000000000000000000000002fef1f5268d9732cac331785987d45fad487fcd6000000000000000000000000debc7a55486dbacb06985ba2415b784e05a35bae000000000000000000000000d7b33a07ee05b604138f94335405b55e2b6bbfdd0000000000000000000000001831c8f78c8b59c1300b79e308bfbf9e4fdd13b0000000000000000000000000361134e27af99a288714e428c290d48f82a4895c0000000000000000000000005897b47e1357ed81b2d85d8f287759502e33f588000000000000000000000000a880bf7e031ed87d422d31bebcc9d0339c7b95b4000000000000000000000000edab03983d839e6a3a887c3ee711a724391f8ee100000000000000000000000080d80649e13268382cea3b0a56a57078c2076fe1000000000000000000000000b0de4907432a9a4ac92f4988daa6024cd57d1b270000000000000000000000005449d051328da4cfe8d1efe7481ff3b690cf86960000000000000000000000004705522d19458a90f06a15d9836a64e45c182c9f000000000000000000000000b6de743a22a7a43edda8b5e21e2f0aeb70354f5b000000000000000000000000970c0720316bc03cd055c5ec74208fe0ba3d3c440000000000000000000000007905754a5b6a28d1edf338d9be06a49ad60d74b600000000000000000000000093054a6f5eb0e1978d1e3e27ae758f17480e5988000000000000000000000000a185b4f947a09286fc028b034f01babe53d9830100000000000000000000000014c74ce14e833d76dc0190651c0eba64f3e67c79000000000000000000000000861fa47e5229c9079d087d6354c1ede95d233f430000000000000000000000006f9925aceffbe67742257abff393b123010c4a10000000000000000000000000a1ea906c54379032c9857139c6f796acf88ddb790000000000000000000000006219f12779268f8a7ddf0f1e44fd75253219d6390000000000000000000000002b7a372d58541c3053793f022cf28ef971f94efa00000000000000000000000060ea580734420a9c23e51c7fdf455b5e0237e07c00000000000000000000000098df91ef04a5c0695f8050b7da4facc0e7d9444e6e906f8388de8faea67a770476ade4b76654545002126aa3ea17890fd8acdd7e580032f247eebb5c75889ab42c43dd88a1071c3950f9bbab1f901c47d5331dfae23ab05c5ca561870b6f55d3fcb94ead2b14d8ce49ccf159b8e3449cbd5050c6ff17743a6b48933b94f38f423b15b2fc9ebcd34aab19bd81c2a69d3d052f467f21e5cd2c2f3e32ac4a52543a386821b079711432c2fefd4be3836ed36d129b1100000001");
+
+        assert_eq!(
+            filled_batch.message_hash(),
+            hex!("92689b8b6360ba49e99b694643ba4c7fedb658496665252ab6de5aed79520a8c").into() // hex!("0e5ff1395ff4b94e02bad28b793efe3e27a32b3170191aae7a0a7c3c46a4a718").into()
+        );
+    }
+
+    #[test]
+    fn test_index_only_message_produces_expected_hash() {
+        use hex_literal::hex;
+        let filled_batch = BatchMessage {
+            committed_sfx: Some(vec![]),
+            reverted_sfx: Some(vec![]),
+            next_committee: Some(vec![]),
+            banned_committee: Some(vec![]),
+            index: 1,
+            signatures: vec![],
+            created: (),
+            status: BatchStatus::PendingMessage,
+            latency: Default::default(),
+        };
+
+        let msg = filled_batch.message();
+        let msg_as_hex = hex::encode(msg);
+        assert_eq!(msg_as_hex, "00000001");
+
+        assert_eq!(
+            filled_batch.message_hash(),
+            hex!("51f81bcdfc324a0dff2b5bec9d92e21cbebc4d5e29d3a3d30de3e03fbeab8d7f").into() // hex!("0e5ff1395ff4b94e02bad28b793efe3e27a32b3170191aae7a0a7c3c46a4a718").into()
+        );
     }
 }

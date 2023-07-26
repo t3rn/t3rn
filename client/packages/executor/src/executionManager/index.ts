@@ -16,11 +16,12 @@ import {
 } from "../circuit/listener";
 import { CircuitRelayer } from "../circuit/relayer";
 import { RelayerEventData, RelayerEvents } from "../gateways/types";
-import { XtxStatus } from "@t3rn/sdk/dist/side-effects/types";
+import { XtxStatus } from "@t3rn/sdk/side-effects/types";
 import { Config, Gateway } from "../../config/config";
-import { Instance } from "../index";
 import { Logger } from "pino";
 import BN from "bn.js";
+import { Prometheus } from "../prometheus";
+import { logger } from "../logging";
 
 // A type used for storing the different SideEffects throughout their respective life-cycle.
 // Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
@@ -94,18 +95,21 @@ export class ExecutionManager {
   biddingEngine: BiddingEngine;
   circuitListener: CircuitListener;
   circuitRelayer: CircuitRelayer;
+  prometheus: Prometheus;
 
   constructor(
     public circuitClient: Sdk["client"],
     public sdk: Sdk,
     public logger: Logger,
-    public config: Config
+    public config: Config,
+    prometheus: Prometheus,
   ) {
     this.priceEngine = new PriceEngine();
     this.strategyEngine = new StrategyEngine();
-    this.biddingEngine = new BiddingEngine(logger);
+    this.biddingEngine = new BiddingEngine(logger, prometheus);
     this.circuitListener = new CircuitListener(this.circuitClient);
     this.circuitRelayer = new CircuitRelayer(sdk);
+    this.prometheus = prometheus;
   }
 
   /** Injects persisted execution state.
@@ -130,7 +134,7 @@ export class ExecutionManager {
     await this.initializeGateways(gatewayConfig);
     await this.circuitListener.start();
     await this.initializeEventListeners();
-    this.addLog({ msg: "Setup Successful" });
+    logger.info("ExecutionManager setup successful");
   }
 
   /** Initiates a shutdown, the promise resolves once all executions are done. */
@@ -139,7 +143,7 @@ export class ExecutionManager {
 
     const recheckQueue = (
       manager: ExecutionManager,
-      resolve: (...args: unknown[]) => void
+      resolve: (...args: unknown[]) => void,
     ) => {
       const done = Object.entries(manager.sdk.gateways)
         .map(([, gtwy]) => gtwy.id)
@@ -147,14 +151,14 @@ export class ExecutionManager {
           (gtwyId) =>
             manager.queue[gtwyId].isBidding.length === 0 &&
             manager.queue[gtwyId].isExecuting.length === 0 &&
-            manager.queue[gtwyId].isConfirming.length === 0
+            manager.queue[gtwyId].isConfirming.length === 0,
         );
 
       if (done) {
         resolve(undefined);
       } else {
         manager.circuitListener.once("Event", () =>
-          recheckQueue(manager, resolve)
+          recheckQueue(manager, resolve),
         );
       }
     };
@@ -222,32 +226,37 @@ export class ExecutionManager {
 
                 // adds to queue
                 this.queue[vendor].isConfirming[eventData.blockNumber].push(
-                  eventData.sfxId
+                  eventData.sfxId,
                 );
 
-                this.addLog({
-                  msg: "moved sfx from isExecuting to isConfirming",
-                  sfxId: eventData.sfxId,
-                  xtxId: this.sfxToXtx[eventData.sfxId],
-                });
+                logger.info(
+                  {
+                    sfxId: eventData.sfxId,
+                    xtxId: this.sfxToXtx[eventData.sfxId],
+                  },
+                  "SFX transition from isExecuting to isConfirming",
+                );
               }
               break;
             case RelayerEvents.HeaderInclusionProofRequest:
               {
-                const proof = await this.relayers[
-                  eventData.target
-                ].generateHeaderInclusionProof(
-                  eventData.blockNumber,
-                  parseInt(eventData.data)
-                ).then(event => { return event.toJSON().proof });
+                const proof = await this.relayers[eventData.target]
+                  .generateHeaderInclusionProof(
+                    eventData.blockNumber,
+                    parseInt(eventData.data),
+                  )
+                  .then((event) => {
+                    return event.toJSON().proof;
+                  });
 
-                const blockHash = await this.relayers[
-                  eventData.target
-                ].getBlockHash(eventData.blockNumber).then(
-                  // @ts-ignore
-                  hash => hash.toString()
-                );
+                const blockHash = await this.relayers[eventData.target]
+                  .getBlockHash(eventData.blockNumber)
+                  .then(
+                    // @ts-ignore - cannot find property in type never
+                    (hash) => hash.toString(),
+                  );
 
+                // @ts-ignore - cannot find property in type never
                 this.xtx[this.sfxToXtx[eventData.sfxId]].sideEffects
                   .get(eventData.sfxId)
                   ?.addHeaderProof(proof, blockHash);
@@ -260,14 +269,14 @@ export class ExecutionManager {
         });
       }
 
-      this.addLog({ msg: "Gateways Initialized" });
+      logger.info("Gateways Initialized");
     }
   }
 
   /** Initialize the circuit listeners */
   async initializeEventListeners() {
     this.circuitListener.on("Event", async (eventData: ListenerEventData) => {
-      Instance.prom.events.inc();
+      this.prometheus.events.inc();
 
       switch (eventData.type) {
         case ListenerEvents.NewSideEffectsAvailable:
@@ -303,11 +312,13 @@ export class ExecutionManager {
             if (!sfx) break;
 
             sfx.confirmedOnCircuit();
-            this.addLog({
-              msg: "Sfx confirmed",
-              sfxId: sfxId,
-              xtxId: this.sfxToXtx[sfxId],
-            });
+            logger.info(
+              {
+                sfxId: sfxId,
+                xtxId: this.sfxToXtx[sfxId],
+              },
+              "Sfx confirmed",
+            );
           }
           break;
         case ListenerEvents.XtxCompleted:
@@ -331,27 +342,32 @@ export class ExecutionManager {
   async addXtx(xtxData: EventData, sdk: Sdk) {
     // create the XTX object
     const xtx = new Execution(
-      this.logger,
+      logger,
       sdk.signer.address,
       xtxData,
       sdk,
       this.strategyEngine,
-      this.biddingEngine
+      this.biddingEngine,
+      this.prometheus,
     );
 
     // Run the XTX strategy checks
     try {
       this.strategyEngine.evaluateXtx(xtx);
-      this.addLog({ msg: "XTX strategy passed!", xtxId: xtx.id });
+      logger.info({ xtxId: xtx.id }, "XTX strategy passed!");
     } catch (e) {
       // XTX does not meet strategy requirements
-      this.addLog({
-        msg: "XTX strategy reject! " + e.toString(),
-        xtxId: xtx.id,
-      });
+      this.prometheus.executorXtxStrategyRejects.inc();
+      logger.warn(
+        {
+          e: e.toString(),
+          xtxId: xtx.id,
+        },
+        "XTX strategy reject!",
+      );
       return;
     }
-    this.logger.info(`Received XTX ${xtx.humanId} 🌱`); // XTX is valid for execution
+    logger.info(`Received XTX ${xtx.humanId} 🌱`); // XTX is valid for execution
 
     // add XTX and init required event listeners
     this.xtx[xtx.id] = xtx;
@@ -361,7 +377,7 @@ export class ExecutionManager {
       this.queue[sfx.vendor].isBidding.push(sfxId);
       await this.addRiskRewardParameters(sfx);
     }
-    this.addLog({ msg: "XTX initialized", xtxId: xtx.id });
+    logger.info({ xtxId: xtx.id }, "XTX initialized");
   }
 
   /**
@@ -396,10 +412,10 @@ export class ExecutionManager {
       // Get the SFX that the executor has won the bid on and can execute now
       const ready = this.xtx[xtxId].getReadyToExecute();
       if (ready.length > 0) {
-        this.logger.info(
+        logger.info(
           `Won bids for XTX ${this.xtx[xtxId].humanId}: ${ready.map(
-            (sfx) => sfx.humanId
-          )} 🏆`
+            (sfx) => sfx.humanId,
+          )} 🏆`,
         );
       }
       for (const sfx of ready) {
@@ -422,12 +438,14 @@ export class ExecutionManager {
    * @param blockHeight The latest block height
    */
   updateGatewayHeight(vendor: string, blockHeight: number) {
-    this.addLog({
-      msg: "Update Gateway Height",
-      vendor: vendor,
-      blockHeight: blockHeight,
-    });
-    this.logger.info(`Gateway height updated: ${vendor} #${blockHeight} 🧱`);
+    logger.info(
+      {
+        vendor: vendor,
+        blockHeight: blockHeight,
+      },
+      "Update Gateway Height",
+    );
+
     if (this.queue[vendor]) {
       this.queue[vendor].blockHeight = blockHeight;
       this.executeConfirmationQueue(vendor);
@@ -453,7 +471,7 @@ export class ExecutionManager {
       if (parseInt(queuedBlocks[i]) <= this.queue[vendor].blockHeight) {
         batchBlocks.push(queuedBlocks[i]);
         readyByHeight = readyByHeight.concat(
-          this.queue[vendor].isConfirming[queuedBlocks[i]]
+          this.queue[vendor].isConfirming[queuedBlocks[i]],
         );
       }
     }
@@ -475,33 +493,36 @@ export class ExecutionManager {
 
     // if we found SFXs, we confirm them
     if (readyByStep.length > 0) {
-      this.addLog({
-        msg: "Execute confirmation queue",
-        gatewayId: vendor,
-        sfxIds: readyByStep.map((sfx) => sfx.id),
-      });
+      logger.info(
+        {
+          gatewayId: vendor,
+          sfxIds: readyByStep.map((sfx) => sfx.id),
+        },
+        "Execute confirmation queue",
+      );
       this.circuitRelayer
         .confirmSideEffects(readyByStep)
         .then(() => {
           // remove from queue and update status
-          this.logger.info(
-            `Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`
+          logger.info(
+            `Confirmed SFXs: ${readyByStep.map((sfx) => sfx.humanId)} 📜`,
           );
           this.processConfirmationBatch(readyByStep, batchBlocks, vendor);
-          this.addLog({
-            msg: "Confirmation batch successful",
-            vendor: vendor,
-          });
+          logger.info(
+            {
+              vendor: vendor,
+            },
+            "Confirmation batch successful",
+          );
         })
         .catch((err) => {
-          this.addLog(
+          logger.info(
             {
-              msg: "Error confirming side effects",
               vendor: vendor,
               sfxIds: readyByStep.map((sfx) => sfx.id),
               error: err,
             },
-            false
+            "Error confirming side effects",
           );
         });
     }
@@ -518,7 +539,7 @@ export class ExecutionManager {
   processConfirmationBatch(
     sfxs: SideEffect[],
     batchBlocks: string[],
-    gatewayId: string
+    gatewayId: string,
   ) {
     // remove from queue
     batchBlocks.forEach((block) => {
@@ -544,13 +565,13 @@ export class ExecutionManager {
           this.circuitRelayer
             .bidSfx(
               notification.payload.sfxId,
-              notification.payload.bidAmount as BN
+              notification.payload.bidAmount as BN,
             )
             .then(() => {
               sfx.bidAccepted(notification.payload.bidAmount as number);
             })
             .catch((e) => {
-              this.logger.info(`Bid rejected for SFX ${sfx.humanId} ❌`);
+              logger.warn(`Bid rejected for SFX ${sfx.humanId} ❌`);
               sfx.bidRejected(e);
             });
         }
@@ -570,7 +591,7 @@ export class ExecutionManager {
     ].getNativeTxCostSubject(sfx);
     // get price of native token on target
     const nativeAssetPriceSubject = this.priceEngine.getAssetPrice(
-      sfx.gateway.ticker
+      sfx.gateway.ticker,
     );
 
     const txOutput = sfx.getTxOutputs();
@@ -583,7 +604,7 @@ export class ExecutionManager {
       txCostSubject,
       nativeAssetPriceSubject,
       txOutputPriceSubject,
-      rewardAssetPriceSubject
+      rewardAssetPriceSubject,
     );
   }
 
@@ -616,7 +637,7 @@ export class ExecutionManager {
         this.removeFromQueue("isExecuting", sfx.id, sfx.vendor);
         let confirmBatch =
           this.queue[sfx.vendor].isConfirming[
-          sfx.targetInclusionHeight.toString()
+            sfx.targetInclusionHeight.toString()
           ];
         if (!confirmBatch) confirmBatch = [];
         if (confirmBatch.includes(sfx.id)) {
@@ -638,15 +659,5 @@ export class ExecutionManager {
       this.queue[gatewayId][queue].splice(index, 1);
     }
     this.biddingEngine.cleanUp(id);
-  }
-
-  private addLog(msg: object, debug = true) {
-    msg["component"] = "ExecutionManager";
-
-    if (debug) {
-      this.logger.debug(msg);
-    } else {
-      this.logger.error(msg);
-    }
   }
 }

@@ -2,6 +2,7 @@ import "@t3rn/types";
 import { EventEmitter } from "events";
 import { Sdk } from "@t3rn/sdk";
 import { Codec } from "@polkadot/types/types";
+import { logger } from "../logging";
 
 /**
  * Enum for the different types of events emitted by the relayer
@@ -79,8 +80,10 @@ export class CircuitListener extends EventEmitter {
             data: notifications[i].event.data,
           });
         } else if (notifications[i].event.method === "HeadersAdded") {
-          console.log(notifications[i].toHuman());
-
+          logger.debug(
+            { event: notifications[i].toHuman() },
+            "Received new headers with HeadersAdded event",
+          );
           let vendor = "";
           if (notifications[i].event.section === "rococoBridge") {
             vendor = "Rococo";

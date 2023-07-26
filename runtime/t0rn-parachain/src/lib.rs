@@ -75,11 +75,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 92,
-    spec_version: 93,
-    impl_version: 91,
+    authoring_version: 110,
+    spec_version: 111,
+    impl_version: 109,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 92,
+    transaction_version: 110,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -185,6 +185,7 @@ construct_runtime!(
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
+        Vacuum: pallet_vacuum = 111,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,

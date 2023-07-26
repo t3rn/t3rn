@@ -1,12 +1,15 @@
 all:
 	cd types; yarn; yarn link; yarn build;
 	cd sdk; yarn; yarn link; yarn build;
-	cd cli; yarn add ../sdk; yarn;
-	cd executor; yarn add ../sdk; yarn add ../types; yarn;
-	cd attester; pnpm i; pnpm add ../types; pnpm add ../sdk;
+	cd cli; pnpm add ../sdk; pnpm install;
+	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install; 
+	cd attester; pnpm add ../types; pnpm add ../sdk; pnpm install;
+
+executor:
+	cd executor; pnpm add ../sdk; pnpm add ../types; pnpm install;
 
 attester:
-	cd attester; pnpm i; pnpm add ../types; pnpm add ../sdk;
+	cd attester; pnpm add ../types; pnpm add ../sdk; pnpm install;
 
 sdk:
 	cd sdk; yarn; yarn link; yarn build;
@@ -18,7 +21,7 @@ clean:
 	find . -type d -name node_modules | xargs rm -rf {}\;
 
 test:
-	cd cli; pnpm run test
+	cd cli; yarn run test
 	cd executor; yarn test
 
 register_roco:
@@ -41,4 +44,4 @@ start_executor:
 
 test_confirm_xtx: register_roco submit_headers_roco submit_side_effects submit_headers_roco_x3
 
-.PHONY: all old sdk types attester
+.PHONY: all old sdk types attester executor

@@ -25,7 +25,7 @@ t3rn facilitates building interoperable solutions in familiar smart contract lan
 Gateway Circuit shares the context of the overall Interoperable Transaction and passes it over to the Gateways. The context contains all of the necessary data base on the Parachains can decide whether to not proceed with the execution. 
 Gateway Circuit has an access to all of the ongoing Interoperable Transactions and before the execution is started the circuit checks if there is no two transactions changing the same account at the same time. 
 
-[Work on the Circuit Prototype is currently in progress.](./circuit)
+[Work on the Circuit Prototype is currently in progress.](./pallets/circuit)
 
 ## On-chain contracts repository - share composable contracts.
 <p align="center">
@@ -40,7 +40,7 @@ All the newly created code for interoperable programming is automatically shared
 
 Smart contracts can be written in familiar languages like !ink, Solidity, WebAssembly. Existent smart contracts can be uploaded as they are, no rewriting required. 
 
-[Learn more about writing composable contracts in our SDK.](./sdk)
+[Learn more about writing composable contracts in our SDK.](./client/packages/sdk)
 
 ## Motivation
 
@@ -62,15 +62,13 @@ Follow the steps below if you're interested building and running the Circuit on 
 ```bash
 git clone https://github.com/t3rn/t3rn
 git checkout origin/development
-git submodule init
-git submodule update
-cargo build --release --features with-standalone-runtime
-cargo run --bin circuit-collator --features with-standalone-runtime
+cargo build --release
+cargo run --bin t0rn-collator
 ```
 
-### Deletion of submodules
+#### Git Config
 
-We have now deleted submodules, we have a way of utilizing the build system(cargo) to reason about dependencies. However, this requires some changes to your configs. Ensure you have your SSH key added to github.
+We have a way of utilizing the build system (cargo) to reason about dependencies. However, this requires some changes to your configs. Ensure you have your SSH key added to github.
 
 `~/.gitconfig`
 ```
@@ -92,7 +90,7 @@ cargo build --release --features with-standalone-runtime,runtime-benchmarks
 ```
 2. Run the command to execute the benchmarks for desirable pallet:
 ```bash
-./target/release/circuit-collator benchmark --chain dev --execution wasm --wasm-execution compiled --pallet pallet_you_want --extrinsic '*' --steps 50 --repeat 20 --raw --template=./benchmarking/frame-weight-template.hbs --output .
+./target/release/t0rn-collator benchmark --chain dev --execution wasm --wasm-execution compiled --pallet pallet_you_want --extrinsic '*' --steps 50 --repeat 20 --raw --template=./benchmarking/frame-weight-template.hbs --output .
 ```
 3. After executing following commands a file called ```pallet_you_want.rs``` will be generated. The file contains weights for the desirable pallet, copy that file into the pallets src directory, and rename it to ```weights.rs```. 
 

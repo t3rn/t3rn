@@ -8,6 +8,7 @@ import { Sdk, ApiPromise } from "@t3rn/sdk";
 import { Codec } from "@polkadot/types/types";
 // @ts-ignore - Typescript does not know about this type
 import { T3rnTypesSfxConfirmedSideEffect } from "@polkadot/types/lookup";
+import { logger } from "../logging";
 
 /**
  * Class responsible for submitting any type of transaction to the circuit. All communication with the circuit is done through the circuit relayer.
@@ -33,11 +34,12 @@ export class CircuitRelayer extends EventEmitter {
    * @param amount The bidding amount, as integer in the reward asset
    */
   async bidSfx(sfxId: string, amount: BN): Promise<string> {
+    // @ts-ignore - says type is infinite
     const encodedSfxId = createType("Hash", sfxId);
     const encodedAmount = createType("u128", amount);
     const tx = this.api.tx.circuit.bidSfx(
       encodedSfxId as never,
-      encodedAmount as never
+      encodedAmount as never,
     );
     return this.sdk.circuit.tx.signAndSendSafe(tx);
   }
@@ -91,12 +93,12 @@ export class CircuitRelayer extends EventEmitter {
         executioner: sfx.executor,
         receivedAt: 0,
         cost: null,
-      }
+      },
     ) as T3rnTypesSfxConfirmedSideEffect;
 
     return this.api.tx.circuit.confirmSideEffect(
       sfx.id,
-      confirmedSideEffect.toJSON()
+      confirmedSideEffect.toJSON(),
     );
   }
 }
@@ -110,7 +112,7 @@ let counter = 0;
 export const exportData = (
   data: Array<unknown> | Record<string, unknown>,
   fileName: string,
-  transactionType: string
+  transactionType: string,
 ) => {
   let deepCopy: Record<string, unknown> | unknown[];
 
@@ -127,9 +129,9 @@ export const exportData = (
     JSON.stringify(encoded, null, 4),
     (err) => {
       if (err) {
-        console.log("Err", err);
+        logger.error({ err }, "Export data failed");
       }
-    }
+    },
   );
 
   counter += 1;
@@ -140,10 +142,10 @@ export const exportData = (
 // Human: Debugging those tests and viewing data
 export const encodeExport = (
   data: Array<unknown> | Record<string, unknown> | Codec,
-  transactionType: string
+  transactionType: string,
 ) => {
   if (Array.isArray(data)) {
-    return data.map((entry) => iterateEncode(entry, transactionType));
+    return data.map((entry) => iterateEncode(entry as Codec, transactionType));
   } else {
     return iterateEncode(data as Codec, transactionType);
   }
@@ -176,7 +178,7 @@ const toSnakeCase = (str: string) =>
   str &&
   (
     str.match(
-      /[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g
+      /[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g,
     ) ?? []
   )
     .map((x: string) => x.toLowerCase())

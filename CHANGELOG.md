@@ -4,6 +4,74 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.43.1-rc.0] - 2023-07-25
+### :bug: Bug Fixes
+- [`0fadd75`](https://github.com/t3rn/t3rn/commit/0fadd750e4937e3ab1f9266bdd5560cac05193ac) - executor sending Confirmed Batches *(PR [#1207](https://github.com/t3rn/t3rn/pull/1207) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.43.0-rc.0] - 2023-07-24
+### :sparkles: New Features
+- [`e7715f9`](https://github.com/t3rn/t3rn/commit/e7715f9009e27ef3a3447d82887dbf6910323e9a) - **cli**: send continuously SFX to circuit *(PR [#1185](https://github.com/t3rn/t3rn/pull/1185) by [@3h4x](https://github.com/3h4x))*
+- [`6641262`](https://github.com/t3rn/t3rn/commit/664126223dde67ad275fb5c2dcdab70612896107) - **cli**: parametrize CLI with env variables *(PR [#1196](https://github.com/t3rn/t3rn/pull/1196) by [@3h4x](https://github.com/3h4x))*
+- [`ecbb98a`](https://github.com/t3rn/t3rn/commit/ecbb98a9e3a49e929135163c618cc6bb25cfc1df) - **executor**: bid monitoring and logging *(PR [#1200](https://github.com/t3rn/t3rn/pull/1200) by [@3h4x](https://github.com/3h4x))*
+
+### :bug: Bug Fixes
+- [`e24ba6a`](https://github.com/t3rn/t3rn/commit/e24ba6a179c7644f10dfd27c522981b3bdb2e0d4) - **executor**: contract data types *(PR [#1183](https://github.com/t3rn/t3rn/pull/1183) by [@3h4x](https://github.com/3h4x))*
+
+### :wrench: Chores
+- [`c3c8f13`](https://github.com/t3rn/t3rn/commit/c3c8f1352452bcbd22c8082693871c697cc628f6) - **docs**: update packages and add dependabot *(PR [#1184](https://github.com/t3rn/t3rn/pull/1184) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.42.0-rc.0] - 2023-07-18
+### :sparkles: New Features
+- [`d2d3436`](https://github.com/t3rn/t3rn/commit/d2d3436ea14fdc78c274d7280c33b24a68145365) - change XTX & SFX hashing to Keccak256 *(PR [#1173](https://github.com/t3rn/t3rn/pull/1173) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :recycle: Refactors
+- [`fc398d7`](https://github.com/t3rn/t3rn/commit/fc398d7a4e6e7a275df131a70ee92f62b9b0fc43) - **executor**: prometheus as a global class *(PR [#1182](https://github.com/t3rn/t3rn/pull/1182) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.41.0-rc.0] - 2023-07-17
+### :sparkles: New Features
+- [`0aa9ba6`](https://github.com/t3rn/t3rn/commit/0aa9ba655d04e9dda4757a4c6501f80a27ab8a71) - executor send batch to sepl with new hash *(PR [#1145](https://github.com/t3rn/t3rn/pull/1145) by [@3h4x](https://github.com/3h4x))*
+- [`360c947`](https://github.com/t3rn/t3rn/commit/360c947b93fb910aea574ecba5df5eee63f73d43) - change XTX & DLQ lifecycle to adaptive timeouts *(PR [#1140](https://github.com/t3rn/t3rn/pull/1140) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.40.0-rc.0] - 2023-07-17
+### :sparkles: New Features
+- [`a54d856`](https://github.com/t3rn/t3rn/commit/a54d856e3ea915fe7f623c0dd9b8e796cbdefd9f) - add ETH gas fees price estimation utility methods to @t3rn/sdk *(PR [#1091](https://github.com/t3rn/t3rn/pull/1091) by [@ahkohd](https://github.com/ahkohd))*
+  - :arrow_lower_right: *addresses issue [#1163](undefined) opened by [@3h4x](https://github.com/3h4x)*
+
+
+## [v1.39.4-rc.0] - 2023-07-14
+### :bug: Bug Fixes
+- [`2fa3304`](https://github.com/t3rn/t3rn/commit/2fa33046c256c43b62cab43d3877e721a1579aeb) - current committee transitions to next committee correctly *(PR [#1165](https://github.com/t3rn/t3rn/pull/1165) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.39.3-rc.0] - 2023-07-14
+### :wrench: Chores
+- [`2a4fd88`](https://github.com/t3rn/t3rn/commit/2a4fd881d61245a7dc10f3441b3eb168919c7f43) - skip t0rn-release only when commit starts with  build(release) *(PR [#1134](https://github.com/t3rn/t3rn/pull/1134) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.39.0-rc.0] - 2023-07-13
+### :sparkles: New Features
+- [`65030ad`](https://github.com/t3rn/t3rn/commit/65030ad8e60ff7c0682de9957e867258e3eb5a94) - add vacuum pallet to enhance transfer assets SFX path *(PR [#1132](https://github.com/t3rn/t3rn/pull/1132) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
+## [v1.38.2-rc.0] - 2023-07-11
+### :wrench: Chores
+- [`fd40dba`](https://github.com/t3rn/t3rn/commit/fd40dba403e9a18f6e17084f347942de5b71b393) - empty PR template *(PR [#1148](https://github.com/t3rn/t3rn/pull/1148) by [@3h4x](https://github.com/3h4x))*
+
+
+## [v1.38.1-rc.0] - 2023-07-10
+### :bug: Bug Fixes
+- [`a88c4ad`](https://github.com/t3rn/t3rn/commit/a88c4ad00122f28b8a438861c7800c4ad754d302) - filter modification *(PR [#1135](https://github.com/t3rn/t3rn/pull/1135) by [@palozano](https://github.com/palozano))*
+
+
+## [v1.38.0-rc.0] - 2023-07-10
+### :sparkles: New Features
+- [`af3fd73`](https://github.com/t3rn/t3rn/commit/af3fd731f9ce2755b300799468ba457d685cf481) - executor send batches to sepl *(PR [#1087](https://github.com/t3rn/t3rn/pull/1087) by [@3h4x](https://github.com/3h4x))*
+
+
 ## [v1.37.0-rc.0] - 2023-07-05
 ### :sparkles: New Features
 - [`213bce9`](https://github.com/t3rn/t3rn/commit/213bce9ec42f41c8d27f5523704ef045c973c0b8) - include smart contract targets in source verification  *(PR [#1065](https://github.com/t3rn/t3rn/pull/1065) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1317,3 +1385,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.36.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.1-rc.0...v1.36.2-rc.0
 [v1.36.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.3-rc.0...v1.36.4-rc.0
 [v1.37.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.36.5-rc.0...v1.37.0-rc.0
+[v1.38.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.37.1-rc.0...v1.38.0-rc.0
+[v1.38.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.0-rc.0...v1.38.1-rc.0
+[v1.38.2-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.1-rc.0...v1.38.2-rc.0
+[v1.39.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.38.5-rc.0...v1.39.0-rc.0
+[v1.39.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.2-rc.0...v1.39.3-rc.0
+[v1.39.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.3-rc.0...v1.39.4-rc.0
+[v1.40.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.39.4-rc.0...v1.40.0-rc.0
+[v1.41.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.40.0-rc.0...v1.41.0-rc.0
+[v1.42.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.41.1-rc.0...v1.42.0-rc.0
+[v1.43.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.42.1-rc.0...v1.43.0-rc.0
+[v1.43.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.0-rc.0...v1.43.1-rc.0

@@ -16,7 +16,6 @@ pub mod signed_extrinsics_config;
 use circuit_runtime_pallets::pallet_attesters::TargetId;
 pub use circuit_runtime_pallets::*;
 pub use circuit_runtime_types::*;
-
 pub type AccountId = sp_runtime::AccountId32;
 pub use crate::signed_extrinsics_config::*;
 mod accounts_config;
@@ -31,6 +30,8 @@ mod xbi_config;
 pub type RococoLightClient = ();
 pub type PolkadotLightClient = pallet_grandpa_finality_verifier::Instance1;
 pub type KusamaLightClient = pallet_grandpa_finality_verifier::Instance2;
+
+pub use crate::circuit_config::GlobalOnInitQueues;
 
 frame_support::construct_runtime!(
     pub enum Runtime where
@@ -74,7 +75,7 @@ frame_support::construct_runtime!(
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Clock: pallet_clock::{Pallet, Config<T>, Storage, Event<T>} = 110,
-        Executors: pallet_executors = 111,
+        Vacuum: pallet_vacuum = 111,
 
         // XCM helpers.
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
@@ -138,7 +139,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -155,7 +155,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -172,12 +171,11 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
                 gateway_id: *b"ksma",
-                verification_vendor: GatewayVendor::Polkadot,
+                verification_vendor: GatewayVendor::Kusama,
                 execution_vendor: ExecutionVendor::Substrate,
                 codec: t3rn_abi::Codec::Scale,
                 registrant: None,
@@ -216,7 +214,6 @@ impl ExtBuilder {
                     (*b"aliq", Some(3)),
                     (*b"cevm", Some(10)),
                     (*b"wasm", Some(10)),
-                    (*b"call", Some(10)),
                 ],
             },
             GatewayRecord {
@@ -247,6 +244,50 @@ impl ExtBuilder {
         self
     }
 
+    fn make_all_light_clients_move_2_times_by(move_by: u32) {
+        use circuit_runtime_pallets::pallet_eth2_finality_verifier::LightClientAsyncAPI;
+        use t3rn_primitives::portal::Portal as PortalT;
+        let starting_height = System::block_number();
+        for vendor in GatewayVendor::iterator() {
+            let mut latest_heartbeat = Portal::get_latest_heartbeat_by_vendor(vendor.clone());
+            latest_heartbeat.last_finalized_height += move_by;
+            latest_heartbeat.last_rational_height += move_by;
+            latest_heartbeat.last_fast_height += move_by;
+
+            System::set_block_number(starting_height + move_by);
+
+            XDNS::on_new_epoch(
+                vendor.clone(),
+                latest_heartbeat.last_finalized_height + 1,
+                latest_heartbeat.clone(),
+            );
+
+            latest_heartbeat.last_finalized_height += 2 * move_by;
+            latest_heartbeat.last_rational_height += 2 * move_by;
+            latest_heartbeat.last_fast_height += 2 * move_by;
+
+            System::set_block_number(starting_height + move_by * 2);
+
+            XDNS::on_new_epoch(
+                vendor.clone(),
+                latest_heartbeat.last_finalized_height + 2,
+                latest_heartbeat,
+            );
+        }
+    }
+
+    fn activate_all_light_clients() {
+        use t3rn_primitives::portal::Portal as PortalT;
+        for &gateway in XDNS::all_gateway_ids().iter() {
+            Portal::turn_on(Origin::root(), gateway).unwrap();
+        }
+        XDNS::process_all_verifier_overviews(System::block_number());
+        XDNS::process_overview(System::block_number());
+
+        Self::make_all_light_clients_move_2_times_by(8);
+        XDNS::process_overview(System::block_number());
+    }
+
     pub fn build(self) -> sp_io::TestExternalities {
         let mut t = frame_system::GenesisConfig::default()
             .build_storage::<Runtime>()
@@ -275,13 +316,10 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");
-        // TODO: reenable
-        // pallet_executors::GenesisConfig::<Runtime>::default()
-        //     .assimilate_storage(&mut t)
-        //     .expect("mock pallet-executors genesis storage assimilation");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(Self::activate_all_light_clients);
         ext
     }
 }

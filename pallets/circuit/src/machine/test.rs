@@ -17,7 +17,7 @@ pub mod test {
         tests::ESCROW_ACCOUNT,
     };
     use hex_literal::hex;
-    use t3rn_primitives::circuit::{Cause, CircuitStatus};
+    use t3rn_primitives::circuit::{AdaptiveTimeout, Cause, CircuitStatus};
     use t3rn_types::fsx::SecurityLvl;
 
     #[test]
@@ -185,12 +185,12 @@ pub mod test {
                 stage_single();
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx(
-                        hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into(),
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -213,7 +213,7 @@ pub mod test {
                         xtx_id
                     ),
                     Ok(vec![hex!(
-                        "810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4"
+                        "0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe"
                     )
                     .into()])
                 );
@@ -255,12 +255,12 @@ pub mod test {
                 stage_single();
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_status(
-                        hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into()
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -277,12 +277,12 @@ pub mod test {
                 stage_single();
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_of_xtx(
-                        hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into()
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -304,7 +304,7 @@ pub mod test {
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_xtx_status(
                         xtx_id
                     ),
-                    Ok(CircuitStatus::Ready)
+                    Ok((CircuitStatus::Ready, AdaptiveTimeout::default_401()))
                 );
             });
     }
@@ -345,12 +345,12 @@ pub mod test {
 
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_fsx_requester(
-                        hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into()
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );
@@ -368,12 +368,12 @@ pub mod test {
 
                 assert_err!(
                     <Circuit as ReadSFX<Hash, AccountId, Balance, BlockNumber>>::get_xtx_status(
-                        hex!("810424cc4a8caa69bd0f1d9ee594f46bc45545a50b4cf8f7e78c41f0804d27a4")
+                        hex!("0d24d4c519a7fa4f636d4d64127967b704047b08c40cf6dd49068daa75ce5ffe")
                             .into()
                     ),
                     DispatchError::Module(ModuleError {
                         index: 108,
-                        error: [56, 0, 0, 0],
+                        error: [59, 0, 0, 0],
                         message: Some("XtxNotFound")
                     })
                 );

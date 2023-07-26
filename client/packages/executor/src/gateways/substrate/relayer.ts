@@ -3,13 +3,14 @@ import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
 import { EventMapper, SideEffect } from "../../executionManager/sideEffect";
 import { getEventProofs } from "../../utils";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import { SfxType } from "@t3rn/sdk/dist/side-effects/types";
+import { SfxType } from "@t3rn/sdk/side-effects/types";
 import { InclusionProof, RelayerEventData, RelayerEvents } from "../types";
 import Estimator from "./estimator";
 import { CostEstimator, Estimate } from "./estimator/cost";
 import { Sdk, Utils } from "@t3rn/sdk";
 import { Gateway } from "../../../config/config";
 import { Logger } from "pino";
+import { logger } from "../../logging";
 
 /**
  * Class responsible for submitting transactions to a target chain. Three main tasks are handled by this class:
@@ -75,8 +76,8 @@ export class SubstrateRelayer extends EventEmitter {
    * @param sfx Object to execute
    */
   async executeTx(sfx: SideEffect) {
-    this.logger.info(
-      `Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`
+    logger.info(
+      `Execution started SFX: ${sfx.humanId} - ${sfx.target} with nonce: ${this.nonce} 🔮`,
     );
     const tx = this.buildTx(sfx) as SubmittableExtrinsic;
     const nonce = this.nonce;
@@ -89,9 +90,9 @@ export class SubstrateRelayer extends EventEmitter {
           if (dispatchError?.isModule) {
             // something went wrong and we can decode the error
             const err = this.client.registry.findMetaError(
-              dispatchError.asModule
+              dispatchError.asModule,
             );
-            this.logger.info(`Execution failed SFX: ${sfx.humanId}`);
+            logger.info(`Execution failed SFX: ${sfx.humanId}`);
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutionError,
               data: `${err.section}::${err.name}: ${err.docs.join(" ")}`,
@@ -100,7 +101,7 @@ export class SubstrateRelayer extends EventEmitter {
             // we attempt to restore the correct nonce
             this.nonce = await this.fetchNonce(
               this.client,
-              this.signer.address
+              this.signer.address,
             );
             reject(Error(`${err.section}::${err.name}: ${err.docs.join(" ")}`));
           } else if (dispatchError) {
@@ -113,17 +114,17 @@ export class SubstrateRelayer extends EventEmitter {
             // we attempt to restore the correct nonce
             this.nonce = await this.fetchNonce(
               this.client,
-              this.signer.address
+              this.signer.address,
             );
             reject(Error(dispatchError.toString()));
           } else if (status.isFinalized) {
             const blockNumber = await this.generateSfxInclusionProof(
               sfx,
               status.asFinalized as never,
-              events
+              events,
             );
-            this.logger.info(
-              `Execution complete SFX:  ${sfx.humanId} - #${blockNumber} 🏁`
+            logger.info(
+              `Execution complete SFX:  ${sfx.humanId} - #${blockNumber} 🏁`,
             );
             this.emit("Event", <RelayerEventData>{
               type: RelayerEvents.SfxExecutedOnTarget,
@@ -134,8 +135,8 @@ export class SubstrateRelayer extends EventEmitter {
             });
             resolve();
           }
-        }
-      )
+        },
+      ),
     );
   }
 
@@ -150,7 +151,7 @@ export class SubstrateRelayer extends EventEmitter {
   async generateSfxInclusionProof(
     sfx: SideEffect,
     blockHash: string,
-    events: unknown
+    events: unknown,
   ): Promise<number> {
     const blockNumber = await this.getBlockNumber(blockHash);
     const event = this.getEvent(sfx.action, events as never);
@@ -166,10 +167,13 @@ export class SubstrateRelayer extends EventEmitter {
 
     if (sfx.target !== "roco") {
       const blockNumber = await this.fetchCorrespondingRelaychainHeaderNumber(
-        blockHash
-      ).catch((err) => {
+        blockHash,
+      ).catch((error) => {
         // this should never happen
-        console.log(err);
+        logger.error(
+          { error: error.toString() },
+          "Failed to fetch corresponding relaychain header number",
+        );
       });
 
       this.emit("Event", <RelayerEventData>{
@@ -184,7 +188,7 @@ export class SubstrateRelayer extends EventEmitter {
       sfx.executedOnTarget(
         inclusionData,
         this.signer.addressRaw,
-        blockNumber as number
+        blockNumber as number,
       );
       // if we have a parachain SFX we need to submit on the relaychain block height
       return blockNumber as number;
@@ -194,7 +198,7 @@ export class SubstrateRelayer extends EventEmitter {
     sfx.executedOnTarget(
       inclusionData,
       this.signer.addressRaw,
-      blockNumber.toNumber()
+      blockNumber.toNumber(),
     );
 
     return blockNumber.toNumber();
@@ -207,40 +211,43 @@ export class SubstrateRelayer extends EventEmitter {
    * @returns Block number of the relaychain block
    */
   async fetchCorrespondingRelaychainHeaderNumber(
-    parachainBlockHash: string
+    parachainBlockHash: string,
   ): Promise<number> {
-    const number = await this.client.rpc.chain.getBlock(
-      parachainBlockHash
-      // ToDo: we should verify that this block is correct. Could be done by running a state query on the relaychain, decoding the block and ensuring the height is correct
-    ).then((parachainBlock) => {
-      // @ts-ignore - property does not exist on type
-      let block = parachainBlock.block;
-      for (let i = 0; i < block.extrinsics.length; i++) {
-        const extrinsic = block.extrinsics[i];
-        if (
-          extrinsic.method.method === "setValidationData" &&
-          extrinsic.method.section === "parachainSystem"
-        ) {
-          return (
-            // @ts-ignore - TS does not know about the type
-            extrinsic.method.args[0].validationData.relayParentNumber.toNumber() +
-            2
-          ); // im not exactly sure why we need to add 2 here, +1 makes sense as its parent.
+    const number = await this.client.rpc.chain
+      .getBlock(
+        parachainBlockHash,
+        // ToDo: we should verify that this block is correct. Could be done by running a state query on the relaychain, decoding the block and ensuring the height is correct
+      )
+      .then((parachainBlock) => {
+        // @ts-ignore - property does not exist on type
+        const block = parachainBlock.block;
+        for (let i = 0; i < block.extrinsics.length; i++) {
+          const extrinsic = block.extrinsics[i];
+          if (
+            extrinsic.method.method === "setValidationData" &&
+            extrinsic.method.section === "parachainSystem"
+          ) {
+            return (
+              // @ts-ignore - TS does not know about the type
+              extrinsic.method.args[0].validationData.relayParentNumber.toNumber() +
+              2
+            ); // im not exactly sure why we need to add 2 here, +1 makes sense as its parent.
+          }
         }
-      }
-    }).catch((err) => {
-      throw Error("Could not find relaychain header number. Error: " + err);
-    });
+      })
+      .catch((err) => {
+        throw Error("Could not find relaychain header number. Error: " + err);
+      });
 
-    return number
+    return number;
   }
 
   async generateHeaderInclusionProof(
     relaychainBlockNumber: number,
-    parachainId: number
+    parachainId: number,
   ) {
     const blockHash = await this.client.rpc.chain.getBlockHash(
-      relaychainBlockNumber
+      relaychainBlockNumber,
     );
 
     return Utils.Substrate.getStorageProof(
@@ -248,7 +255,7 @@ export class SubstrateRelayer extends EventEmitter {
       blockHash,
       "Paras",
       "Heads",
-      parachainId
+      parachainId,
     );
   }
 
@@ -263,10 +270,13 @@ export class SubstrateRelayer extends EventEmitter {
    * @returns Block number
    */
   async getBlockNumber(hash: string) {
-    return await this.client.rpc.chain.getHeader(hash)
+    return await this.client.rpc.chain
+      .getHeader(hash)
       // @ts-ignore - property does not exist on type
-      .then(header => header.number)
-      .catch(err => { throw Error("Could not fetch block number. Error: " + err) });
+      .then((header) => header.number)
+      .catch((err) => {
+        throw Error("Could not fetch block number. Error: " + err);
+      });
   }
 
   /**
@@ -278,14 +288,14 @@ export class SubstrateRelayer extends EventEmitter {
    */
   getEvent(
     transactionType: SfxType,
-    events: Array<{ event: { method: string } }>
+    events: Array<{ event: { method: string } }>,
   ) {
     const event = events.find((item) => {
       return item.event.method === EventMapper[transactionType];
     });
 
     if (!event) {
-      console.log("Event not found");
+      logger.warn("Event not found");
       return;
     }
 
@@ -300,14 +310,11 @@ export class SubstrateRelayer extends EventEmitter {
    * @returns Nonce of the signer
    */
   async fetchNonce(api: ApiPromise, address: string): Promise<number> {
-    return await api.rpc.system.accountNextIndex(address).then(
-      (nextIndex) => {
-        // @ts-ignore - property does not exist on type
-        return parseInt(nextIndex.toHuman());
-      }
-    )
+    return await api.rpc.system.accountNextIndex(address).then((nextIndex) => {
+      // @ts-ignore - property does not exist on type
+      return parseInt(nextIndex.toHuman());
+    });
   }
-
 }
 
 export { Estimator, CostEstimator, Estimate, InclusionProof };

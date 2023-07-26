@@ -1,7 +1,4 @@
-use crate::{
-    claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
-    common::RoundInfo,
-};
+use crate::claimable::{BenefitSource, CircuitRole};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use scale_info::TypeInfo;
@@ -13,10 +10,11 @@ pub type ExecutionId = u64;
 /// General round information consisting ofindex (one-based), head
 /// (beginning block number), and term (round length in number of blocks).
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
-pub struct Settlement<Account, Balance> {
+pub struct Settlement<Account, Balance, AssetId> {
     pub requester: Account,
     pub recipient: Account,
     pub settlement_amount: Balance,
+    pub maybe_asset_id: Option<AssetId>,
     pub outcome: Outcome,
     pub source: BenefitSource,
     pub role: CircuitRole,
@@ -49,9 +47,11 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
     /// Lookup charge by Id and fail if not found
     fn no_charge_or_fail(charge_id: Hash) -> Result<(), DispatchError>;
     /// Lookup charge by Id and fail if not found
-    fn get_settlement(charge_id: Hash) -> Option<Settlement<Account, Balance>>;
+    fn get_settlement(charge_id: Hash) -> Option<Settlement<Account, Balance, AssetId>>;
     /// Get all settlements by role in the current round
-    fn get_settlements_by_role(role: CircuitRole) -> Vec<(Account, Settlement<Account, Balance>)>;
+    fn get_settlements_by_role(
+        role: CircuitRole,
+    ) -> Vec<(Account, Settlement<Account, Balance, AssetId>)>;
     /// Bump contracts registry nonce in Account Manager nonce state and return charge request Id
     fn bump_contracts_registry_nonce() -> Result<Hash, DispatchError>;
     /// Validate deposit goes through
@@ -87,11 +87,6 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber, AssetId> {
         new_payee: Option<&Account>,
         new_recipient: Option<&Account>,
     ) -> DispatchResult;
-
-    fn on_collect_claimable(
-        n: BlockNumber,
-        r: RoundInfo<BlockNumber>,
-    ) -> Result<Vec<ClaimableArtifacts<Account, Balance>>, DispatchError>;
 
     fn can_withdraw(beneficiary: &Account, amount: Balance, asset_id: Option<AssetId>) -> bool;
 

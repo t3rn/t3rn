@@ -1,5 +1,7 @@
 import http from "http";
-import { Registry, Counter, collectDefaultMetrics } from "prom-client";
+import client from "prom-client";
+import { Registry, Counter, collectDefaultMetrics, Gauge } from "prom-client";
+import { logger } from "./logging";
 
 export class Prometheus {
   server: ReturnType<typeof http.createServer>;
@@ -9,35 +11,32 @@ export class Prometheus {
   isActive: boolean;
 
   // Metrics
-  // Number of bids
-  bids: Counter;
-
-  // Number of events
   events: Counter;
-
-  // Number of times circuit rpc server has disconnected
   circuitDisconnects: Counter;
-
-  // Number of times no bid and no competition
-  noBidAndNoCompetition: Counter;
-
-  // Number of times no bid but competition
-  noBidButCompetition: Counter;
-
-  // Number of times been out bid
-  beenOutBid: Counter;
+  executorBids: Counter;
+  executorXtxStrategyRejects: Counter;
+  executorNoBidAndNoCompetition: Counter;
+  executorNoBidButCompetition: Counter;
+  executorBeenOutBid: Counter;
+  attestationsBatchesPending: Gauge;
+  attestationEvents: Counter;
+  attestationVerifierCurrentCommitteeSize: Gauge;
+  attestationVerifierCurrentBatchIndex: Gauge;
+  attestationVerifierCurrentCommitteeTransitionCount: Gauge;
+  attestationBatchesProcessed: Counter;
+  attestatonBatchesFailed: Counter;
 
   constructor() {
+    const Registry = client.Registry;
     this.register = new Registry();
     this.createMetrics();
   }
 
-  // Creates all the metrics for Prometheus
   createMetrics() {
     // Collects default metrics
     collectDefaultMetrics({ register: this.register });
-    this.bids = new Counter({
-      name: "bids",
+    this.executorBids = new Counter({
+      name: "executor_bids",
       help: "Number of bids",
       registers: [this.register],
     });
@@ -55,29 +54,79 @@ export class Prometheus {
       registers: [this.register],
     });
 
-    this.noBidAndNoCompetition = new Counter({
-      name: "no_bid_and_no_competition",
+    this.executorXtxStrategyRejects = new Counter({
+      name: "executor_xtx_strategy_rejects_total",
+      help: "Number of times executor xtx strategy rejects",
+      registers: [this.register],
+    });
+
+    this.executorNoBidAndNoCompetition = new Counter({
+      name: "executor_no_bid_and_no_competition",
       help: "Number of times no bid and no competition",
       registers: [this.register],
     });
 
-    this.noBidButCompetition = new Counter({
-      name: "no_bid_but_competition",
+    this.executorNoBidButCompetition = new Counter({
+      name: "executor_no_bid_but_competition",
       help: "Number of times no bid but competition",
       registers: [this.register],
     });
 
-    this.beenOutBid = new Counter({
-      name: "been_out_bid",
+    this.executorBeenOutBid = new Counter({
+      name: "executor_been_out_bid",
       help: "Number of times been out bid",
       registers: [this.register],
     });
 
+    this.attestationsBatchesPending = new Gauge({
+      name: "attestations_batches_pending_count",
+      help: "Number of attestations batches pending",
+      registers: [this.register],
+    });
+
+    this.attestationEvents = new client.Counter({
+      name: "attestation_events_total",
+      help: "Number of attestations received",
+      registers: [this.register],
+      labelNames: ["method"],
+    });
+
+    this.attestationVerifierCurrentCommitteeSize = new Gauge({
+      name: "attestation_verifier_current_committee_size",
+      help: "Current committee size",
+      registers: [this.register],
+    });
+
+    this.attestationVerifierCurrentBatchIndex = new Gauge({
+      name: "attestation_verifier_current_batch_index",
+      help: "Current batch index",
+      registers: [this.register],
+    });
+
+    this.attestationVerifierCurrentCommitteeTransitionCount = new Gauge({
+      name: "attestation_verifier_current_committee_transition_count",
+      help: "Current committee transition count",
+      registers: [this.register],
+    });
+
+    this.attestationBatchesProcessed = new Counter({
+      name: "attestations_batches_processed_total",
+      help: "Number of attestations batches processed",
+      registers: [this.register],
+    });
+
+    this.attestatonBatchesFailed = new Counter({
+      name: "attestations_batches_failed_total",
+      help: "Number of attestations batches failed",
+      registers: [this.register],
+    });
+
     this.startServer();
+    logger.info("Prometheus metrics server started");
   }
 
   startServer() {
-    const port = process.env.PROMETHEUS_PORT || 4002;
+    const port = process.env.PROMETHEUS_PORT || 8080;
     this.server = http.createServer(async (req, res) => {
       try {
         if (req.url === "/metrics") {
@@ -99,7 +148,7 @@ export class Prometheus {
     });
 
     this.server.listen(port, () => {
-      console.log(`Metrics server listening on port ${port}`);
+      logger.info(`Metrics server listening on port ${port}`);
     });
   }
 

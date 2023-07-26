@@ -169,6 +169,13 @@ impl<T: Config> Portal<T> for Pallet<T> {
         match_light_client_by_gateway_id::<T>(*gateway_id)?.get_latest_heartbeat()
     }
 
+    fn get_latest_heartbeat_by_vendor(vendor: GatewayVendor) -> LightClientHeartbeat<T> {
+        match T::SelectLightClient::select(vendor) {
+            Ok(light_client) => light_client.get_latest_heartbeat().unwrap_or_default(),
+            Err(_) => LightClientHeartbeat::default(),
+        }
+    }
+
     fn get_latest_finalized_header(gateway_id: ChainId) -> Result<HeaderResult, DispatchError> {
         log::debug!(target: "portal", "Getting latest finalized header for gateway id {:?}", gateway_id);
         Ok(match_light_client_by_gateway_id::<T>(gateway_id)?.get_latest_finalized_header())

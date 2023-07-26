@@ -29,7 +29,8 @@ pub use crate::pallet::*;
 use crate::{bids::Bids, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo},
+    dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
+    ensure,
     traits::{Currency, ExistenceRequirement::AllowDeath, Get},
     weights::Weight,
     RuntimeDebug,
@@ -70,9 +71,10 @@ pub use state::XExecSignal;
 
 use t3rn_abi::{recode::Codec, sfx_abi::SFXAbi};
 
-use t3rn_primitives::attesters::AttestersWriteApi;
 pub use t3rn_primitives::light_client::InclusionReceipt;
+use t3rn_primitives::{attesters::AttestersWriteApi, circuit::ReadSFX};
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
+use t3rn_types::fsx::TargetId;
 
 #[cfg(test)]
 pub mod tests;
@@ -97,6 +99,8 @@ pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
+//
+
 reexport_currency_types!();
 
 #[frame_support::pallet]
@@ -118,7 +122,10 @@ pub mod pallet {
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         attesters::AttestersWriteApi,
-        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger, ReadSFX},
+        circuit::{
+            CircuitDLQ, CircuitSubmitAPI, LocalStateExecutionView, LocalTrigger, OnLocalTrigger,
+            ReadSFX,
+        },
         portal::Portal,
         xdns::Xdns,
         SpeedMode,
@@ -149,7 +156,9 @@ pub mod pallet {
         _,
         Identity,
         XExecSignalId<T>,
-        <T as frame_system::Config>::BlockNumber,
+        // Collection of timeout blocks (on the slowest remote target (there) and here (on t3rn/t0rn)), where the emergency height is a set constant via config (400blocks),
+        //  but the primary timeout to look at is AdaptiveTimeout here and there calculated based on advancing epochs of each target.
+        AdaptiveTimeout<<T as frame_system::Config>::BlockNumber, [u8; 4]>,
         OptionQuery,
     >;
 
@@ -217,6 +226,20 @@ pub mod pallet {
                 >,
             >,
         >,
+        OptionQuery,
+    >;
+
+    #[pallet::storage]
+    #[pallet::getter(fn get_dlq)]
+    pub type DLQ<T> = StorageMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        (
+            <T as frame_system::Config>::BlockNumber,
+            Vec<TargetId>,
+            SpeedMode,
+        ),
         OptionQuery,
     >;
 
@@ -377,6 +400,19 @@ pub mod pallet {
         }
     }
 
+    impl<T: Config> CircuitDLQ<T> for Pallet<T> {
+        fn process_dlq(n: T::BlockNumber) -> Weight {
+            Self::process_dlq(n)
+        }
+
+        fn process_adaptive_xtx_timeout_queue(
+            n: T::BlockNumber,
+            verifier: &GatewayVendor,
+        ) -> Weight {
+            Self::process_adaptive_xtx_timeout_queue(n, verifier)
+        }
+    }
+
     impl<T: Config> ReadSFX<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> for Pallet<T> {
         fn get_fsx_of_xtx(xtx_id: T::Hash) -> Result<Vec<T::Hash>, DispatchError> {
             let full_side_effects = FullSideEffects::<T>::get(xtx_id)
@@ -399,7 +435,7 @@ pub mod pallet {
             let xtx_id = SFX2XTXLinksMap::<T>::get(fsx_id)
                 .ok_or::<DispatchError>(Error::<T>::XtxNotFound.into())?;
 
-            Self::get_xtx_status(xtx_id)
+            Ok(Self::get_xtx_status(xtx_id)?.0)
         }
 
         // Look up the FSX by its ID and return the FSX if it exists
@@ -444,10 +480,32 @@ pub mod pallet {
             Ok(xtx.requester)
         }
 
-        fn get_xtx_status(xtx_id: T::Hash) -> Result<CircuitStatus, DispatchError> {
+        fn get_xtx_status(
+            xtx_id: T::Hash,
+        ) -> Result<(CircuitStatus, AdaptiveTimeout<T::BlockNumber, TargetId>), DispatchError>
+        {
             XExecSignals::<T>::get(xtx_id)
-                .map(|xtx| xtx.status)
+                .map(|xtx| (xtx.status, xtx.timeouts_at))
                 .ok_or(Error::<T>::XtxNotFound.into())
+        }
+    }
+
+    impl<T: Config> CircuitSubmitAPI<T, BalanceOf<T>> for Pallet<T> {
+        fn on_extrinsic_trigger(
+            origin: OriginFor<T>,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            Self::on_extrinsic_trigger(origin, side_effects, speed_mode)
+        }
+
+        fn on_remote_origin_trigger(
+            origin: OriginFor<T>,
+            order_origin: T::AccountId,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            Self::on_remote_origin_trigger(origin, order_origin, side_effects, speed_mode)
         }
     }
 
@@ -462,7 +520,7 @@ pub mod pallet {
             let local_ctx = match maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -532,7 +590,7 @@ pub mod pallet {
             let mut local_ctx = match trigger.maybe_xtx_id {
                 Some(xtx_id) => Machine::<T>::load_xtx(xtx_id)?,
                 None => {
-                    let mut local_ctx = Machine::<T>::setup(&[], &requester)?;
+                    let mut local_ctx = Machine::<T>::setup(&[], &requester, None)?;
                     Machine::<T>::compile(&mut local_ctx, no_mangle, no_post_updates)?;
                     local_ctx
                 },
@@ -636,6 +694,32 @@ pub mod pallet {
             Ok(().into())
         }
 
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::cancel_xtx())]
+        pub fn trigger_dlq(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            ensure_signed(origin)?;
+            Self::process_dlq(<frame_system::Pallet<T>>::block_number());
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
+        pub fn on_remote_origin_trigger(
+            origin: OriginFor<T>,
+            order_origin: T::AccountId,
+            side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+            speed_mode: SpeedMode,
+        ) -> DispatchResultWithPostInfo {
+            // Authorize: Retrieve sender of the transaction.
+            let _ = Self::authorize(origin, CircuitRole::Executor)?;
+
+            // Skip remote origin withdrawals - they are already handled by the remote origin
+            let requester = match OrderOrigin::<T::AccountId>::new(&order_origin) {
+                OrderOrigin::Local(_) => return Err(Error::<T>::InvalidOrderOrigin.into()),
+                OrderOrigin::Remote(_) => order_origin.clone(),
+            };
+
+            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
+        }
+
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
@@ -644,22 +728,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
-            // Setup: new xtx context with SFX validation
-            let mut fresh_xtx = Machine::<T>::setup(&side_effects, &requester)?;
 
-            fresh_xtx.xtx.set_speed_mode(speed_mode);
-            // Compile: apply the new state post squaring up and emit
-            Machine::<T>::compile(
-                &mut fresh_xtx,
-                |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
-                |_status_change, local_ctx| {
-                    // Emit: circuit events
-                    Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
-                    Ok(())
-                },
-            )?;
-
-            Ok(().into())
+            Self::do_on_extrinsic_trigger(requester, side_effects, speed_mode)
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::bid_sfx())]
@@ -854,9 +924,11 @@ pub mod pallet {
         UpdateForcedStateTransitionDisallowed,
         UpdateXtxTriggeredWithUnexpectedStatus,
         ConfirmationFailed,
+        InvalidOrderOrigin,
         ApplyTriggeredWithUnexpectedStatus,
         BidderNotEnoughBalance,
         RequesterNotEnoughBalance,
+        AssetsFailedToWithdraw,
         SanityAfterCreatingSFXDepositsFailed,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
@@ -881,6 +953,7 @@ pub mod pallet {
         InvalidFTXStateEmptyConfirmationForFinishedXtx,
         InvalidFTXStateUnassignedExecutorForReadySFX,
         InvalidFTXStateIncorrectExecutorForReadySFX,
+        GatewayNotActive,
         SetupFailed,
         SetupFailedXtxNotFound,
         SetupFailedXtxStorageArtifactsNotFound,
@@ -925,8 +998,6 @@ pub mod pallet {
         ArithmeticErrorDivisionByZero,
     }
 }
-
-pub fn get_xtx_status() {}
 
 /// Payload used by this example crate to hold price
 /// data required to submit a transaction.
@@ -1000,6 +1071,40 @@ impl<T: Config> Pallet<T> {
         }
     }
 
+    fn do_on_extrinsic_trigger(
+        requester: T::AccountId,
+        side_effects: Vec<SideEffect<T::AccountId, BalanceOf<T>>>,
+        speed_mode: SpeedMode,
+    ) -> DispatchResultWithPostInfo {
+        // Setup: new xtx context with SFX validation
+        let mut fresh_xtx = Machine::<T>::setup(
+            &side_effects,
+            &requester,
+            Some(T::Xdns::estimate_adaptive_timeout_on_slowest_target(
+                side_effects
+                    .iter()
+                    .map(|sfx| sfx.target)
+                    .collect::<Vec<TargetId>>(),
+                &speed_mode,
+                T::XtxTimeoutDefault::get(),
+            )),
+        )?;
+
+        fresh_xtx.xtx.set_speed_mode(speed_mode);
+        // Compile: apply the new state post squaring up and emit
+        Machine::<T>::compile(
+            &mut fresh_xtx,
+            |_, _, _, _, _| Ok(PrecompileResult::TryRequest),
+            |_status_change, local_ctx| {
+                // Emit: circuit events
+                Self::emit_sfx(local_ctx.xtx_id, &requester, &side_effects);
+                Ok(())
+            },
+        )?;
+
+        Ok(().into())
+    }
+
     fn authorize(
         origin: OriginFor<T>,
         role: CircuitRole,
@@ -1038,15 +1143,20 @@ impl<T: Config> Pallet<T> {
             return Ok(())
         }
 
+        // Verify each requested asset is supported by the gateway
+        let all_targets = side_effects
+            .iter()
+            .map(|sfx| sfx.target)
+            .collect::<Vec<TargetId>>();
+
+        ensure!(
+            Self::ensure_all_gateways_are_active(all_targets),
+            Error::<T>::GatewayNotActive
+        );
+
         for (index, sfx) in side_effects.iter().enumerate() {
             let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(&sfx.target);
             let security_lvl = determine_security_lvl(gateway_type);
-            // ToDo: Uncomment when test checks for adding new target heartbeats tests are added
-            // let _last_update = <T as Config>::Xdns::verify_active(
-            //     &sfx.target,
-            //     <T as Config>::XtxTimeoutDefault::get(),
-            //     &security_lvl,
-            // )?;
 
             let sfx_abi: SFXAbi = match <T as Config>::Xdns::get_sfx_abi(&sfx.target, sfx.action) {
                 Some(sfx_abi) => sfx_abi,
@@ -1120,6 +1230,18 @@ impl<T: Config> Pallet<T> {
             return Err(DispatchError::Other("Xtx has an empty single step."))
         }
 
+        // Ensure all gateways are active
+        // Verify each requested asset is supported by the gateway
+        let all_targets = step_side_effects
+            .iter()
+            .map(|sfx| sfx.input.target)
+            .collect::<Vec<TargetId>>();
+
+        ensure!(
+            Self::ensure_all_gateways_are_active(all_targets),
+            Error::<T>::GatewayNotActive
+        );
+
         let fsx_opt = step_side_effects
             .iter_mut()
             .find(|fsx| fsx.calc_sfx_id::<SystemHashing<T>, T>(xtx_id) == *sfx_id);
@@ -1136,6 +1258,8 @@ impl<T: Config> Pallet<T> {
                 )),
         };
         log::debug!("Order confirmed!");
+
+        #[cfg(not(feature = "test-skip-verification"))]
         let xtx = Machine::<T>::load_xtx(xtx_id)?.xtx;
 
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
@@ -1188,6 +1312,46 @@ impl<T: Config> Pallet<T> {
         log::debug!("Confirmation success");
 
         Ok(())
+    }
+
+    pub fn get_all_xtx_targets(xtx_id: XExecSignalId<T>) -> Vec<TargetId> {
+        // Get FSX of XTX
+        let fsx_of_xtx = match <Pallet<T>>::get_fsx_of_xtx(xtx_id) {
+            Ok(fsx) => fsx,
+            Err(_) => return vec![],
+        };
+
+        // Map FSX to targets
+        fsx_of_xtx
+            .into_iter()
+            .filter_map(|fsx_id| {
+                <Pallet<T>>::get_fsx(fsx_id)
+                    .ok()
+                    .map(|fsx| fsx.input.target)
+            })
+            .collect()
+    }
+
+    /// At the XTX submission fn verify ensures that all of the gateways are active.
+    /// At either confirmation or revert attempt, ensure that all of the gateways are active, so that Executor won't be slashed.
+    pub fn ensure_all_gateways_are_active(targets: Vec<TargetId>) -> bool {
+        for target in targets.into_iter() {
+            let gateway_activity_overview = match <T as Config>::Xdns::read_last_activity(target) {
+                Some(gateway_activity_overview) => gateway_activity_overview,
+                None => {
+                    log::warn!("Failing to ensure_all_gateways_are_active. Target gateway is not registered in XDNS. Observe XDNS::gateway_activity_overview for more updates");
+                    return false
+                },
+            };
+
+            if !gateway_activity_overview.is_active {
+                log::warn!(
+                    "Failing to ensure_all_gateways_are_active. Target gateway is currently not active. Observe XDNS::gateway_activity_overview for more updates"
+                );
+                return false
+            }
+        }
+        true
     }
 
     // ToDo: This should be called as a 3vm trait injection @Don
@@ -1266,7 +1430,28 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
-    pub fn process_revert_xtx_queue(
+    pub fn process_adaptive_xtx_timeout_queue(
+        n: T::BlockNumber,
+        _verifier: &GatewayVendor,
+    ) -> Weight {
+        let mut current_weight: Weight = 0;
+
+        // Go over all unfinished Xtx to find those that timed out
+        let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
+            .filter(|(_xtx_id, adaptive_timeout)| {
+                // ToDo: consider filtering out by adaptive_timeout.verifier == verifier
+                adaptive_timeout.estimated_height_here < n
+            })
+            .map(|(xtx_id, _timeout_at)| {
+                // if current_weight <= max_allowed_weight {
+                current_weight = current_weight.saturating_add(Self::process_revert_one(xtx_id).0);
+                // }
+            })
+            .count();
+        current_weight
+    }
+
+    pub fn process_emergency_revert_xtx_queue(
         n: T::BlockNumber,
         revert_interval: T::BlockNumber,
         max_allowed_weight: Weight,
@@ -1280,11 +1465,11 @@ impl<T: Config> Pallet<T> {
         } else if n % revert_interval == T::BlockNumber::zero() {
             // Go over all unfinished Xtx to find those that timed out
             let _processed_xtx_revert_count = <PendingXtxTimeoutsMap<T>>::iter()
-                .filter(|(_xtx_id, timeout_at)| timeout_at <= &n)
+                .filter(|(_xtx_id, adaptive_timeout)| adaptive_timeout.emergency_timeout_here <= n)
                 .map(|(xtx_id, _timeout_at)| {
                     if current_weight <= max_allowed_weight {
                         current_weight =
-                            current_weight.saturating_add(Self::process_revert_one(xtx_id));
+                            current_weight.saturating_add(Self::process_revert_one(xtx_id).0);
                     }
                 })
                 .count();
@@ -1292,17 +1477,152 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
-    pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> Weight {
+    pub fn get_adaptive_timeout(
+        xtx_id: T::Hash,
+        maybe_speed_mode: Option<SpeedMode>,
+    ) -> AdaptiveTimeout<T::BlockNumber, TargetId> {
+        let all_targets = Self::get_all_xtx_targets(xtx_id);
+        T::Xdns::estimate_adaptive_timeout_on_slowest_target(
+            all_targets,
+            &maybe_speed_mode.unwrap_or(SpeedMode::Finalized),
+            T::XtxTimeoutDefault::get(),
+        )
+    }
+
+    /// Adds a cross-chain transaction (Xtx) to the Dead Letter Queue (DLQ).
+    ///
+    /// # Arguments
+    ///
+    /// * `xtx_id` - The ID of the Xtx to be added to the DLQ.
+    /// * `targets` - The targets of the Xtx.
+    /// * `speed_mode` - The speed mode of the Xtx.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the weight of the operation and a boolean indicating whether the operation was successful.
+    pub fn add_xtx_to_dlq(
+        xtx_id: T::Hash,
+        targets: Vec<TargetId>,
+        speed_mode: SpeedMode,
+    ) -> (Weight, bool) {
+        if <DLQ<T>>::contains_key(xtx_id) {
+            return (T::DbWeight::get().reads(1), false)
+        }
+
+        <DLQ<T>>::insert(
+            xtx_id,
+            (
+                <frame_system::Module<T>>::block_number(),
+                targets,
+                speed_mode,
+            ),
+        );
+        <XExecSignals<T>>::mutate(xtx_id, |xtx| {
+            if let Some(xtx) = xtx {
+                xtx.timeouts_at.dlq = Some(<frame_system::Module<T>>::block_number());
+            } else {
+                log::error!(
+                    "Xtx not found in XExecSignals for xtx_id when add_xtx_to_dlq: {:?}",
+                    xtx_id
+                )
+            }
+        });
+
+        // Remove the Xtx from the PendingXtxTimeoutsMap if exists
+        if <PendingXtxTimeoutsMap<T>>::contains_key(xtx_id) {
+            <PendingXtxTimeoutsMap<T>>::remove(xtx_id);
+        }
+
+        (
+            T::DbWeight::get().reads_writes(2, 3), // 2 reads (DLQ, XExecSignals), 3 writes (DLQ, XExecSignals, PendingXtxTimeoutsMap)
+            true,
+        )
+    }
+
+    /// Removes a cross-chain transaction (Xtx) from the Dead Letter Queue (DLQ).
+    ///
+    /// # Arguments
+    ///
+    /// * `xtx_id` - The ID of the Xtx to be removed from the DLQ.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the weight of the operation and a boolean indicating whether the operation was successful.
+    pub fn remove_xtx_from_dlq(xtx_id: T::Hash) -> (Weight, bool) {
+        let dlq_entry = match <DLQ<T>>::take(xtx_id) {
+            Some(dlq_entry) => dlq_entry,
+            None => return (T::DbWeight::get().reads(1), false),
+        };
+
+        let adaptive_timeout = Self::get_adaptive_timeout(xtx_id, Some(dlq_entry.2));
+        <PendingXtxTimeoutsMap<T>>::insert(xtx_id, &adaptive_timeout);
+
+        <XExecSignals<T>>::mutate(xtx_id, |xtx| {
+            if let Some(xtx) = xtx {
+                xtx.timeouts_at = adaptive_timeout;
+            } else {
+                log::error!(
+                    "Xtx not found in XExecSignals for xtx_id when remove_xtx_from_dlq: {:?}",
+                    xtx_id
+                )
+            }
+        });
+
+        (
+            T::DbWeight::get().reads_writes(2, 3), // 2 reads (DLQ, XExecSignals), 3 writes (DLQ, XExecSignals, PendingXtxTimeoutsMap)
+            true,
+        )
+    }
+
+    /// Processes the Dead Letter Queue (DLQ).
+    ///
+    /// # Arguments
+    ///
+    /// * `_n` - The current block number.
+    ///
+    /// # Returns
+    ///
+    /// The total weight of the operation.
+    pub fn process_dlq(_n: T::BlockNumber) -> Weight {
+        <DLQ<T>>::iter()
+            .map(|(xtx_id, (_block_number, targets, _speed_mode))| {
+                if Self::ensure_all_gateways_are_active(targets) {
+                    Self::remove_xtx_from_dlq(xtx_id).0
+                } else {
+                    T::DbWeight::get().reads(1)
+                }
+            })
+            .sum()
+    }
+
+    /// Processes a single cross-chain transaction (Xtx) revert operation.
+    ///
+    /// # Arguments
+    ///
+    /// * `xtx_id` - The ID of the Xtx to be processed.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the weight of the operation and a boolean indicating whether the operation was successful.
+    pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> (Weight, bool) {
         const REVERT_WRITES: Weight = 2;
         const REVERT_READS: Weight = 1;
 
-        let _success: bool =
+        let all_targets = Self::get_all_xtx_targets(xtx_id);
+        if !Self::ensure_all_gateways_are_active(all_targets.clone()) {
+            return Self::add_xtx_to_dlq(xtx_id, all_targets, SpeedMode::Finalized)
+        }
+
+        let success: bool =
             Machine::<T>::revert(xtx_id, Cause::Timeout, |_status_change, local_ctx| {
                 Self::request_sfx_attestation(local_ctx);
                 Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id));
             });
 
-        T::DbWeight::get().reads_writes(REVERT_READS, REVERT_WRITES)
+        (
+            T::DbWeight::get().reads_writes(REVERT_READS, REVERT_WRITES),
+            success,
+        )
     }
 
     pub fn request_sfx_attestation(local_ctx: &LocalXtxCtx<T, BalanceOf<T>>) {

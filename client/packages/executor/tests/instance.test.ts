@@ -6,16 +6,17 @@ import { homedir } from "os";
 import { existsSync } from "fs";
 import { readFile, readdir, mkdir, unlink } from "fs/promises";
 import { Instance } from "../src";
+import { mock } from "ts-mockito";
 
 chai.use(chaiAsPromised);
 chai.use(jestSnapshotPlugin());
 chai.should();
 
 describe("Instance", () => {
-  let name = "alina";
+  const name = "alina";
 
   describe("Configuration", () => {
-    let conf = join(homedir(), `.t3rn-executor-${name}`, "config.json");
+    const conf = join(homedir(), `.t3rn-executor-${name}`, "config.json");
     let instance;
 
     beforeEach(async () => {
@@ -24,8 +25,8 @@ describe("Instance", () => {
       }
       process.env.CIRCUIT_SIGNER_KEY = `0x${"acab".repeat(16)}`;
       process.env.ROCO_GATEWAY_SIGNER_KEY = `0x${"acab".repeat(16)}`;
-      instance = new Instance(name, false /*logToDisk*/);
-      instance.logger = { warn() { }, info() { } };
+      instance = new Instance(name, false, mock());
+      instance.logger = { warn() {}, info() {} };
     });
 
     it("should throw if signer keys are missing", async () => {
@@ -36,7 +37,7 @@ describe("Instance", () => {
         .loadConfig()
         .should.be.rejectedWith(
           Error,
-          "Instance::loadConfig: missing circuit signer key"
+          "Instance::loadConfig: missing circuit signer key",
         );
     });
 
@@ -48,7 +49,7 @@ describe("Instance", () => {
         .loadConfig()
         .should.be.rejectedWith(
           Error,
-          "Instance::loadConfig: missing circuit signer key"
+          "Instance::loadConfig: missing circuit signer key",
         );
 
       // reset to bogus substrate private key for the remainder
@@ -60,7 +61,7 @@ describe("Instance", () => {
     it("should load custom config", async () => {
       expect(instance.config).to.be.undefined;
 
-      let config = await instance.loadConfig();
+      const config = await instance.loadConfig();
 
       expect(instance.config).to.not.be.undefined;
       expect(config).to.deep.equal(instance.config);
@@ -70,27 +71,27 @@ describe("Instance", () => {
     it("should persist custom config", async () => {
       expect(existsSync(conf)).to.be.false;
 
-      let config = await instance.loadConfig();
+      const config = await instance.loadConfig();
 
       expect(existsSync(conf)).to.be.true;
-      let stored = await readFile(conf, "utf8").then(JSON.parse);
+      const stored = await readFile(conf, "utf8").then(JSON.parse);
       expect(stored).to.deep.equal(config);
       expect(stored).toMatchSnapshot();
     });
   });
 
   describe("Logs", () => {
-    let logs = join(homedir(), `.t3rn-executor-${name}`, "logs");
+    const logs = join(homedir(), `.t3rn-executor-${name}`, "logs");
     let instance;
 
     beforeEach(async () => {
       await mkdir(logs, { recursive: true });
       await readdir(logs).then((logFiles) =>
-        Promise.all(logFiles.map((logFile) => unlink(join(logs, logFile))))
+        Promise.all(logFiles.map((logFile) => unlink(join(logs, logFile)))),
       );
       process.env.CIRCUIT_SIGNER_KEY = `0x${"acab".repeat(16)}`;
       process.env.ROCO_GATEWAY_SIGNER_KEY = `0x${"acab".repeat(16)}`;
-      instance = new Instance(name);
+      instance = new Instance(name, false, mock());
     });
 
     it("should not log to disk", async () => {
@@ -98,7 +99,7 @@ describe("Instance", () => {
       expect(logFiles.length).to.equal(0);
 
       await instance.configureLogging();
-      instance.logger = { warn() { }, info() { } } as any;
+      instance.logger = { warn() {}, info() {} } as any;
       await instance.logger.info("hallo");
 
       logFiles = await readdir(logs);
@@ -106,7 +107,7 @@ describe("Instance", () => {
     });
 
     it("should log to disk", async () => {
-      let instance = new Instance(name, true /**logToDisk*/);
+      const instance = new Instance(name, true, mock());
       let logFiles = await readdir(logs);
       expect(logFiles.length).to.equal(0);
 
@@ -115,7 +116,7 @@ describe("Instance", () => {
 
       logFiles = await readdir(logs);
       expect(logFiles.length).to.equal(1);
-      let logged = await readFile(join(logs, logFiles[0]), "utf8");
+      const logged = await readFile(join(logs, logFiles[0]), "utf8");
       expect(logged).to.match(/hallo/);
     });
   });

@@ -146,7 +146,7 @@ export type Config = {
         priceSource: string;
         /** The internal id used by the price source. */
         id: string;
-      }
+      },
     ];
   };
   /** The strategies that are being used for each gateway */
@@ -155,6 +155,17 @@ export type Config = {
   };
   /** Parameters for tunning the behavior in the bidding stage */
   bidding: BiddingStrategy;
+
+  /** Configuration for ethereum */
+  attestations: {
+    ethereum: {
+      name: string;
+      rpc: string;
+      attestationVerifierAddress: string;
+      privateKey: string | undefined;
+    };
+    processBatches: boolean;
+  };
 };
 
 export const config: Config = {
@@ -243,5 +254,14 @@ export const config: Config = {
     bidMeek: false,
     overrideNoCompetition: true,
     equalMinProfitBid: false,
+  },
+  attestations: {
+    ethereum: {
+      name: "sepl",
+      rpc: "https://endpoints.omniatech.io/v1/eth/sepolia/public",
+      attestationVerifierAddress: "0x20301d42De13BF315d234893Db1A139bc5737293",
+      privateKey: process.env.ETHEREUM_PRIVATE_KEY,
+    },
+    processBatches: process.env.PROCESS_BATCHES == "true" ? true : false,
   },
 };

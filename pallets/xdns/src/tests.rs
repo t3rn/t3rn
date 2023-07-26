@@ -20,26 +20,30 @@
 use super::*;
 use circuit_mock_runtime::{ExtBuilder, Portal, *};
 use codec::Decode;
-use frame_support::{assert_err, assert_noop, assert_ok};
+
+use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
 use frame_system::Origin;
+use sp_core::crypto::AccountId32;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
-    circuit::SecurityLvl::Optimistic,
+    circuit::SecurityLvl::{Escrow, Optimistic},
+    clock::OnHookQueues,
     portal::Portal as PortalT,
     xdns::{FullGatewayRecord, GatewayRecord, PalletAssetsOverlay, Xdns},
     EthereumToken, ExecutionVendor,
     ExecutionVendor::{Substrate, EVM},
-    GatewayActivity, GatewayVendor,
-    GatewayVendor::{Ethereum, Polkadot, Rococo},
-    SubstrateToken, TokenInfo,
+    FinalityVerifierActivity, GatewayActivity, GatewayVendor,
+    GatewayVendor::{Ethereum, Kusama, Polkadot, Rococo},
+    SpeedMode, SubstrateToken, TokenInfo,
 };
 
 use t3rn_abi::Codec::{Rlp, Scale};
+use t3rn_primitives::xdns::EpochEstimate;
 
 use t3rn_types::fsx::SecurityLvl;
 
 const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 8;
-const STANDARD_SFX_ABI_COUNT: usize = 7;
+const STANDARD_SFX_ABI_COUNT: usize = 6;
 
 #[test]
 fn reboot_self_gateway_populates_entry_if_does_not_exist_with_all_sfx() {
@@ -450,6 +454,7 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
 #[test]
 fn gate_gateway_vendor_returns_error_for_unknown_record() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -461,6 +466,7 @@ fn gate_gateway_vendor_returns_error_for_unknown_record() {
 #[test]
 fn gate_gateway_vendor_returns_vendor_for_known_record() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -472,6 +478,7 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
 #[test]
 fn xdns_returns_full_gateway_record() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -493,7 +500,6 @@ fn xdns_returns_full_gateway_record() {
                                 ([97, 108, 105, 113], Some(3)),
                                 ([99, 101, 118, 109], Some(10)),
                                 ([119, 97, 115, 109], Some(10)),
-                                ([99, 97, 108, 108], Some(10))
                             ]
                         },
                         tokens: vec![]
@@ -513,7 +519,6 @@ fn xdns_returns_full_gateway_record() {
                                 ([97, 108, 105, 113], Some(3)),
                                 ([99, 101, 118, 109], Some(10)),
                                 ([119, 97, 115, 109], Some(10)),
-                                ([99, 97, 108, 108], Some(10))
                             ]
                         },
                         tokens: vec![]
@@ -533,7 +538,6 @@ fn xdns_returns_full_gateway_record() {
                                 ([97, 108, 105, 113], Some(3)),
                                 ([99, 101, 118, 109], Some(10)),
                                 ([119, 97, 115, 109], Some(10)),
-                                ([99, 97, 108, 108], Some(10))
                             ]
                         },
                         tokens: vec![]
@@ -553,7 +557,6 @@ fn xdns_returns_full_gateway_record() {
                                 ([97, 108, 105, 113], Some(3)),
                                 ([99, 101, 118, 109], Some(10)),
                                 ([119, 97, 115, 109], Some(10)),
-                                ([99, 97, 108, 108], Some(10))
                             ]
                         },
                         tokens: vec![]
@@ -585,7 +588,7 @@ fn xdns_returns_full_gateway_record() {
                     FullGatewayRecord {
                         gateway_record: GatewayRecord {
                             gateway_id: [107, 115, 109, 97],
-                            verification_vendor: Polkadot,
+                            verification_vendor: Kusama,
                             execution_vendor: Substrate,
                             codec: Scale,
                             registrant: None,
@@ -620,6 +623,7 @@ fn xdns_returns_full_gateway_record() {
 #[test]
 fn xdns_returns_error_for_inactive_gateway() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -631,6 +635,7 @@ fn xdns_returns_error_for_inactive_gateway() {
 #[test]
 fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_via_portal() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .with_default_attestation_targets()
         .build()
@@ -647,6 +652,7 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                 .unwrap();
             }
 
+            assert_eq!(XDNS::process_all_verifier_overviews(10), 25000000u64);
             assert_eq!(XDNS::process_overview(10), ());
             let overview = XDNS::gateways_overview();
 
@@ -656,9 +662,9 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     GatewayActivity {
                         gateway_id: [0, 0, 0, 0],
                         reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
@@ -666,9 +672,9 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     GatewayActivity {
                         gateway_id: [1, 1, 1, 1],
                         reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
@@ -676,9 +682,9 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     GatewayActivity {
                         gateway_id: [3, 3, 3, 3],
                         reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
@@ -686,9 +692,9 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     GatewayActivity {
                         gateway_id: [5, 5, 5, 5],
                         reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
@@ -696,9 +702,9 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     GatewayActivity {
                         gateway_id: [103, 97, 116, 101],
                         reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
@@ -706,9 +712,9 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     GatewayActivity {
                         gateway_id: [107, 115, 109, 97],
                         reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
@@ -716,9 +722,9 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                     GatewayActivity {
                         gateway_id: [112, 100, 111, 116],
                         reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
@@ -732,33 +738,27 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
 fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_via_portal_and_adding_attestation_target(
 ) {
     use circuit_mock_runtime::Attesters;
-    use frame_support::traits::OnInitialize;
     use sp_core::H256;
-    use t3rn_primitives::attesters::{AttestersWriteApi, LatencyStatus};
+    use t3rn_primitives::attesters::AttestersWriteApi;
 
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .with_default_attestation_targets()
         .build()
         .execute_with(|| {
-            for gateway in XDNS::fetch_full_gateway_records().iter() {
-                // ToDo: Uncomment when eth2::turn_on implemented
-                if gateway.gateway_record.verification_vendor == Ethereum {
-                    continue
-                }
-                Portal::turn_on(
-                    circuit_mock_runtime::Origin::root(),
-                    gateway.gateway_record.gateway_id,
-                )
-                .unwrap();
-            }
+            assert_ok!(XDNS::add_escrow_account(
+                circuit_mock_runtime::Origin::root(),
+                [1, 1, 1, 1],
+                AccountId32::new([1; 32])
+            ));
 
             Attesters::force_activate_target(circuit_mock_runtime::Origin::root(), [1, 1, 1, 1])
                 .unwrap();
             Attesters::request_sfx_attestation_commit([1, 1, 1, 1], H256::repeat_byte(1));
-            Attesters::on_initialize(6);
+            Attesters::on_initialize(System::block_number());
 
-            assert_eq!(XDNS::process_overview(10), ());
+            assert_eq!(XDNS::process_overview(System::block_number()), ());
             let overview = XDNS::gateways_overview();
 
             assert_eq!(
@@ -766,70 +766,70 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                 vec![
                     GatewayActivity {
                         gateway_id: [0, 0, 0, 0],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
                     GatewayActivity {
                         gateway_id: [1, 1, 1, 1],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
-                        attestation_latency: Some(LatencyStatus::OnTime),
-                        security_lvl: Optimistic,
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Escrow,
                         is_active: true
                     },
                     GatewayActivity {
                         gateway_id: [3, 3, 3, 3],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
                     GatewayActivity {
                         gateway_id: [5, 5, 5, 5],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
                     GatewayActivity {
                         gateway_id: [103, 97, 116, 101],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
                     GatewayActivity {
                         gateway_id: [107, 115, 109, 97],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
                     },
                     GatewayActivity {
                         gateway_id: [112, 100, 111, 116],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: true
@@ -840,24 +840,336 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
 }
 
 #[test]
-fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turning_off() {
+fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each_50_blocks() {
     ExtBuilder::default()
+        .with_standard_sfx_abi()
         .with_default_xdns_records()
         .with_default_attestation_targets()
         .build()
         .execute_with(|| {
+            let expected_verifier_overview_all_off = vec![
+                FinalityVerifierActivity {
+                    verifier: Polkadot,
+                    reported_at: 74,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: Kusama,
+                    reported_at: 74,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: Rococo,
+                    reported_at: 74,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: Ethereum,
+                    reported_at: 74,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: false,
+                },
+            ];
+
+            let expected_verifier_overview_all_on = vec![
+                FinalityVerifierActivity {
+                    verifier: Polkadot,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Kusama,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Rococo,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Ethereum,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+            ];
+
+            assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
+
+            // Turn all the gateways off at the beginning. expect that the verifiers overview will be updated only after 50 blocks
             for gateway in XDNS::fetch_full_gateway_records().iter() {
-                // ToDo: Uncomment when eth2::turn_on implemented
-                if gateway.gateway_record.verification_vendor == Ethereum {
-                    continue
-                }
                 Portal::turn_off(
                     circuit_mock_runtime::Origin::root(),
                     gateway.gateway_record.gateway_id,
                 )
                 .unwrap();
             }
-            assert_eq!(XDNS::process_overview(10), ());
+
+            let last_reported_block = expected_verifier_overview_all_on[0].reported_at;
+
+            System::set_block_number(last_reported_block + 1);
+            <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
+                System::block_number(),
+                u64::MAX,
+            );
+            assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
+
+            System::set_block_number(last_reported_block + 5);
+            <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
+                System::block_number(),
+                u64::MAX,
+            );
+            assert_eq!(XDNS::verifier_overview(), expected_verifier_overview_all_on);
+
+            System::set_block_number(System::block_number() + 52);
+            <GlobalOnInitQueues as OnHookQueues<Runtime>>::process_hourly(
+                System::block_number(),
+                u64::MAX,
+            );
+
+            assert_eq!(
+                XDNS::verifier_overview(),
+                expected_verifier_overview_all_off
+            );
+        });
+}
+
+#[test]
+fn get_slowest_verifier_target_applies_emergency_offset_without_epochs_history() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            // Define emergency_offset and SpeedMode
+            let emergency_offset: BlockNumber = 100;
+            let speed_mode = SpeedMode::Fast;
+
+            // Get all targets
+            let all_targets = XDNS::all_gateway_ids();
+
+            // Test the function
+            let result =
+                XDNS::get_slowest_verifier_target(all_targets, &speed_mode, emergency_offset);
+
+            println!("result: {result:?}");
+
+            // Write asserts based on the expected output
+            match result {
+                Some((verifier, target, local_offset, remote_offset)) => {
+                    // Check that the verifier and target are expected values
+                    // You may need to implement PartialEq for GatewayVendor and TargetId
+                    assert_eq!(verifier, GatewayVendor::Ethereum);
+                    assert_eq!(target, *b"eth2");
+
+                    // Check that the offsets are correct
+                    assert_eq!(local_offset, emergency_offset);
+                    assert_eq!(remote_offset, emergency_offset);
+                },
+                None => panic!("Expected Some, got None"),
+            }
+        });
+}
+
+#[test]
+fn get_slowest_verifier_target_selects_slowest_for_filled_epoch_history() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            // Define emergency_offset and SpeedMode
+            let emergency_offset: BlockNumber = 100;
+            let speed_mode = SpeedMode::Finalized;
+
+            // Get all targets
+            let all_targets = XDNS::all_gateway_ids();
+
+            // Set the epoch history for the Ethereum verifier
+            pallet_xdns::EpochHistory::<Runtime>::insert(
+                Ethereum,
+                vec![EpochEstimate::<u32> {
+                    local: 48,
+                    remote: 32,
+                    moving_average_local: 46,
+                    moving_average_remote: 32,
+                }],
+            );
+            pallet_xdns::EpochHistory::<Runtime>::insert(
+                Rococo,
+                vec![EpochEstimate::<u32> {
+                    local: 3,
+                    remote: 4,
+                    moving_average_local: 4,
+                    moving_average_remote: 3,
+                }],
+            );
+            pallet_xdns::EpochHistory::<Runtime>::insert(
+                Kusama,
+                vec![EpochEstimate::<u32> {
+                    local: 3,
+                    remote: 4,
+                    moving_average_local: 4,
+                    moving_average_remote: 3,
+                }],
+            );
+            pallet_xdns::EpochHistory::<Runtime>::insert(
+                Polkadot,
+                vec![EpochEstimate::<u32> {
+                    local: 3,
+                    remote: 4,
+                    moving_average_local: 4,
+                    moving_average_remote: 3,
+                }],
+            );
+
+            // Test the function
+            let result =
+                XDNS::get_slowest_verifier_target(all_targets, &speed_mode, emergency_offset);
+
+            println!("result: {result:?}");
+
+            // Write asserts based on the expected output
+            match result {
+                Some((verifier, target, local_offset, remote_offset)) => {
+                    // Check that the verifier and target are expected values
+                    // You may need to implement PartialEq for GatewayVendor and TargetId
+                    assert_eq!(verifier, GatewayVendor::Ethereum);
+                    assert_eq!(target, *b"eth2");
+
+                    // Check that the offsets are correct
+                    assert_eq!(local_offset, 3 * 46); // 3 x moving_average_local
+                    assert_eq!(remote_offset, 3 * 32); // 3 x moving_average_remote
+                },
+                None => panic!("Expected Some, got None"),
+            }
+        });
+}
+
+#[test]
+fn test_estimate_adaptive_timeout_on_slowest_target() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            // Define emergency_offset and SpeedMode
+            let emergency_offset: BlockNumber = 100;
+            let speed_mode = SpeedMode::Finalized;
+
+            // Get all targets
+            let all_targets = XDNS::all_gateway_ids();
+
+            // Set the epoch history for the Ethereum verifier
+            pallet_xdns::EpochHistory::<Runtime>::insert(
+                Ethereum,
+                vec![EpochEstimate::<u32> {
+                    local: 48,
+                    remote: 32,
+                    moving_average_local: 46,
+                    moving_average_remote: 32,
+                }],
+            );
+            pallet_xdns::EpochHistory::<Runtime>::insert(
+                Rococo,
+                vec![EpochEstimate::<u32> {
+                    local: 3,
+                    remote: 4,
+                    moving_average_local: 4,
+                    moving_average_remote: 3,
+                }],
+            );
+            pallet_xdns::EpochHistory::<Runtime>::insert(
+                Kusama,
+                vec![EpochEstimate::<u32> {
+                    local: 3,
+                    remote: 4,
+                    moving_average_local: 4,
+                    moving_average_remote: 3,
+                }],
+            );
+            pallet_xdns::EpochHistory::<Runtime>::insert(
+                Polkadot,
+                vec![EpochEstimate::<u32> {
+                    local: 3,
+                    remote: 4,
+                    moving_average_local: 4,
+                    moving_average_remote: 3,
+                }],
+            );
+
+            // Test the function
+            let result = XDNS::estimate_adaptive_timeout_on_slowest_target(
+                all_targets,
+                &speed_mode,
+                emergency_offset,
+            );
+
+            println!("result: {result:?}");
+
+            // Write asserts based on the expected output
+            assert_eq!(result.there, *b"eth2"); // target.clone()
+            assert_eq!(result.estimated_height_here, 293); // submit_by_height_here + submit_by_local_offset
+            assert_eq!(result.estimated_height_there, 216); // submit_by_height_there + submit_by_remote_offset
+            assert_eq!(result.submit_by_height_here, 155); // current_block + submit_by_local_offset
+            assert_eq!(result.submit_by_height_there, 120); // latest_overview_of_verifier.finalized_height + submit_by_remote_offset
+            assert_eq!(result.emergency_timeout_here, 117); // emergency_offset + current_block
+            assert_eq!(result.dlq, None); // default value
+        });
+}
+
+#[test]
+fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turning_off() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .with_default_attestation_targets()
+        .build()
+        .execute_with(|| {
+            for gateway in XDNS::fetch_full_gateway_records().iter() {
+                Portal::turn_off(
+                    circuit_mock_runtime::Origin::root(),
+                    gateway.gateway_record.gateway_id,
+                )
+                .unwrap();
+            }
+            assert_eq!(XDNS::process_all_verifier_overviews(100), 1225000000u64);
+            assert_eq!(XDNS::process_overview(100), ());
+
             let overview = XDNS::gateways_overview();
 
             assert_eq!(
@@ -865,70 +1177,70 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                 vec![
                     GatewayActivity {
                         gateway_id: [0, 0, 0, 0],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
                     GatewayActivity {
                         gateway_id: [1, 1, 1, 1],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
                     GatewayActivity {
                         gateway_id: [3, 3, 3, 3],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
                     GatewayActivity {
                         gateway_id: [5, 5, 5, 5],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
                     GatewayActivity {
                         gateway_id: [103, 97, 116, 101],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
                     GatewayActivity {
                         gateway_id: [107, 115, 109, 97],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false
                     },
                     GatewayActivity {
                         gateway_id: [112, 100, 111, 116],
-                        reported_at: 10,
-                        justified_height: 0,
-                        finalized_height: 0,
-                        updated_height: 0,
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
                         attestation_latency: None,
                         security_lvl: Optimistic,
                         is_active: false

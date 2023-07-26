@@ -65,8 +65,8 @@ jobs:
 
       - run: cd .. && make all
       - run: pnpm install
-      - run: pnpm fmt
-      - run: pnpm build-docs
+      - run: pnpm run fmt:check
+      - run: pnpm run build-docs
 
       - name: Save Code Linting Report JSON
         if: github.event_name == 'pull_request'
@@ -83,7 +83,7 @@ jobs:
         # TODO: remove at some point
         continue-on-error: true
 
-      - run: pnpm test
+      - run: pnpm run test
         timeout-minutes: 5
 
   build-docker:

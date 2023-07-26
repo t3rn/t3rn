@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t0rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.37.1-rc.0"
+version     = "1.43.1-rc.0"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -22,7 +22,7 @@ impl-trait-for-tuples = "0.2.2"
 log                   = { version = "0.4.19", default-features = false }
 scale-info            = { version = "2.9.0", default-features = false, features = [ "derive" ] }
 serde                 = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
-smallvec              = { version = "1.6.1", default-features = false }
+smallvec              = { version = "1.11.0", default-features = false }
 
 # Substrate
 frame-benchmarking           = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.27" }
@@ -98,6 +98,7 @@ pallet-account-manager           = { path = "../../pallets/account-manager", def
 pallet-asset-registry            = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false }
 pallet-attesters                 = { path = "../../pallets/attesters", default-features = false }
 pallet-circuit                   = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
+pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
@@ -156,6 +157,7 @@ std = [
   "polkadot-runtime-constants/std",
   "pallet-balances/std",
   "pallet-collator-selection/std",
+  "pallet-vacuum/std",
   "pallet-3vm/std",
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
@@ -238,6 +240,7 @@ runtime-benchmarks = [
   "pallet-assets/runtime-benchmarks",
   "pallet-circuit/runtime-benchmarks",
   "pallet-clock/runtime-benchmarks",
+  "pallet-vacuum/runtime-benchmarks",
   "pallet-3vm-contracts/runtime-benchmarks",
   "pallet-3vm-evm/runtime-benchmarks",
   "pallet-identity/runtime-benchmarks",
@@ -288,6 +291,7 @@ try-runtime = [
   "pallet-treasury/try-runtime",
   "pallet-utility/try-runtime",
   "pallet-xdns/try-runtime",
+  "pallet-vacuum/try-runtime",
   "polkadot-runtime-common/try-runtime",
   "t3rn-abi/try-runtime",
   "pallet-eth2-finality-verifier/try-runtime",

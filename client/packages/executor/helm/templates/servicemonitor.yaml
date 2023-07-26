@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    meta.helm.sh/release-name: executor
+  labels:
+    app.kubernetes.io/component: executor
+    app.kubernetes.io/instance: executor
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: executor
+    release: executor
+  name: executor
+spec:
+  endpoints:
+  - honorLabels: true
+    port: http
+  jobLabel: app.kubernetes.io/name
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: executor
+      app.kubernetes.io/name: executor

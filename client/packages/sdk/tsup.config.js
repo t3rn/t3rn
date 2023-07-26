@@ -1,7 +1,8 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/**/*"],
+  entry: ["src/**/*", "!src/**/*.test.ts", "!src/**/*.spec.ts"],
+  dts: true,
   splitting: false,
   sourcemap: true,
   clean: true,
@@ -13,4 +14,5 @@ export default defineConfig({
     "@polkadot/wasm-crypto",
     "@polkadot/types",
   ],
+  tsconfig: "./tsconfig.build.json",
 });

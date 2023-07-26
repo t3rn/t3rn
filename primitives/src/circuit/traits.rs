@@ -1,11 +1,19 @@
-use crate::{circuit::CircuitStatus, xtx::LocalState, SpeedMode};
+use crate::{circuit::CircuitStatus, xtx::LocalState, GatewayVendor, SpeedMode, TargetId};
 use codec::{Decode, Encode};
-use frame_support::dispatch::{DispatchError, DispatchResult};
+use frame_support::{
+    dispatch::{DispatchError, DispatchResult, DispatchResultWithPostInfo},
+    weights::Weight,
+};
 use frame_system::{pallet_prelude::OriginFor, Config as ConfigSystem};
 use sp_std::{fmt::Debug, vec::Vec};
 
+use crate::circuit::AdaptiveTimeout;
 use t3rn_sdk_primitives::signal::ExecutionSignal;
-use t3rn_types::{fsx::FullSideEffect, sfx::HardenedSideEffect};
+use t3rn_types::{
+    fsx::FullSideEffect,
+    sfx::{HardenedSideEffect, SideEffect},
+};
+
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalTrigger<T: ConfigSystem> {
     /// Id of the contract which generated the side effects
@@ -57,6 +65,26 @@ impl<T: ConfigSystem, Balance> LocalStateExecutionView<T, Balance> {
     }
 }
 
+pub trait CircuitSubmitAPI<T: ConfigSystem, Balance> {
+    fn on_extrinsic_trigger(
+        origin: OriginFor<T>,
+        side_effects: Vec<SideEffect<T::AccountId, Balance>>,
+        speed_mode: SpeedMode,
+    ) -> DispatchResultWithPostInfo;
+
+    fn on_remote_origin_trigger(
+        origin: OriginFor<T>,
+        order_origin: T::AccountId,
+        side_effects: Vec<SideEffect<T::AccountId, Balance>>,
+        speed_mode: SpeedMode,
+    ) -> DispatchResultWithPostInfo;
+}
+
+pub trait CircuitDLQ<T: ConfigSystem> {
+    fn process_dlq(n: T::BlockNumber) -> Weight;
+    fn process_adaptive_xtx_timeout_queue(n: T::BlockNumber, verifier: &GatewayVendor) -> Weight;
+}
+
 pub trait OnLocalTrigger<T: ConfigSystem, Balance> {
     fn on_local_trigger(
         origin: &OriginFor<T>,
@@ -83,7 +111,9 @@ pub trait ReadSFX<Hash, Account, Balance, BlockNumber> {
         fsx_id: Hash,
     ) -> Result<FullSideEffect<Account, BlockNumber, Balance>, DispatchError>;
 
-    fn get_xtx_status(xtx_id: Hash) -> Result<CircuitStatus, DispatchError>;
+    fn get_xtx_status(
+        xtx_id: Hash,
+    ) -> Result<(CircuitStatus, AdaptiveTimeout<BlockNumber, TargetId>), DispatchError>;
 
     fn get_fsx_requester(fsx_id: Hash) -> Result<Account, DispatchError>;
 }

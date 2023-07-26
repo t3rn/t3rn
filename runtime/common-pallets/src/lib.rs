@@ -24,10 +24,10 @@ pub use pallet_circuit;
 pub use pallet_clock;
 pub use pallet_contracts_registry;
 pub use pallet_eth2_finality_verifier;
-pub use pallet_executors;
 pub use pallet_grandpa_finality_verifier;
 pub use pallet_portal;
 pub use pallet_rewards;
+pub use pallet_vacuum;
 pub use pallet_xdns;
 
 pub use cumulus_pallet_aura_ext;

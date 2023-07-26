@@ -27,6 +27,7 @@ use sp_runtime::{
 
 type Header = generic::Header<u32, BlakeTwo256>;
 use sp_std::convert::{TryFrom, TryInto};
+use t3rn_primitives::{light_client::LightClientAsyncAPIEmptyMock, GatewayVendor};
 
 use crate::bridges::runtime::Chain;
 pub type AccountId = u64;
@@ -114,6 +115,10 @@ parameter_types! {
     pub const HeadersToStore: u32 = 5;
     pub const SessionLength: u64 = 5;
     pub const NumValidators: u32 = 5;
+
+    pub const RococoVendor: GatewayVendor = GatewayVendor::Rococo;
+    pub const KusamaVendor: GatewayVendor = GatewayVendor::Kusama;
+    pub const PolkadotVendor: GatewayVendor = GatewayVendor::Polkadot;
 }
 
 parameter_types! {
@@ -140,6 +145,8 @@ impl Config<RococoInstance> for TestRuntime {
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
+    type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
@@ -151,6 +158,8 @@ impl Config<KusamaInstance> for TestRuntime {
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
+    type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
@@ -161,6 +170,8 @@ impl Config<PolkadotInstance> for TestRuntime {
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
+    type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }

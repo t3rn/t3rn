@@ -29,16 +29,30 @@ export const EncodedArgsSchema = z.custom(
   {
     message:
       "Encoded args must be a valid encoded args schema i.e (Transfer, Swap)",
-  }
+  },
 )
 
 export type EncodedArgs = z.infer<typeof EncodedArgsSchema>
 
+export const SideEffectActionSchema = z.enum([
+  "data",
+  "tran",
+  "tass",
+  "swap",
+  "aliq",
+  "rliq",
+  "cevm",
+  "wasm",
+  "cgen",
+])
+
 export const SideEffectSchema = z.object({
-  target: z.string({
-    required_error: "Target is required",
-    invalid_type_error: "Target must be a string",
-  }),
+  target: z
+    .string({
+      required_error: "Target is required",
+      invalid_type_error: "Target must be a string",
+    })
+    .max(4),
   maxReward: z
     .string({
       required_error: "Max reward is required",
@@ -55,17 +69,7 @@ export const SideEffectSchema = z.object({
     .refine((value) => !isNaN(parseFloat(value)) && parseFloat(value) >= 0, {
       message: "Insurance must be a non-negative number",
     }),
-  action: z.enum([
-    "data",
-    "tran",
-    "tass",
-    "swap",
-    "aliq",
-    "rliq",
-    "cevm",
-    "wasm",
-    "cgen",
-  ]),
+  action: SideEffectActionSchema,
   encodedArgs: z.array(EncodedArgsSchema),
   signature: z.string({
     invalid_type_error: "Signature must be a byte string",
@@ -76,8 +80,8 @@ export const SideEffectSchema = z.object({
     })
     .nullable(),
   rewardAssetId: z
-    .number({
-      invalid_type_error: "Reward asset id must be a number",
+    .string({
+      invalid_type_error: "Reward asset id must be a string",
     })
     .nullable(),
 })

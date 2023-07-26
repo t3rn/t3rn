@@ -18,7 +18,7 @@ use t3rn_primitives::{GatewayVendor, TreasuryAccount, TreasuryAccountProvider};
 use sp_core::H256;
 use sp_runtime::{
     generic,
-    traits::{BlakeTwo256, ConvertInto, IdentityLookup},
+    traits::{BlakeTwo256, ConvertInto, IdentityLookup, Keccak256},
     AccountId32, DispatchError,
 };
 use t3rn_primitives::xdns::PalletAssetsOverlay;
@@ -72,7 +72,7 @@ impl system::Config for Test {
     type DbWeight = ();
     type Event = Event;
     type Hash = H256;
-    type Hashing = BlakeTwo256;
+    type Hashing = Keccak256;
     type Header = Header;
     type Index = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
@@ -248,6 +248,7 @@ impl pallet_xdns::Config for Test {
     type AttestersRead =
         t3rn_primitives::attesters::AttestersReadApiEmptyMock<AccountId, Balance, DispatchError>;
     type Balances = Balances;
+    type CircuitDLQ = Circuit;
     type Currency = Balances;
     type Event = Event;
     type Portal = Portal;
@@ -264,6 +265,9 @@ pub type Amount = i64;
 
 parameter_types! {
     pub const HeadersToStore: u32 = 100;
+    pub const RococoVendor: GatewayVendor = GatewayVendor::Rococo;
+    pub const KusamaVendor: GatewayVendor = GatewayVendor::Kusama;
+    pub const PolkadotVendor: GatewayVendor = GatewayVendor::Polkadot;
 }
 
 pub type RococoLightClient = ();
@@ -286,6 +290,8 @@ impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Test {
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = Xdns;
+    type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
@@ -297,6 +303,8 @@ impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Test {
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = Xdns;
+    type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
@@ -308,6 +316,8 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Test {
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
+    type LightClientAsyncAPI = Xdns;
+    type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
     type WeightInfo = ();
 }
