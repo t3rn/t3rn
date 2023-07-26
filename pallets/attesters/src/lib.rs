@@ -317,6 +317,9 @@ pub mod pallet {
         NewTargetProposed(TargetId),
         AttesterAgreedToNewTarget(T::AccountId, TargetId, Vec<u8>),
         CurrentPendingAttestationBatches(TargetId, Vec<(u32, H256)>),
+        AttestationsRemovedFromLateBatches(Vec<u32>),
+        // ShufflingCompleted(current committee, previous committee, next committee)
+        ShufflingCompleted(Vec<T::AccountId>, Vec<T::AccountId>, Vec<T::AccountId>),
     }
 
     #[pallet::error]
@@ -751,6 +754,24 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)]
+        pub fn read_pending_batches(origin: OriginFor<T>) -> DispatchResult {
+            ensure_signed(origin)?;
+
+            for target in AttestationTargets::<T>::get() {
+                let pending_attestation_batches = Self::get_all_batches_to_sign(target);
+                Self::deposit_event(Event::CurrentPendingAttestationBatches(
+                    target,
+                    pending_attestation_batches
+                        .iter()
+                        .map(|batch| (batch.index, batch.message_hash()))
+                        .collect::<Vec<(u32, H256)>>(),
+                ));
+            }
+
+            Ok(())
+        }
+
+        #[pallet::weight(10_000)]
         pub fn set_confirmation_cost(
             origin: OriginFor<T>,
             target: TargetId,
@@ -1112,6 +1133,26 @@ pub mod pallet {
             }
         }
 
+        // Cleans up attestations for a target, after previous committee failed to reach majority on time
+        pub fn remove_attestations_from_late_batches() -> Vec<BatchMessage<T::BlockNumber>> {
+            let mut batches_with_cleared_attestations = vec![];
+            for target in AttestationTargets::<T>::get() {
+                // Remove attestations from batches that are not committed
+                Batches::<T>::mutate(target, |maybe_batches| {
+                    if let Some(batches) = maybe_batches {
+                        batches
+                            .iter_mut()
+                            .filter(|b| b.status == BatchStatus::PendingAttestation)
+                            .for_each(|b| {
+                                b.signatures.clear();
+                                batches_with_cleared_attestations.push(b.clone());
+                            })
+                    }
+                });
+            }
+            batches_with_cleared_attestations
+        }
+
         pub fn get_batches(
             target: TargetId,
             by_status: BatchStatus,
@@ -1174,10 +1215,14 @@ pub mod pallet {
             batches.first().cloned()
         }
 
-        pub fn get_latest_batch_to_sign(target: TargetId) -> Option<BatchMessage<T::BlockNumber>> {
+        pub fn get_all_batches_to_sign(target: TargetId) -> Vec<BatchMessage<T::BlockNumber>> {
             let mut batches = Self::get_batches(target, BatchStatus::PendingAttestation);
             batches.sort_by(|a, b| b.created.cmp(&a.created));
-            batches.first().cloned()
+            batches
+        }
+
+        pub fn get_latest_batch_to_sign(target: TargetId) -> Option<BatchMessage<T::BlockNumber>> {
+            Self::get_all_batches_to_sign(target).first().cloned()
         }
 
         pub fn get_latest_batch_to_sign_hash(target: TargetId) -> Option<H256> {
@@ -1639,6 +1684,26 @@ pub mod pallet {
                 // Call shuffle_committee
                 Self::shuffle_committee();
                 aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
+
+                Self::deposit_event(Event::ShufflingCompleted(
+                    CurrentCommittee::<T>::get(),
+                    PreviousCommittee::<T>::get(),
+                    NextCommittee::<T>::get(),
+                ));
+
+                let late_cleaned_batches = Self::remove_attestations_from_late_batches();
+                aggregated_weight +=
+                    T::DbWeight::get().reads_writes(1, late_cleaned_batches.len() as Weight);
+
+                if late_cleaned_batches.len() > Zero::zero() {
+                    let batch_indices = late_cleaned_batches
+                        .iter()
+                        .map(|batch| batch.index)
+                        .collect::<Vec<u32>>();
+
+                    Self::deposit_event(Event::AttestationsRemovedFromLateBatches(batch_indices));
+                }
+
                 Self::request_next_committee_attestation();
                 aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
 
@@ -1714,12 +1779,12 @@ pub mod attesters_test {
     use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
-        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
-        Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters, ConfigRewards,
-        CurrentCommittee, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
-        NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations, PermanentSlashes,
-        PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters, System,
-        XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
+        AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
+        AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters,
+        ConfigRewards, CurrentCommittee, Event, ExtBuilder, FullSideEffects, LatencyStatus,
+        MiniRuntime, NextBatch, NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations,
+        PermanentSlashes, PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters,
+        System, XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
@@ -2297,6 +2362,116 @@ pub mod attesters_test {
                 Attesters::get_batch_by_message(target, pending_batch.message()).unwrap();
             assert_eq!(the_same_batch.status, BatchStatus::PendingAttestation);
             assert_eq!(the_same_batch.latency, LatencyStatus::Late(1, 0));
+        });
+    }
+
+    fn expect_last_event_to_emit_pending_attestation_batches() -> (TargetId, Vec<(u32, H256)>) {
+        // Recover system event
+        let events = System::events();
+        let expect_pending_attestation_batches = events.last();
+        assert!(expect_pending_attestation_batches.clone().is_some());
+
+        match expect_pending_attestation_batches {
+            Some(event) => match &event.event {
+                Event::Attesters(AttestersEvent::CurrentPendingAttestationBatches(
+                    target,
+                    pending_batches,
+                )) => (*target, pending_batches.clone()),
+                _ => panic!(
+                    "expect_last_event_to_emit_pending_attestation_batches: unexpected event type"
+                ),
+            },
+            None => panic!(
+                "expect_last_event_to_emit_pending_attestation_batches: no last event emitted"
+            ),
+        }
+    }
+
+    #[test]
+    fn test_late_attestations_are_cleaned_at_next_committee_shuffle() {
+        let mut ext = ExtBuilder::default()
+            .with_standard_sfx_abi()
+            .with_eth_gateway_record()
+            .build();
+        ext.execute_with(|| {
+            let _target: TargetId = ETHEREUM_TARGET;
+
+            for counter in 1..33u8 {
+                // Register an attester
+                let _attester = AccountId::from([counter; 32]);
+                register_attester_with_single_private_key([counter; 32]);
+            }
+
+            select_new_committee();
+
+            // Submit 20 attestations - not enough to reach the threshold of Majority Approval
+            for counter in 1..21u8 {
+                let attester = AccountId::from([counter; 32]);
+                sign_and_submit_sfx_to_latest_attestation(
+                    attester,
+                    *b"message_that_needs_attestation32",
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    ETHEREUM_TARGET,
+                    [counter; 32],
+                );
+            }
+
+            Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
+            let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
+            assert_eq!(target, ETHEREUM_TARGET);
+            assert_eq!(pending_batches.len(), 1);
+
+            // Get latest batch
+            let latest_batch =
+                Attesters::get_batches(ETHEREUM_TARGET, BatchStatus::PendingAttestation)
+                    .last()
+                    .unwrap()
+                    .clone();
+
+            assert_eq!(latest_batch.signatures.len(), 20);
+
+            select_new_committee();
+
+            transition_to_next_batch(ETHEREUM_TARGET, 2);
+            // Get the same batch by message
+            let first_pending_batch =
+                Attesters::get_batch_by_message(ETHEREUM_TARGET, latest_batch.message()).unwrap();
+
+            assert_eq!(first_pending_batch.signatures.len(), 0);
+
+            // Submit 20 attestations - not enough to reach the threshold of Majority Approval
+            for counter in 1..21u8 {
+                let attester = AccountId::from([counter; 32]);
+                sign_and_submit_sfx_to_latest_attestation(
+                    attester,
+                    *b"message_that_needs_attestation32",
+                    ECDSA_ATTESTER_KEY_TYPE_ID,
+                    ETHEREUM_TARGET,
+                    [counter; 32],
+                );
+            }
+
+            Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
+            let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
+            assert_eq!(target, ETHEREUM_TARGET);
+            assert_eq!(pending_batches.len(), 2);
+
+            // Get latest batch to sign
+            let second_pending_batch =
+                Attesters::get_latest_batch_to_sign(ETHEREUM_TARGET).unwrap();
+
+            assert_eq!(second_pending_batch.signatures.len(), 20);
+            assert!(second_pending_batch.index != first_pending_batch.index);
+
+            select_new_committee();
+            transition_to_next_batch(ETHEREUM_TARGET, 3);
+
+            // Get the same batch by message
+            let second_batch_again_by_message =
+                Attesters::get_batch_by_message(ETHEREUM_TARGET, second_pending_batch.message())
+                    .unwrap();
+
+            assert_eq!(second_batch_again_by_message.signatures.len(), 0);
         });
     }
 
