@@ -15,7 +15,7 @@ The file exports an object with the following properties:
   - `id`: String that represents the ID of the gateway.
   - `rpc`: String that represents the RPC endpoint of the gateway.
   - `subscan`: String that represents the Subscan URL of the gateway.
-  - `tokenId`: String that represents the token ID of the gateway.
+  - `tokenId`: Number (u32) that represents the token ID of the gateway.
   - `transferData`: Object that defines the transfer data of the gateway.
     - `receiver`: String that represents the receiver address.
     - `fee`: Number that represents the transfer fee (optional).
