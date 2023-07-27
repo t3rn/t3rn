@@ -16,6 +16,7 @@ pub mod pallet {
     const THREE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 3 * 32;
     const TWO_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 2 * 32;
     const ONE_EPOCHS_IN_LOCAL_BLOCKS_U8: u8 = 32;
+    const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
 
     use super::*;
     t3rn_primitives::reexport_currency_types!();
@@ -1263,7 +1264,6 @@ pub mod pallet {
             let mut finality_reward = finality_reward.clone();
 
             // TODO: move to beginning, so can be accessed by everyone
-            const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
 
             let capped_delay_in_blocks = blocks_delay.min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
 
@@ -2011,8 +2011,7 @@ pub mod pallet {
             let quorum = (T::CommitteeSize::get() * 2 / 3) as usize;
 
             for target in AttestationTargets::<T>::get() {
-                let mut new_next_batch = BatchMessage::default();
-                new_next_batch.created = n;
+                let mut new_next_batch = BatchMessage { created: n, ..Default::default() };
                 // If a batch exists, update its status
                 Batches::<T>::mutate(target, |batches| {
                     if let Some(batches) = batches {
@@ -2028,10 +2027,10 @@ pub mod pallet {
                                     batch.message_hash(),
                                 ));
                             } else {
-                                // Mark the batch as late if it has not been attested for. Skip if BatchingWindow overlaps with RepatriationPeriod
-                                if !((n % T::RepatriationPeriod::get()).is_zero()
-                                    && !batch.has_no_sfx())
+                                // Skip if BatchingWindow overlaps with RepatriationPeriod
+                                if !(n % T::RepatriationPeriod::get()).is_zero() || batch.has_no_sfx()
                                 {
+                                    // Mark the batch as late if it has not been attested for. 
                                     batch.latency = match batch.latency {
                                         LatencyStatus::OnTime => LatencyStatus::Late(1, 0),
                                         LatencyStatus::Late(n, r) =>
@@ -2288,9 +2287,9 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::{traits::Keccak256};
+    use sp_runtime::traits::Keccak256;
 
-    use crate::{TargetBatchDispatchEvent};
+    use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
@@ -2303,7 +2302,8 @@ pub mod attesters_test {
     };
     use t3rn_primitives::{
         attesters::{
-            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi, CommitteeRecoverable, CommitteeTransitionIndices,
+            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
+            CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
             AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
