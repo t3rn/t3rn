@@ -207,11 +207,15 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
 
 impl pallet_clock::Config for Runtime {
     type AccountManager = AccountManager;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
+<<<<<<< HEAD
     type RoundDuration = ConstU32<300>;
+=======
+    type RoundDuration = ConstU32<500>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
 }
 
 impl pallet_xdns::Config for Runtime {
@@ -220,10 +224,14 @@ impl pallet_xdns::Config for Runtime {
     type Balances = Balances;
     type CircuitDLQ = Circuit;
     type Currency = Balances;
+<<<<<<< HEAD
     type Event = Event;
     type Portal = Portal;
     type SelfGatewayId = SelfGatewayId;
     type SelfTokenId = ConstU32<3333>;
+=======
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type Time = Timestamp;
     type TreasuryAccounts = Runtime;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
@@ -309,7 +317,7 @@ impl pallet_rewards::Config for Runtime {
 impl pallet_contracts_registry::Config for Runtime {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
@@ -344,8 +352,12 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
 }
 
 impl pallet_portal::Config for Runtime {
+<<<<<<< HEAD
     type Currency = Balances;
     type Event = Event;
+=======
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
@@ -413,12 +425,12 @@ impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
     type Attesters = Attesters;
     type Balances = Balances;
-    type Call = Call;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<100u32>;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3u32>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = SelfGatewayId;
@@ -451,6 +463,7 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
 impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -458,12 +471,20 @@ impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Runtime {
     type LightClientAsyncAPI = XDNS;
     type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -471,12 +492,20 @@ impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
     type LightClientAsyncAPI = XDNS;
     type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -519,4 +548,21 @@ impl pallet_sepolia_finality_verifier::Config for Runtime {
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+}
+
+impl pallet_executors::Config for Runtime {
+    type Currency = Balances;
+    type InstructionHandler = XbiPortal;
+    type RuntimeEvent = RuntimeEvent;
+    type Treasury = Clock;
+    type WeightInfo = ();
+    type Xbi = ();
+>>>>>>> origin/chore/update-flow
 }

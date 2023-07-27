@@ -31,21 +31,24 @@ mod threevm_mock {
         type ContractsRegistry = ContractsRegistry;
         type Currency = Balances;
         type EscrowAccount = EscrowAccount;
-        type Event = Event;
         type OnLocalTrigger = Circuit;
+<<<<<<< HEAD
         type Portal = CircuitPortal;
+=======
+        type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
         type SignalBounceThreshold = ConstU32<2>;
     }
 
     impl pallet_sudo::Config for Test {
-        type Call = Call;
-        type Event = Event;
+        type RuntimeCall = RuntimeCall;
+        type RuntimeEvent = RuntimeEvent;
     }
 
     impl pallet_contracts_registry::Config for Test {
         type Balances = Balances;
         type Currency = Balances;
-        type Event = Event;
+        type RuntimeEvent = RuntimeEvent;
         type WeightInfo = ();
     }
 
@@ -67,12 +70,12 @@ mod threevm_mock {
         type AssetId = u32;
         type Balance = Balance;
         type Currency = Balances;
-        type Event = Event;
         type Extra = ();
         type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
         type Freezer = ();
         type MetadataDepositBase = MetadataDepositBase;
         type MetadataDepositPerByte = MetadataDepositPerByte;
+        type RuntimeEvent = RuntimeEvent;
         type StringLimit = AssetsStringLimit;
         type WeightInfo = ();
     }
@@ -84,8 +87,8 @@ mod threevm_mock {
         type Clock = t3rn_primitives::clock::ClockMock<Self>;
         type Currency = Balances;
         type EscrowAccount = EscrowAccount;
-        type Event = Event;
         type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+        type RuntimeEvent = RuntimeEvent;
         type Time = Timestamp;
         type WeightInfo = ();
     }
@@ -102,12 +105,12 @@ mod threevm_mock {
             DispatchError,
         >;
         type Balances = Balances;
-        type Call = Call;
         type Currency = Balances;
         type DeletionQueueLimit = ConstU32<1024>;
-        type Event = Event;
         type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
         type Portal = CircuitPortal;
+        type RuntimeCall = RuntimeCall;
+        type RuntimeEvent = RuntimeEvent;
         type SFXBiddingPeriod = ConstU32<3>;
         type SelfAccountId = CircuitAccountId;
         type SelfGatewayId = CircuitTargetId;
@@ -156,10 +159,14 @@ mod threevm_mock {
         type Balances = Balances;
         type CircuitDLQ = Circuit;
         type Currency = Balances;
+<<<<<<< HEAD
         type Event = Event;
         type Portal = CircuitPortal;
         type SelfGatewayId = CircuitTargetId;
         type SelfTokenId = ConstU32<3333>;
+=======
+        type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
         type Time = Timestamp;
         type TreasuryAccounts = Test;
         type WeightInfo = ();
@@ -193,6 +200,7 @@ mod threevm_mock {
     impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Test {
         type BridgedChain = Blake2ValU32Chain;
         type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
         type Event = Event;
         type FastConfirmationOffset = ConstU32<0u32>;
         type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -200,12 +208,20 @@ mod threevm_mock {
         type LightClientAsyncAPI = Xdns;
         type MyVendor = RococoVendor;
         type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+        type FastConfirmationOffset = ConstU32<3u32>;
+        type FinalizedConfirmationOffset = ConstU32<10u32>;
+        type HeadersToStore = HeadersToStore;
+        type RationalConfirmationOffset = ConstU32<10u32>;
+        type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
         type WeightInfo = ();
     }
 
     impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Test {
         type BridgedChain = Blake2ValU32Chain;
         type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
         type Event = Event;
         type FastConfirmationOffset = ConstU32<0u32>;
         type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -213,12 +229,20 @@ mod threevm_mock {
         type LightClientAsyncAPI = Xdns;
         type MyVendor = PolkadotVendor;
         type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+        type FastConfirmationOffset = ConstU32<3u32>;
+        type FinalizedConfirmationOffset = ConstU32<10u32>;
+        type HeadersToStore = HeadersToStore;
+        type RationalConfirmationOffset = ConstU32<10u32>;
+        type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
         type WeightInfo = ();
     }
 
     impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Test {
         type BridgedChain = Blake2ValU32Chain;
         type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
         type Event = Event;
         type FastConfirmationOffset = ConstU32<0u32>;
         type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -226,6 +250,13 @@ mod threevm_mock {
         type LightClientAsyncAPI = Xdns;
         type MyVendor = KusamaVendor;
         type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+        type FastConfirmationOffset = ConstU32<3u32>;
+        type FinalizedConfirmationOffset = ConstU32<10u32>;
+        type HeadersToStore = HeadersToStore;
+        type RationalConfirmationOffset = ConstU32<10u32>;
+        type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
         type WeightInfo = ();
     }
 
@@ -256,8 +287,12 @@ mod threevm_mock {
     }
 
     impl pallet_portal::Config for Test {
+<<<<<<< HEAD
         type Currency = Balances;
         type Event = Event;
+=======
+        type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
         type SelectLightClient = SelectLightClientRegistry;
         type WeightInfo = pallet_portal::weights::SubstrateWeight<Test>;
         type Xdns = Xdns;

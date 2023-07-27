@@ -2,7 +2,11 @@ use crate::*;
 
 use crate::{
     accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
+<<<<<<< HEAD
     BlockWeights, Call, Circuit, ContractsRegistry, Event, Portal, RandomnessCollectiveFlip,
+=======
+    BlockWeights, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, RuntimeCall,
+>>>>>>> origin/chore/update-flow
     ThreeVm, Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
@@ -70,15 +74,17 @@ impl pallet_3vm::Config for Runtime {
     type ContractsRegistry = ContractsRegistry;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
     type OnLocalTrigger = Circuit;
+<<<<<<< HEAD
     type Portal = Portal;
+=======
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type SignalBounceThreshold = ConstU32<2>;
 }
 
 impl pallet_3vm_contracts::Config for Runtime {
     type AddressGenerator = pallet_3vm_contracts::DefaultAddressGenerator;
-    type Call = Call;
     /// The safest default is to allow no calls at all.
     ///
     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -86,15 +92,16 @@ impl pallet_3vm_contracts::Config for Runtime {
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
     type CallFilter = frame_support::traits::Nothing;
-    type CallStack = [pallet_3vm_contracts::Frame<Self>; 31];
+    type CallStack = [pallet_3vm_contracts::Frame<Self>; 2];
     type ChainExtension = ();
     type Currency = Balances;
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
-    type Event = Event;
     type Randomness = RandomnessCollectiveFlip;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type Schedule = Schedule;
     type ThreeVm = ThreeVm;
     type Time = Timestamp;
@@ -113,19 +120,6 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
             return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]))
         }
         None
-    }
-}
-
-const WEIGHT_PER_GAS: u64 = 20_000;
-
-pub struct FixedGasWeightMapping;
-impl GasWeightMapping for FixedGasWeightMapping {
-    fn gas_to_weight(gas: u64) -> Weight {
-        gas.saturating_mul(WEIGHT_PER_GAS)
-    }
-
-    fn weight_to_gas(weight: Weight) -> u64 {
-        weight.wrapping_div(WEIGHT_PER_GAS)
     }
 }
 
@@ -160,7 +154,11 @@ impl pallet_3vm_evm::Config for Runtime {
     type CallOrigin = EnsureAddressTruncated;
     type ChainId = ChainId;
     type Currency = Balances;
+<<<<<<< HEAD
     type Event = Event;
+=======
+    type FeeCalculator = FixedGasPrice;
+>>>>>>> origin/chore/update-flow
     // BaseFee pallet may be better from frontier TODO
     type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated<Aura>;
@@ -169,6 +167,7 @@ impl pallet_3vm_evm::Config for Runtime {
     type PrecompilesType = evm_precompile_util::Precompiles<Self>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
     type WithdrawOrigin = EnsureAddressTruncated;
 }

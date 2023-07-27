@@ -42,9 +42,7 @@ frame_support::construct_runtime!(
         System: frame_system,
         Sudo: pallet_sudo,
         Utility: pallet_utility,
-        ParachainSystem: cumulus_pallet_parachain_system::{
-            Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
-        },
+        ParachainSystem: cumulus_pallet_parachain_system,
 
         RandomnessCollectiveFlip: pallet_randomness_collective_flip,
         Timestamp: pallet_timestamp,

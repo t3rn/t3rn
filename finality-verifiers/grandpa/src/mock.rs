@@ -50,13 +50,13 @@ construct_runtime! {
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system,
         GrandpaFinalityVerifier: crate,
         PolkadotBridge: crate::<Instance1>,
         KusamaBridge: crate::<Instance2>,
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Balances: pallet_balances,
+        Timestamp: pallet_timestamp,
+        Sudo: pallet_sudo,
     }
 }
 
@@ -75,9 +75,7 @@ impl frame_system::Config for TestRuntime {
     type BlockLength = ();
     type BlockNumber = u32;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = Event;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Header = Header;
@@ -87,8 +85,10 @@ impl frame_system::Config for TestRuntime {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();
@@ -107,8 +107,8 @@ impl pallet_timestamp::Config for TestRuntime {
 }
 
 impl pallet_sudo::Config for TestRuntime {
-    type Call = Call;
-    type Event = Event;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 parameter_types! {
@@ -130,17 +130,18 @@ impl pallet_balances::Config for TestRuntime {
     type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
-    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl Config<RococoInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -148,12 +149,20 @@ impl Config<RococoInstance> for TestRuntime {
     type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
     type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 
 impl Config<KusamaInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -161,11 +170,19 @@ impl Config<KusamaInstance> for TestRuntime {
     type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
     type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 impl Config<PolkadotInstance> for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -173,6 +190,13 @@ impl Config<PolkadotInstance> for TestRuntime {
     type LightClientAsyncAPI = LightClientAsyncAPIEmptyMock<TestRuntime>;
     type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 

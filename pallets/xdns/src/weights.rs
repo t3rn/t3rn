@@ -48,25 +48,25 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn add_new_gateway() -> Weight {
-        72_795_000_u64
+        Weight::from_ref_time(72_795_000_u64)
             .saturating_add(T::DbWeight::get().reads(2_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
     fn update_ttl() -> Weight {
-        73_255_000_u64
+        Weight::from_ref_time(73_255_000_u64)
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
     fn purge_gateway() -> Weight {
-        58_912_000_u64
+        Weight::from_ref_time(58_912_000_u64)
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 
     fn best_available() -> Weight {
-        25_265_000_u64.saturating_add(T::DbWeight::get().reads(1_u64))
+        Weight::from_ref_time(25_265_000_u64).saturating_add(T::DbWeight::get().reads(1_u64))
     }
 
     fn reboot_self_gateway() -> Weight {
@@ -79,25 +79,25 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn add_new_gateway() -> Weight {
-        72_795_000_u64
+        Weight::from_ref_time(72_795_000_u64)
             .saturating_add(RocksDbWeight::get().reads(2_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
     fn update_ttl() -> Weight {
-        73_255_000_u64
+        Weight::from_ref_time(73_255_000_u64)
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
     fn purge_gateway() -> Weight {
-        58_912_000_u64
+        Weight::from_ref_time(58_912_000_u64)
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 
     fn best_available() -> Weight {
-        25_265_000_u64.saturating_add(RocksDbWeight::get().reads(1_u64))
+        Weight::from_ref_time(25_265_000_u64).saturating_add(RocksDbWeight::get().reads(1_u64))
     }
 
     fn reboot_self_gateway() -> Weight {

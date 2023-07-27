@@ -1,74 +1,73 @@
 [package]
-authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+authors     = { workspace = true }
 description = "A crate that with t3rn ABI cross-codec, SCALE, RLP, and more"
-edition     = "2021"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "t3rn-abi"
-repository  = "https://github.com/t3rn/t3rn/"
+repository  = { workspace = true }
 version     = "1.5.0-rc.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bytes      = { version = "1.2.1", default-features = false, optional = true }
-codec      = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ], optional = true }
-num        = { version = "0.4.1", default-features = false, optional = true }
-num-traits = { version = "0.2", default-features = false, optional = true }
-scale-info = { version = "2.9.0", default-features = false, features = [ "derive" ], optional = true }
-serde      = { default-features = false, version = "1.0", optional = true, features = [ "derive" ] }
+bytes      = { workspace = true, optional = true }
+codec      = { workspace = true, optional = true, package = "parity-scale-codec"}
+num        = { workspace = true, optional = true }
+num-traits = { workspace = true, optional = true }
+scale-info = { workspace = true, optional = true }
+serde      = { workspace = true, optional = true }
 
-sp-core    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-sp-std     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
+sp-core    = { workspace = true, optional = true }
+sp-runtime = { workspace = true, optional = true }
+sp-std     = { workspace = true, optional = true }
 
-frame-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
-frame-system  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false, optional = true }
+frame-support = { workspace = true, optional = true }
+frame-system  = { workspace = true, optional = true }
 
-rlp = { version = "0.5.2", default-features = false, features = [ "derive" ], optional = true }
+rlp = { workspace = true, optional = true }
 
 [dev-dependencies]
 ethabi      = "18.0.0"
 hex         = "0.4"
 hex-literal = "0.4.1"
-rlp-derive  = "0.1.0"
-serde_json  = "1.0.103"
+serde_json  = "1.0.41"
 
 # for mini-mock events
-pallet-assets    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-assets    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+pallet-balances  = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+pallet-contracts = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.39' }
 
 circuit-runtime-types = { path = "../../runtime/common-types" }
-t3rn-sdk-primitives   = { version = "=0.1.1-rc.5" }
+t3rn-sdk-primitives   = { version = "=0.1.1-rc.4" }
 
 [features]
 default = [ "std" ]
 runtime = [ "sp-std", "sp-runtime", "frame-system", "frame-support", "sp-core", "codec", "scale-info", "serde", "bytes", "num-traits", "rlp" ]
 runtime-std = [
-  "sp-std/std",
-  "sp-runtime/std",
-  "frame-system/std",
-  "frame-support/std",
-  "sp-core/std",
-  "codec/std",
-  "scale-info/std",
-  "serde/std",
-  "bytes/std",
-  "num-traits/std",
-  "rlp/std",
+    "sp-std/std",
+    "sp-runtime/std",
+    "frame-system/std",
+    "frame-support/std",
+    "sp-core/std",
+    "codec/std",
+    "scale-info/std",
+    "serde/std",
+    "bytes/std",
+    "num-traits/std",
+    "rlp/std",
 ]
 std = [
-  "sp-std/std",
-  "sp-runtime/std",
-  "frame-system/std",
-  "frame-support/std",
-  "sp-core/std",
-  "codec/std",
-  "scale-info/std",
-  "serde/std",
-  "bytes/std",
-  "num-traits/std",
-  "rlp/std",
+    "sp-std/std",
+    "sp-runtime/std",
+    "frame-system/std",
+    "frame-support/std",
+    "sp-core/std",
+    "codec/std",
+    "scale-info/std",
+    "serde/std",
+    "bytes/std",
+    "num-traits/std",
+    "rlp/std",
 ]
 try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime" ]

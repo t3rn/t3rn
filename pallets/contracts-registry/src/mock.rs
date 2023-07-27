@@ -43,11 +43,11 @@ construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Sudo: pallet_sudo::{Pallet, Call, Event<T>},
+        System: frame_system,
+        Balances: pallet_balances,
+        ContractsRegistry: pallet_contracts_registry,
+        Timestamp: pallet_timestamp,
+        Sudo: pallet_sudo,
     }
 );
 
@@ -65,9 +65,7 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type BlockNumber = BlockNumber;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = Event;
     type Hash = H256;
     type Hashing = Keccak256;
     type Header = Header;
@@ -77,8 +75,10 @@ impl frame_system::Config for Test {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();
@@ -93,11 +93,11 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -119,14 +119,14 @@ impl EscrowTrait<Test> for Test {
 }
 
 impl pallet_sudo::Config for Test {
-    type Call = Call;
-    type Event = Event;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_contracts_registry::Config for Test {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 

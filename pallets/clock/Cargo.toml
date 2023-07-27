@@ -1,45 +1,46 @@
 [package]
-authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+authors     = { workspace = true }
 description = "The global clock calculating basis for claims applicable for entire t3rn platform"
-edition     = "2021"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-clock"
-readme      = "README.md"
-repository  = "https://github.com/t3rn/t3rn/"
-version     = "1.0.0-alpha.0"
+readme      = { workspace = true }
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-codec      = { package = "parity-scale-codec", version = "3", default-features = false }
-log        = { version = "0.4.19", default-features = false }
-scale-info = { version = "2.9.0", default-features = false, features = [ "derive" ] }
-serde      = { version = "1.0", default-features = false, optional = true }
+codec      = { workspace = true, package = "parity-scale-codec" }
+log        = { workspace = true }
+scale-info = { workspace = true }
+serde      = { workspace = true, optional = true }
 
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', optional = true }
-frame-metadata     = { version = "15", features = [ "v13", "v14" ], default-features = false }
-frame-support      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-frame-system       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+frame-benchmarking = { workspace = true, optional = true }
+frame-metadata     = { workspace = true }
+frame-support      = { workspace = true }
+frame-system       = { workspace = true }
 
-sp-io      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-std     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+sp-io      = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std     = { workspace = true }
+sp-version = { workspace = true }
 
 pallet-account-manager = { path = "../account-manager", default-features = false }
 t3rn-primitives        = { default-features = false, path = "../../primitives" }
 
 [dev-dependencies]
-sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-core     = { workspace = true }
+sp-keystore = { workspace = true }
 
-pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 
 pallet-account-manager = { path = "../../pallets/account-manager" }
+pallet-executors       = { path = "../../pallets/executors" }
 
 [features]
 default = [ "std" ]
@@ -59,4 +60,4 @@ std = [
   "t3rn-primitives/std",
   "pallet-account-manager/std",
 ]
-try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime" ]
+try-runtime = [ "frame-support/try-runtime", "frame-system/try-runtime", "sp-runtime/try-runtime" ]

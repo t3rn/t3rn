@@ -5,7 +5,7 @@ use crate::{
     transfers::CurrencyBalanceOf,
     ChainId, Compose,
 };
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::Currency;
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Hash, RuntimeDebug};
@@ -36,7 +36,7 @@ where
     >;
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, MaxEncodedLen, RuntimeDebug, TypeInfo)]
 pub struct AuthorInfo<AccountId, BalanceOf> {
     /// Original code author
     pub account: AccountId,

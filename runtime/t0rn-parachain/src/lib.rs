@@ -19,10 +19,9 @@ pub use crate::{parachain_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
 
 use frame_system::EnsureRoot;
-use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic,
     traits::{AccountIdLookup, Block as BlockT},
@@ -117,13 +116,13 @@ parameter_types! {
 impl pallet_identity::Config for Runtime {
     type BasicDeposit = BasicDeposit;
     type Currency = Balances;
-    type Event = Event;
     type FieldDeposit = FieldDeposit;
     type ForceOrigin = EnsureRoot<AccountId>;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type MaxSubAccounts = MaxSubAccounts;
     type RegistrarOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type Slashed = ();
     type SubAccountDeposit = SubAccountDeposit;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
@@ -164,8 +163,8 @@ construct_runtime!(
         SlashTreasury: pallet_treasury::<Instance4> = 19,
 
         // Collator support. The order of these 4 are important and shall not change.
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
-        CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
+        Authorship: pallet_authorship = 20,
+        CollatorSelection: pallet_collator_selection = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
@@ -324,42 +323,72 @@ impl_runtime_apis! {
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
 
-    impl pallet_3vm_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
+        for Runtime
+    {
+        fn query_call_info(
+            call: RuntimeCall,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: RuntimeCall,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
+        }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
+    }
+
+    impl pallet_3vm_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
         for Runtime
     {
         fn call(
             origin: AccountId,
             dest: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+            Contracts::bare_call(origin, dest, value, gas_limit.unwrap_or_default(), storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT, pallet_3vm_contracts::Determinism::AllowIndeterminism)
         }
 
         fn instantiate(
             origin: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             code: pallet_3vm_contracts_primitives::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+            Contracts::bare_instantiate(origin, value, gas_limit.unwrap_or_default(), storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
         }
 
         fn upload_code(
             origin: AccountId,
             code: Vec<u8>,
             storage_deposit_limit: Option<Balance>,
+            determinism: pallet_3vm_contracts::Determinism,
         ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
         {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
         }
 
         fn get_storage(
@@ -367,38 +396,6 @@ impl_runtime_apis! {
             key: Vec<u8>,
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
-        }
-    }
-
-    impl pallet_evm_rpc_runtime_api::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
-        fn get_evm_address(
-            account_id: AccountId,
-        ) -> Option<H160> {
-            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_evm_address(&account_id)
-        }
-        fn get_or_into_account_id(
-            address: H160,
-        ) -> AccountId {
-            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_or_into_account_id(&address)
-        }
-
-        fn get_threevm_info(
-            address: H160,
-        ) -> Option<(AccountId, Balance, u8)> {
-            Evm::get_threevm_info(&address)
-        }
-
-        fn account_info(address: H160) -> (U256, U256, Vec<u8>) {
-            let account = Evm::account_basic(&address);
-            let code = Evm::get_account_code(&address);
-
-            (account.balance, account.nonce, code)
-        }
-
-        fn storage_at(address: H160, index: U256) -> H256 {
-            let mut tmp = [0u8; 32];
-            index.to_big_endian(&mut tmp);
-            Evm::account_storages(address, H256::from_slice(&tmp[..]))
         }
     }
 

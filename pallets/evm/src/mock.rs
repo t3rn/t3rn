@@ -41,16 +41,15 @@ frame_support::construct_runtime! {
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage},
-        EVM: crate::{Pallet, Call, Storage, Config, Event<T>},
-        ThreeVm: pallet_3vm::{Pallet, Call, Storage, Event<T>},
-        // Utility: pallet_utility::{Pallet, Call, Storage, Event},
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Config<T>, Event<T>},
+        System: frame_system,
+        Balances: pallet_balances,
+        Timestamp: pallet_timestamp,
+        EVM: crate,
+        ThreeVm: pallet_3vm,
+        ContractsRegistry: pallet_contracts_registry,
         Sudo: pallet_sudo,
         Assets: pallet_assets,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
+        Circuit: pallet_circuit,
         CircuitPortal: pallet_portal,
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
@@ -73,9 +72,7 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type BlockNumber = u32;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = Event;
     type Hash = H256;
     type Hashing = Keccak256;
     type Header = generic::Header<u32, BlakeTwo256>;
@@ -85,8 +82,10 @@ impl frame_system::Config for Test {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();
@@ -99,11 +98,11 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
-    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -117,11 +116,11 @@ impl pallet_timestamp::Config for Test {
     type WeightInfo = ();
 }
 
-/// Fixed gas price of `0`.
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-    fn min_gas_price() -> U256 {
-        1u128.into()
+    fn min_gas_price() -> (U256, Weight) {
+        // Return some meaningful gas price and weight
+        (1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
     }
 }
 
@@ -134,22 +133,54 @@ impl FindAuthor<H160> for FindAuthorTruncated {
         Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
     }
 }
-
+parameter_types! {
+    pub BlockGasLimit: U256 = U256::max_value();
+    pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+    pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
+}
 impl crate::Config for Test {
-    type AddressMapping = StoredHashAddressMapping<Test>;
-    type BlockGasLimit = ();
+    type AddressMapping = IdentityAddressMapping;
+    type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-    type CallOrigin = EnsureSigned<Self>;
+    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type ChainId = ();
     type Currency = Balances;
-    type Event = Event;
     type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated;
-    type GasWeightMapping = ();
+    type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
-    type PrecompilesType = ();
-    type PrecompilesValue = ();
+    type OnCreate = ();
+    type PrecompilesType = MockPrecompileSet;
+    type PrecompilesValue = MockPrecompiles;
     type Runner = crate::runner::stack::Runner<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
+    type Timestamp = Timestamp;
+    type WeightInfo = ();
+    type WeightPerGas = WeightPerGas;
     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+}
+
+/// Example PrecompileSet with only Identity precompile.
+pub struct MockPrecompileSet;
+
+impl PrecompileSet for MockPrecompileSet {
+    /// Tries to execute a precompile in the precompile set.
+    /// If the provided address is not a precompile, returns None.
+    fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+        let address = handle.code_address();
+
+        if address == H160::from_low_u64_be(1) {
+            return Some(pallet_evm_precompile_simple::Identity::execute(handle))
+        }
+
+        None
+    }
+
+    /// Check if the given address is a precompile. Should only be called to
+    /// perform the check while not executing the precompile afterward, since
+    /// `execute` already performs a check internally.
+    fn is_precompile(&self, address: H160) -> bool {
+        address == H160::from_low_u64_be(1)
+    }
 }

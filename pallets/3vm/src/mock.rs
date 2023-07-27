@@ -42,16 +42,21 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        ThreeVm: pallet_3vm::{Pallet, Call, Storage, Event<T>},
+        System: frame_system,
+        ThreeVm: pallet_3vm,
         Balances: pallet_balances,
         Timestamp: pallet_timestamp,
         Assets: pallet_assets,
-        Utility: pallet_utility::{Pallet, Call, Storage, Event},
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Utility: pallet_utility,
+        ContractsRegistry: pallet_contracts_registry,
         Sudo: pallet_sudo,
+<<<<<<< HEAD
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
         Portal: pallet_portal,
+=======
+        Circuit: pallet_circuit,
+        CircuitPortal: pallet_portal,
+>>>>>>> origin/chore/update-flow
         Xdns: pallet_xdns,
         AccountManager: pallet_account_manager,
         RococoBridge: pallet_grandpa_finality_verifier,
@@ -68,9 +73,7 @@ impl system::Config for Test {
     type BlockLength = ();
     type BlockNumber = u32;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = Event;
     type Hash = H256;
     type Hashing = Keccak256;
     type Header = Header;
@@ -80,27 +83,29 @@ impl system::Config for Test {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ConstU16<42>;
     type SystemWeightInfo = ();
     type Version = ();
 }
 
 impl pallet_sudo::Config for Test {
-    type Call = Call;
-    type Event = Event;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
-    type Event = Event;
     type ExistentialDeposit = ConstU64<1>;
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -116,9 +121,9 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_utility::Config for Test {
-    type Call = Call;
-    type Event = Event;
     type PalletsOrigin = OriginCaller;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -147,12 +152,12 @@ impl pallet_assets::Config for Test {
     type AssetId = u32;
     type Balance = Balance;
     type Currency = Balances;
-    type Event = Event;
     type Extra = ();
     type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
 }
@@ -164,16 +169,19 @@ impl pallet_3vm::Config for Test {
     type ContractsRegistry = ContractsRegistry;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
     type OnLocalTrigger = Circuit;
+<<<<<<< HEAD
     type Portal = Portal;
+=======
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type SignalBounceThreshold = ConstU32<2>;
 }
 
 impl pallet_contracts_registry::Config for Test {
     type Balances = Balances;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -184,8 +192,8 @@ impl pallet_account_manager::Config for Test {
     type Clock = t3rn_primitives::clock::ClockMock<Self>;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = ();
 }
@@ -199,12 +207,16 @@ impl pallet_circuit::Config for Test {
     type Attesters =
         t3rn_primitives::attesters::AttestersReadApiEmptyMock<AccountId, Balance, DispatchError>;
     type Balances = Balances;
-    type Call = Call;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<1024>;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+<<<<<<< HEAD
     type Portal = Portal;
+=======
+    type Portal = CircuitPortal;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type SFXBiddingPeriod = ConstU32<3>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = CircuitTargetId;
@@ -250,10 +262,14 @@ impl pallet_xdns::Config for Test {
     type Balances = Balances;
     type CircuitDLQ = Circuit;
     type Currency = Balances;
+<<<<<<< HEAD
     type Event = Event;
     type Portal = Portal;
     type SelfGatewayId = CircuitTargetId;
     type SelfTokenId = ConstU32<3333>;
+=======
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type Time = Timestamp;
     type TreasuryAccounts = Test;
     type WeightInfo = ();
@@ -286,6 +302,7 @@ impl pallet_grandpa_finality_verifier::bridges::runtime::Chain for Blake2ValU32C
 impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -293,12 +310,20 @@ impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Test {
     type LightClientAsyncAPI = Xdns;
     type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -306,12 +331,20 @@ impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Test {
     type LightClientAsyncAPI = Xdns;
     type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
+<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -319,6 +352,13 @@ impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Test {
     type LightClientAsyncAPI = Xdns;
     type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+=======
+    type FastConfirmationOffset = ConstU32<3u32>;
+    type FinalizedConfirmationOffset = ConstU32<10u32>;
+    type HeadersToStore = HeadersToStore;
+    type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 
@@ -349,8 +389,12 @@ impl pallet_portal::SelectLightClient<Test> for SelectLightClientRegistry {
 }
 
 impl pallet_portal::Config for Test {
+<<<<<<< HEAD
     type Currency = Balances;
     type Event = Event;
+=======
+    type RuntimeEvent = RuntimeEvent;
+>>>>>>> origin/chore/update-flow
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Test>;
     type Xdns = Xdns;

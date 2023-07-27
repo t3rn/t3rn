@@ -1,57 +1,53 @@
 [package]
 authors     = [ "Parity Technologies <admin@parity.io>", "t3rn ltd. <team@t3rn.io>" ]
 description = "FRAME EVM contracts pallet that is t3rn 3VM enabled"
-edition     = "2021"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-evm"
-readme      = "README.md"
-repository  = "https://github.com/t3rn/3vm/"
-version     = "0.1.0"
+readme      = { workspace = true }
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-evm             = { git = "https://github.com/rust-blockchain/evm.git", rev = "01bcbd2205a212c34451d3b4fabc962793b057d3", default-features = false, features = [ "with-codec" ] }
-hex             = { version = "0.4", default-features = false, features = [ "serde" ] }
-log             = { version = "0.4", default-features = false }
-primitive-types = { version = "0.11.1", default-features = false, features = [ "rlp", "byteorder" ] }
-rlp             = { version = "0.5", default-features = false }
-serde           = { version = "1.0.175", optional = true, features = [ "derive" ] }
-sha3            = { version = "0.10.8", default-features = false }
+evm                   = { workspace = true }
+impl-trait-for-tuples = { workspace = true }
+log                   = { workspace = true }
+primitive-types       = { workspace = true }
 
-codec      = { package = "parity-scale-codec", version = "3.1.0", default-features = false, features = [ "derive" ] }
-scale-info = { version = "2.9.0", default-features = false, features = [ "derive" ] }
-sp-core    = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-sp-io      = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-sp-std     = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+codec      = { workspace = true, package = "parity-scale-codec" }
+scale-info = { workspace = true }
+sp-core    = { workspace = true }
+sp-io      = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std     = { workspace = true }
 
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false, optional = true }
-frame-support      = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-frame-system       = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
-pallet-timestamp   = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27", default-features = false }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support      = { workspace = true }
+frame-system       = { workspace = true }
 
-fp-evm = { version = "3.0.0-dev", path = "primitives", default-features = false }
+# hmm is this needed?
+
+fp-account = { git = "https://github.com/paritytech/frontier.git", branch = "polkadot-v0.9.39", default-features = false }
+fp-evm     = { path = "primitives", default-features = false }
 
 # t3rn dependencies
-t3rn-abi            = { default-features = false, path = "../../types/abi", features = [ "runtime" ] }
-t3rn-primitives     = { default-features = false, path = "../../primitives" }
-t3rn-sdk-primitives = { version = "=0.1.1-rc.5", default-features = false }
-
+t3rn-primitives = { default-features = false, path = "../../primitives" }
 #t3rn-sdk-primitives = { path = "../../../../sdk/crates/primitives", default-features = false }
 
 [dev-dependencies]
 hex-literal = "*"
-serde_json  = { version = "1.0.103" }
+serde_json  = { version = "1.0.34" }
 
 # Substrate Dependencies
-pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
-pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27' }
+pallet-assets                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39', package = "pallet-insecure-randomness-collective-flip" }
+pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
+pallet-utility                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.39' }
 
 # t3rn dependencies
 pallet-3vm                       = { path = "../3vm" }
@@ -66,26 +62,16 @@ pallet-xdns                      = { path = "../xdns" }
 ## Solc dependencies
 #ethers-solc = { git = "https://github.com/gakonst/ethers-rs.git" }
 
-pallet-xbi-portal = { git = "https://github.com/t3rn/xbi", version = "0.3.0" }
+pallet-xbi-portal = { workspace = true, default-features = true }
 
 [features]
 default = [ "std" ]
-runtime-benchmarks = [
-  "frame-benchmarking/runtime-benchmarks",
-  "frame-support/runtime-benchmarks",
-  "frame-system/runtime-benchmarks",
-  "pallet-timestamp/runtime-benchmarks",
-  "sp-runtime/runtime-benchmarks",
-]
+runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks", "frame-support/runtime-benchmarks", "frame-system/runtime-benchmarks", "sp-runtime/runtime-benchmarks" ]
 std = [
   "evm/std",
   "evm/with-serde",
-  "hex/std",
   "log/std",
   "primitive-types/std",
-  "rlp/std",
-  "serde",
-  "sha3/std",
   "codec/std",
   "scale-info/std",
   "sp-core/std",
@@ -94,9 +80,7 @@ std = [
   "sp-std/std",
   "frame-support/std",
   "frame-system/std",
-  "pallet-timestamp/std",
-  "t3rn-abi/std",
   "t3rn-primitives/std",
-  "t3rn-sdk-primitives/std",
   "fp-evm/std",
+  "fp-account/std",
 ]

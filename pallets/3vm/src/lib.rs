@@ -53,7 +53,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// The ID of the circuit
         type CircuitTargetId: Get<ChainId>;
@@ -211,7 +211,7 @@ impl<T: Config> Precompile<T, BalanceOf<T>> for Pallet<T> {
 
 impl<T: Config> LocalStateAccess<T, BalanceOf<T>> for Pallet<T> {
     fn load_local_state(
-        origin: &T::Origin,
+        origin: &T::RuntimeOrigin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
         <T as Config>::OnLocalTrigger::load_local_state(origin, xtx_id.cloned())

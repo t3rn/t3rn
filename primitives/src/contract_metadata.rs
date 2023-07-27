@@ -15,7 +15,7 @@
 // along with cargo-contract.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::Bytes;
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 #[cfg(feature = "std")]
 use core::fmt::{Display, Formatter, Result as DisplayResult};
 use scale_info::TypeInfo;
@@ -141,7 +141,7 @@ impl Display for Compiler {
 }
 
 /// Type of the contract.
-#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo, Copy, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo, Copy, Default, MaxEncodedLen)]
 pub enum ContractType {
     #[default]
     System,

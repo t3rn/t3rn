@@ -1,23 +1,23 @@
 [package]
-authors     = [ "t3rn ltd. <team@t3rn.io>" ]
+authors     = { workspace = true }
 description = "Runtime API definition for the contracts registry pallet."
-edition     = "2018"
-homepage    = "https://t3rn.io"
-license     = "Apache-2.0"
+edition     = { workspace = true }
+homepage    = { workspace = true }
+license     = { workspace = true }
 name        = "pallet-contracts-registry-rpc-runtime-api"
-readme      = "README.md"
-repository  = "https://github.com/t3rn/t3rn/"
-version     = "1.0.0-alpha.0"
+readme      = { workspace = true }
+repository  = { workspace = true }
+version     = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-codec                     = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
+codec      = { workspace = true, package = "parity-scale-codec" }
 pallet-contracts-registry = { path = "../..", default-features = false }
-sp-api                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-core                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
-sp-runtime                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.27', default-features = false }
+sp-api                    = { workspace = true }
+sp-core                   = { workspace = true }
+sp-runtime                = { workspace = true }
 
 [features]
 default = [ "std" ]

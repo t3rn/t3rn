@@ -74,7 +74,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
@@ -118,8 +118,12 @@ pub mod pallet {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
+<<<<<<< HEAD
 
             0
+=======
+            Default::default()
+>>>>>>> origin/chore/update-flow
         }
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
@@ -185,11 +189,11 @@ pub mod pallet {
                     // Add more migration cases here, if needed in the future
                     _ => {
                         // No migration needed.
-                        Ok::<Weight, DispatchError>(0 as Weight)
+                        Ok::<Weight, DispatchError>(Default::default())
                     }
                 }
             })
-            .unwrap_or(0)
+            .unwrap_or_default()
         }
     }
 

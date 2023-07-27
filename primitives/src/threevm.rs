@@ -34,6 +34,7 @@ where
     T: ConfigSystem,
     Balance: Encode + Decode,
 {
+<<<<<<< HEAD
     GetState(T::Origin, GetState<T>),
     SubmitSideEffects(
         T::Origin,
@@ -42,6 +43,14 @@ where
     ),
     Signal(T::Origin, ExecutionSignal<T::Hash>),
     Portal(PortalPrecompileArgs),
+=======
+    GetState(T::RuntimeOrigin, GetState<T>),
+    SubmitSideEffects(
+        T::RuntimeOrigin,
+        SideEffects<T::AccountId, Balance, T::Hash>,
+    ),
+    Signal(T::RuntimeOrigin, ExecutionSignal<T::Hash>),
+>>>>>>> origin/chore/update-flow
 }
 
 /// The happy return type of an invocation
@@ -90,7 +99,7 @@ where
     T: ConfigSystem,
 {
     fn load_local_state(
-        origin: &T::Origin,
+        origin: &T::RuntimeOrigin,
         xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
 }
@@ -194,7 +203,7 @@ where
     T: ConfigSystem,
 {
     fn load_local_state(
-        _origin: &T::Origin,
+        _origin: &T::RuntimeOrigin,
         _xtx_id: Option<&T::Hash>,
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError> {
         Err("Local State Not implemented").map_err(|e| e.into())

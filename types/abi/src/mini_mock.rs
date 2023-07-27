@@ -45,7 +45,6 @@ impl frame_system::Config for MiniRuntime {
     type BlockLength = ();
     type BlockNumber = u64;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
     type Event = ();
     type Hash = H256;
@@ -57,8 +56,9 @@ impl frame_system::Config for MiniRuntime {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();

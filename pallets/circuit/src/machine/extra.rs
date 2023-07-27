@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::{pallet::Error, *};
 use frame_support::ensure;
 

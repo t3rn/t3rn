@@ -124,7 +124,7 @@ macro_rules! setup_currency_adapter {
             for AccountManagerCurrencyAdapter<C, OU>
         where
             T: pallet_transaction_payment::Config + pallet_account_manager::Config<Currency = C>,
-            <T as frame_system::Config>::Call: IsSubType<pallet_3vm_contracts::Call<Runtime>>,
+            <T as frame_system::Config>::RuntimeCall: IsSubType<pallet_3vm_contracts::Call<Runtime>>,
             C: frame_support::traits::Currency<<T as frame_system::Config>::AccountId>,
             C::PositiveImbalance: Imbalance<
                 <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance,
@@ -142,12 +142,12 @@ macro_rules! setup_currency_adapter {
 
             fn withdraw_fee(
                 who: &T::AccountId,
-                call: &<T as frame_system::Config>::Call,
-                info: &sp_runtime::traits::DispatchInfoOf<<T as frame_system::Config>::Call>,
+                call: &<T as frame_system::Config>::RuntimeCall,
+                info: &sp_runtime::traits::DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
                 fee: Self::Balance,
                 tip: Self::Balance,
             ) -> Result<Self::LiquidityInfo, frame_support::pallet_prelude::TransactionValidityError> {
-                let call: &<T as frame_system::Config>::Call = call;
+                let call: &<T as frame_system::Config>::RuntimeCall = call;
 
                 let result = <CurrencyAdapter<C, OU> as pallet_transaction_payment::OnChargeTransaction<T>>::withdraw_fee(
                     who, call, info, fee, tip,
@@ -169,8 +169,8 @@ macro_rules! setup_currency_adapter {
             // for some beneficiary, and peg that metadata to the call to OnUnbalanced
             fn correct_and_deposit_fee(
                 who: &T::AccountId,
-                _dispatch_info: &sp_runtime::traits::DispatchInfoOf<<T as frame_system::Config>::Call>,
-                _post_info: &sp_runtime::traits::PostDispatchInfoOf<<T as frame_system::Config>::Call>,
+                _dispatch_info: &sp_runtime::traits::DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+                _post_info: &sp_runtime::traits::PostDispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
                 corrected_fee: Self::Balance,
                 tip: Self::Balance,
                 already_withdrawn: Self::LiquidityInfo,

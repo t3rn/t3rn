@@ -58,7 +58,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
@@ -122,7 +122,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads(2) + T::DbWeight::get().writes(1))]
+        #[pallet::weight(T::DbWeight::get().reads(2) + T::DbWeight::get().writes(1))]
         pub fn deposit(
             origin: OriginFor<T>,
             charge_id: T::Hash,
@@ -157,7 +157,7 @@ pub mod pallet {
             .map(|_| ())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
+        #[pallet::weight(T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
         pub fn finalize(
             origin: OriginFor<T>,
             charge_id: T::Hash,
@@ -193,7 +193,7 @@ pub mod pallet {
             // TODO: we may want to retry failed transactions here, ensuring a max weight and max retry list
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
-            0
+            Weight::zero()
         }
 
         // A runtime code run after every block and have access to extended set of APIs.
@@ -270,6 +270,6 @@ where
         From<u64>,
 {
     fn convert(w: Weight) -> BalanceOf<T> {
-        BalanceOf::<T>::from(w)
+        BalanceOf::<T>::from(w.ref_time() + w.proof_size())
     }
 }

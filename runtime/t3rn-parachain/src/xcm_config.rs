@@ -1,19 +1,21 @@
 use crate::{
-    AccountId, Balance, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
-    Runtime, XcmpQueue,
+    AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
+    Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
 use frame_support::{
     match_types, parameter_types,
     traits::{Everything, Nothing},
-    weights::{IdentityFee, Weight},
+    weights::Weight,
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
+use polkadot_runtime_common::ToAuthor;
+use sp_core::ConstU32;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
-    EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
+    EnsureXcmOrigin, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     UsingComponents,
@@ -22,9 +24,10 @@ use xcm_executor::XcmExecutor;
 
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
-    pub const RelayNetwork: NetworkId = NetworkId::Any;
-    pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
+    pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
+    pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+    pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -60,24 +63,25 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // Sovereign account converter; this attempts to derive an `AccountId` from the origin location
     // using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
     // foreign chains who want to have a local sovereign account on this chain which they control.
-    SovereignSignedViaLocation<LocationToAccountId, Origin>,
+    SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
     // Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
     // recognized.
-    RelayChainAsNative<RelayChainOrigin, Origin>,
+    RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
     // Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
     // recognized.
-    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
     // Native signed account converter; this just converts an `AccountId32` origin into a normal
     // `Origin::Signed` origin of the same 32-byte value.
-    SignedAccountId32AsNative<RelayNetwork, Origin>,
+    SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-    XcmPassthrough<Origin>,
+    XcmPassthrough<RuntimeOrigin>,
 );
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: Weight = 1_000_000_000;
+    pub UnitWeightCost: Weight = Weight::from_ref_time(1_000_000_000);
     pub const MaxInstructions: u32 = 100;
+    pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 match_types! {
@@ -97,31 +101,41 @@ pub type Barrier = (
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type AssetClaims = PolkadotXcm;
+    type AssetExchanger = ();
+    type AssetLocker = ();
     // How to withdraw and deposit an asset.
     type AssetTransactor = LocalAssetTransactor;
     type AssetTrap = PolkadotXcm;
     type Barrier = Barrier;
-    type Call = Call;
+    type CallDispatcher = RuntimeCall;
+    type FeeManager = ();
     type IsReserve = NativeAsset;
     type IsTeleporter = ();
+    type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+    type MessageExporter = ();
     // Teleporting is disabled.
-    type LocationInverter = LocationInverter<Ancestry>;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
+    type PalletInstancesInfo = AllPalletsWithSystem;
     type ResponseHandler = PolkadotXcm;
+    type RuntimeCall = RuntimeCall;
+    type SafeCallFilter = Everything;
     type SubscriptionService = PolkadotXcm;
-    type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Trader =
+        UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+    type UniversalAliases = Nothing;
+    type UniversalLocation = UniversalLocation;
+    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type XcmSender = XcmRouter;
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
+pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
 pub type XcmRouter = (
     // Two routers - use UMP to communicate with the relay chain:
-    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, ()>,
+    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, (), ()>,
     // ..and XCMP to communicate with the sibling chains.
     XcmpQueue,
 );
@@ -129,16 +143,23 @@ pub type XcmRouter = (
 impl pallet_xcm::Config for Runtime {
     // ^ Override for AdvertisedXcmVersion default
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-    type Call = Call;
-    type Event = Event;
-    type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-    type LocationInverter = LocationInverter<Ancestry>;
-    type Origin = Origin;
-    type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-    type XcmExecuteFilter = Everything;
-    // ^ Disable dispatchable execute on the XCM pallet.
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+    type MaxLockers = ConstU32<8>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type ReachableDest = ReachableDest;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+    type SovereignAccountOf = LocationToAccountId;
+    type TrustedLockers = ();
+    type UniversalLocation = UniversalLocation;
+    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+    type WeightInfo = pallet_xcm::TestWeightInfo;
     // Needs to be `Everything` for local testing.
+    type XcmExecuteFilter = Everything;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type XcmReserveTransferFilter = Nothing;
     type XcmRouter = XcmRouter;
@@ -152,7 +173,7 @@ parameter_types! {
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -160,15 +181,16 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ChannelInfo = ParachainSystem;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type Event = Event;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type PriceForSiblingDelivery = ();
+    type RuntimeEvent = RuntimeEvent;
     type VersionWrapper = PolkadotXcm;
     type WeightInfo = ();
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type Event = Event;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }

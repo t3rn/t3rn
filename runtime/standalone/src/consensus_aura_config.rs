@@ -1,5 +1,6 @@
 use super::*;
 use frame_support::traits::ConstU32;
+use sp_core::ConstU64;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -32,8 +33,6 @@ impl pallet_aura::Config for Runtime {
 }
 
 impl pallet_grandpa::Config for Runtime {
-    type Call = Call;
-    type Event = Event;
     type HandleEquivocation = ();
     type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
         KeyTypeId,
@@ -43,5 +42,7 @@ impl pallet_grandpa::Config for Runtime {
         <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
     type KeyOwnerProofSystem = ();
     type MaxAuthorities = ConstU32<32>;
+    type MaxSetIdSessionEntries = ConstU64<0>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }

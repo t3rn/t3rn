@@ -29,7 +29,7 @@ impl WeightToFeePolynomial for WeightToFee {
         // in Rococo, extrinsic base weight (smallest non-zero weight) is mapped to 1 MILLIUNIT:
         // in our template, we map to 1/10 of that, or 1/10 MILLIUNIT
         let p = MILLIUNIT / 10;
-        let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+        let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -104,9 +104,7 @@ parameter_types! {
 
 impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
-    type FilterUncle = ();
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-    type UncleGenerations = UncleGenerations;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -120,9 +118,9 @@ parameter_types! {
 }
 
 impl pallet_session::Config for Runtime {
-    type Event = Event;
     type Keys = SessionKeys;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+    type RuntimeEvent = RuntimeEvent;
     // Essentially just Aura, but lets be pedantic.
     type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type SessionManager = CollatorSelection;
@@ -154,13 +152,13 @@ pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl pallet_collator_selection::Config for Runtime {
     type Currency = Balances;
-    type Event = Event;
     // should be a multiple of session or things will get inconsistent
     type KickThreshold = Period;
     type MaxCandidates = MaxCandidates;
     type MaxInvulnerables = MaxInvulnerables;
     type MinCandidates = MinCandidates;
     type PotId = PotId;
+    type RuntimeEvent = RuntimeEvent;
     type UpdateOrigin = CollatorSelectionUpdateOrigin;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
@@ -178,9 +176,8 @@ impl pallet_preimage::Config for Runtime {
     type BaseDeposit = PreImageBaseDeposit;
     type ByteDeposit = PreImageByteDeposit;
     type Currency = Balances;
-    type Event = Event;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type MaxSize = PreimageMaxSize;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
 
@@ -192,19 +189,48 @@ parameter_types! {
 }
 
 impl pallet_scheduler::Config for Runtime {
-    type Call = Call;
-    type Event = Event;
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type MaximumWeight = MaximumSchedulerWeight;
-    type NoPreimagePostponement = NoPreimagePostponement;
-    type Origin = Origin;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type PalletsOrigin = OriginCaller;
-    type PreimageProvider = Preimage;
+    type Preimages = ();
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 
+<<<<<<< HEAD
+=======
+parameter_types! {
+    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
+    pub const MaxApprovals: u32 = 100;
+    pub const ProposalBond: Permill = Permill::from_percent(3);
+    pub const SpendPeriod: u32 = (60 * 60 * 24) / 12;
+    pub const ProposalBondMinimum: u128 = 10_u128 * 1_000_000_000_000_u128;
+}
+
+impl pallet_treasury::Config for Runtime {
+    type ApproveOrigin = EnsureRoot<AccountId>;
+    type Burn = ();
+    type BurnDestination = ();
+    type Currency = Balances;
+    type MaxApprovals = MaxApprovals;
+    type OnSlash = Treasury;
+    type PalletId = TreasuryId;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMaximum = ();
+    type ProposalBondMinimum = ProposalBondMinimum;
+    type RejectOrigin = EnsureRoot<AccountId>;
+    type RuntimeEvent = RuntimeEvent;
+    type SpendFunds = ();
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type SpendPeriod = SpendPeriod;
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+}
+
+>>>>>>> origin/chore/update-flow
 struct CheckInherents;
 
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
