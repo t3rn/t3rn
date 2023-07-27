@@ -3150,7 +3150,6 @@ pub mod attesters_test {
                 register_attester_with_single_private_key([counter; 32]);
             }
 
-            // println!("Registered attesters");
             let current_block_1 = add_target_and_transition_to_next_batch(target, 0);
 
             let _committee_transition: CommitteeTransitionIndices = [
@@ -4044,11 +4043,17 @@ pub mod attesters_test {
                 hash: first_batch_hash,
             };
 
+            let delay = System::block_number() - first_batch.available_to_commit_at;
+            let estimated_finality_reward_payout =
+                Attesters::estimate_finality_reward(&target, delay);
+
             const FEE_TREASURY_BALANCE: Balance = 1_000_000_000_000_000_000_000_000_000_000;
             Balances::deposit_creating(
                 &MiniRuntime::get_treasury_account(TreasuryAccount::Fee),
                 FEE_TREASURY_BALANCE,
             );
+
+            let balance_of_submitter_prior = Balances::free_balance(AccountId::from([1; 32]));
 
             // Commit the batch
             assert_ok!(Attesters::commit_batch(
@@ -4061,6 +4066,11 @@ pub mod attesters_test {
             let batch = Attesters::get_batch_by_message(target, first_batch_message)
                 .expect("Batch by message should exist");
             assert_eq!(batch.status, BatchStatus::Committed);
+
+            assert_eq!(
+                Balances::free_balance(AccountId::from([1; 32])),
+                balance_of_submitter_prior + estimated_finality_reward_payout
+            );
         });
     }
 
