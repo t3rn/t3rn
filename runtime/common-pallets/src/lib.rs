@@ -27,6 +27,7 @@ pub use pallet_eth2_finality_verifier;
 pub use pallet_grandpa_finality_verifier;
 pub use pallet_portal;
 pub use pallet_rewards;
+pub use pallet_sepolia_finality_verifier;
 pub use pallet_vacuum;
 pub use pallet_xdns;
 

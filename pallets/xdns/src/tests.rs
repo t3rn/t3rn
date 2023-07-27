@@ -38,7 +38,10 @@ use t3rn_primitives::{
 };
 
 use t3rn_abi::Codec::{Rlp, Scale};
-use t3rn_primitives::xdns::EpochEstimate;
+use t3rn_primitives::{
+    xdns::EpochEstimate,
+    GatewayVendor::{Sepolia, XBI},
+};
 
 use t3rn_types::fsx::SecurityLvl;
 
@@ -732,6 +735,16 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         is_active: true
                     },
                     GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
+                        reported_at: 10,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
                         gateway_id: [103, 97, 116, 101],
                         reported_at: 10,
                         justified_height: 24,
@@ -837,6 +850,16 @@ fn xdns_overview_returns_activity_for_all_registered_targets_after_turning_on_vi
                         is_active: true
                     },
                     GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
+                        reported_at: 17,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: true
+                    },
+                    GatewayActivity {
                         gateway_id: [103, 97, 116, 101],
                         reported_at: 17,
                         justified_height: 24,
@@ -916,6 +939,24 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                     epoch: 26,
                     is_active: false,
                 },
+                FinalityVerifierActivity {
+                    verifier: Sepolia,
+                    reported_at: 74,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
+                FinalityVerifierActivity {
+                    verifier: XBI,
+                    reported_at: 74,
+                    justified_height: 0,
+                    finalized_height: 0,
+                    updated_height: 0,
+                    epoch: 0,
+                    is_active: false,
+                },
             ];
 
             let expected_verifier_overview_all_on = vec![
@@ -948,6 +989,24 @@ fn on_initialize_should_update_update_verifiers_overview_no_more_often_than_each
                 },
                 FinalityVerifierActivity {
                     verifier: Ethereum,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: Sepolia,
+                    reported_at: 17,
+                    justified_height: 24,
+                    finalized_height: 24,
+                    updated_height: 24,
+                    epoch: 26,
+                    is_active: true,
+                },
+                FinalityVerifierActivity {
+                    verifier: XBI,
                     reported_at: 17,
                     justified_height: 24,
                     finalized_height: 24,
@@ -1199,7 +1258,7 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                 )
                 .unwrap();
             }
-            assert_eq!(XDNS::process_all_verifier_overviews(100), 1225000000u64);
+            assert_eq!(XDNS::process_all_verifier_overviews(100), 1825000000u64);
             assert_eq!(XDNS::process_overview(100), ());
 
             let overview = XDNS::gateways_overview();
@@ -1239,6 +1298,16 @@ fn xdns_overview_returns_activity_for_all_registered_but_not_active_after_turnin
                     },
                     GatewayActivity {
                         gateway_id: [5, 5, 5, 5],
+                        reported_at: 100,
+                        justified_height: 24,
+                        finalized_height: 24,
+                        updated_height: 24,
+                        attestation_latency: None,
+                        security_lvl: Optimistic,
+                        is_active: false
+                    },
+                    GatewayActivity {
+                        gateway_id: [101, 116, 104, 50],
                         reported_at: 100,
                         justified_height: 24,
                         finalized_height: 24,
