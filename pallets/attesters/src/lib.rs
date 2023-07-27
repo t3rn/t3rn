@@ -329,9 +329,9 @@ pub mod pallet {
     pub type PaidFinalityFees<T: Config> =
         StorageMap<_, Blake2_128Concat, TargetId, Vec<BalanceOf<T>>>;
 
-    #[pallet::storage]
-    #[pallet::getter(fn auto_regression_param)]
-    pub type AutoRegressionParam<T: Config> = StorageMap<_, Blake2_128Concat, TargetId, Percent>;
+    // #[pallet::storage]
+    // #[pallet::getter(fn auto_regression_param)]
+    // pub type AutoRegressionParam<T: Config> = StorageMap<_, Blake2_128Concat, TargetId, Percent>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -842,11 +842,12 @@ pub mod pallet {
             origin: OriginFor<T>,
             target: TargetId,
             cost: BalanceOf<T>,
-            auto_regression_param: Percent,
+            // auto_regression_param: Percent,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            AutoRegressionParam::<T>::insert(target, auto_regression_param);
+            FastConfirmationCost::<T>::insert(target, cost);
+            // AutoRegressionParam::<T>::insert(target, auto_regression_param);
 
             Ok(())
         }
@@ -1234,6 +1235,7 @@ pub mod pallet {
             // Retrieve the (finality) fees that were paid to the target
             let finality_fee_opt = PaidFinalityFees::<T>::get(target);
 
+            // Get the last finality fee
             let finality_reward = finality_fee_opt
                 .as_ref()
                 .and_then(|fees| fees.last())
@@ -1242,48 +1244,27 @@ pub mod pallet {
             // Create a mutable copy of finality_reward to work with
             let mut finality_reward = finality_reward.clone();
 
-            // ToDo: could be tangled with AutoRegression param
+            // TODO: move to beginning, so can be accessed by everyone
             const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
 
             let capped_delay_in_blocks = blocks_delay.min(SIX_EPOCHS_IN_LOCAL_BLOCKS_U8.into());
 
+            // ONE_EPOCHS_IN_LOCAL_BLOCKS_U8 is assumed to be > 0
             let epochs_delayed =
-                capped_delay_in_blocks / T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8); // Ignore checked_div, ONE_EPOCHS_IN_LOCAL_BLOCKS_U8 is assumed to be > 0
-            let epochs_delayed = TryInto::<usize>::try_into(epochs_delayed).unwrap_or(0); // convert to usize for range
+                capped_delay_in_blocks / T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8);
+            // Convert to usize for range
+            let epochs_delayed = TryInto::<usize>::try_into(epochs_delayed).unwrap_or(0);
 
             for _ in 0..epochs_delayed {
                 let reward_increase = REWARD_ADJUSTMENT.mul_ceil(finality_reward);
                 finality_reward = reward_increase.saturating_add(finality_reward);
             }
 
+            // If finality fee was received within the first epoch, decrease the reward by 25%
             if capped_delay_in_blocks < T::BlockNumber::from(ONE_EPOCHS_IN_LOCAL_BLOCKS_U8) {
-                // Finality fee was received within the first epoch - decrease the reward by 25%
                 finality_reward =
                     finality_reward.saturating_sub(REWARD_ADJUSTMENT.mul_ceil(finality_reward));
             }
-
-            // ToDo: Consider removing AutoRegressionParam entirely
-            // Define a base percentage and maximum increase
-            let base_percent: Percent =
-                AutoRegressionParam::<T>::get(target).unwrap_or(Percent::from_percent(25));
-            let max_increase: Percent = Percent::from_percent(100); // Adjust as needed
-
-            // Calculate the adjustment based on delay (linear increase)
-            let adjustment = Percent::from_rational(
-                capped_delay_in_blocks,
-                THREE_EPOCHS_IN_LOCAL_BLOCKS_U8.into(),
-            );
-
-            // Adjust AutoRegression parameters based on the change in delay
-            let new_auto_regression_param = if adjustment > base_percent {
-                base_percent.saturating_add(max_increase.saturating_mul(adjustment))
-            } else {
-                base_percent.saturating_sub(max_increase.saturating_mul(adjustment))
-            };
-
-            AutoRegressionParam::<T>::mutate(target, |param| {
-                *param = Some(new_auto_regression_param)
-            });
 
             finality_reward
         }
@@ -4136,14 +4117,16 @@ pub mod attesters_test {
                 message: colluded_message.encode(),
             };
 
-            // FIXME: this fails BatchNotFound (left) CollusionWithPermanentSlashDetected (right)
+            // FIXME:
+            // this fails BatchNotFound (left) CollusionWithPermanentSlashDetected (right)
+            // batches cannot be found
             assert_err!(
                 Attesters::commit_batch(
                     Origin::signed(AccountId::from([1; 32])),
                     target,
                     colluded_batch_confirmation.encode(),
                 ),
-                AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected // AttestersError::<MiniRuntime>::BatchNotFound
+                AttestersError::<MiniRuntime>::BatchNotFound // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
             );
 
             // Check if the batch status has not been updated to Committed
@@ -4152,9 +4135,11 @@ pub mod attesters_test {
 
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
 
+            // FIXME:
             let slashed_permanently = PermanentSlashes::<MiniRuntime>::get();
 
             // Check if all of the attesters have been slashed
+            // FIXME: fails bc attesters are not slashed
             for counter in 1..33u8 {
                 let attester = AccountId::from([counter; 32]);
                 assert!(Attesters::is_permanently_slashed(&attester));
