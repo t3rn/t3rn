@@ -4134,7 +4134,7 @@ pub mod attesters_test {
 
             assert_eq!(batch.status, BatchStatus::ReadyForSubmissionFullyApproved);
 
-            // FIXME:
+            // FIXME: permanent slashes cannot be found
             let slashed_permanently = PermanentSlashes::<MiniRuntime>::get();
 
             // Check if all of the attesters have been slashed
