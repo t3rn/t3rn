@@ -1587,9 +1587,9 @@ pub mod pallet {
         }
 
         pub fn reward_submitter(
-            submitter: &T::AccountId,
-            target: &TargetId,
-            batch_message: &BatchMessage<T::BlockNumber>,
+            _submitter: &T::AccountId,
+            _target: &TargetId,
+            _batch_message: &BatchMessage<T::BlockNumber>,
         ) -> Result<BalanceOf<T>, DispatchError> {
             todo!("reward_submitter")
         }
@@ -2242,9 +2242,9 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::{traits::Keccak256, Percent};
+    use sp_runtime::{traits::Keccak256};
 
-    use crate::{Event, PaidFinalityFees, TargetBatchDispatchEvent};
+    use crate::{TargetBatchDispatchEvent};
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersStore,
@@ -2252,12 +2252,11 @@ pub mod attesters_test {
         CurrentCommittee, ExtBuilder, FullSideEffects, LatencyStatus, MiniRuntime, NextBatch,
         NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations, PermanentSlashes,
         PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters, System,
-        XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
+        XExecSignals, ETHEREUM_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
-            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
-            BatchingFactor, CommitteeRecoverable, CommitteeTransitionIndices,
+            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi, CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
             AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
@@ -2456,7 +2455,7 @@ pub mod attesters_test {
     // Returns H256 message hash + signature as Vec<u8>
     fn sign_and_submit_sfx_to_latest_attestation(
         attester: AccountId,
-        messages: Vec<[u8; 32]>,
+        _messages: Vec<[u8; 32]>,
         key_type: KeyTypeId,
         target: TargetId,
         secret_key: [u8; 32],
@@ -3614,10 +3613,10 @@ pub mod attesters_test {
         (res, message_bytes)
     }
 
-    fn expect_latest_confirmed_batching_factor(target: TargetId, latest_confirmed_factor: u16) {
+    fn expect_latest_confirmed_batching_factor(_target: TargetId, _latest_confirmed_factor: u16) {
         // Recover system event
         let events = System::events();
-        let expect_batching_factor_read_event = events.last();
+        let _expect_batching_factor_read_event = events.last();
         // assert!(expect_batching_factor_read_event.clone().is_some());
         // assert_eq!(
         //     expect_batching_factor_read_event.unwrap().event,
@@ -3634,13 +3633,13 @@ pub mod attesters_test {
     }
 
     fn expect_latest_user_finality_fees_estimated(
-        target: TargetId,
-        n_from_now: u16,
-        per_user_fees: u128,
+        _target: TargetId,
+        _n_from_now: u16,
+        _per_user_fees: u128,
     ) {
         // Recover system event
         let events = System::events();
-        let expect_batching_factor_read_event = events.last();
+        let _expect_batching_factor_read_event = events.last();
         // assert!(expect_batching_factor_read_event.clone().is_some());
         // assert_eq!(
         //     expect_batching_factor_read_event.unwrap().event,
@@ -3653,13 +3652,13 @@ pub mod attesters_test {
     }
 
     fn expect_latest_future_total_finality_fees_estimated(
-        target: TargetId,
-        n_from_now: u16,
-        total_fees: u128,
+        _target: TargetId,
+        _n_from_now: u16,
+        _total_fees: u128,
     ) {
         // Recover system event
         let events = System::events();
-        let expect_batching_factor_read_event = events.last();
+        let _expect_batching_factor_read_event = events.last();
         // assert!(expect_batching_factor_read_event.clone().is_some());
         // assert_eq!(
         //     expect_batching_factor_read_event.unwrap().event,
@@ -3710,7 +3709,7 @@ pub mod attesters_test {
     fn request_n_sfx_32_attestations_and_commit(
         messages: Vec<[u8; 32]>,
         target: TargetId,
-        delay_before_commit: BlockNumber,
+        _delay_before_commit: BlockNumber,
     ) -> Vec<u8> {
         for counter in 1..33u8 {
             // Register an attester
@@ -3816,8 +3815,8 @@ pub mod attesters_test {
             let first_batch = attested_batches[0].clone();
 
             // Check if the attestations have been added to the batch
-            let first_batch_hash = first_batch.message_hash();
-            let first_batch_message = first_batch.message();
+            let _first_batch_hash = first_batch.message_hash();
+            let _first_batch_message = first_batch.message();
 
             assert_eq!(first_batch.signatures.len(), 32);
             assert_eq!(
