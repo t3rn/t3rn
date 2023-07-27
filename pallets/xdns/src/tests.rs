@@ -1431,3 +1431,39 @@ fn test_storage_migration_v140_to_v150_for_standard_side_effects_to_standard_sfx
             }
         });
 }
+
+#[test]
+fn test_storage_migration_v143_to_v144_that_kills_old_xdns_records_entry() {
+    ExtBuilder::default()
+        .with_standard_sfx_abi()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // Insert raw xdns records entry
+            frame_support::storage::unhashed::put_raw(
+                &[
+                    225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13,
+                    175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249,
+                    114, 111, 99, 111,
+                ],
+                &[1, 2, 3],
+            );
+
+            pallet_xdns::StorageMigrations::<Runtime>::set(1);
+
+            // Perform the runtime upgrade (call the `on_runtime_upgrade` function)
+            let consumed_weight =
+                <XDNS as frame_support::traits::OnRuntimeUpgrade>::on_runtime_upgrade();
+            let max_weight = <Runtime as frame_system::Config>::DbWeight::get().reads_writes(0, 1);
+            assert_eq!(consumed_weight, max_weight);
+
+            assert_eq!(
+                frame_support::storage::unhashed::get::<Vec<u8>>(&[
+                    225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13,
+                    175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249,
+                    114, 111, 99, 111,
+                ],),
+                None
+            );
+        });
+}

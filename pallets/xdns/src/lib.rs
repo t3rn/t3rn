@@ -142,7 +142,7 @@ pub mod pallet {
             // Define the maximum weight of this migration.
             let max_weight = T::DbWeight::get().reads_writes(10, 10);
             // Define the current storage migration version.
-            const CURRENT_STORAGE_VERSION: u32 = 1;
+            const CURRENT_STORAGE_VERSION: u32 = 2;
             // Migrate the storage entries.
             StorageMigrations::<T>::try_mutate(|current_version| {
                 match *current_version {
@@ -170,6 +170,17 @@ pub mod pallet {
 
                         // Return the weight consumed by the migration.
                         Ok::<Weight, DispatchError>(max_weight)
+                    }
+                    // Storage Migration: Raw XDNS storage entry kill
+                    // Storage Migration Details: 27-07-2023; v1.4.43-rc -> v1.4.44-rc
+                    //     Many Collators on t0rn hit: frame_support::storage: (key, value) failed to decode at [225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13, 175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249, 114, 111, 99, 111]
+                    1 => {
+                        // Manually kill the old XDNS storage entry (XDNSRegistry is now replaced by Gateways)
+                        frame_support::storage::unhashed::kill(&[225, 205, 72, 162, 242, 43, 101, 142, 192, 157, 178, 168, 200, 143, 21, 13, 175, 239, 182, 147, 135, 79, 226, 105, 210, 52, 22, 179, 228, 93, 185, 249, 114, 111, 99, 111]);
+                        // Set migrations_done to true
+                        *current_version = CURRENT_STORAGE_VERSION;
+                        // Return the weight consumed by the migration.
+                        Ok::<Weight, DispatchError>(T::DbWeight::get().writes(1))
                     }
                     // Add more migration cases here, if needed in the future
                     _ => {
