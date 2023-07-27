@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t0rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
-version     = "1.43.1-rc.0"
+version     = "1.45.1-rc.0"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
@@ -101,7 +101,8 @@ pallet-circuit                   = { path = "../../pallets/circuit", package = "
 pallet-vacuum                    = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
 pallet-clock                     = { path = "../../pallets/clock", default-features = false }
 pallet-contracts-registry        = { path = "../../pallets/contracts-registry", default-features = false }
-pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", tag = "v0.1.1", default-features = false }
+pallet-eth2-finality-verifier    = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
+pallet-sepolia-finality-verifier = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia", default-features = false }
 pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-portal                    = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
@@ -215,6 +216,7 @@ std = [
   "pallet-circuit/std",
   "circuit-runtime-types/std",
   "pallet-eth2-finality-verifier/std",
+  "pallet-sepolia-finality-verifier/std",
 ]
 
 runtime-benchmarks = [
@@ -257,6 +259,7 @@ runtime-benchmarks = [
   "pallet-grandpa-finality-verifier/runtime-benchmarks",
   "pallet-utility/runtime-benchmarks",
   "pallet-eth2-finality-verifier/runtime-benchmarks",
+  "pallet-sepolia-finality-verifier/runtime-benchmarks",
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -295,4 +298,5 @@ try-runtime = [
   "polkadot-runtime-common/try-runtime",
   "t3rn-abi/try-runtime",
   "pallet-eth2-finality-verifier/try-runtime",
+  "pallet-sepolia-finality-verifier/try-runtime",
 ]

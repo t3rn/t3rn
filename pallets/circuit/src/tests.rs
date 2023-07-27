@@ -1181,6 +1181,7 @@ fn successfully_confirm_optimistic_transfer() {
                 origin,
                 side_effects,
                 SpeedMode::Finalized,
+                SecurityLvl::Optimistic,
             ));
 
             let (xtx_id, side_effect_a_id) = set_ids(

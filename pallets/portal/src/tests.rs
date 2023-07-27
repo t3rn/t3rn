@@ -217,7 +217,7 @@ mod tests {
                 let result = Portal::register_gateway(
                     Origin::root(),
                     [44u8; 4],
-                    [0u8; 4],
+                    0u32,
                     GatewayVendor::Ethereum,
                     ExecutionVendor::EVM,
                     t3rn_abi::Codec::Rlp,
@@ -365,6 +365,8 @@ mod tests {
                     GatewayVendor::Kusama => *b"ksma",
                     GatewayVendor::Polkadot => *b"pdot",
                     GatewayVendor::Ethereum => *b"eth2",
+                    GatewayVendor::Sepolia => *b"sepl",
+                    GatewayVendor::XBI => *b"xbi_",
                 };
                 let origin = Origin::root();
                 let result = Portal::turn_on(origin, gateway_id);

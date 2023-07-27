@@ -716,7 +716,7 @@ pub mod pallet {
             }
         }
 
-        pub fn process_update_estimated_treasury_balance() {
+        pub fn process_update_estimated_treasury_balance() -> Weight {
             let treasury_balance = TreasuryBalanceSheet {
                 escrow: T::Currency::free_balance(&T::TreasuryAccounts::get_treasury_account(
                     TreasuryAccount::Escrow,
@@ -735,6 +735,8 @@ pub mod pallet {
                 )),
             };
             EstimatedTreasuryBalance::<T>::put(treasury_balance);
+
+            T::DbWeight::get().reads_writes(1, 1)
         }
 
         pub fn process_authors_this_period() -> Weight {
@@ -925,12 +927,10 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_finalize(_n: BlockNumberFor<T>) {
-            Self::process_update_estimated_treasury_balance()
-        }
+        fn on_finalize(_n: BlockNumberFor<T>) {}
 
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            0
+            Self::process_update_estimated_treasury_balance()
         }
     }
 
