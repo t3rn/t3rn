@@ -222,6 +222,9 @@ pub mod pallet {
     pub type PreviousCommittee<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
+    pub type CommitteeTransitionOn<T: Config> = StorageMap<_, Identity, TargetId, u32>;
+
+    #[pallet::storage]
     pub type CurrentRetributionPerSFXPercentage<T: Config> = StorageValue<_, Percent, ValueQuery>;
 
     #[pallet::storage]
@@ -911,7 +914,8 @@ pub mod pallet {
             Ok(())
         }
 
-        fn request_next_committee_attestation() {
+        fn request_next_committee_attestation() -> Vec<(TargetId, u32)> {
+            let mut batch_indices_on_targets = Vec::new();
             for target in AttestationTargets::<T>::get() {
                 if let Some(next_batch) = NextBatch::<T>::get(target) {
                     if next_batch.next_committee.is_none() {
@@ -936,9 +940,12 @@ pub mod pallet {
                             },
                         );
                         NextCommitteeOnTarget::<T>::insert(target, committee_transition_for_target);
+
+                        batch_indices_on_targets.push((target, next_batch.index));
                     }
                 }
             }
+            batch_indices_on_targets
         }
     }
 
@@ -1133,24 +1140,19 @@ pub mod pallet {
             }
         }
 
-        // Cleans up attestations for a target, after previous committee failed to reach majority on time
-        pub fn remove_attestations_from_late_batches() -> Vec<BatchMessage<T::BlockNumber>> {
-            let mut batches_with_cleared_attestations = vec![];
-            for target in AttestationTargets::<T>::get() {
-                // Remove attestations from batches that are not committed
-                Batches::<T>::mutate(target, |maybe_batches| {
-                    if let Some(batches) = maybe_batches {
-                        batches
-                            .iter_mut()
-                            .filter(|b| b.status == BatchStatus::PendingAttestation)
-                            .for_each(|b| {
-                                b.signatures.clear();
-                                batches_with_cleared_attestations.push(b.clone());
-                            })
-                    }
-                });
-            }
-            batches_with_cleared_attestations
+        pub fn is_last_transition_attested() -> bool {
+            CommitteeTransitionOn::<T>::iter().all(|(target, index)| {
+                // Try to find the corresponding batch
+                let batch_by_index = Batches::<T>::get(target)
+                    .and_then(|batches| batches.iter().cloned().find(|b| b.index == index));
+
+                match batch_by_index {
+                    // If found, check if it's not in PendingAttestation status
+                    Some(batch) => batch.status != BatchStatus::PendingAttestation,
+                    // If not found, consider it as "attested"
+                    None => true,
+                }
+            })
         }
 
         pub fn get_batches(
@@ -1666,7 +1668,7 @@ pub mod pallet {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             let mut aggregated_weight: Weight = 0;
             // Check if a shuffling round has passed
-            if (n % T::ShufflingFrequency::get()).is_zero() {
+            if (n % T::ShufflingFrequency::get()).is_zero() && Self::is_last_transition_attested() {
                 // Process pending unnominations
                 aggregated_weight = Self::process_pending_unnominations(n, aggregated_weight);
                 // Update the active set of attesters
@@ -1691,21 +1693,10 @@ pub mod pallet {
                     NextCommittee::<T>::get(),
                 ));
 
-                let late_cleaned_batches = Self::remove_attestations_from_late_batches();
-                aggregated_weight +=
-                    T::DbWeight::get().reads_writes(1, late_cleaned_batches.len() as Weight);
-
-                if late_cleaned_batches.len() > Zero::zero() {
-                    let batch_indices = late_cleaned_batches
-                        .iter()
-                        .map(|batch| batch.index)
-                        .collect::<Vec<u32>>();
-
-                    Self::deposit_event(Event::AttestationsRemovedFromLateBatches(batch_indices));
+                for (target, batch_index) in Self::request_next_committee_attestation() {
+                    CommitteeTransitionOn::<T>::insert(target, batch_index);
                 }
-
-                Self::request_next_committee_attestation();
-                aggregated_weight += T::DbWeight::get().reads_writes(2, 2);
+                aggregated_weight += T::DbWeight::get().reads_writes(2, 3);
 
                 return aggregated_weight
             }
@@ -1780,11 +1771,12 @@ pub mod attesters_test {
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
-        AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber, ConfigAttesters,
-        ConfigRewards, CurrentCommittee, Event, ExtBuilder, FullSideEffects, LatencyStatus,
-        MiniRuntime, NextBatch, NextCommitteeOnTarget, Nominations, Origin, PendingUnnominations,
-        PermanentSlashes, PreviousCommittee, Rewards, SFX2XTXLinksMap, SortedNominatedAttesters,
-        System, XExecSignals, ETHEREUM_TARGET, POLKADOT_TARGET,
+        AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
+        CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee, Event, ExtBuilder,
+        FullSideEffects, LatencyStatus, MiniRuntime, NextBatch, NextCommitteeOnTarget, Nominations,
+        Origin, PendingUnnominations, PermanentSlashes, PreviousCommittee, Rewards,
+        SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET,
+        POLKADOT_TARGET,
     };
     use t3rn_primitives::{
         attesters::{
@@ -2388,7 +2380,7 @@ pub mod attesters_test {
     }
 
     #[test]
-    fn test_late_attestations_are_cleaned_at_next_committee_shuffle() {
+    fn test_late_attestations_stop_committee_shuffle() {
         let mut ext = ExtBuilder::default()
             .with_standard_sfx_abi()
             .with_eth_gateway_record()
@@ -2403,9 +2395,13 @@ pub mod attesters_test {
             }
 
             select_new_committee();
+            assert_eq!(
+                CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
+                None
+            );
 
             // Submit 20 attestations - not enough to reach the threshold of Majority Approval
-            for counter in 1..21u8 {
+            for counter in 1..22u8 {
                 let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
@@ -2428,19 +2424,25 @@ pub mod attesters_test {
                     .unwrap()
                     .clone();
 
-            assert_eq!(latest_batch.signatures.len(), 20);
+            assert_eq!(latest_batch.signatures.len(), 21);
 
             select_new_committee();
+
+            assert_eq!(
+                CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
+                Some(1_u32)
+            );
 
             transition_to_next_batch(ETHEREUM_TARGET, 2);
             // Get the same batch by message
             let first_pending_batch =
                 Attesters::get_batch_by_message(ETHEREUM_TARGET, latest_batch.message()).unwrap();
 
-            assert_eq!(first_pending_batch.signatures.len(), 0);
+            // Keeps the attested signatures
+            assert_eq!(first_pending_batch.signatures.len(), 21);
 
             // Submit 20 attestations - not enough to reach the threshold of Majority Approval
-            for counter in 1..21u8 {
+            for counter in 1..22u8 {
                 let attester = AccountId::from([counter; 32]);
                 sign_and_submit_sfx_to_latest_attestation(
                     attester,
@@ -2454,24 +2456,67 @@ pub mod attesters_test {
             Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
             let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
             assert_eq!(target, ETHEREUM_TARGET);
-            assert_eq!(pending_batches.len(), 2);
+            assert_eq!(pending_batches.len(), 1);
 
             // Get latest batch to sign
             let second_pending_batch =
                 Attesters::get_latest_batch_to_sign(ETHEREUM_TARGET).unwrap();
 
-            assert_eq!(second_pending_batch.signatures.len(), 20);
+            assert_eq!(second_pending_batch.signatures.len(), 21);
             assert!(second_pending_batch.index != first_pending_batch.index);
 
             select_new_committee();
-            transition_to_next_batch(ETHEREUM_TARGET, 3);
+
+            // The committee shuffle should be stopped
+            assert_eq!(
+                CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
+                Some(1_u32)
+            );
+
+            transition_to_next_batch(ETHEREUM_TARGET, 2);
 
             // Get the same batch by message
             let second_batch_again_by_message =
                 Attesters::get_batch_by_message(ETHEREUM_TARGET, second_pending_batch.message())
                     .unwrap();
 
-            assert_eq!(second_batch_again_by_message.signatures.len(), 0);
+            assert_eq!(second_batch_again_by_message.signatures.len(), 21);
+
+            // Sign both of the late batches now by adding 1 missing attestation to each of them
+            let late_attester = AccountId::from([22u8; 32]);
+            let late_first_signature = ecdsa::Pair::from_seed(&[22u8; 32])
+                .sign(first_pending_batch.message_hash().as_ref())
+                .encode();
+
+            assert_ok!(Attesters::submit_attestation(
+                Origin::signed(late_attester.clone()),
+                first_pending_batch.message_hash(),
+                late_first_signature,
+                ETHEREUM_TARGET,
+            ));
+
+            let late_second_signature = ecdsa::Pair::from_seed(&[22u8; 32])
+                .sign(second_pending_batch.message_hash().as_ref())
+                .encode();
+
+            assert_ok!(Attesters::submit_attestation(
+                Origin::signed(late_attester),
+                second_pending_batch.message_hash(),
+                late_second_signature,
+                ETHEREUM_TARGET,
+            ));
+
+            // this time should be successful - no pending batches
+            select_new_committee();
+            Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
+            let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
+            assert_eq!(target, ETHEREUM_TARGET);
+            assert_eq!(pending_batches.len(), 0);
+
+            assert_eq!(
+                CommitteeTransitionOn::<MiniRuntime>::get(ETHEREUM_TARGET),
+                Some(2_u32)
+            );
         });
     }
 
