@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.44.0-rc.0] - 2023-07-27
+### :sparkles: New Features
+- [`3713380`](https://github.com/t3rn/t3rn/commit/3713380f6097e36a93742360478a1aeb2cfb4029) - implement bridge contract to receive remote orders *(PR [#1174](https://github.com/t3rn/t3rn/pull/1174) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+### :white_check_mark: Tests
+- [`8daf064`](https://github.com/t3rn/t3rn/commit/8daf0647764b68d0ad117842cc841cab6f8a5218) - cover xtx id calculations for nonces 0,1 and 2 *(PR [#1205](https://github.com/t3rn/t3rn/pull/1205) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.43.4-rc.0] - 2023-07-27
 ### :bug: Bug Fixes
 - [`38fefaa`](https://github.com/t3rn/t3rn/commit/38fefaa0af383bd8220280d8cf09851f13e8d5f7) - add storage migration to raw key of XDNSRegistry *(PR [#1222](https://github.com/t3rn/t3rn/pull/1222) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1408,3 +1416,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.43.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.0-rc.0...v1.43.1-rc.0
 [v1.43.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.2-rc.0...v1.43.3-rc.0
 [v1.43.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.3-rc.0...v1.43.4-rc.0
+[v1.44.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.4-rc.0...v1.44.0-rc.0
