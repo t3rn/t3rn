@@ -995,7 +995,7 @@ dependencies = [
  "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=main)",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa",
@@ -1008,6 +1008,7 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "pallet-rewards",
  "pallet-scheduler",
+ "pallet-sepolia-finality-verifier",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -1137,7 +1138,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "pallet-contracts-rpc-runtime-api",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=main)",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa",
@@ -1148,6 +1149,7 @@ dependencies = [
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
  "pallet-rewards",
+ "pallet-sepolia-finality-verifier",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6566,6 +6568,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-eth2-finality-verifier"
+version = "1.0.0-alpha.0"
+source = "git+https://github.com/t3rn/eth2-light-client?branch=main#9f1dc98af69da0dd1938561539fcbd4b3b3054a8"
+dependencies = [
+ "eth_trie",
+ "ethereum-types 0.14.1",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "keccak-hash 0.10.0",
+ "log",
+ "milagro_bls",
+ "num-traits",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rlp",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "sp-trie",
+ "ssz-rs",
+ "ssz-rs-derive",
+ "t3rn-primitives",
+ "typenum",
+]
+
+[[package]]
 name = "pallet-evm"
 version = "0.1.0"
 dependencies = [
@@ -7050,7 +7088,7 @@ dependencies = [
  "hex-literal 0.2.2",
  "log",
  "pallet-balances",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?tag=v0.1.1)",
  "pallet-grandpa-finality-verifier",
  "pallet-sudo",
  "pallet-timestamp",
@@ -7189,6 +7227,42 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+]
+
+[[package]]
+name = "pallet-sepolia-finality-verifier"
+version = "1.0.0-alpha.0"
+source = "git+https://github.com/t3rn/eth2-light-client?branch=sepolia#24ca611b648086ce0b1d02603533456bcc6a4173"
+dependencies = [
+ "eth_trie",
+ "ethereum-types 0.14.1",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "keccak-hash 0.10.0",
+ "log",
+ "milagro_bls",
+ "num-traits",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rlp",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "sp-trie",
+ "ssz-rs",
+ "ssz-rs-derive",
+ "t3rn-primitives",
+ "typenum",
 ]
 
 [[package]]
@@ -12492,7 +12566,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-collator"
-version = "1.43.3-rc.0"
+version = "1.45.1-rc.0"
 dependencies = [
  "clap",
  "cumulus-client-cli",
@@ -12568,7 +12642,7 @@ dependencies = [
 
 [[package]]
 name = "t0rn-parachain-runtime"
-version = "1.43.3-rc.0"
+version = "1.45.1-rc.0"
 dependencies = [
  "circuit-runtime-types",
  "cumulus-pallet-aura-ext",
@@ -12609,7 +12683,7 @@ dependencies = [
  "pallet-contracts-primitives 5.0.0",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=main)",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa-finality-verifier",
@@ -12622,6 +12696,7 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "pallet-rewards",
  "pallet-scheduler",
+ "pallet-sepolia-finality-verifier",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -12715,11 +12790,12 @@ dependencies = [
  "pallet-circuit-vacuum",
  "pallet-clock",
  "pallet-contracts 4.0.0-dev",
- "pallet-eth2-finality-verifier",
+ "pallet-eth2-finality-verifier 1.0.0-alpha.0 (git+https://github.com/t3rn/eth2-light-client?branch=main)",
  "pallet-grandpa-finality-verifier",
  "pallet-portal",
  "pallet-randomness-collective-flip",
  "pallet-rewards",
+ "pallet-sepolia-finality-verifier",
  "pallet-timestamp",
  "pallet-treasury",
  "pallet-xdns",
