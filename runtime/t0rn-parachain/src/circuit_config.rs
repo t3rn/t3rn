@@ -383,6 +383,7 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
             GatewayVendor::Ethereum => Ok(Box::new(
                 pallet_eth2_finality_verifier::Pallet::<Runtime>(PhantomData),
             )),
+            _ => Err(PortalError::<Runtime>::LightClientNotFoundByVendor),
         }
     }
 }

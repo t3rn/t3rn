@@ -145,6 +145,8 @@ pub fn match_vendor_with_codec(vendor: GatewayVendor) -> Codec {
         GatewayVendor::Kusama => Codec::Scale,
         GatewayVendor::Polkadot => Codec::Scale,
         GatewayVendor::Ethereum => Codec::Rlp,
+        GatewayVendor::Sepolia => Codec::Rlp,
+        GatewayVendor::XBI => Codec::Scale,
     }
 }
 
