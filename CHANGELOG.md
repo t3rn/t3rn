@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.44.1-rc.0] - 2023-07-27
+### :bug: Bug Fixes
+- [`6075c3b`](https://github.com/t3rn/t3rn/commit/6075c3b35aa29a45b96e8cb5931795e49cad5e27) - stop committee shuffle if previous transition request still awaits attestation *(PR [#1221](https://github.com/t3rn/t3rn/pull/1221) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.44.0-rc.0] - 2023-07-27
 ### :sparkles: New Features
 - [`3713380`](https://github.com/t3rn/t3rn/commit/3713380f6097e36a93742360478a1aeb2cfb4029) - implement bridge contract to receive remote orders *(PR [#1174](https://github.com/t3rn/t3rn/pull/1174) by [@MaciejBaj](https://github.com/MaciejBaj))*
@@ -1417,3 +1422,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.43.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.2-rc.0...v1.43.3-rc.0
 [v1.43.4-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.3-rc.0...v1.43.4-rc.0
 [v1.44.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.4-rc.0...v1.44.0-rc.0
+[v1.44.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.44.0-rc.0...v1.44.1-rc.0
