@@ -217,7 +217,7 @@ mod tests {
                 let result = Portal::register_gateway(
                     Origin::root(),
                     [44u8; 4],
-                    [0u8; 4],
+                    0u32,
                     GatewayVendor::Ethereum,
                     ExecutionVendor::EVM,
                     t3rn_abi::Codec::Rlp,
