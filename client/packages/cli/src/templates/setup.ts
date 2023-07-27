@@ -14,7 +14,7 @@ export default {
       id: "roco",
       rpc: "wss://rococo-rpc.polkadot.io",
       subscan: "https://rococo.api.subscan.io",
-      tokenId: "roco",
+      tokenId: 1001,
       transferData: {
         receiver: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
       },
@@ -37,7 +37,7 @@ export default {
     {
       name: "Rockmine",
       id: "mine",
-      tokenId: "mine",
+      tokenId: 1002,
       rpc: "wss://rococo-rockmine-rpc.polkadot.io",
       transferData: {
         receiver: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
@@ -66,7 +66,7 @@ export default {
     {
       name: "Ethereum",
       id: "eth2",
-      tokenId: "eth2",
+      tokenId: 100,
       transferData: {
         receiver: "0x1234567890123456789012345678901234567890",
         fee: 0,

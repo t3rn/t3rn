@@ -98,9 +98,9 @@ const GatewaySchema = z.object({
       invalid_type_error: "Subscan URL must be a string",
     })
   ),
-  tokenId: z.string({
+  tokenId: z.number({
     required_error: "Token ID is required",
-    invalid_type_error: "Token ID must be a string",
+    invalid_type_error: "Token ID must be a number",
   }),
   transferData: TransferData,
   registrationData: RegistrationData,

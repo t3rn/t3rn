@@ -25,24 +25,6 @@ declare module '@polkadot/api-base/types/errors' {
       TransferDepositFailedOldChargeNotFound: AugmentedError<ApiType>;
       TransferDepositFailedToReleasePreviousCharge: AugmentedError<ApiType>;
     };
-    assetRegistry: {
-      /**
-       * One of the passed capabilities is not valid for this asset
-       **/
-      CapabilitiesNotPermitted: AugmentedError<ApiType>;
-      /**
-       * This location mapping was unallowed for this user
-       **/
-      LocationUnallowed: AugmentedError<ApiType>;
-      /**
-       * The mapping or asset could not be found
-       **/
-      NotFound: AugmentedError<ApiType>;
-      /**
-       * The XCM message shouldnt be executed for given asset
-       **/
-      ShouldntExecuteMessage: AugmentedError<ApiType>;
-    };
     assets: {
       /**
        * The asset-account already exists.
@@ -214,6 +196,7 @@ declare module '@polkadot/api-base/types/errors' {
       ArithmeticErrorDivisionByZero: AugmentedError<ApiType>;
       ArithmeticErrorOverflow: AugmentedError<ApiType>;
       ArithmeticErrorUnderflow: AugmentedError<ApiType>;
+      AssetsFailedToWithdraw: AugmentedError<ApiType>;
       BidderNotEnoughBalance: AugmentedError<ApiType>;
       BiddingFailedExecutorsBalanceTooLowToReserve: AugmentedError<ApiType>;
       BiddingInactive: AugmentedError<ApiType>;
@@ -243,6 +226,7 @@ declare module '@polkadot/api-base/types/errors' {
       FatalXtxTimeoutXtxIdNotMatched: AugmentedError<ApiType>;
       FinalizeSquareUpFailed: AugmentedError<ApiType>;
       FSXNotFoundById: AugmentedError<ApiType>;
+      GatewayNotActive: AugmentedError<ApiType>;
       InsuranceBondAlreadyDeposited: AugmentedError<ApiType>;
       InsuranceBondNotRequired: AugmentedError<ApiType>;
       InvalidFSXBidStateLocated: AugmentedError<ApiType>;
@@ -251,6 +235,7 @@ declare module '@polkadot/api-base/types/errors' {
       InvalidFTXStateIncorrectExecutorForReadySFX: AugmentedError<ApiType>;
       InvalidFTXStateUnassignedExecutorForReadySFX: AugmentedError<ApiType>;
       InvalidLocalTrigger: AugmentedError<ApiType>;
+      InvalidOrderOrigin: AugmentedError<ApiType>;
       LocalExecutionUnauthorized: AugmentedError<ApiType>;
       LocalSideEffectExecutionNotApplicable: AugmentedError<ApiType>;
       OnLocalTriggerFailedToSetupXtx: AugmentedError<ApiType>;
@@ -286,48 +271,6 @@ declare module '@polkadot/api-base/types/errors' {
       XtxNotFound: AugmentedError<ApiType>;
     };
     clock: {
-    };
-    collatorSelection: {
-      /**
-       * User is already a candidate
-       **/
-      AlreadyCandidate: AugmentedError<ApiType>;
-      /**
-       * User is already an Invulnerable
-       **/
-      AlreadyInvulnerable: AugmentedError<ApiType>;
-      /**
-       * Account has no associated validator ID
-       **/
-      NoAssociatedValidatorId: AugmentedError<ApiType>;
-      /**
-       * User is not a candidate
-       **/
-      NotCandidate: AugmentedError<ApiType>;
-      /**
-       * Permission issue
-       **/
-      Permission: AugmentedError<ApiType>;
-      /**
-       * Too few candidates
-       **/
-      TooFewCandidates: AugmentedError<ApiType>;
-      /**
-       * Too many candidates
-       **/
-      TooManyCandidates: AugmentedError<ApiType>;
-      /**
-       * Too many invulnerables
-       **/
-      TooManyInvulnerables: AugmentedError<ApiType>;
-      /**
-       * Unknown error
-       **/
-      Unknown: AugmentedError<ApiType>;
-      /**
-       * Validator ID is not yet registered
-       **/
-      ValidatorNotRegistered: AugmentedError<ApiType>;
     };
     contracts: {
       /**
@@ -478,18 +421,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnknownContract: AugmentedError<ApiType>;
     };
-    cumulusXcm: {
-    };
-    dmpQueue: {
-      /**
-       * The amount of weight given is possibly not enough for executing the message.
-       **/
-      OverLimit: AugmentedError<ApiType>;
-      /**
-       * The message index given is unknown.
-       **/
-      Unknown: AugmentedError<ApiType>;
-    };
     escrowTreasury: {
       /**
        * The spend origin is valid but the amount it is allowed to spend is lower than the
@@ -523,19 +454,23 @@ declare module '@polkadot/api-base/types/errors' {
       CurrentSyncCommitteePeriodNotAvailable: AugmentedError<ApiType>;
       EventNotInReceipt: AugmentedError<ApiType>;
       ExecutionHeaderHashTreeRootFailed: AugmentedError<ApiType>;
+      ExecutionHeaderNotFinalized: AugmentedError<ApiType>;
       ExecutionHeaderNotFound: AugmentedError<ApiType>;
       ForkNotDetected: AugmentedError<ApiType>;
       Halted: AugmentedError<ApiType>;
+      InvalidBeaconLinkage: AugmentedError<ApiType>;
       InvalidBLSPublicKeyUsedForVerification: AugmentedError<ApiType>;
       InvalidBLSSignature: AugmentedError<ApiType>;
       InvalidCheckpoint: AugmentedError<ApiType>;
       InvalidEncodedEpochUpdate: AugmentedError<ApiType>;
+      InvalidExecutionPayload: AugmentedError<ApiType>;
       InvalidExecutionRange: AugmentedError<ApiType>;
       InvalidExecutionRangeLinkage: AugmentedError<ApiType>;
       InvalidFork: AugmentedError<ApiType>;
       InvalidInclusionProof: AugmentedError<ApiType>;
       InvalidInitializationData: AugmentedError<ApiType>;
       InvalidMerkleProof: AugmentedError<ApiType>;
+      InvalidSourceAddress: AugmentedError<ApiType>;
       InvalidSyncCommitteePeriod: AugmentedError<ApiType>;
       MathError: AugmentedError<ApiType>;
       NotPeriodsFirstEpoch: AugmentedError<ApiType>;
@@ -604,6 +539,38 @@ declare module '@polkadot/api-base/types/errors' {
        * Too many approvals in the queue.
        **/
       TooManyApprovals: AugmentedError<ApiType>;
+    };
+    grandpa: {
+      /**
+       * Attempt to signal GRANDPA change with one already pending.
+       **/
+      ChangePending: AugmentedError<ApiType>;
+      /**
+       * A given equivocation report is valid but already previously reported.
+       **/
+      DuplicateOffenceReport: AugmentedError<ApiType>;
+      /**
+       * An equivocation proof provided as part of an equivocation report is invalid.
+       **/
+      InvalidEquivocationProof: AugmentedError<ApiType>;
+      /**
+       * A key ownership proof provided as part of an equivocation report is invalid.
+       **/
+      InvalidKeyOwnershipProof: AugmentedError<ApiType>;
+      /**
+       * Attempt to signal GRANDPA pause when the authority set isn't live
+       * (either paused or already pending pause).
+       **/
+      PauseFailed: AugmentedError<ApiType>;
+      /**
+       * Attempt to signal GRANDPA resume when the authority set isn't paused
+       * (either live or already pending resume).
+       **/
+      ResumeFailed: AugmentedError<ApiType>;
+      /**
+       * Cannot signal forced change so soon after last.
+       **/
+      TooSoon: AugmentedError<ApiType>;
     };
     identity: {
       /**
@@ -717,9 +684,17 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidJustificationLinkage: AugmentedError<ApiType>;
       /**
+       * The payload source is invalid
+       **/
+      InvalidPayloadSource: AugmentedError<ApiType>;
+      /**
        * The header range linkage is not valid
        **/
       InvalidRangeLinkage: AugmentedError<ApiType>;
+      /**
+       * The payload source format is invalid
+       **/
+      InvalidSourceFormat: AugmentedError<ApiType>;
       /**
        * The submitted storage proof is invalid
        **/
@@ -745,6 +720,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       StorageRootNotFound: AugmentedError<ApiType>;
       /**
+       * Failed to decode the source of the event
+       **/
+      UnexpectedEventLength: AugmentedError<ApiType>;
+      /**
+       * The source of event is not valid
+       **/
+      UnexpectedSource: AugmentedError<ApiType>;
+      /**
        * The header couldn't be found in storage
        **/
       UnknownHeader: AugmentedError<ApiType>;
@@ -766,41 +749,6 @@ declare module '@polkadot/api-base/types/errors' {
        * The chain cannot resume normal operation because it is not in maintenance mode
        **/
       NotInMaintenanceMode: AugmentedError<ApiType>;
-    };
-    parachainSystem: {
-      /**
-       * The inherent which supplies the host configuration did not run this block
-       **/
-      HostConfigurationNotAvailable: AugmentedError<ApiType>;
-      /**
-       * No code upgrade has been authorized.
-       **/
-      NothingAuthorized: AugmentedError<ApiType>;
-      /**
-       * No validation function upgrade is currently scheduled.
-       **/
-      NotScheduled: AugmentedError<ApiType>;
-      /**
-       * Attempt to upgrade validation function while existing upgrade pending
-       **/
-      OverlappingUpgrades: AugmentedError<ApiType>;
-      /**
-       * Polkadot currently prohibits this parachain from upgrading its validation function
-       **/
-      ProhibitedByPolkadot: AugmentedError<ApiType>;
-      /**
-       * The supplied validation function has compiled into a blob larger than Polkadot is
-       * willing to run
-       **/
-      TooBig: AugmentedError<ApiType>;
-      /**
-       * The given code upgrade has not been authorized.
-       **/
-      Unauthorized: AugmentedError<ApiType>;
-      /**
-       * The inherent which supplies the validation data did not run this block
-       **/
-      ValidationDataNotAvailable: AugmentedError<ApiType>;
     };
     parachainTreasury: {
       /**
@@ -871,9 +819,17 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidJustificationLinkage: AugmentedError<ApiType>;
       /**
+       * The payload source is invalid
+       **/
+      InvalidPayloadSource: AugmentedError<ApiType>;
+      /**
        * The header range linkage is not valid
        **/
       InvalidRangeLinkage: AugmentedError<ApiType>;
+      /**
+       * The payload source format is invalid
+       **/
+      InvalidSourceFormat: AugmentedError<ApiType>;
       /**
        * The submitted storage proof is invalid
        **/
@@ -899,6 +855,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       StorageRootNotFound: AugmentedError<ApiType>;
       /**
+       * Failed to decode the source of the event
+       **/
+      UnexpectedEventLength: AugmentedError<ApiType>;
+      /**
+       * The source of event is not valid
+       **/
+      UnexpectedSource: AugmentedError<ApiType>;
+      /**
        * The header couldn't be found in storage
        **/
       UnknownHeader: AugmentedError<ApiType>;
@@ -910,63 +874,6 @@ declare module '@polkadot/api-base/types/errors' {
        * A forced change was detected, which is not supported
        **/
       UnsupportedScheduledChange: AugmentedError<ApiType>;
-    };
-    polkadotXcm: {
-      /**
-       * The location is invalid since it already has a subscription from us.
-       **/
-      AlreadySubscribed: AugmentedError<ApiType>;
-      /**
-       * The given location could not be used (e.g. because it cannot be expressed in the
-       * desired version of XCM).
-       **/
-      BadLocation: AugmentedError<ApiType>;
-      /**
-       * The version of the `Versioned` value used is not able to be interpreted.
-       **/
-      BadVersion: AugmentedError<ApiType>;
-      /**
-       * Could not re-anchor the assets to declare the fees for the destination chain.
-       **/
-      CannotReanchor: AugmentedError<ApiType>;
-      /**
-       * The destination `MultiLocation` provided cannot be inverted.
-       **/
-      DestinationNotInvertible: AugmentedError<ApiType>;
-      /**
-       * The assets to be sent are empty.
-       **/
-      Empty: AugmentedError<ApiType>;
-      /**
-       * The message execution fails the filter.
-       **/
-      Filtered: AugmentedError<ApiType>;
-      /**
-       * Origin is invalid for sending.
-       **/
-      InvalidOrigin: AugmentedError<ApiType>;
-      /**
-       * The referenced subscription could not be found.
-       **/
-      NoSubscription: AugmentedError<ApiType>;
-      /**
-       * There was some other issue (i.e. not to do with routing) in sending the message. Perhaps
-       * a lack of space for buffering the message.
-       **/
-      SendFailure: AugmentedError<ApiType>;
-      /**
-       * Too many assets have been attempted for transfer.
-       **/
-      TooManyAssets: AugmentedError<ApiType>;
-      /**
-       * The desired destination was unreachable, generally because there is a no way of routing
-       * to it.
-       **/
-      Unreachable: AugmentedError<ApiType>;
-      /**
-       * The message's weight could not be determined.
-       **/
-      UnweighableMessage: AugmentedError<ApiType>;
     };
     portal: {
       /**
@@ -1013,32 +920,6 @@ declare module '@polkadot/api-base/types/errors' {
        * The creation of the XDNS record was not successful
        **/
       XdnsRecordCreationFailed: AugmentedError<ApiType>;
-    };
-    preimage: {
-      /**
-       * Preimage has already been noted on-chain.
-       **/
-      AlreadyNoted: AugmentedError<ApiType>;
-      /**
-       * The user is not authorized to perform this action.
-       **/
-      NotAuthorized: AugmentedError<ApiType>;
-      /**
-       * The preimage cannot be removed since it has not yet been noted.
-       **/
-      NotNoted: AugmentedError<ApiType>;
-      /**
-       * The preimage request cannot be removed since no outstanding requests exist.
-       **/
-      NotRequested: AugmentedError<ApiType>;
-      /**
-       * A preimage may not be removed when there are outstanding requests.
-       **/
-      Requested: AugmentedError<ApiType>;
-      /**
-       * Preimage is too large to store on-chain.
-       **/
-      TooLarge: AugmentedError<ApiType>;
     };
     rewards: {
       ArithmeticOverflow: AugmentedError<ApiType>;
@@ -1094,9 +975,17 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidJustificationLinkage: AugmentedError<ApiType>;
       /**
+       * The payload source is invalid
+       **/
+      InvalidPayloadSource: AugmentedError<ApiType>;
+      /**
        * The header range linkage is not valid
        **/
       InvalidRangeLinkage: AugmentedError<ApiType>;
+      /**
+       * The payload source format is invalid
+       **/
+      InvalidSourceFormat: AugmentedError<ApiType>;
       /**
        * The submitted storage proof is invalid
        **/
@@ -1122,6 +1011,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       StorageRootNotFound: AugmentedError<ApiType>;
       /**
+       * Failed to decode the source of the event
+       **/
+      UnexpectedEventLength: AugmentedError<ApiType>;
+      /**
+       * The source of event is not valid
+       **/
+      UnexpectedSource: AugmentedError<ApiType>;
+      /**
        * The header couldn't be found in storage
        **/
       UnknownHeader: AugmentedError<ApiType>;
@@ -1133,46 +1030,6 @@ declare module '@polkadot/api-base/types/errors' {
        * A forced change was detected, which is not supported
        **/
       UnsupportedScheduledChange: AugmentedError<ApiType>;
-    };
-    scheduler: {
-      /**
-       * Failed to schedule a call
-       **/
-      FailedToSchedule: AugmentedError<ApiType>;
-      /**
-       * Cannot find the scheduled call.
-       **/
-      NotFound: AugmentedError<ApiType>;
-      /**
-       * Reschedule failed because it does not change scheduled time.
-       **/
-      RescheduleNoChange: AugmentedError<ApiType>;
-      /**
-       * Given target block number is in the past.
-       **/
-      TargetBlockNumberInPast: AugmentedError<ApiType>;
-    };
-    session: {
-      /**
-       * Registered duplicate key.
-       **/
-      DuplicatedKey: AugmentedError<ApiType>;
-      /**
-       * Invalid ownership proof.
-       **/
-      InvalidProof: AugmentedError<ApiType>;
-      /**
-       * Key setting account is not live, so it's impossible to associate keys.
-       **/
-      NoAccount: AugmentedError<ApiType>;
-      /**
-       * No associated validator ID for account.
-       **/
-      NoAssociatedValidatorId: AugmentedError<ApiType>;
-      /**
-       * No keys are associated with this account.
-       **/
-      NoKeys: AugmentedError<ApiType>;
     };
     slashTreasury: {
       /**
@@ -1309,49 +1166,13 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TooManyCalls: AugmentedError<ApiType>;
     };
-    xbiPortal: {
-      AlreadyCheckedIn: AugmentedError<ApiType>;
-      ArithmeticErrorOverflow: AugmentedError<ApiType>;
-      AssetsUnsupported: AugmentedError<ApiType>;
-      CallbackUnsupported: AugmentedError<ApiType>;
-      CallCustomUnsupported: AugmentedError<ApiType>;
-      CallNativeUnsupported: AugmentedError<ApiType>;
-      DefiUnsupported: AugmentedError<ApiType>;
-      EvmUnsupported: AugmentedError<ApiType>;
-      FailedToCastAddress: AugmentedError<ApiType>;
-      FailedToCastHash: AugmentedError<ApiType>;
-      FailedToCastValue: AugmentedError<ApiType>;
-      InstructionuctionNotAllowedHere: AugmentedError<ApiType>;
-      NotificationTimeoutDelivery: AugmentedError<ApiType>;
-      NotificationTimeoutExecution: AugmentedError<ApiType>;
-      ResponseAlreadyStored: AugmentedError<ApiType>;
-      TransferFailed: AugmentedError<ApiType>;
-      TransferUnsupported: AugmentedError<ApiType>;
-      WasmUnsupported: AugmentedError<ApiType>;
-    };
-    xcmpQueue: {
-      /**
-       * Bad overweight index.
-       **/
-      BadOverweightIndex: AugmentedError<ApiType>;
-      /**
-       * Bad XCM data.
-       **/
-      BadXcm: AugmentedError<ApiType>;
-      /**
-       * Bad XCM origin.
-       **/
-      BadXcmOrigin: AugmentedError<ApiType>;
-      /**
-       * Failed to send XCM message.
-       **/
-      FailedToSend: AugmentedError<ApiType>;
-      /**
-       * Provided weight is possibly not enough to execute the message.
-       **/
-      WeightOverLimit: AugmentedError<ApiType>;
+    vacuum: {
     };
     xdns: {
+      /**
+       * Escrow account not found
+       **/
+      EscrowAccountNotFound: AugmentedError<ApiType>;
       /**
        * Gateway verified as inactive
        **/
