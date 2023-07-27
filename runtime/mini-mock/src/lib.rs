@@ -7,9 +7,9 @@ use frame_support::{
 };
 pub use pallet_attesters::{
     ActiveSet, AttestationTargets, Attesters as AttestersStore, BatchMessage, BatchStatus, Batches,
-    Config as ConfigAttesters, CurrentCommittee, Error as AttestersError, LatencyStatus, NextBatch,
-    NextCommitteeOnTarget, Nominations, PendingUnnominations, PermanentSlashes, PreviousCommittee,
-    SortedNominatedAttesters,
+    CommitteeTransitionOn, Config as ConfigAttesters, CurrentCommittee, Error as AttestersError,
+    Event as AttestersEvent, LatencyStatus, NextBatch, NextCommitteeOnTarget, Nominations,
+    PendingUnnominations, PermanentSlashes, PreviousCommittee, SortedNominatedAttesters,
 };
 use std::marker::PhantomData;
 

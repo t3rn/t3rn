@@ -240,7 +240,7 @@ pub trait AttestersWriteApi<Account, Error> {
     fn request_sfx_attestation_commit(target: TargetId, sfx_id: H256) -> Result<(), Error>;
     fn request_sfx_attestation_revert(target: TargetId, sfx_id: H256) -> Result<(), Error>;
     fn request_ban_attesters_attestation(ban_attesters: &Account) -> Result<(), Error>;
-    fn request_next_committee_attestation();
+    fn request_next_committee_attestation() -> Vec<(TargetId, u32)>;
 }
 
 pub trait AttestersReadApi<Account, Balance> {
@@ -309,7 +309,9 @@ impl<Account, Balance, Error> AttestersWriteApi<Account, Error>
         Ok(())
     }
 
-    fn request_next_committee_attestation() {}
+    fn request_next_committee_attestation() -> Vec<(TargetId, u32)> {
+        vec![]
+    }
 }
 
 #[cfg(test)]
@@ -353,7 +355,7 @@ pub mod test {
                 AccountId32,
                 DispatchError,
             >>::request_next_committee_attestation(),
-            ()
+            vec![]
         );
 
         assert_eq!(
