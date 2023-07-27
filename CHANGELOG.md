@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.43.3-rc.0] - 2023-07-27
+### :bug: Bug Fixes
+- [`3827ef9`](https://github.com/t3rn/t3rn/commit/3827ef92b284f949aebd88040d9a02213958e84b) - ensure XDNS override stores single Gateway ID *(PR [#1218](https://github.com/t3rn/t3rn/pull/1218) by [@MaciejBaj](https://github.com/MaciejBaj))*
+
+
 ## [v1.43.1-rc.0] - 2023-07-25
 ### :bug: Bug Fixes
 - [`0fadd75`](https://github.com/t3rn/t3rn/commit/0fadd750e4937e3ab1f9266bdd5560cac05193ac) - executor sending Confirmed Batches *(PR [#1207](https://github.com/t3rn/t3rn/pull/1207) by [@3h4x](https://github.com/3h4x))*
@@ -1396,3 +1401,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.42.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.41.1-rc.0...v1.42.0-rc.0
 [v1.43.0-rc.0]: https://github.com/t3rn/t3rn/compare/v1.42.1-rc.0...v1.43.0-rc.0
 [v1.43.1-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.0-rc.0...v1.43.1-rc.0
+[v1.43.3-rc.0]: https://github.com/t3rn/t3rn/compare/v1.43.2-rc.0...v1.43.3-rc.0
