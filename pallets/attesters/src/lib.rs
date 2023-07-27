@@ -741,6 +741,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let submitter = ensure_signed(origin)?;
 
+            #[cfg(not(feature = "test-skip-verification"))]
             let target_codec = T::Xdns::get_target_codec(&target)?;
 
             // ToDo: Check the source address of the batch ensuring matches Escrow contract address.
@@ -786,10 +787,29 @@ pub mod pallet {
                     .map_err(|_| Error::<T>::UnexpectedBatchHashRecoveredFromCommitment)?;
 
             let batches = Self::get_batches_to_commit(target);
-            let batch = batches
+
+            let batch = match batches
                 .iter()
                 .find(|batch| batch.message_hash() == recovered_enacted_batch_hash)
-                .ok_or(Error::<T>::BatchNotFound)?;
+            {
+                Some(batch) => batch,
+                None => {
+                    // At this point we know the valid message has been recorded on target Escrow Smart Contract
+                    // If we can't find the corresponding batch by the message - we have a problem - attesters are colluding.
+                    println!(
+                        "Collusion detected on target: {target:?} for message hash {recovered_enacted_batch_hash:?}"
+                    );
+                    Self::apply_permanent_attesters_slash(
+                        on_target_batch_event
+                            .signatures
+                            .iter()
+                            .map(|(attester_index, _)| *attester_index)
+                            .collect(),
+                    );
+
+                    return Err(Error::<T>::CollusionWithPermanentSlashDetected.into())
+                },
+            };
 
             ensure!(
                 batch.status == BatchStatus::ReadyForSubmissionFullyApproved
@@ -1260,7 +1280,7 @@ pub mod pallet {
                 .unwrap_or(&base_user_fee_for_single_user);
 
             // Create a mutable copy of finality_reward to work with
-            let mut finality_reward = finality_reward.clone();
+            let mut finality_reward = *finality_reward;
 
             // TODO: move to beginning, so can be accessed by everyone
             const REWARD_ADJUSTMENT: Percent = Percent::from_percent(25);
@@ -2288,9 +2308,9 @@ pub mod attesters_test {
     };
     use sp_application_crypto::{ecdsa, ed25519, sr25519, KeyTypeId, Pair, RuntimePublic};
     use sp_core::H256;
-    use sp_runtime::{traits::Keccak256};
+    use sp_runtime::traits::Keccak256;
 
-    use crate::{TargetBatchDispatchEvent};
+    use crate::TargetBatchDispatchEvent;
     use sp_std::convert::TryInto;
     use t3rn_mini_mock_runtime::{
         AccountId, ActiveSet, AttestationTargets, Attesters, AttestersError, AttestersEvent,
@@ -2303,7 +2323,8 @@ pub mod attesters_test {
     };
     use t3rn_primitives::{
         attesters::{
-            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi, CommitteeRecoverable, CommitteeTransitionIndices,
+            ecdsa_pubkey_to_eth_address, AttesterInfo, AttestersReadApi, AttestersWriteApi,
+            CommitteeRecoverable, CommitteeTransitionIndices,
         },
         circuit::{
             AdaptiveTimeout, CircuitStatus, FullSideEffect, SecurityLvl, SideEffect, XExecSignal,
@@ -4270,7 +4291,6 @@ pub mod attesters_test {
     //     });
     // }
 
-    #[ignore]
     #[test]
     fn register_and_submit_32x_attestations_and_check_collusion_permanent_slash() {
         let target: TargetId = ETHEREUM_TARGET;
@@ -4309,7 +4329,6 @@ pub mod attesters_test {
             }
 
             // Check if the attestations have been added to the batch
-
             let fist_batches =
                 Attesters::get_batches(target, BatchStatus::ReadyForSubmissionFullyApproved);
             assert_eq!(fist_batches.len(), 1);
@@ -4326,16 +4345,13 @@ pub mod attesters_test {
                 message: colluded_message.encode(),
             };
 
-            // FIXME:
-            // this fails BatchNotFound (left) CollusionWithPermanentSlashDetected (right)
-            // batches cannot be found
             assert_err!(
                 Attesters::commit_batch(
                     Origin::signed(AccountId::from([1; 32])),
                     target,
                     colluded_batch_confirmation.encode(),
                 ),
-                AttestersError::<MiniRuntime>::BatchNotFound // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
+                AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected // AttestersError::<MiniRuntime>::CollusionWithPermanentSlashDetected
             );
 
             // Check if the batch status has not been updated to Committed
