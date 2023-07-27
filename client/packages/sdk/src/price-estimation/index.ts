@@ -1,5 +1,5 @@
 import { getPriceForSymbol } from "./cg";
-import { estimateGasFee as calculateGasFee, mapSfxActionToEthAction, SpeedModes } from "./eth";
+import { estimateActionGasFee, EstimateEthActionParams, mapSfxActionToEthAction, SpeedMode } from "./eth";
 
 /**
  * An execution target
@@ -16,23 +16,24 @@ export const Targets = {
  * An execution action
  */
 
-export type Action = "tass"
+export type Action = "tass" | "cevm"
 export const Actions = {
-  TransferAsset: "tass"
+  TransferAsset: "tass",
+  CallEvm: "cevm"
 } as const;
 
 /**
  * An interface to configure execution estimation
  */
 
-interface Estimate {
+interface Estimate<T> {
   target: Target,
   action: Action,
   asset: string,
+  args: T
 }
 
-
-export interface EstimateMaxReward extends Estimate {
+export interface EstimateMaxReward<T> extends Estimate<T> {
   targetAsset: string,
   targetAmount: number,
   overSpendPercent: number
@@ -81,19 +82,26 @@ export const mapTargetToNativeAsset = (target: string) => {
 /** 
  * Estimate the gas fee required for an execution
  *
- * @param target The execution target
- * @param action The execution action
+ * @param input.target The execution target
+ * @param input.action The execution action
+ * @param input.args Arguments used for estimating gas fees.
+ * 
+ * If estimating for an ETH transfer:
+ * @param {EthSpeedModes} input.args - Specifies the desired speed mode. This should be one of the values from the EthSpeedModes Enum.
+ * 
+ * If estimating for an EVM call:
+ * @param {EstimateEvmCallGasParams} input.args - Parameters necessary for estimating gas in an Ethereum Virtual Machine (EVM) call.
  *
  * @returns The gas fee in the target's native asset
 */
 
-export const estimateGasFees = async ({ target, action }: Estimate) => {
+export async function estimateGasFee<T extends EstimateEthActionParams | SpeedMode>({ target, action, args }: Estimate<T>) {
   switch (target) {
     case "eth":
     case "sepl":
-      return calculateGasFee(target, mapSfxActionToEthAction(action), SpeedModes.Standard)
+      return estimateActionGasFee(target, mapSfxActionToEthAction(action), args as T);
     default:
-      throw new Error("Gas fee estimation for this target is not yet implemented!")
+      throw new Error("Gas fee estimation for this target is not yet implemented!");
   }
 }
 
@@ -103,16 +111,25 @@ export const estimateGasFees = async ({ target, action }: Estimate) => {
  * The bid amount is the sum of the gas fee estimate required
  * for an execution and the a profit margin specified by the executor
  *
- * @param input The execution configuration
+ * @param input.target The execution target
+ * @param input.action The execution action
+ * @param input.args Arguments used for estimating gas fees.
+ * 
+ * If estimating for an ETH transfer:
+ * @param {EthSpeedModes} input.args - Specifies the desired speed mode. This should be one of the values from the EthSpeedModes Enum.
+ * 
+ * If estimating for an EVM call:
+ * @param {EstimateEvmCallGasParams} input.args - Parameters necessary for estimating gas in an Ethereum Virtual Machine (EVM) call.
+ *
  * @param profitMargin A function that takes the gas fee estimate and returns the profit margin
  *
  * @returns The bid amount in the target's native asset
 */
 
-export const estimateBidAmount = async (input: Estimate, profitMargin: (gasFee: number) => number) => {
+export async function estimateBidAmount<T extends EstimateEthActionParams | SpeedMode>(input: Estimate<T>, profitMargin: (gasFee: number) => number) {
   const targetNativeAsset = mapTargetToNativeAsset(input.target);
-  const gasFees = await estimateGasFees(input)
-  return { value: gasFees + profitMargin(gasFees), symbol: targetNativeAsset } as Asset
+  const gasFees = await estimateGasFee(input);
+  return { value: gasFees + profitMargin(gasFees), symbol: targetNativeAsset } as Asset;
 }
 
 /**
@@ -123,30 +140,29 @@ export const estimateBidAmount = async (input: Estimate, profitMargin: (gasFee: 
  * @param input.target The execution target
  * @param input.targetAmount The amount of the target asset
  * @param input.targetAsset The target asset
- * @overSpentPercent The percentage of the target amount to be used as a profit margin
+ * @param input.overSpendPercent The percentage of the target amount to be used as a profit margin
+ * @param input.args Arguments used for estimating gas fees.
+ * 
+ * If estimating for an ETH transfer:
+ * @param {EthSpeedModes} input.args - Specifies the desired speed mode. This should be one of the values from the EthSpeedModes Enum.
+ * 
+ * If estimating for an EVM call:
+ * @param {EstimateEvmCallGasParams} input.args - Parameters necessary for estimating gas in an Ethereum Virtual Machine (EVM) call.
  *
  * @returns The maximum reward estimate
 */
 
-export const estimateMaxReward = async ({
-  action,
-  asset: baseAsset,
-  target,
-  targetAmount,
-  targetAsset,
-  overSpendPercent = 0.5
-}: EstimateMaxReward): Promise<MaxRewardEstimation> => {
+export async function estimateMaxReward<T extends EstimateEthActionParams | SpeedMode>({
+  action, asset: baseAsset, target, targetAmount, targetAsset, overSpendPercent = 0.5, args
+}: EstimateMaxReward<T>): Promise<MaxRewardEstimation> {
   const targetNativeAsset = mapTargetToNativeAsset(target);
   const targetAmountInBaseAsset = await getPriceForSymbol(targetAsset, baseAsset) * targetAmount;
-
-  const gasFeeInTargetNativeAsset = await estimateGasFees({
-    target, action, asset: targetAsset,
+  const gasFeeInTargetNativeAsset = await estimateGasFee({
+    target, action, asset: targetAsset, args
   });
   const gasFeeInBaseAsset = await getPriceForSymbol(targetNativeAsset, baseAsset) * gasFeeInTargetNativeAsset;
-
   const executorFeeEstimateInBaseAsset = targetAmountInBaseAsset * overSpendPercent / 100;
   const maxRewardInBaseAsset = targetAmountInBaseAsset + executorFeeEstimateInBaseAsset + gasFeeInBaseAsset;
-
   return {
     gasFee: [{
       value: gasFeeInTargetNativeAsset,
@@ -167,7 +183,7 @@ export const estimateMaxReward = async ({
       value: targetAmountInBaseAsset,
       symbol: baseAsset
     },
-  }
+  };
 }
 
 export * from "./eth";

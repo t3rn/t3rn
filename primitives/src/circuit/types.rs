@@ -666,6 +666,69 @@ mod tests {
     }
 
     #[test]
+    fn sfx_id_calculates_expected_values_for_nonce_0_1_and_2_for_hardcoded_20b_accounts() {
+        let account_32b = AccountId32::new(hex!(
+            "000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        ));
+
+        let xtx_nonce_0 = XExecSignal::<AccountId32, u32>::new(
+            &account_32b,
+            0u32,
+            AdaptiveTimeout::default_401(),
+            None,
+            SpeedMode::Finalized,
+            (0, 0),
+        );
+
+        let xtx_nonce_1 = XExecSignal::<AccountId32, u32>::new(
+            &account_32b,
+            1u32,
+            AdaptiveTimeout::default_401(),
+            None,
+            SpeedMode::Finalized,
+            (0, 0),
+        );
+
+        let xtx_nonce_2 = XExecSignal::<AccountId32, u32>::new(
+            &account_32b,
+            2u32,
+            AdaptiveTimeout::default_401(),
+            None,
+            SpeedMode::Finalized,
+            (0, 0),
+        );
+
+        let order_sfx = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
+            sfx_action: SFXAction::Transfer([3u8; 4], 1u32, account_32b.clone(), 100u128),
+            max_reward: 200u128,
+            insurance: 50u128,
+            reward_asset: 1u32,
+            remote_origin_nonce: Some(5u32),
+        };
+
+        let sfx: SideEffect<AccountId32, u128> = order_sfx.try_into().unwrap();
+
+        let xtx_id_nonce_0 = xtx_nonce_0.generate_id::<MiniRuntime, Keccak256>();
+        let xtx_id_nonce_1 = xtx_nonce_1.generate_id::<MiniRuntime, Keccak256>();
+        let xtx_id_nonce_2 = xtx_nonce_2.generate_id::<MiniRuntime, Keccak256>();
+
+        let sfx_id_nonce_0 = sfx.generate_id::<Keccak256>(xtx_id_nonce_0.0.as_slice(), 0);
+        let sfx_id_nonce_1 = sfx.generate_id::<Keccak256>(xtx_id_nonce_1.0.as_slice(), 0);
+        let sfx_id_nonce_2 = sfx.generate_id::<Keccak256>(xtx_id_nonce_2.0.as_slice(), 0);
+
+        let expected_hash_nonce_0 =
+            hex!("4fd5cefb43ccd33cfe1f4f9a0405af51205e021449892cb08809d97610cfe722");
+        let expected_hash_nonce_1 =
+            hex!("733fc9182521d4ac5f3465c0b0382a5b4bad7af476f8c7517e2739536a42bb94");
+        let expected_hash_nonce_2 =
+            hex!("8066494f08af53d6edb5c6df49048a3b4ae59e20df6d59c86bf8c8650304747e");
+
+        assert_eq!(sfx_id_nonce_0, expected_hash_nonce_0.into());
+        assert_eq!(sfx_id_nonce_1, expected_hash_nonce_1.into());
+        assert_eq!(sfx_id_nonce_2, expected_hash_nonce_2.into());
+    }
+
+    #[test]
     fn test_try_into_transfer() {
         let order_sfx = OrderSFX::<AccountId32, u32, u128, [u8; 4], Vec<u8>, u128> {
             sfx_action: SFXAction::Transfer([3u8; 4], 1u32, AccountId32::new([2u8; 32]), 100u128),

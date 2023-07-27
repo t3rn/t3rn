@@ -75,11 +75,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 112,
-    spec_version: 113,
-    impl_version: 111,
+    authoring_version: 118,
+    spec_version: 119,
+    impl_version: 117,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 112,
+    transaction_version: 118,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -198,6 +198,7 @@ construct_runtime!(
         PolkadotBridge: pallet_grandpa_finality_verifier::<Instance1> = 130,
         KusamaBridge: pallet_grandpa_finality_verifier::<Instance2> = 131,
         EthereumBridge: pallet_eth2_finality_verifier = 132,
+        SepoliaBridge: pallet_sepolia_finality_verifier = 133,
 
         // Handy utilities
         MaintenanceMode: pallet_maintenance_mode = 140,
