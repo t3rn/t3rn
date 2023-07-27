@@ -2011,7 +2011,10 @@ pub mod pallet {
             let quorum = (T::CommitteeSize::get() * 2 / 3) as usize;
 
             for target in AttestationTargets::<T>::get() {
-                let mut new_next_batch = BatchMessage { created: n, ..Default::default() };
+                let mut new_next_batch = BatchMessage {
+                    created: n,
+                    ..Default::default()
+                };
                 // If a batch exists, update its status
                 Batches::<T>::mutate(target, |batches| {
                     if let Some(batches) = batches {
@@ -2028,9 +2031,10 @@ pub mod pallet {
                                 ));
                             } else {
                                 // Skip if BatchingWindow overlaps with RepatriationPeriod
-                                if !(n % T::RepatriationPeriod::get()).is_zero() || batch.has_no_sfx()
+                                if !(n % T::RepatriationPeriod::get()).is_zero()
+                                    || batch.has_no_sfx()
                                 {
-                                    // Mark the batch as late if it has not been attested for. 
+                                    // Mark the batch as late if it has not been attested for.
                                     batch.latency = match batch.latency {
                                         LatencyStatus::OnTime => LatencyStatus::Late(1, 0),
                                         LatencyStatus::Late(n, r) =>
