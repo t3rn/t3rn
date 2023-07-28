@@ -239,7 +239,7 @@ pub trait Xdns<T: frame_system::Config, Balance> {
     ) -> AdaptiveTimeout<T::BlockNumber, TargetId>;
 
     fn register_new_token(
-        origin: &T::Origin,
+        origin: &T::RuntimeOrigin,
         token_id: AssetId,
         token_props: TokenInfo,
     ) -> DispatchResult;

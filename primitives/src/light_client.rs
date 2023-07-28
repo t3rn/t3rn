@@ -90,14 +90,14 @@ pub trait LightClient<T: frame_system::Config> {
 
     fn initialize(
         &self,
-        origin: T::Origin,
+        origin: T::RuntimeOrigin,
         gateway_id: [u8; 4],
         encoded_registration_data: Bytes,
     ) -> Result<(), DispatchError>;
 
-    fn turn_on(&self, origin: T::Origin) -> Result<bool, DispatchError>;
+    fn turn_on(&self, origin: T::RuntimeOrigin) -> Result<bool, DispatchError>;
 
-    fn turn_off(&self, origin: T::Origin) -> Result<bool, DispatchError>;
+    fn turn_off(&self, origin: T::RuntimeOrigin) -> Result<bool, DispatchError>;
 
     fn submit_encoded_headers(&self, encoded_headers_data: Bytes) -> Result<bool, DispatchError>;
 
