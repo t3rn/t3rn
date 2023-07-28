@@ -191,17 +191,8 @@ impl Contains<RuntimeCall> for BaseCallFilter {
             RuntimeCall::XBIPortal(_) => true,
             RuntimeCall::AssetRegistry(_) => true,
             // t3rn pallets
-<<<<<<< HEAD
-            Call::XDNS(method) => matches!(method, pallet_xdns::Call::purge_gateway_record { .. }),
-            Call::ContractsRegistry(method) => matches!(
-=======
-            RuntimeCall::XDNS(method) => matches!(
-                method,
-                pallet_xdns::Call::purge_gateway { .. }
-                    | pallet_xdns::Call::purge_gateway_record { .. }
-            ),
+            RuntimeCall::XDNS(_) => true,
             RuntimeCall::ContractsRegistry(method) => matches!(
->>>>>>> origin/chore/update-flow
                 method,
                 pallet_contracts_registry::Call::add_new_contract { .. }
                     | pallet_contracts_registry::Call::purge { .. }
@@ -217,7 +208,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
                     | pallet_circuit::Call::bid_sfx { .. }
                     | pallet_circuit::Call::confirm_side_effect { .. }
             ),
-            Call::Attesters(_) => true,
+            RuntimeCall::Attesters(_) => true,
             // 3VM
             RuntimeCall::ThreeVm(_) => false,
             RuntimeCall::Contracts(method) => matches!(
@@ -236,8 +227,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
                     | pallet_3vm_evm::Call::create2 { .. } // | pallet_3vm_evm::Call::claim { .. } TODO: wheres this gone
             ),
             // Portal
-<<<<<<< HEAD
-            Call::Portal(method) => matches!(method, pallet_portal::Call::register_gateway { .. }),
+            RuntimeCall::Portal(_) => true,
             _ => true,
         }
     }
@@ -251,63 +241,24 @@ impl Contains<Call> for MaintenanceFilter {
     fn contains(c: &Call) -> bool {
         match c {
             // We want to make calls to the system and scheduler pallets
-            Call::System(_) => true,
-            Call::Scheduler(_) => true,
+            RuntimeCall::System(_) => true,
+            RuntimeCall::Scheduler(_) => true,
             // Sometimes scheduler/system calls require utility calls, particularly batch
-            Call::Utility(_) => true,
+            RuntimeCall::Utility(_) => true,
             // We dont manually control these so likely we dont want to block them during maintenance mode
-            Call::Balances(_) => true,
-            Call::Assets(_) => true,
+            RuntimeCall::Balances(_) => true,
+            RuntimeCall::Assets(_) => true,
             // We wanna be able to make sudo calls in maintenance mode just incase
-            Call::Sudo(_) => true,
-            Call::ParachainSystem(_) => true,
-            Call::Timestamp(_) => true,
-            Call::Session(_) => true,
-
-            Call::Preimage(_) => false,
-            Call::Identity(_) => false,
-            Call::Treasury(_) => false,
-            Call::AccountManager(_) => false,
-            Call::Authorship(_) => false,
-            Call::CollatorSelection(_) => false,
-            Call::XcmpQueue(_) => false,
-            Call::PolkadotXcm(_) => false,
-            Call::DmpQueue(_) => false,
-            Call::XBIPortal(_) => false,
-            Call::AssetRegistry(_) => false,
-            Call::XDNS(_) => false,
-            Call::ContractsRegistry(_) => false,
-            Call::Circuit(_) => false,
-            Call::ThreeVm(_) => false,
-            Call::Contracts(_) => false,
-            Call::Evm(_) => false,
-            Call::Portal(_) => false,
-            Call::RococoBridge(_) => false,
-            Call::PolkadotBridge(_) => false,
-            Call::KusamaBridge(_) => false,
-            Call::Attesters(_) => false,
-            // To catch all new pallets and avoid any exploit
-=======
-            RuntimeCall::Portal(method) =>
-                matches!(method, pallet_portal::Call::register_gateway { .. }),
-            RuntimeCall::RococoBridge(method) => matches!(
-                method,
-                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
-            ),
-            // TODO: check this one
-            RuntimeCall::PolkadotBridge(method) => matches!(
-                method,
-                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
-            ),
-            // TODO: check this one
-            RuntimeCall::KusamaBridge(method) => matches!(
-                method,
-                pallet_grandpa_finality_verifier::Call::submit_headers { .. }
-            ),
-            // Admin
             RuntimeCall::Sudo(_) => true,
+            RuntimeCall::ParachainSystem(_) => true,
+            RuntimeCall::Timestamp(_) => true,
+            RuntimeCall::Session(_) => true,
+            RuntimeCall::RococoBridge(_) => true,
+            RuntimeCall::KusamaBridge(_) => true,
+            RuntimeCall::PolkadotBridge(_) => true,
+            RuntimeCall::EthereumBridge(_) => true,
+            RuntimeCall::SepoliaBridge(_) => true,
             #[allow(unreachable_patterns)] // We need this as an accidental catchall
->>>>>>> origin/chore/update-flow
             _ => false,
         }
     }

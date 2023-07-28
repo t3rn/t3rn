@@ -116,7 +116,6 @@ pallet-3vm-contracts            = { default-features = false, path = "../../pall
 pallet-3vm-contracts-primitives = { default-features = false, path = "../../pallets/contracts/primitives", package = "pallet-contracts-primitives" }
 pallet-3vm-evm                  = { default-features = false, path = "../../pallets/evm", package = "pallet-evm" }
 pallet-3vm-evm-primitives       = { default-features = false, path = "../../pallets/evm/primitives", package = "fp-evm" }
-pallet-executors                = { default-features = false, path = "../../pallets/executors" }
 
 [features]
 default = [ "std" ]
@@ -143,7 +142,6 @@ std = [
   "pallet-asset-registry/std",
   "pallet-asset-tx-payment/std",
   "pallet-authorship/std",
-  "pallet-executors/std",
   "pallet-balances/std",
   "pallet-grandpa-finality-verifier/std",
   "pallet-identity/std",

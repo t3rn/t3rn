@@ -50,16 +50,12 @@ use sp_runtime::{
     traits::{BlakeTwo256, Convert, Hash, IdentityLookup},
     AccountId32,
 };
-use std::{ops::Deref, sync::Arc};
 
-<<<<<<< HEAD
 use sp_runtime::traits::Keccak256;
-use std::{cell::RefCell, sync::Arc};
+use sp_std::{cell::RefCell, sync::Arc};
 
 mod threevm;
-=======
 use crate as pallet_contracts;
->>>>>>> origin/chore/update-flow
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;

@@ -201,8 +201,6 @@ impl pallet_scheduler::Config for Runtime {
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 
-<<<<<<< HEAD
-=======
 parameter_types! {
     pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
     pub const MaxApprovals: u32 = 100;
@@ -230,7 +228,6 @@ impl pallet_treasury::Config for Runtime {
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
->>>>>>> origin/chore/update-flow
 struct CheckInherents;
 
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {

@@ -37,10 +37,7 @@ use sp_runtime::{
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 // pub use orml_traits;
 
-<<<<<<< HEAD
 use num_traits::Zero;
-=======
->>>>>>> origin/chore/update-flow
 use sp_std::{prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;

@@ -141,70 +141,7 @@ async fn start_node_impl(
     collator_options: CollatorOptions,
     para_id: ParaId,
     hwbench: Option<sc_sysinfo::HwBench>,
-<<<<<<< HEAD
-) -> sc_service::error::Result<(
-    TaskManager,
-    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-)>
-where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
-        + Send
-        + Sync
-        + 'static,
-    RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-        + sp_api::Metadata<Block>
-        + sp_session::SessionKeys<Block>
-        + sp_api::ApiExt<
-            Block,
-            StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-        > + sp_offchain::OffchainWorkerApi<Block>
-        + sp_block_builder::BlockBuilder<Block>
-        + cumulus_primitives_core::CollectCollationInfo<Block>
-        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + pallet_3vm_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>
-        + pallet_3vm_evm_rpc::EvmRuntimeRPCApi<Block, AccountId, Balance>
-        + pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>
-        + pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>
-        + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
-    RB: Fn(
-            Arc<TFullClient<Block, RuntimeApi, Executor>>,
-        ) -> Result<RpcModule<()>, sc_service::Error>
-        + Send
-        + 'static,
-    BIQ: FnOnce(
-            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-            &Configuration,
-            Option<TelemetryHandle>,
-            &TaskManager,
-        ) -> Result<
-            sc_consensus::DefaultImportQueue<
-                Block,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-            >,
-            sc_service::Error,
-        > + 'static,
-    BIC: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-        Option<&Registry>,
-        Option<TelemetryHandle>,
-        &TaskManager,
-        Arc<dyn RelayChainInterface>,
-        Arc<
-            sc_transaction_pool::FullPool<
-                Block,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-            >,
-        >,
-        Arc<NetworkService<Block, Hash>>,
-        SyncCryptoStorePtr,
-        bool,
-    ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
-{
-=======
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
->>>>>>> origin/chore/update-flow
     let parachain_config = prepare_node_config(parachain_config);
 
     let params = new_partial(&parachain_config)?;
@@ -392,10 +329,10 @@ fn build_import_queue(
             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
             let slot =
-				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					*timestamp,
-					slot_duration,
-				);
+                sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                    *timestamp,
+                    slot_duration,
+                );
 
             Ok((slot, timestamp))
         },
@@ -403,7 +340,7 @@ fn build_import_queue(
         spawner: &task_manager.spawn_essential_handle(),
         telemetry,
     })
-    .map_err(Into::into)
+        .map_err(Into::into)
 }
 
 fn build_consensus(
@@ -445,10 +382,10 @@ fn build_consensus(
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                 let slot =
-						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-							*timestamp,
-							slot_duration,
-						);
+                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                        *timestamp,
+                        slot_duration,
+                    );
 
                 let parachain_inherent = parachain_inherent.ok_or_else(|| {
                     Box::<dyn std::error::Error + Send + Sync>::from(

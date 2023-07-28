@@ -36,13 +36,8 @@ use crate::{
     Pallet as Contracts, *,
 };
 use codec::{Encode, MaxEncodedLen};
-<<<<<<< HEAD
-use frame_benchmarking::{account, benchmarks, whitelisted_caller};
-use frame_support::{traits::Currency, weights::Weight};
-=======
 use frame_benchmarking::v1::{account, benchmarks, whitelisted_caller};
-use frame_support::weights::Weight;
->>>>>>> origin/chore/update-flow
+use frame_support::{traits::Currency, weights::Weight};
 use frame_system::RawOrigin;
 use sp_runtime::{
     traits::{Bounded, Hash},

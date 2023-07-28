@@ -84,15 +84,11 @@ pub use pallet_contracts_primitives::ReturnFlags;
 pub use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{traits::UniqueSaturatedInto, DispatchError};
 use sp_std::{marker::PhantomData, vec::Vec};
-<<<<<<< HEAD
 pub use state::Init as InitState;
 use t3rn_primitives::{
     threevm::{GetState, Precompile, PrecompileArgs},
     SpeedMode,
 };
-=======
-use t3rn_primitives::threevm::{GetState, Precompile, PrecompileArgs};
->>>>>>> origin/chore/update-flow
 use t3rn_sdk_primitives::{
     signal::ExecutionSignal, state::SideEffects, GET_STATE_FUNCTION_CODE,
     POST_SIGNAL_FUNCTION_CODE, SUBMIT_FUNCTION_CODE,
@@ -260,14 +256,9 @@ impl<C: Config> ChainExtension<C> for ThreeVmExtension {
 
                 let origin = RawOrigin::Signed(env.ext().caller().clone());
                 <C as Config>::ThreeVm::invoke(PrecompileArgs::SubmitSideEffects(
-<<<<<<< HEAD
-                    C::Origin::from(origin),
+                    C::RuntimeOrigin::from(origin),
                     arg.0,
                     arg.1,
-=======
-                    C::RuntimeOrigin::from(origin),
-                    arg,
->>>>>>> origin/chore/update-flow
                 ))?;
                 Ok(RetVal::Converging(0))
             },

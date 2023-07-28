@@ -2,11 +2,7 @@ use crate::*;
 
 use crate::{
     accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-<<<<<<< HEAD
-    BlockWeights, Call, Circuit, ContractsRegistry, Event, Portal, RandomnessCollectiveFlip,
-=======
-    BlockWeights, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, RuntimeCall,
->>>>>>> origin/chore/update-flow
+    BlockWeights, Circuit, ContractsRegistry, Event, Portal, RandomnessCollectiveFlip, RuntimeCall,
     ThreeVm, Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
@@ -75,11 +71,8 @@ impl pallet_3vm::Config for Runtime {
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
     type OnLocalTrigger = Circuit;
-<<<<<<< HEAD
     type Portal = Portal;
-=======
     type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
     type SignalBounceThreshold = ConstU32<2>;
 }
 
@@ -154,11 +147,6 @@ impl pallet_3vm_evm::Config for Runtime {
     type CallOrigin = EnsureAddressTruncated;
     type ChainId = ChainId;
     type Currency = Balances;
-<<<<<<< HEAD
-    type Event = Event;
-=======
-    type FeeCalculator = FixedGasPrice;
->>>>>>> origin/chore/update-flow
     // BaseFee pallet may be better from frontier TODO
     type FeeCalculator = FixedGasPrice;
     type FindAuthor = FindAuthorTruncated<Aura>;

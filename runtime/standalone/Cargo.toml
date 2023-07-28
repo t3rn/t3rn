@@ -73,6 +73,7 @@ pallet-treasury                            = { workspace = true }
 pallet-utility                             = { workspace = true }
 
 sp-api              = { workspace = true }
+sp-io               = { workspace = true }
 sp-block-builder    = { workspace = true }
 sp-consensus-aura   = { workspace = true }
 sp-core             = { workspace = true }

@@ -147,8 +147,6 @@ impl pallet_asset_tx_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
 }
 
-<<<<<<< HEAD
-=======
 parameter_types! {
     pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
     pub const MaxApprovals: u32 = 10;
@@ -176,7 +174,6 @@ impl pallet_treasury::Config for Runtime {
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
->>>>>>> origin/chore/update-flow
 impl pallet_sudo::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
@@ -188,6 +185,7 @@ impl pallet_utility::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
+
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
     fn contains(c: &Call) -> bool {

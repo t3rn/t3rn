@@ -107,7 +107,9 @@ pallet-portal                    = { path = "../../pallets/portal", default-feat
 pallet-portal-rpc-runtime-api    = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
 pallet-xdns                      = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api      = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-pallet-rewards                   = { path = "../../pallets/rewards", default-features = false }
+
+pallet-maintenance-mode                   = { git = 'https://github.com/t3rn/moonbeam-pallets', branch = 'polkadot-v0.9.27', default-features = false }
+
 
 pallet-asset-registry = { workspace = true }
 pallet-xbi-portal     = { workspace = true }
@@ -296,4 +298,9 @@ try-runtime = [
   "t3rn-abi/try-runtime",
   "pallet-eth2-finality-verifier/try-runtime",
   "pallet-sepolia-finality-verifier/try-runtime",
+]
+
+[workspace]
+exclude = [
+  "vendor"
 ]

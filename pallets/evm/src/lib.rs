@@ -63,19 +63,10 @@
 pub mod benchmarking;
 
 #[cfg(test)]
-<<<<<<< HEAD
-pub mod mock;
-
-pub mod runner;
-=======
 mod mock;
->>>>>>> origin/chore/update-flow
 #[cfg(test)]
-pub mod tests;
+mod tests;
 
-<<<<<<< HEAD
-pub use self::{pallet::*, runner::Runner};
-=======
 pub mod address;
 pub mod runner;
 pub mod weights;
@@ -86,7 +77,6 @@ pub use self::{
     runner::{Runner, RunnerError},
     weights::WeightInfo,
 };
->>>>>>> origin/chore/update-flow
 pub use evm::{
     Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -97,10 +87,7 @@ pub use fp_evm::{
 };
 
 use codec::{Decode, Encode};
-<<<<<<< HEAD
-=======
 use fp_account::AccountId20;
->>>>>>> origin/chore/update-flow
 use frame_support::{
     dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
     traits::{
@@ -162,7 +149,6 @@ impl<T: Config> ModuleOperations<T, BalanceOf<T>> for ThreeVmInfo<T> {
 
 #[frame_support::pallet]
 pub mod pallet {
-
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
@@ -259,9 +245,9 @@ pub mod pallet {
         /// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
         #[pallet::call_index(1)]
         #[pallet::weight({
-			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
-		})]
+        let without_base_extrinsic_weight = true;
+        T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
+        })]
         pub fn call(
             origin: OriginFor<T>,
             source: H160,
@@ -277,10 +263,7 @@ pub mod pallet {
             T::CallOrigin::ensure_address_origin(&source, origin)?;
 
             let is_transactional = true;
-<<<<<<< HEAD
-=======
             let validate = true;
->>>>>>> origin/chore/update-flow
             let info = match T::Runner::call(
                 source,
                 target,
@@ -299,28 +282,16 @@ pub mod pallet {
                 Err(e) =>
                     return Err(DispatchErrorWithPostInfo {
                         post_info: PostDispatchInfo {
-<<<<<<< HEAD
-                            actual_weight: None,
-                            pays_fee: Pays::Yes,
-                        },
-                        error: e.into(),
-=======
                             actual_weight: Some(e.weight),
                             pays_fee: Pays::Yes,
                         },
                         error: e.error.into(),
->>>>>>> origin/chore/update-flow
                     }),
             };
 
             match info.exit_reason {
-<<<<<<< HEAD
-                ExitReason::Succeed(ExitSucceed::Returned) => {
-                    Pallet::<T>::deposit_event(Event::<T>::Executed(target));
-=======
                 ExitReason::Succeed(_) => {
                     Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
->>>>>>> origin/chore/update-flow
                 },
                 _ => {
                     Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
@@ -340,9 +311,9 @@ pub mod pallet {
         /// Ethereum.
         #[pallet::call_index(2)]
         #[pallet::weight({
-			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
-		})]
+        let without_base_extrinsic_weight = true;
+        T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
+        })]
         pub fn create(
             origin: OriginFor<T>,
             source: H160,
@@ -415,9 +386,9 @@ pub mod pallet {
         /// Issue an EVM create2 operation.
         #[pallet::call_index(3)]
         #[pallet::weight({
-			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
-		})]
+        let without_base_extrinsic_weight = true;
+        T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
+        })]
         pub fn create2(
             origin: OriginFor<T>,
             source: H160,

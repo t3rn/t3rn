@@ -1,12 +1,4 @@
 use crate::{
-<<<<<<< HEAD
-    accounts_config::EscrowAccount, AccountId, AccountManager, AssetId, Aura, Balance, Balances,
-    BlockWeights, Call, Circuit, ContractsRegistry, Event, Portal, RandomnessCollectiveFlip,
-    Runtime, ThreeVm, Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
-};
-use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
-use pallet_3vm_contracts::weights::WeightInfo;
-=======
     accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
     BlockWeights, Circuit, ContractsRegistry, RandomnessCollectiveFlip, Runtime, RuntimeCall,
     RuntimeEvent, ThreeVm, Timestamp, Weight,
@@ -17,7 +9,7 @@ use frame_support::{
     parameter_types,
     traits::FindAuthor,
 };
->>>>>>> origin/chore/update-flow
+
 use pallet_3vm_evm::{
     EnsureAddressTruncated, FixedGasWeightMapping, StoredHashAddressMapping,
     SubstrateBlockHashMapping, ThreeVMCurrencyAdapter,
@@ -67,11 +59,8 @@ impl pallet_3vm::Config for Runtime {
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
     type OnLocalTrigger = Circuit;
-<<<<<<< HEAD
     type Portal = Portal;
-=======
     type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
     type SignalBounceThreshold = ConstU32<2>;
 }
 
@@ -164,12 +153,8 @@ impl pallet_3vm_evm::Config for Runtime {
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasWeightMapping = FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
-<<<<<<< HEAD
-    type PrecompilesType = evm_precompile_util::Precompiles<Self>;
-=======
     type OnCreate = ();
-    type PrecompilesType = evm_precompile_util::Precompiles;
->>>>>>> origin/chore/update-flow
+    type PrecompilesType = evm_precompile_util::Precompiles<Self>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;

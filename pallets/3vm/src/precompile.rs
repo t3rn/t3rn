@@ -149,11 +149,10 @@ pub(crate) fn invoke_raw<T: Config>(precompile: &u8, args: &mut &[u8], output: &
     }
 }
 
-<<<<<<< HEAD
-fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::Origin> {
+fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::RuntimeOrigin> {
     match codec {
         T3rnCodec::Scale => match <T::AccountId as Decode>::decode(args) {
-            Ok(account) => Some(T::Origin::from(RawOrigin::Signed(account))),
+            Ok(account) => Some(T::RuntimeOrigin::from(RawOrigin::Signed(account))),
             Err(err) => {
                 log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
                 None
@@ -164,20 +163,12 @@ fn extract_origin<T: Config>(codec: &T3rnCodec, args: &mut &[u8]) -> Option<T::O
             let address_bytes = vec![args.take(..=20)?, &[0_u8; 12][..]].concat();
 
             match <T::AccountId as Decode>::decode(&mut &address_bytes[..]) {
-                Ok(account) => Some(T::Origin::from(RawOrigin::Signed(account))),
+                Ok(account) => Some(T::RuntimeOrigin::from(RawOrigin::Signed(account))),
                 Err(err) => {
                     log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
                     None
                 },
             }
-=======
-fn extract_origin<T: frame_system::Config>(args: &mut &[u8]) -> Option<T::RuntimeOrigin> {
-    match <T::AccountId as Decode>::decode(args) {
-        Ok(account) => Some(T::RuntimeOrigin::from(RawOrigin::Signed(account))),
-        Err(err) => {
-            log::debug!(target: LOG_TARGET, "Failed to decode origin: {:?}", err);
-            None
->>>>>>> origin/chore/update-flow
         },
     }
 }

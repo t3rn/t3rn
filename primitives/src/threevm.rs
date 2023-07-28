@@ -34,23 +34,14 @@ where
     T: ConfigSystem,
     Balance: Encode + Decode,
 {
-<<<<<<< HEAD
-    GetState(T::Origin, GetState<T>),
-    SubmitSideEffects(
-        T::Origin,
-        SideEffects<T::AccountId, Balance, T::Hash>,
-        SpeedMode,
-    ),
-    Signal(T::Origin, ExecutionSignal<T::Hash>),
-    Portal(PortalPrecompileArgs),
-=======
     GetState(T::RuntimeOrigin, GetState<T>),
     SubmitSideEffects(
         T::RuntimeOrigin,
         SideEffects<T::AccountId, Balance, T::Hash>,
+        SpeedMode,
     ),
     Signal(T::RuntimeOrigin, ExecutionSignal<T::Hash>),
->>>>>>> origin/chore/update-flow
+    Portal(PortalPrecompileArgs),
 }
 
 /// The happy return type of an invocation

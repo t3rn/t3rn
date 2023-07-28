@@ -29,10 +29,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     storage::child::{self, ChildInfo},
-<<<<<<< HEAD
     traits::Get,
-=======
->>>>>>> origin/chore/update-flow
     weights::Weight,
     RuntimeDebugNoBound,
 };
@@ -357,7 +354,6 @@ pub struct DepositAccount<T: Config>(AccountIdOf<T>);
 impl<T: Config> Deref for DepositAccount<T> {
     type Target = AccountIdOf<T>;
 
-<<<<<<< HEAD
     /// Returns `Some(len)` (in bytes) if a storage item exists at `key`.
     ///
     /// Returns `None` if the `key` wasn't previously set by `set_storage` or
@@ -548,9 +544,9 @@ impl<T: Config> Deref for DepositAccount<T> {
             .map(|_| DeletedContract { trie_id: vec![] })
             .collect();
         <DeletionQueue<T>>::put(queue);
-=======
+    }
+
     fn deref(&self) -> &Self::Target {
         &self.0
->>>>>>> origin/chore/update-flow
     }
 }

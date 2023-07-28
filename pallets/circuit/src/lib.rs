@@ -1477,7 +1477,6 @@ impl<T: Config> Pallet<T> {
         current_weight
     }
 
-<<<<<<< HEAD
     pub fn get_adaptive_timeout(
         xtx_id: T::Hash,
         maybe_speed_mode: Option<SpeedMode>,
@@ -1608,12 +1607,6 @@ impl<T: Config> Pallet<T> {
     pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> (Weight, bool) {
         const REVERT_WRITES: Weight = 2;
         const REVERT_READS: Weight = 1;
-=======
-    pub fn process_revert_one(xtx_id: XExecSignalId<T>) -> Weight {
-        const REVERT_WRITES: u64 = 2;
-        const REVERT_READS: u64 = 1;
->>>>>>> origin/chore/update-flow
-
         let all_targets = Self::get_all_xtx_targets(xtx_id);
         if !Self::ensure_all_gateways_are_active(all_targets.clone()) {
             return Self::add_xtx_to_dlq(xtx_id, all_targets, SpeedMode::Finalized)

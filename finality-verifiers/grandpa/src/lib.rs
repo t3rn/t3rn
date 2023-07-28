@@ -38,11 +38,8 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
-<<<<<<< HEAD
-extern crate core;
-=======
+// Re-export in crate namespace for `construct_runtime!`
 pub use pallet::*;
->>>>>>> origin/chore/update-flow
 
 use crate::weights::WeightInfo;
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
@@ -55,19 +52,10 @@ use frame_support::{ensure, pallet_prelude::*, transactional, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
 use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
-<<<<<<< HEAD
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
-use sp_std::vec::Vec;
 use t3rn_primitives::light_client::LightClientAsyncAPI;
 
-pub mod types;
-
-=======
-use sp_runtime::traits::{BadOrigin, Header as HeaderT};
 use sp_std::{convert::TryInto, vec, vec::Vec};
-// Re-export in crate namespace for `construct_runtime!`
-use sp_runtime::traits::Zero;
->>>>>>> origin/chore/update-flow
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 
 // #[cfg(feature = "runtime-benchmarks")]
@@ -151,17 +139,12 @@ pub mod pallet {
 
         type EpochOffset: Get<Self::BlockNumber>;
 
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-<<<<<<< HEAD
-        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
-
         type LightClientAsyncAPI: LightClientAsyncAPI<Self>;
 
         type MyVendor: Get<GatewayVendor>;
-=======
+
         type RuntimeEvent: From<Event<Self, I>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>;
->>>>>>> origin/chore/update-flow
     }
 
     #[pallet::pallet]
@@ -312,13 +295,9 @@ pub mod pallet {
         ///
         /// If successful in verification, it will write the target range to the underlying storage
         /// pallet.
-<<<<<<< HEAD
         ///
         /// If the new range was accepted, pays no fee.
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-=======
         #[pallet::weight(Weight::from_ref_time(10_000) + T::DbWeight::get().writes(1))]
->>>>>>> origin/chore/update-flow
         pub fn submit_headers(
             origin: OriginFor<T>,
             // seq vector of headers to be added.

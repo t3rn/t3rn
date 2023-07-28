@@ -117,31 +117,12 @@ impl t3rn_primitives::clock::OnHookQueues<Runtime> for GlobalOnInitQueues {
             "Circuit::process_emergency_revert_xtx_queue consumed: {:?}",
             weight
         );
-<<<<<<< HEAD
         total_consumed = total_consumed.saturating_add(weight);
 
         let (_success, weight) = Rewards::process_author();
 
         log::debug!("Rewards::process_author consumed: {:?}", weight);
         total_consumed = total_consumed.saturating_add(weight);
-=======
-        weights_consumed.push(Clock::calculate_claimable_for_round(
-            n,
-            BlockNumber::one(),
-            Perbill::from_percent(CALC_CLAIMABLE_SHARE) * on_init_weight_limit,
-        ));
-        log::debug!(
-            "Clock::calculate_claimable_for_round consumed: {:?}",
-            weights_consumed
-                .last()
-                .expect("Clock::calculate_claimable_for_round consumed weight")
-        );
-        let total_consumed: Weight = weights_consumed
-            .iter()
-            .fold(Weight::zero(), |acc: Weight, weight: &Weight| {
-                acc.saturating_add(*weight)
-            });
->>>>>>> origin/chore/update-flow
 
         log::debug!(
             "Total weight consumed by on init hook: {:?}",
@@ -287,7 +268,7 @@ impl pallet_rewards::Config for Runtime {
     type CollatorBootstrapRewards = CollatorBootstrapRewards;
     type CollatorInflation = CollatorInflation;
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
     type FindAuthor = ();
@@ -297,10 +278,6 @@ impl pallet_rewards::Config for Runtime {
     type TotalInflation = TotalInflation;
     type TreasuryAccounts = Runtime;
     type TreasuryInflation = TreasuryInflation;
-=======
-    type RoundDuration = ConstU32<500u32>;
-    type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
 }
 
 impl pallet_xdns::Config for Runtime {
@@ -309,14 +286,9 @@ impl pallet_xdns::Config for Runtime {
     type Balances = Balances;
     type CircuitDLQ = Circuit;
     type Currency = Balances;
-<<<<<<< HEAD
-    type Event = Event;
     type Portal = Portal;
     type SelfGatewayId = SelfGatewayId;
     type SelfTokenId = ConstU32<3333>;
-=======
-    type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
     type Time = Timestamp;
     type TreasuryAccounts = Runtime;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
@@ -405,12 +377,8 @@ impl pallet_portal::SelectLightClient<Runtime> for SelectLightClientRegistry {
 }
 
 impl pallet_portal::Config for Runtime {
-<<<<<<< HEAD
     type Currency = Balances;
-    type Event = Event;
-=======
     type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
@@ -481,28 +449,19 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
 impl pallet_grandpa_finality_verifier::Config<RococoInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-<<<<<<< HEAD
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
     type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
-=======
-    type FastConfirmationOffset = ConstU32<3u32>;
-    type FinalizedConfirmationOffset = ConstU32<10u32>;
-    type HeadersToStore = HeadersToStore;
-    type RationalConfirmationOffset = ConstU32<10u32>;
     type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
@@ -510,27 +469,21 @@ impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for Runtime {
     type LightClientAsyncAPI = XDNS;
     type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
-=======
-    type FastConfirmationOffset = ConstU32<3u32>;
-    type FinalizedConfirmationOffset = ConstU32<10u32>;
-    type HeadersToStore = HeadersToStore;
-    type RationalConfirmationOffset = ConstU32<10u32>;
     type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-<<<<<<< HEAD
     type Event = Event;
     type FastConfirmationOffset = ConstU32<0u32>;
     type FinalizedConfirmationOffset = ConstU32<0u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
-    type MyVendor = KusamaVendor;
+    type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<0u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -546,7 +499,7 @@ parameter_types! {
 impl pallet_eth2_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
@@ -558,18 +511,11 @@ impl pallet_eth2_finality_verifier::Config for Runtime {
 impl pallet_sepolia_finality_verifier::Config for Runtime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
-=======
-    type FastConfirmationOffset = ConstU32<3u32>;
-    type FinalizedConfirmationOffset = ConstU32<10u32>;
-    type HeadersToStore = HeadersToStore;
-    type RationalConfirmationOffset = ConstU32<10u32>;
-    type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
     type WeightInfo = ();
 }

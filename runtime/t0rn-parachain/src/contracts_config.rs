@@ -1,17 +1,6 @@
 use crate::{
-<<<<<<< HEAD
-    accounts_config::EscrowAccount, AccountManager, AssetId, Aura, Balances, Call, Circuit,
+    accounts_config::EscrowAccount, AccountManager, Aura, Balances, Call, Circuit,
     ContractsRegistry, Event, Portal, RandomnessCollectiveFlip, Runtime, ThreeVm, Timestamp,
-};
-use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
-use pallet_3vm_contracts::weights::WeightInfo;
-use pallet_3vm_evm::{
-    EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,
-    ThreeVMCurrencyAdapter,
-=======
-    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
-    ContractsRegistry, RandomnessCollectiveFlip, Runtime, RuntimeCall, RuntimeEvent, ThreeVm,
-    Timestamp, Weight,
 };
 use circuit_runtime_types::{AssetId, BlockWeights};
 use frame_support::{
@@ -19,11 +8,14 @@ use frame_support::{
     parameter_types,
     traits::FindAuthor,
 };
+use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
-    EnsureAddressTruncated, FixedGasWeightMapping, StoredHashAddressMapping,
-    SubstrateBlockHashMapping, ThreeVMCurrencyAdapter,
->>>>>>> origin/chore/update-flow
+    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances, Circuit,
+    ContractsRegistry, EnsureAddressTruncated, FixedGasWeightMapping, RandomnessCollectiveFlip,
+    Runtime, RuntimeCall, RuntimeEvent, StoredHashAddressMapping, SubstrateBlockHashMapping,
+    ThreeVMCurrencyAdapter, ThreeVm, Timestamp, Weight,
 };
+
 use pallet_3vm_evm_primitives::FeeCalculator;
 use sp_core::{ConstBool, H160, U256};
 use sp_runtime::{ConsensusEngineId, RuntimeAppPublic};
@@ -67,11 +59,8 @@ impl pallet_3vm::Config for Runtime {
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
     type OnLocalTrigger = Circuit;
-<<<<<<< HEAD
     type Portal = Portal;
-=======
     type RuntimeEvent = RuntimeEvent;
->>>>>>> origin/chore/update-flow
     type SignalBounceThreshold = ConstU32<2>;
 }
 
@@ -84,11 +73,7 @@ impl pallet_3vm_contracts::Config for Runtime {
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
     type CallFilter = frame_support::traits::Nothing;
-<<<<<<< HEAD
     type CallStack = [pallet_3vm_contracts::Frame<Self>; 31];
-=======
-    type CallStack = [pallet_3vm_contracts::Frame<Self>; 2];
->>>>>>> origin/chore/update-flow
     type ChainExtension = ();
     type Currency = Balances;
     type DeletionQueueDepth = DeletionQueueDepth;
@@ -133,24 +118,15 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-<<<<<<< HEAD
-    fn min_gas_price() -> U256 {
-        100.into() // TODO: do this right, this is about what pallet-contracts costs
-=======
     fn min_gas_price() -> (U256, Weight) {
         (100.into(), Weight::from_ref_time(1))
->>>>>>> origin/chore/update-flow
     }
 }
 
 parameter_types! {
     pub const ChainId: u64 = 42;
     pub BlockGasLimit: U256 = U256::from(u32::max_value());
-<<<<<<< HEAD
     pub PrecompilesValue: evm_precompile_util::Precompiles<Runtime> = evm_precompile_util::Precompiles::<Runtime>::new(sp_std::vec![
-=======
-    pub PrecompilesValue: evm_precompile_util::Precompiles = evm_precompile_util::Precompiles::new(sp_std::vec![
->>>>>>> origin/chore/update-flow
         (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
         (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
         (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
@@ -177,21 +153,14 @@ impl pallet_3vm_evm::Config for Runtime {
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasWeightMapping = FixedGasWeightMapping<Runtime>;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
-<<<<<<< HEAD
-    type PrecompilesType = evm_precompile_util::Precompiles<Self>;
-=======
     type OnCreate = ();
-    type PrecompilesType = evm_precompile_util::Precompiles;
->>>>>>> origin/chore/update-flow
+    type PrecompilesType = evm_precompile_util::Precompiles<Self>;
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type RuntimeEvent = RuntimeEvent;
     type ThreeVm = ThreeVm;
-<<<<<<< HEAD
-=======
     type Timestamp = Timestamp;
     type WeightInfo = ();
     type WeightPerGas = WeightPerGas;
->>>>>>> origin/chore/update-flow
     type WithdrawOrigin = EnsureAddressTruncated;
 }

@@ -146,36 +146,6 @@ impl pallet_asset_tx_payment::Config for Runtime {
     >;
 }
 
-<<<<<<< HEAD
-=======
-parameter_types! {
-    pub const TreasuryId: PalletId = PalletId(*b"pottrsry");
-    pub const MaxApprovals: u32 = 10;
-    pub const ProposalBond: Permill = Permill::from_percent(1);
-    pub const SpendPeriod: u32 = 60 / 12;
-    pub const ProposalBondMinimum: u128 = 1_000_000_000_000_u128;
-}
-
-impl pallet_treasury::Config for Runtime {
-    type ApproveOrigin = EnsureRoot<AccountId>;
-    type Burn = ();
-    type BurnDestination = ();
-    type Currency = Balances;
-    type MaxApprovals = MaxApprovals;
-    type OnSlash = Treasury;
-    type PalletId = TreasuryId;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMaximum = ();
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type RejectOrigin = EnsureRoot<AccountId>;
-    type RuntimeEvent = RuntimeEvent;
-    type SpendFunds = ();
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
-    type SpendPeriod = SpendPeriod;
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
-}
-
->>>>>>> origin/chore/update-flow
 impl pallet_sudo::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;

@@ -42,19 +42,15 @@ pub mod pallet {
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
-<<<<<<< HEAD
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// Currency access
         type Currency: Currency<Self::AccountId>;
-=======
+        /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
->>>>>>> origin/chore/update-flow
         /// Access to XDNS pallet
         type Xdns: Xdns<Self, BalanceOf<Self>>;
         /// Type representing the weight of this pallet
         type WeightInfo: crate::weights::WeightInfo;
-
+        /// Selects the light client implementation
         type SelectLightClient: SelectLightClient<Self>;
     }
 
