@@ -41,22 +41,22 @@ pub struct EmptyOnHookQueues<T> {
 
 impl<T: frame_system::Config> OnHookQueues<T> for EmptyOnHookQueues<T> {
     fn process(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 
     fn process_weekly(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 
     fn process_bi_weekly(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 
     fn process_daily(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 
     fn process_hourly(_n: T::BlockNumber, _hook_weight_limit: Weight) -> Weight {
-        0
+        Zero::zero()
     }
 }
