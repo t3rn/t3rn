@@ -19,7 +19,7 @@ import { RelayerEventData, RelayerEvents } from "../gateways/types";
 import { XtxStatus } from "@t3rn/sdk/side-effects/types";
 import { Config, Gateway } from "../../config/config";
 import { Logger } from "pino";
-import BN from "bn.js";
+// import BN from "bn.js";
 import { Prometheus } from "../prometheus";
 import { logger } from "../logging";
 
