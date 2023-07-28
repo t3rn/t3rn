@@ -182,7 +182,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type ActiveSetSize: Get<u32>;
         type CommitteeSize: Get<u32>;
         type BatchingWindow: Get<Self::BlockNumber>;
@@ -1774,7 +1774,7 @@ pub mod attesters_test {
         AttestersStore, Balance, Balances, BatchMessage, BatchStatus, BlockNumber,
         CommitteeTransitionOn, ConfigAttesters, ConfigRewards, CurrentCommittee, Event, ExtBuilder,
         FullSideEffects, LatencyStatus, MiniRuntime, NextBatch, NextCommitteeOnTarget, Nominations,
-        Origin, PendingUnnominations, PermanentSlashes, PreviousCommittee, Rewards,
+        PendingUnnominations, PermanentSlashes, PreviousCommittee, Rewards, RuntimeOrigin,
         SFX2XTXLinksMap, SortedNominatedAttesters, System, XExecSignals, ETHEREUM_TARGET,
         POLKADOT_TARGET,
     };
@@ -1811,7 +1811,7 @@ pub mod attesters_test {
             })
             .collect::<Vec<(AccountId, Balance, Balance)>>();
 
-        assert_ok!(Attesters::deregister_attester(Origin::signed(
+        assert_ok!(Attesters::deregister_attester(RuntimeOrigin::signed(
             attester.clone()
         ),));
 
@@ -1878,7 +1878,7 @@ pub mod attesters_test {
         let _ = Balances::deposit_creating(&attester, 100u128);
 
         assert_ok!(Attesters::register_attester(
-            Origin::signed(attester.clone()),
+            RuntimeOrigin::signed(attester.clone()),
             10u128,
             ecdsa_key.clone().try_into().unwrap(),
             ed25519_key.clone().try_into().unwrap(),
@@ -1900,14 +1900,14 @@ pub mod attesters_test {
         assert!(!Attesters::attestation_targets().contains(target));
         assert!(Attesters::pending_attestation_targets().contains(target));
         if AttestersStore::<MiniRuntime>::iter().count() == 0 {
-            Attesters::force_activate_target(Origin::root(), *target);
+            Attesters::force_activate_target(RuntimeOrigin::root(), *target);
         }
         for (attester, attester_info) in AttestersStore::<MiniRuntime>::iter() {
             // assume attester agrees to eth target: deriving eth address from ecdsa key
             let derived_eth_address = ecdsa_pubkey_to_eth_address(&attester_info.key_ec);
             assert_ok!(derived_eth_address);
             assert_ok!(Attesters::agree_to_new_attestation_target(
-                Origin::signed(attester),
+                RuntimeOrigin::signed(attester),
                 *target,
                 derived_eth_address.unwrap().encode(),
             ));
@@ -1917,7 +1917,7 @@ pub mod attesters_test {
     }
 
     pub fn add_target_and_transition_to_next_batch(target: TargetId, index: u32) -> BlockNumber {
-        Attesters::add_attestation_target(Origin::root(), target);
+        Attesters::add_attestation_target(RuntimeOrigin::root(), target);
         if !Attesters::attestation_targets().contains(&target) {
             // if active set is empty, select the next active set
             if !ActiveSet::<MiniRuntime>::get().is_empty() {
@@ -2009,7 +2009,7 @@ pub mod attesters_test {
         };
 
         assert_ok!(Attesters::submit_attestation(
-            Origin::signed(attester),
+            RuntimeOrigin::signed(attester),
             latest_batch_hash,
             signature.clone(),
             target,
@@ -2107,7 +2107,7 @@ pub mod attesters_test {
 
             assert_err!(
                 Attesters::submit_attestation(
-                    Origin::signed(attester),
+                    RuntimeOrigin::signed(attester),
                     message_hash,
                     same_signature_again,
                     target,
@@ -2412,7 +2412,7 @@ pub mod attesters_test {
                 );
             }
 
-            Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
+            Attesters::read_pending_batches(RuntimeOrigin::signed(AccountId::from([1u8; 32])));
             let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
             assert_eq!(target, ETHEREUM_TARGET);
             assert_eq!(pending_batches.len(), 1);
@@ -2453,7 +2453,7 @@ pub mod attesters_test {
                 );
             }
 
-            Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
+            Attesters::read_pending_batches(RuntimeOrigin::signed(AccountId::from([1u8; 32])));
             let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
             assert_eq!(target, ETHEREUM_TARGET);
             assert_eq!(pending_batches.len(), 1);
@@ -2489,7 +2489,7 @@ pub mod attesters_test {
                 .encode();
 
             assert_ok!(Attesters::submit_attestation(
-                Origin::signed(late_attester.clone()),
+                RuntimeOrigin::signed(late_attester.clone()),
                 first_pending_batch.message_hash(),
                 late_first_signature,
                 ETHEREUM_TARGET,
@@ -2500,7 +2500,7 @@ pub mod attesters_test {
                 .encode();
 
             assert_ok!(Attesters::submit_attestation(
-                Origin::signed(late_attester),
+                RuntimeOrigin::signed(late_attester),
                 second_pending_batch.message_hash(),
                 late_second_signature,
                 ETHEREUM_TARGET,
@@ -2508,7 +2508,7 @@ pub mod attesters_test {
 
             // this time should be successful - no pending batches
             select_new_committee();
-            Attesters::read_pending_batches(Origin::signed(AccountId::from([1u8; 32])));
+            Attesters::read_pending_batches(RuntimeOrigin::signed(AccountId::from([1u8; 32])));
             let (target, pending_batches) = expect_last_event_to_emit_pending_attestation_batches();
             assert_eq!(target, ETHEREUM_TARGET);
             assert_eq!(pending_batches.len(), 0);
@@ -3354,7 +3354,7 @@ pub mod attesters_test {
 
             // Commit the batch
             assert_ok!(Attesters::commit_batch(
-                Origin::signed(AccountId::from([1; 32])),
+                RuntimeOrigin::signed(AccountId::from([1; 32])),
                 target,
                 mock_valid_batch_confirmation.encode(),
             ));
@@ -3423,7 +3423,7 @@ pub mod attesters_test {
 
             assert_err!(
                 Attesters::commit_batch(
-                    Origin::signed(AccountId::from([1; 32])),
+                    RuntimeOrigin::signed(AccountId::from([1; 32])),
                     target,
                     colluded_batch_confirmation.encode(),
                 ),
@@ -3467,7 +3467,7 @@ pub mod attesters_test {
                 let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator.clone()),
+                    RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
                     amount
                 ));
@@ -3497,7 +3497,7 @@ pub mod attesters_test {
                 let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator.clone()),
+                    RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
                     amount
                 ));
@@ -3543,7 +3543,7 @@ pub mod attesters_test {
                 let amount = 1000u128 + counter;
                 let _ = Balances::deposit_creating(&nominator, amount);
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator.clone()),
+                    RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
                     amount
                 ));
@@ -3641,7 +3641,7 @@ pub mod attesters_test {
 
             for attester in &attesters {
                 assert_ok!(Attesters::nominate(
-                    Origin::signed(nominator.clone()),
+                    RuntimeOrigin::signed(nominator.clone()),
                     attester.clone(),
                     1000
                 ));
@@ -3650,7 +3650,7 @@ pub mod attesters_test {
             // Unnominate one attester
             let attester_to_unnominate = attesters[1].clone();
             assert_ok!(Attesters::unnominate(
-                Origin::signed(nominator.clone()),
+                RuntimeOrigin::signed(nominator.clone()),
                 attester_to_unnominate.clone()
             ));
 
@@ -3686,7 +3686,7 @@ pub mod attesters_test {
             for (i, attester) in attesters.iter().enumerate() {
                 for _ in 0..2 {
                     assert_ok!(Attesters::nominate(
-                        Origin::signed(nominator.clone()),
+                        RuntimeOrigin::signed(nominator.clone()),
                         attester.clone(),
                         1000 + i as Balance
                     ));
@@ -3696,7 +3696,7 @@ pub mod attesters_test {
             // Unnominate one attester
             let attester_to_unnominate = attesters[1].clone();
             assert_ok!(Attesters::unnominate(
-                Origin::signed(nominator),
+                RuntimeOrigin::signed(nominator),
                 attester_to_unnominate.clone()
             ));
 

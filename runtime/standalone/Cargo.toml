@@ -34,10 +34,10 @@ pallet-xdns                               = { path = "../../pallets/xdns", defau
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 pallet-attesters                          = { path = "../../pallets/attesters", default-features = false }
 pallet-vacuum                             = { path = "../../pallets/circuit/vacuum", package = "pallet-circuit-vacuum", default-features = false }
-pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "main", default-features = false }
-pallet-sepolia-finality-verifier          = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia", default-features = false }
+pallet-eth2-finality-verifier             = { git = "https://github.com/t3rn/eth2-light-client", branch = "main-polkadot-v0.9.39", default-features = false }
+pallet-sepolia-finality-verifier          = { git = "https://github.com/t3rn/eth2-light-client", branch = "sepolia-polkadot-v0.9.39", default-features = false }
 pallet-rewards                            = { path = "../../pallets/rewards", default-features = false }
-pallet-maintenance-mode                   = { git = 'https://github.com/t3rn/moonbeam-pallets', branch = 'polkadot-v0.9.27', default-features = false }
+pallet-maintenance-mode                   = { git = 'https://github.com/t3rn/moonbeam-pallets', branch = 'polkadot-v0.9.39', default-features = false }
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-types      = { path = "../../types", default-features = false }

@@ -26,7 +26,7 @@ homepage   = "https://t3rn.io"
 license    = "Apache-2.0"
 readme     = "README.md"
 repository = "https://github.com/t3rn/t3rn"
-version    = "1.4.0-rc.0"
+version    = "1.45.0-rc.0"
 
 # Dependencies are split into 2 groups: wasm and client.
 # - "nostd" dependencies requires to be no_std compatible, which often requires
@@ -144,13 +144,13 @@ parachain-info                      = { git = 'https://github.com/paritytech/cum
 parachains-common                   = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.39', default-features = false }
 
 # TODO: t3rn dependencies
-pallet-asset-registry = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false, branch = "chore/upgrades" }
-pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false, branch = "chore/upgrades" }
-substrate-abi         = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false, branch = "chore/upgrades" }
-xp-channel            = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false, branch = "chore/upgrades" }
-xp-format             = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false, branch = "chore/upgrades" }
-xp-xcm                = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false, branch = "chore/upgrades" }
-xs-channel            = { git = "https://github.com/t3rn/xbi", version = "0.3.0", default-features = false, branch = "chore/upgrades" }
+pallet-asset-registry = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "chore/upgrades" }
+pallet-xbi-portal     = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "chore/upgrades" }
+substrate-abi         = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "chore/upgrades" }
+xp-channel            = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "chore/upgrades" }
+xp-format             = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "chore/upgrades" }
+xp-xcm                = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "chore/upgrades" }
+xs-channel            = { git = "https://github.com/t3rn/xbi", default-features = false, branch = "chore/upgrades" }
 
 # ====== std ======
 frame-benchmarking-cli         = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
@@ -188,7 +188,9 @@ jsonrpsee = { version = "0.16.2", features = [ "server", "macros" ] }
 getrandom = { version = "0", features = [ "js" ] }
 
 [workspace]
-exclude = [  ]
+exclude = [
+  "vendor"
+]
 # Substrate don't use glob in their workspace, so we don't either.
 # https://github.com/paritytech/substrate/blob/master/Cargo.toml
 # It breaks dependabot.
@@ -230,14 +232,14 @@ members = [
 #[patch."https://github.com/paritytech/cumulus"]
 #fp-evm                      = { path = "./pallets/evm/primitives" }
 
-[patch."https://github.com/t3rn/xbi"]
-pallet-asset-registry = { path = "../xbi/pallets/asset-registry" }
-pallet-xbi-portal     = { path = "../xbi/pallets/portal" }
-substrate-abi         = { path = "../xbi/crates/sabi" }
-xp-channel            = { path = "../xbi/crates/channel-primitives" }
-xp-format             = { path = "../xbi/crates/format" }
-xp-xcm                = { path = "../xbi/crates/xcm-primitives" }
-xs-channel            = { path = "../xbi/crates/channel" }
+#[patch."https://github.com/t3rn/xbi"]
+#pallet-asset-registry = { path = "../xbi/pallets/asset-registry" }
+#pallet-xbi-portal     = { path = "../xbi/pallets/portal" }
+#substrate-abi         = { path = "../xbi/crates/sabi" }
+#xp-channel            = { path = "../xbi/crates/channel-primitives" }
+#xp-format             = { path = "../xbi/crates/format" }
+#xp-xcm                = { path = "../xbi/crates/xcm-primitives" }
+#xs-channel            = { path = "../xbi/crates/channel" }
 
 [patch."https://github.com/t3rn/t3rn"]
 fp-evm                      = { path = "./pallets/evm/primitives" }
