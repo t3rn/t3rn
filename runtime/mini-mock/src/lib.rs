@@ -13,6 +13,9 @@ pub use pallet_attesters::{
 };
 use std::marker::PhantomData;
 
+use frame_support::traits::AsEnsureOriginWithArg;
+use frame_system::EnsureSigned;
+
 pub use pallet_circuit::{
     Config as ConfigCircuit, Error as CircuitError, Event as CircuitEvent, FullSideEffects,
     SFX2XTXLinksMap, XExecSignals,
@@ -46,10 +49,11 @@ pub use pallet_rewards::{
     Error as RewardsError, PendingClaims,
 };
 
+use frame_support::parameter_types;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    generic, parameter_types,
+    generic,
     traits::{BlakeTwo256, ConstU32, ConvertInto, IdentityLookup},
     Perbill, Percent,
 };
@@ -116,14 +120,19 @@ impl pallet_assets::Config for MiniRuntime {
     type AssetAccountDeposit = AssetAccountDeposit;
     type AssetDeposit = AssetDeposit;
     type AssetId = u32;
+    // type AssetIdParameter = codec::Compact<u32>;
+    type AssetIdParameter = u32;
     type Balance = Balance;
+    type CallbackHandle = ();
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type Currency = Balances;
-    type Event = Event;
     type Extra = ();
     type ForceOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type Freezer = ();
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type RuntimeEvent = RuntimeEvent;
     type StringLimit = AssetsStringLimit;
     type WeightInfo = ();
 }
@@ -149,7 +158,7 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
     }
 
     fn force_create_asset(
-        origin: Origin,
+        origin: RuntimeOrigin,
         asset_id: AssetId,
         admin: AccountId,
         is_sufficient: bool,
@@ -161,12 +170,14 @@ impl PalletAssetsOverlay<MiniRuntime, Balance> for MiniRuntime {
         Assets::force_create(origin, asset_id, admin, is_sufficient, min_balance)
     }
 
-    fn destroy(origin: Origin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
-        let destroy_witness = match Assets::get_destroy_witness(asset_id) {
-            Some(witness) => witness,
-            None => return Err("AssetNotFound".into()),
-        };
-        Assets::destroy(origin, *asset_id, destroy_witness)
+    fn destroy(origin: RuntimeOrigin, asset_id: &AssetId) -> DispatchResultWithPostInfo {
+        Assets::freeze_asset(origin.clone(), asset_id.clone())?;
+        Assets::start_destroy(origin.clone(), asset_id.clone())?;
+        Assets::destroy_accounts(origin.clone(), asset_id.clone())?;
+        Assets::destroy_approvals(origin.clone(), asset_id.clone())?;
+        Assets::finish_destroy(origin.clone(), asset_id.clone())?;
+
+        Ok(().into())
     }
 }
 
@@ -181,19 +192,19 @@ impl pallet_account_manager::Config for MiniRuntime {
     type Clock = Clock;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RuntimeEvent = RuntimeEvent;
     type Time = Timestamp;
     type WeightInfo = ();
 }
 
 impl pallet_clock::Config for MiniRuntime {
     type AccountManager = AccountManager;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type OnFinalizeQueues = t3rn_primitives::clock::EmptyOnHookQueues<Self>;
     type OnInitializeQueues = GlobalOnInitQueues;
     type RoundDuration = ConstU32<300>;
+    type RuntimeEvent = RuntimeEvent;
 }
 use t3rn_primitives::monetary::TRN;
 
@@ -240,12 +251,12 @@ impl pallet_rewards::Config for MiniRuntime {
     type CollatorBootstrapRewards = CollatorBootstrapRewards;
     type CollatorInflation = CollatorInflation;
     type Currency = Balances;
-    type Event = Event;
     type ExecutorBootstrapRewards = ExecutorBootstrapRewards;
     type ExecutorInflation = ExecutorInflation;
     type FindAuthor = FindAuthorMockRoundRobinRotate32;
     type InflationDistributionPeriod = InflationDistributionPeriod;
     type OneYear = OneYear;
+    type RuntimeEvent = RuntimeEvent;
     type StartingRepatriationPercentage = StartingRepatriationPercentage;
     type TotalInflation = TotalInflation;
     type TreasuryAccounts = MiniRuntime;
@@ -269,7 +280,6 @@ impl pallet_attesters::Config for MiniRuntime {
     type CommitteeSize = ConstU32<32>;
     type Currency = Balances;
     type DefaultCommission = DefaultCommission;
-    type Event = Event;
     type MaxBatchSize = ConstU32<128>;
     type MinAttesterBond = MinAttesterBond;
     type MinNominatorBond = MinNominatorBond;
@@ -279,6 +289,7 @@ impl pallet_attesters::Config for MiniRuntime {
     type RepatriationPeriod = ConstU32<60>;
     type RewardMultiplier = RewardMultiplier;
     type Rewards = Rewards;
+    type RuntimeEvent = RuntimeEvent;
     type ShufflingFrequency = ConstU32<400>;
     type SlashAccount = SlashAccount;
     type Xdns = XDNS;
@@ -291,12 +302,12 @@ impl pallet_balances::Config for MiniRuntime {
     /// The type for recording an account's balance.
     type Balance = Balance;
     type DustRemoval = ();
-    /// The ubiquitous event type.
-    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
+    /// The ubiquitous event type.
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -308,9 +319,7 @@ impl frame_system::Config for MiniRuntime {
     type BlockLength = ();
     type BlockNumber = BlockNumber;
     type BlockWeights = ();
-    type Call = Call;
     type DbWeight = ();
-    type Event = Event;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Header = Header;
@@ -320,8 +329,10 @@ impl frame_system::Config for MiniRuntime {
     type OnKilledAccount = ();
     type OnNewAccount = ();
     type OnSetCode = ();
-    type Origin = Origin;
     type PalletInfo = PalletInfo;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type SS58Prefix = ();
     type SystemWeightInfo = ();
     type Version = ();
@@ -377,10 +388,10 @@ parameter_types! {
 impl pallet_eth2_finality_verifier::Config for MiniRuntime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type Event = Event;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
+    type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();
@@ -389,10 +400,10 @@ impl pallet_eth2_finality_verifier::Config for MiniRuntime {
 impl pallet_sepolia_finality_verifier::Config for MiniRuntime {
     type CommitteeMajorityThreshold = CommitteeMajorityThreshold;
     type EpochsPerSyncCommitteePeriod = EpochsPerSyncCommitteePeriod;
-    type Event = Event;
     type GenesisValidatorRoot = GenesisValidatorsRoot;
     type HeadersToStore = HeadersToStoreEth;
     type LightClientAsyncAPI = XDNS;
+    type RuntimeEvent = RuntimeEvent;
     type SlotsPerEpoch = SlotsPerEpoch;
     type SyncCommitteeSize = SyncCommitteeSize;
     type WeightInfo = ();
@@ -412,8 +423,8 @@ impl pallet_xdns::Config for MiniRuntime {
     type Balances = Balances;
     type CircuitDLQ = Circuit;
     type Currency = Balances;
-    type Event = Event;
     type Portal = Portal;
+    type RuntimeEvent = RuntimeEvent;
     type SelfGatewayId = SelfGatewayId;
     type SelfTokenId = ConstU32<3333>;
     type Time = Timestamp;
@@ -431,12 +442,11 @@ impl pallet_circuit::Config for MiniRuntime {
     type AccountManager = AccountManager;
     type Attesters = Attesters;
     type Balances = Balances;
-    type Call = Call;
     type Currency = Balances;
     type DeletionQueueLimit = ConstU32<100u32>;
-    type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Portal = Portal;
+    type RuntimeEvent = RuntimeEvent;
     type SFXBiddingPeriod = ConstU32<3u32>;
     type SelfAccountId = CircuitAccountId;
     type SelfGatewayId = SelfGatewayId;
@@ -451,13 +461,13 @@ impl pallet_circuit::Config for MiniRuntime {
 impl pallet_circuit_vacuum::Config for MiniRuntime {
     type CircuitSubmitAPI = Circuit;
     type Currency = Balances;
-    type Event = Event;
     type ReadSFX = Circuit;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_portal::Config for MiniRuntime {
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SelectLightClient = SelectLightClientRegistry;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<MiniRuntime>;
     type Xdns = XDNS;
@@ -482,39 +492,39 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
 impl pallet_grandpa_finality_verifier::Config<RococoInstance> for MiniRuntime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
     type MyVendor = RococoVendor;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<PolkadotInstance> for MiniRuntime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
     type MyVendor = PolkadotVendor;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
 impl pallet_grandpa_finality_verifier::Config<KusamaInstance> for MiniRuntime {
     type BridgedChain = Blake2ValU32Chain;
     type EpochOffset = ConstU32<2_400u32>;
-    type Event = Event;
     type FastConfirmationOffset = ConstU32<3u32>;
     type FinalizedConfirmationOffset = ConstU32<10u32>;
     type HeadersToStore = HeadersToStore;
     type LightClientAsyncAPI = XDNS;
     type MyVendor = KusamaVendor;
     type RationalConfirmationOffset = ConstU32<10u32>;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = ();
 }
 
@@ -1057,7 +1067,7 @@ pub fn make_all_light_clients_move_2_times_by(move_by: u32) {
 pub fn activate_all_light_clients() {
     use t3rn_primitives::portal::Portal as PortalT;
     for &gateway in XDNS::all_gateway_ids().iter() {
-        Portal::turn_on(Origin::root(), gateway).unwrap();
+        Portal::turn_on(RuntimeOrigin::root(), gateway).unwrap();
     }
     XDNS::process_all_verifier_overviews(System::block_number());
     XDNS::process_overview(System::block_number());
@@ -1118,7 +1128,7 @@ pub fn reboot_and_link_assets(ext: &mut TestExternalities) {
 
 pub fn reboot_gateway(ext: &mut TestExternalities) {
     ext.execute_with(|| {
-        let _ = XDNS::reboot_self_gateway(Origin::root(), GatewayVendor::Rococo)
+        let _ = XDNS::reboot_self_gateway(RuntimeOrigin::root(), GatewayVendor::Rococo)
             .expect("ExtBuilder::reboot_self_gateway should fail with root privileges");
     });
 }
@@ -1143,7 +1153,7 @@ pub fn link_assets(
                     println!("ExtBuilder::link_assets register_new_token = {asset_id:?}");
 
                     XDNS::register_new_token(
-                        &Origin::root(),
+                        &RuntimeOrigin::root(),
                         asset_id,
                         token_info.clone(),
                     ).expect("ExtBuilder::link_asset_to_gateway register_new_token = {:?} should not fail after ensuring target_id is registered");
